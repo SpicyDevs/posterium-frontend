@@ -8,7 +8,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
 
-const API_BASE = process.env.VITE_API_URL; // change if needed
+const API_BASE = "https://rpdb.padhaiaayush.workers.dev"; // change if needed
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
 
