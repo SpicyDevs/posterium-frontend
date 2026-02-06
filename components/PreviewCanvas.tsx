@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition } from '../utils';
@@ -8,88 +8,84 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
 
+const API_BASE = "https://freeposterapi.workers.dev"; // change if needed
+
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
-  
+
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => ({
       ...prev,
-      pos: {
-        ...prev.pos,
-        [id]: { x, y }
-      }
+      pos: { ...prev.pos, [id]: { x, y } }
     }));
   };
 
-  // Determine active badges and their order
-  // For the purpose of "Auto Position", we need to know the index of the badge in the list
   const activeBadges = config.ratings;
 
-  // Generate grid lines
   const renderGridLines = () => {
     const lines = [];
-    // Vertical
     for (let i = 1; i < 4; i++) {
       lines.push(
-        <div 
-          key={`v-${i}`}
-          className="absolute top-0 bottom-0 border-r border-white/10 pointer-events-none" 
-          style={{ left: `${(i / 4) * 100}%` }}
-        />
+        <div key={`v-${i}`} className="absolute top-0 bottom-0 border-r border-white/10 pointer-events-none" style={{ left: `${(i / 4) * 100}%` }} />
       );
-    }
-    // Horizontal
-    for (let i = 1; i < 4; i++) {
       lines.push(
-        <div 
-          key={`h-${i}`}
-          className="absolute left-0 right-0 border-b border-white/10 pointer-events-none" 
-          style={{ top: `${(i / 4) * 100}%` }}
-        />
+        <div key={`h-${i}`} className="absolute left-0 right-0 border-b border-white/10 pointer-events-none" style={{ top: `${(i / 4) * 100}%` }} />
       );
     }
     return lines;
   };
 
-  const getPosterImage = () => {
-      // Fallback or real TMDB image construction
-      if(config.tmdbId) {
-          // Note: In a real app we might fetch the config from TMDB to get the actual path.
-          // For this editor, we use a placeholder if ID is missing, or a generic movie-like image.
-          // Since we can't fetch TMDB without a key here, we'll use a reliable placeholder service 
-          // that supports text or use the worker's own generated image as background (but that causes loop issues).
-          // We will use a high quality placeholder from Lorem Picsum with a consistent seed based on ID.
-          return `https://image.tmdb.org/t/p/w500/${config.tmdbId}.jpg`; // This usually 404s without a path.
-      }
-      return "https://picsum.photos/500/750";
+  /**
+   * Convert config → worker query string
+   */
+  const buildQuery = () => {
+    const p = new URLSearchParams();
+
+    if (config.ratings.length) p.set("r", config.ratings.join(","));
+    if (config.source) p.set("source", config.source);
+    if (config.theme) p.set("t", config.theme);
+    if (config.size) p.set("s", config.size);
+    if (config.layout) p.set("l", config.layout);
+    if (config.preset) p.set("pos", config.preset);
+    if (config.shadow) p.set("sh", "1");
+    if (config.customBg) p.set("bg", config.customBg);
+    if (config.customTxt) p.set("txt", config.customTxt);
+
+    const { imdb, rt, meta } = config.pos;
+    if (!isNaN(imdb?.x)) p.set("ix", imdb.x.toString());
+    if (!isNaN(imdb?.y)) p.set("iy", imdb.y.toString());
+    if (!isNaN(rt?.x))   p.set("rx", rt.x.toString());
+    if (!isNaN(rt?.y))   p.set("ry", rt.y.toString());
+    if (!isNaN(meta?.x)) p.set("mx", meta.x.toString());
+    if (!isNaN(meta?.y)) p.set("my", meta.y.toString());
+
+    return p.toString();
   };
-  
-  // Use a proxy image for the preview background to simulate a movie poster
-  // Interstellar: https://image.tmdb.org/t/p/w500/gEU2QniL6C8zYE1mWDk5DUE0qDb.jpg
-  // We'll just hardcode a few for demo purposes if the ID matches defaults, otherwise generic.
-  const bgImage = config.tmdbId === "157336" 
-    ? "https://image.tmdb.org/t/p/w500/gEU2QniL6C8zYE1mWDk5DUE0qDb.jpg"
-    : `https://picsum.photos/seed/${config.tmdbId}/500/750`;
+
+  /**
+   * Final preview URL (memoized)
+   */
+  const bgImage = useMemo(() => {
+    if (!config.tmdbId) return "";
+
+    const query = buildQuery();
+
+    // .jpg → forces worker raster conversion
+    return `${API_BASE}/${config.tmdbId}?${query}`;
+  }, [config]);
 
   return (
     <div className="relative flex justify-center items-center p-4 bg-zinc-900 rounded-lg shadow-2xl overflow-hidden">
-      
-      {/* Canvas Container */}
-      <div 
-        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} 
-        className="relative bg-black shadow-2xl overflow-hidden ring-1 ring-white/10"
-      >
-        {/* Background Image */}
-        <img 
-          src={bgImage} 
-          alt="Poster Preview" 
-          className="w-full h-full object-cover opacity-80"
+      <div style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="relative bg-black shadow-2xl overflow-hidden ring-1 ring-white/10">
+
+        <img
+          src={bgImage}
+          alt="Poster Preview"
+          className="w-full h-full object-cover opacity-90"
           draggable={false}
         />
 
-        {/* Grid Overlay (Visual Aid for snapping) */}
         {renderGridLines()}
 
-        {/* Badges */}
         {activeBadges.map((id, index) => (
           <DraggableBadge
             key={id}
@@ -100,9 +96,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
           />
         ))}
 
-        {/* Info Overlay */}
         <div className="absolute bottom-2 right-2 text-xs text-white/30 pointer-events-none font-mono">
-           {CANVAS_WIDTH}x{CANVAS_HEIGHT}
+          {CANVAS_WIDTH}x{CANVAS_HEIGHT}
         </div>
       </div>
     </div>
