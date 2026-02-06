@@ -1,0 +1,5 @@
+{
+  "name": "FreePosterAPI Editor",
+  "description": "An advanced visual editor for the FreePosterAPI Cloudflare Worker, featuring draggable positioning, live preview, and full parameter configuration.",
+  "requestFramePermissions": []
+}
