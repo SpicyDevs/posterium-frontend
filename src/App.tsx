@@ -65,9 +65,13 @@ const App: React.FC = () => {
                 <span className="hidden sm:inline">Reset</span>
              </button>
              <div className="w-px h-6 bg-white/10 mx-1"></div>
-             <a href="https://github.com/xdaayush/freeposterapi" target="_blank" rel="noreferrer" className="text-zinc-500 hover:text-white transition-colors">
-                 <Github size={20} />
-             </a>
+<a
+  aria-disabled="true"
+  className="text-zinc-600 cursor-not-allowed opacity-40 pointer-events-none select-none"
+>
+  <Github size={20} />
+</a>
+
         </div>
       </header>
 
