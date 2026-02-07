@@ -45,16 +45,29 @@ const App: React.FC = () => {
     <div className="flex flex-col h-[100dvh] bg-[#0a0a0a] text-zinc-200 overflow-hidden font-sans">
       
       {/* Navbar */}
-      <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 border-b border-white/5 bg-[#0a0a0a] z-30">
-        <div className="flex items-center gap-2.5">
+      <header className="h-14 flex-shrink-0 flex items-center justify-between gap-4 px-4 border-b border-white/5 bg-[#0a0a0a] z-30">
+        
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 rounded-lg shadow-lg shadow-blue-900/20">
              <Sparkles size={16} className="text-white" />
           </div>
-          <h1 className="text-base font-bold tracking-tight text-white">
+          <h1 className="hidden sm:block text-base font-bold tracking-tight text-white">
             FreePosterAPI
           </h1>
         </div>
-        <div className="flex gap-3 items-center">
+
+        {/* Center: CodeBox (Dynamic URL) */}
+        <div className="flex-1 max-w-xl">
+             <CodeBox 
+                config={config} 
+                onLoadConfig={handleLoadConfig} 
+                baseUrl={baseUrl}
+            />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 items-center flex-shrink-0">
              <button 
                 onClick={handleReset}
                 className="p-2 text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-md transition-colors"
@@ -72,16 +85,8 @@ const App: React.FC = () => {
       {/* Content Area */}
       <div className="flex flex-1 flex-col md:flex-row overflow-hidden relative">
         
-        {/* CENTER: Preview Canvas (Takes remaining space on mobile) */}
+        {/* CENTER: Preview Canvas */}
         <main className="flex-1 relative flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-800/20 via-[#0a0a0a] to-[#0a0a0a] overflow-hidden order-1 md:order-2">
-            <div className="w-full max-w-2xl mx-auto px-4 pt-4 z-20">
-                 <CodeBox 
-                    config={config} 
-                    onLoadConfig={handleLoadConfig} 
-                    baseUrl={baseUrl}
-                />
-            </div>
-            
             <div className="flex-1 w-full flex items-center justify-center p-4 min-h-0">
                  <PreviewCanvas config={config} setConfig={setConfig} />
             </div>
