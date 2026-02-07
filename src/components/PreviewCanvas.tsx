@@ -61,8 +61,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   };
 
   const cleanPosterUrl = useMemo(() => {
-    return `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-  }, [config.tmdbId]);
+    const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
+    // Append source param if it's fanart so the preview fetches the correct image
+    return config.source === 'fanart' ? `${base}?source=fanart` : base;
+  }, [config.tmdbId, config.source]);
 
   return (
     <div 
