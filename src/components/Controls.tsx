@@ -91,8 +91,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       });
   };
 
-  // Helper for consistent select styling
-  const selectClass = "w-full bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-200 text-xs rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow cursor-pointer";
+  // Improved Select Styling
+  const selectClass = "w-full appearance-none bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-200 text-xs rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:10px_10px] bg-[right_12px_center] bg-no-repeat pr-8";
 
   // Handle Media Type Switch with ID update
   const handleMediaTypeSwitch = (type: 'movie' | 'tv') => {
@@ -118,13 +118,13 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
             <div className="flex gap-2 mb-2">
                  <button 
                     onClick={() => handleMediaTypeSwitch('movie')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'movie' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border transition-colors ${config.mediaType === 'movie' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:bg-zinc-800'}`}
                  >
                      <Film size={14}/> Movie
                  </button>
                  <button 
                     onClick={() => handleMediaTypeSwitch('tv')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'tv' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border transition-colors ${config.mediaType === 'tv' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:bg-zinc-800'}`}
                  >
                      <Tv size={14}/> TV Show
                  </button>
@@ -135,11 +135,11 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         type="text" 
                         value={config.tmdbId}
                         onChange={(e) => handleChange('tmdbId', e.target.value)}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none text-zinc-200 placeholder-zinc-600"
                         placeholder="TMDB / IMDb ID"
                     />
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-1 relative">
                     <select 
                         value={config.source} 
                         onChange={(e) => handleChange('source', e.target.value)}
@@ -212,7 +212,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Styling */}
         <Section title="Styling" icon={<Palette size={16} />}>
-            <div className="mb-3">
+            <div className="mb-3 relative">
                 <select 
                     value={selectedBadge}
                     onChange={(e) => setSelectedBadge(e.target.value as any)}

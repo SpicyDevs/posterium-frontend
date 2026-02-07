@@ -39,7 +39,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const currentScale = autoScale * zoomModifier;
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
-    setConfig(prev => {
+    setConfig((prev: PosterConfig) => {
       if (prev.layout === 'custom' && prev.preset === 'custom') {
          return {
             ...prev,
@@ -48,7 +48,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
       }
 
       const newItems = { ...prev.items };
-      prev.ratings.forEach((r, index) => {
+      prev.ratings.forEach((r: RatingType, index: number) => {
          const currentItem = newItems[r];
          if (currentItem?.x === undefined || currentItem?.y === undefined) {
              const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
@@ -132,7 +132,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 ))}
             </div>
 
-            {config.ratings.map((id, index) => {
+            {config.ratings.map((id: RatingType, index: number) => {
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const itemConfig = config.items[id];
                 const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;

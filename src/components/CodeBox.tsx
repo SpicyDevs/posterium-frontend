@@ -43,10 +43,10 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   };
 
   return (
-    <div className="w-full mx-auto mb-2 px-1">
-      <div className="bg-zinc-900/90 backdrop-blur rounded-lg border border-zinc-700/50 p-1 flex items-center shadow-lg group focus-within:ring-1 focus-within:ring-blue-500/50 transition-all">
-        <div className="pl-3 pr-2 text-zinc-500">
-            <Link size={14} />
+    <div className="w-full group relative">
+      <div className="bg-zinc-900/50 hover:bg-zinc-900 transition-colors backdrop-blur rounded-md border border-zinc-700/50 p-0.5 flex items-center shadow-sm focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:border-blue-500/50">
+        <div className="pl-2 pr-1.5 text-zinc-500">
+            <Link size={12} />
         </div>
         <input
           type="text"
@@ -56,24 +56,19 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
               setUrl(e.target.value);
           }}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-          className="flex-1 bg-transparent border-none text-zinc-300 text-xs font-mono focus:ring-0 placeholder-zinc-600 truncate py-2"
+          className="flex-1 bg-transparent border-none text-zinc-300 text-[11px] font-mono focus:ring-0 placeholder-zinc-600 truncate h-7 py-0"
           placeholder="https://..."
           spellCheck={false}
         />
         {isManualTyping ? (
-             <button onClick={handleLoad} disabled={isProcessing} className="p-2 text-blue-400 hover:bg-zinc-800 rounded disabled:opacity-50">
-                 {isProcessing ? <Loader2 size={16} className="animate-spin"/> : <ArrowRight size={16} />}
+             <button onClick={handleLoad} disabled={isProcessing} className="p-1.5 text-blue-400 hover:bg-zinc-800 rounded disabled:opacity-50">
+                 {isProcessing ? <Loader2 size={12} className="animate-spin"/> : <ArrowRight size={12} />}
              </button>
         ) : (
-            <button onClick={handleCopy} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">
-                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+            <button onClick={handleCopy} className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">
+                {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
             </button>
         )}
-      </div>
-      <div className="flex justify-between mt-1.5 px-1 opacity-60 hover:opacity-100 transition-opacity">
-          <p className="text-[10px] text-zinc-500">
-             {isManualTyping ? "Press Enter to load." : "Dynamic API URL"}
-          </p>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  config.ratings.forEach((key, index) => {
+  config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const autoPos = calculateAutoPosition(key, index, config.ratings.length, config);
     const finalX = item.x !== undefined ? item.x : autoPos.x;
