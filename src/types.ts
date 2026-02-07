@@ -1,8 +1,9 @@
 export type RatingType = 'imdb' | 'rt' | 'meta' | 'tmdb';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
-export type LayoutType = 'row' | 'col';
-export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc';
+// Added 'custom' to allow deselecting
+export type LayoutType = 'row' | 'col' | 'custom';
+export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
 export type SourceType = 'tmdb' | 'fanart';
 export type ExtensionType = 'svg' | 'jpg' | 'png';
 

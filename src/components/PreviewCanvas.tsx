@@ -38,13 +38,42 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   }, []);
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
-    setConfig(prev => ({
-      ...prev,
-      items: {
-          ...prev.items,
-          [id]: { ...prev.items[id], x, y }
+    setConfig(prev => {
+      // If we are already in custom mode, just update the dragged item
+      if (prev.layout === 'custom' && prev.preset === 'custom') {
+         return {
+            ...prev,
+            items: {
+                ...prev.items,
+                [id]: { ...prev.items[id], x, y }
+            }
+         };
       }
-    }));
+
+      // If switching from auto to manual, we must "freeze" the current positions
+      // of ALL items so they don't jump when the layout property changes to 'custom'.
+      const newItems = { ...prev.items };
+      
+      prev.ratings.forEach((r, index) => {
+         // Calculate where it currently is visually
+         const currentItem = newItems[r];
+         // Only freeze if it doesn't already have a manual position
+         if (currentItem?.x === undefined || currentItem?.y === undefined) {
+             const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
+             newItems[r] = { ...currentItem, x: autoPos.x, y: autoPos.y };
+         }
+      });
+
+      // Update the specific item being dragged with new coordinates
+      newItems[id] = { ...newItems[id], x, y };
+
+      return {
+         ...prev,
+         layout: 'custom', // Deselects Row/Col buttons
+         preset: 'custom', // Deselects Preset buttons
+         items: newItems
+      };
+    });
   };
 
   const renderGridLines = () => {
@@ -60,12 +89,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return lines;
   };
 
-  // FIX: This now listens to config.source and appends it to the URL
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-    
-    // We add 'v=1' to force the browser to verify the cache, 
-    // ensuring we don't see a stale image when switching sources.
     if (config.source === 'fanart') {
         return `${base}?source=fanart&v=1`;
     }
