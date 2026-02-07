@@ -29,6 +29,7 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [tempPos, setTempPos] = useState({ x, y });
 
+  // --- Handlers for Mouse Events ---
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -40,12 +41,38 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
     });
   };
 
+  // --- Handlers for Touch Events ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Do NOT call e.preventDefault() here; it might block scrolling or clicks on some devices
+    // unless necessary. But for dragging, we often want to prevent screen scroll.
+    // e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setTempPos({ x, y });
+    setDragOffset({
+      x: touch.clientX - x,
+      y: touch.clientY - y
+    });
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
+      handleMove(e.clientX, e.clientY);
+    };
 
-      let newX = e.clientX - dragOffset.x;
-      let newY = e.clientY - dragOffset.y;
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault(); // Prevents scrolling while dragging
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    };
+
+    const handleMove = (cX: number, cY: number) => {
+      let newX = cX - dragOffset.x;
+      let newY = cY - dragOffset.y;
 
       const snapThreshold = 15;
       const vSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_WIDTH);
@@ -67,7 +94,7 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
       setTempPos({ x: newX, y: newY });
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = () => {
       if (isDragging) {
         setIsDragging(false);
         onPositionChange(id, tempPos.x, tempPos.y);
@@ -76,11 +103,15 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
 
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
     };
   }, [isDragging, dragOffset, id, onPositionChange, width, height, tempPos.x, tempPos.y]);
 
@@ -130,6 +161,7 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
   return (
     <div
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       className="absolute top-0 left-0 select-none cursor-move group z-50 hover:z-[60]"
       style={{
         width: `${width}px`,
