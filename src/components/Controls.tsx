@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
-import { Layout, Palette, Image as ImageIcon, BoxSelect, ScanLine, Sliders } from 'lucide-react';
+import { Layout, Palette, Image as ImageIcon, ScanLine } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;

@@ -96,7 +96,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 };
 
 export const calculateAutoPosition = (
-  ratingId: RatingType, 
+  _ratingId: RatingType, // RENAMED to _ratingId to fix unused variable error
   index: number, 
   totalBadges: number, 
   config: PosterConfig
