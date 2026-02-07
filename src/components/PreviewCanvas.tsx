@@ -62,8 +62,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
 
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-    // Append source param if it's fanart so the preview fetches the correct image
-    return config.source === 'fanart' ? `${base}?source=fanart` : base;
+    // FIX: Added &v=1 to force cache bust. 
+    // This ensures we don't see the old cached response from previous worker versions.
+    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
   }, [config.tmdbId, config.source]);
 
   return (
