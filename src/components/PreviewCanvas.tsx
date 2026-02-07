@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
+import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
-import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
+import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface Props {
@@ -67,24 +67,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const zoomOut = () => setZoomModifier(prev => Math.max(prev - 0.1, 0.1));
   const resetZoom = () => setZoomModifier(1);
 
-  // Pre-calculate all rects for collision detection
-  const badgeRects = useMemo(() => {
-      const scale = getScale(config.size);
-      const w = BASE_BADGE_W * scale;
-      const h = BASE_BADGE_H * scale;
-
-      return config.ratings.map((r, index) => {
-          const auto = calculateAutoPosition(r, index, config.ratings.length, config);
-          const item = config.items[r];
-          return {
-              id: r,
-              x: item?.x ?? auto.x,
-              y: item?.y ?? auto.y,
-              w, h
-          };
-      });
-  }, [config]);
-
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center relative bg-black/20 overflow-hidden">
         
@@ -132,9 +114,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 const itemConfig = config.items[id];
                 const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
                 
-                // Filter out self from obstacles
-                const obstacles = badgeRects.filter(b => b.id !== id);
-
                 return (
                     <DraggableBadge
                         key={id}
@@ -144,7 +123,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                         y={hasManual ? itemConfig!.y! : auto.y}
                         canvasScale={currentScale} 
                         onPositionChange={handlePositionChange}
-                        obstacles={obstacles}
                     />
                 );
             })}
