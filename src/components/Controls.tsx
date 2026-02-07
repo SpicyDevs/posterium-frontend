@@ -33,6 +33,10 @@ const Section: React.FC<{
 const Controls: React.FC<Props> = ({ config, onChange }) => {
   const [selectedBadge, setSelectedBadge] = useState<RatingType | 'global'>('global');
 
+  // New Default IDs based on your request
+  const MOVIE_DEFAULT_ID = "453395";
+  const TV_DEFAULT_ID = "93405";
+
   const handleChange = (key: keyof PosterConfig, value: any) => {
     onChange({ ...config, [key]: value });
   };
@@ -87,6 +91,19 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       });
   };
 
+  // Helper for consistent select styling
+  const selectClass = "w-full bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-200 text-xs rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow cursor-pointer";
+
+  // Handle Media Type Switch with ID update
+  const handleMediaTypeSwitch = (type: 'movie' | 'tv') => {
+      if (config.mediaType === type) return;
+      onChange({ 
+          ...config, 
+          mediaType: type,
+          tmdbId: type === 'movie' ? MOVIE_DEFAULT_ID : TV_DEFAULT_ID
+      });
+  };
+
   return (
     <div className="bg-zinc-900/50 backdrop-blur-md h-full w-full flex flex-col">
       <div className="p-4 border-b border-white/5 bg-[#0f0f11] sticky top-0 z-10">
@@ -100,13 +117,13 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
         <Section title="Source Media" icon={<ImageIcon size={16} />}>
             <div className="flex gap-2 mb-2">
                  <button 
-                    onClick={() => handleChange('mediaType', 'movie')}
+                    onClick={() => handleMediaTypeSwitch('movie')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'movie' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
                  >
                      <Film size={14}/> Movie
                  </button>
                  <button 
-                    onClick={() => handleChange('mediaType', 'tv')}
+                    onClick={() => handleMediaTypeSwitch('tv')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'tv' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
                  >
                      <Tv size={14}/> TV Show
@@ -122,14 +139,16 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         placeholder="TMDB / IMDb ID"
                     />
                 </div>
-                <select 
-                    value={config.source} 
-                    onChange={(e) => handleChange('source', e.target.value)}
-                    className="col-span-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-2 text-xs outline-none"
-                >
-                    <option value="tmdb">TMDB</option>
-                    <option value="fanart">Fanart</option>
-                </select>
+                <div className="col-span-1">
+                    <select 
+                        value={config.source} 
+                        onChange={(e) => handleChange('source', e.target.value)}
+                        className={selectClass}
+                    >
+                        <option value="tmdb">TMDB</option>
+                        <option value="fanart">Fanart</option>
+                    </select>
+                </div>
             </div>
             
             {/* Format Selector */}
@@ -197,7 +216,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 <select 
                     value={selectedBadge}
                     onChange={(e) => setSelectedBadge(e.target.value as any)}
-                    className="w-full bg-zinc-800 text-xs px-3 py-2 rounded border border-zinc-700 outline-none"
+                    className={selectClass}
                 >
                     <option value="global">Global Defaults</option>
                     {config.ratings.map(r => <option key={r} value={r}>{r.toUpperCase()} Override</option>)}
