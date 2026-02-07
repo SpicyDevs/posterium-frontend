@@ -1,3 +1,4 @@
+// src/utils.ts
 import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from './types';
 
 // @ts-ignore
@@ -6,6 +7,37 @@ export const DEFAULT_API_BASE = envApiUrl || "https://rpdb.padhaiaayush.workers.
 
 export const getScale = (size: string) => {
   return size === 'sm' ? 0.8 : (size === 'lg' ? 1.2 : 1.0);
+};
+
+export const calculateAutoPosition = (
+  _ratingId: RatingType,
+  index: number, 
+  totalBadges: number, 
+  config: PosterConfig
+) => {
+  const scale = getScale(config.size);
+  const badgeW = BASE_BADGE_W * scale;
+  const badgeH = BASE_BADGE_H * scale;
+  const isRow = config.layout === 'row';
+
+  const groupW = isRow ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) : badgeW;
+  const groupH = isRow ? badgeH : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
+
+  let presetX = 0;
+  let presetY = 0;
+
+  if (config.preset.includes('l')) presetX = PADDING;
+  else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
+  else presetX = (CANVAS_WIDTH - groupW) / 2;
+
+  if (config.preset.includes('t')) presetY = PADDING;
+  else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
+  else presetY = (CANVAS_HEIGHT - groupH) / 2;
+
+  let x = isRow ? presetX + (index * (badgeW + GAP)) : presetX;
+  let y = isRow ? presetY : presetY + (index * (badgeH + GAP));
+
+  return { x, y };
 };
 
 export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_API_BASE): string => {
@@ -17,27 +49,35 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
-  // Visual Global Params
-  if (config.blur !== 8) params.set('blur', config.blur.toString());
-  if (config.alpha !== 0.4) params.set('alpha', config.alpha.toString());
-  if (config.radius !== 12) params.set('rad', config.radius.toString());
-  if (config.shadow) params.set('sh', '1');
+  // Visual Global Params - ALWAYS APPLY (No default checks)
+  params.set('blur', config.blur.toString());
+  params.set('alpha', config.alpha.toString());
+  params.set('rad', config.radius.toString());
+  params.set('sh', config.shadow ? '1' : '0');
   
-  // Layout Params
-  if (config.size !== 'md') params.set('s', config.size);
+  // Layout Params (Legacy, but kept for state preservation if backend ever uses them)
+  params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // Per-Item Params
-  (Object.keys(config.items) as RatingType[]).forEach(key => {
-    const item = config.items[key];
-    if (!item) return;
-
-    if (item.x !== undefined) params.set(`${key}_x`, Math.round(item.x).toString());
-    if (item.y !== undefined) params.set(`${key}_y`, Math.round(item.y).toString());
+  // Per-Item Params - EXPLICIT CALCULATION
+  // The backend doesn't know about presets/layouts, so we must calculate 
+  // the exact X/Y for every item and send it.
+  config.ratings.forEach((key, index) => {
+    const item = config.items[key] || {};
     
-    // FIX: Do NOT strip the #. URLSearchParams encodes it as %23 automatically.
-    // If you strip it, the backend receives "FFFFFF" which is an invalid CSS color.
+    // 1. Calculate where it SHOULD be based on auto-layout
+    const autoPos = calculateAutoPosition(key, index, config.ratings.length, config);
+    
+    // 2. Use manual override if exists, otherwise use auto
+    const finalX = item.x !== undefined ? item.x : autoPos.x;
+    const finalY = item.y !== undefined ? item.y : autoPos.y;
+
+    // 3. Send to backend
+    params.set(`${key}_x`, Math.round(finalX).toString());
+    params.set(`${key}_y`, Math.round(finalY).toString());
+
+    // 4. Styles
     if (item.bg) params.set(`${key}_bg`, item.bg); 
     if (item.txt) params.set(`${key}_txt`, item.txt);
   });
@@ -67,7 +107,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
-                // Ensure we handle colors if they come back without # (legacy) or with #
                 ...(bg ? { bg: bg.startsWith('#') ? bg : `#${bg}` } : {}),
                 ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
             };
@@ -93,35 +132,4 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     console.error("Failed to parse URL", e);
     return DEFAULT_CONFIG;
   }
-};
-
-export const calculateAutoPosition = (
-  _ratingId: RatingType, // RENAMED to _ratingId to fix unused variable error
-  index: number, 
-  totalBadges: number, 
-  config: PosterConfig
-) => {
-  const scale = getScale(config.size);
-  const badgeW = BASE_BADGE_W * scale;
-  const badgeH = BASE_BADGE_H * scale;
-  const isRow = config.layout === 'row';
-
-  const groupW = isRow ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) : badgeW;
-  const groupH = isRow ? badgeH : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
-
-  let presetX = 0;
-  let presetY = 0;
-
-  if (config.preset.includes('l')) presetX = PADDING;
-  else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
-  else presetX = (CANVAS_WIDTH - groupW) / 2;
-
-  if (config.preset.includes('t')) presetY = PADDING;
-  else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
-  else presetY = (CANVAS_HEIGHT - groupH) / 2;
-
-  let x = isRow ? presetX + (index * (badgeW + GAP)) : presetX;
-  let y = isRow ? presetY : presetY + (index * (badgeH + GAP));
-
-  return { x, y };
 };
