@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RatingType, PosterConfig, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
-import { Star, GripVertical, Ticket, Gauge } from 'lucide-react';
+import { Star, GripVertical, Ticket, Gauge, Clapperboard } from 'lucide-react';
 
 interface Props {
   id: RatingType;
   config: PosterConfig;
   onPositionChange: (id: RatingType, x: number, y: number) => void;
-  // If provided, this is the calculated position from the preset logic
   autoPos: { x: number, y: number }; 
 }
 
@@ -16,20 +15,24 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
 
-  // Current coordinates
-  const currentPos = config.pos[id] || autoPos;
+  // Use manual position if set, otherwise auto
+  const itemConfig = config.items[id];
+  const currentPos = (itemConfig?.x !== undefined && itemConfig?.y !== undefined) 
+    ? { x: itemConfig.x, y: itemConfig.y } 
+    : autoPos;
   
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  
-  // Visual state for the drag preview
   const [visualPos, setVisualPos] = useState(currentPos);
 
+  // Sync when config changes externally (e.g. preset change)
   useEffect(() => {
     if (!isDragging) {
-      setVisualPos(config.pos[id] || autoPos);
+      setVisualPos((itemConfig?.x !== undefined && itemConfig?.y !== undefined) 
+        ? { x: itemConfig.x, y: itemConfig.y } 
+        : autoPos);
     }
-  }, [config.pos, autoPos, id, isDragging]);
+  }, [itemConfig, autoPos, isDragging]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,27 +50,26 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
       let newX = e.clientX - dragOffset.x;
       let newY = e.clientY - dragOffset.y;
 
-      // Snapping Logic
-      const snapX = CANVAS_WIDTH / 4; // 1/4th snapping
-      const snapY = CANVAS_HEIGHT / 4;
-
-      const SNAP_THRESHOLD = 20;
-
-      // Check horizontal snap lines
-      for (let i = 0; i <= 4; i++) {
-        const line = i * snapX;
-        // Snap the center of the badge or edges? Let's snap the top-left for simplicity in this logic, 
-        // or snap based on proximity to line
-        if (Math.abs(newX - line) < SNAP_THRESHOLD) newX = line;
-      }
+      // --- Snapping Logic ---
+      const snapThreshold = 15;
       
-      // Check vertical snap lines
-      for (let i = 0; i <= 4; i++) {
-        const line = i * snapY;
-        if (Math.abs(newY - line) < SNAP_THRESHOLD) newY = line;
+      // Vertical Lines (0, 0.25, 0.5, 0.75, 1.0)
+      const vSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_WIDTH);
+      // Horizontal Lines
+      const hSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_HEIGHT);
+
+      // Snap Center of Badge to Line
+      const centerX = newX + width / 2;
+      const centerY = newY + height / 2;
+
+      for (const line of vSnaps) {
+        if (Math.abs(centerX - line) < snapThreshold) newX = line - width / 2;
+      }
+      for (const line of hSnaps) {
+        if (Math.abs(centerY - line) < snapThreshold) newY = line - height / 2;
       }
 
-      // Boundaries
+      // Hard boundaries
       newX = Math.max(0, Math.min(newX, CANVAS_WIDTH - width));
       newY = Math.max(0, Math.min(newY, CANVAS_HEIGHT - height));
 
@@ -85,84 +87,68 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, id, onPositionChange, visualPos, width, height]);
+  }, [isDragging, dragOffset, id, onPositionChange, width, height]);
 
 
-  // Styles based on config
-  const getStyles = () => {
-    const baseStyle = {
-      width: `${width}px`,
-      height: `${height}px`,
-      borderRadius: `${8 * scale}px`,
-      transform: `translate(${visualPos.x}px, ${visualPos.y}px)`,
-    };
-
-    if (config.customBg) {
-      return {
-        ...baseStyle,
-        backgroundColor: config.customBg,
-        color: config.customTxt || '#fff',
-        border: 'none',
-      };
-    }
-
-    if (config.theme === 'glass') {
-      return {
-        ...baseStyle,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        color: '#fff',
-      };
-    }
-
-    // Solid theme
-    return {
-      ...baseStyle,
-      backgroundColor: '#18181b',
-      color: '#fff',
-      border: 'none',
-    };
-  };
+  // Determine Colors
+  const bgColor = itemConfig?.bg || `rgba(0,0,0, ${config.alpha})`;
+  const txtColor = itemConfig?.txt || '#ffffff';
 
   const getIcon = () => {
     switch (id) {
       case 'imdb': return <Star fill="#f5c518" strokeWidth={0} size={24 * scale} />;
-      case 'rt': return <Ticket fill="#fa320a" strokeWidth={0} size={24 * scale} />; // Approximation
+      case 'rt': return <Ticket fill="#fa320a" strokeWidth={0} size={24 * scale} />; 
       case 'meta': return <Gauge color="#66cc33" size={24 * scale} />;
+      case 'tmdb': return <Clapperboard color="#01b4e4" size={24 * scale} />;
     }
   };
 
-  const getValue = () => {
+  const getDummyValue = () => {
     switch(id) {
         case 'imdb': return '8.7';
         case 'rt': return '73%';
         case 'meta': return '74';
+        case 'tmdb': return '85%';
     }
   }
 
   return (
     <div
       onMouseDown={handleMouseDown}
-      className={`absolute flex items-center justify-between px-3 select-none cursor-move group ${config.shadow ? 'shadow-xl' : ''}`}
+      className="absolute flex items-center justify-between select-none cursor-move group"
       style={{
-        ...getStyles(),
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `translate(${visualPos.x}px, ${visualPos.y}px)`,
+        backgroundColor: bgColor,
+        color: txtColor,
+        borderRadius: `${config.radius}px`,
+        backdropFilter: `blur(${config.blur}px)`,
+        boxShadow: config.shadow ? '3px 5px 2px rgba(0,0,0,0.4)' : 'none',
+        paddingLeft: '10px',
+        paddingRight: '10px',
         willChange: 'transform',
-        boxShadow: config.shadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : 'none'
       }}
     >
       <div className="flex items-center gap-2">
-         {/* Drag Handle visible on hover */}
-        <div className="opacity-0 group-hover:opacity-100 absolute -left-4 bg-white/20 rounded p-0.5">
+         {/* Hidden drag handle hint */}
+        <div className="opacity-0 group-hover:opacity-100 absolute -left-4 bg-blue-500/80 rounded p-0.5 text-white">
            <GripVertical size={12} />
         </div>
         {getIcon()}
       </div>
-      <span style={{ fontSize: `${28 * scale}px`, fontWeight: 'bold' }}>{getValue()}</span>
+      <span style={{ 
+          fontSize: `${28 * scale}px`, 
+          fontFamily: 'Arial, sans-serif', 
+          fontWeight: 'bold',
+          lineHeight: 1 
+      }}>
+          {getDummyValue()}
+      </span>
     </div>
   );
 };

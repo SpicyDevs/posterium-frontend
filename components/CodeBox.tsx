@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, ArrowRight } from 'lucide-react';
-import { generateApiUrl, DEFAULT_API_BASE } from '../utils';
+import { Copy, Check, ArrowRight, Link } from 'lucide-react';
+import { generateApiUrl } from '../utils';
 import { PosterConfig } from '../types';
 
 interface Props {
@@ -12,14 +12,14 @@ interface Props {
 const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const [isManualTyping, setIsManualTyping] = useState(false);
 
-  // Sync internal state with prop config unless user is typing
+  // Sync state with config changes, unless user is actively typing to load something
   useEffect(() => {
-    if (!isFocused) {
+    if (!isManualTyping) {
       setUrl(generateApiUrl(config, baseUrl));
     }
-  }, [config, baseUrl, isFocused]);
+  }, [config, baseUrl, isManualTyping]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(url);
@@ -29,64 +29,44 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
 
   const handleLoad = () => {
       onLoadConfig(url);
+      setIsManualTyping(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-          handleLoad();
-          (e.target as HTMLInputElement).blur();
-      }
-  }
-
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8 px-6">
-      <div className="flex items-center justify-between mb-2">
-         <label className="text-sm font-semibold text-zinc-400">API Endpoint</label>
-         {config.pos.imdb || config.pos.rt || config.pos.meta ? (
-             <span className="text-xs text-yellow-500/80 bg-yellow-900/20 px-2 py-0.5 rounded border border-yellow-700/30">
-                 Custom Coordinates Active
-             </span>
-         ) : null}
-      </div>
-      
-      <div className="relative group">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-           <span className="text-zinc-500 font-mono text-sm">GET</span>
+    <div className="w-full max-w-4xl mx-auto mb-6 px-4">
+      <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-1 flex items-center shadow-lg">
+        <div className="pl-3 pr-2 text-zinc-500">
+            <Link size={16} />
         </div>
         <input
           type="text"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-              setIsFocused(false);
+          onChange={(e) => {
+              setIsManualTyping(true);
+              setUrl(e.target.value);
           }}
-          onKeyDown={handleKeyDown}
-          className="block w-full pl-12 pr-28 py-4 bg-black/50 border border-zinc-700 rounded-lg text-zinc-300 font-mono text-sm shadow-inner focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+          onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
+          className="flex-1 bg-transparent border-none text-zinc-300 text-sm font-mono focus:ring-0 placeholder-zinc-600"
+          placeholder="https://..."
         />
-        
-        <div className="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
-             {isFocused && (
-                 <button 
-                    onClick={handleLoad}
-                    className="p-2 text-zinc-400 hover:text-green-400 transition-colors bg-zinc-800 rounded hover:bg-zinc-700"
-                    title="Load Configuration"
-                 >
-                     <ArrowRight size={16} />
-                 </button>
-             )}
-            <button
-                onClick={handleCopy}
-                className="p-2 text-zinc-400 hover:text-white transition-colors rounded hover:bg-zinc-700"
-                title="Copy URL"
-            >
-                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+        {isManualTyping ? (
+             <button onClick={handleLoad} className="p-2 text-blue-400 hover:bg-zinc-800 rounded">
+                 <ArrowRight size={18} />
+             </button>
+        ) : (
+            <button onClick={handleCopy} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">
+                {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
             </button>
-        </div>
+        )}
       </div>
-      <p className="text-xs text-zinc-500 mt-2">
-          Paste an existing FreePosterAPI URL above and press Enter to load its settings.
-      </p>
+      <div className="flex justify-between mt-2 px-1">
+          <p className="text-[10px] text-zinc-500">
+             {isManualTyping ? "Press Enter to load this configuration." : "This URL generates the image above dynamically."}
+          </p>
+          <p className="text-[10px] text-zinc-500">
+              {config.tmdbId}.{config.extension}
+          </p>
+      </div>
     </div>
   );
 };

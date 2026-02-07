@@ -1,4 +1,4 @@
-import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from './types';
+import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, BadgeConfig } from './types';
 
 // @ts-ignore
 const envApiUrl = import.meta.env.VITE_API_URL;
@@ -9,38 +9,37 @@ export const getScale = (size: string) => {
 };
 
 export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_API_BASE): string => {
-  // Ensure baseUrl doesn't have trailing slash for consistency
   const cleanBase = baseUrl.replace(/\/$/, '');
   const url = new URL(`${cleanBase}/${config.tmdbId}.${config.extension}`);
   const params = url.searchParams;
 
-  if (config.ratings.length > 0) {
-    params.set('r', config.ratings.join(','));
-  }
-
+  // Basic Params
+  if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
-  if (config.theme !== 'glass') params.set('t', config.theme);
-  if (config.size !== 'md') params.set('s', config.size);
+  
+  // Visual Global Params
+  if (config.blur !== 8) params.set('blur', config.blur.toString());
+  if (config.alpha !== 0.4) params.set('alpha', config.alpha.toString());
+  if (config.radius !== 12) params.set('rad', config.radius.toString());
   if (config.shadow) params.set('sh', '1');
-  if (config.layout !== 'col') params.set('l', config.layout);
-  if (config.preset !== 'tr') params.set('pos', config.preset);
+  
+  // Layout Params
+  if (config.size !== 'md') params.set('s', config.size);
+  // Only set layout/preset if no manual positions exist to keep URL clean,
+  // OR if the user explicitly wants that layout fallback.
+  params.set('l', config.layout);
+  params.set('pos', config.preset);
 
-  if (config.customBg) params.set('bg', config.customBg.replace('#', ''));
-  if (config.customTxt) params.set('txt', config.customTxt.replace('#', ''));
+  // Per-Item Params
+  (Object.keys(config.items) as RatingType[]).forEach(key => {
+    const item = config.items[key];
+    if (!item) return;
 
-  // Independent coordinates
-  if (config.pos.imdb) {
-    params.set('ix', Math.round(config.pos.imdb.x).toString());
-    params.set('iy', Math.round(config.pos.imdb.y).toString());
-  }
-  if (config.pos.rt) {
-    params.set('rx', Math.round(config.pos.rt.x).toString());
-    params.set('ry', Math.round(config.pos.rt.y).toString());
-  }
-  if (config.pos.meta) {
-    params.set('mx', Math.round(config.pos.meta.x).toString());
-    params.set('my', Math.round(config.pos.meta.y).toString());
-  }
+    if (item.x !== undefined) params.set(`${key}_x`, Math.round(item.x).toString());
+    if (item.y !== undefined) params.set(`${key}_y`, Math.round(item.y).toString());
+    if (item.bg) params.set(`${key}_bg`, item.bg.replace('#', '')); // Worker handles hex without # usually, but let's be safe
+    if (item.txt) params.set(`${key}_txt`, item.txt.replace('#', ''));
+  });
 
   return url.toString();
 };
@@ -48,44 +47,46 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
-    
-    // Parse ID and extension from path
     const match = url.pathname.match(/\/(\d+)(?:\.(jpg|jpeg|png|svg))?$/);
     const tmdbId = match ? match[1] : DEFAULT_CONFIG.tmdbId;
-    const extension = match && match[2] ? (match[2] === 'jpeg' ? 'jpg' : match[2]) : 'svg';
+    const extension = match && match[2] ? (match[2] === 'jpeg' ? 'jpg' : match[2]) : 'jpg';
     
     const params = url.searchParams;
 
-    // Ratings
-    const ratings = params.has('r') 
-      ? params.get('r')?.split(',') as RatingType[] 
-      : [];
+    // Parse Items
+    const items: PosterConfig['items'] = {};
+    const ratingKeys: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb'];
+    
+    ratingKeys.forEach(key => {
+        const x = params.get(`${key}_x`);
+        const y = params.get(`${key}_y`);
+        const bg = params.get(`${key}_bg`);
+        const txt = params.get(`${key}_txt`);
 
-    // Positions
-    const pos: PosterConfig['pos'] = {};
-    if (params.has('ix') && params.has('iy')) {
-      pos.imdb = { x: parseInt(params.get('ix')!), y: parseInt(params.get('iy')!) };
-    }
-    if (params.has('rx') && params.has('ry')) {
-      pos.rt = { x: parseInt(params.get('rx')!), y: parseInt(params.get('ry')!) };
-    }
-    if (params.has('mx') && params.has('my')) {
-      pos.meta = { x: parseInt(params.get('mx')!), y: parseInt(params.get('my')!) };
-    }
+        if (x || y || bg || txt) {
+            items[key] = {
+                ...(x ? { x: parseInt(x) } : {}),
+                ...(y ? { y: parseInt(y) } : {}),
+                ...(bg ? { bg: `#${bg}` } : {}),
+                ...(txt ? { txt: `#${txt}` } : {}),
+            };
+        }
+    });
 
     return {
       tmdbId,
       extension: extension as any,
-      ratings,
+      ratings: params.has('r') ? params.get('r')?.split(',') as RatingType[] : [],
       source: (params.get('source') as any) || 'tmdb',
-      theme: (params.get('t') as any) || 'glass',
+      theme: 'glass', // Deprecated in favor of granular controls, but kept for legacy
       size: (params.get('s') as any) || 'md',
       shadow: params.get('sh') === '1',
       layout: (params.get('l') as any) || 'col',
       preset: (params.get('pos') as any) || 'tr',
-      customBg: params.get('bg') ? `#${params.get('bg')}` : '',
-      customTxt: params.get('txt') ? `#${params.get('txt')}` : '',
-      pos,
+      blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
+      alpha: params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
+      radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,
+      items,
     };
   } catch (e) {
     console.error("Failed to parse URL", e);
@@ -93,8 +94,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
   }
 };
 
-// Helper to calculate default position based on preset
-// This mimics the worker's logic to show items in their "preset" spot if not manually dragged
 export const calculateAutoPosition = (
   ratingId: RatingType, 
   index: number, 
@@ -106,28 +105,19 @@ export const calculateAutoPosition = (
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
 
-  // Group dimensions
-  const groupW = isRow 
-    ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) 
-    : badgeW;
-  const groupH = isRow 
-    ? badgeH 
-    : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
+  const groupW = isRow ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) : badgeW;
+  const groupH = isRow ? badgeH : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
 
   let presetX = 0;
   let presetY = 0;
 
-  // Horizontal Logic
   if (config.preset.includes('l')) presetX = PADDING;
   else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
-  else if (config.preset.includes('c')) presetX = (CANVAS_WIDTH - groupW) / 2;
-  else presetX = (CANVAS_WIDTH - groupW) / 2; // Default to center if unknown
+  else presetX = (CANVAS_WIDTH - groupW) / 2;
 
-  // Vertical Logic
   if (config.preset.includes('t')) presetY = PADDING;
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
-  else if (config.preset.includes('c')) presetY = (CANVAS_HEIGHT - groupH) / 2;
-  else presetY = (CANVAS_HEIGHT - groupH) / 2; // Default to center
+  else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
   let x = isRow ? presetX + (index * (badgeW + GAP)) : presetX;
   let y = isRow ? presetY : presetY + (index * (badgeH + GAP));

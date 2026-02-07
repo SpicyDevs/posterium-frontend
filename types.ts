@@ -1,4 +1,4 @@
-export type RatingType = 'imdb' | 'rt' | 'meta';
+export type RatingType = 'imdb' | 'rt' | 'meta' | 'tmdb';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col';
@@ -6,9 +6,11 @@ export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' |
 export type SourceType = 'tmdb' | 'fanart';
 export type ExtensionType = 'svg' | 'jpg' | 'png';
 
-export interface BadgePosition {
-  x: number;
-  y: number;
+export interface BadgeConfig {
+  x?: number;
+  y?: number;
+  bg?: string;
+  txt?: string;
 }
 
 export interface PosterConfig {
@@ -20,19 +22,20 @@ export interface PosterConfig {
   shadow: boolean;
   layout: LayoutType;
   preset: PresetType;
-  customBg: string; // Stored as #RRGGBB
-  customTxt: string; // Stored as #RRGGBB
+  
+  // Global defaults
+  blur: number;
+  alpha: number;
+  radius: number;
+  
   extension: ExtensionType;
-  // Independent coordinates. If undefined/null, they follow the preset.
-  pos: {
-    imdb?: BadgePosition;
-    rt?: BadgePosition;
-    meta?: BadgePosition;
-  };
+  
+  // Per-item overrides
+  items: Partial<Record<RatingType, BadgeConfig>>;
 }
 
 export const DEFAULT_CONFIG: PosterConfig = {
-  tmdbId: "157336", // Interstellar
+  tmdbId: "157336",
   ratings: ['imdb', 'rt', 'meta'],
   source: 'tmdb',
   theme: 'glass',
@@ -40,17 +43,15 @@ export const DEFAULT_CONFIG: PosterConfig = {
   shadow: true,
   layout: 'col',
   preset: 'tr',
-  customBg: '',
-  customTxt: '',
+  blur: 8,
+  alpha: 0.4,
+  radius: 12,
   extension: 'jpg',
-  pos: {}
+  items: {}
 };
 
-// Worker constants
 export const CANVAS_WIDTH = 500;
 export const CANVAS_HEIGHT = 750;
-
-// To simulate badge dimensions based on scale
 export const BASE_BADGE_W = 140;
 export const BASE_BADGE_H = 60;
 export const GAP = 10;
