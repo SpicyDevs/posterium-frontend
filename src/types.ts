@@ -16,6 +16,7 @@ export interface BadgeConfig {
   alpha?: number;
   radius?: number;
   shadow?: boolean;
+  icon?: boolean; // New: Toggle icon visibility
 }
 
 export interface ApiKeys {
@@ -39,7 +40,7 @@ export interface PosterConfig {
   radius: number;
   extension: ExtensionType;
   items: Partial<Record<RatingType, BadgeConfig>>;
-  keys?: ApiKeys; // New Field
+  keys?: ApiKeys;
 }
 
 export const DEFAULT_CONFIG: PosterConfig = {

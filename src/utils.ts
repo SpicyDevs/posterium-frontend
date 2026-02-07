@@ -19,7 +19,6 @@ export const calculateAutoPosition = (
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
 
-  // Calculate total group dimensions
   const groupW = isRow 
     ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) 
     : badgeW;
@@ -31,30 +30,18 @@ export const calculateAutoPosition = (
   let presetX = 0;
   let presetY = 0;
 
-  // Horizontal Alignment
-  if (config.preset.includes('l')) {
-    presetX = PADDING;
-  } else if (config.preset.includes('r')) {
-    presetX = CANVAS_WIDTH - groupW - PADDING;
-  } else {
-    // Center (c)
-    presetX = (CANVAS_WIDTH - groupW) / 2;
-  }
+  if (config.preset.includes('l')) presetX = PADDING;
+  else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
+  else presetX = (CANVAS_WIDTH - groupW) / 2;
 
-  // Vertical Alignment
-  if (config.preset.includes('t')) {
-    presetY = PADDING;
-  } else if (config.preset.includes('b')) {
-    presetY = CANVAS_HEIGHT - groupH - PADDING;
-  } else {
-    // Center (c)
-    presetY = (CANVAS_HEIGHT - groupH) / 2;
-  }
+  if (config.preset.includes('t')) presetY = PADDING;
+  else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
+  else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
   let x = isRow ? presetX + (index * (badgeW + GAP)) : presetX;
   let y = isRow ? presetY : presetY + (index * (badgeH + GAP));
 
-  return { x, y };
+  return { x: Math.round(x), y: Math.round(y) };
 };
 
 export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_API_BASE): string => {
@@ -62,30 +49,22 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   const url = new URL(`${cleanBase}/${config.mediaType}/${config.tmdbId}.${config.extension}`);
   const params = url.searchParams;
 
-  // Basic Params
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
-  // API Keys
   if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
   if (config.keys?.omdb) params.set('omdb_key', config.keys.omdb);
 
-  // Cache Buster
   params.set('v', '1');
-
-  // Visual Global Params
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
   params.set('sh', config.shadow ? '1' : '0');
-  
-  // Layout Params
   params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // Per-Item Params
   config.ratings.forEach((key, index) => {
     const item = config.items[key] || {};
     const autoPos = calculateAutoPosition(key, index, config.ratings.length, config);
@@ -102,6 +81,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
+    if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
   });
 
   return url.toString();
@@ -118,7 +98,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     
     const params = url.searchParams;
 
-    // Parse Keys
     const keys: ApiKeys = {};
     if (params.has('tmdb_key')) keys.tmdb = params.get('tmdb_key')!;
     if (params.has('fanart_key')) keys.fanart = params.get('fanart_key')!;
@@ -136,8 +115,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const alpha = params.get(`${key}_alpha`);
         const rad = params.get(`${key}_rad`);
         const sh = params.get(`${key}_sh`);
+        const icon = params.get(`${key}_icon`);
 
-        if (x || y || bg || txt || blur || alpha || rad || sh) {
+        if (x || y || bg || txt || blur || alpha || rad || sh || icon) {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
@@ -147,6 +127,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
                 ...(alpha ? { alpha: parseFloat(alpha) } : {}),
                 ...(rad ? { radius: parseInt(rad) } : {}),
                 ...(sh ? { shadow: sh === '1' } : {}),
+                ...(icon ? { icon: icon === '1' } : {}),
             };
         }
     });
