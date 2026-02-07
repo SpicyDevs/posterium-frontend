@@ -14,11 +14,15 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   const [copied, setCopied] = useState(false);
   const [isManualTyping, setIsManualTyping] = useState(false);
 
-  // Sync state with config changes, unless user is actively typing to load something
+  // Performance: Debounce URL generation to avoid lag during dragging
   useEffect(() => {
-    if (!isManualTyping) {
+    if (isManualTyping) return;
+
+    const timer = setTimeout(() => {
       setUrl(generateApiUrl(config, baseUrl));
-    }
+    }, 150); // 150ms delay makes dragging smooth
+
+    return () => clearTimeout(timer);
   }, [config, baseUrl, isManualTyping]);
 
   const handleCopy = () => {
@@ -33,10 +37,10 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-6 px-4">
-      <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-1 flex items-center shadow-lg">
+    <div className="w-full mx-auto mb-2 px-1">
+      <div className="bg-zinc-900/90 backdrop-blur rounded-lg border border-zinc-700/50 p-1 flex items-center shadow-lg group focus-within:ring-1 focus-within:ring-blue-500/50 transition-all">
         <div className="pl-3 pr-2 text-zinc-500">
-            <Link size={16} />
+            <Link size={14} />
         </div>
         <input
           type="text"
@@ -46,25 +50,23 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
               setUrl(e.target.value);
           }}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-          className="flex-1 bg-transparent border-none text-zinc-300 text-sm font-mono focus:ring-0 placeholder-zinc-600"
+          className="flex-1 bg-transparent border-none text-zinc-300 text-xs font-mono focus:ring-0 placeholder-zinc-600 truncate py-2"
           placeholder="https://..."
+          spellCheck={false}
         />
         {isManualTyping ? (
              <button onClick={handleLoad} className="p-2 text-blue-400 hover:bg-zinc-800 rounded">
-                 <ArrowRight size={18} />
+                 <ArrowRight size={16} />
              </button>
         ) : (
             <button onClick={handleCopy} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">
-                {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
             </button>
         )}
       </div>
-      <div className="flex justify-between mt-2 px-1">
+      <div className="flex justify-between mt-1.5 px-1 opacity-60 hover:opacity-100 transition-opacity">
           <p className="text-[10px] text-zinc-500">
-             {isManualTyping ? "Press Enter to load this configuration." : "This URL generates the image above dynamically."}
-          </p>
-          <p className="text-[10px] text-zinc-500">
-              {config.tmdbId}.{config.extension}
+             {isManualTyping ? "Press Enter to load." : "Dynamic API URL"}
           </p>
       </div>
     </div>

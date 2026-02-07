@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
@@ -9,6 +9,33 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // Auto-Scale Logic for Mobile Responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      if (!containerRef.current) return;
+      // Get parent width (minus padding)
+      const parentWidth = containerRef.current.parentElement?.clientWidth || window.innerWidth;
+      const availableWidth = parentWidth - 40; // 40px safety margin
+      const availableHeight = (window.innerHeight * 0.6) - 40; // Max 60% of screen height on mobile
+
+      // Calculate scale to fit width
+      const scaleX = availableWidth < CANVAS_WIDTH ? availableWidth / CANVAS_WIDTH : 1;
+      
+      // Optional: constrain height too if landscape mobile
+      const scaleY = availableHeight < CANVAS_HEIGHT ? availableHeight / CANVAS_HEIGHT : 1;
+      
+      // Use the smaller scale to ensure it fits entirely
+      // On desktop, we usually want it full size (scale 1), unless window is tiny
+      setScale(Math.min(scaleX, window.innerWidth < 768 ? scaleY : 1, 1));
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => ({
@@ -38,32 +65,43 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   }, [config.tmdbId]);
 
   return (
-    <div className="relative flex justify-center items-center p-4 bg-zinc-900 rounded-lg shadow-2xl overflow-hidden border border-white/5">
-      <div style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="relative bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group">
+    <div 
+      ref={containerRef}
+      className="relative flex justify-center items-center transition-transform duration-200 ease-out"
+      style={{
+        // We scale the outer container
+        width: CANVAS_WIDTH * scale,
+        height: CANVAS_HEIGHT * scale,
+      }}
+    >
+      <div 
+        style={{ 
+          width: CANVAS_WIDTH, 
+          height: CANVAS_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left' // Important for predictable scaling
+        }} 
+        className="absolute top-0 left-0 bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group rounded-sm"
+      >
 
         {/* The Clean Poster */}
         <img
           src={cleanPosterUrl}
           alt="Poster Preview"
-          className="w-full h-full object-cover opacity-100"
+          className="w-full h-full object-cover opacity-100 select-none"
           draggable={false}
         />
 
         {/* Grid Overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-40">
             {renderGridLines()}
         </div>
 
         {/* Badges Overlay */}
         {config.ratings.map((id, index) => {
-          // 1. Calculate Auto Position based on current layout/preset
           const auto = calculateAutoPosition(id, index, config.ratings.length, config);
-          
-          // 2. Check if user has manually overridden this specific badge
           const itemConfig = config.items[id];
           const hasManualPos = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
-
-          // 3. Determine Final Position
           const finalX = hasManualPos ? itemConfig!.x! : auto.x;
           const finalY = hasManualPos ? itemConfig!.y! : auto.y;
 
@@ -79,7 +117,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
           );
         })}
 
-        <div className="absolute bottom-2 right-2 text-[10px] text-white/30 pointer-events-none font-mono">
+        <div className="absolute bottom-2 right-2 text-[10px] text-white/30 pointer-events-none font-mono z-0">
           {CANVAS_WIDTH}x{CANVAS_HEIGHT}
         </div>
       </div>
