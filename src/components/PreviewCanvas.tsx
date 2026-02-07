@@ -12,150 +12,115 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
-  // Auto-Scale Logic for Mobile Responsiveness
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      // Get parent width (minus padding)
-      const parentWidth = containerRef.current.parentElement?.clientWidth || window.innerWidth;
-      const availableWidth = parentWidth - 40; // 40px safety margin
-      // On mobile, limit height to 60% of screen so controls are visible
-      const availableHeight = (window.innerHeight * 0.6) - 40; 
+      
+      // Calculate available space
+      // We subtract padding (32px) to ensure margins
+      const parentWidth = containerRef.current.clientWidth - 32;
+      const parentHeight = containerRef.current.clientHeight - 32;
 
-      // Calculate scale to fit width
-      const scaleX = availableWidth < CANVAS_WIDTH ? availableWidth / CANVAS_WIDTH : 1;
+      // Determine scale needed to fit width AND height
+      const scaleX = parentWidth / CANVAS_WIDTH;
+      const scaleY = parentHeight / CANVAS_HEIGHT;
       
-      // Calculate scale to fit height
-      const scaleY = availableHeight < CANVAS_HEIGHT ? availableHeight / CANVAS_HEIGHT : 1;
+      // Use the smaller scale so it always fits entirely
+      const newScale = Math.min(scaleX, scaleY, 1); // Cap at 1 (don't scale up pixelated)
       
-      // Use the smaller scale to ensure it fits entirely
-      setScale(Math.min(scaleX, window.innerWidth < 768 ? scaleY : 1, 1));
+      setScale(newScale);
     };
 
+    // Initial calcs
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    // Observer is better than window.resize for flex containers
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
   }, []);
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => {
-      // If we are already in custom mode, just update the dragged item
       if (prev.layout === 'custom' && prev.preset === 'custom') {
          return {
             ...prev,
-            items: {
-                ...prev.items,
-                [id]: { ...prev.items[id], x, y }
-            }
+            items: { ...prev.items, [id]: { ...prev.items[id], x, y } }
          };
       }
 
-      // If switching from auto to manual, we must "freeze" the current positions
-      // of ALL items so they don't jump when the layout property changes to 'custom'.
+      // Freeze all positions when starting manual drag
       const newItems = { ...prev.items };
-      
       prev.ratings.forEach((r, index) => {
-         // Calculate where it currently is visually
          const currentItem = newItems[r];
-         // Only freeze if it doesn't already have a manual position
          if (currentItem?.x === undefined || currentItem?.y === undefined) {
              const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
              newItems[r] = { ...currentItem, x: autoPos.x, y: autoPos.y };
          }
       });
-
-      // Update the specific item being dragged with new coordinates
       newItems[id] = { ...newItems[id], x, y };
 
-      return {
-         ...prev,
-         layout: 'custom', // Deselects Row/Col buttons
-         preset: 'custom', // Deselects Preset buttons
-         items: newItems
-      };
+      return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
-  };
-
-  const renderGridLines = () => {
-    const lines = [];
-    for (let i = 1; i < 4; i++) {
-      lines.push(
-        <div key={`v-${i}`} className="absolute top-0 bottom-0 border-r border-blue-400/20 pointer-events-none" style={{ left: `${(i / 4) * 100}%` }} />
-      );
-      lines.push(
-        <div key={`h-${i}`} className="absolute left-0 right-0 border-b border-blue-400/20 pointer-events-none" style={{ top: `${(i / 4) * 100}%` }} />
-      );
-    }
-    return lines;
   };
 
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-    
-    // Add params to force cache bust and select source
-    if (config.source === 'fanart') {
-        return `${base}?source=fanart&v=1`;
-    }
-    return `${base}?v=1`;
+    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
   }, [config.tmdbId, config.source]);
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative flex justify-center items-center transition-transform duration-200 ease-out"
-      style={{
-        // We scale the outer container
-        width: CANVAS_WIDTH * scale,
-        height: CANVAS_HEIGHT * scale,
-      }}
-    >
-      <div 
-        style={{ 
-          width: CANVAS_WIDTH, 
-          height: CANVAS_HEIGHT,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left' 
-        }} 
-        className="absolute top-0 left-0 bg-black shadow-2xl overflow-hidden ring-1 ring-white/10 group rounded-sm"
-      >
-
-        {/* The Clean Poster */}
-        <img
-          src={cleanPosterUrl}
-          alt="Poster Preview"
-          className="w-full h-full object-cover opacity-100 select-none"
-          draggable={false}
-        />
-
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-40">
-            {renderGridLines()}
-        </div>
-
-        {/* Badges Overlay */}
-        {config.ratings.map((id, index) => {
-          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
-          const itemConfig = config.items[id];
-          const hasManualPos = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
-          const finalX = hasManualPos ? itemConfig!.x! : auto.x;
-          const finalY = hasManualPos ? itemConfig!.y! : auto.y;
-
-          return (
-            <DraggableBadge
-              key={id}
-              id={id}
-              config={config}
-              x={finalX}
-              y={finalY}
-              onPositionChange={handlePositionChange}
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative">
+        <div 
+            style={{ 
+                width: CANVAS_WIDTH, 
+                height: CANVAS_HEIGHT,
+                transform: `scale(${scale})`,
+                // Shadows look better if they don't scale, but simplicity first
+            }} 
+            className="bg-black shadow-2xl relative shrink-0 ring-1 ring-white/10"
+        >
+            <img
+                src={cleanPosterUrl}
+                alt="Poster"
+                className="w-full h-full object-cover select-none pointer-events-none"
             />
-          );
-        })}
+            
+            {/* Grid Lines */}
+            <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
+                {[1, 2, 3].map(i => (
+                    <React.Fragment key={i}>
+                        <div className="absolute top-0 bottom-0 border-r border-white/20" style={{ left: `${i*25}%` }} />
+                        <div className="absolute left-0 right-0 border-b border-white/20" style={{ top: `${i*25}%` }} />
+                    </React.Fragment>
+                ))}
+            </div>
 
-        <div className="absolute bottom-2 right-2 text-[10px] text-white/30 pointer-events-none font-mono z-0">
-          {CANVAS_WIDTH}x{CANVAS_HEIGHT}
+            {/* Badges */}
+            {config.ratings.map((id, index) => {
+                const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+                const itemConfig = config.items[id];
+                const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
+                
+                return (
+                    <DraggableBadge
+                        key={id}
+                        id={id}
+                        config={config}
+                        x={hasManual ? itemConfig!.x! : auto.x}
+                        y={hasManual ? itemConfig!.y! : auto.y}
+                        canvasScale={scale} // CRITICAL FIX: Pass the scale
+                        onPositionChange={handlePositionChange}
+                    />
+                );
+            })}
         </div>
-      </div>
+        
+        {/* Info Label */}
+        <div className="absolute bottom-0 right-0 bg-black/50 text-[10px] px-2 py-1 rounded-tl text-white/50 pointer-events-none">
+            {Math.round(scale * 100)}%
+        </div>
     </div>
   );
 };

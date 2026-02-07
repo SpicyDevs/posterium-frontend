@@ -241,7 +241,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Layout */}
         <Section title="Layout & Presets" icon={<Layout size={16} />}>
-            <div className="grid grid-cols-3 gap-0.5 bg-zinc-800 p-0.5 rounded border border-zinc-700 mb-3">
+            {/* Scrollable preset row for better mobile use */}
+            <div className="flex overflow-x-auto gap-2 pb-2 mb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700">
                 {presets.map(p => (
                     <button
                         key={p.id}
@@ -249,7 +250,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                             handleChange('preset', p.id);
                             handleChange('items', {});
                         }}
-                        className={`aspect-square text-[10px] font-bold rounded hover:bg-zinc-600 transition-colors ${config.preset === p.id ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500'}`}
+                        className={`flex-shrink-0 px-3 py-2 text-xs font-bold rounded hover:bg-zinc-600 transition-colors border border-transparent ${config.preset === p.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}
                     >
                         {p.label}
                     </button>

@@ -8,6 +8,7 @@ interface Props {
   config: PosterConfig;
   x: number;
   y: number;
+  canvasScale: number; // New Prop
   onPositionChange: (id: RatingType, x: number, y: number) => void;
 }
 
@@ -19,102 +20,107 @@ const ICONS: Record<string, { vb: string, body: string }> = {
   tmdb: { vb: "0 0 32 32", body: `<path d="M3.7 27.6h24.6V4.4H3.7v23.2z" fill="#0d253f"/><path d="M12.6 18.6c0-3.3 2.1-5.7 5.6-5.7 1.8 0 3.2.7 4.1 1.8v-1.6h2.7v10.9h-2.7v-1.6c-.9 1.1-2.3 1.8-4.1 1.8-3.5 0-5.6-2.4-5.6-5.6zm8.1 0c0-1.9-1-3.4-2.7-3.4-1.8 0-2.8 1.5-2.8 3.4 0 1.9 1 3.4 2.8 3.4 1.7 0 2.7-1.5 2.7-3.4z" fill="#01b4e4"/>` }
 };
 
-const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange }) => {
+const DraggableBadge: React.FC<Props> = ({ id, config, x, y, canvasScale, onPositionChange }) => {
   const scale = getScale(config.size);
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
   const itemConfig = config.items[id];
 
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [tempPos, setTempPos] = useState({ x, y });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialPos, setInitialPos] = useState({ x: 0, y: 0 });
+  const [currentPos, setCurrentPos] = useState({ x, y });
 
-  // --- Handlers for Mouse Events ---
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  // Sync state if prop changes from outside (e.g. layout change)
+  useEffect(() => {
+    if (!isDragging) {
+      setCurrentPos({ x, y });
+    }
+  }, [x, y, isDragging]);
+
+  const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
-    setTempPos({ x, y });
-    setDragOffset({
-      x: e.clientX - x,
-      y: e.clientY - y
-    });
+    setDragStart({ x: clientX, y: clientY });
+    setInitialPos({ x: currentPos.x, y: currentPos.y });
   };
 
-  // --- Handlers for Touch Events ---
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    // Do NOT call e.preventDefault() here; it might block scrolling or clicks on some devices
-    // unless necessary. But for dragging, we often want to prevent screen scroll.
-    // e.preventDefault(); 
+  const handleMove = (clientX: number, clientY: number) => {
+    // FIX: Divide by canvasScale to map screen pixels to canvas coordinates
+    const deltaX = (clientX - dragStart.x) / canvasScale;
+    const deltaY = (clientY - dragStart.y) / canvasScale;
+
+    let newX = initialPos.x + deltaX;
+    let newY = initialPos.y + deltaY;
+
+    // --- Snapping Logic ---
+    const snapThreshold = 10;
+    const centerX = newX + width / 2;
+    const centerY = newY + height / 2;
     
+    // Snap to grid lines (0%, 25%, 50%, 75%, 100%)
+    const vSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_WIDTH);
+    const hSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_HEIGHT);
+
+    for (const line of vSnaps) {
+      if (Math.abs(centerX - line) < snapThreshold) newX = line - width / 2;
+    }
+    for (const line of hSnaps) {
+      if (Math.abs(centerY - line) < snapThreshold) newY = line - height / 2;
+    }
+
+    // Constraints
+    newX = Math.max(0, Math.min(newX, CANVAS_WIDTH - width));
+    newY = Math.max(0, Math.min(newY, CANVAS_HEIGHT - height));
+
+    setCurrentPos({ x: newX, y: newY });
+  };
+
+  const handleEnd = () => {
+    setIsDragging(false);
+    onPositionChange(id, currentPos.x, currentPos.y);
+  };
+
+  // Mouse Handlers
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleStart(e.clientX, e.clientY);
+  };
+
+  // Touch Handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
     const touch = e.touches[0];
-    setIsDragging(true);
-    setTempPos({ x, y });
-    setDragOffset({
-      x: touch.clientX - x,
-      y: touch.clientY - y
-    });
+    handleStart(touch.clientX, touch.clientY);
   };
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      handleMove(e.clientX, e.clientY);
+    if (!isDragging) return;
+
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onMouseUp = () => handleEnd();
+    
+    const onTouchMove = (e: TouchEvent) => {
+        e.preventDefault(); // Stop scrolling
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
     };
+    const onTouchEnd = () => handleEnd();
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging) return;
-      e.preventDefault(); // Prevents scrolling while dragging
-      const touch = e.touches[0];
-      handleMove(touch.clientX, touch.clientY);
-    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
 
-    const handleMove = (cX: number, cY: number) => {
-      let newX = cX - dragOffset.x;
-      let newY = cY - dragOffset.y;
-
-      const snapThreshold = 15;
-      const vSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_WIDTH);
-      const hSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_HEIGHT);
-
-      const centerX = newX + width / 2;
-      const centerY = newY + height / 2;
-
-      for (const line of vSnaps) {
-        if (Math.abs(centerX - line) < snapThreshold) newX = line - width / 2;
-      }
-      for (const line of hSnaps) {
-        if (Math.abs(centerY - line) < snapThreshold) newY = line - height / 2;
-      }
-
-      newX = Math.max(0, Math.min(newX, CANVAS_WIDTH - width));
-      newY = Math.max(0, Math.min(newY, CANVAS_HEIGHT - height));
-
-      setTempPos({ x: newX, y: newY });
-    };
-
-    const handleEnd = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        onPositionChange(id, tempPos.x, tempPos.y);
-      }
-    };
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleEnd);
-      window.addEventListener('touchmove', handleTouchMove, { passive: false });
-      window.addEventListener('touchend', handleEnd);
-    }
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [isDragging, dragOffset, id, onPositionChange, width, height, tempPos.x, tempPos.y]);
+  }, [isDragging, dragStart, initialPos, canvasScale, width, height]);
 
+
+  // Styles
   const blurVal = itemConfig?.blur ?? config.blur;
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
@@ -127,10 +133,10 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
   const iconLeft = 10 * scale;
   const iconTop = 12 * scale;
   const textRight = 10 * scale;
-  const textTop = '50%';
+  const textTop = '50%'; // Centered
 
   const renderIcon = () => {
-    const iconKey = id === 'rt' ? 'rt_fresh' : id;
+    const iconKey = id === 'rt' ? 'rt_fresh' : id; // Default to fresh icon
     const iconData = ICONS[iconKey];
 
     if (!iconData) return null;
@@ -155,13 +161,14 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
     }
   }
 
-  const renderX = isDragging ? tempPos.x : x;
-  const renderY = isDragging ? tempPos.y : y;
+  // Use currentPos while dragging for smooth 60fps updates without React rerenders
+  const renderX = isDragging ? currentPos.x : x;
+  const renderY = isDragging ? currentPos.y : y;
 
   return (
     <div
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       className="absolute top-0 left-0 select-none cursor-move group z-50 hover:z-[60]"
       style={{
         width: `${width}px`,
@@ -170,11 +177,13 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
         backgroundColor: bgColor,
         borderRadius: `${radiusVal}px`,
         backdropFilter: `blur(${blurVal}px)`,
+        // CSS shadow for preview
         boxShadow: hasShadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : 'none',
         willChange: isDragging ? 'transform' : 'auto', 
       }}
     >
-      <div className="opacity-0 group-hover:opacity-100 absolute -left-6 top-1/2 -translate-y-1/2 bg-blue-600 rounded p-1 text-white transition-opacity">
+      {/* Drag Handle Indicator */}
+      <div className="opacity-0 group-hover:opacity-100 absolute -left-6 top-1/2 -translate-y-1/2 bg-blue-600 rounded p-1 text-white transition-opacity hidden md:block">
            <GripVertical size={14} />
       </div>
 
