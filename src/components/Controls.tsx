@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
-import { Layout, Palette, Image as ImageIcon, ScanLine, ChevronDown, ChevronRight } from 'lucide-react';
+import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
+import { Layout, Palette, Image as ImageIcon, ScanLine, ChevronDown, ChevronRight, Tv, Film, Settings } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
@@ -47,15 +47,24 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       });
   };
 
+  const updateApiKey = (key: keyof ApiKeys, value: string) => {
+    onChange({
+        ...config,
+        keys: {
+            ...config.keys,
+            [key]: value
+        }
+    });
+  };
+
   const toggleRating = (r: RatingType) => {
     const current = new Set(config.ratings);
     if (current.has(r)) current.delete(r);
     else current.add(r);
-    const order: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb'];
+    const order: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb', 'age', 'runtime'];
     handleChange('ratings', order.filter(x => current.has(x)));
   };
 
-  // Visually mapped 3x3 Grid
   const presets: {id: PresetType, label: string}[] = [
     { id: 'tl', label: 'TL' }, { id: 'tc', label: 'TC' }, { id: 'tr', label: 'TR' },
     { id: 'lc', label: 'LC' }, { id: 'cc', label: 'CC' }, { id: 'rc', label: 'RC' },
@@ -73,6 +82,20 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       <div className="flex-1 overflow-y-auto">
         {/* Media */}
         <Section title="Source Media" icon={<ImageIcon size={16} />}>
+            <div className="flex gap-2 mb-2">
+                 <button 
+                    onClick={() => handleChange('mediaType', 'movie')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'movie' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                 >
+                     <Film size={14}/> Movie
+                 </button>
+                 <button 
+                    onClick={() => handleChange('mediaType', 'tv')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded text-xs border ${config.mediaType === 'tv' ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                 >
+                     <Tv size={14}/> TV Show
+                 </button>
+            </div>
             <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
                     <input 
@@ -80,7 +103,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         value={config.tmdbId}
                         onChange={(e) => handleChange('tmdbId', e.target.value)}
                         className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
-                        placeholder="TMDB ID"
+                        placeholder="TMDB / IMDb ID"
                     />
                 </div>
                 <select 
@@ -96,12 +119,12 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Badges */}
         <Section title="Active Badges" icon={<ScanLine size={16} />}>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 gap-2">
             {['imdb', 'rt', 'meta', 'tmdb'].map((r) => (
                 <button
                 key={r}
                 onClick={() => toggleRating(r as RatingType)}
-                className={`flex-1 py-2 px-3 rounded border text-xs font-medium transition-all ${
+                className={`py-2 px-3 rounded border text-xs font-medium transition-all ${
                     config.ratings.includes(r as RatingType)
                     ? 'bg-blue-600/20 border-blue-500/50 text-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600'
@@ -110,6 +133,28 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 {r.toUpperCase()}
                 </button>
             ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
+                 <button
+                    onClick={() => toggleRating('age')}
+                    className={`py-2 px-3 rounded border text-xs font-medium transition-all ${
+                        config.ratings.includes('age')
+                        ? 'bg-blue-600/20 border-blue-500/50 text-blue-200'
+                        : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600'
+                    }`}
+                >
+                    Age Rating
+                </button>
+                <button
+                    onClick={() => toggleRating('runtime')}
+                    className={`py-2 px-3 rounded border text-xs font-medium transition-all ${
+                        config.ratings.includes('runtime')
+                        ? 'bg-blue-600/20 border-blue-500/50 text-blue-200'
+                        : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600'
+                    }`}
+                >
+                    Runtime
+                </button>
             </div>
         </Section>
 
@@ -242,7 +287,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Layout */}
         <Section title="Layout & Presets" icon={<Layout size={16} />}>
-            {/* Visual 3x3 Grid */}
             <div className="grid grid-cols-3 gap-1 bg-zinc-800 p-1 rounded border border-zinc-700 mb-3">
                 {presets.map(p => (
                     <button
@@ -271,6 +315,45 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 >
                     Row
                 </button>
+            </div>
+        </Section>
+        
+        {/* Advanced Settings */}
+        <Section title="Advanced Settings" icon={<Settings size={16} />} defaultOpen={false}>
+            <div className="space-y-3">
+                <p className="text-[10px] text-zinc-500 leading-tight">
+                    Enter your own API keys to bypass rate limits. Keys are stored locally in your browser.
+                </p>
+                <div>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">TMDB API Key</label>
+                    <input 
+                        type="password" 
+                        value={config.keys?.tmdb || ''} 
+                        onChange={(e) => updateApiKey('tmdb', e.target.value)}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none placeholder-zinc-600"
+                        placeholder="Optional"
+                    />
+                </div>
+                <div>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Fanart.tv API Key</label>
+                    <input 
+                        type="password" 
+                        value={config.keys?.fanart || ''} 
+                        onChange={(e) => updateApiKey('fanart', e.target.value)}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none placeholder-zinc-600"
+                        placeholder="Optional"
+                    />
+                </div>
+                <div>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">OMDB API Key</label>
+                    <input 
+                        type="password" 
+                        value={config.keys?.omdb || ''} 
+                        onChange={(e) => updateApiKey('omdb', e.target.value)}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none placeholder-zinc-600"
+                        placeholder="Optional"
+                    />
+                </div>
             </div>
         </Section>
       </div>

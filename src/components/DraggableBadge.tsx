@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { RatingType, PosterConfig, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Clock } from 'lucide-react';
 
 interface Props {
-  badgeId: RatingType; // Renamed from id
+  badgeId: RatingType;
   config: PosterConfig;
   x: number;
   y: number;
@@ -106,26 +106,22 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
     };
   }, [isDragging, dragOffset, canvasScale, width, height]);
 
-  // Mouse Handlers
   const onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     handleStart(e.clientX, e.clientY);
   };
 
-  // Touch Handlers
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   };
 
-  // Styles
   const blurVal = itemConfig?.blur ?? config.blur;
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
   const hasShadow = itemConfig?.shadow ?? config.shadow;
-
   const bgColor = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
   const txtColor = itemConfig?.txt || '#ffffff';
 
@@ -135,33 +131,84 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textRight = 10 * scale;
   const textTop = '50%';
 
-  const renderIcon = () => {
+  const renderContent = () => {
+    if (badgeId === 'age') {
+        return (
+            <div className="w-full h-full flex items-center justify-center relative">
+                 <div className="absolute inset-0 m-2.5 border-2 rounded opacity-50" style={{ borderColor: txtColor }}></div>
+                 <span style={{ 
+                     fontSize: `${24 * scale}px`, 
+                     fontFamily: "'Plus Jakarta Sans', sans-serif", 
+                     fontWeight: 'bold',
+                     color: txtColor
+                 }}>PG-13</span>
+            </div>
+        );
+    }
+    
+    if (badgeId === 'runtime') {
+        return (
+             <>
+                <div style={{ position: 'absolute', left: iconLeft, top: 14 * scale }}>
+                    <Clock size={32 * scale} color={txtColor} strokeWidth={2.5} />
+                </div>
+                <span style={{ 
+                    position: 'absolute',
+                    right: textRight,
+                    top: textTop,
+                    transform: 'translateY(-50%)',
+                    fontSize: `${28 * scale}px`, 
+                    fontFamily: "'Plus Jakarta Sans', sans-serif", 
+                    fontWeight: 'bold',
+                    color: txtColor,
+                    lineHeight: 1 
+                }}>
+                    2h 15m
+                </span>
+             </>
+        );
+    }
+
     const iconKey = badgeId === 'rt' ? 'rt_fresh' : badgeId;
     const iconData = ICONS[iconKey];
 
-    if (!iconData) return null;
+    const dummyVal = {
+        imdb: '8.7',
+        rt: '73%',
+        meta: '74',
+        tmdb: '85%'
+    }[badgeId] || '0.0';
 
     return (
-        <svg 
-            viewBox={iconData.vb} 
-            width={iconSize} 
-            height={iconSize}
-            style={{ display: 'block' }}
-            dangerouslySetInnerHTML={{ __html: iconData.body }}
-        />
+        <>
+            {iconData && (
+                <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
+                    <svg 
+                        viewBox={iconData.vb} 
+                        width={iconSize} 
+                        height={iconSize}
+                        style={{ display: 'block' }}
+                        dangerouslySetInnerHTML={{ __html: iconData.body }}
+                    />
+                </div>
+            )}
+            <span style={{ 
+                position: 'absolute',
+                right: textRight,
+                top: textTop,
+                transform: 'translateY(-50%)',
+                fontSize: `${28 * scale}px`, 
+                fontFamily: "'Plus Jakarta Sans', sans-serif", 
+                fontWeight: 'bold',
+                color: txtColor,
+                lineHeight: 1 
+            }}>
+                {dummyVal}
+            </span>
+        </>
     );
   };
 
-  const getDummyValue = () => {
-    switch(badgeId) {
-        case 'imdb': return '8.7';
-        case 'rt': return '73%';
-        case 'meta': return '74';
-        case 'tmdb': return '85%';
-    }
-  }
-
-  // Always use local state for render position to prevent jitter
   const renderX = isDragging ? currentPos.x : x;
   const renderY = isDragging ? currentPos.y : y;
 
@@ -185,24 +232,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
       <div className="opacity-0 group-hover:opacity-100 absolute -left-8 top-1/2 -translate-y-1/2 bg-blue-600/90 backdrop-blur rounded-full p-2 text-white transition-opacity shadow-lg">
            <GripVertical size={20} />
       </div>
-
-      <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
-          {renderIcon()}
-      </div>
-
-      <span style={{ 
-          position: 'absolute',
-          right: textRight,
-          top: textTop,
-          transform: 'translateY(-50%)',
-          fontSize: `${28 * scale}px`, 
-          fontFamily: "'Plus Jakarta Sans', sans-serif", 
-          fontWeight: 'bold',
-          color: txtColor,
-          lineHeight: 1 
-      }}>
-          {getDummyValue()}
-      </span>
+      {renderContent()}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from './types';
+import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, MediaType, ApiKeys } from './types';
 
 // @ts-ignore
 const envApiUrl = import.meta.env.VITE_API_URL;
@@ -41,13 +41,18 @@ export const calculateAutoPosition = (
 
 export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_API_BASE): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
-  const url = new URL(`${cleanBase}/${config.tmdbId}.${config.extension}`);
+  const url = new URL(`${cleanBase}/${config.mediaType}/${config.tmdbId}.${config.extension}`);
   const params = url.searchParams;
 
   // Basic Params
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
+  // API Keys (Advanced)
+  if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
+  if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
+  if (config.keys?.omdb) params.set('omdb_key', config.keys.omdb);
+
   // Cache Buster
   params.set('v', '1');
 
@@ -75,7 +80,6 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     if (item.bg) params.set(`${key}_bg`, item.bg); 
     if (item.txt) params.set(`${key}_txt`, item.txt);
     
-    // NEW: Per-item Style overrides
     if (item.blur !== undefined) params.set(`${key}_blur`, item.blur.toString());
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
@@ -88,22 +92,28 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
-    const match = url.pathname.match(/\/(\d+)(?:\.(jpg|jpeg|png|svg))?$/);
-    const tmdbId = match ? match[1] : DEFAULT_CONFIG.tmdbId;
-    const extension = match && match[2] ? (match[2] === 'jpeg' ? 'jpg' : match[2]) : 'jpg';
+    const match = url.pathname.match(/\/(movie|tv)\/(\w+)(?:\.(jpg|jpeg|png|svg))?$/);
+    
+    const mediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
+    const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
+    const extension = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'jpg';
     
     const params = url.searchParams;
 
+    // Parse Keys
+    const keys: ApiKeys = {};
+    if (params.has('tmdb_key')) keys.tmdb = params.get('tmdb_key')!;
+    if (params.has('fanart_key')) keys.fanart = params.get('fanart_key')!;
+    if (params.has('omdb_key')) keys.omdb = params.get('omdb_key')!;
+
     const items: PosterConfig['items'] = {};
-    const ratingKeys: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb'];
+    const ratingKeys: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb', 'age', 'runtime'];
     
     ratingKeys.forEach(key => {
         const x = params.get(`${key}_x`);
         const y = params.get(`${key}_y`);
         const bg = params.get(`${key}_bg`);
         const txt = params.get(`${key}_txt`);
-        
-        // Parse new params
         const blur = params.get(`${key}_blur`);
         const alpha = params.get(`${key}_alpha`);
         const rad = params.get(`${key}_rad`);
@@ -124,6 +134,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     });
 
     return {
+      mediaType,
       tmdbId,
       extension: extension as any,
       ratings: params.has('r') ? params.get('r')?.split(',') as RatingType[] : [],
@@ -136,6 +147,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
       alpha: params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
       radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,
+      keys,
       items,
     };
   } catch (e) {
