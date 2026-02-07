@@ -1,4 +1,4 @@
-import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, BadgeConfig } from './types';
+import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from './types';
 
 // @ts-ignore
 const envApiUrl = import.meta.env.VITE_API_URL;
@@ -25,8 +25,6 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   
   // Layout Params
   if (config.size !== 'md') params.set('s', config.size);
-  // Only set layout/preset if no manual positions exist to keep URL clean,
-  // OR if the user explicitly wants that layout fallback.
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
@@ -37,8 +35,11 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 
     if (item.x !== undefined) params.set(`${key}_x`, Math.round(item.x).toString());
     if (item.y !== undefined) params.set(`${key}_y`, Math.round(item.y).toString());
-    if (item.bg) params.set(`${key}_bg`, item.bg.replace('#', '')); // Worker handles hex without # usually, but let's be safe
-    if (item.txt) params.set(`${key}_txt`, item.txt.replace('#', ''));
+    
+    // FIX: Do NOT strip the #. URLSearchParams encodes it as %23 automatically.
+    // If you strip it, the backend receives "FFFFFF" which is an invalid CSS color.
+    if (item.bg) params.set(`${key}_bg`, item.bg); 
+    if (item.txt) params.set(`${key}_txt`, item.txt);
   });
 
   return url.toString();
@@ -53,7 +54,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     
     const params = url.searchParams;
 
-    // Parse Items
     const items: PosterConfig['items'] = {};
     const ratingKeys: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb'];
     
@@ -67,8 +67,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
-                ...(bg ? { bg: `#${bg}` } : {}),
-                ...(txt ? { txt: `#${txt}` } : {}),
+                // Ensure we handle colors if they come back without # (legacy) or with #
+                ...(bg ? { bg: bg.startsWith('#') ? bg : `#${bg}` } : {}),
+                ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
             };
         }
     });
@@ -78,7 +79,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       extension: extension as any,
       ratings: params.has('r') ? params.get('r')?.split(',') as RatingType[] : [],
       source: (params.get('source') as any) || 'tmdb',
-      theme: 'glass', // Deprecated in favor of granular controls, but kept for legacy
+      theme: 'glass',
       size: (params.get('s') as any) || 'md',
       shadow: params.get('sh') === '1',
       layout: (params.get('l') as any) || 'col',

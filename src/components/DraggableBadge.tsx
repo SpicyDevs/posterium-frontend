@@ -15,27 +15,30 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
 
-  // Use manual position if set, otherwise auto
   const itemConfig = config.items[id];
-  const currentPos = (itemConfig?.x !== undefined && itemConfig?.y !== undefined) 
-    ? { x: itemConfig.x, y: itemConfig.y } 
-    : autoPos;
   
+  // Robustly handle initial position
+  const getInitialPos = () => {
+     if (itemConfig?.x !== undefined && itemConfig?.y !== undefined) {
+         return { x: itemConfig.x, y: itemConfig.y };
+     }
+     return autoPos;
+  };
+
+  const [visualPos, setVisualPos] = useState(getInitialPos());
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [visualPos, setVisualPos] = useState(currentPos);
 
-  // Sync when config changes externally (e.g. preset change)
+  // Sync state with config changes only when not dragging
   useEffect(() => {
     if (!isDragging) {
-      setVisualPos((itemConfig?.x !== undefined && itemConfig?.y !== undefined) 
-        ? { x: itemConfig.x, y: itemConfig.y } 
-        : autoPos);
+      setVisualPos(getInitialPos());
     }
-  }, [itemConfig, autoPos, isDragging]);
+  }, [itemConfig, autoPos, isDragging, config.preset, config.layout]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault();  // Prevent text selection
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - visualPos.x,
@@ -52,13 +55,9 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
 
       // --- Snapping Logic ---
       const snapThreshold = 15;
-      
-      // Vertical Lines (0, 0.25, 0.5, 0.75, 1.0)
       const vSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_WIDTH);
-      // Horizontal Lines
       const hSnaps = [0, 0.25, 0.5, 0.75, 1].map(f => f * CANVAS_HEIGHT);
 
-      // Snap Center of Badge to Line
       const centerX = newX + width / 2;
       const centerY = newY + height / 2;
 
@@ -94,16 +93,20 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
   }, [isDragging, dragOffset, id, onPositionChange, width, height]);
 
 
-  // Determine Colors
   const bgColor = itemConfig?.bg || `rgba(0,0,0, ${config.alpha})`;
   const txtColor = itemConfig?.txt || '#ffffff';
 
+  // Fix: Ensure icons are visible. Some need stroke, some need fill.
   const getIcon = () => {
     switch (id) {
+      // Star looks best filled with no stroke
       case 'imdb': return <Star fill="#f5c518" strokeWidth={0} size={24 * scale} />;
+      // Ticket looks best filled
       case 'rt': return <Ticket fill="#fa320a" strokeWidth={0} size={24 * scale} />; 
-      case 'meta': return <Gauge color="#66cc33" size={24 * scale} />;
-      case 'tmdb': return <Clapperboard color="#01b4e4" size={24 * scale} />;
+      // Gauge needs stroke (default), fill might clutter it
+      case 'meta': return <Gauge color="#66cc33" strokeWidth={2.5} size={24 * scale} />;
+      // Clapperboard needs stroke
+      case 'tmdb': return <Clapperboard color="#01b4e4" strokeWidth={2.5} size={24 * scale} />;
     }
   };
 
@@ -119,25 +122,28 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
   return (
     <div
       onMouseDown={handleMouseDown}
-      className="absolute flex items-center justify-between select-none cursor-move group"
+      // Added z-50 to ensure it floats above everything
+      className="absolute flex items-center justify-between select-none cursor-move group z-50 hover:z-[60]"
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        transform: `translate(${visualPos.x}px, ${visualPos.y}px)`,
+        // Ensure visualPos is never NaN
+        transform: `translate(${visualPos.x || 0}px, ${visualPos.y || 0}px)`,
         backgroundColor: bgColor,
         color: txtColor,
         borderRadius: `${config.radius}px`,
         backdropFilter: `blur(${config.blur}px)`,
-        boxShadow: config.shadow ? '3px 5px 2px rgba(0,0,0,0.4)' : 'none',
-        paddingLeft: '10px',
-        paddingRight: '10px',
+        // Use standard CSS box shadow
+        boxShadow: config.shadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)' : 'none',
+        paddingLeft: '12px',
+        paddingRight: '12px',
         willChange: 'transform',
       }}
     >
       <div className="flex items-center gap-2">
-         {/* Hidden drag handle hint */}
-        <div className="opacity-0 group-hover:opacity-100 absolute -left-4 bg-blue-500/80 rounded p-0.5 text-white">
-           <GripVertical size={12} />
+        {/* Drag handle hint */}
+        <div className="opacity-0 group-hover:opacity-100 absolute -left-5 bg-blue-600 rounded p-1 text-white transition-opacity">
+           <GripVertical size={14} />
         </div>
         {getIcon()}
       </div>
