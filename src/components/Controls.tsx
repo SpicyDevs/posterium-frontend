@@ -241,7 +241,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Layout */}
         <Section title="Layout & Presets" icon={<Layout size={16} />}>
-            <div className="grid grid-cols-3 gap-1 bg-zinc-800 p-1 rounded border border-zinc-700 mb-3">
+            <div className="grid grid-cols-3 gap-0.5 bg-zinc-800 p-0.5 rounded border border-zinc-700 mb-3">
                 {presets.map(p => (
                     <button
                         key={p.id}
