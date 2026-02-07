@@ -60,11 +60,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return lines;
   };
 
+  // FIX: This now listens to config.source and appends it to the URL
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-    // FIX: Added &v=1 to force cache bust. 
-    // This ensures we don't see the old cached response from previous worker versions.
-    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
+    
+    // We add 'v=1' to force the browser to verify the cache, 
+    // ensuring we don't see a stale image when switching sources.
+    if (config.source === 'fanart') {
+        return `${base}?source=fanart&v=1`;
+    }
+    return `${base}?v=1`;
   }, [config.tmdbId, config.source]);
 
   return (

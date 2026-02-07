@@ -48,36 +48,38 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
-  // Visual Global Params - ALWAYS APPLY (No default checks as requested)
+  // Cache Buster
+  params.set('v', '1');
+
+  // Visual Global Params
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
   params.set('sh', config.shadow ? '1' : '0');
   
-  // Layout Params (Legacy, but kept for URL state preservation)
+  // Layout Params
   params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // Per-Item Params - EXPLICIT CALCULATION
-  // We must calculate exact X/Y for every item because backend has no layout logic
+  // Per-Item Params
   config.ratings.forEach((key, index) => {
     const item = config.items[key] || {};
-    
-    // 1. Calculate where it SHOULD be based on auto-layout
     const autoPos = calculateAutoPosition(key, index, config.ratings.length, config);
-    
-    // 2. Use manual override if exists, otherwise use auto
     const finalX = item.x !== undefined ? item.x : autoPos.x;
     const finalY = item.y !== undefined ? item.y : autoPos.y;
 
-    // 3. Send to backend
     params.set(`${key}_x`, Math.round(finalX).toString());
     params.set(`${key}_y`, Math.round(finalY).toString());
 
-    // 4. Styles
     if (item.bg) params.set(`${key}_bg`, item.bg); 
     if (item.txt) params.set(`${key}_txt`, item.txt);
+    
+    // NEW: Per-item Style overrides
+    if (item.blur !== undefined) params.set(`${key}_blur`, item.blur.toString());
+    if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
+    if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
+    if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
   });
 
   return url.toString();
@@ -100,13 +102,23 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const y = params.get(`${key}_y`);
         const bg = params.get(`${key}_bg`);
         const txt = params.get(`${key}_txt`);
+        
+        // Parse new params
+        const blur = params.get(`${key}_blur`);
+        const alpha = params.get(`${key}_alpha`);
+        const rad = params.get(`${key}_rad`);
+        const sh = params.get(`${key}_sh`);
 
-        if (x || y || bg || txt) {
+        if (x || y || bg || txt || blur || alpha || rad || sh) {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
                 ...(bg ? { bg: bg.startsWith('#') ? bg : `#${bg}` } : {}),
                 ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
+                ...(blur ? { blur: parseInt(blur) } : {}),
+                ...(alpha ? { alpha: parseFloat(alpha) } : {}),
+                ...(rad ? { radius: parseInt(rad) } : {}),
+                ...(sh ? { shadow: sh === '1' } : {}),
             };
         }
     });

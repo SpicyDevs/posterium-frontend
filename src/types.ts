@@ -11,6 +11,11 @@ export interface BadgeConfig {
   y?: number;
   bg?: string;
   txt?: string;
+  // Per-item overrides
+  blur?: number;
+  alpha?: number;
+  radius?: number;
+  shadow?: boolean;
 }
 
 export interface PosterConfig {

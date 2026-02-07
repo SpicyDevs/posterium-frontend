@@ -7,7 +7,6 @@ interface Props {
   onChange: (newConfig: PosterConfig) => void;
 }
 
-// Collapsible Section Component
 const Section: React.FC<{ 
   title: string; 
   icon: React.ReactNode; 
@@ -142,12 +141,15 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         </div>
                         <input type="range" min="0" max="1" step="0.1" value={config.alpha} onChange={(e) => handleChange('alpha', parseFloat(e.target.value))} className="w-full accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"/>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 items-center">
-                        <div>
-                            <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Corner Radius</label>
-                            <input type="number" value={config.radius} onChange={(e) => handleChange('radius', parseInt(e.target.value))} className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs"/>
+                    <div>
+                        <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">
+                            <span>Corner Radius</span>
+                            <span>{config.radius}px</span>
                         </div>
-                        <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer pt-4">
+                        <input type="range" min="0" max="30" value={config.radius} onChange={(e) => handleChange('radius', parseInt(e.target.value))} className="w-full accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"/>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer pt-1">
                             <input type="checkbox" checked={config.shadow} onChange={(e) => handleChange('shadow', e.target.checked)} className="rounded bg-zinc-700 border-zinc-600 text-blue-500 w-4 h-4"/>
                             Drop Shadow
                         </label>
@@ -155,8 +157,10 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 </div>
             ) : (
                 <div className="space-y-3 p-3 bg-zinc-800/50 rounded border border-blue-500/20">
-                    <p className="text-xs text-blue-300">Editing <strong>{selectedBadge.toUpperCase()}</strong> only</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <p className="text-xs text-blue-300 mb-2">Editing <strong>{selectedBadge.toUpperCase()}</strong> only</p>
+                    
+                    {/* Colors */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
                         <div>
                             <label className="text-[10px] text-zinc-500 mb-1 block">Background</label>
                             <div className="flex gap-1">
@@ -177,10 +181,60 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                                 />
                             </div>
                         </div>
-                        <button onClick={() => updateBadgeConfig(selectedBadge, { bg: undefined, txt: undefined })} className="col-span-2 text-xs py-1 text-zinc-500 hover:text-white border border-zinc-700 rounded hover:bg-zinc-800">
-                            Reset Override
-                        </button>
                     </div>
+
+                    {/* Per-Item Sliders */}
+                    <div className="space-y-3 pt-2 border-t border-zinc-700/50">
+                        <div>
+                            <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
+                                <span>Blur Override</span>
+                                <span>{config.items[selectedBadge]?.blur ?? config.blur}px</span>
+                            </div>
+                            <input type="range" min="0" max="20" 
+                                value={config.items[selectedBadge]?.blur ?? config.blur} 
+                                onChange={(e) => updateBadgeConfig(selectedBadge, { blur: parseInt(e.target.value) })} 
+                                className="w-full accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
+                                <span>Opacity Override</span>
+                                <span>{Math.round((config.items[selectedBadge]?.alpha ?? config.alpha) * 100)}%</span>
+                            </div>
+                            <input type="range" min="0" max="1" step="0.1" 
+                                value={config.items[selectedBadge]?.alpha ?? config.alpha} 
+                                onChange={(e) => updateBadgeConfig(selectedBadge, { alpha: parseFloat(e.target.value) })} 
+                                className="w-full accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
+                                <span>Radius Override</span>
+                                <span>{config.items[selectedBadge]?.radius ?? config.radius}px</span>
+                            </div>
+                            <input type="range" min="0" max="30" 
+                                value={config.items[selectedBadge]?.radius ?? config.radius} 
+                                onChange={(e) => updateBadgeConfig(selectedBadge, { radius: parseInt(e.target.value) })} 
+                                className="w-full accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer pt-1">
+                                <input type="checkbox" 
+                                    checked={config.items[selectedBadge]?.shadow ?? config.shadow} 
+                                    onChange={(e) => updateBadgeConfig(selectedBadge, { shadow: e.target.checked })} 
+                                    className="rounded bg-zinc-700 border-zinc-600 text-blue-500 w-4 h-4"
+                                />
+                                Shadow Override
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onClick={() => updateBadgeConfig(selectedBadge, { 
+                        bg: undefined, txt: undefined, blur: undefined, alpha: undefined, radius: undefined, shadow: undefined 
+                    })} className="w-full mt-2 text-xs py-1.5 text-zinc-500 hover:text-white border border-zinc-700 rounded hover:bg-zinc-800 transition-colors">
+                        Reset Overrides
+                    </button>
                 </div>
             )}
         </Section>
