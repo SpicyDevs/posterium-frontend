@@ -5,7 +5,7 @@ export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
 export type SourceType = 'tmdb' | 'fanart';
-export type ExtensionType = 'svg' | 'jpg' | 'png';
+export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp'; // Added 'webp'
 
 export interface BadgeConfig {
   x?: number;
@@ -16,7 +16,7 @@ export interface BadgeConfig {
   alpha?: number;
   radius?: number;
   shadow?: boolean;
-  icon?: boolean; // New: Toggle icon visibility
+  icon?: boolean;
 }
 
 export interface ApiKeys {

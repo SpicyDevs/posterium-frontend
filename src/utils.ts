@@ -90,11 +90,14 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
-    const match = url.pathname.match(/\/(movie|tv)\/(\w+)(?:\.(jpg|jpeg|png|svg))?$/);
+    // Updated regex to include webp
+    const match = url.pathname.match(/\/(movie|tv)\/(\w+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
     
     const mediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
     const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
-    const extension = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'jpg';
+    
+    // Updated logic: if no extension group found, default to 'svg'
+    const extension = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'svg';
     
     const params = url.searchParams;
 

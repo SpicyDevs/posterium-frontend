@@ -112,7 +112,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                      <Tv size={14}/> TV Show
                  </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 mb-2">
                 <div className="col-span-2">
                     <input 
                         type="text" 
@@ -130,6 +130,23 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                     <option value="tmdb">TMDB</option>
                     <option value="fanart">Fanart</option>
                 </select>
+            </div>
+            
+            {/* Format Selector */}
+            <div className="flex bg-zinc-800 rounded border border-zinc-700 p-1">
+                {(['svg', 'jpg', 'webp', 'png'] as const).map((ext) => (
+                    <button
+                        key={ext}
+                        onClick={() => handleChange('extension', ext)}
+                        className={`flex-1 text-[10px] font-medium uppercase py-1.5 rounded transition-all ${
+                            config.extension === ext 
+                            ? 'bg-blue-600 text-white shadow-sm' 
+                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
+                        }`}
+                    >
+                        {ext}
+                    </button>
+                ))}
             </div>
         </Section>
 
