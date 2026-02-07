@@ -11,7 +11,6 @@ interface Props {
   onPositionChange: (id: RatingType, x: number, y: number) => void;
 }
 
-// Exactly matching backend ICONS
 const ICONS: Record<string, { vb: string, body: string }> = {
   imdb: { vb: "0 0 122.88 122.88", body: `<path fill="#F5C518" d="M18.43,0h86.02c10.18,0,18.43,8.25,18.43,18.43v86.02c0,10.18-8.25,18.43-18.43,18.43H18.43C8.25,122.88,0,114.63,0,104.45l0-86.02C0,8.25,8.25,0,18.43,0z"/><path d="M24.96,78.72V44.16h-9.6v34.56H24.96z M45.36,44.16L43.2,60.24L42,51.6l-1.2-7.44l-12,0v34.56h8.16v-22.8l3.36,22.8h6l3.12-23.28v23.28h8.16V44.16H45.36z M61.44,78.72V44.16h14.88c3.6,0,6.24,2.64,6.24,6v22.56c0,3.36-2.64,6-6.24,6H61.44z M72.72,50.4l-2.16-0.24v22.56c1.2,0,2.16-0.24,2.4-0.72c0.48-0.48,0.48-1.92,0.48-4.32V54.24v-2.88L72.72,50.4z M100.56,52.8h0.72c3.36,0,6.24,2.64,6.24,6v13.92c0,3.36-2.88,6-6.24,6h-0.72c-1.92,0-3.84-0.96-5.04-2.64l-0.48,2.16H86.4V44.16h9.12V55.2C96.72,53.76,98.64,52.8,100.56,52.8z M98.64,69.6v-8.16L98.4,58.8c-0.24-0.48-0.96-0.72-1.44-0.72c-0.48,0-1.2,0.24-1.44,0.72v13.68c0.24,0.48,0.96,0.72,1.44,0.72c0.48,0,1.44-0.24,1.44-0.72z"/>` },
   rt_fresh: { vb: "0 0 32 32", body: `<path d="M16 32c8.8 0 16-7.2 16-16S24.8 0 16 0 0 7.2 0 16s7.2 16 16 16z" fill="#FA320A"/><path d="M23.2 21.6c-.7.3-1.8.8-3.4.6-2.1-.2-2.3-1.7-3.1-4.2-.6-1.9-2.3-4-2.3-4s1.7 1.1 2.8 2.3c.7.8 1.4 2.8 1.6 3.3.1.5.3.8.8.7.6-.1.8-.7.6-1.3-.8-2.6-4.5-5.9-6-6.8-1.7-.9-3.3-1-4.7.9-.5.7-.9 2.1-.8 3.6.4 4.3 4.9 8.2 8.7 8.2 5.3 0 7.6-3.8 7.3-5.2-.2-1.2-1.1-1.9-1.5-2.1z" fill="#FFF"/>` },
@@ -92,10 +91,11 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
   const iconLeft = 10 * scale;
   const iconTop = 12 * scale;
   const textRight = 10 * scale;
-  const textTop = '63%';
+  
+  // FIXED: Use true 50% centering instead of 63%
+  const textTop = '50%';
 
   const renderIcon = () => {
-    // Map generic 'rt' to 'rt_fresh' for preview purposes
     const iconKey = id === 'rt' ? 'rt_fresh' : id;
     const iconData = ICONS[iconKey];
 
@@ -151,9 +151,9 @@ const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange })
           position: 'absolute',
           right: textRight,
           top: textTop,
-          transform: 'translateY(-50%)',
+          transform: 'translateY(-50%)', // Centering logic
           fontSize: `${28 * scale}px`, 
-          fontFamily: 'Arial, sans-serif', 
+          fontFamily: "'Inter', sans-serif", // Matches Backend
           fontWeight: 'bold',
           color: txtColor,
           lineHeight: 1 
