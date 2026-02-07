@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
+import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
-import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
+import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface Props {
@@ -12,9 +12,8 @@ interface Props {
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
-  const [zoomModifier, setZoomModifier] = useState(1); // Manual zoom multiplier
+  const [zoomModifier, setZoomModifier] = useState(1);
 
-  // Auto-Scale Logic
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -33,7 +32,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Effective Scale
   const currentScale = autoScale * zoomModifier;
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
@@ -58,22 +56,38 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   };
 
   const cleanPosterUrl = useMemo(() => {
-    const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
+    const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     if (config.source === 'fanart') {
         return `${base}?source=fanart&v=1`;
     }
     return `${base}?v=1`;
-  }, [config.tmdbId, config.source]);
+  }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
-  // Zoom Handlers
   const zoomIn = () => setZoomModifier(prev => Math.min(prev + 0.1, 3));
   const zoomOut = () => setZoomModifier(prev => Math.max(prev - 0.1, 0.1));
   const resetZoom = () => setZoomModifier(1);
 
+  // Pre-calculate all rects for collision detection
+  const badgeRects = useMemo(() => {
+      const scale = getScale(config.size);
+      const w = BASE_BADGE_W * scale;
+      const h = BASE_BADGE_H * scale;
+
+      return config.ratings.map((r, index) => {
+          const auto = calculateAutoPosition(r, index, config.ratings.length, config);
+          const item = config.items[r];
+          return {
+              id: r,
+              x: item?.x ?? auto.x,
+              y: item?.y ?? auto.y,
+              w, h
+          };
+      });
+  }, [config]);
+
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center relative bg-black/20 overflow-hidden">
         
-        {/* Zoom Controls */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
             <button onClick={zoomIn} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg">
                 <ZoomIn size={16} />
@@ -88,13 +102,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             )}
         </div>
 
-        {/* Canvas */}
         <div 
             style={{ 
                 width: CANVAS_WIDTH, 
                 height: CANVAS_HEIGHT,
                 transform: `scale(${currentScale})`,
-                transition: 'transform 0.1s ease-out' // Smooth zoom
+                transition: 'transform 0.1s ease-out'
             }} 
             className="bg-black shadow-2xl relative shrink-0 ring-1 ring-white/10"
         >
@@ -105,7 +118,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 draggable={false}
             />
             
-            {/* Grid */}
             <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
                 {[1, 2, 3].map(i => (
                     <React.Fragment key={i}>
@@ -115,27 +127,29 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 ))}
             </div>
 
-            {/* Badges */}
             {config.ratings.map((id, index) => {
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const itemConfig = config.items[id];
                 const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
                 
+                // Filter out self from obstacles
+                const obstacles = badgeRects.filter(b => b.id !== id);
+
                 return (
                     <DraggableBadge
                         key={id}
-                        badgeId={id} // Renamed prop
+                        badgeId={id}
                         config={config}
                         x={hasManual ? itemConfig!.x! : auto.x}
                         y={hasManual ? itemConfig!.y! : auto.y}
                         canvasScale={currentScale} 
                         onPositionChange={handlePositionChange}
+                        obstacles={obstacles}
                     />
                 );
             })}
         </div>
         
-        {/* Info Label */}
         <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-[10px] px-2 py-1 rounded text-zinc-400 pointer-events-none">
             {Math.round(currentScale * 100)}%
         </div>

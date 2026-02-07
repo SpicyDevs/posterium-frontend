@@ -19,19 +19,37 @@ export const calculateAutoPosition = (
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
 
-  const groupW = isRow ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) : badgeW;
-  const groupH = isRow ? badgeH : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
+  // Calculate total group dimensions
+  const groupW = isRow 
+    ? (totalBadges * badgeW) + ((totalBadges - 1) * GAP) 
+    : badgeW;
+    
+  const groupH = isRow 
+    ? badgeH 
+    : (totalBadges * badgeH) + ((totalBadges - 1) * GAP);
 
   let presetX = 0;
   let presetY = 0;
 
-  if (config.preset.includes('l')) presetX = PADDING;
-  else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
-  else presetX = (CANVAS_WIDTH - groupW) / 2;
+  // Horizontal Alignment
+  if (config.preset.includes('l')) {
+    presetX = PADDING;
+  } else if (config.preset.includes('r')) {
+    presetX = CANVAS_WIDTH - groupW - PADDING;
+  } else {
+    // Center (c)
+    presetX = (CANVAS_WIDTH - groupW) / 2;
+  }
 
-  if (config.preset.includes('t')) presetY = PADDING;
-  else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
-  else presetY = (CANVAS_HEIGHT - groupH) / 2;
+  // Vertical Alignment
+  if (config.preset.includes('t')) {
+    presetY = PADDING;
+  } else if (config.preset.includes('b')) {
+    presetY = CANVAS_HEIGHT - groupH - PADDING;
+  } else {
+    // Center (c)
+    presetY = (CANVAS_HEIGHT - groupH) / 2;
+  }
 
   let x = isRow ? presetX + (index * (badgeW + GAP)) : presetX;
   let y = isRow ? presetY : presetY + (index * (badgeH + GAP));
@@ -48,7 +66,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
-  // API Keys (Advanced)
+  // API Keys
   if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
   if (config.keys?.omdb) params.set('omdb_key', config.keys.omdb);

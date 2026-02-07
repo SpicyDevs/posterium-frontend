@@ -71,6 +71,22 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
     { id: 'bl', label: 'BL' }, { id: 'bc', label: 'BC' }, { id: 'br', label: 'BR' },
   ];
 
+  const handleLayoutChange = (layout: 'row' | 'col') => {
+      onChange({ 
+          ...config, 
+          layout,
+          items: {} // Reset manual overrides so badges stack correctly
+      });
+  };
+
+  const handlePresetChange = (preset: PresetType) => {
+      onChange({ 
+          ...config, 
+          preset,
+          items: {} // Reset manual overrides
+      });
+  };
+
   return (
     <div className="bg-zinc-900/50 backdrop-blur-md h-full w-full flex flex-col">
       <div className="p-4 border-b border-white/5 bg-[#0f0f11] sticky top-0 z-10">
@@ -291,10 +307,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 {presets.map(p => (
                     <button
                         key={p.id}
-                        onClick={() => {
-                            handleChange('preset', p.id);
-                            handleChange('items', {});
-                        }}
+                        onClick={() => handlePresetChange(p.id)}
                         className={`aspect-square flex items-center justify-center text-[10px] font-bold rounded hover:bg-zinc-600 transition-colors ${config.preset === p.id ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 bg-zinc-900/50'}`}
                     >
                         {p.label}
@@ -304,13 +317,13 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
             
             <div className="flex gap-2">
                 <button 
-                    onClick={() => handleChange('layout', 'col')} 
+                    onClick={() => handleLayoutChange('col')} 
                     className={`flex-1 text-xs py-2 rounded border transition-colors ${config.layout === 'col' ? 'bg-blue-600/20 border-blue-500 text-blue-200' : 'border-zinc-700 text-zinc-400 hover:bg-zinc-800'}`}
                 >
                     Column
                 </button>
                 <button 
-                    onClick={() => handleChange('layout', 'row')} 
+                    onClick={() => handleLayoutChange('row')} 
                     className={`flex-1 text-xs py-2 rounded border transition-colors ${config.layout === 'row' ? 'bg-blue-600/20 border-blue-500 text-blue-200' : 'border-zinc-700 text-zinc-400 hover:bg-zinc-800'}`}
                 >
                     Row
