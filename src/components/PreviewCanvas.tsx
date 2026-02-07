@@ -14,6 +14,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const [autoScale, setAutoScale] = useState(1);
   const [zoomModifier, setZoomModifier] = useState(1);
 
+  // Responsive scaling of the canvas within the container
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -36,21 +37,30 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => {
+      // If we are already in custom mode, just update the single item
       if (prev.layout === 'custom' && prev.preset === 'custom') {
          return {
             ...prev,
             items: { ...prev.items, [id]: { ...prev.items[id], x, y } }
          };
       }
+
+      // If switching to custom mode for the first time:
+      // We must freeze ALL other items to their current "Auto" positions so they don't jump.
       const newItems = { ...prev.items };
+      
       prev.ratings.forEach((r, index) => {
+         // Only calculate if not already manually set
          const currentItem = newItems[r];
          if (currentItem?.x === undefined || currentItem?.y === undefined) {
              const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
              newItems[r] = { ...currentItem, x: autoPos.x, y: autoPos.y };
          }
       });
+
+      // Update the dragged item with its new specific coordinates
       newItems[id] = { ...newItems[id], x, y };
+      
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
@@ -110,8 +120,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             </div>
 
             {config.ratings.map((id, index) => {
+                // Calculate where it *would* be automatically
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const itemConfig = config.items[id];
+                
+                // Determine if we use manual (custom) position or auto position
                 const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
                 
                 return (

@@ -32,12 +32,16 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   // Local Visual Position
   const [currentPos, setCurrentPos] = useState({ x, y });
 
-  // Sync only on prop change (FIX: Removed isDragging dependency to prevent snap-back)
+  // Ref to hold the Latest Position (Solves Stale Closure Issue)
+  const posRef = useRef({ x, y });
+
+  // Sync state/ref when props change (only if NOT dragging)
   useEffect(() => {
     if (!isDragging) {
       setCurrentPos({ x, y });
+      posRef.current = { x, y };
     }
-  }, [x, y]);
+  }, [x, y, isDragging]);
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
@@ -62,19 +66,25 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
     let nextX = elemX + deltaX;
     let nextY = elemY + deltaY;
 
-    // Canvas Boundaries (Keep this so they don't fly off screen)
+    // Canvas Boundaries
     const w = width;
     const h = height;
     nextX = Math.max(0, Math.min(nextX, CANVAS_WIDTH - w));
     nextY = Math.max(0, Math.min(nextY, CANVAS_HEIGHT - h));
 
-    setCurrentPos({ x: nextX, y: nextY });
+    const newPos = { x: nextX, y: nextY };
+    
+    // Update both State (for visual) and Ref (for logic)
+    setCurrentPos(newPos);
+    posRef.current = newPos;
   };
 
   const handleEnd = () => {
     setIsDragging(false);
     dragStartRef.current = null;
-    onPositionChange(badgeId, currentPos.x, currentPos.y);
+    
+    // Use the Ref to get the true latest position
+    onPositionChange(badgeId, posRef.current.x, posRef.current.y);
   };
 
   useEffect(() => {
@@ -120,7 +130,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
   const hasShadow = itemConfig?.shadow ?? config.shadow;
-  const showIcon = itemConfig?.icon ?? true; // Icon Toggle
+  const showIcon = itemConfig?.icon ?? true;
   const bgColor = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
   const txtColor = itemConfig?.txt || '#ffffff';
 
@@ -145,7 +155,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
         );
     }
     
-    // Check for explicit icon disable
     if (!showIcon) {
         const dummyVal = { imdb: '8.7', rt: '73%', meta: '74', tmdb: '85%', runtime: '2h 15m' }[badgeId] || '0.0';
         return (
@@ -190,13 +199,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
 
     const iconKey = badgeId === 'rt' ? 'rt_fresh' : badgeId;
     const iconData = ICONS[iconKey];
-
-    const dummyVal = {
-        imdb: '8.7',
-        rt: '73%',
-        meta: '74',
-        tmdb: '85%'
-    }[badgeId] || '0.0';
+    const dummyVal = { imdb: '8.7', rt: '73%', meta: '74', tmdb: '85%' }[badgeId] || '0.0';
 
     return (
         <>
