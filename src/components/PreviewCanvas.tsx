@@ -124,11 +124,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 return (
                     <DraggableBadge
                         key={id}
-                        id={id}
+                        badgeId={id} // Renamed prop
                         config={config}
                         x={hasManual ? itemConfig!.x! : auto.x}
                         y={hasManual ? itemConfig!.y! : auto.y}
-                        canvasScale={currentScale} // Pass effective scale
+                        canvasScale={currentScale} 
                         onPositionChange={handlePositionChange}
                     />
                 );
