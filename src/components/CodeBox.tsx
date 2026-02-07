@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, ArrowRight, Link } from 'lucide-react';
+import { Copy, Check, ArrowRight, Link, Loader2 } from 'lucide-react';
 import { generateApiUrl } from '../utils';
 import { PosterConfig } from '../types';
 
@@ -13,6 +13,7 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [isManualTyping, setIsManualTyping] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Performance: Debounce URL generation to avoid lag during dragging
   useEffect(() => {
@@ -32,8 +33,13 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
   };
 
   const handleLoad = () => {
-      onLoadConfig(url);
-      setIsManualTyping(false);
+      setIsProcessing(true);
+      // Small artificial delay to show the "working" state helps UX
+      setTimeout(() => {
+          onLoadConfig(url);
+          setIsManualTyping(false);
+          setIsProcessing(false);
+      }, 300);
   };
 
   return (
@@ -55,8 +61,8 @@ const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
           spellCheck={false}
         />
         {isManualTyping ? (
-             <button onClick={handleLoad} className="p-2 text-blue-400 hover:bg-zinc-800 rounded">
-                 <ArrowRight size={16} />
+             <button onClick={handleLoad} disabled={isProcessing} className="p-2 text-blue-400 hover:bg-zinc-800 rounded disabled:opacity-50">
+                 {isProcessing ? <Loader2 size={16} className="animate-spin"/> : <ArrowRight size={16} />}
              </button>
         ) : (
             <button onClick={handleCopy} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">

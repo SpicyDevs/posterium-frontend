@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Loader2 } from 'lucide-react'; // Added Loader2
 
 interface Props {
   config: PosterConfig;
@@ -13,6 +13,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
   const [zoomModifier, setZoomModifier] = useState(1);
+  
+  // New: Track image loading state
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   // Responsive scaling of the canvas within the container
   useEffect(() => {
@@ -37,7 +40,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => {
-      // If we are already in custom mode, just update the single item
       if (prev.layout === 'custom' && prev.preset === 'custom') {
          return {
             ...prev,
@@ -45,20 +47,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
          };
       }
 
-      // If switching to custom mode for the first time:
-      // We must freeze ALL other items to their current "Auto" positions so they don't jump.
       const newItems = { ...prev.items };
-      
       prev.ratings.forEach((r, index) => {
-         // Only calculate if not already manually set
          const currentItem = newItems[r];
          if (currentItem?.x === undefined || currentItem?.y === undefined) {
              const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
              newItems[r] = { ...currentItem, x: autoPos.x, y: autoPos.y };
          }
       });
-
-      // Update the dragged item with its new specific coordinates
       newItems[id] = { ...newItems[id], x, y };
       
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
@@ -73,6 +69,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return `${base}?v=1`;
   }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
+  // Trigger loading state when URL changes
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [cleanPosterUrl]);
+
   const zoomIn = () => setZoomModifier(prev => Math.min(prev + 0.1, 3));
   const zoomOut = () => setZoomModifier(prev => Math.max(prev - 0.1, 0.1));
   const resetZoom = () => setZoomModifier(1);
@@ -80,6 +81,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center relative bg-black/20 overflow-hidden">
         
+        {/* Zoom Controls */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
             <button onClick={zoomIn} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg">
                 <ZoomIn size={16} />
@@ -94,6 +96,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             )}
         </div>
 
+        {/* Canvas Area */}
         <div 
             style={{ 
                 width: CANVAS_WIDTH, 
@@ -103,11 +106,21 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             }} 
             className="bg-black shadow-2xl relative shrink-0 ring-1 ring-white/10"
         >
+            {/* Loading Overlay */}
+            {isImageLoading && (
+                <div className="absolute inset-0 z-[100] bg-zinc-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-400 gap-3 transition-opacity duration-300">
+                    <Loader2 className="animate-spin text-blue-500" size={48} />
+                    <span className="text-xs font-semibold tracking-wider uppercase animate-pulse">Fetching Poster...</span>
+                </div>
+            )}
+
             <img
                 src={cleanPosterUrl}
                 alt="Poster"
-                className="w-full h-full object-cover select-none pointer-events-none"
+                className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-500 ${isImageLoading ? 'opacity-50' : 'opacity-100'}`}
                 draggable={false}
+                onLoad={() => setIsImageLoading(false)}
+                onError={() => setIsImageLoading(false)}
             />
             
             <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
@@ -120,11 +133,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             </div>
 
             {config.ratings.map((id, index) => {
-                // Calculate where it *would* be automatically
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const itemConfig = config.items[id];
-                
-                // Determine if we use manual (custom) position or auto position
                 const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
                 
                 return (
