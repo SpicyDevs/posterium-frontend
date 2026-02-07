@@ -122,8 +122,8 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
   return (
     <div
       onMouseDown={handleMouseDown}
-      // Added z-50 to ensure it floats above everything
-      className="absolute flex items-center justify-between select-none cursor-move group z-50 hover:z-[60]"
+      // CRITICAL FIX: Added top-0 left-0 to force positioning from origin.
+      className="absolute top-0 left-0 flex items-center justify-between select-none cursor-move group z-50 hover:z-[60]"
       style={{
         width: `${width}px`,
         height: `${height}px`,
