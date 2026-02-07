@@ -55,6 +55,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
     handleChange('ratings', order.filter(x => current.has(x)));
   };
 
+  // Visually mapped 3x3 Grid
   const presets: {id: PresetType, label: string}[] = [
     { id: 'tl', label: 'TL' }, { id: 'tc', label: 'TC' }, { id: 'tr', label: 'TR' },
     { id: 'lc', label: 'LC' }, { id: 'cc', label: 'CC' }, { id: 'rc', label: 'RC' },
@@ -241,8 +242,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
         {/* Layout */}
         <Section title="Layout & Presets" icon={<Layout size={16} />}>
-            {/* Scrollable preset row for better mobile use */}
-            <div className="flex overflow-x-auto gap-2 pb-2 mb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700">
+            {/* Visual 3x3 Grid */}
+            <div className="grid grid-cols-3 gap-1 bg-zinc-800 p-1 rounded border border-zinc-700 mb-3">
                 {presets.map(p => (
                     <button
                         key={p.id}
@@ -250,7 +251,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                             handleChange('preset', p.id);
                             handleChange('items', {});
                         }}
-                        className={`flex-shrink-0 px-3 py-2 text-xs font-bold rounded hover:bg-zinc-600 transition-colors border border-transparent ${config.preset === p.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}
+                        className={`aspect-square flex items-center justify-center text-[10px] font-bold rounded hover:bg-zinc-600 transition-colors ${config.preset === p.id ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 bg-zinc-900/50'}`}
                     >
                         {p.label}
                     </button>

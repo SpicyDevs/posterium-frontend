@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
@@ -10,36 +11,30 @@ interface Props {
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [autoScale, setAutoScale] = useState(1);
+  const [zoomModifier, setZoomModifier] = useState(1); // Manual zoom multiplier
 
+  // Auto-Scale Logic
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      
-      // Calculate available space
-      // We subtract padding (32px) to ensure margins
       const parentWidth = containerRef.current.clientWidth - 32;
       const parentHeight = containerRef.current.clientHeight - 32;
 
-      // Determine scale needed to fit width AND height
       const scaleX = parentWidth / CANVAS_WIDTH;
       const scaleY = parentHeight / CANVAS_HEIGHT;
       
-      // Use the smaller scale so it always fits entirely
-      const newScale = Math.min(scaleX, scaleY, 1); // Cap at 1 (don't scale up pixelated)
-      
-      setScale(newScale);
+      setAutoScale(Math.min(scaleX, scaleY, 1));
     };
 
-    // Initial calcs
     handleResize();
-
-    // Observer is better than window.resize for flex containers
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
-
     return () => observer.disconnect();
   }, []);
+
+  // Effective Scale
+  const currentScale = autoScale * zoomModifier;
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig(prev => {
@@ -49,8 +44,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             items: { ...prev.items, [id]: { ...prev.items[id], x, y } }
          };
       }
-
-      // Freeze all positions when starting manual drag
       const newItems = { ...prev.items };
       prev.ratings.forEach((r, index) => {
          const currentItem = newItems[r];
@@ -60,24 +53,48 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
          }
       });
       newItems[id] = { ...newItems[id], x, y };
-
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
 
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
-    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
+    if (config.source === 'fanart') {
+        return `${base}?source=fanart&v=1`;
+    }
+    return `${base}?v=1`;
   }, [config.tmdbId, config.source]);
 
+  // Zoom Handlers
+  const zoomIn = () => setZoomModifier(prev => Math.min(prev + 0.1, 3));
+  const zoomOut = () => setZoomModifier(prev => Math.max(prev - 0.1, 0.1));
+  const resetZoom = () => setZoomModifier(1);
+
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative bg-black/20 overflow-hidden">
+        
+        {/* Zoom Controls */}
+        <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
+            <button onClick={zoomIn} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg">
+                <ZoomIn size={16} />
+            </button>
+            <button onClick={zoomOut} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg">
+                <ZoomOut size={16} />
+            </button>
+            {zoomModifier !== 1 && (
+                <button onClick={resetZoom} className="p-2 bg-zinc-800/80 backdrop-blur text-blue-400 rounded hover:bg-zinc-700 hover:text-blue-300 border border-zinc-700 shadow-lg" title="Reset Zoom">
+                    <RotateCcw size={16} />
+                </button>
+            )}
+        </div>
+
+        {/* Canvas */}
         <div 
             style={{ 
                 width: CANVAS_WIDTH, 
                 height: CANVAS_HEIGHT,
-                transform: `scale(${scale})`,
-                // Shadows look better if they don't scale, but simplicity first
+                transform: `scale(${currentScale})`,
+                transition: 'transform 0.1s ease-out' // Smooth zoom
             }} 
             className="bg-black shadow-2xl relative shrink-0 ring-1 ring-white/10"
         >
@@ -85,9 +102,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 src={cleanPosterUrl}
                 alt="Poster"
                 className="w-full h-full object-cover select-none pointer-events-none"
+                draggable={false}
             />
             
-            {/* Grid Lines */}
+            {/* Grid */}
             <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
                 {[1, 2, 3].map(i => (
                     <React.Fragment key={i}>
@@ -110,7 +128,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                         config={config}
                         x={hasManual ? itemConfig!.x! : auto.x}
                         y={hasManual ? itemConfig!.y! : auto.y}
-                        canvasScale={scale} // CRITICAL FIX: Pass the scale
+                        canvasScale={currentScale} // Pass effective scale
                         onPositionChange={handlePositionChange}
                     />
                 );
@@ -118,8 +136,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
         </div>
         
         {/* Info Label */}
-        <div className="absolute bottom-0 right-0 bg-black/50 text-[10px] px-2 py-1 rounded-tl text-white/50 pointer-events-none">
-            {Math.round(scale * 100)}%
+        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-[10px] px-2 py-1 rounded text-zinc-400 pointer-events-none">
+            {Math.round(currentScale * 100)}%
         </div>
     </div>
   );
