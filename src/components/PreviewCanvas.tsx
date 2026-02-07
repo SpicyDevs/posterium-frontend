@@ -20,7 +20,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     }));
   };
 
-  // Render Grid for Snapping Visualization
   const renderGridLines = () => {
     const lines = [];
     for (let i = 1; i < 4; i++) {
@@ -34,9 +33,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return lines;
   };
 
-  // CLEAN POSTER ONLY
   const cleanPosterUrl = useMemo(() => {
-    // We append .jpg to ensure we get the image, not the svg, and NO parameters so it's clean
     return `${DEFAULT_API_BASE}/${config.tmdbId}.jpg`;
   }, [config.tmdbId]);
 
@@ -52,21 +49,35 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
           draggable={false}
         />
 
-        {/* Grid Overlay (only shows when hovering canvas) */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Grid Overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             {renderGridLines()}
         </div>
 
         {/* Badges Overlay */}
-        {config.ratings.map((id, index) => (
-          <DraggableBadge
-            key={id}
-            id={id}
-            config={config}
-            onPositionChange={handlePositionChange}
-            autoPos={calculateAutoPosition(id, index, config.ratings.length, config)}
-          />
-        ))}
+        {config.ratings.map((id, index) => {
+          // 1. Calculate Auto Position based on current layout/preset
+          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+          
+          // 2. Check if user has manually overridden this specific badge
+          const itemConfig = config.items[id];
+          const hasManualPos = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
+
+          // 3. Determine Final Position
+          const finalX = hasManualPos ? itemConfig!.x! : auto.x;
+          const finalY = hasManualPos ? itemConfig!.y! : auto.y;
+
+          return (
+            <DraggableBadge
+              key={id}
+              id={id}
+              config={config}
+              x={finalX}
+              y={finalY}
+              onPositionChange={handlePositionChange}
+            />
+          );
+        })}
 
         <div className="absolute bottom-2 right-2 text-[10px] text-white/30 pointer-events-none font-mono">
           {CANVAS_WIDTH}x{CANVAS_HEIGHT}

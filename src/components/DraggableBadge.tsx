@@ -6,43 +6,31 @@ import { Star, GripVertical, Ticket, Gauge, Clapperboard } from 'lucide-react';
 interface Props {
   id: RatingType;
   config: PosterConfig;
+  x: number; // Received strictly from parent
+  y: number; // Received strictly from parent
   onPositionChange: (id: RatingType, x: number, y: number) => void;
-  autoPos: { x: number, y: number }; 
 }
 
-const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos }) => {
+const DraggableBadge: React.FC<Props> = ({ id, config, x, y, onPositionChange }) => {
   const scale = getScale(config.size);
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
-
   const itemConfig = config.items[id];
-  
-  // Robustly handle initial position
-  const getInitialPos = () => {
-     if (itemConfig?.x !== undefined && itemConfig?.y !== undefined) {
-         return { x: itemConfig.x, y: itemConfig.y };
-     }
-     return autoPos;
-  };
 
-  const [visualPos, setVisualPos] = useState(getInitialPos());
+  // State only for the active drag interaction
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-  // Sync state with config changes only when not dragging
-  useEffect(() => {
-    if (!isDragging) {
-      setVisualPos(getInitialPos());
-    }
-  }, [itemConfig, autoPos, isDragging, config.preset, config.layout]);
+  const [tempPos, setTempPos] = useState({ x, y });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    e.preventDefault();  // Prevent text selection
+    e.stopPropagation();
+    e.preventDefault();
     setIsDragging(true);
+    // Initialize temp position to current prop position
+    setTempPos({ x, y });
     setDragOffset({
-      x: e.clientX - visualPos.x,
-      y: e.clientY - visualPos.y
+      x: e.clientX - x,
+      y: e.clientY - y
     });
   };
 
@@ -72,13 +60,14 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
       newX = Math.max(0, Math.min(newX, CANVAS_WIDTH - width));
       newY = Math.max(0, Math.min(newY, CANVAS_HEIGHT - height));
 
-      setVisualPos({ x: newX, y: newY });
+      setTempPos({ x: newX, y: newY });
     };
 
     const handleMouseUp = () => {
       if (isDragging) {
         setIsDragging(false);
-        onPositionChange(id, visualPos.x, visualPos.y);
+        // Commit the final position to parent state
+        onPositionChange(id, tempPos.x, tempPos.y);
       }
     };
 
@@ -90,22 +79,17 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, id, onPositionChange, width, height]);
+  }, [isDragging, dragOffset, id, onPositionChange, width, height, tempPos.x, tempPos.y]);
 
 
   const bgColor = itemConfig?.bg || `rgba(0,0,0, ${config.alpha})`;
   const txtColor = itemConfig?.txt || '#ffffff';
 
-  // Fix: Ensure icons are visible. Some need stroke, some need fill.
   const getIcon = () => {
     switch (id) {
-      // Star looks best filled with no stroke
       case 'imdb': return <Star fill="#f5c518" strokeWidth={0} size={24 * scale} />;
-      // Ticket looks best filled
       case 'rt': return <Ticket fill="#fa320a" strokeWidth={0} size={24 * scale} />; 
-      // Gauge needs stroke (default), fill might clutter it
       case 'meta': return <Gauge color="#66cc33" strokeWidth={2.5} size={24 * scale} />;
-      // Clapperboard needs stroke
       case 'tmdb': return <Clapperboard color="#01b4e4" strokeWidth={2.5} size={24 * scale} />;
     }
   };
@@ -119,29 +103,29 @@ const DraggableBadge: React.FC<Props> = ({ id, config, onPositionChange, autoPos
     }
   }
 
+  // Determines render position: Prop if idle, Temp State if dragging
+  const renderX = isDragging ? tempPos.x : x;
+  const renderY = isDragging ? tempPos.y : y;
+
   return (
     <div
       onMouseDown={handleMouseDown}
-      // CRITICAL FIX: Added top-0 left-0 to force positioning from origin.
       className="absolute top-0 left-0 flex items-center justify-between select-none cursor-move group z-50 hover:z-[60]"
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        // Ensure visualPos is never NaN
-        transform: `translate(${visualPos.x || 0}px, ${visualPos.y || 0}px)`,
+        transform: `translate(${renderX}px, ${renderY}px)`,
         backgroundColor: bgColor,
         color: txtColor,
         borderRadius: `${config.radius}px`,
         backdropFilter: `blur(${config.blur}px)`,
-        // Use standard CSS box shadow
         boxShadow: config.shadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)' : 'none',
         paddingLeft: '12px',
         paddingRight: '12px',
-        willChange: 'transform',
+        willChange: isDragging ? 'transform' : 'auto', 
       }}
     >
       <div className="flex items-center gap-2">
-        {/* Drag handle hint */}
         <div className="opacity-0 group-hover:opacity-100 absolute -left-5 bg-blue-600 rounded p-1 text-white transition-opacity">
            <GripVertical size={14} />
         </div>
