@@ -1,4 +1,3 @@
-// src/utils.ts
 import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from './types';
 
 // @ts-ignore
@@ -49,20 +48,19 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
   
-  // Visual Global Params - ALWAYS APPLY (No default checks)
+  // Visual Global Params - ALWAYS APPLY (No default checks as requested)
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
   params.set('sh', config.shadow ? '1' : '0');
   
-  // Layout Params (Legacy, but kept for state preservation if backend ever uses them)
+  // Layout Params (Legacy, but kept for URL state preservation)
   params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
   // Per-Item Params - EXPLICIT CALCULATION
-  // The backend doesn't know about presets/layouts, so we must calculate 
-  // the exact X/Y for every item and send it.
+  // We must calculate exact X/Y for every item because backend has no layout logic
   config.ratings.forEach((key, index) => {
     const item = config.items[key] || {};
     
