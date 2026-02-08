@@ -213,7 +213,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
     const current = new Set(config.ratings);
     if (current.has(r)) current.delete(r); else current.add(r);
     // Maintain a specific sort order
-    const order: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
+    const order: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'tmdb', 'meta', 'runtime', 'age'];
     const newRatings = order.filter(x => current.has(x));
     handleChange('ratings', newRatings);
   };
