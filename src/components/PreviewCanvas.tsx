@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, RotateCcw, Loader2 } from 'lucide-react'; // Added Loader2
+import { ZoomIn, ZoomOut, RotateCcw, Loader2 } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
@@ -14,10 +14,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const [autoScale, setAutoScale] = useState(1);
   const [zoomModifier, setZoomModifier] = useState(1);
   
-  // New: Track image loading state
   const [isImageLoading, setIsImageLoading] = useState(true);
 
-  // Responsive scaling of the canvas within the container
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -69,7 +67,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     return `${base}?v=1`;
   }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
-  // Trigger loading state when URL changes
   useEffect(() => {
     setIsImageLoading(true);
   }, [cleanPosterUrl]);
@@ -118,6 +115,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 src={cleanPosterUrl}
                 alt="Poster"
                 className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-500 ${isImageLoading ? 'opacity-50' : 'opacity-100'}`}
+                style={{
+                    filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})`
+                }}
                 draggable={false}
                 onLoad={() => setIsImageLoading(false)}
                 onError={() => setIsImageLoading(false)}

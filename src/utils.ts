@@ -55,6 +55,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
   if (config.keys?.omdb) params.set('omdb_key', config.keys.omdb);
+  if (config.keys?.mdblist) params.set('mdblist_key', config.keys.mdblist);
 
   params.set('v', '1');
   params.set('blur', config.blur.toString());
@@ -64,6 +65,10 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
+
+  // New Global Filters
+  if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
+  if (config.grayscale) params.set('bw', '1');
 
   config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
@@ -82,6 +87,13 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
     if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
+
+    // New Badge Params
+    if (item.scale !== undefined && item.scale !== 1) params.set(`${key}_scale`, item.scale.toString());
+    if (item.borderW !== undefined && item.borderW > 0) {
+        params.set(`${key}_bw`, item.borderW.toString());
+        if (item.borderC) params.set(`${key}_bc`, item.borderC);
+    }
   });
 
   return url.toString();
@@ -103,9 +115,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('tmdb_key')) keys.tmdb = params.get('tmdb_key')!;
     if (params.has('fanart_key')) keys.fanart = params.get('fanart_key')!;
     if (params.has('omdb_key')) keys.omdb = params.get('omdb_key')!;
+    if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
-    // UPDATED: Added new rating types to list of keys to parse
     const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
     
     ratingKeys.forEach(key => {
@@ -118,18 +130,24 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const rad = params.get(`${key}_rad`);
         const sh = params.get(`${key}_sh`);
         const icon = params.get(`${key}_icon`);
+        const scale = params.get(`${key}_scale`);
+        const bw = params.get(`${key}_bw`);
+        const bc = params.get(`${key}_bc`);
 
-        if (x || y || bg || txt || blur || alpha || rad || sh || icon) {
+        if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw) {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
-                ...(bg ? { bg: bg.startsWith('#') ? bg : `#${bg}` } : {}),
+                ...(bg ? { bg } : {}),
                 ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
                 ...(blur ? { blur: parseInt(blur) } : {}),
                 ...(alpha ? { alpha: parseFloat(alpha) } : {}),
                 ...(rad ? { radius: parseInt(rad) } : {}),
                 ...(sh ? { shadow: sh === '1' } : {}),
                 ...(icon ? { icon: icon === '1' } : {}),
+                ...(scale ? { scale: parseFloat(scale) } : {}),
+                ...(bw ? { borderW: parseInt(bw) } : {}),
+                ...(bc ? { borderC: bc.startsWith('#') ? bc : `#${bc}` } : {}),
             };
         }
     });
@@ -148,6 +166,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
       alpha: params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
       radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,
+      posterBlur: params.has('bg_blur') ? parseInt(params.get('bg_blur')!) : 0,
+      grayscale: params.get('bw') === '1',
       keys,
       items,
     };

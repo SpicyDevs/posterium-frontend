@@ -10,20 +10,24 @@ export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 export interface BadgeConfig {
   x?: number;
   y?: number;
-  bg?: string;
+  bg?: string; // Supports "#hex" or "grad:#hex1:#hex2"
   txt?: string;
   blur?: number;
   alpha?: number;
   radius?: number;
   shadow?: boolean;
   icon?: boolean;
+  // NEW FEATURES
+  scale?: number;
+  borderW?: number;
+  borderC?: string;
 }
 
 export interface ApiKeys {
   tmdb?: string;
   fanart?: string;
   omdb?: string;
-  mdblist?: string; // <--- FIXED: Added this line
+  mdblist?: string;
 }
 
 export interface PosterConfig {
@@ -40,6 +44,10 @@ export interface PosterConfig {
   alpha: number;
   radius: number;
   extension: ExtensionType;
+  // NEW POSTER FILTERS
+  posterBlur: number;
+  grayscale: boolean;
+  
   items: Partial<Record<RatingType, BadgeConfig>>;
   keys?: ApiKeys;
 }
@@ -58,6 +66,8 @@ export const DEFAULT_CONFIG: PosterConfig = {
   alpha: 0.4,
   radius: 12,
   extension: 'png',
+  posterBlur: 0,
+  grayscale: false,
   items: {
       imdb: { x: 340, y: 20 },
       rt: { x: 340, y: 90 },
