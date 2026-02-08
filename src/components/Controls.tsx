@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Layout, Palette, Image as ImageIcon, ScanLine, ChevronDown, ChevronRight, Tv, Film, Settings, Globe, Check, ChevronsUpDown } from 'lucide-react';
+// FIXED: Added 'Clock' to imports
+import { Layout, Palette, Image as ImageIcon, ScanLine, ChevronDown, ChevronRight, Tv, Film, Settings, Globe, Check, ChevronsUpDown, Clock } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
