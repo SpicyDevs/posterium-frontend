@@ -14,7 +14,7 @@ export const calculateAutoPosition = (
   totalBadges: number, 
   config: PosterConfig
 ) => {
-  const scale = getScale(config.size) * config.globalScale; // Include global scale in calculation
+  const scale = getScale(config.size) * config.globalScale;
   const badgeW = BASE_BADGE_W * scale;
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
@@ -66,13 +66,14 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // Global Styles (Saved for frontend state, also mapped to items below)
+  // Global Styles
   if (config.globalScale !== 1) params.set('g_scale', config.globalScale.toString());
   if (config.globalBorderW !== 0) params.set('g_bw', config.globalBorderW.toString());
   if (config.globalBorderC !== '#ffffff') params.set('g_bc', config.globalBorderC);
   if (config.globalBg) params.set('g_bg', config.globalBg);
   if (config.globalTxt !== '#ffffff') params.set('g_txt', config.globalTxt);
 
+  // Global Filters
   if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
   if (config.grayscale) params.set('bw', '1');
 
@@ -85,15 +86,9 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     params.set(`${key}_x`, Math.round(finalX).toString());
     params.set(`${key}_y`, Math.round(finalY).toString());
 
-    // Resolve effective values (Item Override > Global Default)
-    const effBg = item.bg || config.globalBg;
-    const effTxt = item.txt || (config.globalTxt !== '#ffffff' ? config.globalTxt : undefined);
-    const effScale = item.scale !== undefined ? item.scale : config.globalScale;
-    const effBorderW = item.borderW !== undefined ? item.borderW : config.globalBorderW;
-    const effBorderC = item.borderC || (config.globalBorderC !== '#ffffff' ? config.globalBorderC : undefined);
-
-    if (effBg) params.set(`${key}_bg`, effBg); 
-    if (effTxt) params.set(`${key}_txt`, effTxt);
+    // Only send parameters if they exist on the item (overrides)
+    if (item.bg) params.set(`${key}_bg`, item.bg); 
+    if (item.txt) params.set(`${key}_txt`, item.txt);
     
     if (item.blur !== undefined) params.set(`${key}_blur`, item.blur.toString());
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
@@ -101,11 +96,9 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
     if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
 
-    if (effScale !== 1) params.set(`${key}_scale`, effScale.toString());
-    if (effBorderW > 0) {
-        params.set(`${key}_bw`, effBorderW.toString());
-        if (effBorderC) params.set(`${key}_bc`, effBorderC);
-    }
+    if (item.scale !== undefined) params.set(`${key}_scale`, item.scale.toString());
+    if (item.borderW !== undefined) params.set(`${key}_bw`, item.borderW.toString());
+    if (item.borderC !== undefined) params.set(`${key}_bc`, item.borderC);
   });
 
   return url.toString();
@@ -151,13 +144,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const bw = params.get(`${key}_bw`);
         const bc = params.get(`${key}_bc`);
 
-        // Check if values differ from globals (if they equal global, we assume they are inherited and don't store them as overrides)
+        // Check if values differ from globals
         const isBgOverride = bg && bg !== globalBg;
         const isTxtOverride = txt && txt !== globalTxt;
         const isScaleOverride = scale && parseFloat(scale) !== globalScale;
         const isBwOverride = bw && parseInt(bw) !== globalBorderW;
         
-        // Note: We always store x,y, icon, blur etc if present as they are position/visibility data
         if (x || y || isBgOverride || isTxtOverride || blur || alpha || rad || sh || icon || isScaleOverride || isBwOverride) {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
@@ -194,7 +186,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       grayscale: params.get('bw') === '1',
       keys,
       items,
-      // Restore globals
       globalScale,
       globalBorderW,
       globalBorderC,
