@@ -1,5 +1,4 @@
 export type MediaType = 'movie' | 'tv';
-// ADDED: rt_popcorn and letterboxd
 export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
@@ -24,6 +23,7 @@ export interface ApiKeys {
   tmdb?: string;
   fanart?: string;
   omdb?: string;
+  mdblist?: string; // <--- FIXED: Added this line
 }
 
 export interface PosterConfig {
