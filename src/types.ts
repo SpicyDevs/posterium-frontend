@@ -1,5 +1,6 @@
 export type MediaType = 'movie' | 'tv';
-export type RatingType = 'imdb' | 'rt' | 'meta' | 'tmdb' | 'age' | 'runtime';
+// ADDED: rt_popcorn and letterboxd
+export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';

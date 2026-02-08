@@ -33,7 +33,6 @@ const Section: React.FC<{
 const Controls: React.FC<Props> = ({ config, onChange }) => {
   const [selectedBadge, setSelectedBadge] = useState<RatingType | 'global'>('global');
 
-  // New Default IDs based on your request
   const MOVIE_DEFAULT_ID = "453395";
   const TV_DEFAULT_ID = "93405";
 
@@ -65,7 +64,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
     const current = new Set(config.ratings);
     if (current.has(r)) current.delete(r);
     else current.add(r);
-    const order: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb', 'age', 'runtime'];
+    // UPDATED: Added new types to the sort order
+    const order: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
     handleChange('ratings', order.filter(x => current.has(x)));
   };
 
@@ -91,10 +91,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       });
   };
 
-  // Improved Select Styling
   const selectClass = "w-full appearance-none bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-200 text-xs rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:10px_10px] bg-[right_12px_center] bg-no-repeat pr-8";
 
-  // Handle Media Type Switch with ID update
   const handleMediaTypeSwitch = (type: 'movie' | 'tv') => {
       if (config.mediaType === type) return;
       onChange({ 
@@ -172,7 +170,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
         {/* Badges */}
         <Section title="Active Badges" icon={<ScanLine size={16} />}>
             <div className="grid grid-cols-2 gap-2">
-            {['imdb', 'rt', 'meta', 'tmdb'].map((r) => (
+            {['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb'].map((r) => (
                 <button
                 key={r}
                 onClick={() => toggleRating(r as RatingType)}
@@ -182,7 +180,7 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                     : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600'
                 }`}
                 >
-                {r.toUpperCase()}
+                {r.replace('rt_popcorn', 'Popcorn').toUpperCase()}
                 </button>
             ))}
             </div>
@@ -225,7 +223,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
 
             {selectedBadge === 'global' ? (
                 <div className="space-y-4">
-                    {/* Global Sliders */}
                     <div>
                         <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">
                             <span>Blur</span><span>{config.blur}px</span>
@@ -255,7 +252,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 <div className="space-y-3 p-3 bg-zinc-800/50 rounded border border-blue-500/20">
                     <p className="text-xs text-blue-300 mb-2">Editing <strong>{selectedBadge.toUpperCase()}</strong> only</p>
                     
-                    {/* Icon Visibility Toggle */}
                     {selectedBadge !== 'age' && (
                         <div className="mb-3 border-b border-zinc-700/50 pb-3">
                             <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
@@ -269,7 +265,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         </div>
                     )}
 
-                    {/* Colors */}
                     <div className="grid grid-cols-2 gap-2 mb-3">
                         <div>
                             <label className="text-[10px] text-zinc-500 mb-1 block">Background</label>
@@ -281,7 +276,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                         </div>
                     </div>
 
-                    {/* Per-Item Sliders */}
                     <div className="space-y-3">
                         <div>
                             <div className="flex justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
@@ -337,6 +331,8 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
                 <div><label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">TMDB API Key</label><input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateApiKey('tmdb', e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none"/></div>
                 <div><label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Fanart.tv API Key</label><input type="password" value={config.keys?.fanart || ''} onChange={(e) => updateApiKey('fanart', e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none"/></div>
                 <div><label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">OMDB API Key</label><input type="password" value={config.keys?.omdb || ''} onChange={(e) => updateApiKey('omdb', e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none"/></div>
+                {/* NEW: MDBList API Key */}
+                <div><label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">MDBList API Key</label><input type="password" value={config.keys?.mdblist || ''} onChange={(e) => updateApiKey('mdblist' as any, e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:border-blue-500 outline-none"/></div>
             </div>
         </Section>
       </div>

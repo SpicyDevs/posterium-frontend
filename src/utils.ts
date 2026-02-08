@@ -90,13 +90,11 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
-    // Updated regex to include webp
     const match = url.pathname.match(/\/(movie|tv)\/(\w+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
     
     const mediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
     const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
     
-    // Updated logic: if no extension group found, default to 'svg'
     const extension = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'svg';
     
     const params = url.searchParams;
@@ -107,7 +105,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('omdb_key')) keys.omdb = params.get('omdb_key')!;
 
     const items: PosterConfig['items'] = {};
-    const ratingKeys: RatingType[] = ['imdb', 'rt', 'meta', 'tmdb', 'age', 'runtime'];
+    // UPDATED: Added new rating types to list of keys to parse
+    const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
     
     ratingKeys.forEach(key => {
         const x = params.get(`${key}_x`);
