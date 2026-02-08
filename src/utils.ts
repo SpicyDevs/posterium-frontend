@@ -1,4 +1,4 @@
-import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, MediaType, ApiKeys } from './types';
+import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, ApiKeys, MediaType } from './types';
 
 // @ts-ignore
 const envApiUrl = import.meta.env.VITE_API_URL;
@@ -14,7 +14,7 @@ export const calculateAutoPosition = (
   totalBadges: number, 
   config: PosterConfig
 ) => {
-  const scale = getScale(config.size);
+  const scale = getScale(config.size) * config.globalScale; // Include global scale in calculation
   const badgeW = BASE_BADGE_W * scale;
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
@@ -66,7 +66,13 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // New Global Filters
+  // Global Styles (Saved for frontend state, also mapped to items below)
+  if (config.globalScale !== 1) params.set('g_scale', config.globalScale.toString());
+  if (config.globalBorderW !== 0) params.set('g_bw', config.globalBorderW.toString());
+  if (config.globalBorderC !== '#ffffff') params.set('g_bc', config.globalBorderC);
+  if (config.globalBg) params.set('g_bg', config.globalBg);
+  if (config.globalTxt !== '#ffffff') params.set('g_txt', config.globalTxt);
+
   if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
   if (config.grayscale) params.set('bw', '1');
 
@@ -79,8 +85,15 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     params.set(`${key}_x`, Math.round(finalX).toString());
     params.set(`${key}_y`, Math.round(finalY).toString());
 
-    if (item.bg) params.set(`${key}_bg`, item.bg); 
-    if (item.txt) params.set(`${key}_txt`, item.txt);
+    // Resolve effective values (Item Override > Global Default)
+    const effBg = item.bg || config.globalBg;
+    const effTxt = item.txt || (config.globalTxt !== '#ffffff' ? config.globalTxt : undefined);
+    const effScale = item.scale !== undefined ? item.scale : config.globalScale;
+    const effBorderW = item.borderW !== undefined ? item.borderW : config.globalBorderW;
+    const effBorderC = item.borderC || (config.globalBorderC !== '#ffffff' ? config.globalBorderC : undefined);
+
+    if (effBg) params.set(`${key}_bg`, effBg); 
+    if (effTxt) params.set(`${key}_txt`, effTxt);
     
     if (item.blur !== undefined) params.set(`${key}_blur`, item.blur.toString());
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
@@ -88,11 +101,10 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
     if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
 
-    // New Badge Params
-    if (item.scale !== undefined && item.scale !== 1) params.set(`${key}_scale`, item.scale.toString());
-    if (item.borderW !== undefined && item.borderW > 0) {
-        params.set(`${key}_bw`, item.borderW.toString());
-        if (item.borderC) params.set(`${key}_bc`, item.borderC);
+    if (effScale !== 1) params.set(`${key}_scale`, effScale.toString());
+    if (effBorderW > 0) {
+        params.set(`${key}_bw`, effBorderW.toString());
+        if (effBorderC) params.set(`${key}_bc`, effBorderC);
     }
   });
 
@@ -106,9 +118,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     
     const mediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
     const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
-    
     const extension = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'svg';
-    
     const params = url.searchParams;
 
     const keys: ApiKeys = {};
@@ -116,6 +126,13 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('fanart_key')) keys.fanart = params.get('fanart_key')!;
     if (params.has('omdb_key')) keys.omdb = params.get('omdb_key')!;
     if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
+
+    // Parse Global Defaults first
+    const globalScale = params.has('g_scale') ? parseFloat(params.get('g_scale')!) : 1.0;
+    const globalBorderW = params.has('g_bw') ? parseInt(params.get('g_bw')!) : 0;
+    const globalBorderC = params.get('g_bc') || '#ffffff';
+    const globalBg = params.get('g_bg') || null;
+    const globalTxt = params.get('g_txt') || '#ffffff';
 
     const items: PosterConfig['items'] = {};
     const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
@@ -134,20 +151,27 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const bw = params.get(`${key}_bw`);
         const bc = params.get(`${key}_bc`);
 
-        if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw) {
+        // Check if values differ from globals (if they equal global, we assume they are inherited and don't store them as overrides)
+        const isBgOverride = bg && bg !== globalBg;
+        const isTxtOverride = txt && txt !== globalTxt;
+        const isScaleOverride = scale && parseFloat(scale) !== globalScale;
+        const isBwOverride = bw && parseInt(bw) !== globalBorderW;
+        
+        // Note: We always store x,y, icon, blur etc if present as they are position/visibility data
+        if (x || y || isBgOverride || isTxtOverride || blur || alpha || rad || sh || icon || isScaleOverride || isBwOverride) {
             items[key] = {
                 ...(x ? { x: parseInt(x) } : {}),
                 ...(y ? { y: parseInt(y) } : {}),
-                ...(bg ? { bg } : {}),
-                ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
+                ...(isBgOverride ? { bg } : {}),
+                ...(isTxtOverride ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
                 ...(blur ? { blur: parseInt(blur) } : {}),
                 ...(alpha ? { alpha: parseFloat(alpha) } : {}),
                 ...(rad ? { radius: parseInt(rad) } : {}),
                 ...(sh ? { shadow: sh === '1' } : {}),
                 ...(icon ? { icon: icon === '1' } : {}),
-                ...(scale ? { scale: parseFloat(scale) } : {}),
-                ...(bw ? { borderW: parseInt(bw) } : {}),
-                ...(bc ? { borderC: bc.startsWith('#') ? bc : `#${bc}` } : {}),
+                ...(isScaleOverride ? { scale: parseFloat(scale!) } : {}),
+                ...(isBwOverride ? { borderW: parseInt(bw!) } : {}),
+                ...(bc && bc !== globalBorderC ? { borderC: bc.startsWith('#') ? bc : `#${bc}` } : {}),
             };
         }
     });
@@ -170,6 +194,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       grayscale: params.get('bw') === '1',
       keys,
       items,
+      // Restore globals
+      globalScale,
+      globalBorderW,
+      globalBorderC,
+      globalBg,
+      globalTxt,
     };
   } catch (e) {
     console.error("Failed to parse URL", e);

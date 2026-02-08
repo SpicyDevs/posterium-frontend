@@ -17,7 +17,6 @@ export interface BadgeConfig {
   radius?: number;
   shadow?: boolean;
   icon?: boolean;
-  // NEW FEATURES
   scale?: number;
   borderW?: number;
   borderC?: string;
@@ -37,14 +36,24 @@ export interface PosterConfig {
   source: SourceType;
   theme: ThemeType;
   size: SizeType;
-  shadow: boolean;
+  shadow: boolean; // Legacy global toggles, kept for compatibility
   layout: LayoutType;
   preset: PresetType;
+  
+  // Global defaults
   blur: number;
   alpha: number;
   radius: number;
   extension: ExtensionType;
-  // NEW POSTER FILTERS
+  
+  // New Global Styling Defaults
+  globalScale: number;
+  globalBorderW: number;
+  globalBorderC: string;
+  globalBg: string | null; // null = use default logic
+  globalTxt: string;
+
+  // Global Image Filters
   posterBlur: number;
   grayscale: boolean;
   
@@ -66,6 +75,14 @@ export const DEFAULT_CONFIG: PosterConfig = {
   alpha: 0.4,
   radius: 12,
   extension: 'png',
+  
+  // New defaults
+  globalScale: 1.0,
+  globalBorderW: 0,
+  globalBorderC: '#ffffff',
+  globalBg: null,
+  globalTxt: '#ffffff',
+
   posterBlur: 0,
   grayscale: false,
   items: {
