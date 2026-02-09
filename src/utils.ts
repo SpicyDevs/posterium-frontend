@@ -2,7 +2,7 @@ import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, 
 
 // @ts-ignore
 const envApiUrl = import.meta.env.VITE_API_URL;
-export const DEFAULT_API_BASE = envApiUrl || "https://rpdb.padhaiaayush.workers.dev";
+export const DEFAULT_API_BASE = envApiUrl || "/api";
 
 export const getScale = (size: string) => {
   return size === 'sm' ? 0.8 : (size === 'lg' ? 1.2 : 1.0);
