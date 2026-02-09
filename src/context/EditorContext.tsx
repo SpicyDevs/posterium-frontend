@@ -3,19 +3,28 @@ import { RatingType } from '../types';
 
 type TabType = 'layers' | 'canvas' | 'badge';
 
+interface ViewOptions {
+  showSafeArea: boolean;
+  showGrid: boolean;
+}
+
 interface EditorContextType {
-  // Navigation State
+  // Navigation
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   
-  // Mobile Specific
+  // Mobile
   isMobileSheetOpen: boolean;
   setMobileSheetOpen: (open: boolean) => void;
   
-  // Selection State
+  // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
   clearSelection: () => void;
+
+  // View Helpers (New)
+  viewOptions: ViewOptions;
+  toggleViewOption: (key: keyof ViewOptions) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -24,10 +33,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('canvas');
   const [isMobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
+  
+  const [viewOptions, setViewOptions] = useState<ViewOptions>({
+    showSafeArea: false,
+    showGrid: false,
+  });
 
   const setActiveTab = (tab: TabType) => {
     setActiveTabState(tab);
-    // On mobile, switching tabs usually means opening the sheet
     if (window.innerWidth < 768) {
         setMobileSheetOpen(true);
     }
@@ -43,7 +56,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setSelectedIds(newSet);
     
-    // Auto-switch to Badge tab if we selected something
+    // Logic: Auto-switch tab based on selection state
     if (newSet.size > 0) {
         setActiveTab('badge');
     } else {
@@ -56,11 +69,16 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setActiveTab('canvas');
   }, []);
 
+  const toggleViewOption = (key: keyof ViewOptions) => {
+      setViewOptions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <EditorContext.Provider value={{ 
         activeTab, setActiveTab, 
         isMobileSheetOpen, setMobileSheetOpen,
-        selectedIds, handleSelection, clearSelection 
+        selectedIds, handleSelection, clearSelection,
+        viewOptions, toggleViewOption
     }}>
       {children}
     </EditorContext.Provider>

@@ -2,7 +2,8 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, RotateCcw, Loader2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Loader2,  } from 'lucide-react';
+import { useEditor } from '../context/EditorContext';
 
 interface Props {
   config: PosterConfig;
@@ -12,15 +13,16 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+  const { viewOptions } = useEditor(); // Consume View Options
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
   const [zoomModifier, setZoomModifier] = useState(1);
   const [isImageLoading, setIsImageLoading] = useState(true);
 
+  // ... (Resize Logic same as before) ...
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      // -32 for padding
       const scaleX = (containerRef.current.clientWidth - 40) / CANVAS_WIDTH;
       const scaleY = (containerRef.current.clientHeight - 40) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
@@ -33,14 +35,13 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const currentScale = autoScale * zoomModifier;
 
+  // ... (Position Change Logic same as before) ...
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
-      // If we are in auto layout, dragging one element switches everything to custom positions to avoid snapping back
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
           prev.ratings.forEach((r, idx) => {
               const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
-              // Use existing override if present, else auto
               if (!newItems[r]) newItems[r] = { x: auto.x, y: auto.y };
               else {
                   if (newItems[r]!.x === undefined) newItems[r]!.x = auto.x;
@@ -48,7 +49,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
               }
           });
       }
-      
       newItems[id] = { ...newItems[id], x, y };
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
@@ -62,7 +62,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b]">
         
         {/* Floating Zoom Controls */}
         <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1 z-50 shadow-xl">
@@ -87,6 +87,25 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             {isImageLoading && (
                 <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
                     <Loader2 className="animate-spin text-indigo-500" size={40} />
+                </div>
+            )}
+
+            {/* View Option: Grid Lines */}
+            {viewOptions?.showGrid && (
+                <div className="absolute inset-0 z-30 pointer-events-none opacity-20">
+                    <div className="absolute top-0 bottom-0 left-1/3 border-l border-white"></div>
+                    <div className="absolute top-0 bottom-0 left-2/3 border-l border-white"></div>
+                    <div className="absolute left-0 right-0 top-1/3 border-t border-white"></div>
+                    <div className="absolute left-0 right-0 top-2/3 border-t border-white"></div>
+                </div>
+            )}
+
+            {/* View Option: Safe Area (Simulating mobile cutoffs) */}
+            {viewOptions?.showSafeArea && (
+                <div className="absolute inset-0 z-30 pointer-events-none">
+                    <div className="absolute inset-8 border border-red-500/30 border-dashed">
+                        <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">Safe Area</div>
+                    </div>
                 </div>
             )}
 
