@@ -17,7 +17,6 @@ export interface BadgeConfig {
   radius?: number;
   shadow?: boolean;
   icon?: boolean;
-  // NEW FEATURES
   scale?: number;
   borderW?: number;
   borderC?: string;
@@ -44,14 +43,13 @@ export interface PosterConfig {
   alpha: number;
   radius: number;
   extension: ExtensionType;
-  // NEW POSTER FILTERS
   posterBlur: number;
   grayscale: boolean;
-  
   items: Partial<Record<RatingType, BadgeConfig>>;
   keys?: ApiKeys;
 }
 
+// Default Constants
 export const DEFAULT_CONFIG: PosterConfig = {
   mediaType: 'movie',
   tmdbId: "453395",
@@ -82,3 +80,14 @@ export const BASE_BADGE_W = 140;
 export const BASE_BADGE_H = 60;
 export const GAP = 10;
 export const PADDING = 20;
+
+export const ALL_BADGES: { id: RatingType; label: string }[] = [
+    { id: 'imdb', label: 'IMDb' },
+    { id: 'rt', label: 'Rotten Tomatoes' },
+    { id: 'rt_popcorn', label: 'Audience Score' },
+    { id: 'letterboxd', label: 'Letterboxd' },
+    { id: 'meta', label: 'Metacritic' },
+    { id: 'tmdb', label: 'TMDB' },
+    { id: 'age', label: 'Age Rating' },
+    { id: 'runtime', label: 'Runtime' },
+];
