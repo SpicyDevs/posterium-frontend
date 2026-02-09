@@ -17,7 +17,6 @@ interface Props {
 const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, onPositionChange, isSelected, onSelect }) => {
   const itemConfig = config.items[badgeId];
   
-  // Resolve item specific props or fallbacks
   const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
@@ -54,7 +53,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
     let nextX = elemX + deltaX;
     let nextY = elemY + deltaY;
 
-    // Boundary check
     nextX = Math.max(0, Math.min(nextX, CANVAS_WIDTH - width));
     nextY = Math.max(0, Math.min(nextY, CANVAS_HEIGHT - height));
 
@@ -111,6 +109,8 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
+      // NOTE: In a real app, you might want to pass the fetched metadata to these badges too, 
+      // but for now, we keep the dummy values or you can lift the fetch state to App.tsx
       const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m' };
       const dummyVal = dummyVals[badgeId] || '0.0';
 
@@ -135,7 +135,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
         <>
             {iconData && (
                 <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
-                    {/* Note: We force the color to the txtColor prop so the icon matches the text in the badge */}
                     <svg viewBox={iconData.vb} width={iconSize} height={iconSize} style={{ display: 'block', color: txtColor }} dangerouslySetInnerHTML={{ __html: iconData.body }} />
                 </div>
             )}
@@ -165,4 +164,4 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   );
 };
 
-export default DraggableBadge;  
+export default DraggableBadge;

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { Eye, EyeOff, Search, Loader2, Film, Monitor } from 'lucide-react';
 import { BADGE_ICONS } from '../constants';
+import { DEFAULT_API_BASE } from '../utils';
 type BadgeIconKey = keyof typeof BADGE_ICONS;
+
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
@@ -18,14 +20,28 @@ interface SearchResult {
   media_type: 'movie' | 'tv';
 }
 
+interface RatingsData {
+  imdb?: string;
+  rt?: string;
+  rt_popcorn?: string;
+  letterboxd?: string;
+  meta?: string;
+  tmdb?: string;
+  age?: string;
+  runtime?: string;
+}
+
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
   // -- SEARCH STATE --
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // -- METADATA STATE --
+  const [fetchedRatings, setFetchedRatings] = useState<RatingsData>({});
 
-  // Debounced Search
+  // 1. Debounced Search (Using TMDB API for listings)
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) {
@@ -33,7 +49,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           return;
       }
       if (!config.keys?.tmdb) {
-          setErrorMsg("TMDB API Key required in settings");
+          setErrorMsg("TMDB API Key required in settings to search");
           return;
       }
 
@@ -57,6 +73,27 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, config.keys?.tmdb]);
 
+  // 2. Fetch Metadata for Current ID (Using provided API)
+  useEffect(() => {
+      const fetchMetadata = async () => {
+          try {
+              const res = await fetch(`${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.json`);
+              if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.ratings) {
+                      setFetchedRatings(data.ratings);
+                  }
+              }
+          } catch (e) {
+              console.error("Failed to fetch metadata", e);
+          }
+      };
+      
+      if (config.tmdbId) {
+          fetchMetadata();
+      }
+  }, [config.tmdbId, config.mediaType]);
+
   const handleSelectMedia = (item: SearchResult) => {
       setConfig(prev => ({
           ...prev,
@@ -67,14 +104,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       setResults([]);
   };
 
-  // -- LAYER LOGIC --
+  // -- LAYER VISIBILITY TOGGLE --
   const toggleVisibility = (e: React.MouseEvent, id: RatingType) => {
     e.stopPropagation();
     const current = new Set(config.ratings);
     if (current.has(id)) current.delete(id);
     else current.add(id);
     
-    // Sort to keep order
+    // Sort to keep standard order
     const sorted = ALL_BADGES.map(b => b.id).filter(id => current.has(id));
     setConfig({ ...config, ratings: sorted });
   };
@@ -122,13 +159,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
       {/* LAYER LIST */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-        <h3 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-2 mb-2 mt-2">Visible Layers</h3>
+        <h3 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-2 mb-2 mt-2">Active Layers</h3>
         
         {ALL_BADGES.map((badge) => {
           const isActive = config.ratings.includes(badge.id);
           const isSelected = selectedIds.has(badge.id);
+          const ratingValue = fetchedRatings[badge.id as keyof RatingsData];
           
-         // Map badge IDs → real icon keys
+        // Map badge IDs → real icon keys
 const iconKeyMap: Record<string, BadgeIconKey> = {
   imdb: "imdb",
   rt: "rt_fresh",
@@ -172,10 +210,10 @@ const iconData = BADGE_ICONS[iconKey];
               </div>
 
               {/* Label & Value */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex justify-between items-center pr-2">
                   <div className={`text-xs font-medium truncate ${isSelected ? 'text-indigo-200' : 'text-zinc-300'}`}>{badge.label}</div>
-                  {/* Mock Value for visual richness */}
-                  {isActive && <div className="text-[9px] text-zinc-500 font-mono">Visible</div>}
+                  {/* Real Value from API */}
+                  {isActive && ratingValue && <div className="text-[10px] text-zinc-500 font-mono bg-zinc-900 px-1.5 rounded">{ratingValue}</div>}
               </div>
               
               {/* Selection Indicator */}
