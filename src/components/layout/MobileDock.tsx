@@ -3,11 +3,11 @@ import { Layers, Monitor, Sliders } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
 const MobileDock: React.FC = () => {
-  const { activeTab, setActiveTab, setMobileSheetOpen } = useEditor();
+  const { activeTab, setActiveTab, setMobileSheetMode } = useEditor();
 
   const handleTabClick = (tab: 'layers' | 'canvas' | 'badge') => {
     setActiveTab(tab);
-    setMobileSheetOpen(true);
+    setMobileSheetMode('half'); // Open sheet on tap
   };
 
   const NavItem = ({ id, icon: Icon, label }: { id: 'layers' | 'canvas' | 'badge', icon: any, label: string }) => (

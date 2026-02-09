@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { RatingType } from '../types';
 
 type TabType = 'layers' | 'canvas' | 'badge';
+export type SheetMode = 'hidden' | 'half' | 'full';
 
 interface ViewOptions {
   showSafeArea: boolean;
@@ -13,16 +14,16 @@ interface EditorContextType {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   
-  // Mobile
-  isMobileSheetOpen: boolean;
-  setMobileSheetOpen: (open: boolean) => void;
+  // Mobile Sheet State
+  mobileSheetMode: SheetMode;
+  setMobileSheetMode: (mode: SheetMode) => void;
   
   // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
   clearSelection: () => void;
 
-  // View Helpers (New)
+  // View Helpers
   viewOptions: ViewOptions;
   toggleViewOption: (key: keyof ViewOptions) => void;
 }
@@ -31,7 +32,7 @@ const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTabState] = useState<TabType>('canvas');
-  const [isMobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
   
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
@@ -41,8 +42,9 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const setActiveTab = (tab: TabType) => {
     setActiveTabState(tab);
-    if (window.innerWidth < 768) {
-        setMobileSheetOpen(true);
+    // On mobile, switching tabs opens the sheet to 'half' if it was hidden
+    if (window.innerWidth < 768 && mobileSheetMode === 'hidden') {
+        setMobileSheetMode('half');
     }
   };
 
@@ -56,13 +58,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setSelectedIds(newSet);
     
-    // Logic: Auto-switch tab based on selection state
     if (newSet.size > 0) {
         setActiveTab('badge');
     } else {
         setActiveTab('canvas');
     }
-  }, [selectedIds]);
+  }, [selectedIds, mobileSheetMode]);
 
   const clearSelection = useCallback(() => {
       setSelectedIds(new Set());
@@ -76,7 +77,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <EditorContext.Provider value={{ 
         activeTab, setActiveTab, 
-        isMobileSheetOpen, setMobileSheetOpen,
+        mobileSheetMode, setMobileSheetMode,
         selectedIds, handleSelection, clearSelection,
         viewOptions, toggleViewOption
     }}>
