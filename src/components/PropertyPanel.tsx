@@ -1,6 +1,6 @@
 import React from 'react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Monitor, Film, Layers, Layout, Grid3X3, Smartphone, Palette } from 'lucide-react';
+import { Layers, Layout, Grid3X3, Smartphone, Palette, Settings } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -85,20 +85,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   if (showGlobal) {
     return (
       <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pb-20">
-         <Section title="Media Source">
-             <div className="flex bg-zinc-900 p-1 rounded-lg border border-white/5 mb-3">
-                 <button onClick={() => updateConfig('mediaType', 'movie')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all active:scale-95 ${config.mediaType === 'movie' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Film size={12}/> Movie</button>
-                 <button onClick={() => updateConfig('mediaType', 'tv')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all active:scale-95 ${config.mediaType === 'tv' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Monitor size={12}/> TV Show</button>
-             </div>
-             <div className="space-y-2">
-                 <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder-zinc-600" placeholder="TMDB ID" />
-                 <select value={config.source} onChange={(e) => updateConfig('source', e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 outline-none cursor-pointer">
-                     <option value="tmdb">TMDB Poster</option>
-                     <option value="fanart">Fanart.tv Poster</option>
-                 </select>
-             </div>
-         </Section>
-
          <Section title="Layout & Alignment">
              <div className="flex gap-6">
                  <div className="flex-shrink-0">
@@ -136,6 +122,20 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </div>
          </Section>
 
+         <Section title="Badge Defaults">
+            <div className="space-y-4">
+                <ControlRow label="Glass Blur">
+                    <InputRange value={config.blur} min={0} max={20} onChange={(v) => updateConfig('blur', v)} />
+                </ControlRow>
+                <ControlRow label="Opacity">
+                    <InputRange value={config.alpha} min={0} max={1} step={0.1} onChange={(v) => updateConfig('alpha', v)} />
+                </ControlRow>
+                <ControlRow label="Radius">
+                    <InputRange value={config.radius} min={0} max={30} onChange={(v) => updateConfig('radius', v)} />
+                </ControlRow>
+            </div>
+         </Section>
+
          <Section title="View Options">
              <div className="grid grid-cols-2 gap-2">
                  <button onClick={() => toggleViewOption('showSafeArea')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
@@ -147,9 +147,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
              </div>
          </Section>
 
-         <Section title="API Keys">
-            <div className="space-y-2">
-                <input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateKeys('tmdb', e.target.value)} placeholder="TMDB Key (Required for Search)" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-1.5 text-xs text-zinc-300 focus:border-indigo-500 outline-none"/>
+         <Section title="Advanced Settings">
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 text-zinc-500">
+                    <Settings size={12} />
+                    <span className="text-[10px] uppercase tracking-wider">Custom API Keys</span>
+                </div>
+                <div className="space-y-3">
+                    <input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateKeys('tmdb', e.target.value)} placeholder="TMDB Key (Overrides Default)" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 focus:border-indigo-500 outline-none transition-colors"/>
+                    <input type="password" value={config.keys?.fanart || ''} onChange={(e) => updateKeys('fanart', e.target.value)} placeholder="Fanart.tv Key" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 focus:border-indigo-500 outline-none transition-colors"/>
+                </div>
             </div>
          </Section>
       </div>

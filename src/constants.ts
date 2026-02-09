@@ -1,3 +1,5 @@
+export const TMDB_API_KEY = "ba133e792590c9d89882093eea76e13f"; // Hardcoded key for instant search
+
 export const BADGE_ICONS: Record<string, { vb: string, body: string, color: string }> = {
   imdb: { 
     vb: "0 0 122.88 122.88", 
