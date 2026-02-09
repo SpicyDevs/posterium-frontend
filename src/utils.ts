@@ -1,8 +1,6 @@
-import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, ApiKeys, MediaType } from './types';
+import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, MediaType, ApiKeys } from './types';
 
-// @ts-ignore
-const envApiUrl = import.meta.env.VITE_API_URL;
-export const DEFAULT_API_BASE = envApiUrl || "https://rpdb.padhaiaayush.workers.dev";
+export const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "https://rpdb.padhaiaayush.workers.dev";
 
 export const getScale = (size: string) => {
   return size === 'sm' ? 0.8 : (size === 'lg' ? 1.2 : 1.0);
@@ -14,7 +12,8 @@ export const calculateAutoPosition = (
   totalBadges: number, 
   config: PosterConfig
 ) => {
-  const scale = getScale(config.size) * config.globalScale;
+  // Use config.globalScale to determine layout flow
+  const scale = config.globalScale || 1.0;
   const badgeW = BASE_BADGE_W * scale;
   const badgeH = BASE_BADGE_H * scale;
   const isRow = config.layout === 'row';
@@ -86,7 +85,6 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
     params.set(`${key}_x`, Math.round(finalX).toString());
     params.set(`${key}_y`, Math.round(finalY).toString());
 
-    // Only send parameters if they exist on the item (overrides)
     if (item.bg) params.set(`${key}_bg`, item.bg); 
     if (item.txt) params.set(`${key}_txt`, item.txt);
     
@@ -120,7 +118,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('omdb_key')) keys.omdb = params.get('omdb_key')!;
     if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
 
-    // Parse Global Defaults first
     const globalScale = params.has('g_scale') ? parseFloat(params.get('g_scale')!) : 1.0;
     const globalBorderW = params.has('g_bw') ? parseInt(params.get('g_bw')!) : 0;
     const globalBorderC = params.get('g_bc') || '#ffffff';
@@ -144,7 +141,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const bw = params.get(`${key}_bw`);
         const bc = params.get(`${key}_bc`);
 
-        // Check if values differ from globals
         const isBgOverride = bg && bg !== globalBg;
         const isTxtOverride = txt && txt !== globalTxt;
         const isScaleOverride = scale && parseFloat(scale) !== globalScale;

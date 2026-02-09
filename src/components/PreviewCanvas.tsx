@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState, useCallback, useDeferredValue } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
@@ -6,7 +6,7 @@ import { ZoomIn, ZoomOut, RotateCcw, Loader2 } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
-  setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+  setConfig: (config: PosterConfig) => void;
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
@@ -15,109 +15,142 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const [zoomModifier, setZoomModifier] = useState(1);
   const [isImageLoading, setIsImageLoading] = useState(true);
 
-  // Performance: Defer the config passed to layout/badges to keep UI sliders responsive
-  const deferredConfig = useDeferredValue(config);
-
+  // Auto-fit logic
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      const parentWidth = containerRef.current.clientWidth - 32;
-      const parentHeight = containerRef.current.clientHeight - 32;
+      // Add padding calculation to prevent edge leaks
+      const parentWidth = containerRef.current.clientWidth - 40; 
+      const parentHeight = containerRef.current.clientHeight - 40;
+      
+      // Calculate scale to fit
       const scaleX = parentWidth / CANVAS_WIDTH;
       const scaleY = parentHeight / CANVAS_HEIGHT;
-      setAutoScale(Math.min(scaleX, scaleY, 1));
+      
+      // Ensure we don't scale up infinitely, but do scale down
+      setAutoScale(Math.min(scaleX, scaleY, 1.0)); 
     };
+    
     handleResize();
+    window.addEventListener('resize', handleResize);
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    
+    return () => {
+        window.removeEventListener('resize', handleResize);
+        observer.disconnect();
+    };
   }, []);
 
-  const currentScale = autoScale * zoomModifier;
+  const currentScale = Math.max(0.1, autoScale * zoomModifier);
 
   const handlePositionChange = useCallback((id: RatingType, x: number, y: number) => {
-    setConfig((prev: PosterConfig) => {
-      if (prev.layout === 'custom' && prev.preset === 'custom') {
-         return { ...prev, items: { ...prev.items, [id]: { ...prev.items[id], x, y } } };
-      }
-      const newItems = { ...prev.items };
-      prev.ratings.forEach((r: RatingType, index: number) => {
-         const currentItem = newItems[r];
-         if (currentItem?.x === undefined || currentItem?.y === undefined) {
-             const autoPos = calculateAutoPosition(r, index, prev.ratings.length, prev);
-             newItems[r] = { ...currentItem, x: autoPos.x, y: autoPos.y };
-         }
-      });
-      newItems[id] = { ...newItems[id], x, y };
-      return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
+    setConfig({
+        ...config,
+        layout: 'custom', 
+        preset: 'custom',
+        items: {
+            ...config.items,
+            [id]: { ...config.items[id], x, y }
+        }
     });
-  }, [setConfig]);
+  }, [config, setConfig]);
 
+  // Memoize URL to prevent flickering, only update when structural keys change
   const cleanPosterUrl = useMemo(() => {
-    const base = `${DEFAULT_API_BASE}/${deferredConfig.mediaType}/${deferredConfig.tmdbId}.${deferredConfig.extension}`;
-    return deferredConfig.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
-  }, [deferredConfig.tmdbId, deferredConfig.source, deferredConfig.mediaType, deferredConfig.extension]);
+    const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
+    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
+  }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
   useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative bg-black/20 overflow-hidden">
-        <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
-            <button onClick={() => setZoomModifier(p => Math.min(p + 0.1, 3))} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg"><ZoomIn size={16} /></button>
-            <button onClick={() => setZoomModifier(p => Math.max(p - 0.1, 0.1))} className="p-2 bg-zinc-800/80 backdrop-blur text-zinc-300 rounded hover:bg-zinc-700 hover:text-white border border-zinc-700 shadow-lg"><ZoomOut size={16} /></button>
-            {zoomModifier !== 1 && <button onClick={() => setZoomModifier(1)} className="p-2 bg-zinc-800/80 backdrop-blur text-blue-400 rounded hover:bg-zinc-700 hover:text-blue-300 border border-zinc-700 shadow-lg" title="Reset"><RotateCcw size={16} /></button>}
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden bg-transparent select-none">
+        
+        {/* Zoom Controls */}
+        <div className="absolute top-4 right-4 flex flex-col gap-1 z-50">
+            <button onClick={() => setZoomModifier(p => Math.min(p + 0.1, 3))} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors"><ZoomIn size={16} /></button>
+            <button onClick={() => setZoomModifier(p => Math.max(p - 0.1, 0.1))} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors"><ZoomOut size={16} /></button>
+            <button onClick={() => setZoomModifier(1)} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors" title="Reset Zoom"><RotateCcw size={16} /></button>
         </div>
 
-        <div style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, transform: `scale(${currentScale})`, transition: 'transform 0.1s ease-out' }} className="bg-black shadow-2xl relative shrink-0 ring-1 ring-white/10">
+        {/* Canvas Wrapper */}
+        <div 
+            style={{ 
+                width: CANVAS_WIDTH, 
+                height: CANVAS_HEIGHT, 
+                transform: `scale(${currentScale})`,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+            }} 
+            className="relative bg-zinc-900 shadow-2xl transition-transform duration-75 ease-out origin-center"
+        >
+            {/* Loading State */}
             {isImageLoading && (
-                <div className="absolute inset-0 z-[100] bg-zinc-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-400 gap-3 transition-opacity duration-300">
-                    <Loader2 className="animate-spin text-blue-500" size={48} /><span className="text-xs font-semibold tracking-wider uppercase animate-pulse">Fetching Poster...</span>
+                <div className="absolute inset-0 z-10 bg-zinc-900 flex flex-col items-center justify-center text-zinc-500 gap-3">
+                    <Loader2 className="animate-spin text-blue-500" size={32} />
                 </div>
             )}
-            <img src={cleanPosterUrl} alt="Poster" className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-500 ${isImageLoading ? 'opacity-50' : 'opacity-100'}`} style={{ filter: `blur(${deferredConfig.posterBlur}px) grayscale(${deferredConfig.grayscale ? 1 : 0})` }} draggable={false} onLoad={() => setIsImageLoading(false)} onError={() => setIsImageLoading(false)} />
-            <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
-                {[1, 2, 3].map(i => (<React.Fragment key={i}><div className="absolute top-0 bottom-0 border-r border-white/20" style={{ left: `${i*25}%` }} /><div className="absolute left-0 right-0 border-b border-white/20" style={{ top: `${i*25}%` }} /></React.Fragment>))}
+            
+            {/* Poster Image */}
+            <img 
+                src={cleanPosterUrl} 
+                alt="Poster" 
+                className={`w-full h-full object-cover pointer-events-none transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`} 
+                style={{ 
+                    filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})` 
+                }} 
+                onLoad={() => setIsImageLoading(false)} 
+            />
+
+            {/* Grid Overlay (Optional visual aid) */}
+            <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity z-0">
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20" />
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20" />
             </div>
 
-            {deferredConfig.ratings.map((id: RatingType, index: number) => {
-                const auto = calculateAutoPosition(id, index, deferredConfig.ratings.length, deferredConfig);
-                const item = deferredConfig.items[id] || {};
-                
-                // Effective props resolution
-                const bg = item.bg || deferredConfig.globalBg || `rgba(0,0,0,${deferredConfig.alpha})`;
-                const txt = item.txt || (deferredConfig.globalTxt !== '#ffffff' ? deferredConfig.globalTxt : '#ffffff');
-                const scale = item.scale !== undefined ? item.scale : deferredConfig.globalScale;
-                const borderW = item.borderW !== undefined ? item.borderW : deferredConfig.globalBorderW;
-                const borderC = item.borderC || (deferredConfig.globalBorderC !== '#ffffff' ? deferredConfig.globalBorderC : '#ffffff');
-                
-                const w = BASE_BADGE_W; 
-                const h = BASE_BADGE_H;
-
-                return (
-                    <DraggableBadge
-                        key={id}
-                        id={id}
-                        x={item.x !== undefined ? item.x : auto.x}
-                        y={item.y !== undefined ? item.y : auto.y}
-                        w={w} h={h}
-                        canvasScale={currentScale}
-                        onPositionChange={handlePositionChange}
-                        // Visual Props (Flattened for memoization)
-                        bg={bg}
-                        txt={txt}
-                        blur={item.blur !== undefined ? item.blur : deferredConfig.blur}
-                        alpha={item.alpha !== undefined ? item.alpha : deferredConfig.alpha}
-                        radius={item.radius !== undefined ? item.radius : deferredConfig.radius}
-                        shadow={item.shadow !== undefined ? item.shadow : deferredConfig.shadow}
-                        icon={item.icon !== undefined ? item.icon : true}
-                        scale={scale}
-                        borderW={borderW}
-                        borderC={borderC}
-                    />
-                );
-            })}
+            {/* Badges Layer */}
+            <div className="absolute inset-0 z-20 overflow-hidden">
+                {config.ratings.map((id: RatingType, index: number) => {
+                    const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+                    const item = config.items[id] || {};
+                    
+                    // Defaults
+                    const bg = item.bg || config.globalBg || `rgba(0,0,0,${config.alpha})`;
+                    const txt = item.txt || (config.globalTxt !== '#ffffff' ? config.globalTxt : '#ffffff');
+                    const scale = item.scale !== undefined ? item.scale : config.globalScale;
+                    const borderW = item.borderW !== undefined ? item.borderW : config.globalBorderW;
+                    const borderC = item.borderC || (config.globalBorderC !== '#ffffff' ? config.globalBorderC : '#ffffff');
+                    
+                    return (
+                        <DraggableBadge
+                            key={id}
+                            id={id}
+                            x={item.x !== undefined ? item.x : auto.x}
+                            y={item.y !== undefined ? item.y : auto.y}
+                            w={BASE_BADGE_W} 
+                            h={BASE_BADGE_H}
+                            canvasScale={currentScale}
+                            onPositionChange={handlePositionChange}
+                            bg={bg}
+                            txt={txt}
+                            blur={item.blur !== undefined ? item.blur : config.blur}
+                            alpha={item.alpha !== undefined ? item.alpha : config.alpha}
+                            radius={item.radius !== undefined ? item.radius : config.radius}
+                            shadow={item.shadow !== undefined ? item.shadow : config.shadow}
+                            icon={item.icon !== undefined ? item.icon : true}
+                            scale={scale}
+                            borderW={borderW}
+                            borderC={borderC}
+                        />
+                    );
+                })}
+            </div>
         </div>
-        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur text-[10px] px-2 py-1 rounded text-zinc-400 pointer-events-none">{Math.round(currentScale * 100)}%</div>
+        
+        {/* Scale Indicator */}
+        <div className="absolute bottom-4 left-4 bg-zinc-900/80 backdrop-blur border border-zinc-800 text-[10px] px-2 py-1 rounded text-zinc-400 font-mono">
+            {Math.round(currentScale * 100)}%
+        </div>
     </div>
   );
 };
