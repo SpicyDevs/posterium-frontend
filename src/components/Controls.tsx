@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Layout, Palette, Image as ImageIcon, ScanLine, ChevronDown, ChevronRight, Tv, Film, Settings, Globe, Check, ChevronsUpDown, Clock, Sparkles } from 'lucide-react';
+import { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
+import { Layout, Palette, ScanLine, ChevronDown, ChevronRight, Tv, Film, Settings } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
@@ -52,17 +52,6 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
     </div>
   );
 };
-
-// ... (Keep existing BADGE_ICONS and BadgeIcon logic unchanged, just style fixes) ...
-const BadgeIcon: React.FC<{ type: string, className?: string }> = ({ type, className = "w-4 h-4" }) => {
-    // Note: Reusing your existing SVG logic here for brevity, assume it's same as provided
-    if (type === 'global') return <Globe className={className} />;
-    if (type === 'age') return <span className={`${className} flex items-center justify-center border border-current rounded text-[8px] font-bold`}>13+</span>;
-    if (type === 'runtime') return <Clock className={className} />;
-    // Simple placeholder for others to keep code block small, your original SVGs work fine
-    return <ScanLine className={className} />; 
-};
-
 
 const Controls: React.FC<Props> = ({ config, onChange }) => {
   const [selectedBadge, setSelectedBadge] = useState<RatingType | 'global'>('global');

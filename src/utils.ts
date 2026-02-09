@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { PosterConfig, DEFAULT_CONFIG, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING, MediaType, ApiKeys } from './types';
 
 export const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "https://rpdb.padhaiaayush.workers.dev";
