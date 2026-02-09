@@ -3,9 +3,8 @@ import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare } from 'lucide-react';
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
-import { useEditor } from '../context/EditorContext'; // <--- Import Context
+import { useEditor } from '../context/EditorContext';
 
-// Ensure type safety for keys
 type BadgeIconKey = keyof typeof BADGE_ICONS;
 
 interface Props {
@@ -19,7 +18,7 @@ interface SearchResult { id: number; title: string; poster_path: string; release
 interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection } = useEditor(); // <--- Get batch selector
+  const { setBatchSelection } = useEditor(); // <--- Use the new batch function
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,7 +27,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
-  // 1. Search Logic
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
@@ -42,7 +40,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, apiKey]);
 
-  // 2. Metadata Logic
   useEffect(() => {
       const fetchMeta = async () => {
           if (!config.tmdbId) return;
@@ -74,11 +71,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     }
   };
 
+  // Fixed Select All Logic
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          // Select ALL visible badges at once
-          const allVisible = ALL_BADGES.filter(b => config.ratings.includes(b.id)).map(b => b.id);
-          setBatchSelection(allVisible);
+          // Select all currently visible badges
+          const allVisibleIds = ALL_BADGES
+            .filter(b => config.ratings.includes(b.id))
+            .map(b => b.id);
+          setBatchSelection(allVisibleIds);
       } else {
           // Deselect all
           setBatchSelection([]);
@@ -96,10 +96,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
-      
-      {/* --- HEADER SECTION --- */}
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
-          {/* Search Bar */}
           <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400" size={14} />
               <input 
@@ -158,9 +155,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           </div>
       </div>
 
-      {/* --- LAYER LIST --- */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-[#0c0c0e]">
-        
         <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Layers</h3>
             <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group">
@@ -178,7 +173,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const isActive = config.ratings.includes(badge.id);
           const isSelected = selectedIds.has(badge.id);
           const ratingValue = fetchedData[badge.id as keyof RatingsData];
-          
           const iconKey = getIconKey(badge.id);
           const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS.imdb;
 

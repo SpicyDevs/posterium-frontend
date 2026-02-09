@@ -21,7 +21,7 @@ interface EditorContextType {
   // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
-  setBatchSelection: (ids: RatingType[]) => void; // <--- New batch function
+  setBatchSelection: (ids: RatingType[]) => void; // <--- New Batch Function
   clearSelection: () => void;
 
   // View Helpers
@@ -64,12 +64,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } else {
         setActiveTab('canvas');
     }
-  }, [selectedIds]);
+  }, [selectedIds, mobileSheetMode]);
 
-  // New function to handle "Select All" atomically
+  // Fix for "Select All" bug: Set all IDs at once instead of toggling one by one
   const setBatchSelection = useCallback((ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
-      if (ids.length > 0) setActiveTab('badge');
+      if (ids.length > 0) {
+          setActiveTab('badge');
+      }
   }, []);
 
   const clearSelection = useCallback(() => {

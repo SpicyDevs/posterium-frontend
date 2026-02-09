@@ -26,21 +26,11 @@ const StudioLayout: React.FC<{
   const currentY = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
 
-  // Helper to get translate Y value for a mode
-  const getTranslateY = (mode: string) => {
-    switch (mode) {
-      case 'hidden': return '100%'; // Fully hidden (except handle if we wanted) or just offscreen
-      case 'half': return '0%';     // Relative to its natural position (bottom: 0, height: 50%)
-      case 'full': return '0%';     // Relative to its natural position (bottom: 0, height: 92%)
-      default: return '100%';
-    }
-  };
-
   const handleTouchStart = (e: React.TouchEvent) => {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
       
-      // Remove transition for direct finger tracking
+      // Remove transition for direct finger tracking to feel like "holding"
       if (sheetRef.current) {
           sheetRef.current.style.transition = 'none';
       }
@@ -53,8 +43,12 @@ const StudioLayout: React.FC<{
       currentY.current = deltaY;
 
       // Apply transform directly to track finger
-      // We limit upward drag in full mode to prevent detaching
-      if (mobileSheetMode === 'full' && deltaY < 0) return;
+      // If full, prevent dragging up (negative delta) too much
+      if (mobileSheetMode === 'full' && deltaY < 0) {
+          // Resistance
+          sheetRef.current.style.transform = `translateY(${deltaY * 0.2}px)`;
+          return;
+      }
       
       sheetRef.current.style.transform = `translateY(${deltaY}px)`;
   };
@@ -65,10 +59,10 @@ const StudioLayout: React.FC<{
       startY.current = null;
 
       // Restore transition for the snap animation
-      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
       sheetRef.current.style.transform = ''; // Clear inline transform to let CSS/State take over
 
-      const threshold = 100; // pixels to trigger change
+      const threshold = 80; // pixels to trigger change
       const delta = currentY.current;
 
       if (delta > threshold) {
@@ -84,10 +78,10 @@ const StudioLayout: React.FC<{
       currentY.current = 0;
   };
 
-  // Sync state changes to style (in case state changes without drag)
+  // Ensure style is clean when mode changes programmatically
   useEffect(() => {
      if (sheetRef.current && !isDragging.current) {
-         sheetRef.current.style.transform = ''; // Reset any manual transforms
+         sheetRef.current.style.transform = ''; 
      }
   }, [mobileSheetMode]);
 
@@ -95,7 +89,7 @@ const StudioLayout: React.FC<{
       if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
       switch (mobileSheetMode) {
           case 'full': return '90%'; 
-          case 'half': return '50%';
+          case 'half': return '50%'; // This pushes the canvas "view" up, triggering auto-zoom in PreviewCanvas
           default: return '4rem'; 
       }
   };
@@ -131,7 +125,7 @@ const StudioLayout: React.FC<{
 
         {/* Center Canvas */}
         <main 
-            className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-300 ease-out" 
+            className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)" 
             style={{ paddingBottom: getCanvasPadding() }} 
             onClick={(e) => {
                 if(e.target === e.currentTarget) clearSelection();
@@ -157,7 +151,7 @@ const StudioLayout: React.FC<{
                 height: mobileSheetMode === 'full' ? '92%' : '50%',
                 touchAction: 'none',
                 // Default transition, overridden during drag
-                transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
             {/* Drag Handle Area */}

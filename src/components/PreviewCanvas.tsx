@@ -27,13 +27,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const lastDist = useRef<number | null>(null);
   const lastPan = useRef<{ x: number, y: number } | null>(null);
 
-  // 1. Initial Fit-to-Screen Logic (Dynamic based on container size)
+  // 1. Initial Fit-to-Screen Logic (Responsive to Mobile Sheet)
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
       const padding = 40;
-      // The container size changes via CSS when sheet opens (padding-bottom in App.tsx)
-      // This observer handles that change automatically.
+      // We check container dimensions. App.tsx changes container size via paddingBottom based on sheet mode.
       const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
       const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
@@ -42,11 +41,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [mobileSheetMode]); // Trigger check when mode changes
+  }, [mobileSheetMode]); // <--- Re-run when sheet mode changes to "zoom out" the poster
 
   const currentScale = autoScale * zoom;
 
-  // ... (Gesture Handlers unchanged) ...
   const handleWheel = (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
@@ -129,11 +127,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         
         {/* Mobile Floating Action Bar */}
         <div 
-            className={`absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-300 ease-out`}
+            className="absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
             style={{ 
-                // Dynamically adjust bottom position based on sheet mode
-                bottom: mobileSheetMode === 'half' ? '55%' : '5rem', // 55% clears the half-height sheet
-                opacity: mobileSheetMode === 'full' ? 0 : 1, // Hide when sheet is full
+                // Slide buttons up when half panel is open
+                bottom: mobileSheetMode === 'half' ? '55%' : '5rem',
+                // Fade out when full panel is open
+                opacity: mobileSheetMode === 'full' ? 0 : 1,
                 pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto'
             }}
         >

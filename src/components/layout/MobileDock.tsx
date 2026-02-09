@@ -11,12 +11,8 @@ const MobileDock: React.FC = () => {
   };
 
   const NavItem = ({ id, icon: Icon, label }: { id: 'layers' | 'canvas' | 'badge', icon: any, label: string }) => {
-    // Determine active state: must match activeTab AND sheet must be open (or we are not checking for open-ness)
-    // Fix: If sheet is hidden, no tab should look "active" in terms of opening a panel, 
-    // BUT usually 'canvas' is the default view. 
-    // The user requested "deselect the selected effect... because the panel is not yet opened".
-    // So if hidden, we force inactive style.
-    
+    // Only show active color if the tab matches AND the sheet is actually open.
+    // If sheet is hidden, user is looking at the canvas, but we want the UI to look "clean/deselected" as requested.
     const isActive = activeTab === id && mobileSheetMode !== 'hidden';
 
     return (
