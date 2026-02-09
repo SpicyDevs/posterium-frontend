@@ -7,10 +7,6 @@ interface Props {
   onChange: (newConfig: PosterConfig) => void;
 }
 
-// ==========================================
-// HELPERS & COMPONENTS
-// ==========================================
-
 const LiveSlider: React.FC<{
   value: number;
   min: number;
@@ -79,7 +75,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
       }
   };
 
-  // Improved Color Picker
   const ColorInput = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => (
     <div className="flex items-center justify-between gap-2 p-2 bg-zinc-900 border border-zinc-800 rounded-md">
         <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
@@ -101,8 +96,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
   return (
     <div className="h-full flex flex-col bg-[#09090b]">
       <div className="flex-1">
-        
-        {/* MEDIA SECTION */}
         <Section title="Media Source" icon={<Film />}>
             <div className="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
                  {['movie', 'tv'].map((type) => (
@@ -140,7 +133,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
             </div>
         </Section>
 
-        {/* BADGES SECTION */}
         <Section title="Badges" icon={<ScanLine />}>
             <div className="grid grid-cols-2 gap-2">
             {['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'].map((r) => (
@@ -161,7 +153,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
             </div>
         </Section>
 
-        {/* STYLING SECTION */}
         <Section title="Appearance" icon={<Palette />}>
             <div className="mb-4">
                  <select 
@@ -192,7 +183,6 @@ const Controls: React.FC<Props> = ({ config, onChange }) => {
             </div>
         </Section>
 
-        {/* LAYOUT SECTION */}
         <Section title="Layout Presets" icon={<Layout />}>
              <div className="grid grid-cols-3 gap-2">
                  {['tl', 'tc', 'tr', 'lc', 'cc', 'rc', 'bl', 'bc', 'br'].map((p) => (

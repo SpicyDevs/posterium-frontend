@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useCallback, useLayoutEffect } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
@@ -11,35 +11,35 @@ interface Props {
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [autoScale, setAutoScale] = useState(1);
+  const [autoScale, setAutoScale] = useState(0.5);
   const [zoomModifier, setZoomModifier] = useState(1);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const prevUrlRef = useRef<string>("");
 
-  // Auto-fit logic
-  useEffect(() => {
+  // FIX: Robust Auto-fit logic using ResizeObserver
+  useLayoutEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      // Add padding calculation to prevent edge leaks
-      const parentWidth = containerRef.current.clientWidth - 40; 
-      const parentHeight = containerRef.current.clientHeight - 40;
       
-      // Calculate scale to fit
+      // Calculate available space with safety padding
+      const padding = 32; 
+      const parentWidth = Math.max(0, containerRef.current.clientWidth - padding);
+      const parentHeight = Math.max(0, containerRef.current.clientHeight - padding);
+      
+      if (parentWidth === 0 || parentHeight === 0) return;
+
       const scaleX = parentWidth / CANVAS_WIDTH;
       const scaleY = parentHeight / CANVAS_HEIGHT;
       
-      // Ensure we don't scale up infinitely, but do scale down
-      setAutoScale(Math.min(scaleX, scaleY, 1.0)); 
+      // Use the smaller scale to ensure it fits entirely
+      setAutoScale(Math.min(scaleX, scaleY, 1.2)); 
     };
     
     handleResize();
-    window.addEventListener('resize', handleResize);
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
     
-    return () => {
-        window.removeEventListener('resize', handleResize);
-        observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   const currentScale = Math.max(0.1, autoScale * zoomModifier);
@@ -56,22 +56,27 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
     });
   }, [config, setConfig]);
 
-  // Memoize URL to prevent flickering, only update when structural keys change
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
   }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
-  useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
+  // FIX: Prevent loading state flicker (Black Screen) on drag
+  useEffect(() => { 
+      if (prevUrlRef.current !== cleanPosterUrl) {
+          setIsImageLoading(true); 
+          prevUrlRef.current = cleanPosterUrl;
+      }
+  }, [cleanPosterUrl]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden bg-transparent select-none">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden bg-transparent select-none touch-none">
         
         {/* Zoom Controls */}
         <div className="absolute top-4 right-4 flex flex-col gap-1 z-50">
-            <button onClick={() => setZoomModifier(p => Math.min(p + 0.1, 3))} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors"><ZoomIn size={16} /></button>
-            <button onClick={() => setZoomModifier(p => Math.max(p - 0.1, 0.1))} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors"><ZoomOut size={16} /></button>
-            <button onClick={() => setZoomModifier(1)} className="p-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors" title="Reset Zoom"><RotateCcw size={16} /></button>
+            <button onClick={() => setZoomModifier(p => Math.min(p + 0.1, 3))} className="p-2 bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors backdrop-blur"><ZoomIn size={16} /></button>
+            <button onClick={() => setZoomModifier(p => Math.max(p - 0.1, 0.1))} className="p-2 bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors backdrop-blur"><ZoomOut size={16} /></button>
+            <button onClick={() => setZoomModifier(1)} className="p-2 bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-white rounded shadow-lg transition-colors backdrop-blur" title="Reset Zoom"><RotateCcw size={16} /></button>
         </div>
 
         {/* Canvas Wrapper */}
@@ -80,14 +85,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
                 width: CANVAS_WIDTH, 
                 height: CANVAS_HEIGHT, 
                 transform: `scale(${currentScale})`,
+                transformOrigin: 'center center', // FIX: Ensure scaling centers correctly
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
             }} 
-            className="relative bg-zinc-900 shadow-2xl transition-transform duration-75 ease-out origin-center"
+            className="relative bg-zinc-900 shadow-2xl transition-transform duration-75 ease-out"
         >
-            {/* Loading State */}
+            {/* Loading State Overlay */}
             {isImageLoading && (
-                <div className="absolute inset-0 z-10 bg-zinc-900 flex flex-col items-center justify-center text-zinc-500 gap-3">
+                <div className="absolute inset-0 z-30 bg-zinc-950 flex flex-col items-center justify-center text-zinc-500 gap-3">
                     <Loader2 className="animate-spin text-blue-500" size={32} />
+                    <span className="text-xs font-mono uppercase tracking-wider">Loading...</span>
                 </div>
             )}
             
@@ -95,22 +102,19 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
             <img 
                 src={cleanPosterUrl} 
                 alt="Poster" 
-                className={`w-full h-full object-cover pointer-events-none transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`} 
+                className="w-full h-full object-cover pointer-events-none absolute inset-0 z-0"
                 style={{ 
-                    filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})` 
+                    filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})`,
+                    opacity: isImageLoading ? 0 : 1,
+                    transition: 'opacity 0.3s ease-in-out'
                 }} 
-                onLoad={() => setIsImageLoading(false)} 
+                onLoad={() => setIsImageLoading(false)}
+                onError={() => setIsImageLoading(false)}
             />
 
-            {/* Grid Overlay (Optional visual aid) */}
-            <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity z-0">
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20" />
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20" />
-            </div>
-
-            {/* Badges Layer */}
+            {/* Badges Layer - Ensure it's above image */}
             <div className="absolute inset-0 z-20 overflow-hidden">
-                {config.ratings.map((id: RatingType, index: number) => {
+                {!isImageLoading && config.ratings.map((id: RatingType, index: number) => {
                     const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                     const item = config.items[id] || {};
                     
@@ -148,7 +152,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig }) => {
         </div>
         
         {/* Scale Indicator */}
-        <div className="absolute bottom-4 left-4 bg-zinc-900/80 backdrop-blur border border-zinc-800 text-[10px] px-2 py-1 rounded text-zinc-400 font-mono">
+        <div className="absolute bottom-4 left-4 bg-zinc-900/90 backdrop-blur border border-zinc-800 text-[10px] px-2 py-1 rounded text-zinc-400 font-mono pointer-events-none">
             {Math.round(currentScale * 100)}%
         </div>
     </div>
