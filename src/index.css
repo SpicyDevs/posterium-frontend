@@ -4,22 +4,39 @@
 
 @layer base {
   body {
-    @apply bg-[#0a0a0a] text-zinc-200;
+    @apply bg-[#0a0a0a] text-zinc-200 overflow-hidden;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: none; 
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* --- Custom Scrollbar --- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-::-webkit-scrollbar-track {
-  background: #1f1f1f; 
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; 
 }
-::-webkit-scrollbar-thumb {
-  background: #444; 
-  border-radius: 4px;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+
+/* --- Range Slider Glow --- */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  @apply w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] cursor-pointer hover:scale-110 transition-transform;
+  margin-top: -3px; /* Align with track */
+}
+input[type=range]::-moz-range-thumb {
+  @apply w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] cursor-pointer hover:scale-110 transition-transform;
+  border: none;
+}
+input[type=range]:focus::-webkit-slider-thumb {
+  @apply ring-2 ring-indigo-500/50;
+}
+
+/* --- Safe Area for Mobile Bottom Dock --- */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }

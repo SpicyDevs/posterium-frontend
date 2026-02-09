@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, RotateCcw, Loader2,  } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, Loader2, Grip } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -13,18 +13,27 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { viewOptions } = useEditor(); // Consume View Options
+  const { viewOptions } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // -- VIEW STATE --
   const [autoScale, setAutoScale] = useState(1);
-  const [zoomModifier, setZoomModifier] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isPanning, setIsPanning] = useState(false);
 
-  // ... (Resize Logic same as before) ...
+  // -- GESTURE STATE --
+  const lastDist = useRef<number | null>(null);
+  const lastPan = useRef<{ x: number, y: number } | null>(null);
+
+  // 1. Initial Fit-to-Screen Logic
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      const scaleX = (containerRef.current.clientWidth - 40) / CANVAS_WIDTH;
-      const scaleY = (containerRef.current.clientHeight - 40) / CANVAS_HEIGHT;
+      const padding = 40;
+      const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
+      const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
     };
     handleResize();
@@ -33,9 +42,67 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => observer.disconnect();
   }, []);
 
-  const currentScale = autoScale * zoomModifier;
+  const currentScale = autoScale * zoom;
 
-  // ... (Position Change Logic same as before) ...
+  // 2. Gesture Handlers
+  const handleWheel = (e: React.WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? 0.9 : 1.1;
+          setZoom(z => Math.max(0.2, Math.min(z * delta, 4)));
+      } else {
+          // Pan with scroll
+          setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+      }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+      if (e.touches.length === 2) {
+          // Pinch Start
+          const dist = Math.hypot(
+              e.touches[0].clientX - e.touches[1].clientX,
+              e.touches[0].clientY - e.touches[1].clientY
+          );
+          lastDist.current = dist;
+      } else if (e.touches.length === 1) {
+          // Pan Start
+          setIsPanning(true);
+          lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+      if (e.touches.length === 2 && lastDist.current) {
+          // Pinch Move
+          const dist = Math.hypot(
+              e.touches[0].clientX - e.touches[1].clientX,
+              e.touches[0].clientY - e.touches[1].clientY
+          );
+          const delta = dist / lastDist.current;
+          setZoom(z => Math.max(0.2, Math.min(z * delta, 4)));
+          lastDist.current = dist;
+      } else if (e.touches.length === 1 && lastPan.current && isPanning) {
+          // Pan Move
+          const dx = e.touches[0].clientX - lastPan.current.x;
+          const dy = e.touches[0].clientY - lastPan.current.y;
+          setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+          lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+  };
+
+  const handleTouchEnd = () => {
+      lastDist.current = null;
+      lastPan.current = null;
+      setIsPanning(false);
+  };
+
+  // Reset View Helper
+  const resetView = () => {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+  };
+
+  // Badge Logic
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
@@ -62,26 +129,41 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b]">
+    <div 
+        ref={containerRef} 
+        className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b] touch-none"
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+    >
         
-        {/* Floating Zoom Controls */}
-        <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1 z-50 shadow-xl">
-            <button onClick={() => setZoomModifier(z => Math.max(z - 0.1, 0.2))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10"><ZoomOut size={16}/></button>
-            <span className="text-[10px] font-mono w-12 text-center text-zinc-300">{Math.round(currentScale * 100)}%</span>
-            <button onClick={() => setZoomModifier(z => Math.min(z + 0.1, 3))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10"><ZoomIn size={16}/></button>
-            <div className="w-px h-4 bg-white/10 mx-1"></div>
-            <button onClick={() => setZoomModifier(1)} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10"><RotateCcw size={14}/></button>
+        {/* Mobile Floating Action Bar */}
+        <div className="absolute bottom-20 md:bottom-6 right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50">
+             {/* Pan Indicator (Visual Only) */}
+             {isPanning && (
+                 <div className="bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-full mb-2 md:mb-0 md:mr-2 pointer-events-none">
+                     Panning
+                 </div>
+             )}
+
+             <div className="flex flex-col md:flex-row items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
+                <button onClick={() => setZoom(z => Math.min(z + 0.1, 4))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"><ZoomIn size={18}/></button>
+                <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"><ZoomOut size={18}/></button>
+                <div className="w-4 h-px md:w-px md:h-4 bg-white/10 mx-1"></div>
+                <button onClick={resetView} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform" title="Fit to Screen"><Maximize size={16}/></button>
+             </div>
         </div>
 
-        {/* The Poster Canvas */}
+        {/* The Poster Canvas Container (Transform Target) */}
         <div 
             style={{ 
                 width: CANVAS_WIDTH, 
                 height: CANVAS_HEIGHT,
-                transform: `scale(${currentScale})`,
-                transition: 'transform 0.1s cubic-bezier(0,0,0.2,1)'
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
+                transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)'
             }} 
-            className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group"
+            className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
         >
             {/* Loading State */}
             {isImageLoading && (
@@ -100,7 +182,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
                 </div>
             )}
 
-            {/* View Option: Safe Area (Simulating mobile cutoffs) */}
+            {/* View Option: Safe Area */}
             {viewOptions?.showSafeArea && (
                 <div className="absolute inset-0 z-30 pointer-events-none">
                     <div className="absolute inset-8 border border-red-500/30 border-dashed">
