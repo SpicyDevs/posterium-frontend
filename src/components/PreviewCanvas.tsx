@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, Maximize, Loader2, Grip } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, Loader2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {

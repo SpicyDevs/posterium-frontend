@@ -45,14 +45,13 @@ const AlignmentGrid: React.FC<{ value: PresetType, onChange: (v: PresetType) => 
                 <button
                     key={pos}
                     onClick={() => onChange(pos)}
-                    className={`w-6 h-6 rounded-sm border transition-all ${
+                    className={`w-6 h-6 rounded-sm border transition-all active:scale-90 ${
                         value === pos 
                         ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
                         : 'bg-zinc-800/50 border-white/5 hover:border-white/20 hover:bg-zinc-700'
                     }`}
                     title={`Align ${pos.toUpperCase()}`}
                 >
-                    {/* Tiny dot to indicate position visually */}
                     <div className={`w-1 h-1 bg-current rounded-full mx-auto opacity-50 ${value === pos ? 'text-white' : 'text-zinc-500'}`} />
                 </button>
             ))}
@@ -63,7 +62,6 @@ const AlignmentGrid: React.FC<{ value: PresetType, onChange: (v: PresetType) => 
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
   
-  // -- HANDLERS --
   const updateConfig = (key: keyof PosterConfig, value: any) => setConfig(prev => ({ ...prev, [key]: value }));
   const updateKeys = (key: keyof ApiKeys, value: string) => setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
   
@@ -84,17 +82,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
 
-  // -- RENDER: GLOBAL SETTINGS --
   if (showGlobal) {
     return (
       <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pb-20">
          <Section title="Media Source">
              <div className="flex bg-zinc-900 p-1 rounded-lg border border-white/5 mb-3">
-                 <button onClick={() => updateConfig('mediaType', 'movie')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${config.mediaType === 'movie' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Film size={12}/> Movie</button>
-                 <button onClick={() => updateConfig('mediaType', 'tv')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${config.mediaType === 'tv' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Monitor size={12}/> TV Show</button>
+                 <button onClick={() => updateConfig('mediaType', 'movie')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all active:scale-95 ${config.mediaType === 'movie' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Film size={12}/> Movie</button>
+                 <button onClick={() => updateConfig('mediaType', 'tv')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all active:scale-95 ${config.mediaType === 'tv' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}><Monitor size={12}/> TV Show</button>
              </div>
              <div className="space-y-2">
-                 <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none placeholder-zinc-600 transition-all" placeholder="TMDB ID (e.g. 453395)" />
+                 <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder-zinc-600" placeholder="TMDB ID" />
                  <select value={config.source} onChange={(e) => updateConfig('source', e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 outline-none cursor-pointer">
                      <option value="tmdb">TMDB Poster</option>
                      <option value="fanart">Fanart.tv Poster</option>
@@ -111,10 +108,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                  <div className="flex-1">
                     <div className="text-[10px] text-zinc-500 mb-2 font-medium">Flow</div>
                     <div className="flex flex-col gap-2">
-                        <button onClick={() => updateConfig('layout', 'col')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors ${config.layout === 'col' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
+                        <button onClick={() => updateConfig('layout', 'col')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95 ${config.layout === 'col' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
                             <Layout size={12} className="rotate-90"/> Column
                         </button>
-                        <button onClick={() => updateConfig('layout', 'row')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors ${config.layout === 'row' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
+                        <button onClick={() => updateConfig('layout', 'row')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95 ${config.layout === 'row' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
                             <Layout size={12}/> Row
                         </button>
                     </div>
@@ -128,11 +125,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </ControlRow>
             
             <div className="grid grid-cols-2 gap-3 pt-2">
-                <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
                     <input type="checkbox" checked={config.grayscale} onChange={(e) => updateConfig('grayscale', e.target.checked)} className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-0" />
                     <span className="text-xs text-zinc-300">Grayscale</span>
                 </label>
-                <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
                     <input type="checkbox" checked={config.shadow} onChange={(e) => updateConfig('shadow', e.target.checked)} className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-0" />
                     <span className="text-xs text-zinc-300">Shadows</span>
                 </label>
@@ -141,10 +138,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
          <Section title="View Options">
              <div className="grid grid-cols-2 gap-2">
-                 <button onClick={() => toggleViewOption('showSafeArea')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-colors ${viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                 <button onClick={() => toggleViewOption('showSafeArea')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
                      <Smartphone size={14} /> Safe Area
                  </button>
-                 <button onClick={() => toggleViewOption('showGrid')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-colors ${viewOptions.showGrid ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                 <button onClick={() => toggleViewOption('showGrid')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showGrid ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
                      <Grid3X3 size={14} /> Grid Lines
                  </button>
              </div>
@@ -152,15 +149,13 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
          <Section title="API Keys">
             <div className="space-y-2">
-                <input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateKeys('tmdb', e.target.value)} placeholder="TMDB Key" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-1.5 text-xs text-zinc-300 focus:border-indigo-500 outline-none"/>
+                <input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateKeys('tmdb', e.target.value)} placeholder="TMDB Key (Required for Search)" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-1.5 text-xs text-zinc-300 focus:border-indigo-500 outline-none"/>
             </div>
          </Section>
       </div>
     );
   }
 
-  // -- RENDER: SELECTION SETTINGS --
-  
   if (selectedIds.size === 0) {
       return (
           <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 p-8 text-center bg-[#18181b]">
@@ -173,7 +168,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   }
 
   const mixedVal = (val: any, def: any) => val === null ? '' : val ?? def;
-  const isAgeSelected = selectedIds.has('age'); // Contextual check
+  const isAgeSelected = selectedIds.has('age');
 
   return (
     <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pb-20">
@@ -226,9 +221,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
         <Section title="Visibility">
             <div className="space-y-2">
-                {/* Contextual Logic: Hide Icon toggle for Age rating */}
                 {!isAgeSelected && (
-                    <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10">
+                    <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
                         <span className="text-xs text-zinc-300 font-medium">Show Icon</span>
                         <input type="checkbox" 
                             checked={getCommonValue('icon', true) ?? true} 
@@ -238,7 +232,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     </label>
                 )}
                 
-                <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10">
+                <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
                     <span className="text-xs text-zinc-300 font-medium">Drop Shadow</span>
                     <input type="checkbox" 
                         checked={getCommonValue('shadow', true) ?? true} 
@@ -256,7 +250,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     selectedIds.forEach(id => delete newItems[id]);
                     return { ...prev, items: newItems };
                 })}
-                className="w-full py-2.5 border border-red-500/20 text-red-400 bg-red-500/5 rounded text-xs font-medium hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 border border-red-500/20 text-red-400 bg-red-500/5 rounded text-xs font-medium hover:bg-red-500/10 transition-all active:scale-95 flex items-center justify-center gap-2"
              >
                 <Palette size={14} /> Reset Overrides to Global
              </button>
