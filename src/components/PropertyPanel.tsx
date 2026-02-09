@@ -1,14 +1,15 @@
 import React from 'react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Monitor, Film, Globe, Layers, Layout } from 'lucide-react';
+import { Monitor, Film, Layers, Layout } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
+  viewMode?: 'global' | 'selection'; // <--- NEW PROP
 }
 
-// UI Helpers
+// UI Helpers (Same as before)
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="border-b border-white/5 py-4 px-4 last:border-0">
     <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">{title}</h3>
@@ -36,13 +37,12 @@ const InputRange: React.FC<{ value: number; onChange: (v: number) => void; min: 
     </div>
 );
 
-const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
+const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   
-  // -- HANDLERS --
+  // -- HANDLERS (Same as before) --
   const updateConfig = (key: keyof PosterConfig, value: any) => setConfig(prev => ({ ...prev, [key]: value }));
   const updateKeys = (key: keyof ApiKeys, value: string) => setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
   
-  // Multi-edit handler
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) => {
       setConfig(prev => {
           const newItems = { ...prev.items };
@@ -58,10 +58,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
       return values.every(v => v === values[0]) ? values[0] : null; 
   };
 
-  const isGlobal = selectedIds.size === 0;
+  // Logic: Use prop if available, otherwise fallback to auto-detection
+  const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
 
   // -- RENDER: GLOBAL SETTINGS --
-  if (isGlobal) {
+  if (showGlobal) {
     const presets: {id: PresetType, label: string}[] = [
         { id: 'tl', label: 'TL' }, { id: 'tc', label: 'TC' }, { id: 'tr', label: 'TR' },
         { id: 'lc', label: 'LC' }, { id: 'cc', label: 'CC' }, { id: 'rc', label: 'RC' },
@@ -69,12 +70,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
     ];
 
     return (
-      <div className="flex flex-col h-full overflow-y-auto">
-         <div className="p-4 border-b border-white/5 bg-[#0c0c0e] sticky top-0 z-10">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Globe size={16} className="text-indigo-400"/> Global Settings
-            </h2>
-         </div>
+      <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
+         {/* Note: Header removed here because Inspector.tsx handles the Tabs */}
 
          <Section title="Media Source">
              <div className="flex bg-zinc-800/50 p-1 rounded-lg border border-white/5 mb-3">
@@ -149,16 +146,20 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
   }
 
   // -- RENDER: MULTI-SELECT SETTINGS --
+  if (selectedIds.size === 0) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2 p-8 text-center">
+              <Layers size={32} className="opacity-20" />
+              <p className="text-xs">Select a badge on the canvas to edit its properties.</p>
+          </div>
+      );
+  }
+
   const mixedVal = (val: any, def: any) => val === null ? '' : val ?? def;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-        <div className="p-4 border-b border-white/5 bg-[#0c0c0e] sticky top-0 z-10">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Layers size={16} className="text-indigo-400"/> 
-                {selectedIds.size} Badge{selectedIds.size > 1 ? 's' : ''} Selected
-            </h2>
-        </div>
+    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
+        {/* Header removed, handled by Inspector */}
 
         <Section title="Appearance">
             <ControlRow label="Scale">
