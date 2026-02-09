@@ -2,7 +2,7 @@ import React from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
 import { PosterConfig } from '../../types';
-import { Globe, Layers, MousePointer2 } from 'lucide-react';
+import { Globe, Layers } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
