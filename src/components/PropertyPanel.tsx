@@ -1,6 +1,6 @@
 import React from 'react';
-import { PosterConfig, RatingType, BadgeConfig, ApiKeys } from '../types';
-import {  Monitor, Film, Globe, Layers } from 'lucide-react';
+import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
+import { Monitor, Film, Globe, Layers, Layout } from 'lucide-react';
 
 interface Props {
   config: PosterConfig;
@@ -53,16 +53,21 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
       });
   };
 
-  // Helper to get a common value for a property from selected items (or default)
   const getCommonValue = <K extends keyof BadgeConfig>(prop: K, def: any): any => {
       const values = Array.from(selectedIds).map(id => config.items[id]?.[prop] ?? config[prop as keyof PosterConfig] ?? def);
-      return values.every(v => v === values[0]) ? values[0] : null; // Return null if mixed
+      return values.every(v => v === values[0]) ? values[0] : null; 
   };
 
   const isGlobal = selectedIds.size === 0;
 
   // -- RENDER: GLOBAL SETTINGS --
   if (isGlobal) {
+    const presets: {id: PresetType, label: string}[] = [
+        { id: 'tl', label: 'TL' }, { id: 'tc', label: 'TC' }, { id: 'tr', label: 'TR' },
+        { id: 'lc', label: 'LC' }, { id: 'cc', label: 'CC' }, { id: 'rc', label: 'RC' },
+        { id: 'bl', label: 'BL' }, { id: 'bc', label: 'BC' }, { id: 'br', label: 'BR' },
+    ];
+
     return (
       <div className="flex flex-col h-full overflow-y-auto">
          <div className="p-4 border-b border-white/5 bg-[#0c0c0e] sticky top-0 z-10">
@@ -82,6 +87,24 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
                      <option value="tmdb">TMDB Poster</option>
                      <option value="fanart">Fanart.tv Poster</option>
                  </select>
+             </div>
+         </Section>
+
+         <Section title="Layout & Alignment">
+             <div className="grid grid-cols-3 gap-1 mb-3">
+                 {presets.map(p => (
+                     <button 
+                        key={p.id} 
+                        onClick={() => updateConfig('preset', p.id)} 
+                        className={`aspect-square flex items-center justify-center text-[10px] font-bold rounded hover:bg-zinc-700 transition-colors ${config.preset === p.id ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
+                     >
+                        {p.label}
+                     </button>
+                 ))}
+             </div>
+             <div className="flex bg-zinc-800/50 p-1 rounded-lg border border-white/5">
+                 <button onClick={() => updateConfig('layout', 'col')} className={`flex-1 py-1.5 text-[10px] font-medium rounded-md transition-all ${config.layout === 'col' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-white'}`}><Layout size={12} className="inline mr-1 rotate-90"/> Column</button>
+                 <button onClick={() => updateConfig('layout', 'row')} className={`flex-1 py-1.5 text-[10px] font-medium rounded-md transition-all ${config.layout === 'row' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-white'}`}><Layout size={12} className="inline mr-1"/> Row</button>
              </div>
          </Section>
 
@@ -115,7 +138,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
             </div>
          </Section>
 
-         <Section title="API Keys (Advanced)">
+         <Section title="API Keys">
             <p className="text-[10px] text-zinc-500 mb-2">Optional keys to bypass rate limits.</p>
             <div className="space-y-2">
                 <input type="password" value={config.keys?.tmdb || ''} onChange={(e) => updateKeys('tmdb', e.target.value)} placeholder="TMDB Key" className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-1.5 text-xs text-zinc-300 focus:border-indigo-500 outline-none"/>
@@ -126,7 +149,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
   }
 
   // -- RENDER: MULTI-SELECT SETTINGS --
-  // We use `getCommonValue` to determine if we show a value or a "Mixed" state
   const mixedVal = (val: any, def: any) => val === null ? '' : val ?? def;
 
   return (
@@ -208,7 +230,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds }) => {
              <button 
                 onClick={() => setConfig(prev => {
                     const newItems = { ...prev.items };
-                    selectedIds.forEach(id => delete newItems[id]); // Remove overrides
+                    selectedIds.forEach(id => delete newItems[id]);
                     return { ...prev, items: newItems };
                 })}
                 className="w-full py-2 border border-white/10 rounded text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
