@@ -32,7 +32,6 @@ const StudioLayout: React.FC<{
   const handleTouchMove = (e: React.TouchEvent) => {
       if (startY.current === null) return;
       const deltaY = e.touches[0].clientY - startY.current;
-      // Simple visual feedback could go here, but for now we wait for end
       currentSheetY.current = deltaY;
   };
 
@@ -54,13 +53,12 @@ const StudioLayout: React.FC<{
       currentSheetY.current = 0;
   };
 
-  // Calculate bottom padding for canvas so poster auto-fits
   const getCanvasPadding = () => {
       if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
       switch (mobileSheetMode) {
-          case 'full': return '90%'; // Almost covered, but maybe user wants to see top?
-          case 'half': return '50%'; // Push canvas up by 50%
-          default: return '4rem'; // Dock height
+          case 'full': return '90%'; 
+          case 'half': return '50%';
+          default: return '4rem'; 
       }
   };
 
@@ -96,7 +94,7 @@ const StudioLayout: React.FC<{
         {/* Center Canvas */}
         <main 
             className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-300 ease-out" 
-            style={{ paddingBottom: getCanvasPadding() }} // <--- Auto-fit magic
+            style={{ paddingBottom: getCanvasPadding() }} 
             onClick={(e) => {
                 if(e.target === e.currentTarget) clearSelection();
             }}
@@ -119,7 +117,7 @@ const StudioLayout: React.FC<{
             `}
             style={{ 
                 height: mobileSheetMode === 'full' ? '92%' : '50%',
-                touchAction: 'none' // Important for custom drag handling
+                touchAction: 'none' 
             }}
         >
             {/* Drag Handle Area */}
@@ -133,7 +131,12 @@ const StudioLayout: React.FC<{
             </div>
             
             {/* Sheet Content */}
-            <div className="h-[calc(100%-32px)] overflow-hidden relative">
+            {/* BUG FIX: stopPropagation prevents scroll from triggering sheet drag */}
+            <div 
+                className="h-[calc(100%-32px)] overflow-hidden relative"
+                onPointerDown={(e) => e.stopPropagation()} 
+                onTouchStart={(e) => e.stopPropagation()}
+            >
                 {activeTab === 'layers' && (
                     <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
                 )}
@@ -151,7 +154,6 @@ const StudioLayout: React.FC<{
 };
 
 const App: React.FC = () => {
-  // ... (State persistence logic remains unchanged)
   const [config, setConfig] = useState<PosterConfig>(() => {
     try { return localStorage.getItem(STORAGE_KEY) ? JSON.parse(localStorage.getItem(STORAGE_KEY)!) : DEFAULT_CONFIG; } catch { return DEFAULT_CONFIG; }
   });

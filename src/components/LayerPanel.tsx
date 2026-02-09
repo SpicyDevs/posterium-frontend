@@ -4,6 +4,7 @@ import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare } from 'lucide
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 
+// Ensure type safety for keys
 type BadgeIconKey = keyof typeof BADGE_ICONS;
 
 interface Props {
@@ -13,7 +14,6 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
 }
 
-// ... Interfaces (SearchResult, RatingsData) unchanged ...
 interface SearchResult { id: number; title: string; poster_path: string; release_date: string; media_type: 'movie' | 'tv'; }
 interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; }
 
@@ -24,8 +24,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [, setErrorMsg] = useState('');
   const [fetchedData, setFetchedData] = useState<RatingsData>({});
 
-  // Use Hardcoded Key if user hasn't provided one
-  const apiKey = config.keys?.tmdb || TMDB_API_KEY;
+  // BUG FIX: Correctly fallback to hardcoded key if config key is empty string
+  const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
   // 1. Search Logic
   useEffect(() => {
@@ -35,7 +35,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       try {
           const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
-          if (data.results) setResults(data.results.filter((i: any) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
+          // BUG FIX: Avoid 'any' type
+          if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
     return () => clearTimeout(delayDebounce);
@@ -65,21 +66,38 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const toggleVisibility = (e: React.MouseEvent, id: RatingType) => {
     e.stopPropagation();
-    const current = new Set(config.ratings);
-    if (current.has(id)) current.delete(id); else current.add(id);
-    const sorted = ALL_BADGES.map(b => b.id).filter(id => current.has(id));
-    setConfig({ ...config, ratings: sorted });
+    // BUG FIX: Do not resort using ALL_BADGES. Preserve manual z-index (array order).
+    const currentRatings = [...config.ratings];
+    if (currentRatings.includes(id)) {
+        // Remove
+        setConfig({ ...config, ratings: currentRatings.filter(r => r !== id) });
+    } else {
+        // Add (Append to top)
+        setConfig({ ...config, ratings: [...currentRatings, id] });
+    }
   };
 
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          ALL_BADGES.filter(b => config.ratings.includes(b.id)).forEach(b => onSelect(b.id, true));
+          // BUG FIX: Only select items that are NOT currently selected
+          ALL_BADGES.filter(b => config.ratings.includes(b.id)).forEach(b => {
+             if (!selectedIds.has(b.id)) onSelect(b.id, true);
+          });
       } else {
-          selectedIds.forEach(id => onSelect(id, true)); // Toggle off logic relies on parent toggling if present
+          // Deselect all
+          selectedIds.forEach(id => onSelect(id, true)); 
       }
   };
 
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
+
+  // Helper to map badge IDs to Icon IDs
+  const getIconKey = (id: string): BadgeIconKey => {
+      if (id === 'rt') return 'rt_fresh';
+      if (id === 'rt_popcorn') return 'popcorn_fresh';
+      if (id === 'meta') return 'meta'; // Explicitly handle meta
+      return id as BadgeIconKey;
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
@@ -95,6 +113,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   className="w-full bg-[#18181b] border border-white/10 rounded-md py-2 pl-9 pr-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50 transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search Media"
               />
               {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={12} />}
           </div>
@@ -119,11 +138,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
              {/* 1. Disabled Title Input */}
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
+                 {/* BUG FIX: Improved contrast from text-zinc-400 to text-zinc-300 */}
                  <input 
                     type="text" 
                     disabled 
                     value={fetchedData.title || "Loading..."} 
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-400 cursor-not-allowed italic"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 cursor-not-allowed italic"
                  />
              </div>
 
@@ -169,7 +189,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const isSelected = selectedIds.has(badge.id);
           const ratingValue = fetchedData[badge.id as keyof RatingsData];
           
-          const iconKey = (badge.id === 'rt' ? 'rt_fresh' : badge.id === 'rt_popcorn' ? 'popcorn_fresh' : badge.id) as BadgeIconKey;
+          const iconKey = getIconKey(badge.id);
+          // BUG FIX: Fallback to imdb only if truly missing, but explicitly handle meta above.
           const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS.imdb;
 
           return (
@@ -214,6 +235,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   <button 
                     onClick={(e) => toggleVisibility(e, badge.id)}
                     className={`p-1.5 rounded hover:bg-white/10 transition-all active:scale-90 ${isActive ? 'text-zinc-400 hover:text-white' : 'text-zinc-600'}`}
+                    aria-label={isActive ? "Hide Layer" : "Show Layer"}
                   >
                     {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
                   </button>

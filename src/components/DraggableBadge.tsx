@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RatingType, PosterConfig, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
-import { BADGE_ICONS } from '../constants'; // <--- Import from constants
+import { BADGE_ICONS } from '../constants';
 
 interface Props {
   badgeId: RatingType;
@@ -17,6 +17,7 @@ interface Props {
 const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, onPositionChange, isSelected, onSelect }) => {
   const itemConfig = config.items[badgeId];
   
+  // NOTE: Scale determines dimension, NOT CSS transform, preventing "Double Scale" bug.
   const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
@@ -109,8 +110,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
-      // NOTE: In a real app, you might want to pass the fetched metadata to these badges too, 
-      // but for now, we keep the dummy values or you can lift the fetch state to App.tsx
       const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m' };
       const dummyVal = dummyVals[badgeId] || '0.0';
 
@@ -150,7 +149,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        transform: `translate(${currentPos.x}px, ${currentPos.y}px)`,
+        transform: `translate(${currentPos.x}px, ${currentPos.y}px)`, // No scale() here
         background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
         border: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,

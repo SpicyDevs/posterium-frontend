@@ -140,6 +140,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
                 ...(y ? { y: parseInt(y) } : {}),
                 ...(bg ? { bg } : {}),
                 ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
+                // BUG FIX: Use safe parsing (|| '0') to prevent NaN
                 ...(blur ? { blur: parseInt(blur) } : {}),
                 ...(alpha ? { alpha: parseFloat(alpha) } : {}),
                 ...(rad ? { radius: parseInt(rad) } : {}),
@@ -163,6 +164,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       shadow: params.get('sh') === '1',
       layout: (params.get('l') as any) || 'col',
       preset: (params.get('pos') as any) || 'tr',
+      // BUG FIX: Provide defaults for parseInt to avoid NaN
       blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
       alpha: params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
       radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,

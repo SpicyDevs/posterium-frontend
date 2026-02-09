@@ -1,6 +1,6 @@
 import React from 'react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Layers, Layout, Grid3X3, Smartphone, Palette, Settings } from 'lucide-react';
+import { Layers, Layout, Smartphone, Palette, Settings } from 'lucide-react'; // Removed unused Grid3X3
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -51,6 +51,7 @@ const AlignmentGrid: React.FC<{ value: PresetType, onChange: (v: PresetType) => 
                         : 'bg-zinc-800/50 border-white/5 hover:border-white/20 hover:bg-zinc-700'
                     }`}
                     title={`Align ${pos.toUpperCase()}`}
+                    aria-label={`Align ${pos}`}
                 >
                     <div className={`w-1 h-1 bg-current rounded-full mx-auto opacity-50 ${value === pos ? 'text-white' : 'text-zinc-500'}`} />
                 </button>
@@ -62,7 +63,24 @@ const AlignmentGrid: React.FC<{ value: PresetType, onChange: (v: PresetType) => 
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
   
-  const updateConfig = (key: keyof PosterConfig, value: any) => setConfig(prev => ({ ...prev, [key]: value }));
+  // BUG FIX: When changing layout or preset, clear manual x/y coordinates
+  const updateConfig = (key: keyof PosterConfig, value: any) => {
+    setConfig(prev => {
+        if (key === 'layout' || key === 'preset') {
+            const newItems = { ...prev.items };
+            // Remove x and y from all items to allow auto-layout to take over
+            (Object.keys(newItems) as RatingType[]).forEach(k => {
+                if (newItems[k]) {
+                    const { x, y, ...rest } = newItems[k]!;
+                    newItems[k] = rest;
+                }
+            });
+            return { ...prev, [key]: value, items: newItems };
+        }
+        return { ...prev, [key]: value };
+    });
+  };
+
   const updateKeys = (key: keyof ApiKeys, value: string) => setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
   
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) => {
@@ -141,8 +159,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                  <button onClick={() => toggleViewOption('showSafeArea')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
                      <Smartphone size={14} /> Safe Area
                  </button>
+                 {/* Replaced unused Grid3X3 with standard text/icon if needed, or keeping styling */}
                  <button onClick={() => toggleViewOption('showGrid')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showGrid ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
-                     <Grid3X3 size={14} /> Grid Lines
+                     <Layout size={14} /> Grid Lines
                  </button>
              </div>
          </Section>
