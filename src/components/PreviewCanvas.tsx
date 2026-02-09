@@ -13,7 +13,7 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { viewOptions } = useEditor();
+  const { viewOptions, mobileSheetMode } = useEditor(); // <--- Get mode
   const containerRef = useRef<HTMLDivElement>(null);
   
   // -- VIEW STATE --
@@ -27,11 +27,13 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const lastDist = useRef<number | null>(null);
   const lastPan = useRef<{ x: number, y: number } | null>(null);
 
-  // 1. Initial Fit-to-Screen Logic
+  // 1. Initial Fit-to-Screen Logic (Dynamic based on container size)
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
       const padding = 40;
+      // The container size changes via CSS when sheet opens (padding-bottom in App.tsx)
+      // This observer handles that change automatically.
       const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
       const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
@@ -40,32 +42,26 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [mobileSheetMode]); // Trigger check when mode changes
 
   const currentScale = autoScale * zoom;
 
-  // 2. Gesture Handlers
+  // ... (Gesture Handlers unchanged) ...
   const handleWheel = (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           const delta = e.deltaY > 0 ? 0.9 : 1.1;
           setZoom(z => Math.max(0.2, Math.min(z * delta, 4)));
       } else {
-          // Pan with scroll
           setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
       if (e.touches.length === 2) {
-          // Pinch Start
-          const dist = Math.hypot(
-              e.touches[0].clientX - e.touches[1].clientX,
-              e.touches[0].clientY - e.touches[1].clientY
-          );
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           lastDist.current = dist;
       } else if (e.touches.length === 1) {
-          // Pan Start
           setIsPanning(true);
           lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
@@ -73,16 +69,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const handleTouchMove = (e: React.TouchEvent) => {
       if (e.touches.length === 2 && lastDist.current) {
-          // Pinch Move
-          const dist = Math.hypot(
-              e.touches[0].clientX - e.touches[1].clientX,
-              e.touches[0].clientY - e.touches[1].clientY
-          );
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           const delta = dist / lastDist.current;
           setZoom(z => Math.max(0.2, Math.min(z * delta, 4)));
           lastDist.current = dist;
       } else if (e.touches.length === 1 && lastPan.current && isPanning) {
-          // Pan Move
           const dx = e.touches[0].clientX - lastPan.current.x;
           const dy = e.touches[0].clientY - lastPan.current.y;
           setPan(p => ({ x: p.x + dx, y: p.y + dy }));
@@ -96,13 +87,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       setIsPanning(false);
   };
 
-  // Reset View Helper
   const resetView = () => {
       setZoom(1);
       setPan({ x: 0, y: 0 });
   };
 
-  // Badge Logic
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
@@ -139,8 +128,15 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     >
         
         {/* Mobile Floating Action Bar */}
-        <div className="absolute bottom-20 md:bottom-6 right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50">
-             {/* Pan Indicator (Visual Only) */}
+        <div 
+            className={`absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-300 ease-out`}
+            style={{ 
+                // Dynamically adjust bottom position based on sheet mode
+                bottom: mobileSheetMode === 'half' ? '55%' : '5rem', // 55% clears the half-height sheet
+                opacity: mobileSheetMode === 'full' ? 0 : 1, // Hide when sheet is full
+                pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto'
+            }}
+        >
              {isPanning && (
                  <div className="bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-full mb-2 md:mb-0 md:mr-2 pointer-events-none">
                      Panning
@@ -165,14 +161,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             }} 
             className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
         >
-            {/* Loading State */}
             {isImageLoading && (
                 <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
                     <Loader2 className="animate-spin text-indigo-500" size={40} />
                 </div>
             )}
 
-            {/* View Option: Grid Lines */}
             {viewOptions?.showGrid && (
                 <div className="absolute inset-0 z-30 pointer-events-none opacity-20">
                     <div className="absolute top-0 bottom-0 left-1/3 border-l border-white"></div>
@@ -182,7 +176,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
                 </div>
             )}
 
-            {/* View Option: Safe Area */}
             {viewOptions?.showSafeArea && (
                 <div className="absolute inset-0 z-30 pointer-events-none">
                     <div className="absolute inset-8 border border-red-500/30 border-dashed">
@@ -199,7 +192,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
                 onLoad={() => setIsImageLoading(false)}
             />
             
-            {/* Badges */}
             {config.ratings.map((id: RatingType, index: number) => {
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const itemConfig = config.items[id];

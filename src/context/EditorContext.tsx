@@ -21,6 +21,7 @@ interface EditorContextType {
   // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
+  setBatchSelection: (ids: RatingType[]) => void; // <--- New batch function
   clearSelection: () => void;
 
   // View Helpers
@@ -63,7 +64,13 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } else {
         setActiveTab('canvas');
     }
-  }, [selectedIds, mobileSheetMode]);
+  }, [selectedIds]);
+
+  // New function to handle "Select All" atomically
+  const setBatchSelection = useCallback((ids: RatingType[]) => {
+      setSelectedIds(new Set(ids));
+      if (ids.length > 0) setActiveTab('badge');
+  }, []);
 
   const clearSelection = useCallback(() => {
       setSelectedIds(new Set());
@@ -78,7 +85,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <EditorContext.Provider value={{ 
         activeTab, setActiveTab, 
         mobileSheetMode, setMobileSheetMode,
-        selectedIds, handleSelection, clearSelection,
+        selectedIds, handleSelection, setBatchSelection, clearSelection,
         viewOptions, toggleViewOption
     }}>
       {children}

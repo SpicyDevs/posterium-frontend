@@ -20,38 +20,76 @@ const StudioLayout: React.FC<{
 }> = ({ config, setConfig, handleReset, baseUrl, handleLoadConfig }) => {
   const { activeTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, clearSelection } = useEditor();
   
-  // -- DRAG LOGIC --
+  // -- DRAG LOGIC (Physics Based) --
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
-  const currentSheetY = useRef<number>(0);
+  const currentY = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
+
+  // Helper to get translate Y value for a mode
+  const getTranslateY = (mode: string) => {
+    switch (mode) {
+      case 'hidden': return '100%'; // Fully hidden (except handle if we wanted) or just offscreen
+      case 'half': return '0%';     // Relative to its natural position (bottom: 0, height: 50%)
+      case 'full': return '0%';     // Relative to its natural position (bottom: 0, height: 92%)
+      default: return '100%';
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
       startY.current = e.touches[0].clientY;
+      isDragging.current = true;
+      
+      // Remove transition for direct finger tracking
+      if (sheetRef.current) {
+          sheetRef.current.style.transition = 'none';
+      }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-      if (startY.current === null) return;
+      if (startY.current === null || !isDragging.current || !sheetRef.current) return;
+      
       const deltaY = e.touches[0].clientY - startY.current;
-      currentSheetY.current = deltaY;
+      currentY.current = deltaY;
+
+      // Apply transform directly to track finger
+      // We limit upward drag in full mode to prevent detaching
+      if (mobileSheetMode === 'full' && deltaY < 0) return;
+      
+      sheetRef.current.style.transform = `translateY(${deltaY}px)`;
   };
 
   const handleTouchEnd = () => {
-      if (startY.current === null) return;
-      const threshold = 50; // pixels to trigger change
-      
-      if (currentSheetY.current > threshold) {
+      if (!isDragging.current || !sheetRef.current) return;
+      isDragging.current = false;
+      startY.current = null;
+
+      // Restore transition for the snap animation
+      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      sheetRef.current.style.transform = ''; // Clear inline transform to let CSS/State take over
+
+      const threshold = 100; // pixels to trigger change
+      const delta = currentY.current;
+
+      if (delta > threshold) {
           // Dragged Down
           if (mobileSheetMode === 'full') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('hidden');
-      } else if (currentSheetY.current < -threshold) {
+      } else if (delta < -threshold) {
           // Dragged Up
           if (mobileSheetMode === 'hidden') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('full');
       }
       
-      startY.current = null;
-      currentSheetY.current = 0;
+      currentY.current = 0;
   };
+
+  // Sync state changes to style (in case state changes without drag)
+  useEffect(() => {
+     if (sheetRef.current && !isDragging.current) {
+         sheetRef.current.style.transform = ''; // Reset any manual transforms
+     }
+  }, [mobileSheetMode]);
 
   const getCanvasPadding = () => {
       if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
@@ -112,12 +150,14 @@ const StudioLayout: React.FC<{
         <div 
             ref={sheetRef}
             className={`
-                md:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40 transition-transform duration-300 cubic-bezier(0.32, 0.72, 0, 1)
+                md:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40
                 ${mobileSheetMode === 'hidden' ? 'translate-y-[120%]' : 'translate-y-0'}
             `}
             style={{ 
                 height: mobileSheetMode === 'full' ? '92%' : '50%',
-                touchAction: 'none' 
+                touchAction: 'none',
+                // Default transition, overridden during drag
+                transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
             }}
         >
             {/* Drag Handle Area */}
@@ -131,7 +171,6 @@ const StudioLayout: React.FC<{
             </div>
             
             {/* Sheet Content */}
-            {/* BUG FIX: stopPropagation prevents scroll from triggering sheet drag */}
             <div 
                 className="h-[calc(100%-32px)] overflow-hidden relative"
                 onPointerDown={(e) => e.stopPropagation()} 

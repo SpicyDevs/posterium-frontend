@@ -3,6 +3,7 @@ import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare } from 'lucide-react';
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
+import { useEditor } from '../context/EditorContext'; // <--- Import Context
 
 // Ensure type safety for keys
 type BadgeIconKey = keyof typeof BADGE_ICONS;
@@ -18,13 +19,13 @@ interface SearchResult { id: number; title: string; poster_path: string; release
 interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+  const { setBatchSelection } = useEditor(); // <--- Get batch selector
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [, setErrorMsg] = useState('');
   const [fetchedData, setFetchedData] = useState<RatingsData>({});
 
-  // BUG FIX: Correctly fallback to hardcoded key if config key is empty string
   const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
   // 1. Search Logic
@@ -35,7 +36,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       try {
           const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
-          // BUG FIX: Avoid 'any' type
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
@@ -66,36 +66,31 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const toggleVisibility = (e: React.MouseEvent, id: RatingType) => {
     e.stopPropagation();
-    // BUG FIX: Do not resort using ALL_BADGES. Preserve manual z-index (array order).
     const currentRatings = [...config.ratings];
     if (currentRatings.includes(id)) {
-        // Remove
         setConfig({ ...config, ratings: currentRatings.filter(r => r !== id) });
     } else {
-        // Add (Append to top)
         setConfig({ ...config, ratings: [...currentRatings, id] });
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          // BUG FIX: Only select items that are NOT currently selected
-          ALL_BADGES.filter(b => config.ratings.includes(b.id)).forEach(b => {
-             if (!selectedIds.has(b.id)) onSelect(b.id, true);
-          });
+          // Select ALL visible badges at once
+          const allVisible = ALL_BADGES.filter(b => config.ratings.includes(b.id)).map(b => b.id);
+          setBatchSelection(allVisible);
       } else {
           // Deselect all
-          selectedIds.forEach(id => onSelect(id, true)); 
+          setBatchSelection([]);
       }
   };
 
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
 
-  // Helper to map badge IDs to Icon IDs
   const getIconKey = (id: string): BadgeIconKey => {
       if (id === 'rt') return 'rt_fresh';
       if (id === 'rt_popcorn') return 'popcorn_fresh';
-      if (id === 'meta') return 'meta'; // Explicitly handle meta
+      if (id === 'meta') return 'meta'; 
       return id as BadgeIconKey;
   }
 
@@ -118,7 +113,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={12} />}
           </div>
 
-          {/* Results Dropdown */}
           {(results.length > 0) && (
               <div className="absolute left-3 right-3 top-12 bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
                   {results.map(item => (
@@ -133,12 +127,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </div>
           )}
 
-          {/* Media Info (Moved Here) */}
           <div className="space-y-2">
-             {/* 1. Disabled Title Input */}
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 {/* BUG FIX: Improved contrast from text-zinc-400 to text-zinc-300 */}
                  <input 
                     type="text" 
                     disabled 
@@ -147,7 +138,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                  />
              </div>
 
-             {/* 2. TMDB ID + Type Toggle */}
              <div className="flex gap-2">
                  <div className="flex-1">
                      <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">TMDB ID</label>
@@ -190,7 +180,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const ratingValue = fetchedData[badge.id as keyof RatingsData];
           
           const iconKey = getIconKey(badge.id);
-          // BUG FIX: Fallback to imdb only if truly missing, but explicitly handle meta above.
           const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS.imdb;
 
           return (
@@ -206,7 +195,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 ${!isActive ? 'opacity-40 grayscale' : 'cursor-pointer'}
               `}
             >
-              {/* Left Aligned Checkbox */}
               <div 
                 className="flex items-center justify-center p-1"
                 onClick={(e) => { e.stopPropagation(); if(isActive) onSelect(badge.id, true); }}
@@ -216,7 +204,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </div>
               </div>
 
-              {/* Thumbnail */}
               <div className="w-6 h-6 flex items-center justify-center bg-zinc-800 rounded shadow-sm border border-white/5">
                   {badge.id === 'age' ? (
                       <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span>
@@ -225,7 +212,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   )}
               </div>
 
-              {/* Label & Visibility */}
               <div className="flex-1 min-w-0 flex justify-between items-center pr-1">
                   <div className="flex flex-col">
                       <span className={`text-xs font-medium truncate ${isSelected ? 'text-indigo-200' : 'text-zinc-300'}`}>{badge.label}</span>
