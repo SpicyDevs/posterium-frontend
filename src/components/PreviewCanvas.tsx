@@ -162,7 +162,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     >
       {/* Mobile Floating Action Bar */}
       <div
-        className="absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
+        className="absolute right-4 md:right-2 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
         style={{
           bottom: mobileSheetMode === 'half' ? '55%' : '5rem',
           opacity: mobileSheetMode === 'full' ? 0 : 1,
