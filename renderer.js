@@ -8,6 +8,10 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
         letterboxd: {x:30,y:350}, meta: {x:30,y:430}, age: {x:30,y:510}, runtime: {x:30,y:590}
     };
     
+    // FIX: Escape ampersands in the URL for valid XML/SVG syntax
+    // The browser expects "&amp;" instead of "&" inside the href attribute
+    const validPosterUrl = posterUrl ? posterUrl.replace(/&/g, "&amp;") : "";
+    
     // Generate Defs
     const defs = Object.entries(ICONS).map(([k,v]) => `<symbol id="i-${k}" viewBox="${v.vb}">${v.body}</symbol>`).join("") 
             + `<filter id="sh" x="-50%" y="-50%" width="200%" height="200%">
@@ -26,9 +30,9 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
     let badgeElements = "";
     let mainLayer = "";
 
-    if (posterUrl) {
-        // 1. Main Poster Layer (Using URL)
-        mainLayer = `<image href="${posterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#poster-fx)"/>`;
+    if (validPosterUrl) {
+        // 1. Main Poster Layer (Using Escaped URL)
+        mainLayer = `<image href="${validPosterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#poster-fx)"/>`;
 
         // 2. Calculate Blur Masks
         const activeRatings = cfg.ratings.filter(t => ratings[t]);
@@ -45,7 +49,7 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
 
         // Create clip paths and background layers for each blur level
         uniqueBlurs.forEach(b => {
-            let paths = ""; // Defined HERE, inside the loop
+            let paths = ""; 
             
             activeRatings.forEach(t => {
                 const item = cfg.items[t];
@@ -58,11 +62,11 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
                 }
             });
             
-            // Check paths here (must be inside the uniqueBlurs loop)
             if (paths) {
                 const maskId = `m-${b}`;
                 blurDefs += `<clipPath id="${maskId}">${paths}</clipPath>`;
-                backgroundLayers += `<image href="${posterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
+                // Use validPosterUrl here too
+                backgroundLayers += `<image href="${validPosterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
             }
         });
 
