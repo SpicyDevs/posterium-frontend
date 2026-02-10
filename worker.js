@@ -179,9 +179,7 @@ export default {
                     return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
 */
-const posterUrl = data.finalPosterUrl 
-    ? `https://wsrv.nl/?url=${encodeURIComponent(data.finalPosterUrl)}&w=500&output=webp&q=80` 
-    : "";
+const posterUrl = data.finalPosterUrl;
     return generateSVGResponse(request, cfg, posterUrl, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
