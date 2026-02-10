@@ -3,18 +3,23 @@ import { fetchWithTimeout, safeJsonFetch, getD1Cache, setD1Cache, getFanartPoste
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
     const { tmdbApiKey, fanartApiKey, omdbApiKey, mdbListApiKey } = apiKeys;
-    const cacheKey = `${inputType}:${rawId}:v20`; // Version bumped
+    const cacheKey = `${inputType}:${rawId}:v21`; // Version bumped to invalidate broken caches
 
     // 1. Check Cache
     let cachedData = await getD1Cache(env.POSTER_CACHE, cacheKey);
     
     // Full Cache Hit
     if (cachedData && cachedData.cacheLevel === 'full') {
-        return { ...processCachedData(cachedData, cfg), isCached: true };
+        // If requesting textless but cache doesn't have it, we might need to fetch
+        if (cfg.textless && !cachedData.posters.tmdb?.textless && inputType !== 'anime') {
+             // Fall through to partial update
+        } else {
+             return { ...processCachedData(cachedData, cfg), isCached: true };
+        }
     }
 
-    // Partial Cache Upgrade needed for JSON
-    if (cachedData && format !== 'json') {
+    // Partial Cache Upgrade needed for JSON or missing Textless
+    if (cachedData && format !== 'json' && !(cfg.textless && !cachedData.posters.tmdb?.textless)) {
         ctx.waitUntil(hydrateCache(env, cachedData, apiKeys, cacheKey));
         return { ...processCachedData(cachedData, cfg), isCached: true };
     }
@@ -25,7 +30,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     
     // 3. Determine Requirements
     const needsFull = (format === 'json');
-    const required = determineRequirements(cfg.ratings, needsFull, inputType, coreData);
+    const required = determineRequirements(cfg, needsFull, inputType, coreData);
     
     // 4. Fetch Selected APIs (Fast Path)
     const currentData = cachedData || { ratings: {}, posters: {}, omdb: null, mdblist: null };
@@ -72,9 +77,6 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
             vote_count: data.members || 0
         };
         
-        // Note: Standard Jikan endpoint doesn't return external IDs. 
-        // We fetch them lazily in fetchSelectedAPIs if needed.
-        
         if (data.score) ratings.mal = data.score.toString();
         if (data.rating) ratings.age = data.rating.split(' ')[0];
         if (data.duration) {
@@ -87,7 +89,7 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
         
         return { 
             movie, 
-            ids: { tmdb: null, imdb: null, mal: rawId }, // IMDb ID is null initially
+            ids: { tmdb: null, imdb: null, mal: rawId }, 
             ratings, 
             posters: { mal: { text: posterUrl, textless: null } },
             type: 'anime'
@@ -102,11 +104,9 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
             else throw new Error("ID Not Found");
         }
 
-        // OPTIMIZATION: Exclude 'images' from append_to_response unless strictly needed for textless
-        // This keeps the JSON small for standard requests.
         let appends = "external_ids,release_dates,content_ratings";
         if (cfg.textless) {
-             appends += ",images"; // Only fetch full image list if we need to search for textless now
+             appends += ",images"; 
         }
 
         const tmdbUrl = `https://api.themoviedb.org/3/${activeType}/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=${appends}&include_image_language=en,null`;
@@ -119,7 +119,6 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
         const tmdbPosters = { text: null, textless: null };
         if (movie.poster_path) tmdbPosters.text = `https://image.tmdb.org/t/p/w780${movie.poster_path}`;
         
-        // Only process images if we asked for them
         if (movie.images?.posters) {
             const tl = movie.images.posters.filter(p => p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === "");
             if (tl.length > 0) {
@@ -155,28 +154,24 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
 
 // --- REQUIREMENTS LOGIC ---
 
-function determineRequirements(requestedRatings, needsFull, inputType, coreData) {
-    // If anime and we don't have IMDb ID yet, we might need to fetch it
+function determineRequirements(cfg, needsFull, inputType, coreData) {
+    const requestedRatings = cfg.ratings || [];
     const req = { 
         fanart: false, 
         omdb: false, 
         mdblist: false, 
         metahub: false, 
-        tmdbImages: false, // New requirement: Fetch TMDB Images separately
-        jikanExternal: false // New requirement: Fetch Jikan External IDs
+        tmdbImages: false,
+        jikanExternal: false
     };
     
     // If hydration/full, we need everything
     if (needsFull) {
-        req.tmdbImages = (inputType !== 'anime'); // Always fill image cache for TMDB
+        req.tmdbImages = (inputType !== 'anime'); 
         req.fanart = true;
-        
-        // Anime specific: need external ID to check others
         if (inputType === 'anime' && !coreData.ids.imdb) {
             req.jikanExternal = true;
         }
-        
-        // We assume we will get an IMDb ID, so we request these (logic below handles nulls)
         req.metahub = true;
         req.omdb = true;
         req.mdblist = true;
@@ -186,27 +181,22 @@ function determineRequirements(requestedRatings, needsFull, inputType, coreData)
     // Fast Path Logic
     
     // 1. Anime ID Resolution
-    // If we need any external ratings (IMDb, RT, etc) for Anime, we need the external ID first
     if (inputType === 'anime' && !coreData.ids.imdb) {
         const needsExternal = requestedRatings.some(r => ['imdb', 'rt', 'meta', 'letterboxd'].includes(r));
         if (needsExternal) req.jikanExternal = true;
     }
     
-    const hasImdbId = !!coreData.ids.imdb; // Might be false now, but resolved after jikanExternal fetch? 
-    // Complexity: fetchSelectedAPIs handles sequential deps or we just fail fast. 
-    // We will let fetchSelectedAPIs handle Jikan External, then if it returns ID, use it.
+    const hasImdbId = !!coreData.ids.imdb; 
 
-    // 2. TMDB Images (Textless)
-    // If coreData doesn't have textless, and we specifically want it, we must fetch /images
-    // coreData.posters.tmdb.textless is null if we didn't fetch it in core
-    if (inputType !== 'anime' && !coreData.posters.tmdb?.textless) {
-         // If config required textless, core would have fetched it.
-         // But if we are here, maybe we are just filling gaps? 
-         // For Fast Path, if we don't have it, we probably don't fetch it unless strictly required.
+    // 2. TMDB Images (Textless) - Fetch if requested but missing
+    if (inputType !== 'anime' && cfg.textless && !coreData.posters.tmdb?.textless) {
+         req.tmdbImages = true;
     }
 
-    // 3. Ratings
-    // We only enable these if we anticipate having an ID (either present or being fetched)
+    // 3. Ratings & Source Images
+    if (cfg.source === 'fanart') req.fanart = true;
+    if (cfg.source === 'metahub') req.metahub = true;
+
     if (hasImdbId || req.jikanExternal) {
         if (requestedRatings.includes('imdb') || requestedRatings.includes('rt') || requestedRatings.includes('meta') || requestedRatings.includes('runtime')) {
             req.omdb = true;
@@ -221,14 +211,11 @@ function determineRequirements(requestedRatings, needsFull, inputType, coreData)
 
 async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     const promises = [];
-    const ids = coreData.ids; // Mutable ref if possible, or we clone. 
+    const ids = coreData.ids; 
     let workingImdbId = ids.imdb;
 
-    // 1. Jikan External (High Priority - blocking for others if needed)
+    // 1. Jikan External
     if (req.jikanExternal && !workingImdbId) {
-        // We must await this if we want to pipeline. For simplicity in Promise.all, 
-        // we might miss OMDB in this pass if we don't chain. 
-        // Optimization: Chain the promise for Jikan -> OMDB
         const jikanPromise = fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}/external`, 3000)
             .then(async res => {
                 if (!res) return null;
@@ -249,7 +236,6 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         promises.push(fetchWithTimeout(url, 2500).then(async res => {
             if(!res) return null;
             const data = await res.json();
-            // Extract textless
             let textless = null;
             if (data.posters) {
                  const tl = data.posters.filter(p => p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === "");
@@ -262,14 +248,8 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         }));
     }
 
-    // 3. Standard APIs (Fanart, Metahub, OMDB, MDBList)
-    // Note: If Jikan ID is missing and being fetched, OMDB/MDBList calls here will be skipped 
-    // or need chaining. For Fast Path, skipping is safer (user gets partial). 
-    // For Hydration, we might miss it. 
-    // *Fix*: We will simply skip OMDB/MDBList in this pass if ID is missing. 
-    // Hydration will eventually catch up on a second pass or we accept the limitation.
-
-    if (workingImdbId) {
+    // 3. Standard APIs
+    if (workingImdbId || coreData.type !== 'anime') {
         if (req.fanart && !currentData.posters.fanart) {
             const fanartId = coreData.type === 'movie' ? ids.tmdb : (ids.tvdb || ids.tmdb);
             if (fanartId) {
@@ -277,14 +257,14 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
                 promises.push(getFanartPoster(fanartId, coreData.type, apiKeys.fanartApiKey, true).then(p => ({ source: 'fanart', type: 'textless', url: p })));
             }
         }
-        if (req.metahub && !currentData.posters.metahub) {
+        if (req.metahub && !currentData.posters.metahub && workingImdbId) {
             promises.push(Promise.resolve({ source: 'metahub', type: 'text', url: `https://images.metahub.space/poster/medium/${workingImdbId}/img` }));
         }
-        if (req.omdb && !currentData.omdb) {
+        if (req.omdb && !currentData.omdb && workingImdbId) {
             promises.push(safeJsonFetch(fetchWithTimeout(`https://www.omdbapi.com/?i=${workingImdbId}&apikey=${apiKeys.omdbApiKey}&tomatoes=true`, 3000))
                 .then(res => ({ source: 'omdb', data: res })));
         }
-        if (req.mdblist && !currentData.mdblist && apiKeys.mdbListApiKey) {
+        if (req.mdblist && !currentData.mdblist && apiKeys.mdbListApiKey && workingImdbId) {
             promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${apiKeys.mdbListApiKey}&i=${workingImdbId}`, 3000))
                 .then(res => ({ source: 'mdblist', data: res })));
         }
@@ -295,20 +275,22 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
 }
 
 function mergeData(coreData, currentData, newResults) {
-    const merged = { ...currentData, core: coreData, ids: coreData.ids };
+    const merged = { ...currentData, core: coreData };
     
-    if (!merged.ratings) merged.ratings = { ...coreData.ratings };
-    if (!merged.posters) merged.posters = { ...coreData.posters };
+    // Deep merge identifiers
+    merged.ids = { ...coreData.ids, ...(currentData.ids || {}) };
+    
+    // Deep merge Ratings
+    merged.ratings = { ...coreData.ratings, ...(currentData.ratings || {}) };
+
+    // Deep merge Posters (Crucial: Start with Core/TMDB, then Cache, then New)
+    merged.posters = { ...coreData.posters, ...(currentData.posters || {}) };
 
     newResults.forEach(res => {
         if (!res) return;
         
-        // Handle Late-Bound IDs (Jikan)
-        if (res.source === 'jikan_ext') {
-            merged.ids.imdb = res.id; // Update ID for future use
-        }
+        if (res.source === 'jikan_ext') merged.ids.imdb = res.id;
         
-        // Handle TMDB Images Separate Fetch
         if (res.source === 'tmdb_images') {
              if (!merged.posters.tmdb) merged.posters.tmdb = { text: null, textless: null };
              if (res.textless) merged.posters.tmdb.textless = res.textless;
@@ -362,7 +344,8 @@ async function hydrateCache(env, currentData, apiKeys, cacheKey) {
                       (currentData.core.type === 'anime'); 
 
     // 1. Determine requirements (Assume full fetch needed)
-    const req = determineRequirements([], true, currentData.core.type, currentData.core);
+    // Pass empty cfg since we want full data regardless of user cfg here
+    const req = determineRequirements({}, true, currentData.core.type, currentData.core);
 
     // 2. Filter out expensive APIs if NOT popular
     if (!isPopular) {
@@ -371,9 +354,6 @@ async function hydrateCache(env, currentData, apiKeys, cacheKey) {
     }
 
     // 3. Fetch missing pieces
-    // Note: If Jikan ID was missing in Core, fetchSelectedAPIs might resolve it in step 1, 
-    // but here we are in a new execution context. 
-    // Ideally, currentData has updated IDs if we ran mergeData before calling this.
     const fetchedResults = await fetchSelectedAPIs(req, currentData, currentData.core, apiKeys);
     
     // 4. Merge
