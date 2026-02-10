@@ -166,6 +166,7 @@ export default {
         }
 
         // SVG Response Generation
+ /*
         let posterBase64 = "";
         if (data.finalPosterUrl) {
             const imageFetch = fetch(data.finalPosterUrl, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
@@ -175,8 +176,13 @@ export default {
                 posterBase64 = `data:${imgReq.headers.get("content-type") || "image/jpeg"};base64,${bufferToBase64(buffer)}`;
             }
         }
+                    return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
-        return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
+*/
+const posterUrl = data.finalPosterUrl 
+    ? `https://wsrv.nl/?url=${encodeURIComponent(data.finalPosterUrl)}&w=500&output=webp&q=80` 
+    : "";
+    return generateSVGResponse(request, cfg, posterUrl, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
         // Simple error handling
