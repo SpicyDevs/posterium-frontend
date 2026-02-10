@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, Maximize, Loader2, AlertCircle } from 'lucide-react'; // Added AlertCircle for error state
+import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react'; // Added AlertCircle for error state
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -174,7 +174,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
                 <button onClick={() => setZoom(z => Math.min(z + 0.1, 4))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"><ZoomIn size={18}/></button>
                 <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"><ZoomOut size={18}/></button>
                 <div className="w-4 h-px md:w-px md:h-4 bg-white/10 mx-1"></div>
-                <button onClick={resetView} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform" title="Fit to Screen"><Maximize size={16}/></button>
+                <button onClick={resetView} className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform" title="Fit to Screen"><SearchX size={18}/></button>
              </div>
         </div>
 
