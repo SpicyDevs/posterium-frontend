@@ -93,7 +93,8 @@ export async function getFanartPoster(id, type, apiKey, preferTextless = false) 
             return list.length > 1 ? list[1].url : list[0].url;
         };
 
-        const textlessList = data[posterKey].filter(p => p.lang === '00'); // '00' is No Language
+        // FIX: Added check for empty string "" language code
+        const textlessList = data[posterKey].filter(p => p.lang === '00' || p.lang === ''); 
         const englishList = data[posterKey].filter(p => p.lang === 'en');
 
         if (preferTextless) {

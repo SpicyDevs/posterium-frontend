@@ -35,7 +35,8 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys) {
     }
 
     // 3. Fetch Core TMDB Data
-    const tmdbUrl = `https://api.themoviedb.org/3/${activeType}/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=external_ids,release_dates,content_ratings,credits,images`;
+    // FIX: Added '&include_image_language=en,null' to ensure textless images (null) are returned
+    const tmdbUrl = `https://api.themoviedb.org/3/${activeType}/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=external_ids,release_dates,content_ratings,credits,images&include_image_language=en,null`;
     const tmdbRes = await fetchWithTimeout(tmdbUrl, 2500);
     if (!tmdbRes) throw new Error("TMDB Resource Not Found");
     
@@ -69,7 +70,8 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys) {
     // 5. Resolve Poster URL
     let tmdbPoster = null;
     if (cfg.textless && movie.images && movie.images.posters) {
-        const textlessPosters = movie.images.posters.filter(p => p.iso_639_1 === null || p.iso_639_1 === 'xx');
+        // FIX: Added check for empty string "" as requested
+        const textlessPosters = movie.images.posters.filter(p => p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === "");
         if (textlessPosters.length > 0) {
             textlessPosters.sort((a, b) => b.vote_count - a.vote_count);
             tmdbPoster = `https://image.tmdb.org/t/p/w780${textlessPosters[0].file_path}`;
