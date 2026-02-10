@@ -11,8 +11,8 @@ export default {
     const cache = caches.default;
     const url = new URL(request.url);
 
-    // Standard Cache Check (GET only)
-    if (request.method === "GET") {
+    // Standard Cache Check (GET only) - Skip for ratings endpoint to ensure fresh data/auth check
+    if (request.method === "GET" && !url.pathname.startsWith('/ratings')) {
         let response = await cache.match(request);
         if (response) return response;
     }
@@ -20,7 +20,7 @@ export default {
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-    // --- SEARCH ROUTE (Unchanged) ---
+    // --- SEARCH ROUTE ---
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         if (!query) return new Response("Missing query", { status: 400 });
@@ -39,7 +39,53 @@ export default {
         }
     }
 
-    // --- RESOLVE FORMAT & ID ---
+    // --- NEW INTERNAL RATINGS ENDPOINT ---
+    // Route: /ratings/:inputType/:id
+    const ratingsMatch = url.pathname.match(/^\/ratings\/(movie|tv|anime)\/([^\/]+)$/);
+    if (ratingsMatch) {
+        // Security Check
+        if (request.headers.get("X-Internal-Secret") !== "spicydevs-internal-v1") {
+            return new Response("Unauthorized", { status: 403 });
+        }
+
+        const inputType = ratingsMatch[1];
+        const rawId = ratingsMatch[2];
+
+        // Prepare keys
+        const apiKeys = {
+            tmdbApiKey: env.TMDB_API_KEY,
+            fanartApiKey: env.FANART_API_KEY,
+            omdbApiKey: env.OMDB_API_KEY,
+            mdbListApiKey: env.MDBLIST_API_KEY
+        };
+
+        try {
+             // Config to fetch all standard ratings
+             const cfg = { 
+                 ratings: ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'],
+                 textless: false, 
+                 source: 'tmdb' 
+             };
+             
+             // Fetch Data (using 'json' format trigger to get full data)
+             const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, 'json');
+             
+             return new Response(JSON.stringify({
+                 ratings: data.ratings,
+                 ids: data.ids,
+                 meta: { 
+                     title: data.movie?.title || data.movie?.name || data.movie?.original_title,
+                     year: data.movie?.release_date?.split('-')[0] || data.movie?.first_air_date?.split('-')[0]
+                 }
+             }), { 
+                 headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
+             });
+        } catch(e) {
+             return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        }
+    }
+
+    // --- STANDARD RESOLVE FORMAT & ID ---
     const match = url.pathname.match(/^\/(movie|tv|poster|anime)\/(tt\d+|\d+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/i);
     if (!match) return new Response("Not Found", { status: 404 });
 
@@ -50,7 +96,6 @@ export default {
     const downloadFilename = `${rawId}.${format === 'json' ? 'json' : format}`;
     const dispositionHeader = isDownload ? `attachment; filename="${downloadFilename}"` : "inline";
 
-    // --- KEY MANAGEMENT (Unchanged) ---
     const userKeys = {
         tmdb: url.searchParams.get("tmdb_key"),
         fanart: url.searchParams.get("fanart_key"),
@@ -72,7 +117,6 @@ export default {
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
-    // --- RASTER PROXY (Unchanged) ---
     if (format !== "svg" && format !== "json") {
         const svgUrl = new URL(request.url);
         const publicHost = "rpdb.padhaiaayush.workers.dev";
@@ -103,13 +147,8 @@ export default {
 
     try {
         const cfg = parseConfig(url);
-
-        // --- CALL SERVICE LAYER ---
-        // PASS 'format' so service knows if it needs full JSON or fast partial data
         const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format);
-        // --------------------------
 
-        // JSON Response (Combined All APIs)
         if (format === 'json') {
             const jsonRes = new Response(JSON.stringify({
                 meta: {
@@ -118,11 +157,11 @@ export default {
                     source_config: cfg.source,
                     textless_requested: cfg.textless,
                     is_cached: data.isCached,
-                    cache_status: data.cacheLevel // 'partial' or 'full'
+                    cache_status: data.cacheLevel
                 },
                 poster: { 
                     selected: data.finalPosterUrl,
-                    all_sources: data.posters // Returns cached collection of text/textless
+                    all_sources: data.posters
                 },
                 ratings: data.ratings,
                 details: {
@@ -144,7 +183,6 @@ export default {
             return jsonRes;
         }
 
-        // SVG Response Generation
         let posterBase64 = "";
         if (data.finalPosterUrl) {
             const imageFetch = fetch(data.finalPosterUrl, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
