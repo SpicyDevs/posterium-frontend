@@ -14,7 +14,6 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
 }
 
-// UPDATED: Interface now includes 'name' and 'first_air_date' for TV support
 interface SearchResult { 
     id: number; 
     title?: string; 
@@ -25,16 +24,13 @@ interface SearchResult {
     media_type: 'movie' | 'tv'; 
 }
 
-interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; mal?: string; }
-
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection } = useEditor();
+  const { setBatchSelection, ratingsData, setRatingsData } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [, setErrorMsg] = useState('');
-  const [fetchedData, setFetchedData] = useState<RatingsData>({});
-
+  
   const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
   useEffect(() => {
@@ -42,32 +38,47 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true); setErrorMsg('');
       try {
-          const res = await fetch(`https://freeposterapi.pages.dev/api/search?q=${encodeURIComponent(searchQuery)}`);
+          const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
-          // Filter ensures we only get movies and tv
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, apiKey]);
 
-  useEffect(() => {
-      const fetchMeta = async () => {
-          if (!config.tmdbId) return;
-          try {
-              const res = await fetch(`${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.json`);
-              if (res.ok) {
-                  const data = await res.json();
-                  if (data) setFetchedData({ ...data.ratings, title: data.raw?.tmdb?.title || data.raw?.tmdb?.name || data.raw?.tmdb?.original_title || data.details?.title });
-              }
-          } catch(e) { /* ignore */ }
-      };
-      fetchMeta();
-  }, [config.tmdbId, config.mediaType]);
+  // SMART SELECTION: Fetch ID first to fill input with IMDb ID
+  const handleSelectMedia = async (item: SearchResult) => {
+      setIsSearching(true);
+      try {
+          // 1. Fetch details from our new internal ratings endpoint to resolve IMDb ID
+          const res = await fetch(`${DEFAULT_API_BASE}/ratings/${item.media_type}/${item.id}`);
+          if (res.ok) {
+              const data = await res.json();
+              
+              // 2. Determine best ID (Prefer IMDb 'tt...')
+              const bestId = data.ids?.imdb || item.id.toString();
+              
+              // 3. Update Global Data
+              setRatingsData({ ...data.ratings, title: data.meta?.title, year: data.meta?.year });
 
-  const handleSelectMedia = (item: SearchResult) => {
-      setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
-      setSearchQuery(''); setResults([]);
+              // 4. Update Config
+              setConfig(prev => ({ 
+                  ...prev, 
+                  tmdbId: bestId, 
+                  mediaType: item.media_type as any 
+              }));
+          } else {
+              // Fallback if fetch fails
+              setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
+          }
+      } catch (e) {
+          console.error("Selection Error", e);
+          setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
+      } finally {
+          setIsSearching(false);
+          setSearchQuery(''); 
+          setResults([]);
+      }
   };
 
   const updateConfig = (key: keyof PosterConfig, value: any) => setConfig(prev => ({ ...prev, [key]: value }));
@@ -84,9 +95,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          const allVisibleIds = ALL_BADGES
-            .filter(b => config.ratings.includes(b.id))
-            .map(b => b.id);
+          const allVisibleIds = ALL_BADGES.filter(b => config.ratings.includes(b.id)).map(b => b.id);
           setBatchSelection(allVisibleIds);
       } else {
           setBatchSelection([]);
@@ -94,7 +103,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   };
 
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
-
   const getIconKey = (id: string): BadgeIconKey => {
       if (id === 'rt') return 'rt_fresh';
       if (id === 'rt_popcorn') return 'popcorn_fresh';
@@ -122,11 +130,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {(results.length > 0) && (
               <div className="absolute left-3 right-3 top-12 bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
                   {results.map(item => {
-                      // FIX: Support TV Show 'name' and 'first_air_date'
                       const title = item.title || item.name;
                       const date = item.release_date || item.first_air_date;
                       const year = date ? date.split('-')[0] : '';
-
                       return (
                         <button key={item.id} onClick={() => handleSelectMedia(item)} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0">
                             <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
@@ -146,56 +152,49 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <div className="space-y-2">
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 <div 
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
-                    title={fetchedData.title || "Loading..."}
-                 >
-                    {fetchedData.title || <span className="italic text-zinc-500">Loading...</span>}
+                 <div className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate">
+                    {ratingsData.title ? (
+                        <span>{ratingsData.title} <span className="text-zinc-500">({ratingsData.year})</span></span>
+                    ) : (
+                        <span className="italic text-zinc-500">Loading...</span>
+                    )}
                  </div>
              </div>
 
              <div className="flex gap-2">
                  <div className="flex-1">
                      <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
-                        {config.mediaType === 'anime' ? 'MAL ID' : 'TMDB ID'}
+                        Media ID / Source
                      </label>
                      <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
-                         <select 
-                             value={config.mediaType} 
-                             onChange={(e) => updateConfig('mediaType', e.target.value)} 
-                             className="bg-zinc-800 border-r border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
-                         >
-                             <option value="movie">Movie</option>
-                             <option value="tv">TV</option>
-                             <option value="anime">Anime</option>
-                         </select>
-
+                         {/* REMOVED MEDIA TYPE SELECTOR AS REQUESTED */}
                          <input 
                             type="text" 
                             value={config.tmdbId} 
                             onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                            className="w-24 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
+                            className="flex-1 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
+                            placeholder="tt12345 or 12345"
                          />
 
                          <select 
                             value={config.source} 
                             onChange={(e) => updateConfig('source', e.target.value)} 
-                            className="flex-1 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
+                            className="w-24 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
                          >
                              <option value="tmdb">TMDB</option>
                              <option value="fanart">Fanart</option>
                              <option value="metahub">Metahub</option>
-                             {/* FIX: Only show MAL if Anime is selected */}
                              {config.mediaType === 'anime' && <option value="mal">MyAnimeList</option>}
                          </select>
                      </div>
                  </div>
              </div>
 
-             <label className="flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer hover:border-zinc-500 transition-all group">
+             <label className={`flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer transition-all group ${config.source === 'metahub' ? 'opacity-50 cursor-not-allowed' : 'hover:border-zinc-500'}`}>
                  <input 
                     type="checkbox" 
                     checked={config.textless} 
+                    disabled={config.source === 'metahub'}
                     onChange={(e) => updateConfig('textless', e.target.checked)} 
                     className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0 group-hover:border-zinc-500"
                  />
@@ -221,7 +220,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         {ALL_BADGES.map((badge) => {
           const isActive = config.ratings.includes(badge.id);
           const isSelected = selectedIds.has(badge.id);
-          const ratingValue = fetchedData[badge.id as keyof RatingsData];
+          const ratingValue = ratingsData[badge.id as keyof typeof ratingsData];
           const iconKey = getIconKey(badge.id);
           const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id]; 
 

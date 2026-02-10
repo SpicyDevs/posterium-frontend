@@ -18,8 +18,29 @@ const StudioLayout: React.FC<{
   baseUrl: string;
   handleLoadConfig: (url: string) => void;
 }> = ({ config, setConfig, handleReset, baseUrl, handleLoadConfig }) => {
-  const { activeTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, clearSelection } = useEditor();
+  const { activeTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, clearSelection, setRatingsData } = useEditor();
   
+  // -- GLOBAL DATA FETCH --
+  useEffect(() => {
+    if (!config.tmdbId) return;
+    const fetchMeta = async () => {
+        // Clear old data slightly to indicate loading or keep old? Keeping old prevents flicker.
+        try {
+            // Call new Internal Ratings Endpoint
+            const res = await fetch(`${DEFAULT_API_BASE}/ratings/${config.mediaType}/${config.tmdbId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setRatingsData({ 
+                    ...data.ratings, 
+                    title: data.meta?.title, 
+                    year: data.meta?.year 
+                });
+            }
+        } catch(e) { /* ignore */ }
+    };
+    fetchMeta();
+  }, [config.tmdbId, config.mediaType, setRatingsData]);
+
   // -- DRAG LOGIC (Physics Based) --
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
@@ -29,8 +50,6 @@ const StudioLayout: React.FC<{
   const handleTouchStart = (e: React.TouchEvent) => {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
-      
-      // Remove transition for direct finger tracking to feel like "holding"
       if (sheetRef.current) {
           sheetRef.current.style.transition = 'none';
       }
@@ -38,18 +57,12 @@ const StudioLayout: React.FC<{
 
   const handleTouchMove = (e: React.TouchEvent) => {
       if (startY.current === null || !isDragging.current || !sheetRef.current) return;
-      
       const deltaY = e.touches[0].clientY - startY.current;
       currentY.current = deltaY;
-
-      // Apply transform directly to track finger
-      // If full, prevent dragging up (negative delta) too much
       if (mobileSheetMode === 'full' && deltaY < 0) {
-          // Resistance
           sheetRef.current.style.transform = `translateY(${deltaY * 0.2}px)`;
           return;
       }
-      
       sheetRef.current.style.transform = `translateY(${deltaY}px)`;
   };
 
@@ -57,28 +70,22 @@ const StudioLayout: React.FC<{
       if (!isDragging.current || !sheetRef.current) return;
       isDragging.current = false;
       startY.current = null;
-
-      // Restore transition for the snap animation
       sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-      sheetRef.current.style.transform = ''; // Clear inline transform to let CSS/State take over
+      sheetRef.current.style.transform = ''; 
 
-      const threshold = 80; // pixels to trigger change
+      const threshold = 80; 
       const delta = currentY.current;
 
       if (delta > threshold) {
-          // Dragged Down
           if (mobileSheetMode === 'full') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('hidden');
       } else if (delta < -threshold) {
-          // Dragged Up
           if (mobileSheetMode === 'hidden') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('full');
       }
-      
       currentY.current = 0;
   };
 
-  // Ensure style is clean when mode changes programmatically
   useEffect(() => {
      if (sheetRef.current && !isDragging.current) {
          sheetRef.current.style.transform = ''; 
@@ -89,7 +96,7 @@ const StudioLayout: React.FC<{
       if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
       switch (mobileSheetMode) {
           case 'full': return '90%'; 
-          case 'half': return '50%'; // This pushes the canvas "view" up, triggering auto-zoom in PreviewCanvas
+          case 'half': return '50%'; 
           default: return '4rem'; 
       }
   };
@@ -117,13 +124,9 @@ const StudioLayout: React.FC<{
 
       {/* Main Grid */}
       <div className="flex flex-1 overflow-hidden relative">
-        
-        {/* Desktop Left */}
         <aside className="hidden md:flex w-72 flex-col bg-[#0c0c0e] border-r border-white/5 z-20">
             <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
         </aside>
-
-        {/* Center Canvas */}
         <main 
             className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)" 
             style={{ paddingBottom: getCanvasPadding() }} 
@@ -134,13 +137,9 @@ const StudioLayout: React.FC<{
             <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
             <PreviewCanvas config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
         </main>
-
-        {/* Desktop Right */}
         <aside className="hidden md:flex w-80 flex-col bg-[#0c0c0e] border-l border-white/5 z-20">
            <Inspector config={config} setConfig={setConfig} />
         </aside>
-
-        {/* Mobile Bottom Sheet (Draggable) */}
         <div 
             ref={sheetRef}
             className={`
@@ -150,11 +149,9 @@ const StudioLayout: React.FC<{
             style={{ 
                 height: mobileSheetMode === 'full' ? '92%' : '50%',
                 touchAction: 'none',
-                // Default transition, overridden during drag
                 transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
-            {/* Drag Handle Area */}
             <div 
                 className="h-8 w-full flex items-center justify-center cursor-grab active:cursor-grabbing border-b border-white/5 touch-none"
                 onTouchStart={handleTouchStart}
@@ -163,8 +160,6 @@ const StudioLayout: React.FC<{
             >
                 <div className="w-12 h-1 bg-zinc-700 rounded-full" />
             </div>
-            
-            {/* Sheet Content */}
             <div 
                 className="h-[calc(100%-32px)] overflow-hidden relative"
                 onPointerDown={(e) => e.stopPropagation()} 
@@ -178,9 +173,7 @@ const StudioLayout: React.FC<{
                 )}
             </div>
         </div>
-
       </div>
-
       <MobileDock />
     </div>
   );

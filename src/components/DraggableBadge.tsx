@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RatingType, PosterConfig, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
+import { useEditor } from '../context/EditorContext';
 
 interface Props {
   badgeId: RatingType;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, onPositionChange, isSelected, onSelect }) => {
+  const { ratingsData } = useEditor(); // USE REAL DATA
   const itemConfig = config.items[badgeId];
   
   const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
@@ -108,24 +110,33 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
-      // Added mal: '8.5'
-      const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m', mal: '8.5' };
-      const dummyVal = dummyVals[badgeId] || '0.0';
+      // USE REAL RATINGS FROM CONTEXT
+      const val = ratingsData[badgeId as keyof typeof ratingsData] || '0.0';
 
       if (badgeId === 'age') {
         return (
             <div className="w-full h-full flex items-center justify-center relative">
                  <div className="absolute inset-0 m-2.5 border-2 rounded opacity-50" style={{ borderColor: txtColor }}></div>
-                 <span style={{ fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>PG-13</span>
+                 <span style={{ fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>{val || 'N/A'}</span>
             </div>
         );
       }
 
       if (!showIcon) {
-        return <span style={{ position: 'absolute', left: '50%', top: textTop, transform: 'translate(-50%, -50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{dummyVal}</span>;
+        return <span style={{ position: 'absolute', left: '50%', top: textTop, transform: 'translate(-50%, -50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{val}</span>;
       }
 
-      let iconKey: string = badgeId === 'rt' ? 'rt_fresh' : (badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId);
+      // Determine RT icon state
+      let iconKey: string = badgeId;
+      if (badgeId === 'rt') {
+          const num = parseInt(val.replace('%','')) || 0;
+          iconKey = num >= 60 ? 'rt_fresh' : 'rt_rotten';
+      }
+      if (badgeId === 'rt_popcorn') {
+          const num = parseInt(val.replace('%','')) || 0;
+          iconKey = num >= 60 ? 'popcorn_fresh' : 'popcorn_rotten';
+      }
+
       const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
 
       return (
@@ -135,7 +146,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
                     <svg viewBox={iconData.vb} width={iconSize} height={iconSize} style={{ display: 'block', color: txtColor }} dangerouslySetInnerHTML={{ __html: iconData.body }} />
                 </div>
             )}
-            <span style={{ position: 'absolute', right: textRight, top: textTop, transform: 'translateY(-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{dummyVal}</span>
+            <span style={{ position: 'absolute', right: textRight, top: textTop, transform: 'translateY(-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{val}</span>
         </>
       );
   };
