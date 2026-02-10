@@ -46,6 +46,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       try {
           const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}&source=${searchSource}`);
           const data = await res.json();
+          // Filter out items without poster or valid media type
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv', 'anime'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
@@ -64,7 +65,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               // Resolve IMDb ID (prioritize this as it enables OMDB/MDBList ratings)
               const imdbId = data.ids?.imdb;
               
-              // Default to 'poster' endpoint because we are using unique IDs (tt or MAL/TMDB specific)
               let newType: MediaType = 'poster';
               let newId = item.id.toString();
               let malId: string | undefined = undefined;
@@ -74,11 +74,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               } else {
                   // Fallback for items without IMDb ID
                   if (item.media_type === 'anime') {
-                      newType = 'anime'; // Keep anime type if no IMDb, so backend knows to use Jikan
+                      newType = 'anime'; // Keep anime type if no IMDb
                       malId = item.id.toString();
                   } else {
-                      // Movie/TV without IMDb ID -> use TMDB ID
-                      // newType is already 'poster' which works with TMDB IDs too if 'tt' is missing
+                      // Movie/TV without IMDb ID -> MUST use specific type (movie/tv) 
+                      // because backend 'poster' type only works with 'tt' IDs
+                      newType = item.media_type as MediaType;
                   }
               }
 
@@ -101,7 +102,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   malId: malId 
               }));
           } else {
-              // Fallback if ratings fetch fails
+              // Fallback if ratings fetch fails entirely
               setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type }));
           }
       } catch (e) {
