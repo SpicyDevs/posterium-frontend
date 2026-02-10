@@ -58,7 +58,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.keys?.omdb) params.set('omdb_key', config.keys.omdb);
   if (config.keys?.mdblist) params.set('mdblist_key', config.keys.mdblist);
 
-  params.set('v', '1');
+  params.set('v', '2');
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
