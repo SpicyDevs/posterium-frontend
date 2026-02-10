@@ -22,7 +22,8 @@ export function parseConfig(url) {
     };
 
     const items = {};
-    ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'].forEach(key => {
+    // Added 'mal' to the list
+    ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'].forEach(key => {
         const scaleOverride = getFloat(`${key}_scale`, NaN);
         const bwOverride = getInt(`${key}_bw`, NaN);
         const bcOverride = p.get(`${key}_bc`);
@@ -48,7 +49,7 @@ export function parseConfig(url) {
     return {
         ratings: p.has("r") ? p.get("r").split(",") : [],
         source: p.get("source") || "tmdb",
-        textless: getBool("textless", false), // NEW PARAMETER
+        textless: getBool("textless", false),
         posterBlur: getInt("bg_blur", 0),
         grayscale: getBool("bw", false),
         items

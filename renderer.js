@@ -3,9 +3,11 @@ import { ICONS } from './icons.js';
 import { FINAL_CACHE_TTL } from './config.js';
 
 export function generateSVGResponse(request, cfg, posterBase64, ratings, dispositionHeader, cache, ctx) {
+    // Added 'mal' to defaults at position y:670
     const defaults = { 
         tmdb: {x:30,y:30}, imdb: {x:30,y:110}, rt: {x:30,y:190}, rt_popcorn: {x:30,y:270},
-        letterboxd: {x:30,y:350}, meta: {x:30,y:430}, age: {x:30,y:510}, runtime: {x:30,y:590}
+        letterboxd: {x:30,y:350}, meta: {x:30,y:430}, age: {x:30,y:510}, runtime: {x:30,y:590},
+        mal: {x:30,y:670}
     };
     
     // Generate Defs

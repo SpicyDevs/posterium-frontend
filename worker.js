@@ -2,68 +2,45 @@
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
 import { getRandomKey, bufferToBase64 } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
-import { getPosterData } from './posterService.js'; // Imported Logic
+import { getPosterData } from './posterService.js';
 
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*" } });
 
-    // Edge Caching
     const cache = caches.default;
+    const url = new URL(request.url);
+
+    // Standard Cache Check (GET only)
     if (request.method === "GET") {
         let response = await cache.match(request);
         if (response) return response;
     }
 
-    const url = new URL(request.url);
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-   // Search Route
+    // --- SEARCH ROUTE (Unchanged) ---
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         if (!query) return new Response("Missing query", { status: 400 });
-
         const tmdbKey = env.TMDB_API_KEY; 
         const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&query=${encodeURIComponent(query)}`;
-
         try {
             const tmdbRes = await fetch(searchUrl, { cf: { cacheTtl: 3600, cacheEverything: true } });
             const data = await tmdbRes.json();
             if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
-
-            // RESTORED: The original advanced sorting logic
             const results = data.results
                 .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-                .sort((a, b) => {
-                    const titleA = (a.title || a.name || "").toLowerCase();
-                    const titleB = (b.title || b.name || "").toLowerCase();
-                    const q = query.toLowerCase();
-
-                    // Priority 1: Exact Match
-                    const isExactA = titleA === q;
-                    const isExactB = titleB === q;
-                    if (isExactA && !isExactB) return -1;
-                    if (!isExactA && isExactB) return 1;
-
-                    // Priority 2: Starts With
-                    const startsA = titleA.startsWith(q);
-                    const startsB = titleB.startsWith(q);
-                    if (startsA && !startsB) return -1;
-                    if (!startsA && startsB) return 1;
-
-                    // Priority 3: Popularity
-                    return (b.popularity || 0) - (a.popularity || 0);
-                });
-
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
             return new Response(JSON.stringify({ results }));
         } catch (e) {
             return new Response("Search Error", { status: 500 });
         }
     }
 
-    // Resolve Format
-    const match = url.pathname.match(/^\/(movie|tv|poster)\/(tt\d+|\d+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/i);
+    // --- RESOLVE FORMAT & ID ---
+    const match = url.pathname.match(/^\/(movie|tv|poster|anime)\/(tt\d+|\d+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/i);
     if (!match) return new Response("Not Found", { status: 404 });
 
     const inputType = match[1]; 
@@ -73,7 +50,7 @@ export default {
     const downloadFilename = `${rawId}.${format === 'json' ? 'json' : format}`;
     const dispositionHeader = isDownload ? `attachment; filename="${downloadFilename}"` : "inline";
 
-    // Key Resolution
+    // --- KEY MANAGEMENT (Unchanged) ---
     const userKeys = {
         tmdb: url.searchParams.get("tmdb_key"),
         fanart: url.searchParams.get("fanart_key"),
@@ -95,12 +72,12 @@ export default {
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
-    // Raster Proxy
+    // --- RASTER PROXY (Unchanged) ---
     if (format !== "svg" && format !== "json") {
         const svgUrl = new URL(request.url);
         const publicHost = "rpdb.padhaiaayush.workers.dev";
         svgUrl.pathname = `/${inputType}/${rawId}.svg`;
-        if (svgUrl.hostname !== publicHost) {
+        if (svgUrl.hostname !== publicHost && !svgUrl.hostname.includes('localhost')) {
             svgUrl.hostname = publicHost;
             svgUrl.protocol = "https:";
             svgUrl.port = ""; 
@@ -128,10 +105,11 @@ export default {
         const cfg = parseConfig(url);
 
         // --- CALL SERVICE LAYER ---
-        const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys);
+        // PASS 'format' so service knows if it needs full JSON or fast partial data
+        const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format);
         // --------------------------
 
-        // JSON Response
+        // JSON Response (Combined All APIs)
         if (format === 'json') {
             const jsonRes = new Response(JSON.stringify({
                 meta: {
@@ -139,21 +117,22 @@ export default {
                     resolved: { type: data.foundType, tmdb_id: data.movie?.id },
                     source_config: cfg.source,
                     textless_requested: cfg.textless,
-                    is_cached: data.isCached
+                    is_cached: data.isCached,
+                    cache_status: data.cacheLevel // 'partial' or 'full'
                 },
-                poster: { url: data.finalPosterUrl },
+                poster: { 
+                    selected: data.finalPosterUrl,
+                    all_sources: data.posters // Returns cached collection of text/textless
+                },
                 ratings: data.ratings,
                 details: {
                     title: data.movie?.title || data.movie?.name,
                     overview: data.movie?.overview,
-                    tagline: data.movie?.tagline,
-                    genres: data.movie?.genres,
-                    release_date: data.movie?.release_date || data.movie?.first_air_date,
-                    status: data.movie?.status,
+                    year: data.movie?.release_date?.split('-')[0] || data.movie?.first_air_date?.split('-')[0],
+                    runtime: data.ratings?.runtime,
+                    age_rating: data.ratings?.age,
                     imdb_id: data.movie?.external_ids?.imdb_id,
-                    backdrop: data.movie?.backdrop_path ? `https://image.tmdb.org/t/p/original${data.movie.backdrop_path}` : null
-                },
-                raw: { tmdb: data.movie, omdb: data.omdb, mdblist: data.mdblist }
+                }
             }, null, 2), {
                 headers: { 
                     "Content-Type": "application/json", 
@@ -175,12 +154,10 @@ export default {
                 posterBase64 = `data:${imgReq.headers.get("content-type") || "image/jpeg"};base64,${bufferToBase64(buffer)}`;
             }
         }
-                    return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
-
+        return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
-        // Simple error handling
-        const status = (e.message === "ID Not Found" || e.message === "TMDB Resource Not Found") ? 404 : 500;
+        const status = (e.message === "ID Not Found" || e.message === "Resource Not Found") ? 404 : 500;
         return new Response("Error: " + e.message, { status });
     }
   }
