@@ -45,35 +45,36 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
 
         // Create clip paths and background layers for each blur level
         uniqueBlurs.forEach(b => {
-            let paths = "";
+            let paths = ""; // Defined HERE, inside the loop
+            
             activeRatings.forEach(t => {
                 const item = cfg.items[t];
                 if (item.blur === b) {
                     const x = item.x !== null ? item.x : defaults[t].x;
                     const y = item.y !== null ? item.y : defaults[t].y;
                     const scale = item.scale !== undefined ? item.scale : 1.0;
-                    // Define the shape (rect) that needs the blurred background
+                    // Append to paths
                     paths += `<rect x="${x}" y="${y}" width="140" height="60" rx="${item.radius}" fill="white" transform="translate(${x},${y}) scale(${scale}) translate(-${x},-${y})" />`;
                 }
             });
             
+            // Check paths here (must be inside the uniqueBlurs loop)
             if (paths) {
                 const maskId = `m-${b}`;
                 blurDefs += `<clipPath id="${maskId}">${paths}</clipPath>`;
-                // Apply the blur filter to the poster URL, clipped to the badge shapes
                 backgroundLayers += `<image href="${posterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
             }
         });
 
     } else {
-        // Fallback if no poster URL found
+        // Fallback
         mainLayer = `
             <rect width="500" height="750" fill="#1a1a1a"/>
             <text x="250" y="375" dominant-baseline="middle" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="50" font-weight="bold" fill="#666666">NO POSTER</text>
         `;
     }
 
-    // Badge Layers (The visible cards on top)
+    // Badge Layers
     const activeRatings = cfg.ratings.filter(t => ratings[t]);
     activeRatings.forEach(t => {
         const val = ratings[t];
