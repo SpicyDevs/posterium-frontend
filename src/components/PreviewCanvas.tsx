@@ -1,14 +1,9 @@
-import React, { useMemo, useRef, useEffect, useState } from "react";
-import {
-  PosterConfig,
-  RatingType,
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-} from "../types";
-import DraggableBadge from "./DraggableBadge";
-import { calculateAutoPosition, DEFAULT_API_BASE } from "../utils";
-import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from "lucide-react"; // Added AlertCircle for error state
-import { useEditor } from "../context/EditorContext";
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
+import DraggableBadge from './DraggableBadge';
+import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
+import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react'; // Added AlertCircle for error state
+import { useEditor } from '../context/EditorContext';
 
 interface Props {
   config: PosterConfig;
@@ -17,12 +12,7 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
 }
 
-const PreviewCanvas: React.FC<Props> = ({
-  config,
-  setConfig,
-  selectedIds,
-  onSelect,
-}) => {
+const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
   const { viewOptions, mobileSheetMode } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,10 +33,8 @@ const PreviewCanvas: React.FC<Props> = ({
     const handleResize = () => {
       if (!containerRef.current) return;
       const padding = 40;
-      const scaleX =
-        (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
-      const scaleY =
-        (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
+      const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
+      const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
     };
     handleResize();
@@ -71,7 +59,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (e.touches.length === 2) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
+        e.touches[0].clientY - e.touches[1].clientY
       );
       lastDist.current = dist;
     } else if (e.touches.length === 1) {
@@ -84,7 +72,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (e.touches.length === 2 && lastDist.current) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
+        e.touches[0].clientY - e.touches[1].clientY
       );
       const delta = dist / lastDist.current;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
@@ -111,7 +99,7 @@ const PreviewCanvas: React.FC<Props> = ({
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
-      if (prev.layout !== "custom" || prev.preset !== "custom") {
+      if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
           const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
           if (!newItems[r]) newItems[r] = { x: auto.x, y: auto.y };
@@ -122,7 +110,7 @@ const PreviewCanvas: React.FC<Props> = ({
         });
       }
       newItems[id] = { ...newItems[id], x, y };
-      return { ...prev, layout: "custom", preset: "custom", items: newItems };
+      return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
 
@@ -132,23 +120,17 @@ const PreviewCanvas: React.FC<Props> = ({
     const params = new URLSearchParams();
 
     // Explicitly set source even if it is TMDB to ensure unique URL signature
-    params.set("source", config.source);
+    params.set('source', config.source);
 
-    if (config.textless) params.set("textless", "1");
+    if (config.textless) params.set('textless', '1');
 
     // Cache Buster: Uses Date.now() to ensure fresh fetch when these dependencies change.
     // This fixes the "Browser cached the wrong source" issue.
-    params.set("_t", Date.now().toString());
-    params.set("v", "2");
+    params.set('_t', Date.now().toString());
+    params.set('v', '2');
 
     return `${base}?${params.toString()}`;
-  }, [
-    config.tmdbId,
-    config.source,
-    config.mediaType,
-    config.extension,
-    config.textless,
-  ]);
+  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless]);
 
   // Reset loading/error state when URL changes
   useEffect(() => {
@@ -158,13 +140,8 @@ const PreviewCanvas: React.FC<Props> = ({
 
   // SMART LOAD HANDLER: Only disable loading if the loaded URL matches the current one.
   // This prevents race conditions where an old request finishes after a new one started.
-  const handleImageLoad = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>,
-  ) => {
-    if (
-      e.currentTarget.src === cleanPosterUrl ||
-      e.currentTarget.src.includes(cleanPosterUrl)
-    ) {
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    if (e.currentTarget.src === cleanPosterUrl || e.currentTarget.src.includes(cleanPosterUrl)) {
       setIsImageLoading(false);
     }
   };
@@ -187,9 +164,9 @@ const PreviewCanvas: React.FC<Props> = ({
       <div
         className="absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
         style={{
-          bottom: mobileSheetMode === "half" ? "55%" : "5rem",
-          opacity: mobileSheetMode === "full" ? 0 : 1,
-          pointerEvents: mobileSheetMode === "full" ? "none" : "auto",
+          bottom: mobileSheetMode === 'half' ? '55%' : '5rem',
+          opacity: mobileSheetMode === 'full' ? 0 : 1,
+          pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
         }}
       >
         {isPanning && (
@@ -228,9 +205,7 @@ const PreviewCanvas: React.FC<Props> = ({
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
-          transition: isPanning
-            ? "none"
-            : "transform 0.2s cubic-bezier(0,0,0.2,1)",
+          transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
       >
@@ -270,7 +245,7 @@ const PreviewCanvas: React.FC<Props> = ({
           key={cleanPosterUrl} // Forces React to recreate the img element on URL change, preventing ghosting
           src={cleanPosterUrl}
           alt="Poster"
-          className={`w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? "opacity-0 scale-105" : "opacity-100 scale-100"}`}
+          className={`w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
           style={{
             filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})`,
           }}
@@ -279,15 +254,9 @@ const PreviewCanvas: React.FC<Props> = ({
         />
 
         {config.ratings.map((id: RatingType, index: number) => {
-          const auto = calculateAutoPosition(
-            id,
-            index,
-            config.ratings.length,
-            config,
-          );
+          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
-          const hasManual =
-            itemConfig?.x !== undefined && itemConfig?.y !== undefined;
+          const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
 
           return (
             <DraggableBadge
