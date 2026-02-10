@@ -15,10 +15,10 @@ interface Props {
 }
 
 interface SearchResult { id: number; title: string; poster_path: string; release_date: string; media_type: 'movie' | 'tv'; }
-interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; }
+interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; mal?: string; }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection } = useEditor(); // <--- Use the new batch function
+  const { setBatchSelection } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -47,7 +47,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               const res = await fetch(`${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.json`);
               if (res.ok) {
                   const data = await res.json();
-                  if (data) setFetchedData({ ...data.ratings, title: data.raw?.tmdb?.title || data.raw?.tmdb?.name || data.raw?.tmdb?.original_title });
+                  if (data) setFetchedData({ ...data.ratings, title: data.raw?.tmdb?.title || data.raw?.tmdb?.name || data.raw?.tmdb?.original_title || data.details?.title });
               }
           } catch(e) { /* ignore */ }
       };
@@ -55,7 +55,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [config.tmdbId, config.mediaType]);
 
   const handleSelectMedia = (item: SearchResult) => {
-      setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type }));
+      setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
       setSearchQuery(''); setResults([]);
   };
 
@@ -71,16 +71,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     }
   };
 
-  // Fixed Select All Logic
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          // Select all currently visible badges
           const allVisibleIds = ALL_BADGES
             .filter(b => config.ratings.includes(b.id))
             .map(b => b.id);
           setBatchSelection(allVisibleIds);
       } else {
-          // Deselect all
           setBatchSelection([]);
       }
   };
@@ -97,6 +94,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
+          {/* Search Box */}
           <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400" size={14} />
               <input 
@@ -137,17 +135,38 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
              <div className="flex gap-2">
                  <div className="flex-1">
-                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">TMDB ID</label>
+                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
+                        {config.mediaType === 'anime' ? 'MAL ID' : 'TMDB ID'}
+                     </label>
                      <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
+                         {/* Type Selector */}
+                         <select 
+                             value={config.mediaType} 
+                             onChange={(e) => updateConfig('mediaType', e.target.value)} 
+                             className="bg-zinc-800 border-r border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
+                         >
+                             <option value="movie">Movie</option>
+                             <option value="tv">TV</option>
+                             <option value="anime">Anime</option>
+                         </select>
+
+                         {/* ID Input */}
                          <input 
                             type="text" 
                             value={config.tmdbId} 
                             onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                            className="flex-1 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none"
+                            className="flex-1 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono"
                          />
-                         <select value={config.source} onChange={(e) => updateConfig('source', e.target.value)} className="bg-zinc-800 border-l border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer">
+
+                         {/* Source Selector */}
+                         <select 
+                            value={config.source} 
+                            onChange={(e) => updateConfig('source', e.target.value)} 
+                            className="bg-zinc-800 border-l border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
+                         >
                              <option value="tmdb">TMDB</option>
                              <option value="fanart">Fanart</option>
+                             <option value="metahub">Metahub</option>
                          </select>
                      </div>
                  </div>
@@ -174,7 +193,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const isSelected = selectedIds.has(badge.id);
           const ratingValue = fetchedData[badge.id as keyof RatingsData];
           const iconKey = getIconKey(badge.id);
-          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS.imdb;
+          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id]; // Fallback to ID check for MAL
 
           return (
             <div 
@@ -202,7 +221,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   {badge.id === 'age' ? (
                       <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span>
                   ) : (
-                      <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} />
+                      // Note: If iconData is undefined (e.g. MAL missing in constants), this handles gracefully
+                      iconData ? (
+                        <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} />
+                      ) : (
+                        <span className="text-[8px] font-bold text-zinc-500">{badge.label.substring(0, 2)}</span>
+                      )
                   )}
               </div>
 

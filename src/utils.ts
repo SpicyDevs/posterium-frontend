@@ -51,6 +51,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
+  if (config.textless) params.set('textless', '1'); // <--- Handle Textless
   
   if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
@@ -102,7 +103,8 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
-    const match = url.pathname.match(/\/(movie|tv)\/(\w+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
+    // Updated Regex to include 'anime'
+    const match = url.pathname.match(/\/(movie|tv|anime)\/(\w+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
     
     const mediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
     const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
@@ -118,7 +120,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
-    const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'age', 'runtime'];
+    const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'];
     
     ratingKeys.forEach(key => {
         const x = params.get(`${key}_x`);
@@ -140,7 +142,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
                 ...(y ? { y: parseInt(y) } : {}),
                 ...(bg ? { bg } : {}),
                 ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
-                // BUG FIX: Use safe parsing (|| '0') to prevent NaN
                 ...(blur ? { blur: parseInt(blur) } : {}),
                 ...(alpha ? { alpha: parseFloat(alpha) } : {}),
                 ...(rad ? { radius: parseInt(rad) } : {}),
@@ -159,12 +160,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       extension: extension as any,
       ratings: params.has('r') ? params.get('r')?.split(',') as RatingType[] : [],
       source: (params.get('source') as any) || 'tmdb',
+      textless: params.get('textless') === '1', // <--- Parse Textless
       theme: 'glass',
       size: (params.get('s') as any) || 'md',
       shadow: params.get('sh') === '1',
       layout: (params.get('l') as any) || 'col',
       preset: (params.get('pos') as any) || 'tr',
-      // BUG FIX: Provide defaults for parseInt to avoid NaN
       blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
       alpha: params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
       radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,

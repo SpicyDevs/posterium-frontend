@@ -1,10 +1,10 @@
-export type MediaType = 'movie' | 'tv';
-export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime';
+export type MediaType = 'movie' | 'tv' | 'anime';
+export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime' | 'mal';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
-export type SourceType = 'tmdb' | 'fanart';
+export type SourceType = 'tmdb' | 'fanart' | 'metahub';
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 
 export interface BadgeConfig {
@@ -34,6 +34,7 @@ export interface PosterConfig {
   tmdbId: string;
   ratings: RatingType[];
   source: SourceType;
+  textless: boolean; // <--- New Feature
   theme: ThemeType;
   size: SizeType;
   shadow: boolean;
@@ -55,6 +56,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   tmdbId: "453395",
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
+  textless: false, // <--- Default
   theme: 'glass',
   size: 'md',
   shadow: true,
@@ -88,6 +90,7 @@ export const ALL_BADGES: { id: RatingType; label: string }[] = [
     { id: 'letterboxd', label: 'Letterboxd' },
     { id: 'meta', label: 'Metacritic' },
     { id: 'tmdb', label: 'TMDB' },
+    { id: 'mal', label: 'MyAnimeList' }, // <--- New Badge
     { id: 'age', label: 'Age Rating' },
     { id: 'runtime', label: 'Runtime' },
 ];

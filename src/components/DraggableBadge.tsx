@@ -17,7 +17,6 @@ interface Props {
 const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, onPositionChange, isSelected, onSelect }) => {
   const itemConfig = config.items[badgeId];
   
-  // NOTE: Scale determines dimension, NOT CSS transform, preventing "Double Scale" bug.
   const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
@@ -87,7 +86,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
     handleStart(e.clientX, e.clientY);
   };
 
-  // --- RENDERING ---
   const blurVal = itemConfig?.blur ?? config.blur;
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
@@ -110,7 +108,8 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
-      const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m' };
+      // Added mal: '8.5'
+      const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m', mal: '8.5' };
       const dummyVal = dummyVals[badgeId] || '0.0';
 
       if (badgeId === 'age') {
@@ -126,7 +125,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
         return <span style={{ position: 'absolute', left: '50%', top: textTop, transform: 'translate(-50%, -50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{dummyVal}</span>;
       }
 
-      // Icon Key mapping
       let iconKey: string = badgeId === 'rt' ? 'rt_fresh' : (badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId);
       const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
 
@@ -149,7 +147,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        transform: `translate(${currentPos.x}px, ${currentPos.y}px)`, // No scale() here
+        transform: `translate(${currentPos.x}px, ${currentPos.y}px)`, 
         background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
         border: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,
