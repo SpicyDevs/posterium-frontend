@@ -14,7 +14,17 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
 }
 
-interface SearchResult { id: number; title: string; poster_path: string; release_date: string; media_type: 'movie' | 'tv'; }
+// UPDATED: Interface now includes 'name' and 'first_air_date' for TV support
+interface SearchResult { 
+    id: number; 
+    title?: string; 
+    name?: string; 
+    poster_path: string; 
+    release_date?: string; 
+    first_air_date?: string; 
+    media_type: 'movie' | 'tv'; 
+}
+
 interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; mal?: string; }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
@@ -34,6 +44,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       try {
           const res = await fetch(`https://freeposterapi.pages.dev/api/search?q=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
+          // Filter ensures we only get movies and tv
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
@@ -110,22 +121,31 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
           {(results.length > 0) && (
               <div className="absolute left-3 right-3 top-12 bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
-                  {results.map(item => (
-                      <button key={item.id} onClick={() => handleSelectMedia(item)} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0">
-                          <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
-                          <div className="flex-1 min-w-0">
-                              <div className="text-xs font-bold text-zinc-200 truncate">{item.title || (item as any).name}</div>
-                              <div className="text-[10px] text-zinc-500 flex items-center gap-1">{item.media_type === 'movie' ? <Film size={10}/> : <Monitor size={10}/>}<span>{item.release_date?.split('-')[0]}</span></div>
-                          </div>
-                      </button>
-                  ))}
+                  {results.map(item => {
+                      // FIX: Support TV Show 'name' and 'first_air_date'
+                      const title = item.title || item.name;
+                      const date = item.release_date || item.first_air_date;
+                      const year = date ? date.split('-')[0] : '';
+
+                      return (
+                        <button key={item.id} onClick={() => handleSelectMedia(item)} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0">
+                            <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
+                            <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-zinc-200 truncate">{title}</div>
+                                <div className="text-[10px] text-zinc-500 flex items-center gap-1">
+                                    {item.media_type === 'movie' ? <Film size={10}/> : <Monitor size={10}/>}
+                                    <span>{year}</span>
+                                </div>
+                            </div>
+                        </button>
+                      );
+                  })}
               </div>
           )}
 
           <div className="space-y-2">
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 {/* Replaced Input with Div for better text display */}
                  <div 
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
                     title={fetchedData.title || "Loading..."}
@@ -140,7 +160,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         {config.mediaType === 'anime' ? 'MAL ID' : 'TMDB ID'}
                      </label>
                      <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
-                         {/* Type Selector */}
                          <select 
                              value={config.mediaType} 
                              onChange={(e) => updateConfig('mediaType', e.target.value)} 
@@ -151,7 +170,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                              <option value="anime">Anime</option>
                          </select>
 
-                         {/* ID Input - Reduced Width */}
                          <input 
                             type="text" 
                             value={config.tmdbId} 
@@ -159,7 +177,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                             className="w-24 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
                          />
 
-                         {/* Source Selector - Takes Remaining Space */}
                          <select 
                             value={config.source} 
                             onChange={(e) => updateConfig('source', e.target.value)} 
@@ -168,13 +185,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                              <option value="tmdb">TMDB</option>
                              <option value="fanart">Fanart</option>
                              <option value="metahub">Metahub</option>
-                             <option value="mal">MyAnimeList</option>
+                             {/* FIX: Only show MAL if Anime is selected */}
+                             {config.mediaType === 'anime' && <option value="mal">MyAnimeList</option>}
                          </select>
                      </div>
                  </div>
              </div>
 
-             {/* Textless Toggle Moved Here */}
              <label className="flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer hover:border-zinc-500 transition-all group">
                  <input 
                     type="checkbox" 
