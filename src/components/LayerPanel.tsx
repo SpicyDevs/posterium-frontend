@@ -125,12 +125,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <div className="space-y-2">
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 <input 
-                    type="text" 
-                    disabled 
-                    value={fetchedData.title || "Loading..."} 
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 cursor-not-allowed italic"
-                 />
+                 {/* Replaced Input with Div for better text display */}
+                 <div 
+                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
+                    title={fetchedData.title || "Loading..."}
+                 >
+                    {fetchedData.title || <span className="italic text-zinc-500">Loading...</span>}
+                 </div>
              </div>
 
              <div className="flex gap-2">
@@ -150,23 +151,24 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                              <option value="anime">Anime</option>
                          </select>
 
-                         {/* ID Input */}
+                         {/* ID Input - Reduced Width */}
                          <input 
                             type="text" 
                             value={config.tmdbId} 
                             onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                            className="flex-1 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono"
+                            className="w-24 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
                          />
 
-                         {/* Source Selector */}
+                         {/* Source Selector - Takes Remaining Space */}
                          <select 
                             value={config.source} 
                             onChange={(e) => updateConfig('source', e.target.value)} 
-                            className="bg-zinc-800 border-l border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
+                            className="flex-1 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
                          >
                              <option value="tmdb">TMDB</option>
                              <option value="fanart">Fanart</option>
                              <option value="metahub">Metahub</option>
+                             <option value="mal">MyAnimeList</option>
                          </select>
                      </div>
                  </div>
@@ -193,7 +195,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const isSelected = selectedIds.has(badge.id);
           const ratingValue = fetchedData[badge.id as keyof RatingsData];
           const iconKey = getIconKey(badge.id);
-          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id]; // Fallback to ID check for MAL
+          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id]; 
 
           return (
             <div 
@@ -221,7 +223,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   {badge.id === 'age' ? (
                       <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span>
                   ) : (
-                      // Note: If iconData is undefined (e.g. MAL missing in constants), this handles gracefully
                       iconData ? (
                         <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} />
                       ) : (

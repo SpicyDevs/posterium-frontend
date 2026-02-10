@@ -4,7 +4,7 @@ export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
-export type SourceType = 'tmdb' | 'fanart' | 'metahub';
+export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal'; // Added 'mal'
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 
 export interface BadgeConfig {
@@ -34,7 +34,7 @@ export interface PosterConfig {
   tmdbId: string;
   ratings: RatingType[];
   source: SourceType;
-  textless: boolean; // <--- New Feature
+  textless: boolean;
   theme: ThemeType;
   size: SizeType;
   shadow: boolean;
@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   tmdbId: "453395",
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
-  textless: false, // <--- Default
+  textless: false,
   theme: 'glass',
   size: 'md',
   shadow: true,
@@ -90,7 +90,7 @@ export const ALL_BADGES: { id: RatingType; label: string }[] = [
     { id: 'letterboxd', label: 'Letterboxd' },
     { id: 'meta', label: 'Metacritic' },
     { id: 'tmdb', label: 'TMDB' },
-    { id: 'mal', label: 'MyAnimeList' }, // <--- New Badge
+    { id: 'mal', label: 'MyAnimeList' },
     { id: 'age', label: 'Age Rating' },
     { id: 'runtime', label: 'Runtime' },
 ];

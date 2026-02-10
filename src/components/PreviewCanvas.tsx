@@ -13,7 +13,7 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { viewOptions, mobileSheetMode } = useEditor(); // <--- Get mode
+  const { viewOptions, mobileSheetMode } = useEditor(); 
   const containerRef = useRef<HTMLDivElement>(null);
   
   // -- VIEW STATE --
@@ -27,12 +27,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const lastDist = useRef<number | null>(null);
   const lastPan = useRef<{ x: number, y: number } | null>(null);
 
-  // 1. Initial Fit-to-Screen Logic (Responsive to Mobile Sheet)
+  // 1. Initial Fit-to-Screen Logic
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
       const padding = 40;
-      // We check container dimensions. App.tsx changes container size via paddingBottom based on sheet mode.
       const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
       const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
       setAutoScale(Math.min(scaleX, scaleY, 1));
@@ -41,7 +40,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [mobileSheetMode]); // <--- Re-run when sheet mode changes to "zoom out" the poster
+  }, [mobileSheetMode]);
 
   const currentScale = autoScale * zoom;
 
@@ -108,9 +107,13 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     });
   };
 
+  // UPDATED: Correctly appends source param for all sources
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
-    return config.source === 'fanart' ? `${base}?source=fanart&v=1` : `${base}?v=1`;
+    const params = new URLSearchParams();
+    if (config.source !== 'tmdb') params.set('source', config.source);
+    params.set('v', '1');
+    return `${base}?${params.toString()}`;
   }, [config.tmdbId, config.source, config.mediaType, config.extension]);
 
   useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
@@ -129,9 +132,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         <div 
             className="absolute right-4 md:right-6 flex flex-col md:flex-row items-center gap-2 z-50 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
             style={{ 
-                // Slide buttons up when half panel is open
                 bottom: mobileSheetMode === 'half' ? '55%' : '5rem',
-                // Fade out when full panel is open
                 opacity: mobileSheetMode === 'full' ? 0 : 1,
                 pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto'
             }}
@@ -150,7 +151,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
              </div>
         </div>
 
-        {/* The Poster Canvas Container (Transform Target) */}
+        {/* The Poster Canvas Container */}
         <div 
             style={{ 
                 width: CANVAS_WIDTH, 
