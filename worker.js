@@ -38,14 +38,20 @@ export default {
                     const titleA = (a.title || a.name || "").toLowerCase();
                     const titleB = (b.title || b.name || "").toLowerCase();
                     const q = query.toLowerCase();
+
+                    // Priority 1: Exact Match
                     const isExactA = titleA === q;
                     const isExactB = titleB === q;
                     if (isExactA && !isExactB) return -1;
                     if (!isExactA && isExactB) return 1;
+
+                    // Priority 2: Starts With
                     const startsA = titleA.startsWith(q);
                     const startsB = titleB.startsWith(q);
                     if (startsA && !startsB) return -1;
                     if (!startsA && startsB) return 1;
+
+                    // Priority 3: Popularity
                     return (b.popularity || 0) - (a.popularity || 0);
                 });
 
@@ -100,8 +106,9 @@ export default {
         // Remove 'download' param so wsrv.nl gets the inline SVG
         svgUrl.searchParams.delete("download");
 
-        // NOTE: The request.url hostname must be publicly accessible for wsrv.nl to reach it.
-        // Localhost/Preview URLs might fail.
+        // CRITICAL: Tell the SVG endpoint to embed the image as Base64
+        // so wsrv.nl receives a self-contained SVG.
+        svgUrl.searchParams.set("base64", "1");
 
         const rasterService = new URL("https://wsrv.nl/");
         rasterService.searchParams.set("url", svgUrl.toString());
@@ -128,7 +135,10 @@ export default {
 
     try {
         const cfg = parseConfig(url);
+        
+        // --- CALL SERVICE LAYER ---
         const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys);
+        // --------------------------
 
         // JSON Response
         if (format === 'json') {
@@ -164,10 +174,30 @@ export default {
             return jsonRes;
         }
 
-        // SVG Response
-        return generateSVGResponse(request, cfg, data.finalPosterUrl, data.ratings, dispositionHeader, cache, ctx);
+        // SVG Response (Logic to handle Embedding)
+        let posterSource = data.finalPosterUrl;
+
+        // If 'base64=1' is present, we must fetch the image and embed it as Data URI
+        // This is primarily for the rasterizer (wsrv.nl) request
+        if (url.searchParams.get("base64") === "1" && posterSource) {
+            try {
+                const imgReq = await fetch(posterSource, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
+                if (imgReq.ok) {
+                    const buffer = await imgReq.arrayBuffer();
+                    const b64 = bufferToBase64(buffer);
+                    const contentType = imgReq.headers.get("content-type") || "image/jpeg";
+                    posterSource = `data:${contentType};base64,${b64}`;
+                }
+            } catch (e) {
+                console.error("Base64 Embed Error:", e);
+                // Fallback to URL string (might result in blank on wsrv.nl, but avoids crash)
+            }
+        }
+
+        return generateSVGResponse(request, cfg, posterSource, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
+        // Simple error handling
         const status = (e.message === "ID Not Found" || e.message === "TMDB Resource Not Found") ? 404 : 500;
         return new Response("Error: " + e.message, { status });
     }
