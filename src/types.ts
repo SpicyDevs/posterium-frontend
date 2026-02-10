@@ -1,3 +1,5 @@
+// src/types.ts
+
 export type MediaType = 'movie' | 'tv' | 'anime' | 'poster';
 export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime' | 'mal';
 export type ThemeType = 'glass' | 'solid';
@@ -5,12 +7,13 @@ export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
 export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal'; 
-export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
+export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp'; // Ensure 'jpg' is here
 
+// ... rest of the file remains unchanged ...
 export interface BadgeConfig {
   x?: number;
   y?: number;
-  bg?: string; // Supports "#hex" or "grad:#hex1:#hex2"
+  bg?: string;
   txt?: string;
   blur?: number;
   alpha?: number;
@@ -32,7 +35,7 @@ export interface ApiKeys {
 export interface PosterConfig {
   mediaType: MediaType;
   tmdbId: string;
-  malId?: string; // Added to support hybrid Anime/IMDb lookup
+  malId?: string;
   ratings: RatingType[];
   source: SourceType;
   textless: boolean;
@@ -51,10 +54,9 @@ export interface PosterConfig {
   keys?: ApiKeys;
 }
 
-// Default Constants
 export const DEFAULT_CONFIG: PosterConfig = {
-  mediaType: 'movie',
-  tmdbId: "453395",
+  mediaType: 'poster', // Changed default to generic poster
+  tmdbId: "tt0111161", // Changed default to IMDb ID (Shawshank Redemption)
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
   textless: false,

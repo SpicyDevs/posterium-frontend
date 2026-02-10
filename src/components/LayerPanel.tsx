@@ -1,8 +1,10 @@
+// src/components/LayerPanel.tsx
+
 import React, { useState, useEffect } from 'react';
 import { PosterConfig, RatingType, ALL_BADGES, MediaType } from '../types';
-import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare, RotateCcw, FileDown, ChevronDown, Ghost } from 'lucide-react';
+import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare, Ghost } from 'lucide-react'; // Removed unused icons
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
-import { DEFAULT_API_BASE, generateApiUrl } from '../utils';
+import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
 
 type BadgeIconKey = keyof typeof BADGE_ICONS;
@@ -54,27 +56,35 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
   const handleSelectMedia = async (item: SearchResult) => {
       setIsSearching(true);
       try {
+          // Fetch Ratings first to get external IDs
           const res = await fetch(`${DEFAULT_API_BASE}/ratings/${item.media_type}/${item.id}`);
           if (res.ok) {
               const data = await res.json();
               
-              // Resolve IMDb ID
+              // Resolve IMDb ID (prioritize this as it enables OMDB/MDBList ratings)
               const imdbId = data.ids?.imdb;
               
+              // Default to 'poster' endpoint because we are using unique IDs (tt or MAL/TMDB specific)
+              let newType: MediaType = 'poster';
               let newId = item.id.toString();
-              // Explicitly type this as MediaType so it accepts 'poster' later
-              let newType: MediaType = item.media_type;
               let malId: string | undefined = undefined;
 
-              // If Anime has IMDb ID, we can use the Poster endpoint (IMDb ID)
-              if (newType === 'anime' && imdbId) {
-                  newId = imdbId;
-                  newType = 'poster';
-                  malId = item.id.toString(); // Save the original MAL ID
-              } else if (imdbId) {
-                  // Standard Movie/TV
-                  newId = imdbId;
-                  newType = 'poster';
+              if (imdbId) {
+                  newId = imdbId; // Use IMDb ID (tt...)
+              } else {
+                  // Fallback for items without IMDb ID
+                  if (item.media_type === 'anime') {
+                      newType = 'anime'; // Keep anime type if no IMDb, so backend knows to use Jikan
+                      malId = item.id.toString();
+                  } else {
+                      // Movie/TV without IMDb ID -> use TMDB ID
+                      // newType is already 'poster' which works with TMDB IDs too if 'tt' is missing
+                  }
+              }
+
+              // Store MAL ID for display if it's an anime
+              if (item.media_type === 'anime') {
+                  malId = item.id.toString();
               }
 
               setRatingsData({ 
@@ -91,6 +101,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
                   malId: malId 
               }));
           } else {
+              // Fallback if ratings fetch fails
               setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type }));
           }
       } catch (e) {
@@ -123,13 +134,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
       }
   };
 
-  const handleDownload = () => {
-      const url = generateApiUrl(config, baseUrl);
-      const downloadUrl = new URL(url);
-      downloadUrl.searchParams.set('download', '1');
-      window.location.href = downloadUrl.toString();
-  };
-
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
   const getIconKey = (id: string): BadgeIconKey => {
       if (id === 'rt') return 'rt_fresh';
@@ -145,27 +149,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
     <div className="flex flex-col h-full bg-[#0c0c0e]">
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
           
-          <div className="flex gap-2">
-             <button onClick={onReset} className="flex items-center gap-2 px-3 py-1.5 text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-md transition-all text-xs font-medium group flex-1 justify-center" title="Reset Config">
-                <RotateCcw size={14} className="group-hover:-rotate-180 transition-transform duration-500"/> Reset
-             </button>
-             
-             <div className="flex items-center rounded-md bg-indigo-600 text-white overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-500/20 transition-colors hover:bg-indigo-500 flex-1">
-                <button onClick={handleDownload} className="flex-1 px-3 py-1.5 text-xs font-bold flex items-center justify-center gap-2 border-r border-indigo-700/50">
-                     <FileDown size={14} /> Download
-                </button>
-                <div className="relative">
-                    <select value={config.extension} onChange={(e) => setConfig(p => ({...p, extension: e.target.value as any}))} className="bg-transparent text-xs font-medium pl-1 pr-4 py-1.5 outline-none cursor-pointer text-center appearance-none">
-                        <option value="svg" className="bg-zinc-800 text-zinc-200">SVG</option>
-                        <option value="png" className="bg-zinc-800 text-zinc-200">PNG</option>
-                        <option value="jpg" className="bg-zinc-800 text-zinc-200">JPG</option>
-                        <option value="webp" className="bg-zinc-800 text-zinc-200">WEBP</option>
-                    </select>
-                    <ChevronDown size={10} className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
-                </div>
-             </div>
-          </div>
-
+          {/* SEARCH BAR */}
           <div className="space-y-1">
               <div className="flex gap-1 mb-1">
                   <button onClick={() => setSearchSource('tmdb')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-wider rounded border ${searchSource === 'tmdb' ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>TMDB</button>
@@ -178,8 +162,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
               </div>
           </div>
 
+          {/* SEARCH RESULTS DROPDOWN */}
           {(results.length > 0) && (
-              <div className="absolute left-3 right-3 top-[8.5rem] bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
+              <div className="absolute left-3 right-3 top-[5rem] bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
                   {results.map(item => {
                       const title = item.title || item.name;
                       const date = item.release_date || item.first_air_date;
@@ -200,15 +185,24 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
               </div>
           )}
 
-          <div className="space-y-2">
+          {/* MEDIA ID / SOURCE INPUT */}
+          <div className="space-y-2 pt-2">
              <div className="flex gap-2">
                  <div className="flex-1">
-                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Media ID / Source</label>
+                     <div className="flex justify-between items-baseline mb-1">
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">Media ID / Source</label>
+                        {/* TITLE DISPLAY */}
+                        {ratingsData.title && (
+                            <span className="text-[9px] font-bold text-indigo-300 truncate max-w-[150px]" title={ratingsData.title}>
+                                {ratingsData.title} <span className="text-zinc-500 font-normal">({ratingsData.year})</span>
+                            </span>
+                        )}
+                     </div>
                      <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
                          <div className="flex-1 relative flex items-center">
-                             <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono" placeholder="ID" />
-                             {config.malId && config.tmdbId.startsWith('tt') && (
-                                 <span className="absolute right-2 text-[9px] text-zinc-500 font-mono pointer-events-none">(MAL: {config.malId})</span>
+                             <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono" placeholder="ID (e.g. tt...)" />
+                             {config.malId && (
+                                 <span className="absolute right-2 text-[9px] text-zinc-500 font-mono pointer-events-none bg-zinc-900/90 px-1">(MAL: {config.malId})</span>
                              )}
                          </div>
                          <div className="w-px bg-zinc-700"></div>
