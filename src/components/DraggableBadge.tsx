@@ -97,8 +97,8 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
     ? `linear-gradient(135deg, ${bgRaw.split(':')[1]}, ${bgRaw.split(':')[2]})` 
     : bgRaw;
 
-  const borderWidth = itemConfig?.borderW || 0;
-  const borderColor = itemConfig?.borderC || 'transparent';
+  const outlineWidth = itemConfig?.outlineW || 0;
+  const outlineColor = itemConfig?.outlineC || 'transparent';
   const txtColor = itemConfig?.txt || '#ffffff';
 
   const iconSize = 36 * scale;
@@ -115,7 +115,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
       if (badgeId === 'age') {
         return (
             <div className="w-full h-full flex items-center justify-center relative">
-                 <div className="absolute inset-0 m-2.5 border-2 rounded opacity-50" style={{ borderColor: txtColor }}></div>
+                 <div className="absolute inset-0 m-2.5 border-2 rounded opacity-50" style={{ outlineColor: txtColor }}></div>
                  <span style={{ fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>PG-13</span>
             </div>
         );
@@ -150,7 +150,7 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
         transform: `translate(${currentPos.x}px, ${currentPos.y}px)`, 
         background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
-        border: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,
+        outline: `${Math.max(outlineWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : outlineColor}`,
         backdropFilter: `blur(${blurVal}px)`,
         boxShadow: hasShadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : 'none',
         willChange: isDragging ? 'transform' : 'auto', 
