@@ -49,6 +49,7 @@ export function parseConfig(url) {
     return {
         ratings: p.has("r") ? p.get("r").split(",") : [],
         source: p.get("source") || "tmdb",
+        malId: p.get("mal_id") || undefined, // Added MAL ID parsing
         textless: getBool("textless", false),
         posterBlur: getInt("bg_blur", 0),
         grayscale: getBool("bw", false),

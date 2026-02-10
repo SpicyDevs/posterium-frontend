@@ -11,7 +11,6 @@ export default {
     const cache = caches.default;
     const url = new URL(request.url);
 
-    // Standard Cache Check (GET only) - Skip for ratings endpoint to ensure fresh data/auth check
     if (request.method === "GET" && !url.pathname.startsWith('/ratings')) {
         let response = await cache.match(request);
         if (response) return response;
@@ -20,30 +19,44 @@ export default {
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-    // --- SEARCH ROUTE ---
+    // --- SEARCH ROUTE (Updated to support Source) ---
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
+        const source = url.searchParams.get("source") || "tmdb";
         if (!query) return new Response("Missing query", { status: 400 });
-        const tmdbKey = env.TMDB_API_KEY; 
-        const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&query=${encodeURIComponent(query)}`;
+        
         try {
-            const tmdbRes = await fetch(searchUrl, { cf: { cacheTtl: 3600, cacheEverything: true } });
-            const data = await tmdbRes.json();
-            if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
-            const results = data.results
-                .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-            return new Response(JSON.stringify({ results }));
+            if (source === 'mal') {
+                const jikanUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`;
+                const jikanRes = await fetch(jikanUrl, { cf: { cacheTtl: 3600, cacheEverything: true } });
+                const data = await jikanRes.json();
+                const results = (data.data || []).map(item => ({
+                    id: item.mal_id,
+                    title: item.title_english || item.title,
+                    poster_path: item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url,
+                    release_date: item.aired?.from ? item.aired.from.split('T')[0] : null,
+                    media_type: 'anime'
+                }));
+                return new Response(JSON.stringify({ results }), { headers: { "Content-Type": "application/json" }});
+            } else {
+                const tmdbKey = env.TMDB_API_KEY; 
+                const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&query=${encodeURIComponent(query)}`;
+                const tmdbRes = await fetch(searchUrl, { cf: { cacheTtl: 3600, cacheEverything: true } });
+                const data = await tmdbRes.json();
+                if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
+                const results = data.results
+                    .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+                return new Response(JSON.stringify({ results }));
+            }
         } catch (e) {
             return new Response("Search Error", { status: 500 });
         }
     }
 
-    // --- NEW INTERNAL RATINGS ENDPOINT ---
-    // Route: /ratings/:inputType/:id
+    // --- RATINGS ENDPOINT ---
     const ratingsMatch = url.pathname.match(/^\/ratings\/(movie|tv|anime)\/([^\/]+)$/);
     if (ratingsMatch) {
-        // Security Check
         if (request.headers.get("X-Internal-Secret") !== "spicydevs-internal-v1") {
             return new Response("Unauthorized", { status: 403 });
         }
@@ -51,7 +64,6 @@ export default {
         const inputType = ratingsMatch[1];
         const rawId = ratingsMatch[2];
 
-        // Prepare keys
         const apiKeys = {
             tmdbApiKey: env.TMDB_API_KEY,
             fanartApiKey: env.FANART_API_KEY,
@@ -60,14 +72,12 @@ export default {
         };
 
         try {
-             // Config to fetch all standard ratings
              const cfg = { 
                  ratings: ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'],
                  textless: false, 
                  source: 'tmdb' 
              };
              
-             // Fetch Data (using 'json' format trigger to get full data)
              const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, 'json');
              
              return new Response(JSON.stringify({
@@ -85,7 +95,7 @@ export default {
         }
     }
 
-    // --- STANDARD RESOLVE FORMAT & ID ---
+    // --- STANDARD RESOLVE ---
     const match = url.pathname.match(/^\/(movie|tv|poster|anime)\/(tt\d+|\d+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/i);
     if (!match) return new Response("Not Found", { status: 404 });
 
