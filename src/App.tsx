@@ -7,7 +7,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
-import { Sparkles, Github, RotateCcw } from 'lucide-react';
+import { Sparkles, Github } from 'lucide-react';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
@@ -24,14 +24,13 @@ const StudioLayout: React.FC<{
   useEffect(() => {
     if (!config.tmdbId) return;
     const fetchMeta = async () => {
-        // Clear old data slightly to indicate loading or keep old? Keeping old prevents flicker.
         try {
-            // Call new Internal Ratings Endpoint
             const res = await fetch(`${DEFAULT_API_BASE}/ratings/${config.mediaType}/${config.tmdbId}`);
             if (res.ok) {
                 const data = await res.json();
                 setRatingsData({ 
-                    ...data.ratings, 
+                    ...data.ratings,
+                    externalIds: data.ids, // Persist IDs
                     title: data.meta?.title, 
                     year: data.meta?.year 
                 });
@@ -116,8 +115,6 @@ const StudioLayout: React.FC<{
              <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
         </div>
         <div className="flex gap-2 items-center justify-end w-64">
-             <button onClick={handleReset} className="p-2 text-zinc-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors" title="Reset"><RotateCcw size={18} /></button>
-             <div className="w-px h-5 bg-white/10 mx-1"></div>
              <a href="https://github.com/xdaayush/freeposterapi" target="_blank" rel="noreferrer" className="text-zinc-500 hover:text-white transition-colors p-2"><Github size={20} /></a>
         </div>
       </header>
@@ -125,7 +122,14 @@ const StudioLayout: React.FC<{
       {/* Main Grid */}
       <div className="flex flex-1 overflow-hidden relative">
         <aside className="hidden md:flex w-72 flex-col bg-[#0c0c0e] border-r border-white/5 z-20">
-            <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
+            <LayerPanel 
+                config={config} 
+                setConfig={setConfig} 
+                selectedIds={selectedIds} 
+                onSelect={handleSelection} 
+                baseUrl={baseUrl}
+                onReset={handleReset}
+            />
         </aside>
         <main 
             className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)" 
@@ -166,7 +170,14 @@ const StudioLayout: React.FC<{
                 onTouchStart={(e) => e.stopPropagation()}
             >
                 {activeTab === 'layers' && (
-                    <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
+                    <LayerPanel 
+                        config={config} 
+                        setConfig={setConfig} 
+                        selectedIds={selectedIds} 
+                        onSelect={handleSelection} 
+                        baseUrl={baseUrl}
+                        onReset={handleReset}
+                    />
                 )}
                 {(activeTab === 'canvas' || activeTab === 'badge') && (
                     <Inspector config={config} setConfig={setConfig} />

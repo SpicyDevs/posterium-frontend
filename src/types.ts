@@ -1,10 +1,10 @@
-export type MediaType = 'movie' | 'tv' | 'anime';
+export type MediaType = 'movie' | 'tv' | 'anime' | 'poster';
 export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime' | 'mal';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
-export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal'; // Added 'mal'
+export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal'; 
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 
 export interface BadgeConfig {
@@ -32,6 +32,7 @@ export interface ApiKeys {
 export interface PosterConfig {
   mediaType: MediaType;
   tmdbId: string;
+  malId?: string; // Added to support hybrid Anime/IMDb lookup
   ratings: RatingType[];
   source: SourceType;
   textless: boolean;

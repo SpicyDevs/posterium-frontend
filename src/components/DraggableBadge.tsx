@@ -16,7 +16,7 @@ interface Props {
 }
 
 const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, onPositionChange, isSelected, onSelect }) => {
-  const { ratingsData } = useEditor(); // USE REAL DATA
+  const { ratingsData } = useEditor();
   const itemConfig = config.items[badgeId];
   
   const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
@@ -110,14 +110,15 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
-      // USE REAL RATINGS FROM CONTEXT
-      const val = ratingsData[badgeId as keyof typeof ratingsData] || '0.0';
+      // FIX: Cast as string | undefined to avoid TypeScript confusion with 'externalIds' object
+      const rawVal = ratingsData[badgeId as keyof typeof ratingsData] as string | undefined;
+      const val = rawVal ? rawVal : (['age', 'runtime'].includes(badgeId) ? 'N/A' : '0.0');
 
       if (badgeId === 'age') {
         return (
             <div className="w-full h-full flex items-center justify-center relative">
                  <div className="absolute inset-0 m-2.5 border-2 rounded opacity-50" style={{ borderColor: txtColor }}></div>
-                 <span style={{ fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>{val || 'N/A'}</span>
+                 <span style={{ fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>{val}</span>
             </div>
         );
       }
@@ -126,7 +127,6 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
         return <span style={{ position: 'absolute', left: '50%', top: textTop, transform: 'translate(-50%, -50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{val}</span>;
       }
 
-      // Determine RT icon state
       let iconKey: string = badgeId;
       if (badgeId === 'rt') {
           const num = parseInt(val.replace('%','')) || 0;

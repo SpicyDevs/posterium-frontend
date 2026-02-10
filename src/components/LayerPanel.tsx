@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PosterConfig, RatingType, ALL_BADGES } from '../types';
-import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare } from 'lucide-react';
+import { PosterConfig, RatingType, ALL_BADGES, MediaType } from '../types';
+import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare, RotateCcw, FileDown, ChevronDown, Ghost } from 'lucide-react';
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
-import { DEFAULT_API_BASE } from '../utils';
+import { DEFAULT_API_BASE, generateApiUrl } from '../utils';
 import { useEditor } from '../context/EditorContext';
 
 type BadgeIconKey = keyof typeof BADGE_ICONS;
@@ -12,68 +12,89 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
+  baseUrl: string;
+  onReset: () => void;
 }
 
 interface SearchResult { 
-    id: number; 
+    id: number | string; 
     title?: string; 
     name?: string; 
     poster_path: string; 
     release_date?: string; 
     first_air_date?: string; 
-    media_type: 'movie' | 'tv'; 
+    media_type: 'movie' | 'tv' | 'anime'; 
 }
 
-const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, baseUrl, onReset }) => {
   const { setBatchSelection, ratingsData, setRatingsData } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSource, setSearchSource] = useState<'tmdb' | 'mal'>('tmdb');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [, setErrorMsg] = useState('');
   
   const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
+  // Search Logic
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true); setErrorMsg('');
       try {
-          const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`);
+          const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}&source=${searchSource}`);
           const data = await res.json();
-          if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
+          if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv', 'anime'].includes(i.media_type)));
       } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, apiKey]);
+  }, [searchQuery, apiKey, searchSource]);
 
-  // SMART SELECTION: Fetch ID first to fill input with IMDb ID
+  // Handle Media Selection
   const handleSelectMedia = async (item: SearchResult) => {
       setIsSearching(true);
       try {
-          // 1. Fetch details from our new internal ratings endpoint to resolve IMDb ID
           const res = await fetch(`${DEFAULT_API_BASE}/ratings/${item.media_type}/${item.id}`);
           if (res.ok) {
               const data = await res.json();
               
-              // 2. Determine best ID (Prefer IMDb 'tt...')
-              const bestId = data.ids?.imdb || item.id.toString();
+              // Resolve IMDb ID
+              const imdbId = data.ids?.imdb;
               
-              // 3. Update Global Data
-              setRatingsData({ ...data.ratings, title: data.meta?.title, year: data.meta?.year });
+              let newId = item.id.toString();
+              // Explicitly type this as MediaType so it accepts 'poster' later
+              let newType: MediaType = item.media_type;
+              let malId: string | undefined = undefined;
 
-              // 4. Update Config
+              // If Anime has IMDb ID, we can use the Poster endpoint (IMDb ID)
+              if (newType === 'anime' && imdbId) {
+                  newId = imdbId;
+                  newType = 'poster';
+                  malId = item.id.toString(); // Save the original MAL ID
+              } else if (imdbId) {
+                  // Standard Movie/TV
+                  newId = imdbId;
+                  newType = 'poster';
+              }
+
+              setRatingsData({ 
+                  ...data.ratings, 
+                  externalIds: data.ids, 
+                  title: data.meta?.title, 
+                  year: data.meta?.year 
+              });
+
               setConfig(prev => ({ 
                   ...prev, 
-                  tmdbId: bestId, 
-                  mediaType: item.media_type as any 
+                  tmdbId: newId, 
+                  mediaType: newType,
+                  malId: malId 
               }));
           } else {
-              // Fallback if fetch fails
-              setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
+              setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type }));
           }
       } catch (e) {
           console.error("Selection Error", e);
-          setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
       } finally {
           setIsSearching(false);
           setSearchQuery(''); 
@@ -102,6 +123,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
   };
 
+  const handleDownload = () => {
+      const url = generateApiUrl(config, baseUrl);
+      const downloadUrl = new URL(url);
+      downloadUrl.searchParams.set('download', '1');
+      window.location.href = downloadUrl.toString();
+  };
+
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
   const getIconKey = (id: string): BadgeIconKey => {
       if (id === 'rt') return 'rt_fresh';
@@ -110,36 +138,59 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       return id as BadgeIconKey;
   }
 
+  // Determine Is Anime
+  const isAnime = config.mediaType === 'anime' || !!config.malId || !!ratingsData.externalIds?.mal;
+
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
-          {/* Search Box */}
-          <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400" size={14} />
-              <input 
-                  type="text" 
-                  placeholder="Search Movie/TV..." 
-                  className="w-full bg-[#18181b] border border-white/10 rounded-md py-2 pl-9 pr-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50 transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Search Media"
-              />
-              {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={12} />}
+          
+          <div className="flex gap-2">
+             <button onClick={onReset} className="flex items-center gap-2 px-3 py-1.5 text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-md transition-all text-xs font-medium group flex-1 justify-center" title="Reset Config">
+                <RotateCcw size={14} className="group-hover:-rotate-180 transition-transform duration-500"/> Reset
+             </button>
+             
+             <div className="flex items-center rounded-md bg-indigo-600 text-white overflow-hidden border border-indigo-500 shadow-sm shadow-indigo-500/20 transition-colors hover:bg-indigo-500 flex-1">
+                <button onClick={handleDownload} className="flex-1 px-3 py-1.5 text-xs font-bold flex items-center justify-center gap-2 border-r border-indigo-700/50">
+                     <FileDown size={14} /> Download
+                </button>
+                <div className="relative">
+                    <select value={config.extension} onChange={(e) => setConfig(p => ({...p, extension: e.target.value as any}))} className="bg-transparent text-xs font-medium pl-1 pr-4 py-1.5 outline-none cursor-pointer text-center appearance-none">
+                        <option value="svg" className="bg-zinc-800 text-zinc-200">SVG</option>
+                        <option value="png" className="bg-zinc-800 text-zinc-200">PNG</option>
+                        <option value="jpg" className="bg-zinc-800 text-zinc-200">JPG</option>
+                        <option value="webp" className="bg-zinc-800 text-zinc-200">WEBP</option>
+                    </select>
+                    <ChevronDown size={10} className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-1">
+              <div className="flex gap-1 mb-1">
+                  <button onClick={() => setSearchSource('tmdb')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-wider rounded border ${searchSource === 'tmdb' ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>TMDB</button>
+                  <button onClick={() => setSearchSource('mal')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-wider rounded border ${searchSource === 'mal' ? 'bg-pink-600 border-pink-500 text-white' : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>MAL (Anime)</button>
+              </div>
+              <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400" size={14} />
+                  <input type="text" placeholder={`Search ${searchSource === 'mal' ? 'Anime' : 'Movie/TV'}...`} className="w-full bg-[#18181b] border border-white/10 rounded-md py-2 pl-9 pr-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50 transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={12} />}
+              </div>
           </div>
 
           {(results.length > 0) && (
-              <div className="absolute left-3 right-3 top-12 bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
+              <div className="absolute left-3 right-3 top-[8.5rem] bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
                   {results.map(item => {
                       const title = item.title || item.name;
                       const date = item.release_date || item.first_air_date;
                       const year = date ? date.split('-')[0] : '';
                       return (
                         <button key={item.id} onClick={() => handleSelectMedia(item)} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0">
-                            <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
+                            <img src={item.poster_path} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
                             <div className="flex-1 min-w-0">
                                 <div className="text-xs font-bold text-zinc-200 truncate">{title}</div>
                                 <div className="text-[10px] text-zinc-500 flex items-center gap-1">
-                                    {item.media_type === 'movie' ? <Film size={10}/> : <Monitor size={10}/>}
+                                    {item.media_type === 'anime' ? <Ghost size={10}/> : item.media_type === 'movie' ? <Film size={10}/> : <Monitor size={10}/>}
                                     <span>{year}</span>
                                 </div>
                             </div>
@@ -150,56 +201,26 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           )}
 
           <div className="space-y-2">
-             <div>
-                 <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 <div className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate">
-                    {ratingsData.title ? (
-                        <span>{ratingsData.title} <span className="text-zinc-500">({ratingsData.year})</span></span>
-                    ) : (
-                        <span className="italic text-zinc-500">Loading...</span>
-                    )}
-                 </div>
-             </div>
-
              <div className="flex gap-2">
                  <div className="flex-1">
-                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
-                        Media ID / Source
-                     </label>
+                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Media ID / Source</label>
                      <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
-                         {/* REMOVED MEDIA TYPE SELECTOR AS REQUESTED */}
-                         <input 
-                            type="text" 
-                            value={config.tmdbId} 
-                            onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                            className="flex-1 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
-                            placeholder="tt12345 or 12345"
-                         />
-
-                         <select 
-                            value={config.source} 
-                            onChange={(e) => updateConfig('source', e.target.value)} 
-                            className="w-24 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
-                         >
+                         <div className="flex-1 relative flex items-center">
+                             <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono" placeholder="ID" />
+                             {config.malId && config.tmdbId.startsWith('tt') && (
+                                 <span className="absolute right-2 text-[9px] text-zinc-500 font-mono pointer-events-none">(MAL: {config.malId})</span>
+                             )}
+                         </div>
+                         <div className="w-px bg-zinc-700"></div>
+                         <select value={config.source} onChange={(e) => updateConfig('source', e.target.value)} className="w-24 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors">
                              <option value="tmdb">TMDB</option>
                              <option value="fanart">Fanart</option>
                              <option value="metahub">Metahub</option>
-                             {config.mediaType === 'anime' && <option value="mal">MyAnimeList</option>}
+                             {isAnime && <option value="mal">MyAnimeList</option>}
                          </select>
                      </div>
                  </div>
              </div>
-
-             <label className={`flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer transition-all group ${config.source === 'metahub' ? 'opacity-50 cursor-not-allowed' : 'hover:border-zinc-500'}`}>
-                 <input 
-                    type="checkbox" 
-                    checked={config.textless} 
-                    disabled={config.source === 'metahub'}
-                    onChange={(e) => updateConfig('textless', e.target.checked)} 
-                    className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0 group-hover:border-zinc-500"
-                 />
-                 <span className="text-[10px] font-medium text-zinc-300 group-hover:text-white uppercase tracking-wider">Use Textless Poster</span>
-             </label>
           </div>
       </div>
 
@@ -208,16 +229,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Layers</h3>
             <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group">
                 <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
-                <div 
-                    className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
-                    onClick={(e) => { e.preventDefault(); handleSelectAll(!allVisibleSelected); }}
-                >
+                <div className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`} onClick={(e) => { e.preventDefault(); handleSelectAll(!allVisibleSelected); }}>
                     {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
                 </div>
             </label>
         </div>
         
         {ALL_BADGES.map((badge) => {
+          if (badge.id === 'mal' && !isAnime) return null;
           const isActive = config.ratings.includes(badge.id);
           const isSelected = selectedIds.has(badge.id);
           const ratingValue = ratingsData[badge.id as keyof typeof ratingsData];
@@ -225,52 +244,21 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id]; 
 
           return (
-            <div 
-              key={badge.id}
-              onClick={(e) => {
-                  if (!isActive) return;
-                  onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
-              }}
-              className={`
-                group flex items-center gap-3 px-2 py-2 rounded-md transition-all border
-                ${isSelected ? 'bg-indigo-900/20 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}
-                ${!isActive ? 'opacity-40 grayscale' : 'cursor-pointer'}
-              `}
-            >
-              <div 
-                className="flex items-center justify-center p-1"
-                onClick={(e) => { e.stopPropagation(); if(isActive) onSelect(badge.id, true); }}
-              >
+            <div key={badge.id} onClick={(e) => { if (!isActive) return; onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey); }} className={`group flex items-center gap-3 px-2 py-2 rounded-md transition-all border ${isSelected ? 'bg-indigo-900/20 border-indigo-500/30' : 'border-transparent hover:bg-white/5'} ${!isActive ? 'opacity-40 grayscale' : 'cursor-pointer'}`}>
+              <div className="flex items-center justify-center p-1" onClick={(e) => { e.stopPropagation(); if(isActive) onSelect(badge.id, true); }}>
                   <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-500 border-indigo-400' : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500'}`}>
                       {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
                   </div>
               </div>
-
               <div className="w-6 h-6 flex items-center justify-center bg-zinc-800 rounded shadow-sm border border-white/5">
-                  {badge.id === 'age' ? (
-                      <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span>
-                  ) : (
-                      iconData ? (
-                        <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} />
-                      ) : (
-                        <span className="text-[8px] font-bold text-zinc-500">{badge.label.substring(0, 2)}</span>
-                      )
-                  )}
+                  {badge.id === 'age' ? <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span> : (iconData ? <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} /> : <span className="text-[8px] font-bold text-zinc-500">{badge.label.substring(0, 2)}</span>)}
               </div>
-
               <div className="flex-1 min-w-0 flex justify-between items-center pr-1">
                   <div className="flex flex-col">
                       <span className={`text-xs font-medium truncate ${isSelected ? 'text-indigo-200' : 'text-zinc-300'}`}>{badge.label}</span>
-                      {isActive && ratingValue && <span className="text-[9px] text-zinc-500 font-mono">{ratingValue}</span>}
+                      {isActive && ratingValue && <span className="text-[9px] text-zinc-500 font-mono">{ratingValue as string}</span>}
                   </div>
-                  
-                  <button 
-                    onClick={(e) => toggleVisibility(e, badge.id)}
-                    className={`p-1.5 rounded hover:bg-white/10 transition-all active:scale-90 ${isActive ? 'text-zinc-400 hover:text-white' : 'text-zinc-600'}`}
-                    aria-label={isActive ? "Hide Layer" : "Show Layer"}
-                  >
-                    {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
-                  </button>
+                  <button onClick={(e) => toggleVisibility(e, badge.id)} className={`p-1.5 rounded hover:bg-white/10 transition-all active:scale-90 ${isActive ? 'text-zinc-400 hover:text-white' : 'text-zinc-600'}`} aria-label={isActive ? "Hide Layer" : "Show Layer"}>{isActive ? <Eye size={13} /> : <EyeOff size={13} />}</button>
               </div>
             </div>
           );

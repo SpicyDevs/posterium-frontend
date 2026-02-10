@@ -21,7 +21,15 @@ export interface RatingsData {
     tmdb?: string; 
     age?: string; 
     runtime?: string; 
-    mal?: string; 
+    mal?: string;
+    // Added externalIds to support the new functionality
+    externalIds?: {
+        imdb?: string | null;
+        tmdb?: string | number | null;
+        tvdb?: string | number | null;
+        mal?: string | number | null;
+        [key: string]: any;
+    };
 }
 
 interface EditorContextType {
