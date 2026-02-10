@@ -3,7 +3,7 @@ import { fetchWithTimeout, safeJsonFetch, getD1Cache, setD1Cache, getFanartPoste
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
     const { tmdbApiKey, fanartApiKey, omdbApiKey, mdbListApiKey } = apiKeys;
-    const cacheKey = `${inputType}:${rawId}:v21`; // Version bumped to invalidate broken caches
+    const cacheKey = `${inputType}:${rawId}:v22`; // Version bumped to v22
 
     // 1. Check Cache
     let cachedData = await getD1Cache(env.POSTER_CACHE, cacheKey);
@@ -25,12 +25,12 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     }
 
     // 2. Fetch Core Data (Optimized Skeleton)
-    // Pass 'cfg' so we know if we need textless images immediately
     let coreData = cachedData?.core ? cachedData.core : await fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
     
     // 3. Determine Requirements
     const needsFull = (format === 'json');
-    const required = determineRequirements(cfg, needsFull, inputType, coreData);
+    // We pass cachedData to help determine if we already have what we need (like textless)
+    const required = determineRequirements(cfg, needsFull, inputType, coreData, cachedData);
     
     // 4. Fetch Selected APIs (Fast Path)
     const currentData = cachedData || { ratings: {}, posters: {}, omdb: null, mdblist: null };
@@ -59,7 +59,6 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
     let ratings = {};
     
     if (inputType === 'anime') {
-        // OPTIMIZATION: Use standard endpoint instead of /full to reduce payload
         const jikanRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${rawId}`, 3500);
         if (!jikanRes) throw new Error("Resource Not Found");
         const data = (await jikanRes.json()).data;
@@ -154,7 +153,7 @@ async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
 
 // --- REQUIREMENTS LOGIC ---
 
-function determineRequirements(cfg, needsFull, inputType, coreData) {
+function determineRequirements(cfg, needsFull, inputType, coreData, cachedData) {
     const requestedRatings = cfg.ratings || [];
     const req = { 
         fanart: false, 
@@ -188,21 +187,27 @@ function determineRequirements(cfg, needsFull, inputType, coreData) {
     
     const hasImdbId = !!coreData.ids.imdb; 
 
-    // 2. TMDB Images (Textless) - Fetch if requested but missing
-    if (inputType !== 'anime' && cfg.textless && !coreData.posters.tmdb?.textless) {
+    // 2. TMDB Images (Textless) - Fetch if requested, but NOT in core AND NOT in cache
+    const hasCachedTextless = cachedData?.posters?.tmdb?.textless;
+    const hasCoreTextless = coreData.posters.tmdb?.textless;
+    
+    if (inputType !== 'anime' && cfg.textless && !hasCoreTextless && !hasCachedTextless) {
          req.tmdbImages = true;
     }
 
     // 3. Ratings & Source Images
-    if (cfg.source === 'fanart') req.fanart = true;
-    if (cfg.source === 'metahub') req.metahub = true;
+    // Only fetch if we don't already have them in cache (or if cache is partial? no, mergeData handles partials)
+    // Actually, for fast path, we blindly fetch if source requested, relying on mergeData to combine.
+    // Optimization: Check cache before fetching source
+    if (cfg.source === 'fanart' && !cachedData?.posters?.fanart) req.fanart = true;
+    if (cfg.source === 'metahub' && !cachedData?.posters?.metahub) req.metahub = true;
 
     if (hasImdbId || req.jikanExternal) {
         if (requestedRatings.includes('imdb') || requestedRatings.includes('rt') || requestedRatings.includes('meta') || requestedRatings.includes('runtime')) {
-            req.omdb = true;
+            if (!cachedData?.omdb) req.omdb = true;
         }
         if (requestedRatings.includes('letterboxd') || requestedRatings.includes('rt_popcorn')) {
-            req.mdblist = true;
+            if (!cachedData?.mdblist) req.mdblist = true;
         }
     }
     
@@ -277,22 +282,44 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
 function mergeData(coreData, currentData, newResults) {
     const merged = { ...currentData, core: coreData };
     
-    // Deep merge identifiers
     merged.ids = { ...coreData.ids, ...(currentData.ids || {}) };
-    
-    // Deep merge Ratings
     merged.ratings = { ...coreData.ratings, ...(currentData.ratings || {}) };
 
-    // Deep merge Posters (Crucial: Start with Core/TMDB, then Cache, then New)
-    merged.posters = { ...coreData.posters, ...(currentData.posters || {}) };
+    // --- DEEP MERGE POSTERS (FIX) ---
+    // 1. Initialize with Core (Fresh TMDB text poster)
+    merged.posters = { ...coreData.posters };
 
+    // 2. Merge in Cached Data (Preserving fresh Core TMDB text)
+    if (currentData.posters) {
+        Object.keys(currentData.posters).forEach(key => {
+            if (key === 'tmdb') {
+                // For TMDB: Keep fresh TEXT from Core, but allow Cache to provide TEXTLESS
+                const coreTmdb = merged.posters.tmdb || {};
+                const cachedTmdb = currentData.posters.tmdb || {};
+                merged.posters.tmdb = {
+                    text: coreTmdb.text || cachedTmdb.text, 
+                    textless: coreTmdb.textless || cachedTmdb.textless 
+                };
+            } else {
+                // For other sources, simply add them if they don't exist yet (or overwrite if we prefer cache?)
+                // Usually we just want to ensure we don't lose them.
+                if (!merged.posters[key]) {
+                    merged.posters[key] = currentData.posters[key];
+                }
+            }
+        });
+    }
+
+    // 3. Merge New Fetch Results (Highest Priority)
     newResults.forEach(res => {
         if (!res) return;
         
         if (res.source === 'jikan_ext') merged.ids.imdb = res.id;
         
         if (res.source === 'tmdb_images') {
+             // Ensure object exists
              if (!merged.posters.tmdb) merged.posters.tmdb = { text: null, textless: null };
+             // Update textless from new fetch
              if (res.textless) merged.posters.tmdb.textless = res.textless;
         }
 
@@ -344,8 +371,8 @@ async function hydrateCache(env, currentData, apiKeys, cacheKey) {
                       (currentData.core.type === 'anime'); 
 
     // 1. Determine requirements (Assume full fetch needed)
-    // Pass empty cfg since we want full data regardless of user cfg here
-    const req = determineRequirements({}, true, currentData.core.type, currentData.core);
+    // Pass empty cfg, but pass currentData so we know what we already have
+    const req = determineRequirements({}, true, currentData.core.type, currentData.core, currentData);
 
     // 2. Filter out expensive APIs if NOT popular
     if (!isPopular) {
