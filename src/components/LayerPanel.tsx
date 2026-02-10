@@ -173,6 +173,17 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                      </div>
                  </div>
              </div>
+
+             {/* Textless Toggle Moved Here */}
+             <label className="flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer hover:border-zinc-500 transition-all group">
+                 <input 
+                    type="checkbox" 
+                    checked={config.textless} 
+                    onChange={(e) => updateConfig('textless', e.target.checked)} 
+                    className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0 group-hover:border-zinc-500"
+                 />
+                 <span className="text-[10px] font-medium text-zinc-300 group-hover:text-white uppercase tracking-wider">Use Textless Poster</span>
+             </label>
           </div>
       </div>
 

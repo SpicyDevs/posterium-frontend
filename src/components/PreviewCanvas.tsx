@@ -107,14 +107,17 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     });
   };
 
-  // UPDATED: Correctly appends source param for all sources
+  // UPDATED: Correctly appends source param for all sources AND textless
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     const params = new URLSearchParams();
     if (config.source !== 'tmdb') params.set('source', config.source);
+    if (config.textless) params.set('textless', '1'); // <--- Added this check
+    
     params.set('v', '2');
+    
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.source, config.mediaType, config.extension]);
+  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless]); // <--- Added textless dependency
 
   useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
 

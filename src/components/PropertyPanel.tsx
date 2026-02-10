@@ -127,10 +127,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </ControlRow>
             
             <div className="flex flex-col gap-3 pt-2">
-                <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
-                    <input type="checkbox" checked={config.textless} onChange={(e) => updateConfig('textless', e.target.checked)} className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-0" />
-                    <span className="text-xs text-zinc-300">Textless Poster</span>
-                </label>
+                {/* Removed Textless Checkbox from here */}
 
                 <div className="grid grid-cols-2 gap-3">
                     <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
