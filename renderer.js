@@ -2,14 +2,13 @@
 import { ICONS } from './icons.js';
 import { FINAL_CACHE_TTL } from './config.js';
 
-export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositionHeader, cache, ctx) {
+export function generateSVGString(cfg, posterUrl, ratings) {
     const defaults = { 
         tmdb: {x:30,y:30}, imdb: {x:30,y:110}, rt: {x:30,y:190}, rt_popcorn: {x:30,y:270},
         letterboxd: {x:30,y:350}, meta: {x:30,y:430}, age: {x:30,y:510}, runtime: {x:30,y:590}
     };
     
     // FIX: Escape ampersands in the URL for valid XML/SVG syntax
-    // The browser expects "&amp;" instead of "&" inside the href attribute
     const validPosterUrl = posterUrl ? posterUrl.replace(/&/g, "&amp;") : "";
     
     // Generate Defs
@@ -133,13 +132,17 @@ export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositio
         </g>`;
     });
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750">
         <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&amp;display=swap');</style>
         <defs>${defs}${blurDefs}</defs>
         ${mainLayer}
         ${backgroundLayers}
         ${badgeElements}
     </svg>`;
+}
+
+export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositionHeader, cache, ctx) {
+    const svg = generateSVGString(cfg, posterUrl, ratings);
 
     const finalResponse = new Response(svg, {
         headers: { 

@@ -1,8 +1,8 @@
 // worker.js
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
 import { getRandomKey, bufferToBase64 } from './utils.js';
-import { generateSVGResponse } from './renderer.js';
-import { getPosterData } from './posterService.js'; // Imported Logic
+import { generateSVGResponse, generateSVGString } from './renderer.js';
+import { getPosterData } from './posterService.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -19,7 +19,7 @@ export default {
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-   // Search Route
+    // Search Route
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         if (!query) return new Response("Missing query", { status: 400 });
@@ -32,7 +32,6 @@ export default {
             const data = await tmdbRes.json();
             if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
 
-            // RESTORED: The original advanced sorting logic
             const results = data.results
                 .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
                 .sort((a, b) => {
@@ -95,41 +94,13 @@ export default {
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
-    // Raster Proxy
-    if (format !== "svg" && format !== "json") {
-        const svgUrl = new URL(request.url);
-        const publicHost = "rpdb.padhaiaayush.workers.dev";
-        svgUrl.pathname = `/${inputType}/${rawId}.svg`;
-        if (svgUrl.hostname !== publicHost) {
-            svgUrl.hostname = publicHost;
-            svgUrl.protocol = "https:";
-            svgUrl.port = ""; 
-        }
-        url.searchParams.forEach((v, k) => svgUrl.searchParams.set(k, v));
-        const rasterService = new URL("https://wsrv.nl/");
-        rasterService.searchParams.set("url", svgUrl.toString());
-        rasterService.searchParams.set("output", format === "webp" ? "webp" : (format === "png" ? "png" : "jpg"));
-        rasterService.searchParams.set("q", "100"); 
-
-        const response = await fetch(rasterService);
-        const finalRes = new Response(response.body, {
-            headers: {
-                "Content-Type": response.headers.get("Content-Type"),
-                "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`, 
-                "Access-Control-Allow-Origin": "*",
-                "Content-Disposition": dispositionHeader
-            }
-        });
-        ctx.waitUntil(cache.put(request, finalRes.clone()));
-        return finalRes;
-    }
-
     try {
         const cfg = parseConfig(url);
 
-        // --- CALL SERVICE LAYER ---
+        // --- CALL SERVICE LAYER FIRST ---
+        // Fetch data immediately so we have the poster URL available for all formats
         const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys);
-        // --------------------------
+        // --------------------------------
 
         // JSON Response
         if (format === 'json') {
@@ -165,22 +136,41 @@ export default {
             return jsonRes;
         }
 
-        // SVG Response Generation
- /*
-        let posterBase64 = "";
-        if (data.finalPosterUrl) {
-            const imageFetch = fetch(data.finalPosterUrl, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
-            const imgReq = await imageFetch;
-            if (imgReq.ok) {
-                const buffer = await imgReq.arrayBuffer();
-                posterBase64 = `data:${imgReq.headers.get("content-type") || "image/jpeg"};base64,${bufferToBase64(buffer)}`;
-            }
+        // SVG Response (Direct return with TMDB URL inside)
+        if (format === 'svg') {
+            return generateSVGResponse(request, cfg, data.finalPosterUrl, data.ratings, dispositionHeader, cache, ctx);
         }
-                    return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
-*/
-const posterUrl = data.finalPosterUrl;
-    return generateSVGResponse(request, cfg, posterUrl, data.ratings, dispositionHeader, cache, ctx);
+        // Raster Proxy (PNG, JPG, WEBP)
+        // 1. Generate the SVG content internally (with the TMDB URL inside it)
+        const svgString = generateSVGString(cfg, data.finalPosterUrl, data.ratings);
+
+        // 2. Convert SVG to Base64 using TextEncoder for UTF-8 safety
+        const svgBuffer = new TextEncoder().encode(svgString);
+        const svgBase64 = bufferToBase64(svgBuffer.buffer);
+
+        // 3. Construct wsrv.nl URL using Data URI to prevent callback loop
+        const rasterService = new URL("https://wsrv.nl/");
+        rasterService.searchParams.set("url", `data:image/svg+xml;base64,${svgBase64}`);
+        rasterService.searchParams.set("output", format === "webp" ? "webp" : (format === "png" ? "png" : "jpg"));
+        rasterService.searchParams.set("q", "100"); 
+
+        const response = await fetch(rasterService);
+
+        if (!response.ok) {
+            return new Response("Rasterization Error", { status: 502 });
+        }
+
+        const finalRes = new Response(response.body, {
+            headers: {
+                "Content-Type": response.headers.get("Content-Type"),
+                "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`, 
+                "Access-Control-Allow-Origin": "*",
+                "Content-Disposition": dispositionHeader
+            }
+        });
+        ctx.waitUntil(cache.put(request, finalRes.clone()));
+        return finalRes;
 
     } catch (e) {
         // Simple error handling

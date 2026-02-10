@@ -12,3 +12,9 @@ id = "f061a15e71f74e69aa21a571f889e05d"
 binding = "POSTER_CACHE"
 database_name = "poster-data"
 database_id = "64832706-ceb2-4907-a6a2-62c5b197a8fd"
+
+[vars]
+FANART_API_KEY=474df0c4626d01344571c33076e628da
+MDBLIST_API_KEY=r5gmzaektnxqnin5kl7iknjny
+OMDB_API_KEY=d6cd195a
+TMDB_API_KEY=ba133e792590c9d89882093eea76e13f
