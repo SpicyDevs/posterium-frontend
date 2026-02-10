@@ -53,17 +53,19 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys) {
     if (imdbId && mdbListApiKey) promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${mdbListApiKey}&i=${imdbId}`, 3000)).then(res => ({ type: 'mdblist', res })));
 
     const results = await Promise.allSettled(promises);
-    let fanartUrl = null;
-    /** @type {any} */
-    let omdb = null;
-    /** @type {any} */
-    let mdblist = null;
+    
+    // FIX: Use an object container to avoid "let x = null" type inference errors
+    const fetchedData = {
+        fanartUrl: null,
+        omdb: null,
+        mdblist: null
+    };
 
     results.forEach(r => {
         if (r.status === 'fulfilled' && r.value) {
-            if (r.value.type === 'fanart') fanartUrl = r.value.res;
-            if (r.value.type === 'omdb') omdb = r.value.res;
-            if (r.value.type === 'mdblist') mdblist = r.value.res;
+            if (r.value.type === 'fanart') fetchedData.fanartUrl = r.value.res;
+            if (r.value.type === 'omdb') fetchedData.omdb = r.value.res;
+            if (r.value.type === 'mdblist') fetchedData.mdblist = r.value.res;
         }
     });
 
@@ -81,10 +83,14 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys) {
         tmdbPoster = movie.poster_path ? `https://image.tmdb.org/t/p/w780${movie.poster_path}` : null;
     }
 
-    let finalPosterUrl = (cfg.source === 'tmdb') ? (tmdbPoster || fanartUrl) : (fanartUrl || tmdbPoster);
+    let finalPosterUrl = (cfg.source === 'tmdb') ? (tmdbPoster || fetchedData.fanartUrl) : (fetchedData.fanartUrl || tmdbPoster);
 
     // 6. Consolidate Ratings
     const ratings = {};
+    // Use fetchedData.omdb instead of omdb variable
+    const omdb = fetchedData.omdb;
+    const mdblist = fetchedData.mdblist;
+
     if (omdb) {
         if (omdb.imdbRating && omdb.imdbRating !== "N/A") ratings.imdb = omdb.imdbRating;
         if (omdb.Metascore && omdb.Metascore !== "N/A") ratings.meta = omdb.Metascore;
@@ -137,7 +143,8 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys) {
     if (runtime) ratings.runtime = runtime;
 
     // 7. Write to Cache
-    const dataToCache = { movie, ratings, finalPosterUrl, foundType: activeType, omdb, mdblist };
+    // Pass the extracted objects from fetchedData to the cache object
+    const dataToCache = { movie, ratings, finalPosterUrl, foundType: activeType, omdb: fetchedData.omdb, mdblist: fetchedData.mdblist };
     if (env.POSTER_CACHE) {
         ctx.waitUntil(setD1Cache(env.POSTER_CACHE, cacheKey, dataToCache));
     }
