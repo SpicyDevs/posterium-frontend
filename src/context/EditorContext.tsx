@@ -9,29 +9,6 @@ interface ViewOptions {
   showGrid: boolean;
 }
 
-// Define the shape of our ratings/meta data
-export interface RatingsData { 
-    title?: string; 
-    year?: string;
-    imdb?: string; 
-    rt?: string; 
-    rt_popcorn?: string; 
-    letterboxd?: string; 
-    meta?: string; 
-    tmdb?: string; 
-    age?: string; 
-    runtime?: string; 
-    mal?: string;
-    // Added externalIds to support the new functionality
-    externalIds?: {
-        imdb?: string | null;
-        tmdb?: string | number | null;
-        tvdb?: string | number | null;
-        mal?: string | number | null;
-        [key: string]: any;
-    };
-}
-
 interface EditorContextType {
   // Navigation
   activeTab: TabType;
@@ -44,16 +21,12 @@ interface EditorContextType {
   // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
-  setBatchSelection: (ids: RatingType[]) => void;
+  setBatchSelection: (ids: RatingType[]) => void; // <--- New Batch Function
   clearSelection: () => void;
 
   // View Helpers
   viewOptions: ViewOptions;
   toggleViewOption: (key: keyof ViewOptions) => void;
-
-  // Global Data
-  ratingsData: RatingsData;
-  setRatingsData: (data: RatingsData) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -62,7 +35,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('canvas');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
-  const [ratingsData, setRatingsData] = useState<RatingsData>({});
   
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
@@ -71,6 +43,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const setActiveTab = (tab: TabType) => {
     setActiveTabState(tab);
+    // On mobile, switching tabs opens the sheet to 'half' if it was hidden
     if (window.innerWidth < 768 && mobileSheetMode === 'hidden') {
         setMobileSheetMode('half');
     }
@@ -93,6 +66,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [selectedIds, mobileSheetMode]);
 
+  // Fix for "Select All" bug: Set all IDs at once instead of toggling one by one
   const setBatchSelection = useCallback((ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
       if (ids.length > 0) {
@@ -114,8 +88,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         activeTab, setActiveTab, 
         mobileSheetMode, setMobileSheetMode,
         selectedIds, handleSelection, setBatchSelection, clearSelection,
-        viewOptions, toggleViewOption,
-        ratingsData, setRatingsData
+        viewOptions, toggleViewOption
     }}>
       {children}
     </EditorContext.Provider>

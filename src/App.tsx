@@ -1,15 +1,13 @@
-// src/App.tsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { PosterConfig, DEFAULT_CONFIG } from './types';
-import { parseUrlToConfig, DEFAULT_API_BASE, generateApiUrl } from './utils'; // Import generateApiUrl
+import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
 import CodeBox from './components/CodeBox';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
-import { Sparkles, Github, RotateCcw, FileDown, ChevronDown } from 'lucide-react'; // Added icons
+import { Sparkles, Github, RotateCcw } from 'lucide-react';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
@@ -20,38 +18,8 @@ const StudioLayout: React.FC<{
   baseUrl: string;
   handleLoadConfig: (url: string) => void;
 }> = ({ config, setConfig, handleReset, baseUrl, handleLoadConfig }) => {
-  const { activeTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, clearSelection, setRatingsData } = useEditor();
+  const { activeTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, clearSelection } = useEditor();
   
-  // -- DOWNLOAD HANDLER --
-  const handleDownload = () => {
-      const url = generateApiUrl(config, baseUrl);
-      const downloadUrl = new URL(url);
-      downloadUrl.searchParams.set('download', '1');
-      window.location.href = downloadUrl.toString();
-  };
-
-  // -- GLOBAL DATA FETCH --
-  useEffect(() => {
-    if (!config.tmdbId) return;
-    const fetchMeta = async () => {
-        try {
-            // Check if ID starts with tt (IMDb) to use 'poster' endpoint, else rely on config
-            const endpointType = config.tmdbId.startsWith('tt') ? 'poster' : config.mediaType;
-            const res = await fetch(`${DEFAULT_API_BASE}/ratings/${endpointType}/${config.tmdbId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setRatingsData({ 
-                    ...data.ratings,
-                    externalIds: data.ids, 
-                    title: data.meta?.title, 
-                    year: data.meta?.year 
-                });
-            }
-        } catch(e) { /* ignore */ }
-    };
-    fetchMeta();
-  }, [config.tmdbId, config.mediaType, setRatingsData]);
-
   // -- DRAG LOGIC (Physics Based) --
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
@@ -61,6 +29,8 @@ const StudioLayout: React.FC<{
   const handleTouchStart = (e: React.TouchEvent) => {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
+      
+      // Remove transition for direct finger tracking to feel like "holding"
       if (sheetRef.current) {
           sheetRef.current.style.transition = 'none';
       }
@@ -68,12 +38,18 @@ const StudioLayout: React.FC<{
 
   const handleTouchMove = (e: React.TouchEvent) => {
       if (startY.current === null || !isDragging.current || !sheetRef.current) return;
+      
       const deltaY = e.touches[0].clientY - startY.current;
       currentY.current = deltaY;
+
+      // Apply transform directly to track finger
+      // If full, prevent dragging up (negative delta) too much
       if (mobileSheetMode === 'full' && deltaY < 0) {
+          // Resistance
           sheetRef.current.style.transform = `translateY(${deltaY * 0.2}px)`;
           return;
       }
+      
       sheetRef.current.style.transform = `translateY(${deltaY}px)`;
   };
 
@@ -81,22 +57,28 @@ const StudioLayout: React.FC<{
       if (!isDragging.current || !sheetRef.current) return;
       isDragging.current = false;
       startY.current = null;
-      sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-      sheetRef.current.style.transform = ''; 
 
-      const threshold = 80; 
+      // Restore transition for the snap animation
+      sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+      sheetRef.current.style.transform = ''; // Clear inline transform to let CSS/State take over
+
+      const threshold = 80; // pixels to trigger change
       const delta = currentY.current;
 
       if (delta > threshold) {
+          // Dragged Down
           if (mobileSheetMode === 'full') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('hidden');
       } else if (delta < -threshold) {
+          // Dragged Up
           if (mobileSheetMode === 'hidden') setMobileSheetMode('half');
           else if (mobileSheetMode === 'half') setMobileSheetMode('full');
       }
+      
       currentY.current = 0;
   };
 
+  // Ensure style is clean when mode changes programmatically
   useEffect(() => {
      if (sheetRef.current && !isDragging.current) {
          sheetRef.current.style.transform = ''; 
@@ -107,7 +89,7 @@ const StudioLayout: React.FC<{
       if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
       switch (mobileSheetMode) {
           case 'full': return '90%'; 
-          case 'half': return '50%'; 
+          case 'half': return '50%'; // This pushes the canvas "view" up, triggering auto-zoom in PreviewCanvas
           default: return '4rem'; 
       }
   };
@@ -123,49 +105,25 @@ const StudioLayout: React.FC<{
           </div>
           <h1 className="font-bold tracking-tight text-white text-sm hidden sm:block">FreePosterAPI</h1>
         </div>
-        
-        <div className="flex-1 max-w-2xl mx-4 flex items-center gap-3">
+        <div className="flex-1 max-w-xl mx-4">
              <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
-             
-             {/* RESET BUTTON */}
-             <button onClick={handleReset} className="flex items-center gap-2 px-3 py-1.5 text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md transition-all text-xs font-medium group" title="Reset Config">
-                <RotateCcw size={14} className="group-hover:-rotate-180 transition-transform duration-500"/> Reset
-             </button>
-
-             {/* DOWNLOAD BUTTON */}
-             <div className="flex items-center rounded-md bg-blue-600 text-white overflow-hidden border border-blue-500 shadow-sm shadow-blue-500/20 transition-colors hover:bg-blue-500">
-                <button onClick={handleDownload} className="px-3 py-1.5 text-xs font-bold flex items-center gap-2 border-r border-blue-700/50 hover:bg-blue-700/50 transition-colors">
-                     <FileDown size={14} /> Download
-                </button>
-                <div className="relative hover:bg-blue-700/50 transition-colors">
-                    <select value={config.extension} onChange={(e) => setConfig(p => ({...p, extension: e.target.value as any}))} className="bg-transparent text-xs font-medium pl-2 pr-6 py-1.5 outline-none cursor-pointer text-center appearance-none">
-                        <option value="svg" className="bg-zinc-800 text-zinc-200">SVG</option>
-                        <option value="png" className="bg-zinc-800 text-zinc-200">PNG</option>
-                        <option value="jpg" className="bg-zinc-800 text-zinc-200">JPG</option>
-                        <option value="webp" className="bg-zinc-800 text-zinc-200">WEBP</option>
-                    </select>
-                    <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
-                </div>
-             </div>
         </div>
-
         <div className="flex gap-2 items-center justify-end w-64">
+             <button onClick={handleReset} className="p-2 text-zinc-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors" title="Reset"><RotateCcw size={18} /></button>
+             <div className="w-px h-5 bg-white/10 mx-1"></div>
              <a href="https://github.com/xdaayush/freeposterapi" target="_blank" rel="noreferrer" className="text-zinc-500 hover:text-white transition-colors p-2"><Github size={20} /></a>
         </div>
       </header>
 
       {/* Main Grid */}
       <div className="flex flex-1 overflow-hidden relative">
+        
+        {/* Desktop Left */}
         <aside className="hidden md:flex w-72 flex-col bg-[#0c0c0e] border-r border-white/5 z-20">
-            <LayerPanel 
-                config={config} 
-                setConfig={setConfig} 
-                selectedIds={selectedIds} 
-                onSelect={handleSelection} 
-                baseUrl={baseUrl}
-                onReset={handleReset}
-            />
+            <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
         </aside>
+
+        {/* Center Canvas */}
         <main 
             className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)" 
             style={{ paddingBottom: getCanvasPadding() }} 
@@ -176,9 +134,13 @@ const StudioLayout: React.FC<{
             <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
             <PreviewCanvas config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
         </main>
+
+        {/* Desktop Right */}
         <aside className="hidden md:flex w-80 flex-col bg-[#0c0c0e] border-l border-white/5 z-20">
            <Inspector config={config} setConfig={setConfig} />
         </aside>
+
+        {/* Mobile Bottom Sheet (Draggable) */}
         <div 
             ref={sheetRef}
             className={`
@@ -188,9 +150,11 @@ const StudioLayout: React.FC<{
             style={{ 
                 height: mobileSheetMode === 'full' ? '92%' : '50%',
                 touchAction: 'none',
+                // Default transition, overridden during drag
                 transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
+            {/* Drag Handle Area */}
             <div 
                 className="h-8 w-full flex items-center justify-center cursor-grab active:cursor-grabbing border-b border-white/5 touch-none"
                 onTouchStart={handleTouchStart}
@@ -199,27 +163,24 @@ const StudioLayout: React.FC<{
             >
                 <div className="w-12 h-1 bg-zinc-700 rounded-full" />
             </div>
+            
+            {/* Sheet Content */}
             <div 
                 className="h-[calc(100%-32px)] overflow-hidden relative"
                 onPointerDown={(e) => e.stopPropagation()} 
                 onTouchStart={(e) => e.stopPropagation()}
             >
                 {activeTab === 'layers' && (
-                    <LayerPanel 
-                        config={config} 
-                        setConfig={setConfig} 
-                        selectedIds={selectedIds} 
-                        onSelect={handleSelection} 
-                        baseUrl={baseUrl}
-                        onReset={handleReset}
-                    />
+                    <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
                 )}
                 {(activeTab === 'canvas' || activeTab === 'badge') && (
                     <Inspector config={config} setConfig={setConfig} />
                 )}
             </div>
         </div>
+
       </div>
+
       <MobileDock />
     </div>
   );

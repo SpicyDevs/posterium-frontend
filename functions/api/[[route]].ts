@@ -10,12 +10,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const workerPath = url.pathname.replace(/^\/api/, '');
   
   // 3. Construct the internal request URL
+  // The hostname doesn't matter for Service Bindings, but we need a valid URL structure.
   const internalUrl = new URL(workerPath + url.search, 'https://internal-worker');
 
-  // 4. Create a new Request object to inject the secret header
-  const newRequest = new Request(internalUrl.toString(), context.request);
-  newRequest.headers.set('X-Internal-Secret', 'spicydevs-internal-v1');
-
-  // 5. Call the bound worker directly
-  return context.env.BACKEND_WORKER.fetch(newRequest);
+  // 4. Call the bound worker directly (Zero-Latency RPC)
+  // We recreate the Request to strip headers that might cause issues (like CF-Connecting-IP immutable headers)
+  // or simply pass the original request if your worker handles it well.
+  return context.env.BACKEND_WORKER.fetch(internalUrl.toString(), context.request);
 }
