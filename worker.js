@@ -43,11 +43,21 @@ export default {
                 const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&query=${encodeURIComponent(query)}`;
                 const tmdbRes = await fetch(searchUrl, { cf: { cacheTtl: 3600, cacheEverything: true } });
                 const data = await tmdbRes.json();
-                if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
+                if (!data.results) return new Response(JSON.stringify({ results: [] }), { headers: { "Content-Type": "application/json" }});
+                
+                // Fix: Map results to include full poster URL and clean data
                 const results = data.results
                     .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-                return new Response(JSON.stringify({ results }));
+                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+                    .map(item => ({
+                        id: item.id,
+                        title: item.title || item.name,
+                        poster_path: item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null,
+                        media_type: item.media_type,
+                        release_date: item.release_date || item.first_air_date
+                    }));
+
+                return new Response(JSON.stringify({ results }), { headers: { "Content-Type": "application/json" }});
             }
         } catch (e) {
             return new Response("Search Error", { status: 500 });
