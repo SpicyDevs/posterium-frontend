@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import DraggableBadge from './DraggableBadge';
 import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, Maximize, Loader2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, Loader2, AlertCircle } from 'lucide-react'; // Added AlertCircle for error state
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -21,6 +21,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false); // New Error State
   const [isPanning, setIsPanning] = useState(false);
 
   // -- GESTURE STATE --
@@ -107,19 +108,42 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     });
   };
 
-  // UPDATED: Correctly appends source param for all sources AND textless
+  // UPDATED: Cache busting and explicit params
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     const params = new URLSearchParams();
-    if (config.source !== 'tmdb') params.set('source', config.source);
-    if (config.textless) params.set('textless', '1'); // <--- Added this check
     
+    // Explicitly set source even if it is TMDB to ensure unique URL signature
+    params.set('source', config.source);
+    
+    if (config.textless) params.set('textless', '1');
+    
+    // Cache Buster: Uses Date.now() to ensure fresh fetch when these dependencies change.
+    // This fixes the "Browser cached the wrong source" issue.
+    params.set('_t', Date.now().toString());
     params.set('v', '2');
     
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless]); // <--- Added textless dependency
+  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless]);
 
-  useEffect(() => { setIsImageLoading(true); }, [cleanPosterUrl]);
+  // Reset loading/error state when URL changes
+  useEffect(() => { 
+      setIsImageLoading(true); 
+      setImageError(false);
+  }, [cleanPosterUrl]);
+
+  // SMART LOAD HANDLER: Only disable loading if the loaded URL matches the current one.
+  // This prevents race conditions where an old request finishes after a new one started.
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      if (e.currentTarget.src === cleanPosterUrl || e.currentTarget.src.includes(cleanPosterUrl)) {
+          setIsImageLoading(false);
+      }
+  };
+
+  const handleImageError = () => {
+      setIsImageLoading(false);
+      setImageError(true);
+  };
 
   return (
     <div 
@@ -164,9 +188,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             }} 
             className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
         >
-            {isImageLoading && (
+            {isImageLoading && !imageError && (
                 <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
                     <Loader2 className="animate-spin text-indigo-500" size={40} />
+                </div>
+            )}
+
+            {imageError && (
+                <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex flex-col items-center justify-center text-red-400 gap-2">
+                    <AlertCircle size={32} />
+                    <span className="text-xs font-mono">Failed to load</span>
                 </div>
             )}
 
@@ -188,11 +219,13 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             )}
 
             <img
+                key={cleanPosterUrl} // Forces React to recreate the img element on URL change, preventing ghosting
                 src={cleanPosterUrl}
                 alt="Poster"
                 className={`w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
                 style={{ filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})` }}
-                onLoad={() => setIsImageLoading(false)}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
             />
             
             {config.ratings.map((id: RatingType, index: number) => {
