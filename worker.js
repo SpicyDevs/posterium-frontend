@@ -1,7 +1,7 @@
 // worker.js
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
 import { getRandomKey, bufferToBase64 } from './utils.js';
-import { generateSVGResponse, generateSVGString } from './renderer.js';
+import { generateSVGResponse } from './renderer.js';
 import { getPosterData } from './posterService.js';
 
 export default {
@@ -38,20 +38,14 @@ export default {
                     const titleA = (a.title || a.name || "").toLowerCase();
                     const titleB = (b.title || b.name || "").toLowerCase();
                     const q = query.toLowerCase();
-
-                    // Priority 1: Exact Match
                     const isExactA = titleA === q;
                     const isExactB = titleB === q;
                     if (isExactA && !isExactB) return -1;
                     if (!isExactA && isExactB) return 1;
-
-                    // Priority 2: Starts With
                     const startsA = titleA.startsWith(q);
                     const startsB = titleB.startsWith(q);
                     if (startsA && !startsB) return -1;
                     if (!startsA && startsB) return 1;
-
-                    // Priority 3: Popularity
                     return (b.popularity || 0) - (a.popularity || 0);
                 });
 
@@ -94,13 +88,47 @@ export default {
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
+    // Raster Proxy (PNG, JPG, WEBP)
+    if (format !== "svg" && format !== "json") {
+        // Construct the URL for the SVG version of this specific request
+        const svgUrl = new URL(request.url);
+        
+        // Force the path to be the SVG version: /movie/123.svg
+        // This ensures wsrv.nl requests the SVG from us
+        svgUrl.pathname = `/${inputType}/${rawId}.svg`;
+        
+        // Remove 'download' param so wsrv.nl gets the inline SVG
+        svgUrl.searchParams.delete("download");
+
+        // NOTE: The request.url hostname must be publicly accessible for wsrv.nl to reach it.
+        // Localhost/Preview URLs might fail.
+
+        const rasterService = new URL("https://wsrv.nl/");
+        rasterService.searchParams.set("url", svgUrl.toString());
+        rasterService.searchParams.set("output", format === "webp" ? "webp" : (format === "png" ? "png" : "jpg"));
+        rasterService.searchParams.set("q", "100"); 
+
+        const response = await fetch(rasterService);
+        
+        if (!response.ok) {
+            return new Response("Rasterization Error (wsrv.nl returned " + response.status + ")", { status: 502 });
+        }
+
+        const finalRes = new Response(response.body, {
+            headers: {
+                "Content-Type": response.headers.get("Content-Type"),
+                "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`, 
+                "Access-Control-Allow-Origin": "*",
+                "Content-Disposition": dispositionHeader
+            }
+        });
+        ctx.waitUntil(cache.put(request, finalRes.clone()));
+        return finalRes;
+    }
+
     try {
         const cfg = parseConfig(url);
-
-        // --- CALL SERVICE LAYER FIRST ---
-        // Fetch data immediately so we have the poster URL available for all formats
         const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys);
-        // --------------------------------
 
         // JSON Response
         if (format === 'json') {
@@ -136,44 +164,10 @@ export default {
             return jsonRes;
         }
 
-        // SVG Response (Direct return with TMDB URL inside)
-        if (format === 'svg') {
-            return generateSVGResponse(request, cfg, data.finalPosterUrl, data.ratings, dispositionHeader, cache, ctx);
-        }
-
-        // Raster Proxy (PNG, JPG, WEBP)
-        // 1. Generate the SVG content internally (with the TMDB URL inside it)
-        const svgString = generateSVGString(cfg, data.finalPosterUrl, data.ratings);
-
-        // 2. Convert SVG to Base64 using TextEncoder for UTF-8 safety
-        const svgBuffer = new TextEncoder().encode(svgString);
-        const svgBase64 = bufferToBase64(svgBuffer.buffer);
-
-        // 3. Construct wsrv.nl URL using Data URI to prevent callback loop
-        const rasterService = new URL("https://wsrv.nl/");
-        rasterService.searchParams.set("url", `data:image/svg+xml;base64,${svgBase64}`);
-        rasterService.searchParams.set("output", format === "webp" ? "webp" : (format === "png" ? "png" : "jpg"));
-        rasterService.searchParams.set("q", "100"); 
-
-        const response = await fetch(rasterService);
-
-        if (!response.ok) {
-            return new Response("Rasterization Error", { status: 502 });
-        }
-
-        const finalRes = new Response(response.body, {
-            headers: {
-                "Content-Type": response.headers.get("Content-Type"),
-                "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`, 
-                "Access-Control-Allow-Origin": "*",
-                "Content-Disposition": dispositionHeader
-            }
-        });
-        ctx.waitUntil(cache.put(request, finalRes.clone()));
-        return finalRes;
+        // SVG Response
+        return generateSVGResponse(request, cfg, data.finalPosterUrl, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
-        // Simple error handling
         const status = (e.message === "ID Not Found" || e.message === "TMDB Resource Not Found") ? 404 : 500;
         return new Response("Error: " + e.message, { status });
     }
