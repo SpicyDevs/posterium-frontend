@@ -2,16 +2,11 @@
 import { ICONS } from './icons.js';
 import { FINAL_CACHE_TTL } from './config.js';
 
-// Helper to create the SVG string
-export function generateSVGString(cfg, posterUrl, ratings) {
+export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositionHeader, cache, ctx) {
     const defaults = { 
         tmdb: {x:30,y:30}, imdb: {x:30,y:110}, rt: {x:30,y:190}, rt_popcorn: {x:30,y:270},
         letterboxd: {x:30,y:350}, meta: {x:30,y:430}, age: {x:30,y:510}, runtime: {x:30,y:590}
     };
-    
-    // FIX: Escape ampersands in the URL for valid XML/SVG syntax
-    // Browser/wsrv fails if href contains unescaped '&'
-    const validPosterUrl = posterUrl ? posterUrl.replace(/&/g, "&amp;") : "";
     
     // Generate Defs
     const defs = Object.entries(ICONS).map(([k,v]) => `<symbol id="i-${k}" viewBox="${v.vb}">${v.body}</symbol>`).join("") 
@@ -30,9 +25,21 @@ export function generateSVGString(cfg, posterUrl, ratings) {
     let backgroundLayers = "";
     let badgeElements = "";
     let mainLayer = "";
+if (posterUrl) { // Check for URL instead of Base64
+        // Use the URL in the href attribute
+        mainLayer = `<image href="${posterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#poster-fx)"/>`;
 
-    if (validPosterUrl) {
-        mainLayer = `<image href="${validPosterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#poster-fx)"/>`;
+        // ... rest of the blur logic ...
+        // Update the blur background layers to use the URL too
+        if (paths) {
+             const maskId = `m-${b}`;
+             blurDefs += `<clipPath id="${maskId}">${paths}</clipPath>`;
+             backgroundLayers += `<image href="${posterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
+        }
+    }
+    // Main Poster Layer
+ /*   if (posterBase64) {
+        mainLayer = `<image href="${posterBase64}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#poster-fx)"/>`;
 
         const activeRatings = cfg.ratings.filter(t => ratings[t]);
         const uniqueBlurs = new Set();
@@ -46,7 +53,7 @@ export function generateSVGString(cfg, posterUrl, ratings) {
         });
 
         uniqueBlurs.forEach(b => {
-            let paths = ""; 
+            let paths = "";
             activeRatings.forEach(t => {
                 const item = cfg.items[t];
                 if (item.blur === b) {
@@ -60,10 +67,10 @@ export function generateSVGString(cfg, posterUrl, ratings) {
             if (paths) {
                 const maskId = `m-${b}`;
                 blurDefs += `<clipPath id="${maskId}">${paths}</clipPath>`;
-                backgroundLayers += `<image href="${validPosterUrl}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
+                backgroundLayers += `<image href="${posterBase64}" width="500" height="750" preserveAspectRatio="xMidYMid slice" filter="url(#b-${b}) url(#poster-fx)" clip-path="url(#${maskId})" />`;
             }
         });
-    } else {
+    }*/ else {
         mainLayer = `
             <rect width="500" height="750" fill="#1a1a1a"/>
             <text x="250" y="375" dominant-baseline="middle" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="50" font-weight="bold" fill="#666666">NO POSTER</text>
@@ -125,17 +132,13 @@ export function generateSVGString(cfg, posterUrl, ratings) {
         </g>`;
     });
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750">
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="750" viewBox="0 0 500 750">
         <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&amp;display=swap');</style>
         <defs>${defs}${blurDefs}</defs>
         ${mainLayer}
         ${backgroundLayers}
         ${badgeElements}
     </svg>`;
-}
-
-export function generateSVGResponse(request, cfg, posterUrl, ratings, dispositionHeader, cache, ctx) {
-    const svg = generateSVGString(cfg, posterUrl, ratings);
 
     const finalResponse = new Response(svg, {
         headers: { 

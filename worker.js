@@ -2,7 +2,7 @@
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
 import { getRandomKey, bufferToBase64 } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
-import { getPosterData } from './posterService.js';
+import { getPosterData } from './posterService.js'; // Imported Logic
 
 export default {
   async fetch(request, env, ctx) {
@@ -19,7 +19,7 @@ export default {
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-    // Search Route
+   // Search Route
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         if (!query) return new Response("Missing query", { status: 400 });
@@ -32,6 +32,7 @@ export default {
             const data = await tmdbRes.json();
             if (!data.results) return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" }});
 
+            // RESTORED: The original advanced sorting logic
             const results = data.results
                 .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
                 .sort((a, b) => {
@@ -94,33 +95,23 @@ export default {
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
-    // Raster Proxy (PNG, JPG, WEBP)
+    // Raster Proxy
     if (format !== "svg" && format !== "json") {
-        // Construct the URL for the SVG version of this specific request
         const svgUrl = new URL(request.url);
-        
-        // Force the path to be the SVG version: /movie/123.svg
-        // This ensures wsrv.nl requests the SVG from us
+        const publicHost = "rpdb.padhaiaayush.workers.dev";
         svgUrl.pathname = `/${inputType}/${rawId}.svg`;
-        
-        // Remove 'download' param so wsrv.nl gets the inline SVG
-        svgUrl.searchParams.delete("download");
-
-        // CRITICAL: Tell the SVG endpoint to embed the image as Base64
-        // so wsrv.nl receives a self-contained SVG.
-        svgUrl.searchParams.set("base64", "1");
-
+        if (svgUrl.hostname !== publicHost) {
+            svgUrl.hostname = publicHost;
+            svgUrl.protocol = "https:";
+            svgUrl.port = ""; 
+        }
+        url.searchParams.forEach((v, k) => svgUrl.searchParams.set(k, v));
         const rasterService = new URL("https://wsrv.nl/");
         rasterService.searchParams.set("url", svgUrl.toString());
         rasterService.searchParams.set("output", format === "webp" ? "webp" : (format === "png" ? "png" : "jpg"));
         rasterService.searchParams.set("q", "100"); 
 
         const response = await fetch(rasterService);
-        
-        if (!response.ok) {
-            return new Response("Rasterization Error (wsrv.nl returned " + response.status + ")", { status: 502 });
-        }
-
         const finalRes = new Response(response.body, {
             headers: {
                 "Content-Type": response.headers.get("Content-Type"),
@@ -135,7 +126,7 @@ export default {
 
     try {
         const cfg = parseConfig(url);
-        
+
         // --- CALL SERVICE LAYER ---
         const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys);
         // --------------------------
@@ -174,27 +165,24 @@ export default {
             return jsonRes;
         }
 
-        // SVG Response (Logic to handle Embedding)
-        let posterSource = data.finalPosterUrl;
-
-        // If 'base64=1' is present, we must fetch the image and embed it as Data URI
-        // This is primarily for the rasterizer (wsrv.nl) request
-        if (url.searchParams.get("base64") === "1" && posterSource) {
-            try {
-                const imgReq = await fetch(posterSource, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
-                if (imgReq.ok) {
-                    const buffer = await imgReq.arrayBuffer();
-                    const b64 = bufferToBase64(buffer);
-                    const contentType = imgReq.headers.get("content-type") || "image/jpeg";
-                    posterSource = `data:${contentType};base64,${b64}`;
-                }
-            } catch (e) {
-                console.error("Base64 Embed Error:", e);
-                // Fallback to URL string (might result in blank on wsrv.nl, but avoids crash)
+        // SVG Response Generation
+ /*
+        let posterBase64 = "";
+        if (data.finalPosterUrl) {
+            const imageFetch = fetch(data.finalPosterUrl, { cf: { cacheTtl: IMG_CACHE_TTL, cacheEverything: true } });
+            const imgReq = await imageFetch;
+            if (imgReq.ok) {
+                const buffer = await imgReq.arrayBuffer();
+                posterBase64 = `data:${imgReq.headers.get("content-type") || "image/jpeg"};base64,${bufferToBase64(buffer)}`;
             }
         }
+                    return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
-        return generateSVGResponse(request, cfg, posterSource, data.ratings, dispositionHeader, cache, ctx);
+*/
+const posterUrl = data.finalPosterUrl 
+    ? `https://wsrv.nl/?url=${encodeURIComponent(data.finalPosterUrl)}&w=500&output=webp&q=80` 
+    : "";
+    return generateSVGResponse(request, cfg, posterUrl, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
         // Simple error handling
