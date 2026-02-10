@@ -1,3 +1,14 @@
 name = "rpdb"
 main = "worker.js"
 compatibility_date = "2024-02-10"
+
+[[kv_namespaces]]
+binding = "USER_KEYS"
+id = "poster-data"
+
+# 3. D1 Database Binding (for Caching)
+# Replace 'database_id' with your actual D1 Database ID
+[[d1_databases]]
+binding = "POSTER_CACHE"
+database_name = "poster-data"
+database_id = "64832706-ceb2-4907-a6a2-62c5b197a8fd"
