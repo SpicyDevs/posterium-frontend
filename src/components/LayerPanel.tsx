@@ -28,7 +28,7 @@ interface SearchResult {
     media_type: 'movie' | 'tv' | 'anime'; 
 }
 
-const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, baseUrl, onReset }) => {
+const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
   const { setBatchSelection, ratingsData, setRatingsData } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSource, setSearchSource] = useState<'tmdb' | 'mal'>('tmdb');
