@@ -1,7 +1,10 @@
+// src/components/PropertyPanel.tsx
 import React from 'react';
+import { Disclosure, Switch, Transition } from '@headlessui/react'; // <--- Headless UI
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Layers, Layout, Smartphone, Palette, Settings } from 'lucide-react'; 
+import { Layers, Layout, Smartphone, Palette, Settings, ChevronUp, ChevronDown } from 'lucide-react'; 
 import { useEditor } from '../context/EditorContext';
+import clsx from 'clsx';
 
 interface Props {
   config: PosterConfig;
@@ -10,11 +13,30 @@ interface Props {
   viewMode?: 'global' | 'selection';
 }
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="border-b border-white/5 py-5 px-5 last:border-0">
-    <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">{title}</h3>
-    <div className="space-y-4">{children}</div>
-  </div>
+// Collapsible Section using Headless UI Disclosure
+const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = true }) => (
+  <Disclosure defaultOpen={defaultOpen}>
+    {({ open }) => (
+      <div className="border-b border-white/5 last:border-0">
+        <Disclosure.Button className="flex w-full justify-between items-center px-5 py-4 text-left hover:bg-white/5 transition-colors focus:outline-none">
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">{title}</h3>
+            {open ? <ChevronUp size={14} className="text-zinc-500" /> : <ChevronDown size={14} className="text-zinc-500" />}
+        </Disclosure.Button>
+        <Transition
+            enter="transition duration-100 ease-out"
+            enterFrom="transform scale-95 opacity-0"
+            enterTo="transform scale-100 opacity-100"
+            leave="transition duration-75 ease-out"
+            leaveFrom="transform scale-100 opacity-100"
+            leaveTo="transform scale-95 opacity-0"
+        >
+            <Disclosure.Panel className="px-5 pb-5 pt-0 space-y-4">
+                {children}
+            </Disclosure.Panel>
+        </Transition>
+      </div>
+    )}
+  </Disclosure>
 );
 
 const ControlRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
@@ -24,6 +46,22 @@ const ControlRow: React.FC<{ label: string; children: React.ReactNode }> = ({ la
         </div>
         {children}
     </div>
+);
+
+// Helper for Boolean Toggles
+const ToggleRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, checked, onChange }) => (
+    <Switch.Group>
+        <div className="flex items-center justify-between p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all">
+            <Switch.Label className="text-xs text-zinc-300">{label}</Switch.Label>
+            <Switch
+                checked={checked}
+                onChange={onChange}
+                className={`${checked ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
+            >
+                <span className={`${checked ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}/>
+            </Switch>
+        </div>
+    </Switch.Group>
 );
 
 const InputRange: React.FC<{ value: number; onChange: (v: number) => void; min: number; max: number; step?: number; unit?: string }> = ({ value, onChange, min, max, step = 1, unit = '' }) => (
@@ -45,15 +83,13 @@ const AlignmentGrid: React.FC<{ value: PresetType, onChange: (v: PresetType) => 
                 <button
                     key={pos}
                     onClick={() => onChange(pos)}
-                    className={`w-6 h-6 rounded-sm border transition-all active:scale-90 ${
-                        value === pos 
-                        ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]' 
-                        : 'bg-zinc-800/50 border-white/5 hover:border-white/20 hover:bg-zinc-700'
-                    }`}
+                    className={clsx(
+                        "w-6 h-6 rounded-sm border transition-all active:scale-90",
+                        value === pos ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-zinc-800/50 border-white/5 hover:border-white/20 hover:bg-zinc-700'
+                    )}
                     title={`Align ${pos.toUpperCase()}`}
-                    aria-label={`Align ${pos}`}
                 >
-                    <div className={`w-1 h-1 bg-current rounded-full mx-auto opacity-50 ${value === pos ? 'text-white' : 'text-zinc-500'}`} />
+                    <div className={clsx("w-1 h-1 bg-current rounded-full mx-auto opacity-50", value === pos ? 'text-white' : 'text-zinc-500')} />
                 </button>
             ))}
         </div>
@@ -84,9 +120,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) => {
       setConfig(prev => {
           const newItems = { ...prev.items };
-          selectedIds.forEach(id => {
-              newItems[id] = { ...newItems[id], ...updates };
-          });
+          selectedIds.forEach(id => { newItems[id] = { ...newItems[id], ...updates }; });
           return { ...prev, items: newItems };
       });
   };
@@ -110,10 +144,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                  <div className="flex-1">
                     <div className="text-[10px] text-zinc-500 mb-2 font-medium">Flow</div>
                     <div className="flex flex-col gap-2">
-                        <button onClick={() => updateConfig('layout', 'col')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95 ${config.layout === 'col' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
+                        <button onClick={() => updateConfig('layout', 'col')} className={clsx("flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95", config.layout === 'col' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400')}>
                             <Layout size={12} className="rotate-90"/> Column
                         </button>
-                        <button onClick={() => updateConfig('layout', 'row')} className={`flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95 ${config.layout === 'row' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'}`}>
+                        <button onClick={() => updateConfig('layout', 'row')} className={clsx("flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95", config.layout === 'row' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300' : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400')}>
                             <Layout size={12}/> Row
                         </button>
                     </div>
@@ -126,19 +160,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 <InputRange value={config.posterBlur} min={0} max={20} onChange={(v) => updateConfig('posterBlur', v)} />
             </ControlRow>
             
-            <div className="flex flex-col gap-3 pt-2">
-                {/* Removed Textless Checkbox from here */}
-
-                <div className="grid grid-cols-2 gap-3">
-                    <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
-                        <input type="checkbox" checked={config.grayscale} onChange={(e) => updateConfig('grayscale', e.target.checked)} className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-0" />
-                        <span className="text-xs text-zinc-300">Grayscale</span>
-                    </label>
-                    <label className="flex items-center gap-3 p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
-                        <input type="checkbox" checked={config.shadow} onChange={(e) => updateConfig('shadow', e.target.checked)} className="rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-0" />
-                        <span className="text-xs text-zinc-300">Shadows</span>
-                    </label>
-                </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+                <ToggleRow label="Grayscale" checked={config.grayscale} onChange={(v) => updateConfig('grayscale', v)} />
+                <ToggleRow label="Shadows" checked={config.shadow} onChange={(v) => updateConfig('shadow', v)} />
             </div>
          </Section>
 
@@ -156,18 +180,18 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </div>
          </Section>
 
-         <Section title="View Options">
+         <Section title="View Options" defaultOpen={false}>
              <div className="grid grid-cols-2 gap-2">
-                 <button onClick={() => toggleViewOption('showSafeArea')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                 <button onClick={() => toggleViewOption('showSafeArea')} className={clsx("flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95", viewOptions.showSafeArea ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300')}>
                      <Smartphone size={14} /> Safe Area
                  </button>
-                 <button onClick={() => toggleViewOption('showGrid')} className={`flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95 ${viewOptions.showGrid ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                 <button onClick={() => toggleViewOption('showGrid')} className={clsx("flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95", viewOptions.showGrid ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300')}>
                      <Layout size={14} /> Grid Lines
                  </button>
              </div>
          </Section>
 
-         <Section title="Advanced Settings">
+         <Section title="Advanced Settings" defaultOpen={false}>
             <div className="space-y-4">
                 <div className="flex items-center gap-2 text-zinc-500">
                     <Settings size={12} />
@@ -226,17 +250,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 </ControlRow>
                 
                 <ControlRow label="Border Width">
-                    <InputRange 
-                        value={getCommonValue('borderW', 0) ?? 0} 
-                        min={0} max={10} 
-                        onChange={(v) => updateSelectedBadges({ borderW: v })} 
-                    />
+                    <InputRange value={getCommonValue('borderW', 0) ?? 0} min={0} max={10} onChange={(v) => updateSelectedBadges({ borderW: v })} />
                 </ControlRow>
                  <ControlRow label="Border Color">
                      <div className="relative w-full group">
-                         <input type="color" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" 
-                            onChange={(e) => updateSelectedBadges({ borderC: e.target.value })} 
-                         />
+                         <input type="color" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" onChange={(e) => updateSelectedBadges({ borderC: e.target.value })} />
                          <div className="w-full h-9 bg-zinc-900 border border-zinc-700 rounded flex items-center px-2 text-xs text-zinc-400 group-hover:border-zinc-500 transition-colors">
                              <div className="w-5 h-5 rounded border border-white/10 mr-2 shadow-sm" style={{ background: mixedVal(getCommonValue('borderC', '#ffffff'), '#fff') }}></div>
                              <span className="font-mono">{mixedVal(getCommonValue('borderC', '#ffffff'), 'Mixed')}</span>
@@ -249,24 +267,17 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         <Section title="Visibility">
             <div className="space-y-2">
                 {!isAgeSelected && (
-                    <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
-                        <span className="text-xs text-zinc-300 font-medium">Show Icon</span>
-                        <input type="checkbox" 
-                            checked={getCommonValue('icon', true) ?? true} 
-                            onChange={(e) => updateSelectedBadges({ icon: e.target.checked })} 
-                            className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0" 
-                        />
-                    </label>
-                )}
-                
-                <label className="flex items-center justify-between p-3 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all active:scale-[0.98]">
-                    <span className="text-xs text-zinc-300 font-medium">Drop Shadow</span>
-                    <input type="checkbox" 
-                        checked={getCommonValue('shadow', true) ?? true} 
-                        onChange={(e) => updateSelectedBadges({ shadow: e.target.checked })} 
-                        className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0" 
+                    <ToggleRow 
+                        label="Show Icon" 
+                        checked={getCommonValue('icon', true) ?? true} 
+                        onChange={(v) => updateSelectedBadges({ icon: v })} 
                     />
-                </label>
+                )}
+                <ToggleRow 
+                    label="Drop Shadow" 
+                    checked={getCommonValue('shadow', true) ?? true} 
+                    onChange={(v) => updateSelectedBadges({ shadow: v })} 
+                />
             </div>
         </Section>
 

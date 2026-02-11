@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+// src/components/LayerPanel.tsx
+import React, { useState, useEffect, Fragment } from 'react';
+import { Combobox, Listbox, Switch, Transition } from '@headlessui/react';
+import { Check, ChevronsUpDown, Search, Loader2, CheckSquare } from 'lucide-react';
+import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
-import { Eye, EyeOff, Search, Loader2, Film, Monitor, CheckSquare } from 'lucide-react';
 import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
@@ -14,7 +17,6 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
 }
 
-// UPDATED: Interface now includes 'name' and 'first_air_date' for TV support
 interface SearchResult { 
     id: number; 
     title?: string; 
@@ -32,21 +34,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [, setErrorMsg] = useState('');
   const [fetchedData, setFetchedData] = useState<RatingsData>({});
 
   const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
 
+  // -- SEARCH LOGIC --
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
-      setIsSearching(true); setErrorMsg('');
+      setIsSearching(true);
       try {
           const res = await fetch(`https://freeposterapi.pages.dev/api/search?q=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
-          // Filter ensures we only get movies and tv
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
-      } catch (e) { setErrorMsg("API Error"); } finally { setIsSearching(false); }
+      } catch (e) { } finally { setIsSearching(false); }
     }, 500);
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, apiKey]);
@@ -67,26 +68,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const handleSelectMedia = (item: SearchResult) => {
       setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
-      setSearchQuery(''); setResults([]);
+      setSearchQuery(''); 
   };
 
   const updateConfig = (key: keyof PosterConfig, value: any) => setConfig(prev => ({ ...prev, [key]: value }));
 
-  const toggleVisibility = (e: React.MouseEvent, id: RatingType) => {
-    e.stopPropagation();
+  const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
     const currentRatings = [...config.ratings];
-    if (currentRatings.includes(id)) {
-        setConfig({ ...config, ratings: currentRatings.filter(r => r !== id) });
+    if (isVisible) {
+        // Add if not present
+        if (!currentRatings.includes(id)) setConfig({ ...config, ratings: [...currentRatings, id] });
     } else {
-        setConfig({ ...config, ratings: [...currentRatings, id] });
+        // Remove
+        setConfig({ ...config, ratings: currentRatings.filter(r => r !== id) });
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
       if (checked) {
-          const allVisibleIds = ALL_BADGES
-            .filter(b => config.ratings.includes(b.id))
-            .map(b => b.id);
+          const allVisibleIds = ALL_BADGES.filter(b => config.ratings.includes(b.id)).map(b => b.id);
           setBatchSelection(allVisibleIds);
       } else {
           setBatchSelection([]);
@@ -94,7 +94,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   };
 
   const allVisibleSelected = config.ratings.length > 0 && config.ratings.every(r => selectedIds.has(r));
-
   const getIconKey = (id: string): BadgeIconKey => {
       if (id === 'rt') return 'rt_fresh';
       if (id === 'rt_popcorn') return 'popcorn_fresh';
@@ -102,120 +101,137 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       return id as BadgeIconKey;
   }
 
+  // Helper for Listbox
+  const SelectBox = ({ value, onChange, options }: { value: string, onChange: (v: string) => void, options: {id: string, label: string}[] }) => (
+    <Listbox value={value} onChange={onChange}>
+        <div className="relative mt-1">
+            <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-zinc-800 py-1.5 pl-3 pr-8 text-left border border-zinc-700 hover:border-zinc-500 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 sm:text-xs">
+                <span className="block truncate text-zinc-300">{options.find(o => o.id === value)?.label}</span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronsUpDown className="h-3 w-3 text-zinc-400" aria-hidden="true" />
+                </span>
+            </Listbox.Button>
+            <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-lg ring-1 ring-black/5 focus:outline-none z-50 border border-white/10">
+                    {options.map((opt) => (
+                        <Listbox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-300'}`}>
+                            {({ selected }) => (
+                                <>
+                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{opt.label}</span>
+                                    {selected && <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-400"><Check className="h-3 w-3" /></span>}
+                                </>
+                            )}
+                        </Listbox.Option>
+                    ))}
+                </Listbox.Options>
+            </Transition>
+        </div>
+    </Listbox>
+  );
+
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
-          {/* Search Box */}
-          <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400" size={14} />
-              <input 
-                  type="text" 
-                  placeholder="Search Movie/TV..." 
-                  className="w-full bg-[#18181b] border border-white/10 rounded-md py-2 pl-9 pr-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50 transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Search Media"
-              />
-              {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={12} />}
-          </div>
-
-          {(results.length > 0) && (
-              <div className="absolute left-3 right-3 top-12 bg-[#18181b] border border-white/10 rounded-md shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar">
-                  {results.map(item => {
-                      // FIX: Support TV Show 'name' and 'first_air_date'
-                      const title = item.title || item.name;
-                      const date = item.release_date || item.first_air_date;
-                      const year = date ? date.split('-')[0] : '';
-
-                      return (
-                        <button key={item.id} onClick={() => handleSelectMedia(item)} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0">
-                            <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-12 object-cover rounded bg-zinc-800" />
-                            <div className="flex-1 min-w-0">
-                                <div className="text-xs font-bold text-zinc-200 truncate">{title}</div>
-                                <div className="text-[10px] text-zinc-500 flex items-center gap-1">
-                                    {item.media_type === 'movie' ? <Film size={10}/> : <Monitor size={10}/>}
-                                    <span>{year}</span>
-                                </div>
-                            </div>
-                        </button>
-                      );
-                  })}
+          
+          {/* Headless Combobox Search */}
+          <Combobox value={null} onChange={handleSelectMedia}>
+              <div className="relative">
+                  <div className="relative w-full cursor-default overflow-hidden rounded-md border border-white/10 bg-[#18181b] text-left focus-within:border-indigo-500/50">
+                      <Combobox.Input
+                        className="w-full border-none py-2 pl-9 pr-3 text-xs leading-5 text-zinc-200 bg-transparent focus:ring-0"
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        displayValue={(item: SearchResult) => item?.title || ''}
+                        placeholder="Search Movie/TV..."
+                      />
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                         {isSearching ? <Loader2 className="animate-spin text-indigo-500" size={14} /> : <Search className="text-zinc-500" size={14} />}
+                      </div>
+                  </div>
+                  <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0" afterLeave={() => setSearchQuery('')}>
+                      <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-2xl ring-1 ring-black/5 focus:outline-none z-50 border border-white/10 custom-scrollbar">
+                          {results.length === 0 && searchQuery !== '' && !isSearching ? (
+                              <div className="relative cursor-default select-none py-2 px-4 text-zinc-500">Nothing found.</div>
+                          ) : (
+                              results.map((item) => (
+                                  <Combobox.Option key={item.id} value={item} className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 flex items-center gap-3 ${active ? 'bg-indigo-500/20 text-white' : 'text-zinc-300'}`}>
+                                       <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-10 object-cover rounded bg-zinc-800 flex-shrink-0" />
+                                       <div className="flex-1 min-w-0">
+                                            <span className="block truncate font-medium">{item.title || item.name}</span>
+                                            <span className="block truncate text-[10px] text-zinc-500">{(item.release_date || item.first_air_date)?.split('-')[0]} • {item.media_type.toUpperCase()}</span>
+                                       </div>
+                                  </Combobox.Option>
+                              ))
+                          )}
+                      </Combobox.Options>
+                  </Transition>
               </div>
-          )}
+          </Combobox>
 
-          <div className="space-y-2">
+          <div className="space-y-3 pt-2">
              <div>
                  <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">Active Media Title</label>
-                 <div 
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
-                    title={fetchedData.title || "Loading..."}
-                 >
+                 <div className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate" title={fetchedData.title || "Loading..."}>
                     {fetchedData.title || <span className="italic text-zinc-500">Loading...</span>}
                  </div>
              </div>
 
              <div className="flex gap-2">
-                 <div className="flex-1">
-                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
-                        {config.mediaType === 'anime' ? 'MAL ID' : 'TMDB ID'}
-                     </label>
-                     <div className="flex bg-zinc-900 border border-zinc-700 rounded overflow-hidden">
-                         <select 
-                             value={config.mediaType} 
-                             onChange={(e) => updateConfig('mediaType', e.target.value)} 
-                             className="bg-zinc-800 border-r border-zinc-700 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
-                         >
-                             <option value="movie">Movie</option>
-                             <option value="tv">TV</option>
-                             <option value="anime">Anime</option>
-                         </select>
-
-                         <input 
-                            type="text" 
-                            value={config.tmdbId} 
-                            onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                            className="w-24 bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none font-mono text-center border-r border-zinc-700"
-                         />
-
-                         <select 
-                            value={config.source} 
-                            onChange={(e) => updateConfig('source', e.target.value)} 
-                            className="flex-1 bg-zinc-800 px-2 text-[10px] text-zinc-300 outline-none cursor-pointer hover:text-white transition-colors"
-                         >
-                             <option value="tmdb">TMDB</option>
-                             <option value="fanart">Fanart</option>
-                             <option value="metahub">Metahub</option>
-                             {/* FIX: Only show MAL if Anime is selected */}
-                             {config.mediaType === 'anime' && <option value="mal">MyAnimeList</option>}
-                         </select>
-                     </div>
+                 <div className="flex-1 space-y-1">
+                     <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">Media Type</label>
+                     <SelectBox 
+                        value={config.mediaType} 
+                        onChange={(v) => updateConfig('mediaType', v)} 
+                        options={[{id: 'movie', label: 'Movie'}, {id: 'tv', label: 'TV'}, {id: 'anime', label: 'Anime'}]}
+                     />
+                 </div>
+                 <div className="w-24 space-y-1">
+                    <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">ID</label>
+                    <input type="text" value={config.tmdbId} onChange={(e) => updateConfig('tmdbId', e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono text-center" />
                  </div>
              </div>
+             
+             <div className="space-y-1">
+                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">Source API</label>
+                <SelectBox 
+                    value={config.source} 
+                    onChange={(v) => updateConfig('source', v)} 
+                    options={[
+                        {id: 'tmdb', label: 'TMDB'}, 
+                        {id: 'fanart', label: 'Fanart.tv'}, 
+                        {id: 'metahub', label: 'Metahub'},
+                        ...(config.mediaType === 'anime' ? [{id: 'mal', label: 'MyAnimeList'}] : [])
+                    ]}
+                />
+             </div>
 
-             <label className="flex items-center gap-2 p-2 rounded bg-zinc-900 border border-zinc-700 cursor-pointer hover:border-zinc-500 transition-all group">
-                 <input 
-                    type="checkbox" 
-                    checked={config.textless} 
-                    onChange={(e) => updateConfig('textless', e.target.checked)} 
-                    className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0 group-hover:border-zinc-500"
-                 />
-                 <span className="text-[10px] font-medium text-zinc-300 group-hover:text-white uppercase tracking-wider">Use Textless Poster</span>
-             </label>
+             {/* Headless Switch */}
+             <Switch.Group>
+                <div className="flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2">
+                    <Switch.Label className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Textless Poster</Switch.Label>
+                    <Switch
+                        checked={config.textless}
+                        onChange={(checked) => updateConfig('textless', checked)}
+                        className={`${config.textless ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
+                    >
+                        <span className={`${config.textless ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}/>
+                    </Switch>
+                </div>
+             </Switch.Group>
           </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-[#0c0c0e]">
         <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Layers</h3>
-            <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group">
+            <button 
+                onClick={(e) => { e.preventDefault(); handleSelectAll(!allVisibleSelected); }}
+                className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group"
+            >
                 <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
-                <div 
-                    className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
-                    onClick={(e) => { e.preventDefault(); handleSelectAll(!allVisibleSelected); }}
-                >
+                <div className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}>
                     {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
                 </div>
-            </label>
+            </button>
         </div>
         
         {ALL_BADGES.map((badge) => {
@@ -228,50 +244,47 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           return (
             <div 
               key={badge.id}
-              onClick={(e) => {
-                  if (!isActive) return;
-                  onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
-              }}
-              className={`
-                group flex items-center gap-3 px-2 py-2 rounded-md transition-all border
-                ${isSelected ? 'bg-indigo-900/20 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}
-                ${!isActive ? 'opacity-40 grayscale' : 'cursor-pointer'}
-              `}
+              onClick={(e) => { if (!isActive) return; onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey); }}
+              className={clsx(
+                "group flex items-center gap-3 px-2 py-2 rounded-md transition-all border",
+                isSelected ? 'bg-indigo-900/20 border-indigo-500/30' : 'border-transparent hover:bg-white/5',
+                !isActive ? 'opacity-40 grayscale' : 'cursor-pointer'
+              )}
             >
-              <div 
-                className="flex items-center justify-center p-1"
-                onClick={(e) => { e.stopPropagation(); if(isActive) onSelect(badge.id, true); }}
-              >
-                  <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-500 border-indigo-400' : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500'}`}>
+              <div className="flex items-center justify-center p-1" onClick={(e) => { e.stopPropagation(); if(isActive) onSelect(badge.id, true); }}>
+                  <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", isSelected ? 'bg-indigo-500 border-indigo-400' : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500')}>
                       {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
                   </div>
               </div>
-
               <div className="w-6 h-6 flex items-center justify-center bg-zinc-800 rounded shadow-sm border border-white/5">
-                  {badge.id === 'age' ? (
-                      <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span>
-                  ) : (
-                      iconData ? (
-                        <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} />
-                      ) : (
+                  {badge.id === 'age' ? ( <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">PG</span> ) : (
+                      iconData ? ( <svg viewBox={iconData?.vb} className="w-4 h-4" style={{ color: isActive ? iconData?.color : '#71717a' }} dangerouslySetInnerHTML={{ __html: iconData?.body }} /> ) : (
                         <span className="text-[8px] font-bold text-zinc-500">{badge.label.substring(0, 2)}</span>
                       )
                   )}
               </div>
-
               <div className="flex-1 min-w-0 flex justify-between items-center pr-1">
                   <div className="flex flex-col">
-                      <span className={`text-xs font-medium truncate ${isSelected ? 'text-indigo-200' : 'text-zinc-300'}`}>{badge.label}</span>
+                      <span className={clsx("text-xs font-medium truncate", isSelected ? 'text-indigo-200' : 'text-zinc-300')}>{badge.label}</span>
                       {isActive && ratingValue && <span className="text-[9px] text-zinc-500 font-mono">{ratingValue}</span>}
                   </div>
                   
-                  <button 
-                    onClick={(e) => toggleVisibility(e, badge.id)}
-                    className={`p-1.5 rounded hover:bg-white/10 transition-all active:scale-90 ${isActive ? 'text-zinc-400 hover:text-white' : 'text-zinc-600'}`}
-                    aria-label={isActive ? "Hide Layer" : "Show Layer"}
-                  >
-                    {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
-                  </button>
+                  {/* --- CHANGED: Replaced Eye Icon Button with Switch --- */}
+                  <Switch
+                        checked={isActive}
+                        onChange={(val) => handleToggleVisibility(badge.id, val)}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()} // Important: Stop row selection
+                        className={clsx(
+                            isActive ? 'bg-indigo-600' : 'bg-zinc-700',
+                            'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500'
+                        )}
+                    >
+                        <span className={clsx(
+                            isActive ? 'translate-x-3.5' : 'translate-x-0.5',
+                            'inline-block h-3 w-3 transform rounded-full bg-white transition-transform'
+                        )} />
+                    </Switch>
+                  {/* --------------------------------------------------- */}
               </div>
             </div>
           );
