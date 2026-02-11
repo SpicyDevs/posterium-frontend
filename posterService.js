@@ -2,8 +2,8 @@
 import { fetchWithTimeout, safeJsonFetch, getD1Cache, setD1Cache, getFanartPoster } from './utils.js';
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
-    const { tmdbApiKey, fanartApiKey, omdbApiKey, mdbListApiKey } = apiKeys;
-    const cacheKey = `${inputType}:${rawId}:v22`; 
+    const { tmdbApiKey, fanartApiKey, mdbListApiKey } = apiKeys;
+    const cacheKey = `${inputType}:${rawId}:v23`; // Bumped version to invalidate old OMDB-based caches
 
     // 1. Check Cache
     let cachedData = await getD1Cache(env.POSTER_CACHE, cacheKey);
@@ -34,7 +34,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     const required = determineRequirements(cfg, needsFull, inputType, coreData, cachedData);
     
     // 4. Fetch Selected APIs
-    const currentData = cachedData || { ratings: {}, posters: {}, omdb: null, mdblist: null };
+    const currentData = cachedData || { ratings: {}, posters: {}, mdblist: null };
     const fetchedResults = await fetchSelectedAPIs(required, currentData, coreData, apiKeys);
     
     // Merge
@@ -158,12 +158,11 @@ function determineRequirements(cfg, needsFull, inputType, coreData, cachedData) 
     const requestedRatings = cfg.ratings || [];
     const req = { 
         fanart: false, 
-        omdb: false, 
         mdblist: false, 
         metahub: false, 
         tmdbImages: false,
         jikanExternal: false,
-        malImages: false // Added support for manual MAL fetch
+        malImages: false
     };
     
     // Check if we need to fetch MAL images (Anime source)
@@ -178,7 +177,6 @@ function determineRequirements(cfg, needsFull, inputType, coreData, cachedData) 
             req.jikanExternal = true;
         }
         req.metahub = true;
-        req.omdb = true;
         req.mdblist = true;
         return req;
     }
@@ -203,11 +201,13 @@ function determineRequirements(cfg, needsFull, inputType, coreData, cachedData) 
     if (cfg.source === 'metahub' && !cachedData?.posters?.metahub) req.metahub = true;
 
     if (hasImdbId || req.jikanExternal) {
-        if (requestedRatings.includes('imdb') || requestedRatings.includes('rt') || requestedRatings.includes('meta') || requestedRatings.includes('runtime')) {
-            if (!cachedData?.omdb) req.omdb = true;
-        }
-        if (requestedRatings.includes('letterboxd') || requestedRatings.includes('rt_popcorn')) {
-            if (!cachedData?.mdblist) req.mdblist = true;
+        // Updated: Check if any ratings usually fetched from external sources are needed
+        // All these now come from MDBList
+        const externalRatings = ['imdb', 'rt', 'rt_popcorn', 'meta', 'letterboxd', 'runtime'];
+        const needsMdbList = requestedRatings.some(r => externalRatings.includes(r));
+        
+        if (needsMdbList && !cachedData?.mdblist) {
+            req.mdblist = true;
         }
     }
     
@@ -280,10 +280,8 @@ async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         if (req.metahub && !currentData.posters.metahub && workingImdbId) {
             promises.push(Promise.resolve({ source: 'metahub', type: 'text', url: `https://images.metahub.space/poster/medium/${workingImdbId}/img` }));
         }
-        if (req.omdb && !currentData.omdb && workingImdbId) {
-            promises.push(safeJsonFetch(fetchWithTimeout(`https://www.omdbapi.com/?i=${workingImdbId}&apikey=${apiKeys.omdbApiKey}&tomatoes=true`, 3000))
-                .then(res => ({ source: 'omdb', data: res })));
-        }
+        
+        // MDBList (Replaces OMDB for ratings)
         if (req.mdblist && !currentData.mdblist && apiKeys.mdbListApiKey && workingImdbId) {
             promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${apiKeys.mdbListApiKey}&i=${workingImdbId}`, 3000))
                 .then(res => ({ source: 'mdblist', data: res })));
@@ -329,7 +327,6 @@ function mergeData(coreData, currentData, newResults) {
              if (res.textless) merged.posters.tmdb.textless = res.textless;
         }
 
-        if (res.source === 'omdb') merged.omdb = res.data;
         if (res.source === 'mdblist') merged.mdblist = res.data;
         
         if (res.source === 'fanart' || res.source === 'metahub' || res.source === 'mal') {
@@ -338,32 +335,45 @@ function mergeData(coreData, currentData, newResults) {
         }
     });
 
-    const omdb = merged.omdb;
     const mdblist = merged.mdblist;
 
-    if (omdb) {
-        if (omdb.imdbRating && omdb.imdbRating !== "N/A") merged.ratings.imdb = omdb.imdbRating;
-        if (omdb.Metascore && omdb.Metascore !== "N/A") merged.ratings.meta = omdb.Metascore;
-        const rt = omdb.Ratings?.find(r => r.Source === "Rotten Tomatoes");
-        if (rt) merged.ratings.rt = rt.Value;
-        if (!merged.ratings.runtime && omdb.Runtime && omdb.Runtime !== "N/A") {
-            merged.ratings.runtime = omdb.Runtime.replace(" min", "m").replace(" h", "h");
-        }
-    }
-
     if (mdblist) {
-        if (mdblist.mal_id && !merged.ids.mal) merged.ids.mal = mdblist.mal_id; // Capture MAL ID
+        if (mdblist.mal_id && !merged.ids.mal) merged.ids.mal = mdblist.mal_id;
+        
+        // Runtime handling (mdblist returns integer minutes, e.g. 142)
+        if (!merged.ratings.runtime && mdblist.runtime) {
+            const h = Math.floor(mdblist.runtime / 60);
+            const m = mdblist.runtime % 60;
+            merged.ratings.runtime = h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
         
         if (mdblist.ratings) {
-            if (!merged.ratings.imdb && mdblist.score) merged.ratings.imdb = mdblist.score.toString();
-            const rtData = mdblist.ratings.find(x => x.source === 'tomatoes');
-            if (!merged.ratings.rt && rtData?.value) merged.ratings.rt = rtData.value + "%"; 
-            const metaData = mdblist.ratings.find(x => x.source === 'metacritic');
-            if (!merged.ratings.meta && metaData?.value) merged.ratings.meta = metaData.value.toString();
-            const rtAudience = mdblist.ratings.find(x => x.source === 'tomatoesaudience');
-            if (rtAudience?.value) merged.ratings.rt_popcorn = rtAudience.value + "%";
-            const lbData = mdblist.ratings.find(x => x.source === 'letterboxd');
-            if (lbData?.value) merged.ratings.letterboxd = lbData.value.toString();
+            const getVal = (source) => mdblist.ratings.find(x => x.source === source)?.value;
+
+            if (!merged.ratings.imdb) {
+                const val = getVal('imdb');
+                if (val) merged.ratings.imdb = val.toString();
+            }
+
+            if (!merged.ratings.rt) {
+                const val = getVal('tomatoes');
+                if (val) merged.ratings.rt = val + "%"; 
+            }
+
+            if (!merged.ratings.meta) {
+                const val = getVal('metacritic');
+                if (val) merged.ratings.meta = val.toString();
+            }
+
+            if (!merged.ratings.rt_popcorn) {
+                const val = getVal('tomatoesaudience');
+                if (val) merged.ratings.rt_popcorn = val + "%";
+            }
+
+            if (!merged.ratings.letterboxd) {
+                const val = getVal('letterboxd');
+                if (val) merged.ratings.letterboxd = val.toString();
+            }
         }
     }
 
@@ -380,7 +390,6 @@ async function hydrateCache(env, currentData, apiKeys, cacheKey) {
     const req = determineRequirements({}, true, currentData.core.type, currentData.core, currentData);
 
     if (!isPopular) {
-        req.omdb = false;
         req.mdblist = false;
     }
 
@@ -426,8 +435,7 @@ function processCachedData(data, cfg) {
         ratings: data.ratings,
         foundType: data.core.type,
         finalPosterUrl,
-        posters: data.posters, 
-        omdb: data.omdb,       
+        posters: data.posters,       
         mdblist: data.mdblist, 
         cacheLevel: data.cacheLevel || 'partial',
         isCached: false 

@@ -19,7 +19,7 @@ export default {
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
 
-    // --- SEARCH ROUTE (Updated to support Source) ---
+    // --- SEARCH ROUTE ---
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         const source = url.searchParams.get("source") || "tmdb";
@@ -45,7 +45,6 @@ export default {
                 const data = await tmdbRes.json();
                 if (!data.results) return new Response(JSON.stringify({ results: [] }), { headers: { "Content-Type": "application/json" }});
                 
-                // Fix: Map results to include full poster URL and clean data
                 const results = data.results
                     .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
                     .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -77,7 +76,6 @@ export default {
         const apiKeys = {
             tmdbApiKey: env.TMDB_API_KEY,
             fanartApiKey: env.FANART_API_KEY,
-            omdbApiKey: env.OMDB_API_KEY,
             mdbListApiKey: env.MDBLIST_API_KEY
         };
 
@@ -119,7 +117,6 @@ export default {
     const userKeys = {
         tmdb: url.searchParams.get("tmdb_key"),
         fanart: url.searchParams.get("fanart_key"),
-        omdb: url.searchParams.get("omdb_key"),
         mdblist: url.searchParams.get("mdblist_key")
     };
 
@@ -133,7 +130,6 @@ export default {
     const apiKeys = {
         tmdbApiKey: userKeys.tmdb || await getRandomKey(env.USER_KEYS, 'tmdb') || env.TMDB_API_KEY,
         fanartApiKey: userKeys.fanart || await getRandomKey(env.USER_KEYS, 'fanart') || env.FANART_API_KEY,
-        omdbApiKey: userKeys.omdb || await getRandomKey(env.USER_KEYS, 'omdb') || env.OMDB_API_KEY,
         mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
