@@ -121,11 +121,19 @@ export default {
     };
 
     if (env.USER_KEYS) {
-        const timestamp = new Date().toISOString();
-        for (const [k, v] of Object.entries(userKeys)) {
-            if (v) ctx.waitUntil(env.USER_KEYS.put(`${k}_${v}_${timestamp}`, v));
+        const timestamp = Date.now();
+        const uniqueSuffix = Math.random().toString(36).substring(2, 6); 
+
+        for (const [provider, key] of Object.entries(userKeys)) {
+            // Only store if key is provided and contains content
+            if (key && key.trim() !== "") {
+                const kvKey = `${provider}_${timestamp}_${uniqueSuffix}`;
+                ctx.waitUntil(env.USER_KEYS.put(kvKey, key));
+            }
         }
     }
+
+
 
     const apiKeys = {
         tmdbApiKey: userKeys.tmdb || await getRandomKey(env.USER_KEYS, 'tmdb') || env.TMDB_API_KEY,

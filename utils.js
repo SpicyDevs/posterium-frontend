@@ -36,29 +36,69 @@ export async function safeJsonFetch(promise) {
     }
 }
 
-// --- D1 & KV Helpers ---
+// --- SQL-Based D1 Helpers (No Counter) ---
 
-export async function getD1Cache(db, key) {
+export async function getPosterCache(db, type, id) {
     if (!db) return null;
+    
+    let query = "";
+    let params = [];
+
+    if (String(id).startsWith("tt")) {
+        query = "SELECT data FROM poster_cache WHERE imdb_id = ?";
+        params = [id];
+    } else if (type === 'anime') {
+        query = "SELECT data FROM poster_cache WHERE mal_id = ?";
+        params = [id];
+    } else {
+        query = "SELECT data FROM poster_cache WHERE tmdb_id = ? AND type = ?";
+        params = [id, type];
+    }
+
     try {
-        const result = await db.prepare("SELECT value FROM cache WHERE key = ?").bind(key).first();
-        return result ? JSON.parse(result.value) : null;
+        const result = await db.prepare(query).bind(...params).first();
+        return result ? JSON.parse(result.data) : null;
     } catch (e) {
         console.error("D1 Read Error:", e);
         return null;
     }
 }
 
-export async function setD1Cache(db, key, data) {
+export async function setPosterCache(db, type, ids, fullData) {
     if (!db) return;
+
+    const tmdb = ids.tmdb ? parseInt(ids.tmdb) : null;
+    const mal = ids.mal ? parseInt(ids.mal) : null;
+    const imdb = ids.imdb || null;
+
+    let conflictTarget = "";
+    if (type === 'anime' && mal) {
+        conflictTarget = "mal_id";
+    } else if (tmdb) {
+        conflictTarget = "tmdb_id, type"; 
+    } else if (imdb) {
+        conflictTarget = "imdb_id";
+    } else {
+        return; 
+    }
+
     try {
-        await db.prepare(
-            "INSERT OR REPLACE INTO cache (key, value, created_at) VALUES (?, ?, ?)"
-        ).bind(key, JSON.stringify(data), Date.now()).run();
+        await db.prepare(`
+            INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(${conflictTarget}) DO UPDATE SET
+                data = excluded.data,
+                tmdb_id = COALESCE(excluded.tmdb_id, poster_cache.tmdb_id),
+                mal_id = COALESCE(excluded.mal_id, poster_cache.mal_id),
+                imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id),
+                created_at = excluded.created_at
+        `).bind(tmdb, mal, imdb, type, JSON.stringify(fullData), Date.now()).run();
     } catch (e) {
         console.error("D1 Write Error:", e);
     }
 }
+
+// --- KV Helpers ---
 
 export async function getRandomKey(storage, prefix) {
     if (!storage) return null;
@@ -74,7 +114,6 @@ export async function getRandomKey(storage, prefix) {
     }
 }
 
-// UPDATED: Accepts preferTextless boolean
 export async function getFanartPoster(id, type, apiKey, preferTextless = false) {
     if (!id) return null; 
     const endpoint = type === 'movie' ? 'movies' : 'tv';
@@ -84,26 +123,14 @@ export async function getFanartPoster(id, type, apiKey, preferTextless = false) 
     const posterKey = type === 'movie' ? 'movieposter' : 'tvposter';
     
     if (data[posterKey] && data[posterKey].length > 0) {
-        
-        // Helper to pick best image from a list
         const pickBest = (list) => {
             if (!list || list.length === 0) return null;
             list.sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
-            // Return 2nd best if available (often better quality/less cluttered), else 1st
             return list.length > 1 ? list[1].url : list[0].url;
         };
-
-        // FIX: Added check for empty string "" language code
         const textlessList = data[posterKey].filter(p => p.lang === '00' || p.lang === ''); 
         const englishList = data[posterKey].filter(p => p.lang === 'en');
-
-        if (preferTextless) {
-            // Try textless first, fallback to English
-            return pickBest(textlessList) || pickBest(englishList);
-        } else {
-            // Try English first, fallback to textless
-            return pickBest(englishList) || pickBest(textlessList);
-        }
+        return preferTextless ? (pickBest(textlessList) || pickBest(englishList)) : (pickBest(englishList) || pickBest(textlessList));
     }
     return null;
 }
