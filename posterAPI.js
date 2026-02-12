@@ -1,5 +1,4 @@
-import { fetchWithTimeout, safeJsonFetch, getFanartPoster } from './utils.js';
-
+import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage } from './utils.js';
 // --- CORE FETCHING ---
 
 export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
@@ -110,9 +109,10 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
         jikanExternal: false,
         malImages: false
     };
-    
-    if (cfg.source === 'mal' && !cachedData?.posters?.mal) req.malImages = true;
-
+    const hasCoreMal = coreData.posters?.mal?.text;
+  if (cfg.source === 'mal' && !cachedData?.posters?.mal && !hasCoreMal) {
+        req.malImages = true;
+    }
     if (needsFull) {
         req.tmdbImages = (inputType !== 'anime'); 
         req.fanart = true;
@@ -211,16 +211,20 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     // 4. Standard APIs
     if (workingImdbId || coreData.type !== 'anime') {
         // Fanart: Fetch One Text and One Textless
-        if (req.fanart && !currentData.posters?.fanart && apiKeys.fanartApiKey) {
+       if (req.fanart && !currentData.posters?.fanart && apiKeys.fanartApiKey) {
             const fanartId = coreData.type === 'movie' ? ids.tmdb : (ids.tvdb || ids.tmdb);
             if (fanartId) {
-                // Pass keys correctly
-                promises.push(getFanartPoster(fanartId, coreData.type, apiKeys.fanartApiKey, false)
-                    .then(p => ({ source: 'fanart', type: 'text', url: p })));
-                promises.push(getFanartPoster(fanartId, coreData.type, apiKeys.fanartApiKey, true)
-                    .then(p => ({ source: 'fanart', type: 'textless', url: p })));
+                // Fetch ONCE, return ARRAY of results
+                promises.push(fetchFanartData(fanartId, coreData.type, apiKeys.fanartApiKey)
+                    .then(data => {
+                        if (!data) return null;
+                        return [
+                            { source: 'fanart', type: 'text', url: extractFanartImage(data, coreData.type, false) },
+                            { source: 'fanart', type: 'textless', url: extractFanartImage(data, coreData.type, true) }
+                        ];
+                    })
+                );
             }
-        }
         // Metahub: Only Text
         if (req.metahub && !currentData.posters?.metahub && workingImdbId) {
             promises.push(Promise.resolve({ source: 'metahub', url: `https://images.metahub.space/poster/medium/${workingImdbId}/img` }));
@@ -234,5 +238,8 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     }
 
     const results = await Promise.allSettled(promises);
-    return results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
-}
+return results
+        .map(r => r.status === 'fulfilled' ? r.value : null)
+        .filter(Boolean)
+        .flat();
+    }

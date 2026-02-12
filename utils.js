@@ -147,15 +147,20 @@ export async function addApiKeyToKV(storage, provider, newKey) {
         console.error(`Error adding API key to ${provider}:`, e);
     }
 }
+// utils.js
 
-export async function getFanartPoster(id, type, apiKey, preferTextless = false) {
-    if (!id) return null; 
+// ... keep existing bufferToBase64, fetchWithTimeout, safeJsonFetch, database helpers ...
+
+// NEW: Fetch the raw data once
+export async function fetchFanartData(id, type, apiKey) {
+    if (!id || !apiKey) return null;
     const endpoint = type === 'movie' ? 'movies' : 'tv';
-    // Ensure API Key is passed correctly in URL
     const url = `https://webservice.fanart.tv/v3/${endpoint}/${id}?api_key=${apiKey}`;
-    
-    const data = await safeJsonFetch(fetchWithTimeout(url, 2000));
-    
+    return await safeJsonFetch(fetchWithTimeout(url, 2000));
+}
+
+// NEW: Helper to extract URL from data (no fetch)
+export function extractFanartImage(data, type, preferTextless) {
     if (!data) return null;
     const posterKey = type === 'movie' ? 'movieposter' : 'tvposter';
     
@@ -166,7 +171,6 @@ export async function getFanartPoster(id, type, apiKey, preferTextless = false) 
         const textlessList = list.filter(p => p.lang === '00' || p.lang === ''); 
         const englishList = list.filter(p => p.lang === 'en');
         
-        // Return only the URL string of the best match
         if (preferTextless) {
             return (textlessList[0]?.url || englishList[0]?.url || list[0]?.url);
         } else {
