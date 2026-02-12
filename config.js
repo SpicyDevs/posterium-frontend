@@ -22,7 +22,6 @@ export function parseConfig(url) {
     };
 
     const items = {};
-    // Added 'mal' to the list
     ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'].forEach(key => {
         const scaleOverride = getFloat(`${key}_scale`, NaN);
         const bwOverride = getInt(`${key}_bw`, NaN);
@@ -48,8 +47,8 @@ export function parseConfig(url) {
 
     return {
         ratings: p.has("r") ? p.get("r").split(",") : [],
-        source: p.get("source") || "tmdb",
-        malId: p.get("mal_id") || undefined, // Added MAL ID parsing
+        source: p.get("source"), // No default "tmdb" here to allow Auto-detection
+        malId: p.get("mal_id") || undefined,
         textless: getBool("textless", false),
         posterBlur: getInt("bg_blur", 0),
         grayscale: getBool("bw", false),

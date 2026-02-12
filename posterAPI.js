@@ -1,4 +1,5 @@
 import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage } from './utils.js';
+
 // --- CORE FETCHING ---
 
 export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
@@ -31,11 +32,10 @@ export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
             title, year,
             ids: { tmdb: null, imdb: null, mal: rawId }, 
             ratings, 
-            posters: { mal: { text: posterUrl } }, // Only text for MAL
+            posters: { mal: { text: posterUrl } }, 
             type: 'anime'
         };
     } else {
-        // TMDB Logic
         if (inputType === 'poster' || rawId.startsWith("tt")) {
             const findUrl = `https://api.themoviedb.org/3/find/${rawId}?api_key=${tmdbApiKey}&external_source=imdb_id`;
             const findData = await safeJsonFetch(fetchWithTimeout(findUrl, 2500));
@@ -58,14 +58,11 @@ export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
 
         if (movie.vote_average) ratings.tmdb = Math.round(movie.vote_average * 10) + "%";
         
-        // 1. TMDB Text Poster
         if (movie.poster_path) posters.tmdb.text = `https://image.tmdb.org/t/p/w780${movie.poster_path}`;
         
-        // 2. TMDB Textless Poster (Best One)
         if (movie.images?.posters) {
             const tl = movie.images.posters.filter(p => p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === "");
             if (tl.length > 0) {
-                // Sort by vote count desc
                 tl.sort((a, b) => b.vote_count - a.vote_count);
                 posters.tmdb.textless = `https://image.tmdb.org/t/p/w780${tl[0].file_path}`;
             }
@@ -107,12 +104,15 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
         metahub: false, 
         tmdbImages: false,
         jikanExternal: false,
-        malImages: false
+        malImages: false,
+        fanartSecondBest: false // New Flag
     };
+
     const hasCoreMal = coreData.posters?.mal?.text;
-  if (cfg.source === 'mal' && !cachedData?.posters?.mal && !hasCoreMal) {
+    if (cfg.source === 'mal' && !cachedData?.posters?.mal && !hasCoreMal) {
         req.malImages = true;
     }
+
     if (needsFull) {
         req.tmdbImages = (inputType !== 'anime'); 
         req.fanart = true;
@@ -126,18 +126,26 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
     const hasCachedTextless = cachedData?.posters?.tmdb?.textless;
     const hasCoreTextless = coreData.posters.tmdb?.textless;
     
-    // Only fetch TMDB images if we specifically need textless and don't have it
     if (inputType !== 'anime' && cfg.textless && !hasCoreTextless && !hasCachedTextless) {
          req.tmdbImages = true;
     }
 
-    if (cfg.source === 'fanart' && !cachedData?.posters?.fanart) req.fanart = true;
+    // Auto Logic: If source is missing OR fanart, and we don't have it cached.
+    if ((!cfg.source || cfg.source === 'fanart') && !cachedData?.posters?.fanart) {
+        req.fanart = true;
+    }
+    
+    // Explicit 2nd Best Requirement
+    if (cfg.source === 'fanart') {
+        req.fanartSecondBest = true;
+    }
+
     if (cfg.source === 'metahub' && !cachedData?.posters?.metahub) req.metahub = true;
 
     if (hasImdbId || req.jikanExternal) {
         const externalRatings = ['imdb', 'rt', 'rt_popcorn', 'meta', 'letterboxd', 'runtime'];
         const needsMdbList = requestedRatings.some(r => externalRatings.includes(r));
-        if (needsMdbList) req.mdblist = true; // Always check mdblist if ratings requested to ensure fresh data
+        if (needsMdbList) req.mdblist = true;
     }
     
     return req;
@@ -164,7 +172,7 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         promises.push(jikanPromise);
     }
 
-    // 2. MAL Images (Only Text)
+    // 2. MAL Images
     if (req.malImages && ids.mal) {
         promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}`, 3500)
             .then(async res => {
@@ -181,16 +189,13 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
             .then(async res => {
                 if (!res) return null;
                 const data = await res.json();
-                // Check if the search result matches our year/title reasonably well
                 const match = data.data?.[0];
-                if (match) {
-                     return { source: 'mdblist', data: { mal_id: match.mal_id } }; // Reuse the mdblist processor to inject the ID
-                }
+                if (match) return { source: 'mdblist', data: { mal_id: match.mal_id } };
                 return null;
             }));
     }
 
-    // 3. TMDB Images (For Textless)
+    // 3. TMDB Images
     if (req.tmdbImages && coreData.type !== 'anime') {
         const url = `https://api.themoviedb.org/3/${coreData.type}/${ids.tmdb}/images?api_key=${apiKeys.tmdbApiKey}&include_image_language=en,null`;
         promises.push(fetchWithTimeout(url, 2500).then(async res => {
@@ -210,23 +215,23 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
 
     // 4. Standard APIs
     if (workingImdbId || coreData.type !== 'anime') {
-        // Fanart: Fetch One Text and One Textless
+        // Fanart
        if (req.fanart && !currentData.posters?.fanart && apiKeys.fanartApiKey) {
             const fanartId = coreData.type === 'movie' ? ids.tmdb : (ids.tvdb || ids.tmdb);
             if (fanartId) {
-                // Fetch ONCE, return ARRAY of results
                 promises.push(fetchFanartData(fanartId, coreData.type, apiKeys.fanartApiKey)
                     .then(data => {
                         if (!data) return null;
                         return [
-                            { source: 'fanart', type: 'text', url: extractFanartImage(data, coreData.type, false) },
-                            { source: 'fanart', type: 'textless', url: extractFanartImage(data, coreData.type, true) }
+                            // Apply second best logic if requested
+                            { source: 'fanart', type: 'text', url: extractFanartImage(data, coreData.type, false, req.fanartSecondBest) },
+                            { source: 'fanart', type: 'textless', url: extractFanartImage(data, coreData.type, true, false) }
                         ];
                     })
                 );
             }
         }
-        // Metahub: Only Text
+        // Metahub
         if (req.metahub && !currentData.posters?.metahub && workingImdbId) {
             promises.push(Promise.resolve({ source: 'metahub', url: `https://images.metahub.space/poster/medium/${workingImdbId}/img` }));
         }
@@ -239,8 +244,8 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     }
 
     const results = await Promise.allSettled(promises);
-return results
+    return results
         .map(r => r.status === 'fulfilled' ? r.value : null)
         .filter(Boolean)
         .flat();
-    }
+}

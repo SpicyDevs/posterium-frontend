@@ -1,3 +1,4 @@
+// utils.js
 import { API_CACHE_TTL } from './config.js';
 
 export function bufferToBase64(buffer) {
@@ -19,7 +20,6 @@ export const fetchWithTimeout = async (url, ms, cacheSeconds = API_CACHE_TTL) =>
         const r = await fetch(url, { 
             signal: controller.signal, 
             headers: {
-                // Identify your service to avoid 403 blocks
                 "User-Agent": "FreePosterAPI/1.0 (https://freeposterapi.pages.dev)"
             },
             cf: { cacheTtl: cacheSeconds, cacheEverything: true } 
@@ -39,7 +39,7 @@ export async function safeJsonFetch(promise) {
     }
 }
 
-// --- D1 Database Helpers (New Schema) ---
+// --- D1 Database Helpers ---
 
 export async function getD1Cache(db, type, id) {
     if (!db) return null;
@@ -47,7 +47,6 @@ export async function getD1Cache(db, type, id) {
     let query = "";
     let params = [];
 
-    // Prioritize IDs based on input format
     if (String(id).startsWith("tt")) {
         query = "SELECT data FROM poster_cache WHERE imdb_id = ?";
         params = [id];
@@ -78,12 +77,7 @@ export async function setD1Cache(db, type, ids, minimalData) {
     const dataStr = JSON.stringify(minimalData);
 
     try {
-        // STRATEGY: Atomic UPSERT using ON CONFLICT.
-        // This attempts to INSERT. If a conflict occurs (ID exists), it updates instead.
-        // Efficient: 1 Query.
-        
         if (type === 'anime' && mal) {
-            // Anime: Conflict target is MAL_ID
             await db.prepare(`
                 INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -93,9 +87,7 @@ export async function setD1Cache(db, type, ids, minimalData) {
                     imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id),
                     tmdb_id = COALESCE(excluded.tmdb_id, poster_cache.tmdb_id)
             `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
-
         } else if (tmdb) {
-            // Standard (Movie/TV): Conflict target is TMDB_ID + TYPE
             await db.prepare(`
                 INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -110,16 +102,14 @@ export async function setD1Cache(db, type, ids, minimalData) {
         console.error("D1 Upsert Error:", e);
     }
 }
-// --- KV Database Helpers (Array Strategy) ---
+
+// --- KV Database Helpers ---
 
 export async function getApiKeyFromKV(storage, provider) {
     if (!storage) return null;
     try {
-        // Provider is 'tmdb', 'fanart', or 'mdblist'
         const keys = await storage.get(provider, { type: 'json' });
         if (!keys || !Array.isArray(keys) || keys.length === 0) return null;
-        
-        // Return random key
         return keys[Math.floor(Math.random() * keys.length)];
     } catch (e) {
         console.error(`Error loading API key for ${provider}:`, e);
@@ -133,39 +123,31 @@ export async function addApiKeyToKV(storage, provider, newKey) {
     if (cleanKey.length === 0) return;
 
     try {
-        // 1. Get existing array
         let keys = await storage.get(provider, { type: 'json' });
         if (!Array.isArray(keys)) keys = [];
-
-        // 2. Add only if unique
         if (!keys.includes(cleanKey)) {
             keys.push(cleanKey);
-            // 3. Save back (KV limit 25MB is plenty for simple key strings)
             await storage.put(provider, JSON.stringify(keys));
         }
     } catch (e) {
         console.error(`Error adding API key to ${provider}:`, e);
     }
 }
-// utils.js
 
-// ... keep existing bufferToBase64, fetchWithTimeout, safeJsonFetch, database helpers ...
+// --- Fanart Helpers ---
 
-// NEW: Fetch the raw data once
 export async function fetchFanartData(id, type, apiKey) {
     if (!id || !apiKey) return null;
     const endpoint = type === 'movie' ? 'movies' : 'tv';
-    const url = `https://webservice.fanart.tv/v3/${endpoint}/${id}?api_key=${apiKey}`;
+    const url = `https://webservice.fanart.tv/v3.2/${endpoint}/${id}?client_key=${apiKey}`;
     return await safeJsonFetch(fetchWithTimeout(url, 2000));
 }
 
-// NEW: Helper to extract URL from data (no fetch)
-export function extractFanartImage(data, type, preferTextless) {
+export function extractFanartImage(data, type, preferTextless, useSecondBest = false) {
     if (!data) return null;
     const posterKey = type === 'movie' ? 'movieposter' : 'tvposter';
     
     if (data[posterKey] && data[posterKey].length > 0) {
-        // Sort by likes
         const list = data[posterKey].sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
         
         const textlessList = list.filter(p => p.lang === '00' || p.lang === ''); 
@@ -174,7 +156,13 @@ export function extractFanartImage(data, type, preferTextless) {
         if (preferTextless) {
             return (textlessList[0]?.url || englishList[0]?.url || list[0]?.url);
         } else {
-            return (englishList[0]?.url || textlessList[0]?.url || list[0]?.url);
+            // Text logic
+            const targetList = englishList.length > 0 ? englishList : (textlessList.length > 0 ? textlessList : list);
+            
+            if (useSecondBest && targetList.length > 1) {
+                return targetList[1].url;
+            }
+            return targetList[0].url;
         }
     }
     return null;
