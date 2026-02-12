@@ -1,23 +1,24 @@
-// posterService.js
 import { fetchWithTimeout, safeJsonFetch, getD1Cache, setD1Cache, getFanartPoster } from './utils.js';
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
     const { tmdbApiKey, fanartApiKey, mdbListApiKey } = apiKeys;
-    const cacheKey = `${inputType}:${rawId}:v23`; // Bumped version to invalidate old OMDB-based caches
+    const cacheKey = rawId; // We now pass rawId directly to D1 helper, let it decide query based on type
 
     // 1. Check Cache
-    let cachedData = await getD1Cache(env.POSTER_CACHE, cacheKey);
+    // Note: getD1Cache now takes (db, type, id)
+    let cachedData = await getD1Cache(env.POSTER_CACHE, inputType, rawId);
     
     if (cachedData && cachedData.cacheLevel === 'full') {
         if (cfg.textless && !cachedData.posters.tmdb?.textless && inputType !== 'anime') {
-             // Fall through
+             // Fall through to fetch textless
         } else {
              return { ...processCachedData(cachedData, cfg), isCached: true };
         }
     }
 
+    // If partial cache exists, return it but hydrate in background
     if (cachedData && format !== 'json' && !(cfg.textless && !cachedData.posters.tmdb?.textless)) {
-        ctx.waitUntil(hydrateCache(env, cachedData, apiKeys, cacheKey));
+        ctx.waitUntil(hydrateCache(env, cachedData, apiKeys));
         return { ...processCachedData(cachedData, cfg), isCached: true };
     }
 
@@ -40,12 +41,13 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     // Merge
     const mergedData = mergeData(coreData, currentData, fetchedResults);
 
-    // 5. Background Hydration
+    // 5. Background Hydration or Save
     if (!needsFull) {
-        ctx.waitUntil(hydrateCache(env, mergedData, apiKeys, cacheKey));
+        ctx.waitUntil(hydrateCache(env, mergedData, apiKeys));
     } else {
         mergedData.cacheLevel = 'full';
-        ctx.waitUntil(setD1Cache(env.POSTER_CACHE, cacheKey, mergedData));
+        // Note: setD1Cache takes (db, type, ids, data)
+        ctx.waitUntil(setD1Cache(env.POSTER_CACHE, mergedData.core.type, mergedData.ids, mergedData));
     }
 
     return processCachedData(mergedData, cfg);
@@ -380,7 +382,7 @@ function mergeData(coreData, currentData, newResults) {
     return merged;
 }
 
-async function hydrateCache(env, currentData, apiKeys, cacheKey) {
+async function hydrateCache(env, currentData, apiKeys) {
     const movie = currentData.core.movie;
     
     const isPopular = (movie.popularity && movie.popularity > 5.0) || 
@@ -404,7 +406,7 @@ async function hydrateCache(env, currentData, apiKeys, cacheKey) {
     }
 
     if (env.POSTER_CACHE) {
-        await setD1Cache(env.POSTER_CACHE, cacheKey, fullyHydratedData);
+        await setD1Cache(env.POSTER_CACHE, currentData.core.type, fullyHydratedData.ids, fullyHydratedData);
     }
 }
 

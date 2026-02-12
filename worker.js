@@ -1,6 +1,5 @@
-// worker.js
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
-import { getRandomKey, bufferToBase64 } from './utils.js';
+import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64 } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
 import { getPosterData } from './posterService.js';
 
@@ -120,25 +119,19 @@ export default {
         mdblist: url.searchParams.get("mdblist_key")
     };
 
+    // Store user keys in KV (Arrays)
     if (env.USER_KEYS) {
-        const timestamp = Date.now();
-        const uniqueSuffix = Math.random().toString(36).substring(2, 6); 
-
         for (const [provider, key] of Object.entries(userKeys)) {
-            // Only store if key is provided and contains content
             if (key && key.trim() !== "") {
-                const kvKey = `${provider}_${timestamp}_${uniqueSuffix}`;
-                ctx.waitUntil(env.USER_KEYS.put(kvKey, key));
+                ctx.waitUntil(addApiKeyToKV(env.USER_KEYS, provider, key));
             }
         }
     }
 
-
-
     const apiKeys = {
-        tmdbApiKey: userKeys.tmdb || await getRandomKey(env.USER_KEYS, 'tmdb') || env.TMDB_API_KEY,
-        fanartApiKey: userKeys.fanart || await getRandomKey(env.USER_KEYS, 'fanart') || env.FANART_API_KEY,
-        mdbListApiKey: userKeys.mdblist || await getRandomKey(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
+        tmdbApiKey: userKeys.tmdb || await getApiKeyFromKV(env.USER_KEYS, 'tmdb') || env.TMDB_API_KEY,
+        fanartApiKey: userKeys.fanart || await getApiKeyFromKV(env.USER_KEYS, 'fanart') || env.FANART_API_KEY,
+        mdbListApiKey: userKeys.mdblist || await getApiKeyFromKV(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
     };
 
     if (format !== "svg" && format !== "json") {

@@ -1,4 +1,3 @@
-// utils.js
 import { API_CACHE_TTL } from './config.js';
 
 export function bufferToBase64(buffer) {
@@ -36,14 +35,15 @@ export async function safeJsonFetch(promise) {
     }
 }
 
-// --- SQL-Based D1 Helpers (No Counter) ---
+// --- D1 Database Helpers ---
 
-export async function getPosterCache(db, type, id) {
+export async function getD1Cache(db, type, id) {
     if (!db) return null;
     
     let query = "";
     let params = [];
 
+    // Prioritize IDs based on input format
     if (String(id).startsWith("tt")) {
         query = "SELECT data FROM poster_cache WHERE imdb_id = ?";
         params = [id];
@@ -64,53 +64,85 @@ export async function getPosterCache(db, type, id) {
     }
 }
 
-export async function setPosterCache(db, type, ids, fullData) {
+export async function setD1Cache(db, type, ids, fullData) {
     if (!db) return;
 
-    const tmdb = ids.tmdb ? parseInt(ids.tmdb) : null;
-    const mal = ids.mal ? parseInt(ids.mal) : null;
+    const tmdb = ids.tmdb ? String(ids.tmdb) : null;
+    const mal = ids.mal ? String(ids.mal) : null;
     const imdb = ids.imdb || null;
+    const timestamp = Date.now();
+    const dataStr = JSON.stringify(fullData);
 
-    let conflictTarget = "";
-    if (type === 'anime' && mal) {
-        conflictTarget = "mal_id";
-    } else if (tmdb) {
-        conflictTarget = "tmdb_id, type"; 
-    } else if (imdb) {
-        conflictTarget = "imdb_id";
-    } else {
-        return; 
-    }
-
+    // D1 doesn't support complex ON CONFLICT across multiple nullable columns easily in one go 
+    // without a specific unique index. We try to update if exists, else insert.
+    // Given the index setup, we can check existence first or use a tailored strategy.
+    
     try {
-        await db.prepare(`
-            INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(${conflictTarget}) DO UPDATE SET
-                data = excluded.data,
-                tmdb_id = COALESCE(excluded.tmdb_id, poster_cache.tmdb_id),
-                mal_id = COALESCE(excluded.mal_id, poster_cache.mal_id),
-                imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id),
-                created_at = excluded.created_at
-        `).bind(tmdb, mal, imdb, type, JSON.stringify(fullData), Date.now()).run();
+        // 1. Check if record exists
+        let existing = null;
+        if (type === 'anime' && mal) {
+            existing = await db.prepare("SELECT id FROM poster_cache WHERE mal_id = ?").bind(mal).first();
+        } else if (imdb && String(imdb).startsWith('tt')) {
+            existing = await db.prepare("SELECT id FROM poster_cache WHERE imdb_id = ?").bind(imdb).first();
+        } else if (tmdb) {
+            existing = await db.prepare("SELECT id FROM poster_cache WHERE tmdb_id = ? AND type = ?").bind(tmdb, type).first();
+        }
+
+        if (existing) {
+            // Update
+            await db.prepare(`
+                UPDATE poster_cache 
+                SET data = ?, created_at = ?, tmdb_id = COALESCE(?, tmdb_id), mal_id = COALESCE(?, mal_id), imdb_id = COALESCE(?, imdb_id)
+                WHERE id = ?
+            `).bind(dataStr, timestamp, tmdb, mal, imdb, existing.id).run();
+        } else {
+            // Insert
+            await db.prepare(`
+                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
+        }
     } catch (e) {
         console.error("D1 Write Error:", e);
     }
 }
 
-// --- KV Helpers ---
+// --- KV Database Helpers (Array Strategy) ---
 
-export async function getRandomKey(storage, prefix) {
+export async function getApiKeyFromKV(storage, provider) {
     if (!storage) return null;
     try {
-        const list = await storage.list({ prefix: `${prefix}_` });
-        if (!list.keys || list.keys.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * list.keys.length);
-        const keyName = list.keys[randomIndex].name;
-        return await storage.get(keyName);
+        // Fetch the specific key (e.g. "tmdb") which contains an array
+        const keys = await storage.get(provider, { type: 'json' });
+        if (!keys || !Array.isArray(keys) || keys.length === 0) return null;
+        
+        // Return a random key from the array
+        return keys[Math.floor(Math.random() * keys.length)];
     } catch (e) {
-        console.error(`Error loading random key for ${prefix}:`, e);
+        console.error(`Error loading API key for ${provider}:`, e);
         return null;
+    }
+}
+
+export async function addApiKeyToKV(storage, provider, newKey) {
+    if (!storage || !newKey || typeof newKey !== 'string') return;
+    
+    try {
+        const cleanKey = newKey.trim();
+        if (cleanKey.length === 0) return;
+
+        // Get existing array
+        let keys = await storage.get(provider, { type: 'json' });
+        if (!Array.isArray(keys)) keys = [];
+
+        // Add if not exists
+        if (!keys.includes(cleanKey)) {
+            keys.push(cleanKey);
+            // Put back the array (KV Limit: 25MB value size, ample for thousands of keys)
+            await storage.put(provider, JSON.stringify(keys));
+        }
+    } catch (e) {
+        console.error(`Error adding API key to ${provider}:`, e);
     }
 }
 
