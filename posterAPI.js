@@ -225,6 +225,7 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
                     })
                 );
             }
+        }
         // Metahub: Only Text
         if (req.metahub && !currentData.posters?.metahub && workingImdbId) {
             promises.push(Promise.resolve({ source: 'metahub', url: `https://images.metahub.space/poster/medium/${workingImdbId}/img` }));
