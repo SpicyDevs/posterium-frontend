@@ -167,3 +167,36 @@ export function extractFanartImage(data, type, preferTextless, useSecondBest = f
     }
     return null;
 }
+
+// --- IMDb Helpers (New) ---
+
+export function extractImdbImage(data) {
+    if (!data || !data.images || !Array.isArray(data.images)) return null;
+
+    // Filter: Must be labeled 'poster' and must be Portrait (Height > Width)
+    const candidates = data.images.filter(img => 
+        img.type === 'poster' && 
+        img.width && img.height && 
+        img.height > img.width
+    );
+
+    if (candidates.length === 0) return null;
+
+    // Logic: Calculate distance from ideal Aspect Ratio (0.667 aka 2:3)
+    // If aspect ratios are very similar (within 5%), pick the higher resolution one.
+    const IDEAL_AR = 2 / 3;
+
+    candidates.sort((a, b) => {
+        const arA = a.width / a.height;
+        const arB = b.width / b.height;
+        const diffA = Math.abs(arA - IDEAL_AR);
+        const diffB = Math.abs(arB - IDEAL_AR);
+
+        if (Math.abs(diffA - diffB) < 0.05) {
+            return (b.width * b.height) - (a.width * a.height); // Higher res wins
+        }
+        return diffA - diffB; // Closer AR wins
+    });
+
+    return candidates[0].url;
+}

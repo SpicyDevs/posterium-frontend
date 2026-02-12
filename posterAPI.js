@@ -1,4 +1,4 @@
-import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage } from './utils.js';
+import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage, extractImdbImage } from './utils.js';
 
 // --- CORE FETCHING ---
 
@@ -105,7 +105,8 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
         tmdbImages: false,
         jikanExternal: false,
         malImages: false,
-        fanartSecondBest: false // New Flag
+        fanartSecondBest: false,
+        imdb: false // New Source
     };
 
     const hasCoreMal = coreData.posters?.mal?.text;
@@ -119,6 +120,7 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
         if (inputType === 'anime' && !coreData.ids.imdb) req.jikanExternal = true;
         req.metahub = true;
         req.mdblist = true;
+        req.imdb = true; // Include IMDb in full cache
         return req;
     }
     
@@ -141,6 +143,9 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
     }
 
     if (cfg.source === 'metahub' && !cachedData?.posters?.metahub) req.metahub = true;
+    
+    // IMDb Specific Requirement
+    if (cfg.source === 'imdb' && !cachedData?.posters?.imdb) req.imdb = true;
 
     if (hasImdbId || req.jikanExternal) {
         const externalRatings = ['imdb', 'rt', 'rt_popcorn', 'meta', 'letterboxd', 'runtime'];
@@ -240,6 +245,15 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         if (req.mdblist && apiKeys.mdbListApiKey && workingImdbId) {
             promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${apiKeys.mdbListApiKey}&i=${workingImdbId}`, 3000))
                 .then(res => ({ source: 'mdblist', data: res })));
+        }
+
+        // IMDb (New)
+        if (req.imdb && workingImdbId) {
+            promises.push(safeJsonFetch(fetchWithTimeout(`https://api.imdbapi.dev/titles/${workingImdbId}/images?types=poster`, 3000))
+                .then(data => {
+                    const url = extractImdbImage(data);
+                    return url ? { source: 'imdb', url } : null;
+                }));
         }
     }
 

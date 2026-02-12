@@ -22,7 +22,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     // 2. The Fork: Standard vs Race
     // "show tmdb only when source is tmdb" -> Standard Path
     // "no source is provided" -> Race Path
-    if (coreData || cfg.source === 'tmdb' || cfg.source === 'mal' || inputType === 'anime') {
+    if (coreData || cfg.source === 'tmdb' || cfg.source === 'mal' || cfg.source === 'imdb' || inputType === 'anime') {
         if (!coreData) coreData = await fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
     } else {
         // --- RACE LOGIC ---
@@ -163,7 +163,7 @@ function mergeAndMinimize(coreData, currentData, newResults) {
             merged.posters.fanart[res.type] = res.url;
         }
         
-        if (res.source === 'metahub' || res.source === 'mal') {
+        if (res.source === 'metahub' || res.source === 'mal' || res.source === 'imdb') {
             if (!merged.posters[res.source]) merged.posters[res.source] = {};
             merged.posters[res.source].text = res.url;
         }
@@ -214,6 +214,7 @@ function processCachedData(data, cfg, overrideSource = null) {
 
     if (preferred === 'metahub') finalPosterUrl = p.metahub?.text;
     else if (preferred === 'mal') finalPosterUrl = p.mal?.text;
+    else if (preferred === 'imdb') finalPosterUrl = p.imdb?.text;
     else if (preferred === 'tmdb') finalPosterUrl = p.tmdb?.[type] || p.tmdb?.text;
     else if (preferred === 'fanart') finalPosterUrl = p.fanart?.[type] || p.fanart?.text;
 
@@ -221,6 +222,7 @@ function processCachedData(data, cfg, overrideSource = null) {
         // Fallback chain (Auto)
         finalPosterUrl = (p.tmdb?.[type] || p.tmdb?.text) || 
                          (p.fanart?.[type] || p.fanart?.text) || 
+                         p.imdb?.text || // IMDb fallback priority: after fanart, before metahub
                          p.metahub?.text || 
                          p.mal?.text;
     }
