@@ -78,40 +78,38 @@ export async function setD1Cache(db, type, ids, minimalData) {
     const dataStr = JSON.stringify(minimalData);
 
     try {
-        // Check for existence to determine UPDATE vs INSERT
-        let existing = null;
+        // STRATEGY: Atomic UPSERT using ON CONFLICT.
+        // This attempts to INSERT. If a conflict occurs (ID exists), it updates instead.
+        // Efficient: 1 Query.
+        
         if (type === 'anime' && mal) {
-            existing = await db.prepare("SELECT id FROM poster_cache WHERE mal_id = ?").bind(mal).first();
-        } else if (imdb && String(imdb).startsWith('tt')) {
-            existing = await db.prepare("SELECT id FROM poster_cache WHERE imdb_id = ?").bind(imdb).first();
-        } else if (tmdb) {
-            existing = await db.prepare("SELECT id FROM poster_cache WHERE tmdb_id = ? AND type = ?").bind(tmdb, type).first();
-        }
-
-        if (existing) {
-            const THREE_DAYS = 259200000;
-            const isFresh = (Date.now() - existing.created_at) < THREE_DAYS;
-            const isUpgrade = minimalData.cacheLevel === 'full' && JSON.parse(existing.data).cacheLevel !== 'full';
-
-            if (isFresh && !isUpgrade) {
-                return; // Skip write to save costs
-            }
-            await db.prepare(`
-                UPDATE poster_cache 
-                SET data = ?, created_at = ?, tmdb_id = COALESCE(?, tmdb_id), mal_id = COALESCE(?, mal_id), imdb_id = COALESCE(?, imdb_id)
-                WHERE id = ?
-            `).bind(dataStr, timestamp, tmdb, mal, imdb, existing.id).run();
-        } else {
+            // Anime: Conflict target is MAL_ID
             await db.prepare(`
                 INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(mal_id) DO UPDATE SET
+                    data = excluded.data,
+                    created_at = excluded.created_at,
+                    imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id),
+                    tmdb_id = COALESCE(excluded.tmdb_id, poster_cache.tmdb_id)
+            `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
+
+        } else if (tmdb) {
+            // Standard (Movie/TV): Conflict target is TMDB_ID + TYPE
+            await db.prepare(`
+                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(tmdb_id, type) DO UPDATE SET
+                    data = excluded.data,
+                    created_at = excluded.created_at,
+                    mal_id = COALESCE(excluded.mal_id, poster_cache.mal_id),
+                    imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id)
             `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
         }
     } catch (e) {
-        console.error("D1 Write Error:", e);
+        console.error("D1 Upsert Error:", e);
     }
 }
-
 // --- KV Database Helpers (Array Strategy) ---
 
 export async function getApiKeyFromKV(storage, provider) {
