@@ -35,7 +35,7 @@ export async function safeJsonFetch(promise) {
     }
 }
 
-// --- D1 Database Helpers ---
+// --- D1 Database Helpers (New Schema) ---
 
 export async function getD1Cache(db, type, id) {
     if (!db) return null;
@@ -64,21 +64,17 @@ export async function getD1Cache(db, type, id) {
     }
 }
 
-export async function setD1Cache(db, type, ids, fullData) {
+export async function setD1Cache(db, type, ids, minimalData) {
     if (!db) return;
 
     const tmdb = ids.tmdb ? String(ids.tmdb) : null;
     const mal = ids.mal ? String(ids.mal) : null;
     const imdb = ids.imdb || null;
     const timestamp = Date.now();
-    const dataStr = JSON.stringify(fullData);
+    const dataStr = JSON.stringify(minimalData);
 
-    // D1 doesn't support complex ON CONFLICT across multiple nullable columns easily in one go 
-    // without a specific unique index. We try to update if exists, else insert.
-    // Given the index setup, we can check existence first or use a tailored strategy.
-    
     try {
-        // 1. Check if record exists
+        // Check for existence to determine UPDATE vs INSERT
         let existing = null;
         if (type === 'anime' && mal) {
             existing = await db.prepare("SELECT id FROM poster_cache WHERE mal_id = ?").bind(mal).first();
@@ -89,14 +85,12 @@ export async function setD1Cache(db, type, ids, fullData) {
         }
 
         if (existing) {
-            // Update
             await db.prepare(`
                 UPDATE poster_cache 
                 SET data = ?, created_at = ?, tmdb_id = COALESCE(?, tmdb_id), mal_id = COALESCE(?, mal_id), imdb_id = COALESCE(?, imdb_id)
                 WHERE id = ?
             `).bind(dataStr, timestamp, tmdb, mal, imdb, existing.id).run();
         } else {
-            // Insert
             await db.prepare(`
                 INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -112,11 +106,11 @@ export async function setD1Cache(db, type, ids, fullData) {
 export async function getApiKeyFromKV(storage, provider) {
     if (!storage) return null;
     try {
-        // Fetch the specific key (e.g. "tmdb") which contains an array
+        // Provider is 'tmdb', 'fanart', or 'mdblist'
         const keys = await storage.get(provider, { type: 'json' });
         if (!keys || !Array.isArray(keys) || keys.length === 0) return null;
         
-        // Return a random key from the array
+        // Return random key
         return keys[Math.floor(Math.random() * keys.length)];
     } catch (e) {
         console.error(`Error loading API key for ${provider}:`, e);
@@ -126,19 +120,18 @@ export async function getApiKeyFromKV(storage, provider) {
 
 export async function addApiKeyToKV(storage, provider, newKey) {
     if (!storage || !newKey || typeof newKey !== 'string') return;
-    
-    try {
-        const cleanKey = newKey.trim();
-        if (cleanKey.length === 0) return;
+    const cleanKey = newKey.trim();
+    if (cleanKey.length === 0) return;
 
-        // Get existing array
+    try {
+        // 1. Get existing array
         let keys = await storage.get(provider, { type: 'json' });
         if (!Array.isArray(keys)) keys = [];
 
-        // Add if not exists
+        // 2. Add only if unique
         if (!keys.includes(cleanKey)) {
             keys.push(cleanKey);
-            // Put back the array (KV Limit: 25MB value size, ample for thousands of keys)
+            // 3. Save back (KV limit 25MB is plenty for simple key strings)
             await storage.put(provider, JSON.stringify(keys));
         }
     } catch (e) {
@@ -149,20 +142,27 @@ export async function addApiKeyToKV(storage, provider, newKey) {
 export async function getFanartPoster(id, type, apiKey, preferTextless = false) {
     if (!id) return null; 
     const endpoint = type === 'movie' ? 'movies' : 'tv';
-    const data = await safeJsonFetch(fetchWithTimeout(`https://webservice.fanart.tv/v3/${endpoint}/${id}?api_key=${apiKey}`, 2000));
+    // Ensure API Key is passed correctly in URL
+    const url = `https://webservice.fanart.tv/v3/${endpoint}/${id}?api_key=${apiKey}`;
+    
+    const data = await safeJsonFetch(fetchWithTimeout(url, 2000));
     
     if (!data) return null;
     const posterKey = type === 'movie' ? 'movieposter' : 'tvposter';
     
     if (data[posterKey] && data[posterKey].length > 0) {
-        const pickBest = (list) => {
-            if (!list || list.length === 0) return null;
-            list.sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
-            return list.length > 1 ? list[1].url : list[0].url;
-        };
-        const textlessList = data[posterKey].filter(p => p.lang === '00' || p.lang === ''); 
-        const englishList = data[posterKey].filter(p => p.lang === 'en');
-        return preferTextless ? (pickBest(textlessList) || pickBest(englishList)) : (pickBest(englishList) || pickBest(textlessList));
+        // Sort by likes
+        const list = data[posterKey].sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
+        
+        const textlessList = list.filter(p => p.lang === '00' || p.lang === ''); 
+        const englishList = list.filter(p => p.lang === 'en');
+        
+        // Return only the URL string of the best match
+        if (preferTextless) {
+            return (textlessList[0]?.url || englishList[0]?.url || list[0]?.url);
+        } else {
+            return (englishList[0]?.url || textlessList[0]?.url || list[0]?.url);
+        }
     }
     return null;
 }
