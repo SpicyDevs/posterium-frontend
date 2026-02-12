@@ -1,4 +1,4 @@
-import { getD1Cache, setD1Cache } from './utils.js';
+import { fetchWithTimeout, getD1Cache, setD1Cache } from './utils.js';
 import { fetchCoreData, determineRequirements, fetchSelectedAPIs } from './posterAPI.js';
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
@@ -19,13 +19,27 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     }
 
     // 2. Fetch Core Data (if not in cache)
-    let coreData = cachedData?.ids ? cachedData : await fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
-    
+let coreData = cachedData?.ids ? cachedData : await fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
+
+
     // Inject parsed malId if available and not in core
     if (cfg.malId && !coreData.ids.mal) {
         coreData.ids.mal = cfg.malId;
     }
 
+    if (inputType === 'anime' && !coreData.ids.imdb && coreData.ids.mal) {
+        try {
+            // Give Jikan a bit more time (4000ms) and run this BEFORE determing requirements
+            const extRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${coreData.ids.mal}/external`, 4000);
+            if (extRes) {
+                const jData = await extRes.json();
+                const imdbItem = jData.data?.find(e => e.name === 'IMDb');
+                if (imdbItem?.url) {
+                    coreData.ids.imdb = imdbItem.url.match(/tt\d+/)?.[0];
+                }
+            }
+        } catch (e) { console.log("Jikan ID fetch failed", e); }
+    }
     // 3. Determine Requirements
     const needsFull = (format === 'json');
     const required = determineRequirements(cfg, needsFull, inputType, coreData, cachedData);

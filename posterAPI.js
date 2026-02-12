@@ -92,7 +92,8 @@ export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
             ids: { tmdb: tmdbId, imdb: movie.external_ids?.imdb_id, tvdb: movie.external_ids?.tvdb_id },
             ratings,
             posters,
-            type: activeType
+            type: activeType,
+            original_language: movie.original_language
         };
     }
 }
@@ -172,6 +173,20 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
                 const imgs = data?.images;
                 const posterUrl = imgs?.webp?.large_image_url || imgs?.jpg?.large_image_url;
                 return posterUrl ? { source: 'mal', url: posterUrl } : null;
+            }));
+    }
+
+    if (coreData.original_language === 'ja' && !coreData.ids.mal && !currentData.ids?.mal) {
+         promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(coreData.title)}&limit=1`, 3000)
+            .then(async res => {
+                if (!res) return null;
+                const data = await res.json();
+                // Check if the search result matches our year/title reasonably well
+                const match = data.data?.[0];
+                if (match) {
+                     return { source: 'mdblist', data: { mal_id: match.mal_id } }; // Reuse the mdblist processor to inject the ID
+                }
+                return null;
             }));
     }
 
