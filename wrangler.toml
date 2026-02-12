@@ -15,3 +15,6 @@ database_id = "64832706-ceb2-4907-a6a2-62c5b197a8fd"
 FANART_API_KEY="474df0c4626d01344571c33076e628da"
 MDBLIST_API_KEY="r5gmzaektnxqnin5kl7iknjny"
 TMDB_API_KEY="ba133e792590c9d89882093eea76e13f"
+
+[placement]
+mode = "smart"

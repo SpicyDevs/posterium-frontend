@@ -160,8 +160,9 @@ function processCachedData(data, cfg) {
 }
 
 async function hydrateCache(env, currentData, apiKeys) {
-    const isPopular = (currentData.ids.imdb && currentData.ratings.tmdb && parseInt(currentData.ratings.tmdb) > 50) || currentData.type === 'anime';
-    const req = determineRequirements({}, true, currentData.type, currentData, currentData);
+const tmdbRating = currentData.ratings?.tmdb ? parseInt(currentData.ratings.tmdb) : 0;
+const isPopular = (currentData.ids?.imdb && tmdbRating > 50) || currentData.type === 'anime';
+const req = determineRequirements({}, true, currentData.type, currentData, currentData);
     
     // Skip expensive calls for unpopular content to save API usage? 
     // Logic preserved from original but simplified.

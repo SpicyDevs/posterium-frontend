@@ -18,6 +18,10 @@ export const fetchWithTimeout = async (url, ms, cacheSeconds = API_CACHE_TTL) =>
     try {
         const r = await fetch(url, { 
             signal: controller.signal, 
+            headers: {
+                // Identify your service to avoid 403 blocks
+                "User-Agent": "FreePosterAPI/1.0 (https://freeposterapi.pages.dev)"
+            },
             cf: { cacheTtl: cacheSeconds, cacheEverything: true } 
         });
         return r.ok ? r : null;
@@ -85,6 +89,13 @@ export async function setD1Cache(db, type, ids, minimalData) {
         }
 
         if (existing) {
+            const THREE_DAYS = 259200000;
+            const isFresh = (Date.now() - existing.created_at) < THREE_DAYS;
+            const isUpgrade = minimalData.cacheLevel === 'full' && JSON.parse(existing.data).cacheLevel !== 'full';
+
+            if (isFresh && !isUpgrade) {
+                return; // Skip write to save costs
+            }
             await db.prepare(`
                 UPDATE poster_cache 
                 SET data = ?, created_at = ?, tmdb_id = COALESCE(?, tmdb_id), mal_id = COALESCE(?, mal_id), imdb_id = COALESCE(?, imdb_id)
