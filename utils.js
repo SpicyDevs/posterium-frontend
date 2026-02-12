@@ -85,11 +85,11 @@ export async function setD1Cache(db, type, ids, minimalData) {
         if (type === 'anime' && mal) {
             // Anime: Conflict target is MAL_ID
             await db.prepare(`
-                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
+                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(mal_id) DO UPDATE SET
                     data = excluded.data,
-                    created_at = excluded.created_at,
+                    updated_at = excluded.updated_at,
                     imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id),
                     tmdb_id = COALESCE(excluded.tmdb_id, poster_cache.tmdb_id)
             `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
@@ -97,11 +97,11 @@ export async function setD1Cache(db, type, ids, minimalData) {
         } else if (tmdb) {
             // Standard (Movie/TV): Conflict target is TMDB_ID + TYPE
             await db.prepare(`
-                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, created_at)
+                INSERT INTO poster_cache (tmdb_id, mal_id, imdb_id, type, data, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(tmdb_id, type) DO UPDATE SET
                     data = excluded.data,
-                    created_at = excluded.created_at,
+                    updated_at = excluded.updated_at,
                     mal_id = COALESCE(excluded.mal_id, poster_cache.mal_id),
                     imdb_id = COALESCE(excluded.imdb_id, poster_cache.imdb_id)
             `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
