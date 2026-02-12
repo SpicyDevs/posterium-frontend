@@ -3,6 +3,15 @@ import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64 } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
 import { getPosterData } from './posterService.js';
 
+// 1. Define Global State outside the default export
+// These persist between requests on the same worker instance
+let GLOBAL_KEYS = {
+    tmdb: null,
+    fanart: null,
+    mdblist: null,
+    initialized: false
+};
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*" } });
@@ -103,12 +112,21 @@ export default {
         });
     }
 
-    // Select keys (User provided -> Random from KV -> Default Env)
+    // 2. LAZY KEY SELECTION
+    // Immediate: Use memory cache if available, otherwise fall back to env default immediately.
+    // This adds 0ms latency.
     const apiKeys = {
-        tmdbApiKey: userKeys.tmdb || await getApiKeyFromKV(env.USER_KEYS, 'tmdb') || env.TMDB_API_KEY,
-        fanartApiKey: userKeys.fanart || await getApiKeyFromKV(env.USER_KEYS, 'fanart') || env.FANART_API_KEY,
-        mdbListApiKey: userKeys.mdblist || await getApiKeyFromKV(env.USER_KEYS, 'mdblist') || env.MDBLIST_API_KEY
+        tmdbApiKey: userKeys.tmdb || GLOBAL_KEYS.tmdb || env.TMDB_API_KEY,
+        fanartApiKey: userKeys.fanart || GLOBAL_KEYS.fanart || env.FANART_API_KEY,
+        mdbListApiKey: userKeys.mdblist || GLOBAL_KEYS.mdblist || env.MDBLIST_API_KEY
     };
+
+    // 3. BACKGROUND REFRESH
+    // If we haven't fetched KV keys yet, schedule it for AFTER this response is sent.
+    // The NEXT user will get the random keys.
+    if (!GLOBAL_KEYS.initialized && env.USER_KEYS) {
+        ctx.waitUntil(refreshGlobalKeys(env.USER_KEYS));
+    }
 
     if (format !== "svg" && format !== "json") {
         const svgUrl = new URL(request.url);
@@ -183,3 +201,20 @@ export default {
     }
   }
 };
+
+// Helper function to update global state in background
+async function refreshGlobalKeys(kv) {
+    try {
+        const [t, f, m] = await Promise.all([
+            getApiKeyFromKV(kv, 'tmdb'),
+            getApiKeyFromKV(kv, 'fanart'),
+            getApiKeyFromKV(kv, 'mdblist')
+        ]);
+        if (t) GLOBAL_KEYS.tmdb = t;
+        if (f) GLOBAL_KEYS.fanart = f;
+        if (m) GLOBAL_KEYS.mdblist = m;
+        GLOBAL_KEYS.initialized = true;
+    } catch (e) {
+        console.error("Background Key Refresh Failed", e);
+    }
+}
