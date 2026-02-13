@@ -1,7 +1,8 @@
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
-import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64, logEvent, normalizeServiceError } from './utils.js';
+import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64, getD1Cache, logEvent, normalizeServiceError } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
 import { getPosterData } from './posterService.js';
+import { SUPPORTED_SOURCES } from './sources/index.js';
 
 // 1. Define Global State outside the default export
 // These persist between requests on the same worker instance
@@ -38,6 +39,137 @@ export default {
 
     if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
     if (url.pathname === "/") return Response.redirect("https://freeposterapi.pages.dev", 301);
+
+    // --- TEST / HEALTH DIAGNOSTICS ENDPOINT ---
+    if (url.pathname === "/test" || url.pathname === "/test/") {
+        const runExecution = url.searchParams.get("run") === "1";
+        const sourceList = url.searchParams.get("sources")
+            ? url.searchParams.get("sources").split(',').map(s => s.trim().toLowerCase()).filter(s => SUPPORTED_SOURCES.includes(s))
+            : SUPPORTED_SOURCES;
+
+        const ids = {
+            movie: url.searchParams.get("movie_id") || "550",
+            tv: url.searchParams.get("tv_id") || "1399",
+            anime: url.searchParams.get("anime_id") || "5114"
+        };
+
+        const baseUrl = `${url.origin}`;
+        const steps = [];
+        const addStep = (title, details = {}) => {
+            steps.push({ step: steps.length + 1, title, timestamp: new Date().toISOString(), details });
+        };
+
+        addStep("Received /test request", {
+            requestId,
+            method: request.method,
+            runExecution,
+            fullPath: `${url.pathname}${url.search}`
+        });
+
+        addStep("Parsed IDs and source matrix", {
+            ids,
+            sourceCount: sourceList.length,
+            sources: sourceList
+        });
+
+        const dbPreview = {};
+        if (env.POSTER_CACHE) {
+            for (const [mediaType, id] of Object.entries(ids)) {
+                const item = await getD1Cache(env.POSTER_CACHE, mediaType, id);
+                dbPreview[mediaType] = {
+                    cacheHit: Boolean(item),
+                    cacheLevel: item?.cacheLevel || null,
+                    knownIds: item?.ids || null
+                };
+            }
+            addStep("Checked database cache first", dbPreview);
+        } else {
+            addStep("Checked database cache first", { warning: "POSTER_CACHE binding not configured" });
+        }
+
+        addStep("Checked configured key availability", {
+            tmdbConfigured: Boolean(env.TMDB_API_KEY),
+            fanartConfigured: Boolean(env.FANART_API_KEY),
+            mdblistConfigured: Boolean(env.MDBLIST_API_KEY),
+            userKeysKVConfigured: Boolean(env.USER_KEYS)
+        });
+
+        const matrix = [];
+        ["movie", "tv", "anime"].forEach(mediaType => {
+            sourceList.forEach(source => {
+                const requestPath = `/${mediaType}/${ids[mediaType]}.json?source=${encodeURIComponent(source)}&textless=1&r=imdb,rt,meta,tmdb,mal,age,runtime`;
+                matrix.push({
+                    mediaType,
+                    id: ids[mediaType],
+                    source,
+                    requestPath,
+                    requestUrl: `${baseUrl}${requestPath}`
+                });
+            });
+        });
+
+        addStep("Built exhaustive test matrix across media types and sources", {
+            totalRequests: matrix.length,
+            mediaTypes: ["movie", "tv", "anime"],
+            sample: matrix.slice(0, 4)
+        });
+
+        const results = [];
+        if (runExecution) {
+            addStep("Executing each matrix entry", { mode: "live" });
+            for (const testCase of matrix) {
+                const startedAt = Date.now();
+                try {
+                    const testRes = await fetch(testCase.requestUrl, {
+                        headers: { "X-Request-ID": `${requestId}:test:${testCase.mediaType}:${testCase.source}` }
+                    });
+
+                    results.push({
+                        ...testCase,
+                        status: testRes.status,
+                        ok: testRes.ok,
+                        durationMs: Date.now() - startedAt
+                    });
+                } catch (error) {
+                    results.push({
+                        ...testCase,
+                        status: 0,
+                        ok: false,
+                        durationMs: Date.now() - startedAt,
+                        error: error?.message || "Request failed"
+                    });
+                }
+            }
+            addStep("Completed live execution", {
+                total: results.length,
+                succeeded: results.filter(r => r.ok).length,
+                failed: results.filter(r => !r.ok).length
+            });
+        } else {
+            addStep("Execution skipped", { reason: "Pass run=1 to execute all tests. Returned dry-run matrix only." });
+        }
+
+        return new Response(JSON.stringify({
+            requestId,
+            route: "/test",
+            mode: runExecution ? "live" : "dry-run",
+            receivedInput: {
+                query: Object.fromEntries(url.searchParams.entries()),
+                ids,
+                sources: sourceList
+            },
+            fullTestsCommand: `curl '${baseUrl}/test/?run=1&movie_id=${ids.movie}&tv_id=${ids.tv}&anime_id=${ids.anime}&sources=${sourceList.join(',')}'`,
+            summary: {
+                matrixCount: matrix.length,
+                executedCount: results.length
+            },
+            steps,
+            matrix,
+            results
+        }, null, 2), {
+            headers: withRequestHeaders({ "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }, requestId)
+        });
+    }
 
     // --- SEARCH ROUTE (Unchanged) ---
     if (url.pathname === "/search") {
