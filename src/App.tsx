@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react'; // <--- Headless UI
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { PosterConfig, DEFAULT_CONFIG } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
@@ -18,7 +18,7 @@ const STORAGE_KEY = 'freeposterapi_config_v2';
 const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ isOpen, onClose, onConfirm }) => (
   <Transition appear show={isOpen} as={Fragment}>
     <Dialog as="div" className="relative z-50" onClose={onClose}>
-      <Transition.Child
+      <TransitionChild
         as={Fragment}
         enter="ease-out duration-300"
         enterFrom="opacity-0"
@@ -28,11 +28,11 @@ const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
         leaveTo="opacity-0"
       >
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
-      </Transition.Child>
+      </TransitionChild>
 
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4 text-center">
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="ease-out duration-300"
             enterFrom="opacity-0 scale-95"
@@ -41,10 +41,10 @@ const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#18181b] border border-white/10 p-6 text-left align-middle shadow-xl transition-all">
-              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-white flex items-center gap-2">
+            <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#18181b] border border-white/10 p-6 text-left align-middle shadow-xl transition-all">
+              <DialogTitle as="h3" className="text-lg font-medium leading-6 text-white flex items-center gap-2">
                 <AlertTriangle className="text-red-500" size={20} /> Reset Configuration
-              </Dialog.Title>
+              </DialogTitle>
               <div className="mt-2">
                 <p className="text-sm text-zinc-400">
                   Are you sure you want to reset all settings to default? This action cannot be undone.
@@ -65,8 +65,8 @@ const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
                   Yes, Reset Everything
                 </button>
               </div>
-            </Dialog.Panel>
-          </Transition.Child>
+            </DialogPanel>
+          </TransitionChild>
         </div>
       </div>
     </Dialog>
