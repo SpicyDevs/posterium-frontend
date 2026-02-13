@@ -4,8 +4,9 @@ import { Loader2, ArrowLeft, CheckCircle2, XCircle, Play, Settings2, Database, I
 
 const TestRunner: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveResults, setLiveResults] = useState<Record<string, any>>({});
 
   const [ids, setIds] = useState({
     movie: '550',
@@ -16,22 +17,83 @@ const TestRunner: React.FC = () => {
   const runTests = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setData(null);
+    setLiveResults({});
+    
     try {
+      // 1. Fetch dry-run matrix manifest from backend
       const url = new URL(`${DEFAULT_API_BASE}/test`);
+      url.searchParams.set('run', '0'); // Request manifest only
       url.searchParams.set('movie_id', ids.movie);
       url.searchParams.set('tv_id', ids.tv);
       url.searchParams.set('anime_id', ids.anime);
-      url.searchParams.set('api_base', DEFAULT_API_BASE);
+      url.searchParams.set('api_base', DEFAULT_API_BASE); // Passes frontend's base URL to avoid internal worker blocks
       
       const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`Test matrix failed with status ${res.status}`);
+      if (!res.ok) throw new Error(`Failed to fetch test manifest: ${res.status}`);
       
       const json = await res.json();
-      setData(json);
+      setLoading(false);
+      
+      // 2. Execute requests directly from the client browser
+      setIsExecuting(true);
+      const matrix = json.matrix || [];
+      
+      // Initialize pending state for UI
+      const initialResults: Record<string, any> = {};
+      matrix.forEach((m: any) => {
+         initialResults[m.requestPath] = { ...m, _status: 'pending' };
+      });
+      setLiveResults(initialResults);
+
+      // Execute network requests sequentially to prevent Cloudflare 522 timeouts
+      // and avoid rate-limiting the external upstream APIs (TMDB, Fanart, etc.)
+      for (const testCase of matrix) {
+         const startedAt = Date.now();
+         try {
+            const fetchUrl = `${DEFAULT_API_BASE}${testCase.requestPath}`;
+            const testRes = await fetch(fetchUrl);
+            
+            let responseData = null;
+            if (testRes.ok && testRes.headers.get('content-type')?.includes('application/json')) {
+                responseData = await testRes.json();
+            }
+
+            setLiveResults(prev => ({
+                ...prev,
+                [testCase.requestPath]: {
+                    ...testCase,
+                    _status: 'complete',
+                    status: testRes.status,
+                    ok: testRes.ok,
+                    durationMs: Date.now() - startedAt,
+                    details: responseData ? {
+                        cacheStatus: responseData.meta?.cache_status || "miss",
+                        sourcesFound: Object.keys(responseData.poster?.all_sources || {}).length
+                    } : null
+                }
+            }));
+         } catch (err: any) {
+            setLiveResults(prev => ({
+                ...prev,
+                [testCase.requestPath]: {
+                    ...testCase,
+                    _status: 'error',
+                    status: 0,
+                    ok: false,
+                    durationMs: Date.now() - startedAt,
+                    error: err.message || "Network request blocked/failed"
+                }
+            }));
+         }
+         
+         // 250ms throttle between each request to allow Worker & upstream APIs to breathe
+         await new Promise(resolve => setTimeout(resolve, 250));
+      }
+
     } catch (err: any) {
       setError(err.message);
     } finally {
+      setIsExecuting(false);
       setLoading(false);
     }
   }, [ids]);
@@ -43,6 +105,12 @@ const TestRunner: React.FC = () => {
   const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIds(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  const resultsArray = Object.values(liveResults);
+  const total = resultsArray.length;
+  const completed = resultsArray.filter((r: any) => r._status !== 'pending').length;
+  const passed = resultsArray.filter((r: any) => r.ok).length;
+  const failed = resultsArray.filter((r: any) => r._status !== 'pending' && !r.ok).length;
 
   return (
     <div className="h-[100dvh] w-full bg-[#09090b] text-zinc-200 font-sans overflow-y-auto custom-scrollbar relative">
@@ -77,22 +145,22 @@ const TestRunner: React.FC = () => {
               </div>
               <button 
                 onClick={runTests} 
-                disabled={loading}
+                disabled={loading || isExecuting}
                 className="ml-auto flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
               >
-                {loading ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-                Execute Matrix
+                {(loading || isExecuting) ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
+                {isExecuting ? 'Executing...' : 'Execute Matrix'}
               </button>
             </div>
           </div>
 
-          {data && !loading && (
-            <div className="flex shrink-0 gap-6 text-sm font-mono bg-[#18181b] px-5 py-3 rounded-xl border border-white/10 shadow-xl">
-               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Total</span><span className="text-zinc-300 font-bold">{data.results.length}</span></div>
+          {total > 0 && (
+            <div className="flex shrink-0 gap-6 text-sm font-mono bg-[#18181b] px-5 py-3 rounded-xl border border-white/10 shadow-xl transition-all">
+               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Progress</span><span className="text-blue-400 font-bold">{completed}/{total}</span></div>
                <div className="w-px bg-white/10"></div>
-               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Pass</span><span className="text-green-400 font-bold">{data.results.filter((r:any) => r.ok).length}</span></div>
+               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Pass</span><span className="text-green-400 font-bold">{passed}</span></div>
                <div className="w-px bg-white/10"></div>
-               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Fail</span><span className="text-red-400 font-bold">{data.results.filter((r:any) => !r.ok).length}</span></div>
+               <div className="flex flex-col"><span className="text-[10px] text-zinc-500 uppercase tracking-widest font-sans">Fail</span><span className="text-red-400 font-bold">{failed}</span></div>
             </div>
           )}
         </div>
@@ -101,26 +169,27 @@ const TestRunner: React.FC = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-40 text-indigo-400 gap-5">
             <Loader2 size={56} className="animate-spin" />
-            <p className="text-sm font-bold tracking-widest uppercase">Computing Matrix Geometry...</p>
+            <p className="text-sm font-bold tracking-widest uppercase">Fetching Manifest...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-5 rounded-xl shadow-lg">
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-5 rounded-xl shadow-lg mt-6">
             <p className="font-bold uppercase text-sm tracking-wider flex items-center gap-2"><XCircle size={18}/> Critical Execution Error</p>
             <p className="text-sm mt-2 font-mono">{error}</p>
           </div>
         )}
 
         {/* Matrix Grid */}
-        {data && data.results && !loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-            {data.results.map((res: any, idx: number) => {
+        {total > 0 && !loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20 mt-6">
+            {resultsArray.map((res: any, idx: number) => {
               const cleanPath = res.requestPath;
               const imgUrl = `${DEFAULT_API_BASE}${cleanPath.replace('.json', '.png')}`;
+              const isPending = res._status === 'pending';
 
               return (
-                <div key={idx} className="bg-[#18181b] border border-white/5 rounded-2xl overflow-hidden shadow-2xl flex flex-col group hover:border-white/10 transition-all hover:-translate-y-1">
+                <div key={idx} className={`bg-[#18181b] border ${isPending ? 'border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'border-white/5 shadow-2xl'} rounded-2xl overflow-hidden flex flex-col group hover:border-white/10 transition-all hover:-translate-y-1`}>
                   
                   {/* Card Header */}
                   <div className="p-3.5 border-b border-white/5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
@@ -132,13 +201,24 @@ const TestRunner: React.FC = () => {
                          {res.source}
                        </span>
                     </div>
-                    {res.ok ? <CheckCircle2 size={18} className="text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" /> : <XCircle size={18} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />}
+                    {isPending ? (
+                      <Loader2 size={18} className="text-indigo-400 animate-spin" />
+                    ) : res.ok ? (
+                      <CheckCircle2 size={18} className="text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                    ) : (
+                      <XCircle size={18} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
+                    )}
                   </div>
                   
                   {/* Poster Preview */}
                   <div className="bg-[#0c0c0e] aspect-[2/3] w-full relative flex items-center justify-center p-6 overflow-hidden">
                      <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
-                     {res.ok ? (
+                     {isPending ? (
+                         <div className="text-indigo-400/80 text-xs font-mono text-center flex flex-col items-center gap-3 z-10">
+                            <Loader2 size={24} className="animate-spin text-indigo-500/50" />
+                            <span className="uppercase tracking-widest font-bold text-[10px]">Awaiting Execution</span>
+                         </div>
+                     ) : res.ok ? (
                         <img 
                           src={imgUrl} 
                           alt={`${res.mediaType} ${res.source}`} 
@@ -149,7 +229,7 @@ const TestRunner: React.FC = () => {
                         <div className="text-red-400/80 text-xs font-mono text-center flex flex-col items-center gap-3 z-10 bg-red-950/30 p-6 rounded-2xl border border-red-500/20 backdrop-blur">
                             <XCircle size={36} className="text-red-500" />
                             <span className="uppercase tracking-widest font-bold">Failed</span>
-                            <span className="opacity-70">{res.error || `HTTP ${res.status}`}</span>
+                            <span className="opacity-70 text-[10px] break-all">{res.error || `HTTP ${res.status}`}</span>
                         </div>
                      )}
                   </div>
@@ -160,21 +240,31 @@ const TestRunner: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3 mb-1">
                         <div className="flex flex-col bg-black/40 rounded p-2 border border-white/5">
                             <span className="text-zinc-500 uppercase tracking-widest text-[9px] font-bold mb-1 flex items-center gap-1"><Database size={10}/> Cache</span>
-                            <span className="text-indigo-400 font-mono text-[11px] uppercase">{res.details?.cacheStatus || 'N/A'}</span>
+                            <span className={`font-mono text-[11px] uppercase ${isPending ? 'text-zinc-600' : 'text-indigo-400'}`}>
+                              {isPending ? '---' : res.details?.cacheStatus || 'N/A'}
+                            </span>
                         </div>
                         <div className="flex flex-col bg-black/40 rounded p-2 border border-white/5">
                             <span className="text-zinc-500 uppercase tracking-widest text-[9px] font-bold mb-1 flex items-center gap-1"><ImageIcon size={10}/> Sources</span>
-                            <span className="text-zinc-300 font-mono text-[11px]">{res.details?.sourcesFound || 0} Retrieved</span>
+                            <span className={`font-mono text-[11px] ${isPending ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                              {isPending ? '---' : `${res.details?.sourcesFound || 0} Retrieved`}
+                            </span>
                         </div>
                     </div>
 
                     <div className="flex justify-between items-center text-xs px-1">
                        <span className="text-zinc-500 uppercase tracking-wider text-[10px] font-bold">Latency</span>
-                       <span className="text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded text-[10px]">{res.durationMs}ms</span>
+                       {isPending ? (
+                          <span className="text-zinc-600 font-mono bg-white/5 px-2 py-0.5 rounded text-[10px]">--- ms</span>
+                       ) : (
+                          <span className={`${res.ok ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'} font-mono px-2 py-0.5 rounded text-[10px]`}>
+                            {res.durationMs}ms
+                          </span>
+                       )}
                     </div>
 
                     <div className="pt-3 border-t border-white/5">
-                       <a href={imgUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-indigo-400/80 hover:text-indigo-300 hover:underline break-all block leading-tight bg-indigo-500/5 p-2 rounded border border-indigo-500/10">
+                       <a href={isPending ? '#' : imgUrl} target="_blank" rel="noreferrer" className={`text-[10px] font-mono break-all block leading-tight p-2 rounded border ${isPending ? 'text-zinc-600 bg-white/5 border-white/5 pointer-events-none' : 'text-indigo-400/80 hover:text-indigo-300 hover:underline bg-indigo-500/5 border-indigo-500/10'}`}>
                          {cleanPath}
                        </a>
                     </div>
