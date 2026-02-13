@@ -1,8 +1,8 @@
-import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage, extractImdbImage } from './utils.js';
+import { fetchWithTimeout, safeJsonFetch, fetchFanartData, extractFanartImage, extractImdbImage, normalizeServiceError } from './utils.js';
 
 // --- CORE FETCHING ---
 
-export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
+export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg, requestContext = {}) {
     let activeType = inputType;
     let tmdbId = rawId;
     let title = "";
@@ -11,8 +11,7 @@ export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
     let posters = { tmdb: { text: null, textless: null } };
     
     if (inputType === 'anime') {
-        const jikanRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${rawId}`, 3500);
-        if (!jikanRes) throw new Error("Resource Not Found");
+        const jikanRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${rawId}`, 3500, undefined, { ...requestContext, provider: 'jikan', inputType, id: rawId, route: '/anime/:id' });
         const data = (await jikanRes.json()).data;
         
         title = data.title_english || data.title;
@@ -38,18 +37,17 @@ export async function fetchCoreData(inputType, rawId, tmdbApiKey, cfg) {
     } else {
         if (inputType === 'poster' || rawId.startsWith("tt")) {
             const findUrl = `https://api.themoviedb.org/3/find/${rawId}?api_key=${tmdbApiKey}&external_source=imdb_id`;
-            const findData = await safeJsonFetch(fetchWithTimeout(findUrl, 2500));
+            const findData = await safeJsonFetch(fetchWithTimeout(findUrl, 2500, undefined, { ...requestContext, provider: 'tmdb', inputType, id: rawId, route: '/find/:id' }), { ...requestContext, provider: 'tmdb', inputType, id: rawId, route: '/find/:id' });
             if (findData?.movie_results?.length > 0) { activeType = 'movie'; tmdbId = findData.movie_results[0].id; }
             else if (findData?.tv_results?.length > 0) { activeType = 'tv'; tmdbId = findData.tv_results[0].id; }
-            else throw new Error("ID Not Found");
+            else throw normalizeServiceError({ code: "ID_NOT_FOUND", status: 404, message: "ID Not Found", failureClass: "not_found", provider: "tmdb" }, requestContext);
         }
 
         let appends = "external_ids,release_dates,content_ratings";
         if (cfg.textless) appends += ",images"; 
 
         const tmdbUrl = `https://api.themoviedb.org/3/${activeType}/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=${appends}&include_image_language=en,null`;
-        const tmdbRes = await fetchWithTimeout(tmdbUrl, 2500);
-        if (!tmdbRes) throw new Error("Resource Not Found");
+        const tmdbRes = await fetchWithTimeout(tmdbUrl, 2500, undefined, { ...requestContext, provider: 'tmdb', inputType: activeType, id: tmdbId, route: '/tmdb/:type/:id' });
         const movie = await tmdbRes.json();
         
         title = movie.title || movie.name;
@@ -156,14 +154,14 @@ export function determineRequirements(cfg, needsFull, inputType, coreData, cache
     return req;
 }
 
-export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
+export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys, requestContext = {}) {
     const promises = [];
     const ids = coreData.ids; 
     let workingImdbId = ids.imdb;
 
     // 1. Jikan External
     if (req.jikanExternal && !workingImdbId) {
-        const jikanPromise = fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}/external`, 3000)
+        const jikanPromise = fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}/external`, 3000, undefined, { ...requestContext, provider: 'jikan', inputType: coreData.type, id: ids.mal, route: '/anime/:id/external' })
             .then(async res => {
                 if (!res) return null;
                 const jData = await res.json();
@@ -179,7 +177,7 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
 
     // 2. MAL Images
     if (req.malImages && ids.mal) {
-        promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}`, 3500)
+        promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime/${ids.mal}`, 3500, undefined, { ...requestContext, provider: 'jikan', inputType: coreData.type, id: ids.mal, route: '/anime/:id' })
             .then(async res => {
                 if (!res) return null;
                 const data = (await res.json()).data;
@@ -190,7 +188,7 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     }
 
     if (coreData.original_language === 'ja' && !coreData.ids.mal && !currentData.ids?.mal) {
-         promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(coreData.title)}&limit=1`, 3000)
+         promises.push(fetchWithTimeout(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(coreData.title)}&limit=1`, 3000, undefined, { ...requestContext, provider: 'jikan', inputType: coreData.type, id: ids.mal || ids.tmdb, route: '/anime/search' })
             .then(async res => {
                 if (!res) return null;
                 const data = await res.json();
@@ -203,7 +201,7 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
     // 3. TMDB Images
     if (req.tmdbImages && coreData.type !== 'anime') {
         const url = `https://api.themoviedb.org/3/${coreData.type}/${ids.tmdb}/images?api_key=${apiKeys.tmdbApiKey}&include_image_language=en,null`;
-        promises.push(fetchWithTimeout(url, 2500).then(async res => {
+        promises.push(fetchWithTimeout(url, 2500, undefined, { ...requestContext, provider: 'tmdb', inputType: coreData.type, id: ids.tmdb, route: '/tmdb/:type/:id/images' }).then(async res => {
             if(!res) return null;
             const data = await res.json();
             let textless = null;
@@ -243,13 +241,13 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
         
         // MDBList
         if (req.mdblist && apiKeys.mdbListApiKey && workingImdbId) {
-            promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${apiKeys.mdbListApiKey}&i=${workingImdbId}`, 3000))
+            promises.push(safeJsonFetch(fetchWithTimeout(`https://mdblist.com/api/?apikey=${apiKeys.mdbListApiKey}&i=${workingImdbId}`, 3000, undefined, { ...requestContext, provider: 'mdblist', inputType: coreData.type, id: workingImdbId, route: '/mdblist' }), { ...requestContext, provider: 'mdblist', inputType: coreData.type, id: workingImdbId, route: '/mdblist' })
                 .then(res => ({ source: 'mdblist', data: res })));
         }
 
         // IMDb (New)
         if (req.imdb && workingImdbId) {
-            promises.push(safeJsonFetch(fetchWithTimeout(`https://api.imdbapi.dev/titles/${workingImdbId}/images?types=poster`, 3000))
+            promises.push(safeJsonFetch(fetchWithTimeout(`https://api.imdbapi.dev/titles/${workingImdbId}/images?types=poster`, 3000, undefined, { ...requestContext, provider: 'imdb', inputType: coreData.type, id: workingImdbId, route: '/imdb/images' }), { ...requestContext, provider: 'imdb', inputType: coreData.type, id: workingImdbId, route: '/imdb/images' })
                 .then(data => {
                     const url = extractImdbImage(data);
                     return url ? { source: 'imdb', url } : null;
@@ -259,7 +257,18 @@ export async function fetchSelectedAPIs(req, currentData, coreData, apiKeys) {
 
     const results = await Promise.allSettled(promises);
     return results
-        .map(r => r.status === 'fulfilled' ? r.value : null)
+        .map(r => {
+            if (r.status === 'fulfilled') return r.value;
+            return {
+                source: 'error',
+                error: normalizeServiceError(r.reason, {
+                    ...requestContext,
+                    code: 'FETCH_SELECTED_API_ERROR',
+                    status: r.reason?.status || 502,
+                    failureClass: r.reason?.failureClass || 'upstream_error'
+                })
+            };
+        })
         .filter(Boolean)
         .flat();
 }
