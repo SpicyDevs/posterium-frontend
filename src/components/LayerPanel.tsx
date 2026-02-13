@@ -66,7 +66,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       fetchMeta();
   }, [config.tmdbId, config.mediaType]);
 
-  const handleSelectMedia = (item: SearchResult) => {
+  const handleSelectMedia = (item: SearchResult | null) => {
+      if (!item) return;
       setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
       setSearchQuery(''); 
   };
@@ -134,7 +135,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11]">
           
           {/* Headless Combobox Search */}
-          <Combobox value={null} onChange={handleSelectMedia}>
+          <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
               <div className="relative">
                   <div className="relative w-full cursor-default overflow-hidden rounded-md border border-white/10 bg-[#18181b] text-left focus-within:border-indigo-500/50">
                       <Combobox.Input

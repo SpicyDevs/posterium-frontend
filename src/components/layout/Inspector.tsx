@@ -1,5 +1,5 @@
 // src/components/layout/Inspector.tsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Tab } from '@headlessui/react'; // <--- Headless UI
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
