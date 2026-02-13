@@ -19,10 +19,10 @@ const TestRunner: React.FC = () => {
     setData(null);
     try {
       const url = new URL(`${DEFAULT_API_BASE}/test`);
-      url.searchParams.set('run', '1');
       url.searchParams.set('movie_id', ids.movie);
       url.searchParams.set('tv_id', ids.tv);
       url.searchParams.set('anime_id', ids.anime);
+      url.searchParams.set('api_base', DEFAULT_API_BASE);
       
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error(`Test matrix failed with status ${res.status}`);
