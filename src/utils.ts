@@ -120,8 +120,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
-    const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'];
-    
+
+    const ratingKeys: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'anilist', 'age', 'runtime'];    
     ratingKeys.forEach(key => {
         const x = params.get(`${key}_x`);
         const y = params.get(`${key}_y`);

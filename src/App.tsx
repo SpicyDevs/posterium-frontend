@@ -10,6 +10,7 @@ import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { Sparkles, Github, RotateCcw, AlertTriangle } from 'lucide-react';
+import TestRunner from './pages/TestRunner';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
@@ -151,16 +152,17 @@ const StudioLayout: React.FC<{
         <div className="flex-1 max-w-xl mx-4">
              <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
         </div>
-        <div className="flex gap-2 items-center justify-end w-64">
+        <div className="flex gap-2 items-center justify-end w-auto sm:w-64">
+             <a href="/tests" className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">Run Tests</a>
              <button 
-                onClick={() => setIsResetOpen(true)} // Open Dialog
+                onClick={() => setIsResetOpen(true)}
                 className="p-2 text-zinc-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors" 
                 title="Reset"
              >
                 <RotateCcw size={18} />
              </button>
-             <div className="w-px h-5 bg-white/10 mx-1"></div>
-             <a href="https://github.com/xdaayush/freeposterapi" target="_blank" rel="noreferrer" className="text-zinc-500 hover:text-white transition-colors p-2"><Github size={20} /></a>
+             <div className="w-px h-5 bg-white/10 mx-1 hidden sm:block"></div>
+             <a href="https://github.com/xdaayush/freeposterapi" target="_blank" rel="noreferrer" className="text-zinc-500 hover:text-white transition-colors p-2 hidden sm:block"><Github size={20} /></a>
         </div>
       </header>
 
@@ -225,9 +227,13 @@ const StudioLayout: React.FC<{
 };
 
 const App: React.FC = () => {
+  if (window.location.pathname === '/tests') {
+    return <TestRunner />;
+  }
   const [config, setConfig] = useState<PosterConfig>(() => {
     try { return localStorage.getItem(STORAGE_KEY) ? JSON.parse(localStorage.getItem(STORAGE_KEY)!) : DEFAULT_CONFIG; } catch { return DEFAULT_CONFIG; }
   });
+  
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }, [config]);
   const handleLoadConfig = (url: string) => {

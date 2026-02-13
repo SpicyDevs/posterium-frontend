@@ -108,8 +108,8 @@ const DraggableBadge: React.FC<Props> = ({ badgeId, config, x, y, canvasScale, o
   const textTop = '50%';
 
   const renderContent = () => {
-      // Added mal: '8.5'
-      const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m', mal: '8.5' };
+      // Added mal: '8.5' and anilist: '85%'
+      const dummyVals: Record<string, string> = { imdb: '8.7', rt: '73%', rt_popcorn: '88%', letterboxd: '4.2', meta: '74', tmdb: '85%', runtime: '2h 15m', mal: '8.5', anilist: '85%' };
       const dummyVal = dummyVals[badgeId] || '0.0';
 
       if (badgeId === 'age') {

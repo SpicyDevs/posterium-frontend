@@ -1,6 +1,6 @@
 // src/components/LayerPanel.tsx
 import React, { useState, useEffect, Fragment } from 'react';
-import { Combobox, Listbox, Switch, Transition } from '@headlessui/react';
+import { Combobox, Listbox, ListboxButton, ListboxOptions, ListboxOption, Switch, Transition } from '@headlessui/react';
 import { Check, ChevronsUpDown, Search, Loader2, CheckSquare } from 'lucide-react';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
@@ -27,8 +27,7 @@ interface SearchResult {
     media_type: 'movie' | 'tv'; 
 }
 
-interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; mal?: string; }
-
+interface RatingsData { title?: string; imdb?: string; rt?: string; rt_popcorn?: string; letterboxd?: string; meta?: string; tmdb?: string; age?: string; runtime?: string; mal?: string; anilist?: string; }
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
   const { setBatchSelection } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,25 +105,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const SelectBox = ({ value, onChange, options }: { value: string, onChange: (v: string) => void, options: {id: string, label: string}[] }) => (
     <Listbox value={value} onChange={onChange}>
         <div className="relative mt-1">
-            <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-zinc-800 py-1.5 pl-3 pr-8 text-left border border-zinc-700 hover:border-zinc-500 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 sm:text-xs">
+            <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-zinc-800 py-1.5 pl-3 pr-8 text-left border border-zinc-700 hover:border-zinc-500 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 sm:text-xs">
                 <span className="block truncate text-zinc-300">{options.find(o => o.id === value)?.label}</span>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronsUpDown className="h-3 w-3 text-zinc-400" aria-hidden="true" />
                 </span>
-            </Listbox.Button>
+            </ListboxButton>
             <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-lg ring-1 ring-black/5 focus:outline-none z-50 border border-white/10">
+                <ListboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-lg ring-1 ring-black/5 focus:outline-none z-50 border border-white/10">
                     {options.map((opt) => (
-                        <Listbox.Option key={opt.id} value={opt.id} className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-300'}`}>
-                            {({ selected }) => (
+                        <ListboxOption key={opt.id} value={opt.id} className={({ active }: { active: boolean }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-300'}`}>
+                            {({ selected }: { selected: boolean }) => (
                                 <>
                                     <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{opt.label}</span>
                                     {selected && <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-400"><Check className="h-3 w-3" /></span>}
                                 </>
                             )}
-                        </Listbox.Option>
+                        </ListboxOption>
                     ))}
-                </Listbox.Options>
+                </ListboxOptions>
             </Transition>
         </div>
     </Listbox>
@@ -200,7 +199,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         {id: 'tmdb', label: 'TMDB'}, 
                         {id: 'fanart', label: 'Fanart.tv'}, 
                         {id: 'metahub', label: 'Metahub'},
-                        ...(config.mediaType === 'anime' ? [{id: 'mal', label: 'MyAnimeList'}] : [])
+                        {id: 'imdb', label: 'IMDb'},
+                        ...(config.mediaType === 'anime' ? [{id: 'mal', label: 'MyAnimeList'}, {id: 'anilist', label: 'AniList'}] : [])
                     ]}
                 />
              </div>
