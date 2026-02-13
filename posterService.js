@@ -1,5 +1,6 @@
 import { fetchWithTimeout, getD1Cache, setD1Cache, fetchFanartData, extractFanartImage, logEvent, normalizeServiceError } from './utils.js';
 import { fetchCoreData, determineRequirements, fetchSelectedAPIs } from './posterAPI.js';
+import { DEFAULT_SOURCE_PRIORITY, getSourceAdapter } from './sources/index.js';
 
 export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format, requestContext = {}) {
     const { tmdbApiKey, fanartApiKey } = apiKeys;
@@ -24,7 +25,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     // 2. The Fork: Standard vs Race
     // "show tmdb only when source is tmdb" -> Standard Path
     // "no source is provided" -> Race Path
-    if (coreData || cfg.source === 'tmdb' || cfg.source === 'mal' || cfg.source === 'imdb' || inputType === 'anime') {
+    if (coreData || cfg.source || inputType === 'anime') {
         if (!coreData) coreData = await fetchCoreData(inputType, rawId, tmdbApiKey, cfg, requestContext);
     } else {
         // --- RACE LOGIC ---
@@ -182,9 +183,10 @@ function mergeAndMinimize(coreData, currentData, newResults) {
             merged.posters.fanart[res.type] = res.url;
         }
         
-        if (res.source === 'metahub' || res.source === 'mal' || res.source === 'imdb') {
-            if (!merged.posters[res.source]) merged.posters[res.source] = {};
-            merged.posters[res.source].text = res.url;
+        if (res.url && res.source) {
+            if (!merged.posters[res.source]) merged.posters[res.source] = { text: null, textless: null };
+            const variant = res.type || 'text';
+            merged.posters[res.source][variant] = res.url;
         }
 
         if (res.source === 'mdblist' && res.data) {
@@ -220,30 +222,25 @@ function mergeAndMinimize(coreData, currentData, newResults) {
 }
 
 function processCachedData(data, cfg, overrideSource = null) {
+    const posters = data.posters || {};
+    const variant = cfg.textless ? 'textless' : 'text';
+    const configuredOrder = Array.isArray(cfg.sourcePriority) && cfg.sourcePriority.length > 0
+        ? cfg.sourcePriority
+        : DEFAULT_SOURCE_PRIORITY;
+
+    const sourcePriority = [overrideSource, cfg.source, ...configuredOrder]
+        .filter(Boolean)
+        .filter((source, idx, arr) => arr.indexOf(source) === idx);
+
     let finalPosterUrl = null;
-    const p = data.posters || {};
-    const type = cfg.textless ? 'textless' : 'text';
-
-    // Logic: 
-    // 1. If Override Source (Race Winner) provided, try that first.
-    // 2. Else if cfg.source provided, try that.
-    // 3. Else fallback.
-
-    const preferred = overrideSource || cfg.source;
-
-    if (preferred === 'metahub') finalPosterUrl = p.metahub?.text;
-    else if (preferred === 'mal') finalPosterUrl = p.mal?.text;
-    else if (preferred === 'imdb') finalPosterUrl = p.imdb?.text;
-    else if (preferred === 'tmdb') finalPosterUrl = p.tmdb?.[type] || p.tmdb?.text;
-    else if (preferred === 'fanart') finalPosterUrl = p.fanart?.[type] || p.fanart?.text;
-
-    if (!finalPosterUrl) {
-        // Fallback chain (Auto)
-        finalPosterUrl = (p.tmdb?.[type] || p.tmdb?.text) || 
-                         (p.fanart?.[type] || p.fanart?.text) || 
-                         p.imdb?.text || // IMDb fallback priority: after fanart, before metahub
-                         p.metahub?.text || 
-                         p.mal?.text;
+    for (const sourceName of sourcePriority) {
+        const adapter = getSourceAdapter(sourceName);
+        if (!adapter) continue;
+        const candidate = adapter.getPoster(posters, variant);
+        if (candidate) {
+            finalPosterUrl = candidate;
+            break;
+        }
     }
 
     return {
@@ -252,7 +249,7 @@ function processCachedData(data, cfg, overrideSource = null) {
         ratings: data.ratings,
         foundType: data.type,
         finalPosterUrl,
-        posters: data.posters,       
+        posters: data.posters,
         cacheLevel: data.cacheLevel || 'partial'
     };
 }

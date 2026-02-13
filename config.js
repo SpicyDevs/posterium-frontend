@@ -1,3 +1,5 @@
+import { SUPPORTED_SOURCES, DEFAULT_SOURCE_PRIORITY } from './sources/index.js';
+
 export const API_CACHE_TTL = 15552000; // 6 Months
 export const IMG_CACHE_TTL = 7776000;  // 3 Months
 export const FINAL_CACHE_TTL = 172800; // 2 Days
@@ -13,6 +15,19 @@ export function clampIntRange(value, min, max) {
 export function clampFloatRange(value, min, max) {
     if (!Number.isFinite(value)) return min;
     return Math.max(min, Math.min(max, value));
+}
+
+function parseSourceOrder(value) {
+    if (!value) return [...DEFAULT_SOURCE_PRIORITY];
+    const items = value
+        .split(',')
+        .map(v => v.trim().toLowerCase())
+        .filter(Boolean);
+
+    const invalid = items.find(item => !SUPPORTED_SOURCES.includes(item));
+    if (invalid) throw new Error(`Invalid source in 'source_order': '${invalid}'`);
+
+    return [...new Set(items)];
 }
 
 export function parseConfig(url) {
@@ -41,6 +56,11 @@ export function parseConfig(url) {
         }
         return value;
     };
+
+    const source = p.get('source') ? p.get('source').trim().toLowerCase() : null;
+    if (source && !SUPPORTED_SOURCES.includes(source)) {
+        throw new Error(`Invalid source '${source}'`);
+    }
 
     const defaults = {
         blur: getInt("blur", 0, 0, 25),
@@ -84,7 +104,8 @@ export function parseConfig(url) {
 
     return {
         ratings: parsedRatings,
-        source: p.get("source"), // No default "tmdb" here to allow Auto-detection
+        source,
+        sourcePriority: parseSourceOrder(p.get('source_order')),
         malId: p.get("mal_id") || undefined,
         textless: getBool("textless", false),
         posterBlur: getInt("bg_blur", 0, 0, 25),
