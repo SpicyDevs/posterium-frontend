@@ -1,6 +1,51 @@
 // utils.js
 import { API_CACHE_TTL } from './config.js';
 
+const SENSITIVE_KEY_PATTERN = /(key|token|secret|authorization|password)/i;
+
+export function redactSensitive(value) {
+    if (value == null) return value;
+    const s = String(value);
+    if (s.length <= 6) return '***';
+    return `${s.slice(0, 2)}***${s.slice(-2)}`;
+}
+
+function sanitizeForLog(payload, depth = 0) {
+    if (depth > 4 || payload == null) return payload;
+    if (Array.isArray(payload)) return payload.map(v => sanitizeForLog(v, depth + 1));
+    if (typeof payload !== 'object') return payload;
+
+    return Object.entries(payload).reduce((acc, [key, value]) => {
+        if (SENSITIVE_KEY_PATTERN.test(key)) {
+            acc[key] = redactSensitive(value);
+        } else {
+            acc[key] = sanitizeForLog(value, depth + 1);
+        }
+        return acc;
+    }, {});
+}
+
+export function logEvent(level, message, meta = {}) {
+    const logger = level === 'error' ? console.error : console.log;
+    const defaults = { route: null, inputType: null, id: null, provider: null, failureClass: null, requestId: null };
+    logger(JSON.stringify({ ts: new Date().toISOString(), level, message, ...defaults, ...sanitizeForLog(meta) }));
+}
+
+export function normalizeServiceError(error, overrides = {}) {
+    const base = typeof error === 'object' && error !== null ? error : { message: String(error || 'Unknown error') };
+    const normalized = {
+        code: base.code || 'INTERNAL_ERROR',
+        status: base.status || 500,
+        message: base.message || 'Internal error',
+        failureClass: base.failureClass || 'internal',
+        provider: base.provider || null,
+        requestId: base.requestId || null,
+        retryable: Boolean(base.retryable),
+        details: base.details || null
+    };
+    return { ...normalized, ...overrides };
+}
+
 export function bufferToBase64(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -13,9 +58,10 @@ export function bufferToBase64(buffer) {
     return btoa(binary);
 }
 
-export const fetchWithTimeout = async (url, ms, cacheSeconds = API_CACHE_TTL) => {
+export const fetchWithTimeout = async (url, ms, cacheSeconds = API_CACHE_TTL, context = {}) => {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), ms);
+    const provider = context.provider || 'unknown';
     try {
         const r = await fetch(url, { 
             signal: controller.signal, 
@@ -24,18 +70,63 @@ export const fetchWithTimeout = async (url, ms, cacheSeconds = API_CACHE_TTL) =>
             },
             cf: { cacheTtl: cacheSeconds, cacheEverything: true } 
         });
-        return r.ok ? r : null;
-    } catch { return null; }
+        if (!r.ok) {
+            throw normalizeServiceError({
+                code: 'UPSTREAM_BAD_STATUS',
+                status: 502,
+                message: `Upstream returned ${r.status}`,
+                provider,
+                failureClass: 'non_2xx',
+                retryable: r.status >= 500,
+                details: { upstreamStatus: r.status, url }
+            }, context);
+        }
+        return r;
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            throw normalizeServiceError({
+                code: 'UPSTREAM_TIMEOUT',
+                status: 504,
+                message: `Upstream timeout after ${ms}ms`,
+                provider,
+                failureClass: 'timeout',
+                retryable: true,
+                details: { timeoutMs: ms, url }
+            }, context);
+        }
+        throw normalizeServiceError(error, { provider, ...context });
+    }
     finally { clearTimeout(t); }
 };
 
-export async function safeJsonFetch(promise) {
+export async function safeJsonFetch(promise, context = {}) {
+    const provider = context.provider || 'unknown';
     try {
         const req = await promise;
-        if (!req) return null;
-        return await req.json();
+        const data = await req.json();
+        const isEmptyObject = typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0;
+        if (data == null || isEmptyObject) {
+            throw normalizeServiceError({
+                code: 'UPSTREAM_EMPTY_PAYLOAD',
+                status: 502,
+                message: 'Upstream returned empty payload',
+                provider,
+                failureClass: 'empty_payload',
+                retryable: true
+            }, context);
+        }
+        return data;
     } catch (e) {
-        return null;
+        if (e?.code) throw e;
+        throw normalizeServiceError({
+            code: 'UPSTREAM_PARSE_ERROR',
+            status: 502,
+            message: 'Failed to parse upstream payload',
+            provider,
+            failureClass: 'parse_error',
+            retryable: true,
+            details: { reason: e?.message }
+        }, context);
     }
 }
 
@@ -62,7 +153,7 @@ export async function getD1Cache(db, type, id) {
         const result = await db.prepare(query).bind(...params).first();
         return result ? JSON.parse(result.data) : null;
     } catch (e) {
-        console.error("D1 Read Error:", e);
+        logEvent('error', 'D1 Read Error', { failureClass: 'db_read_error', details: { reason: e?.message } });
         return null;
     }
 }
@@ -99,7 +190,7 @@ export async function setD1Cache(db, type, ids, minimalData) {
             `).bind(tmdb, mal, imdb, type, dataStr, timestamp).run();
         }
     } catch (e) {
-        console.error("D1 Upsert Error:", e);
+        logEvent('error', 'D1 Upsert Error', { failureClass: 'db_write_error', details: { reason: e?.message } });
     }
 }
 
@@ -112,7 +203,7 @@ export async function getApiKeyFromKV(storage, provider) {
         if (!keys || !Array.isArray(keys) || keys.length === 0) return null;
         return keys[Math.floor(Math.random() * keys.length)];
     } catch (e) {
-        console.error(`Error loading API key for ${provider}:`, e);
+        logEvent('error', 'Error loading API key', { provider, failureClass: 'kv_read_error', details: { reason: e?.message } });
         return null;
     }
 }
@@ -130,7 +221,7 @@ export async function addApiKeyToKV(storage, provider, newKey) {
             await storage.put(provider, JSON.stringify(keys));
         }
     } catch (e) {
-        console.error(`Error adding API key to ${provider}:`, e);
+        logEvent('error', 'Error adding API key', { provider, failureClass: 'kv_write_error', details: { reason: e?.message } });
     }
 }
 
@@ -140,7 +231,7 @@ export async function fetchFanartData(id, type, apiKey) {
     if (!id || !apiKey) return null;
     const endpoint = type === 'movie' ? 'movies' : 'tv';
     const url = `https://webservice.fanart.tv/v3.2/${endpoint}/${id}?client_key=${apiKey}`;
-    return await safeJsonFetch(fetchWithTimeout(url, 2000));
+    return await safeJsonFetch(fetchWithTimeout(url, 2000, API_CACHE_TTL, { provider: 'fanart', inputType: type, id }), { provider: 'fanart', inputType: type, id });
 }
 
 export function extractFanartImage(data, type, preferTextless, useSecondBest = false) {

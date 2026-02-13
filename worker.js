@@ -1,5 +1,5 @@
 import { API_CACHE_TTL, IMG_CACHE_TTL, FINAL_CACHE_TTL, parseConfig } from './config.js';
-import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64 } from './utils.js';
+import { getApiKeyFromKV, addApiKeyToKV, bufferToBase64, logEvent, normalizeServiceError } from './utils.js';
 import { generateSVGResponse } from './renderer.js';
 import { getPosterData } from './posterService.js';
 
@@ -12,12 +12,24 @@ let GLOBAL_KEYS = {
     initialized: false
 };
 
+
+function getRequestId(request) {
+    return request.headers.get('X-Request-ID') || crypto.randomUUID();
+}
+
+function withRequestHeaders(initHeaders = {}, requestId) {
+    const headers = new Headers(initHeaders);
+    headers.set('X-Request-ID', requestId);
+    return headers;
+}
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*" } });
 
     const cache = caches.default;
     const url = new URL(request.url);
+    const requestId = getRequestId(request);
 
     if (request.method === "GET" && !url.pathname.startsWith('/ratings')) {
         let response = await cache.match(request);
@@ -31,7 +43,7 @@ export default {
     if (url.pathname === "/search") {
         const query = url.searchParams.get("q");
         const source = url.searchParams.get("source") || "tmdb";
-        if (!query) return new Response("Missing query", { status: 400 });
+        if (!query) return new Response(JSON.stringify({ error: "Missing query", requestId }), { status: 400, headers: withRequestHeaders({"Content-Type":"application/json"}, requestId) });
         try {
             if (source === 'mal') {
                 const jikanRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`, { cf: { cacheTtl: 3600, cacheEverything: true } });
@@ -61,7 +73,9 @@ export default {
                 return new Response(JSON.stringify({ results }), { headers: { "Content-Type": "application/json" }});
             }
         } catch (e) {
-            return new Response("Search Error", { status: 500 });
+            const err = normalizeServiceError(e, { requestId, route: url.pathname, failureClass: e?.failureClass || "search_error", provider: "search" });
+            logEvent("error", "Search failed", { route: url.pathname, requestId, failureClass: err.failureClass, provider: err.provider });
+            return new Response(JSON.stringify({ error: err.message, requestId, failureClass: err.failureClass }), { status: err.status, headers: withRequestHeaders({"Content-Type":"application/json"}, requestId) });
         }
     }
 
@@ -69,7 +83,7 @@ export default {
     const ratingsMatch = url.pathname.match(/^\/ratings\/(movie|tv|anime)\/([^\/]+)$/);
     if (ratingsMatch) {
         if (request.headers.get("X-Internal-Secret") !== "spicydevs-internal-v1") {
-            return new Response("Unauthorized", { status: 403 });
+            return new Response(JSON.stringify({ error: "Unauthorized", requestId, failureClass: "auth" }), { status: 403, headers: withRequestHeaders({"Content-Type":"application/json"}, requestId) });
         }
         const inputType = ratingsMatch[1];
         const rawId = ratingsMatch[2];
@@ -77,20 +91,22 @@ export default {
 
         try {
              const cfg = { ratings: ['imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'age', 'runtime'], textless: false, source: 'tmdb' };
-             const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, 'json');
+             const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, 'json', { requestId, route: url.pathname, inputType, id: rawId });
              return new Response(JSON.stringify({
                  ratings: data.ratings,
                  ids: data.ids, // Useful for debugging/linking
                  meta: { title: data.title, year: data.year }
-             }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+             }), { headers: withRequestHeaders({ "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }, requestId) });
         } catch(e) {
-             return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+             const err = normalizeServiceError(e, { requestId, route: url.pathname, inputType, id: rawId });
+             logEvent('error', 'Ratings route failed', { route: url.pathname, requestId, inputType, id: rawId, provider: err.provider, failureClass: err.failureClass });
+             return new Response(JSON.stringify({ error: err.message, requestId, failureClass: err.failureClass }), { status: err.status, headers: withRequestHeaders({"Content-Type":"application/json"}, requestId) });
         }
     }
 
     // --- STANDARD RESOLVE ---
     const match = url.pathname.match(/^\/(movie|tv|poster|anime)\/(tt\d+|\d+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/i);
-    if (!match) return new Response("Not Found", { status: 404 });
+    if (!match) return new Response(JSON.stringify({ error: "Not Found", requestId, failureClass: "not_found" }), { status: 404, headers: withRequestHeaders({"Content-Type":"application/json"}, requestId) });
 
     const inputType = match[1]; 
     const rawId = match[2];
@@ -145,12 +161,12 @@ export default {
 
         const response = await fetch(rasterService);
         const finalRes = new Response(response.body, {
-            headers: {
+            headers: withRequestHeaders({
                 "Content-Type": response.headers.get("Content-Type"),
                 "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`, 
                 "Access-Control-Allow-Origin": "*",
                 "Content-Disposition": dispositionHeader
-            }
+            }, requestId)
         });
         ctx.waitUntil(cache.put(request, finalRes.clone()));
         return finalRes;
@@ -158,7 +174,7 @@ export default {
 
     try {
         const cfg = parseConfig(url);
-        const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format);
+        const data = await getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format, { requestId, route: url.pathname, inputType, id: rawId });
 
         if (format === 'json') {
             const jsonRes = new Response(JSON.stringify({
@@ -174,11 +190,11 @@ export default {
                 },
                 ratings: data.ratings
             }, null, 2), {
-                headers: { 
+                headers: withRequestHeaders({ 
                     "Content-Type": "application/json", 
                     "Access-Control-Allow-Origin": "*",
                     "Cache-Control": `public, max-age=${FINAL_CACHE_TTL}`
-                }
+                }, requestId)
             });
             ctx.waitUntil(cache.put(request, jsonRes.clone()));
             return jsonRes;
@@ -196,8 +212,9 @@ export default {
         return generateSVGResponse(request, cfg, posterBase64, data.ratings, dispositionHeader, cache, ctx);
 
     } catch (e) {
-        const status = (e.message === "ID Not Found" || e.message === "Resource Not Found") ? 404 : 500;
-        return new Response("Error: " + e.message, { status });
+        const err = normalizeServiceError(e, { requestId, route: url.pathname, inputType, id: rawId });
+        logEvent('error', 'Request failed', { route: url.pathname, requestId, inputType, id: rawId, provider: err.provider, failureClass: err.failureClass });
+        return new Response(JSON.stringify({ error: err.message, requestId, failureClass: err.failureClass }), { status: err.status, headers: withRequestHeaders({"Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}, requestId) });
     }
   }
 };
@@ -215,6 +232,6 @@ async function refreshGlobalKeys(kv) {
         if (m) GLOBAL_KEYS.mdblist = m;
         GLOBAL_KEYS.initialized = true;
     } catch (e) {
-        console.error("Background Key Refresh Failed", e);
+        logEvent("error", "Background Key Refresh Failed", { route: "background", provider: "kv", failureClass: "background_refresh", details: { reason: e?.message } });
     }
 }

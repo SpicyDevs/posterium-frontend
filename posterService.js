@@ -1,8 +1,10 @@
-import { fetchWithTimeout, getD1Cache, setD1Cache, fetchFanartData, extractFanartImage } from './utils.js';
+import { fetchWithTimeout, getD1Cache, setD1Cache, fetchFanartData, extractFanartImage, logEvent, normalizeServiceError } from './utils.js';
 import { fetchCoreData, determineRequirements, fetchSelectedAPIs } from './posterAPI.js';
 
-export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format) {
+export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, format, requestContext = {}) {
     const { tmdbApiKey, fanartApiKey } = apiKeys;
+
+    try {
 
     // 1. Check Cache
     let cachedData = await getD1Cache(env.POSTER_CACHE, inputType, rawId);
@@ -23,7 +25,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     // "show tmdb only when source is tmdb" -> Standard Path
     // "no source is provided" -> Race Path
     if (coreData || cfg.source === 'tmdb' || cfg.source === 'mal' || cfg.source === 'imdb' || inputType === 'anime') {
-        if (!coreData) coreData = await fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
+        if (!coreData) coreData = await fetchCoreData(inputType, rawId, tmdbApiKey, cfg, requestContext);
     } else {
         // --- RACE LOGIC ---
         // We race Fanart vs Core (TMDB). 
@@ -40,7 +42,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
                 .catch(() => null);
         }
 
-        const corePromise = fetchCoreData(inputType, rawId, tmdbApiKey, cfg);
+        const corePromise = fetchCoreData(inputType, rawId, tmdbApiKey, cfg, requestContext);
         
         // Tap Fanart to see if it finishes fast
         let fanartResolved = false;
@@ -82,13 +84,13 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
 
     if (inputType === 'anime' && !coreData.ids.imdb && coreData.ids.mal && needsImdbForRatings) {
         try {
-            const extRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${coreData.ids.mal}/external`, 4000);
+            const extRes = await fetchWithTimeout(`https://api.jikan.moe/v4/anime/${coreData.ids.mal}/external`, 4000, undefined, { ...requestContext, provider: 'jikan', inputType, id: coreData.ids.mal, route: '/anime/:id/external' });
             if (extRes) {
                 const jData = await extRes.json();
                 const imdbItem = jData.data?.find(e => e.name === 'IMDb');
                 if (imdbItem?.url) coreData.ids.imdb = imdbItem.url.match(/tt\d+/)?.[0];
             }
-        } catch (e) { console.log("Jikan ID fetch failed", e); }
+        } catch (e) { logEvent('error', 'Jikan ID fetch failed', { ...requestContext, route: '/anime/:id/external', provider: 'jikan', inputType, id: rawId, failureClass: e?.failureClass || 'upstream_error', details: { reason: e?.message } }); }
     }
 
     // 3. Determine Requirements
@@ -100,7 +102,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
 
     // 4. Fetch Selected APIs
     const currentData = cachedData || { ratings: {}, posters: {} };
-    const fetchedResults = await fetchSelectedAPIs(required, currentData, coreData, apiKeys);
+    const fetchedResults = await fetchSelectedAPIs(required, currentData, coreData, apiKeys, requestContext);
     
     // Inject Race Result into fetchedResults if needed
     if (raceFanartData) {
@@ -119,7 +121,7 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
 
     // 6. Background Hydration
     if (!needsFull) {
-        ctx.waitUntil(hydrateCache(env, mergedData, apiKeys));
+        ctx.waitUntil(hydrateCache(env, mergedData, apiKeys, requestContext));
     } else {
         mergedData.cacheLevel = 'full';
         ctx.waitUntil(setD1Cache(env.POSTER_CACHE, mergedData.type || inputType, mergedData.ids, mergedData));
@@ -128,6 +130,11 @@ export async function getPosterData(env, ctx, inputType, rawId, cfg, apiKeys, fo
     // 7. Process Final Output
     // We pass the raceWinnerSource to prefer that one if set
     return processCachedData(mergedData, cfg, raceWinnerSource);
+    } catch (error) {
+        const normalized = normalizeServiceError(error, { ...requestContext, inputType, id: rawId, route: requestContext.route || "/poster" });
+        logEvent('error', 'getPosterData failed', { ...normalized, inputType, id: rawId, route: requestContext.route || "/poster" });
+        throw normalized;
+    }
 }
 
 // --- HELPER LOGIC ---
@@ -150,6 +157,18 @@ function mergeAndMinimize(coreData, currentData, newResults) {
 
     newResults.forEach(res => {
         if (!res) return;
+
+        if (res.source === 'error' && res.error) {
+            logEvent('error', 'fetchSelectedAPIs source failure', {
+                route: res.error.route || null,
+                inputType: res.error.inputType || null,
+                id: res.error.id || null,
+                provider: res.error.provider || null,
+                failureClass: res.error.failureClass || 'upstream_error',
+                requestId: res.error.requestId || null
+            });
+            return;
+        }
         
         if (res.source === 'jikan_ext') merged.ids.imdb = res.id;
         
@@ -238,14 +257,14 @@ function processCachedData(data, cfg, overrideSource = null) {
     };
 }
 
-async function hydrateCache(env, currentData, apiKeys) {
+async function hydrateCache(env, currentData, apiKeys, requestContext = {}) {
     const tmdbRating = currentData.ratings?.tmdb ? parseInt(currentData.ratings.tmdb) : 0;
     const isPopular = (currentData.ids?.imdb && tmdbRating > 50) || currentData.type === 'anime';
     const req = determineRequirements({}, true, currentData.type, currentData, currentData);
     
     if (!isPopular) req.mdblist = false;
 
-    const fetchedResults = await fetchSelectedAPIs(req, currentData, currentData, apiKeys);
+    const fetchedResults = await fetchSelectedAPIs(req, currentData, currentData, apiKeys, requestContext);
     const hydrated = mergeAndMinimize(currentData, currentData, fetchedResults);
     
     hydrated.cacheLevel = isPopular ? 'full' : 'partial';
