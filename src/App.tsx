@@ -10,7 +10,6 @@ import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { Sparkles, Github, RotateCcw, AlertTriangle } from 'lucide-react';
-import TestRunner from './pages/TestRunner';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
