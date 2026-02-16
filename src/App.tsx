@@ -226,9 +226,7 @@ const StudioLayout: React.FC<{
 };
 
 const App: React.FC = () => {
-  if (window.location.pathname === '/tests') {
-    return <TestRunner />;
-  }
+
   const [config, setConfig] = useState<PosterConfig>(() => {
     try { return localStorage.getItem(STORAGE_KEY) ? JSON.parse(localStorage.getItem(STORAGE_KEY)!) : DEFAULT_CONFIG; } catch { return DEFAULT_CONFIG; }
   });
