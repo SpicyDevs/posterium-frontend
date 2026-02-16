@@ -43,7 +43,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true);
       try {
-          const res = await fetch(`https://freeposterapi.pages.dev/api/search?q=${encodeURIComponent(searchQuery)}`);
+          const res = await fetch(`https://api.spicydevs.xyz/search?q=${encodeURIComponent(searchQuery)}`);
           const data = await res.json();
           if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)));
       } catch (e) { } finally { setIsSearching(false); }

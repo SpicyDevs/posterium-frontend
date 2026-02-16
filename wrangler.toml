@@ -1,7 +1,0 @@
-name = "freeposterapi"
-pages_build_output_dir = "dist"
-
-# Add this section to bind your Pages project to your existing Worker
-[[services]]
-binding = "BACKEND_WORKER"       # The variable name we will use in code
-service = "rpdb" # The name of your backend worker (from your README)
