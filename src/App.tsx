@@ -152,7 +152,6 @@ const StudioLayout: React.FC<{
              <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
         </div>
         <div className="flex gap-2 items-center justify-end w-auto sm:w-64">
-             <a href="/tests" className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">Run Tests</a>
              <button 
                 onClick={() => setIsResetOpen(true)}
                 className="p-2 text-zinc-400 hover:text-red-400 hover:bg-white/5 rounded-md transition-colors" 
