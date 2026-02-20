@@ -53,18 +53,29 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       const fetchMeta = async () => {
           if (!config.tmdbId) return;
           try {
-              const res = await fetch(`${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.json`);
+              const res = await fetch(`${DEFAULT_API_BASE}/ratings/${config.mediaType}/${config.tmdbId}`);
               if (res.ok) {
                   const data = await res.json();
-                  if (data) setFetchedData({ ...data.ratings, title: data.raw?.tmdb?.title || data.raw?.tmdb?.name || data.raw?.tmdb?.original_title || data.details?.title });
+                  if (data) {
+                      // Grab title from new meta object
+                      setFetchedData({ ...data.ratings, title: data.meta?.title });
+                      
+                      // Automatically update ID input to IMDb ID if it exists
+                      if (data.ids?.imdb && data.ids.imdb !== config.tmdbId) {
+                          setConfig(prev => ({ ...prev, tmdbId: data.ids.imdb }));
+                      }
+                  }
               }
           } catch(e) { /* ignore */ }
       };
       fetchMeta();
   }, [config.tmdbId, config.mediaType]);
 
-  const handleSelectMedia = (item: SearchResult | null) => {
+const handleSelectMedia = (item: SearchResult | null) => {
       if (!item) return;
+
+      setFetchedData({ title: item.title || item.name });
+
       setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), mediaType: item.media_type as any }));
       setSearchQuery(''); 
   };

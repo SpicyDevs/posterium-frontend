@@ -149,7 +149,6 @@ const resetView = () => {
     });
   };
 
-  // UPDATED: Cache busting and explicit params
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     const params = new URLSearchParams();
@@ -158,15 +157,14 @@ const resetView = () => {
     params.set('source', config.source);
 
     if (config.textless) params.set('textless', '1');
+    if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
 
     // Cache Buster: Uses Date.now() to ensure fresh fetch when these dependencies change.
-    // This fixes the "Browser cached the wrong source" issue.
     params.set('_t', Date.now().toString());
     params.set('v', '2');
 
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless]);
-
+  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless, config.ptype]);
   // Reset loading/error state when URL changes
   useEffect(() => {
     setIsImageLoading(true);
