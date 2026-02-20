@@ -237,9 +237,13 @@ const App: React.FC = () => {
     setConfig(newConfig);
     try { const urlObj = new URL(url); setBaseUrl(urlObj.origin); } catch(e) {}
   };
-  const handleReset = () => {
-    setConfig(DEFAULT_CONFIG); localStorage.removeItem(STORAGE_KEY);
+const handleReset = () => {
+    setConfig(DEFAULT_CONFIG); 
+    localStorage.removeItem(STORAGE_KEY);
+    // Dispatch an event for PreviewCanvas to catch
+    window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   };
+
   return (
     <EditorProvider>
         <StudioLayout config={config} setConfig={setConfig} handleReset={handleReset} baseUrl={baseUrl} handleLoadConfig={handleLoadConfig} />

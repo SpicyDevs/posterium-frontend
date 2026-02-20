@@ -118,10 +118,18 @@ const handleTouchMove = (e: React.TouchEvent) => {
     setIsPanning(false);
   };
 
-  const resetView = () => {
+const resetView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
+
+  useEffect(() => {
+    const handleResetEvent = () => resetView();
+    window.addEventListener('reset-canvas-view', handleResetEvent);
+    
+    // Cleanup listener on unmount
+    return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
+  }, []);
 
   const handlePositionChange = (id: RatingType, x: number, y: number) => {
     setConfig((prev: PosterConfig) => {
