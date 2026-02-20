@@ -45,13 +45,24 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const currentScale = autoScale * zoom;
 
-  const handleWheel = (e: React.WheelEvent) => {
+  // --- NEW: Helper to keep pan within boundaries ---
+  const clampPan = (newX: number, newY: number) => {
+    // Allows panning up to the canvas's own width/height. 
+    // You can divide this (e.g., CANVAS_WIDTH / 1.5) to make it stricter.
+const limitX = CANVAS_WIDTH / 1.5;
+const limitY = CANVAS_HEIGHT / 1.5;
+    return {
+      x: Math.max(-limitX, Math.min(limitX, newX)),
+      y: Math.max(-limitY, Math.min(limitY, newY)),
+    };
+  };
+const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
     } else {
-      setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+      setPan((p) => clampPan(p.x - e.deltaX, p.y - e.deltaY)); // <-- Updated
     }
   };
 
@@ -68,7 +79,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastDist.current) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
@@ -80,7 +91,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     } else if (e.touches.length === 1 && lastPan.current && isPanning) {
       const dx = e.touches[0].clientX - lastPan.current.x;
       const dy = e.touches[0].clientY - lastPan.current.y;
-      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+      
+      // <-- Updated to use clampPan -->
+      setPan((p) => clampPan(p.x + dx, p.y + dy));
+      
       lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
