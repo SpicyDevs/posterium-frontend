@@ -49,8 +49,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const clampPan = (newX: number, newY: number) => {
     // Allows panning up to the canvas's own width/height. 
     // You can divide this (e.g., CANVAS_WIDTH / 1.5) to make it stricter.
-const limitX = CANVAS_WIDTH / 1.5;
-const limitY = CANVAS_HEIGHT / 1.5;
+const limitX = CANVAS_WIDTH / 3;
+const limitY = CANVAS_HEIGHT / 3;
     return {
       x: Math.max(-limitX, Math.min(limitX, newX)),
       y: Math.max(-limitY, Math.min(limitY, newY)),
