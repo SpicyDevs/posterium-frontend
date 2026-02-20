@@ -58,11 +58,24 @@ const limitY = CANVAS_HEIGHT / 1.5;
   };
 const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
+      // Zooming
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
     } else {
-      setPan((p) => clampPan(p.x - e.deltaX, p.y - e.deltaY)); // <-- Updated
+      // Panning
+      let dx = e.deltaX;
+      let dy = e.deltaY;
+
+      // If Shift is held, convert vertical scrolling (deltaY) into horizontal panning
+      if (e.shiftKey) {
+        // Browsers sometimes automatically swap deltaY to deltaX when Shift is held.
+        // This handles both native browser behavior and manual swapping.
+        dx = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+        dy = 0; 
+      }
+
+      setPan((p) => clampPan(p.x - dx, p.y - dy));
     }
   };
 
