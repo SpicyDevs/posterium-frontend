@@ -4,7 +4,7 @@ import { Combobox, Listbox, ListboxButton, ListboxOptions, ListboxOption, Switch
 import { Check, ChevronsUpDown, Search, Loader2, CheckSquare } from 'lucide-react';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
-import { BADGE_ICONS, TMDB_API_KEY } from '../constants';
+import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
 
@@ -35,8 +35,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [isSearching, setIsSearching] = useState(false);
   const [fetchedData, setFetchedData] = useState<RatingsData>({});
 
-  const apiKey = config.keys?.tmdb && config.keys.tmdb.length > 0 ? config.keys.tmdb : TMDB_API_KEY;
-
   // -- SEARCH LOGIC --
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -49,7 +47,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       } catch (e) { } finally { setIsSearching(false); }
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, apiKey]);
+  }, [searchQuery]);
 
   useEffect(() => {
       const fetchMeta = async () => {
@@ -205,16 +203,37 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 />
              </div>
 
+             {/* PType Selector */}
+             {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
+                 <div className="space-y-1 pt-1">
+                    <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">Poster Type</label>
+                    <SelectBox 
+                        value={config.ptype || 'auto'} 
+                        onChange={(v) => updateConfig('ptype', v)} 
+                        options={[
+                            {id: 'auto', label: 'Auto (Default)'},
+                            {id: 'top1', label: 'Top 1'},
+                            {id: 'top2', label: 'Top 2'},
+                            {id: 'top3', label: 'Top 3'},
+                            ...(config.source === 'tmdb' ? [{id: 'best', label: 'Best (Bayesian)'}] : []),
+                            ...(config.source === 'fanart' ? [{id: 'latest', label: 'Latest'}, {id: 'oldest', label: 'Oldest'}] : []),
+                            {id: 'random', label: 'Random'}
+                        ]}
+                    />
+                 </div>
+             )}
+
              {/* Headless Switch */}
              <Switch.Group>
-                <div className="flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2">
+                <div className={clsx("flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2", ['metahub', 'imdb'].includes(config.source) && "opacity-50 pointer-events-none")}>
                     <Switch.Label className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Textless Poster</Switch.Label>
                     <Switch
-                        checked={config.textless}
+                        checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
                         onChange={(checked) => updateConfig('textless', checked)}
-                        className={`${config.textless ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
+                        disabled={['metahub', 'imdb'].includes(config.source)}
+                        className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
                     >
-                        <span className={`${config.textless ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}/>
+                        <span className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}/>
                     </Switch>
                 </div>
              </Switch.Group>

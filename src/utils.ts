@@ -51,7 +51,8 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 
   if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
   if (config.source !== 'tmdb') params.set('source', config.source);
-  if (config.textless) params.set('textless', '1'); // <--- Handle Textless
+  if (config.textless && !['metahub', 'imdb'].includes(config.source)) params.set('textless', '1'); 
+  if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
   
   if (config.keys?.tmdb) params.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) params.set('fanart_key', config.keys.fanart);
@@ -160,7 +161,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       extension: extension as any,
       ratings: params.has('r') ? params.get('r')?.split(',') as RatingType[] : [],
       source: (params.get('source') as any) || 'tmdb',
-      textless: params.get('textless') === '1', // <--- Parse Textless
+      ptype: params.get('ptype') || 'auto', // <-- Add this line
+      textless: params.get('textless') === '1',
       theme: 'glass',
       size: (params.get('s') as any) || 'md',
       shadow: params.get('sh') === '1',

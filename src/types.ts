@@ -34,6 +34,7 @@ export interface PosterConfig {
   tmdbId: string;
   ratings: RatingType[];
   source: SourceType;
+  ptype: string;
   textless: boolean;
   theme: ThemeType;
   size: SizeType;
@@ -56,6 +57,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   tmdbId: "453395",
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
+  ptype: 'auto',
   textless: false,
   theme: 'glass',
   size: 'md',
