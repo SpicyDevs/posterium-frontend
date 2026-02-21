@@ -42,6 +42,25 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [mobileSheetMode]);
+// --- Stop Browser Page Zoom on Ctrl+Scroll ---
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // We must use a native event listener with { passive: false } 
+    // because React's synthetic onWheel is passive by default.
+    const preventBrowserZoom = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // Stops the browser page from zooming
+      }
+    };
+
+    container.addEventListener('wheel', preventBrowserZoom, { passive: false });
+    
+    return () => {
+      container.removeEventListener('wheel', preventBrowserZoom);
+    };
+  }, []);
 
   const currentScale = autoScale * zoom;
 
