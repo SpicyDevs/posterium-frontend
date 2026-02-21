@@ -42,12 +42,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [mobileSheetMode]);
-// --- Stop Browser Page Zoom on Ctrl+Scroll ---
+  // --- Stop Browser Page Zoom on Ctrl+Scroll ---
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // We must use a native event listener with { passive: false } 
+    // We must use a native event listener with { passive: false }
     // because React's synthetic onWheel is passive by default.
     const preventBrowserZoom = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -56,7 +56,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     };
 
     container.addEventListener('wheel', preventBrowserZoom, { passive: false });
-    
+
     return () => {
       container.removeEventListener('wheel', preventBrowserZoom);
     };
@@ -66,16 +66,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   // --- NEW: Helper to keep pan within boundaries ---
   const clampPan = (newX: number, newY: number) => {
-    // Allows panning up to the canvas's own width/height. 
+    // Allows panning up to the canvas's own width/height.
     // You can divide this (e.g., CANVAS_WIDTH / 1.5) to make it stricter.
-const limitX = CANVAS_WIDTH / 3;
-const limitY = CANVAS_HEIGHT / 3;
+    const limitX = CANVAS_WIDTH / 3;
+    const limitY = CANVAS_HEIGHT / 3;
     return {
       x: Math.max(-limitX, Math.min(limitX, newX)),
       y: Math.max(-limitY, Math.min(limitY, newY)),
     };
   };
-const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       // Zooming
       e.preventDefault();
@@ -91,7 +91,7 @@ const handleWheel = (e: React.WheelEvent) => {
         // Browsers sometimes automatically swap deltaY to deltaX when Shift is held.
         // This handles both native browser behavior and manual swapping.
         dx = e.deltaY !== 0 ? e.deltaY : e.deltaX;
-        dy = 0; 
+        dy = 0;
       }
 
       setPan((p) => clampPan(p.x - dx, p.y - dy));
@@ -111,7 +111,7 @@ const handleWheel = (e: React.WheelEvent) => {
     }
   };
 
-const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastDist.current) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
@@ -123,10 +123,10 @@ const handleTouchMove = (e: React.TouchEvent) => {
     } else if (e.touches.length === 1 && lastPan.current && isPanning) {
       const dx = e.touches[0].clientX - lastPan.current.x;
       const dy = e.touches[0].clientY - lastPan.current.y;
-      
+
       // <-- Updated to use clampPan -->
       setPan((p) => clampPan(p.x + dx, p.y + dy));
-      
+
       lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
@@ -137,7 +137,7 @@ const handleTouchMove = (e: React.TouchEvent) => {
     setIsPanning(false);
   };
 
-const resetView = () => {
+  const resetView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
@@ -145,7 +145,7 @@ const resetView = () => {
   useEffect(() => {
     const handleResetEvent = () => resetView();
     window.addEventListener('reset-canvas-view', handleResetEvent);
-    
+
     // Cleanup listener on unmount
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
@@ -183,7 +183,14 @@ const resetView = () => {
     params.set('v', '2');
 
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.source, config.mediaType, config.extension, config.textless, config.ptype]);
+  }, [
+    config.tmdbId,
+    config.source,
+    config.mediaType,
+    config.extension,
+    config.textless,
+    config.ptype,
+  ]);
   // Reset loading/error state when URL changes
   useEffect(() => {
     setIsImageLoading(true);
@@ -330,4 +337,3 @@ const resetView = () => {
 };
 
 export default PreviewCanvas;
-

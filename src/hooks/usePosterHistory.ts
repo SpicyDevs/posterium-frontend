@@ -7,17 +7,20 @@ export const usePosterHistory = (initialState: PosterConfig) => {
 
   const state = history[currentIndex];
 
-  const setState = useCallback((newState: PosterConfig) => {
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, currentIndex + 1);
-      // Only push if different (simple JSON check)
-      if (JSON.stringify(newHistory[newHistory.length - 1]) === JSON.stringify(newState)) {
-        return newHistory;
-      }
-      return [...newHistory, newState];
-    });
-    setCurrentIndex((prev) => prev + 1);
-  }, [currentIndex]);
+  const setState = useCallback(
+    (newState: PosterConfig) => {
+      setHistory((prev) => {
+        const newHistory = prev.slice(0, currentIndex + 1);
+        // Only push if different (simple JSON check)
+        if (JSON.stringify(newHistory[newHistory.length - 1]) === JSON.stringify(newState)) {
+          return newHistory;
+        }
+        return [...newHistory, newState];
+      });
+      setCurrentIndex((prev) => prev + 1);
+    },
+    [currentIndex]
+  );
 
   const undo = useCallback(() => {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
@@ -33,6 +36,6 @@ export const usePosterHistory = (initialState: PosterConfig) => {
     undo,
     redo,
     canUndo: currentIndex > 0,
-    canRedo: currentIndex < history.length - 1
+    canRedo: currentIndex < history.length - 1,
   };
 };

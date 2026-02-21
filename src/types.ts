@@ -1,5 +1,15 @@
 export type MediaType = 'movie' | 'tv' | 'anime';
-export type RatingType = 'imdb' | 'rt' | 'rt_popcorn' | 'letterboxd' | 'meta' | 'tmdb' | 'age' | 'runtime' | 'mal' | 'anilist';
+export type RatingType =
+  | 'imdb'
+  | 'rt'
+  | 'rt_popcorn'
+  | 'letterboxd'
+  | 'meta'
+  | 'tmdb'
+  | 'age'
+  | 'runtime'
+  | 'mal'
+  | 'anilist';
 export type ThemeType = 'glass' | 'solid';
 export type SizeType = 'sm' | 'md' | 'lg';
 export type LayoutType = 'row' | 'col' | 'custom';
@@ -54,7 +64,7 @@ export interface PosterConfig {
 // Default Constants
 export const DEFAULT_CONFIG: PosterConfig = {
   mediaType: 'movie',
-  tmdbId: "453395",
+  tmdbId: '453395',
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
   ptype: 'auto',
@@ -71,11 +81,11 @@ export const DEFAULT_CONFIG: PosterConfig = {
   posterBlur: 0,
   grayscale: false,
   items: {
-      imdb: { x: 340, y: 20 },
-      rt: { x: 340, y: 90 },
-      age: { x: 8, y: 683 }
+    imdb: { x: 340, y: 20 },
+    rt: { x: 340, y: 90 },
+    age: { x: 8, y: 683 },
   },
-  keys: {}
+  keys: {},
 };
 
 export const CANVAS_WIDTH = 500;
@@ -86,14 +96,14 @@ export const GAP = 10;
 export const PADDING = 20;
 
 export const ALL_BADGES: { id: RatingType; label: string }[] = [
-    { id: 'imdb', label: 'IMDb' },
-    { id: 'rt', label: 'Rotten Tomatoes' },
-    { id: 'rt_popcorn', label: 'Audience Score' },
-    { id: 'letterboxd', label: 'Letterboxd' },
-    { id: 'meta', label: 'Metacritic' },
-    { id: 'tmdb', label: 'TMDB' },
-    { id: 'mal', label: 'MyAnimeList' },
-    { id: 'anilist', label: 'AniList' },
-    { id: 'age', label: 'Age Rating' },
-    { id: 'runtime', label: 'Runtime' },
-]
+  { id: 'imdb', label: 'IMDb' },
+  { id: 'rt', label: 'Rotten Tomatoes' },
+  { id: 'rt_popcorn', label: 'Audience Score' },
+  { id: 'letterboxd', label: 'Letterboxd' },
+  { id: 'meta', label: 'Metacritic' },
+  { id: 'tmdb', label: 'TMDB' },
+  { id: 'mal', label: 'MyAnimeList' },
+  { id: 'anilist', label: 'AniList' },
+  { id: 'age', label: 'Age Rating' },
+  { id: 'runtime', label: 'Runtime' },
+];

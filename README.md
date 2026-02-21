@@ -1,4 +1,3 @@
-
 # FreePosterAPI - Self-Hosting Guide
 
 This guide will walk you through deploying both the **Cloudflare Worker (Backend)** and the **React Editor (Frontend)** to your own Cloudflare account.
@@ -8,11 +7,10 @@ This guide will walk you through deploying both the **Cloudflare Worker (Backend
 1. **Node.js & npm** installed on your machine.
 2. A **Cloudflare Account** (Free tier is sufficient).
 3. **API Keys** from the following providers:
-* [TMDB API Key](https://www.themoviedb.org/documentation/api) (The Movie Database)
-* [OMDB API Key](https://www.omdbapi.com/apikey.aspx) (Open Movie Database)
-* [Fanart.tv API Key](https://fanart.tv/get-an-api-key/)
 
-
+- [TMDB API Key](https://www.themoviedb.org/documentation/api) (The Movie Database)
+- [OMDB API Key](https://www.omdbapi.com/apikey.aspx) (Open Movie Database)
+- [Fanart.tv API Key](https://fanart.tv/get-an-api-key/)
 
 ---
 
@@ -50,7 +48,7 @@ npx wrangler kv:namespace create "POSTER_CACHE"
 
 ```
 
-*Copy the **id** output from this command. You will need it for the next step.*
+_Copy the **id** output from this command. You will need it for the next step._
 
 ### 4. Configure `wrangler.toml`
 
@@ -64,7 +62,7 @@ compatibility_date = "2023-10-02"
 # 1. KV Namespace Binding
 [[kv_namespaces]]
 binding = "POSTER_CACHE"
-id = "YOUR_KV_NAMESPACE_ID_HERE" 
+id = "YOUR_KV_NAMESPACE_ID_HERE"
 
 # 2. Environment Variables (API Keys)
 [vars]
@@ -128,15 +126,14 @@ Alternatively, you can connect your GitHub repository to **Cloudflare Pages** vi
 1. Go to **Workers & Pages** > **Create Application** > **Pages** > **Connect to Git**.
 2. Select your repository.
 3. **Build Settings:**
-* **Framework preset:** Vite / React
-* **Build command:** `npm run build`
-* **Output directory:** `dist`
 
+- **Framework preset:** Vite / React
+- **Build command:** `npm run build`
+- **Output directory:** `dist`
 
 4. **Environment Variables:**
-* Add `VITE_API_URL` with your worker URL.
 
-
+- Add `VITE_API_URL` with your worker URL.
 
 ---
 
@@ -149,12 +146,12 @@ Alternatively, you can connect your GitHub repository to **Cloudflare Pages** vi
 
 ## Troubleshooting
 
-* **Images not loading?** Check the "Real-time Logs" of your worker:
+- **Images not loading?** Check the "Real-time Logs" of your worker:
+
 ```bash
 npx wrangler tail
 
 ```
 
-
-* **"KV is not defined" error?** Ensure you created the KV namespace *and* added the `[[kv_namespaces]]` block correctly in `wrangler.toml`.
-* **API Rate Limits?** If images load slowly or fail, ensure your API keys are valid and that the KV cache is working (second load of the same poster should be instant).
+- **"KV is not defined" error?** Ensure you created the KV namespace _and_ added the `[[kv_namespaces]]` block correctly in `wrangler.toml`.
+- **API Rate Limits?** If images load slowly or fail, ensure your API keys are valid and that the KV cache is working (second load of the same poster should be instant).
