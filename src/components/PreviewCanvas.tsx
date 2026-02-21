@@ -240,7 +240,7 @@ const resetView = () => {
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
-        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
+        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform overflow-hidden"
       >
         {isImageLoading && !imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
