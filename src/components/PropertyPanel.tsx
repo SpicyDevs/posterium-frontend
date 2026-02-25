@@ -53,7 +53,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?
       </div>
     )}
   </Disclosure>
-);;
+);
 
 const ControlRow: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
@@ -424,8 +424,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </div>
       </Section>
 
-<Section title="Visibility">
-        <div className="space-y-4"> {/* CHANGED: space-y-2 to space-y-4 for slider spacing */}
+      <Section title="Visibility">
+        <div className="space-y-4">
+          {' '}
+          {/* CHANGED: space-y-2 to space-y-4 for slider spacing */}
           {!isAgeSelected && (
             <ToggleRow
               label="Show Icon"

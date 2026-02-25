@@ -88,7 +88,7 @@ const DraggableBadge: React.FC<Props> = ({
     onPositionChange(badgeId, posRef.current.x, posRef.current.y);
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (!isDragging) return;
 
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
@@ -131,10 +131,10 @@ useEffect(() => {
   const blurVal = itemConfig?.blur ?? config.blur;
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
-  
+
   const rawShadow = itemConfig?.shadow ?? config.shadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  
+
   const showIcon = itemConfig?.icon ?? true;
 
   const bgRaw = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
@@ -244,7 +244,7 @@ useEffect(() => {
     );
   };
 
-return (
+  return (
     <div
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
@@ -258,7 +258,8 @@ return (
         outline: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,
         backdropFilter: `blur(${blurVal}px)`,
         // CHANGED: Scale the shadow offset and blur dynamically based on intensity value
-        boxShadow: shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : 'none',
+        boxShadow:
+          shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : 'none',
         willChange: isDragging ? 'transform' : 'auto',
         touchAction: 'none',
       }}

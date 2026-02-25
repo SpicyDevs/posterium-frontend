@@ -15,11 +15,11 @@ interface Props {
 const Inspector: React.FC<Props> = ({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds, clearSelection } = useEditor();
 
-  // If items are selected, force the "Selection" view mode. 
+  // If items are selected, force the "Selection" view mode.
   // Otherwise, fallback to the explicitly clicked tab mode.
   const currentMode = selectedIds.size > 0 || activeTab === 'badge' ? 'selection' : 'global';
 
-return (
+  return (
     <SidebarLayout
       header={
         <>

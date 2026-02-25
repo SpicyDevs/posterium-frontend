@@ -305,7 +305,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 />
               </div>
               <div className="w-24 space-y-1">
-                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">ID</label>
+                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
+                  ID
+                </label>
                 <input
                   type="text"
                   value={config.tmdbId}

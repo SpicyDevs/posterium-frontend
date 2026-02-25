@@ -15,10 +15,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ header, children, bodyCla
       <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-app-header shrink-0">
         {header}
       </div>
-      
+
       {/* Body */}
       {/* lg:flex-1 and lg:overflow-y-auto keeps the split-scroll behavior strictly for desktop */}
-      <div className={clsx("relative lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-24 lg:pb-0", bodyClassName)}>
+      <div
+        className={clsx(
+          'relative lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-24 lg:pb-0',
+          bodyClassName
+        )}
+      >
         {children}
       </div>
     </div>
