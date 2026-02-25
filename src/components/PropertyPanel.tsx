@@ -22,6 +22,7 @@ interface Props {
 }
 
 // Collapsible Section using Headless UI Disclosure
+
 const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({
   title,
   children,
@@ -29,16 +30,14 @@ const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?
 }) => (
   <Disclosure defaultOpen={defaultOpen}>
     {({ open }) => (
-      <div className="border-b border-white/5 last:border-0">
-        <Disclosure.Button className="flex w-full justify-between items-center px-5 py-4 text-left hover:bg-white/5 transition-colors focus:outline-none">
+      <div className="border-b border-white/5 last:border-0 p-2">
+        <Disclosure.Button className="group flex w-full justify-between items-center px-3 py-2.5 rounded-md transition-all border border-transparent hover:bg-white/5 focus:outline-none">
           <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
             {title}
           </h3>
-          {open ? (
-            <ChevronUp size={14} className="text-zinc-500" />
-          ) : (
-            <ChevronDown size={14} className="text-zinc-500" />
-          )}
+          <div className="text-zinc-500 group-hover:text-zinc-300 transition-colors">
+            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </div>
         </Disclosure.Button>
         <Transition
           enter="transition duration-100 ease-out"
@@ -48,7 +47,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?
           leaveFrom="transform scale-100 opacity-100"
           leaveTo="transform scale-95 opacity-0"
         >
-          <Disclosure.Panel className="px-5 pb-5 pt-0 space-y-4">{children}</Disclosure.Panel>
+          <Disclosure.Panel className="px-3 pb-3 pt-2 space-y-4">{children}</Disclosure.Panel>
         </Transition>
       </div>
     )}
