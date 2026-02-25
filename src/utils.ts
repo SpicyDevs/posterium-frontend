@@ -74,7 +74,7 @@ export const generateApiUrl = (
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
-  params.set('sh', config.shadow ? '1' : '0');
+  params.set('sh', config.shadow.toString());
   params.set('s', config.size);
   params.set('l', config.layout);
   params.set('pos', config.preset);
@@ -98,7 +98,7 @@ export const generateApiUrl = (
     if (item.blur !== undefined) params.set(`${key}_blur`, item.blur.toString());
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
-    if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow ? '1' : '0');
+    if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow.toString());
     if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
 
     // New Badge Params
@@ -169,7 +169,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ...(blur ? { blur: parseInt(blur) } : {}),
           ...(alpha ? { alpha: parseFloat(alpha) } : {}),
           ...(rad ? { radius: parseInt(rad) } : {}),
-          ...(sh ? { shadow: sh === '1' } : {}),
+          ...(sh ? { shadow: parseInt(sh) } : {}),
           ...(icon ? { icon: icon === '1' } : {}),
           ...(scale ? { scale: parseFloat(scale) } : {}),
           ...(bw ? { borderW: parseInt(bw) } : {}),
@@ -188,7 +188,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       textless: params.get('textless') === '1',
       theme: 'glass',
       size: (params.get('s') as any) || 'md',
-      shadow: params.get('sh') === '1',
+      shadow: params.has('sh') ? parseInt(params.get('sh')!) : 6,
       layout: (params.get('l') as any) || 'col',
       preset: (params.get('pos') as any) || 'tr',
       blur: params.has('blur') ? parseInt(params.get('blur')!) : 8,
