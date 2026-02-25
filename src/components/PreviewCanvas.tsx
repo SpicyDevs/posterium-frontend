@@ -304,7 +304,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           key={cleanPosterUrl} // Forces React to recreate the img element on URL change, preventing ghosting
           src={cleanPosterUrl}
           alt="Poster"
-          className={`w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'}`}
           style={{
             filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})`,
           }}
