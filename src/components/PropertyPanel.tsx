@@ -188,7 +188,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   if (showGlobal) {
     return (
-      <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pb-20">
+      <div className="flex flex-col pb-20">
         <Section title="Layout & Alignment">
           <div className="flex gap-6">
             <div className="flex-shrink-0">
@@ -336,7 +336,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   if (selectedIds.size === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 p-8 text-center bg-[#18181b]">
+      <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 p-8 text-center bg-transparent">
         <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
           <Layers size={20} className="opacity-40" />
         </div>
@@ -351,7 +351,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const isAgeSelected = selectedIds.has('age');
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pb-20">
+    <div className="flex flex-col pb-20">
       <Section title="Transform">
         <ControlRow label="Scale">
           <InputRange
