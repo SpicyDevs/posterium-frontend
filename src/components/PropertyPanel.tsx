@@ -201,7 +201,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 <button
                   onClick={() => updateConfig('layout', 'col')}
                   className={clsx(
-                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95',
+                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors',
                     config.layout === 'col'
                       ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300'
                       : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'
@@ -212,7 +212,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 <button
                   onClick={() => updateConfig('layout', 'row')}
                   className={clsx(
-                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors active:scale-95',
+                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors',
                     config.layout === 'row'
                       ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300'
                       : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'
@@ -235,7 +235,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             />
           </ControlRow>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="gap-3 pt-2">
             <ToggleRow
               label="Grayscale"
               checked={config.grayscale}
