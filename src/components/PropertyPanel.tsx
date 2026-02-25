@@ -31,7 +31,8 @@ const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?
   <Disclosure defaultOpen={defaultOpen}>
     {({ open }) => (
       <div className="border-b border-white/5 last:border-0 p-2">
-        <Disclosure.Button className="group flex w-full justify-between items-center px-3 py-2.5 rounded-md transition-all border border-transparent hover:bg-white/5 focus:outline-none">
+        {/* CHANGED: Added outline-none, focus:outline-none, and focus:ring-0 to suppress the flash */}
+        <Disclosure.Button className="group flex w-full justify-between items-center px-3 py-2.5 rounded-md transition-all hover:bg-white/5 outline-none focus:outline-none focus-visible:outline-none focus:ring-0">
           <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
             {title}
           </h3>
@@ -52,7 +53,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?
       </div>
     )}
   </Disclosure>
-);
+);;
 
 const ControlRow: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
