@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef, Fragment, useCallback } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { PosterConfig, DEFAULT_CONFIG } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
@@ -98,7 +98,56 @@ const StudioLayout: React.FC<{
     handleSelection,
     clearSelection,
   } = useEditor();
-  const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
+const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
+
+  // --- SIDEBAR RESIZE LOGIC ---
+  const [leftWidth, setLeftWidth] = useState(288); // Default w-72 (288px)
+  const [rightWidth, setRightWidth] = useState(320); // Default w-80 (320px)
+
+  const startResizingLeft = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = leftWidth;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const newWidth = startWidth + (moveEvent.clientX - startX);
+      setLeftWidth(Math.max(220, Math.min(newWidth, 600))); // Min 220px, Max 600px
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+  }, [leftWidth]);
+
+  const startResizingRight = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = rightWidth;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const newWidth = startWidth - (moveEvent.clientX - startX);
+      setRightWidth(Math.max(260, Math.min(newWidth, 600))); // Min 260px, Max 600px
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+  }, [rightWidth]);
+  // ----------------------------------
+
+  // -- DRAG LOGIC (Retained for Physics) --
 
   // -- DRAG LOGIC (Retained for Physics) --
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -198,14 +247,23 @@ const StudioLayout: React.FC<{
         </div>
       </header>
 
-      {/* Main Grid */}
+{/* Main Grid */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="hidden md:flex w-72 flex-col bg-[#0c0c0e] border-r border-white/5 z-20">
+        {/* Left Sidebar */}
+        <aside 
+          className="hidden md:flex flex-col bg-[#0c0c0e] border-r border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
+          style={{ width: leftWidth }}
+        >
           <LayerPanel
             config={config}
             setConfig={setConfig}
             selectedIds={selectedIds}
             onSelect={handleSelection}
+          />
+          {/* Resizer Handle */}
+          <div 
+            onMouseDown={startResizingLeft}
+            className="absolute top-0 right-[-3px] bottom-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
           />
         </aside>
 
@@ -231,7 +289,16 @@ const StudioLayout: React.FC<{
           />
         </main>
 
-        <aside className="hidden md:flex w-80 flex-col bg-[#0c0c0e] border-l border-white/5 z-20">
+        {/* Right Sidebar */}
+        <aside 
+          className="hidden md:flex flex-col bg-[#0c0c0e] border-l border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
+          style={{ width: rightWidth }}
+        >
+          {/* Resizer Handle */}
+          <div 
+            onMouseDown={startResizingRight}
+            className="absolute top-0 left-[-3px] bottom-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
+          />
           <Inspector config={config} setConfig={setConfig} />
         </aside>
 
