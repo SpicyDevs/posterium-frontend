@@ -5,19 +5,20 @@ import clsx from 'clsx';
 interface SidebarLayoutProps {
   header: React.ReactNode;
   children: React.ReactNode;
-  bodyClassName?: string; // Allows passing specific padding to the body if needed
+  bodyClassName?: string;
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ header, children, bodyClassName }) => {
   return (
-    <div className="flex flex-col h-full bg-[#0c0c0e]">
-      {/* Shared Fixed Header Style */}
-      <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0f0f11] shrink-0">
+    <div className="flex flex-col h-full bg-app-sidebar overflow-y-auto lg:overflow-hidden custom-scrollbar">
+      {/* Header */}
+      <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-app-header shrink-0">
         {header}
       </div>
       
-      {/* Shared Scrollable Body Style */}
-      <div className={clsx("flex-1 overflow-y-auto custom-scrollbar bg-[#0c0c0e] relative", bodyClassName)}>
+      {/* Body */}
+      {/* lg:flex-1 and lg:overflow-y-auto keeps the split-scroll behavior strictly for desktop */}
+      <div className={clsx("relative lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-24 lg:pb-0", bodyClassName)}>
         {children}
       </div>
     </div>
