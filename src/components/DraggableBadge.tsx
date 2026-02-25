@@ -88,15 +88,28 @@ const DraggableBadge: React.FC<Props> = ({
     onPositionChange(badgeId, posRef.current.x, posRef.current.y);
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (!isDragging) return;
+
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
     const onMouseUp = () => handleEnd();
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // Prevent scrolling while dragging the badge
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const onTouchEnd = () => handleEnd();
+
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
     };
   }, [isDragging, canvasScale, width, height]);
 
@@ -105,6 +118,14 @@ const DraggableBadge: React.FC<Props> = ({
     e.preventDefault();
     onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
     handleStart(e.clientX, e.clientY);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Prevent default to stop synthetic mouse events from firing after touch
+    // (but passive needs to be true/false depending on the browser, React handles this safely here)
+    onSelect(badgeId, false); // Multi-select is hard on mobile, default to false
+    handleStart(e.touches[0].clientX, e.touches[0].clientY);
   };
 
   const blurVal = itemConfig?.blur ?? config.blur;
@@ -220,9 +241,10 @@ const DraggableBadge: React.FC<Props> = ({
     );
   };
 
-  return (
+return (
     <div
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart} /* <--- Add this line */
       className={`absolute top-0 left-0 select-none cursor-move group z-50 hover:z-[60]`}
       style={{
         width: `${width}px`,
@@ -234,6 +256,7 @@ const DraggableBadge: React.FC<Props> = ({
         backdropFilter: `blur(${blurVal}px)`,
         boxShadow: hasShadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : 'none',
         willChange: isDragging ? 'transform' : 'auto',
+        touchAction: 'none', /* <--- Add this line to prevent browser handling touches */
       }}
     >
       {renderContent()}

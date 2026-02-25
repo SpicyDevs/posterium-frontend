@@ -194,8 +194,9 @@ const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
     if (sheetRef.current && !isDragging.current) sheetRef.current.style.transform = '';
   }, [mobileSheetMode]);
 
-  const getCanvasPadding = () => {
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return 0;
+const getCanvasPadding = () => {
+    // CHANGED: 768 to 1024 (lg breakpoint)
+    if (typeof window === 'undefined' || window.innerWidth >= 1024) return 0;
     switch (mobileSheetMode) {
       case 'full':
         return '90%';
@@ -251,7 +252,7 @@ const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
       <div className="flex flex-1 overflow-hidden relative">
         {/* Left Sidebar */}
         <aside 
-          className="hidden md:flex flex-col bg-[#0c0c0e] border-r border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
+          className="hidden lg:flex flex-col bg-[#0c0c0e] border-r border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
           style={{ width: leftWidth }}
         >
           <LayerPanel
@@ -291,7 +292,7 @@ const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
 
         {/* Right Sidebar */}
         <aside 
-          className="hidden md:flex flex-col bg-[#0c0c0e] border-l border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
+          className="hidden lg:flex flex-col bg-[#0c0c0e] border-l border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
           style={{ width: rightWidth }}
         >
           {/* Resizer Handle */}
@@ -306,7 +307,7 @@ const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
         <div
           ref={sheetRef}
           className={`
-                md:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40
+                lg:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40
                 ${mobileSheetMode === 'hidden' ? 'translate-y-[120%]' : 'translate-y-0'}
             `}
           style={{

@@ -35,7 +35,7 @@ const MobileDock: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]">
+    <div className="ld:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]">
       <NavItem id="layers" icon={Layers} label="Layers" />
       <NavItem id="canvas" icon={Monitor} label="Canvas" />
       <NavItem id="badge" icon={Sliders} label="Edit Badge" />
