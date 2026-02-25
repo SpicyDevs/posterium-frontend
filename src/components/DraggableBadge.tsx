@@ -131,7 +131,10 @@ useEffect(() => {
   const blurVal = itemConfig?.blur ?? config.blur;
   const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
-  const hasShadow = itemConfig?.shadow ?? config.shadow;
+  
+  const rawShadow = itemConfig?.shadow ?? config.shadow;
+  const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
+  
   const showIcon = itemConfig?.icon ?? true;
 
   const bgRaw = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
@@ -244,7 +247,7 @@ useEffect(() => {
 return (
     <div
       onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart} /* <--- Add this line */
+      onTouchStart={onTouchStart}
       className={`absolute top-0 left-0 select-none cursor-move group z-50 hover:z-[60]`}
       style={{
         width: `${width}px`,
@@ -254,9 +257,10 @@ return (
         borderRadius: `${radiusVal}px`,
         outline: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,
         backdropFilter: `blur(${blurVal}px)`,
-        boxShadow: hasShadow ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : 'none',
+        // CHANGED: Scale the shadow offset and blur dynamically based on intensity value
+        boxShadow: shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : 'none',
         willChange: isDragging ? 'transform' : 'auto',
-        touchAction: 'none', /* <--- Add this line to prevent browser handling touches */
+        touchAction: 'none',
       }}
     >
       {renderContent()}

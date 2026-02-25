@@ -241,16 +241,24 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               checked={config.grayscale}
               onChange={(v) => updateConfig('grayscale', v)}
             />
-            <ToggleRow
-              label="Shadows"
-              checked={config.shadow}
-              onChange={(v) => updateConfig('shadow', v)}
-            />
+            {/* <ToggleRow */}
+            {/*   label="Shadows" */}
+            {/*   checked={config.shadow} */}
+            {/*   onChange={(v) => updateConfig('shadow', v)} */}
+            {/* /> */}
           </div>
         </Section>
 
         <Section title="Badge Defaults">
           <div className="space-y-4">
+            <ControlRow label="Shadow Intensity">
+              <InputRange
+                value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('shadow', v)}
+              />
+            </ControlRow>
             <ControlRow label="Glass Blur">
               <InputRange
                 value={config.blur}
@@ -416,8 +424,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </div>
       </Section>
 
-      <Section title="Visibility">
-        <div className="space-y-2">
+<Section title="Visibility">
+        <div className="space-y-4"> {/* CHANGED: space-y-2 to space-y-4 for slider spacing */}
           {!isAgeSelected && (
             <ToggleRow
               label="Show Icon"
@@ -425,11 +433,18 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               onChange={(v) => updateSelectedBadges({ icon: v })}
             />
           )}
-          <ToggleRow
-            label="Drop Shadow"
-            checked={getCommonValue('shadow', true) ?? true}
-            onChange={(v) => updateSelectedBadges({ shadow: v })}
-          />
+          {/* CHANGED: Replaced ToggleRow with ControlRow & InputRange */}
+          <ControlRow label="Drop Shadow">
+            <InputRange
+              value={(() => {
+                const val = getCommonValue('shadow', 6);
+                return typeof val === 'boolean' ? (val ? 6 : 0) : (val ?? 6);
+              })()}
+              min={0}
+              max={30}
+              onChange={(v) => updateSelectedBadges({ shadow: v })}
+            />
+          </ControlRow>
         </div>
       </Section>
 

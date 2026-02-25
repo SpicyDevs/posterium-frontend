@@ -20,12 +20,12 @@ export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 export interface BadgeConfig {
   x?: number;
   y?: number;
-  bg?: string; // Supports "#hex" or "grad:#hex1:#hex2"
+  bg?: string;
   txt?: string;
   blur?: number;
   alpha?: number;
   radius?: number;
-  shadow?: boolean;
+  shadow?: number;
   icon?: boolean;
   scale?: number;
   borderW?: number;
@@ -48,7 +48,7 @@ export interface PosterConfig {
   textless: boolean;
   theme: ThemeType;
   size: SizeType;
-  shadow: boolean;
+  shadow: number;
   layout: LayoutType;
   preset: PresetType;
   blur: number;
@@ -71,7 +71,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   textless: false,
   theme: 'glass',
   size: 'md',
-  shadow: true,
+  shadow: 5,
   layout: 'custom',
   preset: 'custom',
   blur: 8,
