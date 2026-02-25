@@ -194,19 +194,6 @@ const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
     if (sheetRef.current && !isDragging.current) sheetRef.current.style.transform = '';
   }, [mobileSheetMode]);
 
-const getCanvasPadding = () => {
-    // CHANGED: 768 to 1024 (lg breakpoint)
-    if (typeof window === 'undefined' || window.innerWidth >= 1024) return 0;
-    switch (mobileSheetMode) {
-      case 'full':
-        return '90%';
-      case 'half':
-        return '50%';
-      default:
-        return '4rem';
-    }
-  };
-
   return (
     <div className="flex flex-col h-[100dvh] bg-[#09090b] text-zinc-200 overflow-hidden font-sans selection:bg-indigo-500/30">
       <ResetDialog
@@ -270,7 +257,6 @@ const getCanvasPadding = () => {
 
         <main
           className="flex-1 relative bg-[#18181b] flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
-          style={{ paddingBottom: getCanvasPadding() }}
           onClick={(e) => {
             if (e.target === e.currentTarget) clearSelection();
           }}
