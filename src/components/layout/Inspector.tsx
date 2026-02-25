@@ -55,19 +55,6 @@ return (
               </button>
             </div>
           </div>
-
-          <div className="space-y-1">
-            <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-              Status
-            </label>
-            <div className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate">
-              {selectedIds.size > 0
-                ? `Editing ${selectedIds.size} badge${selectedIds.size > 1 ? 's' : ''}`
-                : currentMode === 'selection'
-                  ? 'No Badge Selected'
-                  : 'Global Canvas Active'}
-            </div>
-          </div>
         </>
       }
     >
