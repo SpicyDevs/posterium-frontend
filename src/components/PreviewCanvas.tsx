@@ -219,9 +219,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Mobile Floating Action Bar */}
+{/* Mobile Floating Action Bar */}
       <div
-        className="absolute right-4 lg:right-1 flex flex-col lg:flex-row items-center gap-2 z-30 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
+        className="absolute right-4 lg:right-4 flex flex-col items-center gap-2 z-30 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
         style={{
           bottom: mobileSheetMode === 'half' ? '55%' : 'calc(4.5rem + env(safe-area-inset-bottom))',
           opacity: mobileSheetMode === 'full' ? 0 : 1,
@@ -229,12 +229,12 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         }}
       >
         {isPanning && (
-          <div className="bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-full mb-2 lg:mb-0 lg:mr-2 pointer-events-none">
+          <div className="bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-full mb-2 pointer-events-none">
             Panning
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
+        <div className="flex flex-col items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
           <button
             onClick={() => setZoom((z) => Math.min(z + 0.1, 4))}
             className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
@@ -247,7 +247,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           >
             <ZoomOut size={18} />
           </button>
-          <div className="w-4 h-px lg:w-px lg:h-4 bg-white/10 mx-1"></div>
+          
+          {/* Divider updated to be always horizontal */}
+          <div className="w-4 h-px bg-white/10 my-1"></div>
+          
           <button
             onClick={resetView}
             className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform"
