@@ -371,7 +371,35 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           />
         </ControlRow>
       </Section>
-
+      <Section title="Glass & Shape">
+        <div className="space-y-4">
+          <ControlRow label="Glass Blur">
+            <InputRange
+              value={getCommonValue('blur', config.blur) ?? config.blur}
+              min={0}
+              max={20}
+              onChange={(v) => updateSelectedBadges({ blur: v })}
+            />
+          </ControlRow>
+          <ControlRow label="Opacity">
+            <InputRange
+              value={getCommonValue('alpha', config.alpha) ?? config.alpha}
+              min={0}
+              max={1}
+              step={0.1}
+              onChange={(v) => updateSelectedBadges({ alpha: v })}
+            />
+          </ControlRow>
+          <ControlRow label="Radius">
+            <InputRange
+              value={getCommonValue('radius', config.radius) ?? config.radius}
+              min={0}
+              max={30}
+              onChange={(v) => updateSelectedBadges({ radius: v })}
+            />
+          </ControlRow>
+        </div>
+      </Section>
       <Section title="Fill & Stroke">
         <div className="space-y-4">
           <ControlRow label="Background">

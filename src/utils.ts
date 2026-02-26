@@ -79,9 +79,14 @@ export const generateApiUrl = (
   params.set('l', config.layout);
   params.set('pos', config.preset);
 
-  // New Global Filters
   if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
   if (config.grayscale) params.set('bw', '1');
+
+  if (config.scale !== undefined && config.scale !== 1) params.set('g_scale', config.scale.toString());
+  if (config.borderW !== undefined && config.borderW > 0) params.set('g_bw', config.borderW.toString());
+  if (config.borderC) params.set('g_bc', config.borderC);
+  if (config.bg) params.set('g_bg', config.bg);
+  if (config.txt) params.set('g_txt', config.txt);
 
   config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
@@ -101,13 +106,10 @@ export const generateApiUrl = (
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow.toString());
     if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
 
-    // New Badge Params
-    if (item.scale !== undefined && item.scale !== 1)
-      params.set(`${key}_scale`, item.scale.toString());
-    if (item.borderW !== undefined && item.borderW > 0) {
-      params.set(`${key}_bw`, item.borderW.toString());
-      if (item.borderC) params.set(`${key}_bc`, item.borderC);
-    }
+    // Remove the strict !== 1 and > 0 checks so specific badges can revert to defaults
+    if (item.scale !== undefined) params.set(`${key}_scale`, item.scale.toString());
+    if (item.borderW !== undefined) params.set(`${key}_bw`, item.borderW.toString());
+    if (item.borderC !== undefined) params.set(`${key}_bc`, item.borderC);
   });
 
   return url.toString();
@@ -178,13 +180,20 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       }
     });
 
+    // Fetch global overrides
+    const g_scale = params.get('g_scale');
+    const g_bw = params.get('g_bw');
+    const g_bc = params.get('g_bc');
+    const g_bg = params.get('g_bg');
+    const g_txt = params.get('g_txt');
+
     return {
       mediaType,
       tmdbId,
       extension: extension as any,
       ratings: params.has('r') ? (params.get('r')?.split(',') as RatingType[]) : [],
       source: (params.get('source') as any) || 'tmdb',
-      ptype: params.get('ptype') || 'auto', // <-- Add this line
+      ptype: params.get('ptype') || 'auto',
       textless: params.get('textless') === '1',
       theme: 'glass',
       size: (params.get('s') as any) || 'md',
@@ -196,6 +205,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       radius: params.has('rad') ? parseInt(params.get('rad')!) : 12,
       posterBlur: params.has('bg_blur') ? parseInt(params.get('bg_blur')!) : 0,
       grayscale: params.get('bw') === '1',
+      
+      // Parse global overrides
+      scale: g_scale ? parseFloat(g_scale) : 1.0,
+      borderW: g_bw ? parseInt(g_bw) : 0,
+      borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
+      bg: g_bg || undefined,
+      txt: g_txt ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
+
       keys,
       items,
     };

@@ -57,6 +57,11 @@ export interface PosterConfig {
   extension: ExtensionType;
   posterBlur: number;
   grayscale: boolean;
+  scale?: number;
+  borderW?: number;
+  borderC?: string;
+  bg?: string;
+  txt?: string;
   items: Partial<Record<RatingType, BadgeConfig>>;
   keys?: ApiKeys;
 }
