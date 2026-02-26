@@ -34,10 +34,10 @@ const Inspector: React.FC<Props> = ({ config, setConfig }) => {
                   setActiveTab('canvas');
                 }}
                 className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-all',
+                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
                   currentMode === 'global'
-                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border border-white/10'
-                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5' // <-- transparent border fallback
                 )}
               >
                 <Globe size={12} /> Canvas
@@ -45,10 +45,10 @@ const Inspector: React.FC<Props> = ({ config, setConfig }) => {
               <button
                 onClick={() => setActiveTab('badge')}
                 className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-all',
+                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
                   currentMode === 'selection'
-                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border border-white/10'
-                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                 )}
               >
                 <Layers size={12} /> Selection {selectedIds.size > 0 && `(${selectedIds.size})`}
