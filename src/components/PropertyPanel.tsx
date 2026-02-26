@@ -251,6 +251,37 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
         <Section title="Badge Defaults">
           <div className="space-y-4">
+<ToggleRow
+              label="Show Icons"
+              checked={config.icon ?? true}
+              onChange={(v) => updateConfig('icon', v)}
+            />
+            <ControlRow label="Border Width">
+              <InputRange
+                value={config.borderW ?? 0}
+                min={0}
+                max={10}
+                onChange={(v) => updateConfig('borderW', v)}
+              />
+            </ControlRow>
+            <ControlRow label="Border Color">
+              <div className="relative w-full group">
+                <input
+                  type="color"
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                  onChange={(e) => updateConfig('borderC', e.target.value)}
+                />
+                <div className="w-full h-9 bg-zinc-900 border border-zinc-700 rounded flex items-center px-2 text-xs text-zinc-400 group-hover:border-zinc-500 transition-colors">
+                  <div
+                    className="w-5 h-5 rounded border border-white/10 mr-2 shadow-sm"
+                    style={{ background: config.borderC ?? '#ffffff' }}
+                  ></div>
+                  <span className="font-mono">
+                    {config.borderC ?? '#ffffff'}
+                  </span>
+                </div>
+              </div>
+            </ControlRow>
             <ControlRow label="Shadow Intensity">
               <InputRange
                 value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}

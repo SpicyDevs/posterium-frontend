@@ -135,7 +135,7 @@ const DraggableBadge: React.FC<Props> = ({
   const rawShadow = itemConfig?.shadow ?? config.shadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
 
-  const showIcon = itemConfig?.icon ?? true;
+  const showIcon = itemConfig?.icon ?? config.icon ?? true;
 
   const bgRaw = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
   const backgroundStyle = bgRaw.startsWith('grad:')

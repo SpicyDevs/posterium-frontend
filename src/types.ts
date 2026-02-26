@@ -62,6 +62,7 @@ export interface PosterConfig {
   borderC?: string;
   bg?: string;
   txt?: string;
+  icon?: boolean;
   items: Partial<Record<RatingType, BadgeConfig>>;
   keys?: ApiKeys;
 }

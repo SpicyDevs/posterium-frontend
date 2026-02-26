@@ -87,6 +87,7 @@ export const generateApiUrl = (
   if (config.borderC) params.set('g_bc', config.borderC);
   if (config.bg) params.set('g_bg', config.bg);
   if (config.txt) params.set('g_txt', config.txt);
+  if (config.icon !== undefined) params.set('g_icon', config.icon ? '1' : '0');
 
   config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
@@ -104,7 +105,8 @@ export const generateApiUrl = (
     if (item.alpha !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow.toString());
-    if (item.icon !== undefined) params.set(`${key}_icon`, item.icon ? '1' : '0');
+    const finalIcon = item.icon ?? config.icon ?? true;
+    params.set(`${key}_icon`, finalIcon ? '1' : '0');
 
     // Remove the strict !== 1 and > 0 checks so specific badges can revert to defaults
     if (item.scale !== undefined) params.set(`${key}_scale`, item.scale.toString());
@@ -186,6 +188,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const g_bc = params.get('g_bc');
     const g_bg = params.get('g_bg');
     const g_txt = params.get('g_txt');
+    const g_icon = params.get('g_icon');
 
     return {
       mediaType,
@@ -212,6 +215,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
       bg: g_bg || undefined,
       txt: g_txt ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
+      icon: g_icon ? g_icon === '1' : true,
 
       keys,
       items,
