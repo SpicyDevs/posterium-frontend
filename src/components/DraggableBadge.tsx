@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
+import { CheckSquare } from 'lucide-react';
 
 interface Props {
   badgeId: RatingType;
@@ -270,23 +271,17 @@ const DraggableBadge: React.FC<Props> = ({
 
       {/* Selection Checkmark Indicator */}
       {isSelected && (
-        <div className="absolute -top-2.5 -right-2.5 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center shadow-sm border-2 border-zinc-900 z-10 pointer-events-none transition-all animate-in zoom-in-50 duration-200">
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+        <div 
+          className="absolute bg-indigo-600 border border-indigo-500 rounded flex items-center justify-center shadow-sm z-10 pointer-events-none transition-all animate-in zoom-in-50 duration-200"
+          style={{
+            top: `${-10 * scale}px`,
+            right: `${-10 * scale}px`,
+            width: `${20 * scale}px`,
+            height: `${20 * scale}px`,
+          }}
+        >
+          <CheckSquare size={12 * scale} className="text-white" />
         </div>
       )}
-    </div>
-  );
-};
 
 export default DraggableBadge;
