@@ -411,15 +411,23 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </button>
       </div>
 
-      {ALL_BADGES.map((badge) => {
-        const isActive = config.ratings.includes(badge.id);
-        const isSelected = selectedIds.has(badge.id);
-        const ratingValue = fetchedData[badge.id as keyof RatingsData];
-        const iconKey = getIconKey(badge.id);
-        const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
+      {[...ALL_BADGES]
+        .sort((a, b) => {
+          const aActive = config.ratings.includes(a.id);
+          const bActive = config.ratings.includes(b.id);
+          if (aActive && !bActive) return -1;
+          if (!aActive && bActive) return 1;
+          return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
+        })
+        .map((badge) => {
+          const isActive = config.ratings.includes(badge.id);
+          const isSelected = selectedIds.has(badge.id);
+          const ratingValue = fetchedData[badge.id as keyof RatingsData];
+          const iconKey = getIconKey(badge.id);
+          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
 
-        return (
-          <div
+          return (
+            <div
             key={badge.id}
             onClick={(e) => {
               if (!isActive) return;
