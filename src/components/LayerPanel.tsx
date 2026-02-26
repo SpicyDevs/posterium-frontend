@@ -1,4 +1,3 @@
-// src/components/LayerPanel.tsx
 import React, { useState, useEffect, Fragment } from 'react';
 import {
   Combobox,
@@ -9,14 +8,14 @@ import {
   Switch,
   Transition,
 } from '@headlessui/react';
-import { Check, ChevronsUpDown, Search, Loader2, CheckSquare } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, Loader2, CheckSquare, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
-import SidebarLayout from './SidebarLayout'; // <--- Added shared layout import
-
+import SidebarLayout from './SidebarLayout';
 type BadgeIconKey = keyof typeof BADGE_ICONS;
 
 interface Props {
@@ -145,9 +144,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       setBatchSelection([]);
     }
   };
-
-  const allVisibleSelected =
+const allVisibleSelected =
     config.ratings.length > 0 && config.ratings.every((r) => selectedIds.has(r));
+    
   const getIconKey = (id: string): BadgeIconKey => {
     if (id === 'rt') return 'rt_fresh';
     if (id === 'rt_popcorn') return 'popcorn_fresh';
@@ -155,7 +154,152 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return id as BadgeIconKey;
   };
 
-  // Helper for Listbox
+  // --- DND Handlers ---
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const startIndex = result.source.index;
+    const endIndex = result.destination.index;
+
+    if (startIndex === endIndex) return;
+
+    // We reverse the array for the UI so the top of the list is the top of the Z-index stack.
+    // Apply the reorder to the reversed array, then reverse it back to save.
+    const newRatings = [...config.ratings].reverse();
+    const [removed] = newRatings.splice(startIndex, 1);
+    newRatings.splice(endIndex, 0, removed);
+
+    setConfig((prev) => ({ ...prev, ratings: newRatings.reverse() }));
+  };
+
+  // Reversed so the top of the list is the top-most visual layer
+  const activeBadges = [...config.ratings]
+    .reverse()
+    .map((id) => ALL_BADGES.find((b) => b.id === id))
+    .filter((b): b is { id: RatingType; label: string } => b !== undefined);
+
+  const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id));
+
+  // Shared row renderer for both active (draggable) and inactive items
+  const renderBadgeRow = (
+    badge: { id: RatingType; label: string },
+    isActive: boolean,
+    provided?: any,
+    isDragging?: boolean
+  ) => {
+    const isSelected = selectedIds.has(badge.id);
+    const ratingValue = fetchedData[badge.id as keyof RatingsData];
+    const iconKey = getIconKey(badge.id);
+    const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
+
+    return (
+      <div
+        ref={provided?.innerRef}
+        {...provided?.draggableProps}
+        onClick={(e) => {
+          if (!isActive) return;
+          onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
+        }}
+        className={clsx(
+          'group flex items-center gap-3 px-2 py-2 rounded-md transition-colors border',
+          isSelected
+            ? 'bg-indigo-900/20 border-indigo-500/30'
+            : 'border-transparent hover:bg-white/5',
+          !isActive ? 'opacity-40 grayscale' : 'cursor-pointer',
+          isDragging ? 'shadow-xl bg-zinc-800 border-white/10 z-50' : ''
+        )}
+        style={provided?.draggableProps.style}
+      >
+        {/* Drag Handle */}
+        {isActive ? (
+          <div
+            {...provided?.dragHandleProps}
+            className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-1 -ml-1 outline-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={14} />
+          </div>
+        ) : (
+          <div className="w-5" /> // Spacer for alignment
+        )}
+
+        {/* Custom Selection Indicator */}
+        <div
+          className="flex items-center justify-center py-1 pr-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isActive) onSelect(badge.id, true);
+          }}
+        >
+          <div
+            className={clsx(
+              'w-3.5 h-3.5 rounded border flex items-center justify-center transition-all',
+              isSelected
+                ? 'bg-indigo-500 border-indigo-400'
+                : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500'
+            )}
+          >
+            {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
+          </div>
+        </div>
+
+        {/* Icon */}
+        <div className="w-6 h-6 flex items-center justify-center bg-zinc-800 rounded shadow-sm border border-white/5 shrink-0">
+          {badge.id === 'age' ? (
+            <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">
+              PG
+            </span>
+          ) : iconData ? (
+            <svg
+              viewBox={iconData?.vb}
+              className="w-4 h-4"
+              style={{ color: isActive ? iconData?.color : '#71717a' }}
+              dangerouslySetInnerHTML={{ __html: iconData?.body }}
+            />
+          ) : (
+            <span className="text-[8px] font-bold text-zinc-500">
+              {badge.label.substring(0, 2)}
+            </span>
+          )}
+        </div>
+
+        {/* Text & Toggle */}
+        <div className="flex-1 min-w-0 flex justify-between items-center pr-1">
+          <div className="flex flex-col">
+            <span
+              className={clsx(
+                'text-xs font-medium truncate',
+                isSelected ? 'text-indigo-200' : 'text-zinc-300'
+              )}
+            >
+              {badge.label}
+            </span>
+            {isActive && ratingValue && (
+              <span className="text-[9px] text-zinc-500 font-mono">{ratingValue}</span>
+            )}
+          </div>
+
+          <Switch
+            checked={isActive}
+            onChange={(val) => handleToggleVisibility(badge.id, val)}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            className={clsx(
+              isActive ? 'bg-indigo-600' : 'bg-zinc-700',
+              'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500'
+            )}
+          >
+            <span
+              className={clsx(
+                isActive ? 'translate-x-3.5' : 'translate-x-0.5',
+                'inline-block h-3 w-3 transform rounded-full bg-white transition-transform'
+              )}
+            />
+          </Switch>
+        </div>
+      </div>
+    );
+  };
+
+  // Helper for Listbox (Existing)
   const SelectBox = ({
     value,
     onChange,
@@ -215,7 +359,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       bodyClassName="p-2 space-y-1"
       header={
         <>
-          {/* Headless Combobox Search */}
           <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
             <div className="relative">
               <div className="relative w-full cursor-default overflow-hidden rounded-md border border-white/10 bg-[#18181b] text-left focus-within:border-indigo-500/50">
@@ -339,7 +482,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               />
             </div>
 
-            {/* PType Selector */}
             {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
               <div className="space-y-1 pt-1">
                 <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
@@ -366,7 +508,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </div>
             )}
 
-            {/* Headless Switch */}
             <Switch.Group>
               <div
                 className={clsx(
@@ -394,13 +535,15 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
     >
       <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
-        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Layers</h3>
+        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          Active Layers
+        </h3>
         <button
           onClick={(e) => {
             e.preventDefault();
             handleSelectAll(!allVisibleSelected);
           }}
-          className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group"
+          className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group outline-none"
         >
           <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
           <div
@@ -411,109 +554,37 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </button>
       </div>
 
-      {[...ALL_BADGES]
-        .sort((a, b) => {
-          const aActive = config.ratings.includes(a.id);
-          const bActive = config.ratings.includes(b.id);
-          if (aActive && !bActive) return -1;
-          if (!aActive && bActive) return 1;
-          return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
-        })
-        .map((badge) => {
-          const isActive = config.ratings.includes(badge.id);
-          const isSelected = selectedIds.has(badge.id);
-          const ratingValue = fetchedData[badge.id as keyof RatingsData];
-          const iconKey = getIconKey(badge.id);
-          const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="active-badges-list">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
+              {activeBadges.map((badge, index) => (
+                <Draggable key={badge.id} draggableId={badge.id} index={index}>
+                  {(provided, snapshot) => renderBadgeRow(badge, true, provided, snapshot.isDragging)}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
-          return (
-            <div
-            key={badge.id}
-            onClick={(e) => {
-              if (!isActive) return;
-              onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
-            }}
-            className={clsx(
-              'group flex items-center gap-3 px-2 py-2 rounded-md transition-all border',
-              isSelected
-                ? 'bg-indigo-900/20 border-indigo-500/30'
-                : 'border-transparent hover:bg-white/5',
-              !isActive ? 'opacity-40 grayscale' : 'cursor-pointer'
-            )}
-          >
-            <div
-              className="flex items-center justify-center p-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isActive) onSelect(badge.id, true);
-              }}
-            >
-              <div
-                className={clsx(
-                  'w-3.5 h-3.5 rounded border flex items-center justify-center transition-all',
-                  isSelected
-                    ? 'bg-indigo-500 border-indigo-400'
-                    : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500'
-                )}
-              >
-                {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
-              </div>
-            </div>
-            <div className="w-6 h-6 flex items-center justify-center bg-zinc-800 rounded shadow-sm border border-white/5">
-              {badge.id === 'age' ? (
-                <span className="text-[8px] font-bold border rounded px-0.5 border-zinc-500 text-zinc-400">
-                  PG
-                </span>
-              ) : iconData ? (
-                <svg
-                  viewBox={iconData?.vb}
-                  className="w-4 h-4"
-                  style={{ color: isActive ? iconData?.color : '#71717a' }}
-                  dangerouslySetInnerHTML={{ __html: iconData?.body }}
-                />
-              ) : (
-                <span className="text-[8px] font-bold text-zinc-500">
-                  {badge.label.substring(0, 2)}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 flex justify-between items-center pr-1">
-              <div className="flex flex-col">
-                <span
-                  className={clsx(
-                    'text-xs font-medium truncate',
-                    isSelected ? 'text-indigo-200' : 'text-zinc-300'
-                  )}
-                >
-                  {badge.label}
-                </span>
-                {isActive && ratingValue && (
-                  <span className="text-[9px] text-zinc-500 font-mono">{ratingValue}</span>
-                )}
-              </div>
-
-              {/* --- CHANGED: Replaced Eye Icon Button with Switch --- */}
-              <Switch
-                checked={isActive}
-                onChange={(val) => handleToggleVisibility(badge.id, val)}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()} // Important: Stop row selection
-                className={clsx(
-                  isActive ? 'bg-indigo-600' : 'bg-zinc-700',
-                  'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500'
-                )}
-              >
-                <span
-                  className={clsx(
-                    isActive ? 'translate-x-3.5' : 'translate-x-0.5',
-                    'inline-block h-3 w-3 transform rounded-full bg-white transition-transform'
-                  )}
-                />
-              </Switch>
-              {/* --------------------------------------------------- */}
-            </div>
+      {inactiveBadges.length > 0 && (
+        <>
+          <div className="px-2 mt-4 mb-2 pt-4 border-t border-white/5">
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Available Badges
+            </h3>
           </div>
-        );
-      })}
+          <div className="space-y-1 pb-4">
+            {inactiveBadges.map((badge) => (
+              <React.Fragment key={badge.id}>
+                {renderBadgeRow(badge, false)}
+              </React.Fragment>
+            ))}
+          </div>
+        </>
+      )}
     </SidebarLayout>
   );
 };
