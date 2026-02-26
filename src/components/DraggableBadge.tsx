@@ -142,8 +142,9 @@ const DraggableBadge: React.FC<Props> = ({
     ? `linear-gradient(135deg, ${bgRaw.split(':')[1]}, ${bgRaw.split(':')[2]})`
     : bgRaw;
 
-  const borderWidth = itemConfig?.borderW || 0;
-  const borderColor = itemConfig?.borderC || 'transparent';
+// Default border width is 0 unless set, default color is white
+  const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
+  const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
   const txtColor = itemConfig?.txt || '#ffffff';
 
   const iconSize = 36 * scale;
@@ -153,7 +154,6 @@ const DraggableBadge: React.FC<Props> = ({
   const textTop = '50%';
 
   const renderContent = () => {
-    // Added mal: '8.5' and anilist: '85%'
     const dummyVals: Record<string, string> = {
       imdb: '8.7',
       rt: '73%',
@@ -244,6 +244,12 @@ const DraggableBadge: React.FC<Props> = ({
     );
   };
 
+// Combine standard drop shadow with the selection glow
+  const dropShadow = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : '';
+  // Soft glow for selection
+  const glowShadow = isSelected ? `0 0 20px rgba(99, 102, 241, 0.6)` : '';
+  const finalBoxShadow = [glowShadow, dropShadow].filter(Boolean).join(', ') || 'none';
+
   return (
     <div
       onMouseDown={onMouseDown}
@@ -255,13 +261,13 @@ const DraggableBadge: React.FC<Props> = ({
         transform: `translate(${currentPos.x}px, ${currentPos.y}px)`,
         background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
-        outline: `${Math.max(borderWidth, isSelected ? 2 : 0)}px solid ${isSelected ? '#6366f1' : borderColor}`,
+        // Outline draws outside the element's dimensions by default
+        outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
         backdropFilter: `blur(${blurVal}px)`,
-        // CHANGED: Scale the shadow offset and blur dynamically based on intensity value
-        boxShadow:
-          shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : 'none',
+        boxShadow: finalBoxShadow,
         willChange: isDragging ? 'transform' : 'auto',
         touchAction: 'none',
+        transition: isDragging ? 'none' : 'box-shadow 0.2s ease-out',
       }}
     >
       {renderContent()}
