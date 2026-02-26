@@ -277,8 +277,10 @@ const StudioLayout: React.FC<{
             FreePosterAPI
           </h1>
         </div>
-        <div className="flex-1 max-w-xl mx-4">
-          <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
+        <div className="flex-1 mx-4 flex justify-center">
+          <div className="w-3/4">
+            <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
+          </div>
         </div>
         <div className="flex gap-2 items-center justify-end w-auto sm:w-64">
           <button

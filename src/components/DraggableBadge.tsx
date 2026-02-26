@@ -270,21 +270,25 @@ const DraggableBadge: React.FC<Props> = ({
 
 {/* Selection Checkmark Indicator */}
       {isSelected && (
-        <div 
-          className="absolute bg-indigo-500 border border-indigo-400 rounded flex items-center justify-center shadow-sm z-10 pointer-events-none transition-all animate-in zoom-in-50 duration-200"
+        <div
+          className="absolute bg-indigo-500 border border-indigo-400 rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{
-            top: `${-7 * scale}px`,
-            right: `${-7 * scale}px`,
-            width: `${14 * scale}px`,
-            height: `${14 * scale}px`,
+            // increase default checkmark size by 15% and keep it tightly coupled to badge `scale`
+            top: `${-7 * scale * 1.15}px`,
+            right: `${-7 * scale * 1.15}px`,
+            width: `${14 * scale * 1.15}px`,
+            height: `${14 * scale * 1.15}px`,
+            // disable transitions so changes to `scale` apply immediately and consistently
+            transition: 'none',
+            willChange: 'transform, width, height, top, right',
           }}
         >
-          <div 
+          <div
             className="bg-white"
             style={{
-              width: `${6 * scale}px`,
-              height: `${6 * scale}px`,
-              borderRadius: `${1.5 * scale}px`,
+              width: `${6 * scale * 1.15}px`,
+              height: `${6 * scale * 1.15}px`,
+              borderRadius: `${1.5 * scale * 1.15}px`,
             }}
           />
         </div>

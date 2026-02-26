@@ -50,8 +50,9 @@ interface RatingsData {
 }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection } = useEditor();
+const { setBatchSelection } = useEditor();
   const [searchQuery, setSearchQuery] = useState('');
+  const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [fetchedData, setFetchedData] = useState<RatingsData>({});
@@ -123,14 +124,30 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const updateConfig = (key: keyof PosterConfig, value: any) =>
     setConfig((prev) => ({ ...prev, [key]: value }));
 
-  const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
+const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
     const currentRatings = [...config.ratings];
     if (isVisible) {
-      // Add if not present
-      if (!currentRatings.includes(id)) setConfig({ ...config, ratings: [...currentRatings, id] });
+      if (!currentRatings.includes(id)) {
+        // Pushing to the START of the array makes it render at the bottom of the active UI list (last of toggled)
+        setConfig({ ...config, ratings: [id, ...currentRatings] });
+        setInactiveOrder(prev => prev.filter(x => x !== id));
+      }
     } else {
-      // Remove
       setConfig({ ...config, ratings: currentRatings.filter((r) => r !== id) });
+      // Prepending pushes it to the top of the inactive list (top of untoggled)
+      setInactiveOrder(prev => [id, ...prev.filter(x => x !== id)]);
+    }
+  };
+
+  const allVisible = config.ratings.length === ALL_BADGES.length;
+  const handleToggleAllVisibility = () => {
+    if (allVisible) {
+      setConfig({ ...config, ratings: [] });
+      setInactiveOrder(prev => [...[...config.ratings].reverse(), ...prev]);
+    } else {
+      const missing = ALL_BADGES.filter(b => !config.ratings.includes(b.id)).map(b => b.id);
+      setConfig({ ...config, ratings: [...missing, ...config.ratings] });
+      setInactiveOrder([]);
     }
   };
 
@@ -177,8 +194,14 @@ const allVisibleSelected =
     .map((id) => ALL_BADGES.find((b) => b.id === id))
     .filter((b): b is { id: RatingType; label: string } => b !== undefined);
 
-  const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id));
-
+const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
+    const idxA = inactiveOrder.indexOf(a.id);
+    const idxB = inactiveOrder.indexOf(b.id);
+    if (idxA === -1 && idxB === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
   // Shared row renderer for both active (draggable) and inactive items
   const renderBadgeRow = (
     badge: { id: RatingType; label: string },
@@ -199,8 +222,8 @@ const allVisibleSelected =
           if (!isActive) return;
           onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
         }}
-        className={clsx(
-          'group flex items-center gap-3 px-2 py-2 rounded-md transition-colors border',
+className={clsx(
+          'group flex items-center gap-3 px-2 py-2 rounded-md transition-colors border select-none',
           isSelected
             ? 'bg-indigo-900/20 border-indigo-500/30'
             : 'border-transparent hover:bg-white/5',
@@ -534,24 +557,51 @@ const allVisibleSelected =
         </>
       }
     >
-      <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
+    <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
         <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
           Active Layers
         </h3>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            handleSelectAll(!allVisibleSelected);
-          }}
-          className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors group outline-none"
-        >
-          <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
-          <div
-            className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleToggleAllVisibility();
+            }}
+            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
+            title="Toggle Visibility of All Badges"
           >
-            {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
-          </div>
-        </button>
+            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Toggle All</span>
+            <div
+              className={clsx(
+                "relative inline-flex h-3 w-5 items-center rounded-full transition-colors",
+                allVisible ? "bg-indigo-600" : "bg-zinc-700"
+              )}
+            >
+              <span
+                className={clsx(
+                  "inline-block h-2 w-2 transform rounded-full bg-white transition-transform",
+                  allVisible ? "translate-x-2.5" : "translate-x-0.5"
+                )}
+              />
+            </div>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleSelectAll(!allVisibleSelected);
+            }}
+            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
+            title="Select All for Editing"
+          >
+            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
+            <div
+              className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
+            >
+              {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
+            </div>
+          </button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
