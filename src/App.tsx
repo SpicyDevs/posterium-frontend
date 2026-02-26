@@ -10,6 +10,7 @@ import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { Sparkles, Github, RotateCcw, AlertTriangle } from 'lucide-react';
+import { usePosterHistory } from './hooks/usePosterHistory';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
@@ -89,7 +90,9 @@ const StudioLayout: React.FC<{
   handleReset: () => void;
   baseUrl: string;
   handleLoadConfig: (url: string) => void;
-}> = ({ config, setConfig, handleReset, baseUrl, handleLoadConfig }) => {
+  undo: () => void;
+  redo: () => void;
+}> = ({ config, setConfig, handleReset, baseUrl, handleLoadConfig, undo, redo }) => {
   const {
     activeTab,
     mobileSheetMode,
@@ -97,9 +100,65 @@ const StudioLayout: React.FC<{
     selectedIds,
     handleSelection,
     clearSelection,
+    setBatchSelection, // <-- 1. Extract setBatchSelection here
   } = useEditor();
+
   const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
 
+  // --- Global Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore keypresses if the user is typing in an input or text area
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+
+      // --- NEW: Select All: Ctrl+A or Cmd+A ---
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault(); // Stop the browser from selecting all page text
+        setBatchSelection(config.ratings);
+        return; // Exit early
+      }
+
+      // Undo: Ctrl+Z or Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y or Cmd+Y OR Ctrl+Shift+Z or Cmd+Shift+Z
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Disable Badge: Delete or Backspace
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+        e.preventDefault();
+        setConfig((prev) => ({
+          ...prev,
+          ratings: prev.ratings.filter((r) => !selectedIds.has(r)), // Removes from the active list
+        }));
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, selectedIds, setConfig, clearSelection, config.ratings, setBatchSelection]); // <-- 2. Added new dependencies here
+
+  // ... Rest of the StudioLayout component remains exactly the same ...
+
+  // ... Rest of the StudioLayout component remains exactly the same ...
   // --- SIDEBAR RESIZE LOGIC ---
   const [leftWidth, setLeftWidth] = useState(288); // Default w-72 (288px)
   const [rightWidth, setRightWidth] = useState(320); // Default w-80 (320px)
@@ -343,7 +402,13 @@ const StudioLayout: React.FC<{
 };
 
 const App: React.FC = () => {
-  const [config, setConfig] = useState<PosterConfig>(() => {
+  // Swapped useState for usePosterHistory
+  const {
+    state: config,
+    setState: setConfig,
+    undo,
+    redo,
+  } = usePosterHistory(() => {
     try {
       return localStorage.getItem(STORAGE_KEY)
         ? JSON.parse(localStorage.getItem(STORAGE_KEY)!)
@@ -357,6 +422,7 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
+
   const handleLoadConfig = (url: string) => {
     const newConfig = parseUrlToConfig(url);
     setConfig(newConfig);
@@ -365,10 +431,10 @@ const App: React.FC = () => {
       setBaseUrl(urlObj.origin);
     } catch (e) {}
   };
+
   const handleReset = () => {
     setConfig(DEFAULT_CONFIG);
     localStorage.removeItem(STORAGE_KEY);
-    // Dispatch an event for PreviewCanvas to catch
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   };
 
@@ -380,6 +446,8 @@ const App: React.FC = () => {
         handleReset={handleReset}
         baseUrl={baseUrl}
         handleLoadConfig={handleLoadConfig}
+        undo={undo}
+        redo={redo}
       />
     </EditorProvider>
   );
