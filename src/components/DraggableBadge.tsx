@@ -283,5 +283,8 @@ const DraggableBadge: React.FC<Props> = ({
           <CheckSquare size={12 * scale} className="text-white" />
         </div>
       )}
+    </div>
+  );
+};
 
 export default DraggableBadge;
