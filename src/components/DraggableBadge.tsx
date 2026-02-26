@@ -244,11 +244,8 @@ const DraggableBadge: React.FC<Props> = ({
     );
   };
 
-// Combine standard drop shadow with the selection glow
   const dropShadow = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : '';
-  // Soft glow for selection
-  const glowShadow = isSelected ? `0 0 20px rgba(99, 102, 241, 0.6)` : '';
-  const finalBoxShadow = [glowShadow, dropShadow].filter(Boolean).join(', ') || 'none';
+  const finalBoxShadow = dropShadow || 'none';
 
   return (
     <div
@@ -261,7 +258,6 @@ const DraggableBadge: React.FC<Props> = ({
         transform: `translate(${currentPos.x}px, ${currentPos.y}px)`,
         background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
-        // Outline draws outside the element's dimensions by default
         outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
         backdropFilter: `blur(${blurVal}px)`,
         boxShadow: finalBoxShadow,
@@ -271,6 +267,24 @@ const DraggableBadge: React.FC<Props> = ({
       }}
     >
       {renderContent()}
+
+      {/* Selection Checkmark Indicator */}
+      {isSelected && (
+        <div className="absolute -top-2.5 -right-2.5 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center shadow-sm border-2 border-zinc-900 z-10 pointer-events-none transition-all animate-in zoom-in-50 duration-200">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+      )}
     </div>
   );
 };
