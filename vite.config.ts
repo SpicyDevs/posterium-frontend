@@ -1,24 +1,48 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import webfontDownload from 'vite-plugin-webfont-dl';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     webfontDownload(),
+    visualizer({
+      open: false,
+      filename: 'dist/stats.html',
+      logLevel: 'warn',
+    }),
   ],
   build: {
-    target: 'esnext', // Use modern JS features (smaller bundle size)
-    minify: 'esbuild', // Faster build time
+    target: 'ES2020',
+    minify: 'esbuild',
+    // Optimize for Cloudflare Pages
+    cssCodeSplit: true,
+    sourcemap: false, // Disable source maps in production to reduce bundle size
     rollupOptions: {
       output: {
         // Split vendor logic from app logic for better caching
         manualChunks: {
           vendor: ['react', 'react-dom'],
           ui: ['lucide-react'],
+          headlessui: ['@headlessui/react'],
         },
+        // Optimize chunk naming for cache busting
+        chunkFileNames: 'assets/chunk-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
+    },
+    // Preload important modules
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1000, // Warn if chunks exceed 1MB
+  },
+  // Optimize resolve to reduce bundle size
+  resolve: {
+    alias: {
+      // Use production builds of certain dependencies
+      'react/jsx-runtime': 'react/jsx-runtime',
     },
   },
 });

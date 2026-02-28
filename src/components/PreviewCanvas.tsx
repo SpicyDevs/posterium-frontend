@@ -178,6 +178,8 @@ const [isImageLoading, setIsImageLoading] = useState(true);
   }, []);
 
 const handleDragMove = (id: RatingType, dx: number, dy: number) => {
+    // Validate dx/dy to prevent NaN or Infinity values that could break rendering
+    if (!isFinite(dx) || !isFinite(dy)) return;
     setDragSession({ id, dx, dy });
   };
 
@@ -218,13 +220,16 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         
-        const bX = selWidth * 0.8;
-        const bY = selHeight * 0.8;
+        // Allow badges to go slightly off-screen (40% of their size) for better UX
+        const offsetX = selWidth * 0.4;
+        const offsetY = selHeight * 0.4;
 
         let nx = startX + dx;
         let ny = startY + dy;
-        nx = Math.max(-bX, Math.min(nx, CANVAS_WIDTH - selWidth + bX));
-        ny = Math.max(-bY, Math.min(ny, CANVAS_HEIGHT - selHeight + bY));
+        
+        // Ensure badges stay mostly visible on canvas
+        nx = Math.max(-offsetX, Math.min(nx, CANVAS_WIDTH - selWidth + offsetX));
+        ny = Math.max(-offsetY, Math.min(ny, CANVAS_HEIGHT - selHeight + offsetY));
 
         newItems[targetId]!.x = nx;
         newItems[targetId]!.y = ny;
@@ -399,6 +404,10 @@ return (
           let x = itemConfig?.x !== undefined ? itemConfig.x : auto.x;
           let y = itemConfig?.y !== undefined ? itemConfig.y : auto.y;
 
+          // Ensure x and y are valid numbers (fallback to auto if invalid)
+          if (!isFinite(x)) x = auto.x;
+          if (!isFinite(y)) y = auto.y;
+
           // Check if this badge is overlapping the hovered badge
           let isObscuring = false;
           if (hoveredBadgeId && hoveredBadgeId !== id) {
@@ -415,10 +424,12 @@ return (
               y += dragSession.dy;
               
               const selScale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
-              const bX = (BASE_BADGE_W * selScale) * 0.8;
-              const bY = (BASE_BADGE_H * selScale) * 0.8;
-              x = Math.max(-bX, Math.min(x, CANVAS_WIDTH - (BASE_BADGE_W * selScale) + bX));
-              y = Math.max(-bY, Math.min(y, CANVAS_HEIGHT - (BASE_BADGE_H * selScale) + bY));
+              const bW = BASE_BADGE_W * selScale;
+              const bH = BASE_BADGE_H * selScale;
+              const offsetX = bW * 0.4;
+              const offsetY = bH * 0.4;
+              x = Math.max(-offsetX, Math.min(x, CANVAS_WIDTH - bW + offsetX));
+              y = Math.max(-offsetY, Math.min(y, CANVAS_HEIGHT - bH + offsetY));
             }
           }
 

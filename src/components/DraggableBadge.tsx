@@ -62,7 +62,10 @@ const DraggableBadge: React.FC<Props> = ({
     const deltaX = (clientX - mouseX) / canvasScale;
     const deltaY = (clientY - mouseY) / canvasScale;
 
-    onDragMove(badgeId, deltaX, deltaY);
+    // Prevent NaN or Infinity from breaking the drag session
+    if (isFinite(deltaX) && isFinite(deltaY)) {
+      onDragMove(badgeId, deltaX, deltaY);
+    }
   };
 
   const handleEnd = (e: MouseEvent | TouchEvent) => {
