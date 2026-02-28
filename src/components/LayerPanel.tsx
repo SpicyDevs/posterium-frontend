@@ -9,7 +9,7 @@ import {
   Transition,
 } from '@headlessui/react';
 import { Check, ChevronsUpDown, Search, Loader2, CheckSquare, GripVertical } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
@@ -206,7 +206,7 @@ const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).
   const renderBadgeRow = (
     badge: { id: RatingType; label: string },
     isActive: boolean,
-    provided?: any,
+    provided?: DraggableProvided,
     isDragging?: boolean
   ) => {
     const isSelected = selectedIds.has(badge.id);

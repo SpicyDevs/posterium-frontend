@@ -3,3 +3,11 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Force revalidation for the main entry point to ensure instant updates
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Cache Vite's immutable hashed assets permanently (1 year)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
