@@ -13,7 +13,7 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { viewOptions, mobileSheetMode } = useEditor();
+const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
  const [autoScale, setAutoScale] = useState(1);
@@ -272,7 +272,7 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
     setImageError(true);
   };
 
-  return (
+return (
     <div
       ref={containerRef}
       className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b] touch-none"
@@ -280,6 +280,9 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) clearSelection();
+      }}
     >
 {/* Mobile Floating Action Bar */}
       <div
@@ -323,7 +326,7 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
         </div>
       </div>
 
-      {/* The Poster Canvas Container */}
+    {/* The Poster Canvas Container */}
       <div
         style={{
           width: CANVAS_WIDTH,
@@ -332,15 +335,18 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) clearSelection();
+        }}
       >
         {isImageLoading && !imageError && (
-          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
+          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center pointer-events-none">
             <Loader2 className="animate-spin text-indigo-500" size={40} />
           </div>
         )}
 
         {imageError && (
-          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex flex-col items-center justify-center text-red-400 gap-2">
+          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex flex-col items-center justify-center text-red-400 gap-2 pointer-events-none">
             <AlertCircle size={32} />
             <span className="text-xs font-mono">Failed to load</span>
           </div>
@@ -383,15 +389,11 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
           const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
 
           // Check if this badge is IN FRONT OF the hovered badge AND overlapping it
-          let isObscuring = false;
+        let isObscuring = false;
           if (hoveredBadgeId && hoveredBadgeId !== id) {
             const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
-            // Higher index = higher z-index (rendered later)
-            if (index > hoveredIdx) {
-              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
-            }
+            isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
           }
-
           return (
             <DraggableBadge
               key={id}
