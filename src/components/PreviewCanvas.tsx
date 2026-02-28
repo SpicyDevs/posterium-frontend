@@ -16,13 +16,37 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const { viewOptions, mobileSheetMode } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // -- VIEW STATE --
-  const [autoScale, setAutoScale] = useState(1);
+ const [autoScale, setAutoScale] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false); // New Error State
   const [isPanning, setIsPanning] = useState(false);
+  const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
+
+  // -- GEOMETRY CALCULATION FOR HOVER OVERLAPPING --
+  const getBadgeRect = (id: RatingType, index: number) => {
+    const itemConfig = config.items[id];
+    const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+    const x = itemConfig?.x ?? auto.x;
+    const y = itemConfig?.y ?? auto.y;
+    const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
+    const w = BASE_BADGE_W * scale;
+    const h = BASE_BADGE_H * scale;
+    return { x, y, w, h };
+  };
+
+  const checkOverlap = (id1: RatingType, idx1: number, id2: RatingType, idx2: number) => {
+    const r1 = getBadgeRect(id1, idx1);
+    const r2 = getBadgeRect(id2, idx2);
+    // Standard AABB (Axis-Aligned Bounding Box) Collision
+    return (
+      r1.x < r2.x + r2.w &&
+      r1.x + r1.w > r2.x &&
+      r1.y < r2.y + r2.h &&
+      r1.y + r1.h > r2.y
+    );
+  };
 
   // -- GESTURE STATE --
   const lastDist = useRef<number | null>(null);
@@ -205,7 +229,7 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
-  
+
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     const params = new URLSearchParams();
@@ -358,6 +382,16 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
           const itemConfig = config.items[id];
           const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
 
+          // Check if this badge is IN FRONT OF the hovered badge AND overlapping it
+          let isObscuring = false;
+          if (hoveredBadgeId && hoveredBadgeId !== id) {
+            const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
+            // Higher index = higher z-index (rendered later)
+            if (index > hoveredIdx) {
+              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
+            }
+          }
+
           return (
             <DraggableBadge
               key={id}
@@ -369,10 +403,12 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
               onPositionChange={handlePositionChange}
               isSelected={selectedIds.has(id)}
               onSelect={onSelect}
+              isObscuring={isObscuring}
+              onHoverChange={(isHovered) => setHoveredBadgeId(isHovered ? id : null)}
             />
           );
         })}
-      </div>
+            </div>
     </div>
   );
 };
