@@ -207,9 +207,14 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
       }
 
       const applyDelta = (targetId: RatingType) => {
-        let startX = newItems[targetId]?.x;
-        let startY = newItems[targetId]?.y;
-        
+        // Guarantee the item exists so we can safely mutate its properties
+        if (!newItems[targetId]) {
+          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
+          newItems[targetId] = { x: auto.x, y: auto.y };
+        }
+
+        let startX = newItems[targetId].x;
+        let startY = newItems[targetId].y;
         if (startX === undefined || startY === undefined) {
           const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
           startX = startX ?? auto.x;
