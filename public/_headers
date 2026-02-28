@@ -34,11 +34,7 @@ https://fonts.gstatic.com/*
 /api/*
   Cache-Control: public, max-age=60, must-revalidate
   
-# Preload critical resources
-/
-  Link: </assets/vendor.*.js>; rel=preload; as=script, </assets/index.*.css>; rel=preload; as=style
-  Link: <https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap>; rel=preload; as=style
-  
-# Enable Brotli compression (Cloudflare auto-detects)
-/*
-  Content-Encoding: br
+# Preload critical resources (handled in HTML)
+# removed wildcard patterns which caused invalid fetches
+
+# Compression is automatically handled by Cloudflare; no manual header needed
