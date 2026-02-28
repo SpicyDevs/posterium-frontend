@@ -40,3 +40,17 @@ input[type='range']:focus::-webkit-slider-thumb {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
+
+
+/* Add this at the very bottom of the file */
+
+/* --- Badge Hover Effects --- */
+.badge-item {
+  transition: opacity 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+/* When hovering a badge, decrease opacity of all badges rendered AFTER it (which sit in front of it) */
+.badge-item:hover ~ .badge-item {
+  opacity: 0.35 !important;
+  pointer-events: none;
+}

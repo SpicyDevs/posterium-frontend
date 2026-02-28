@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
+import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
-import { calculateAutoPosition, DEFAULT_API_BASE } from '../utils';
-import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react'; // Added AlertCircle for error state
+import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
+import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -150,9 +150,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
 
-  const handlePositionChange = (id: RatingType, x: number, y: number) => {
+const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
+      
+      // Ensure all items have initial coordinates before applying deltas
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
           const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
@@ -163,7 +165,48 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           }
         });
       }
-      newItems[id] = { ...newItems[id], x, y };
+
+      // Calculate movement delta
+      let oldX = newItems[id]?.x;
+      let oldY = newItems[id]?.y;
+      if (oldX === undefined || oldY === undefined) {
+        const auto = calculateAutoPosition(id, prev.ratings.indexOf(id), prev.ratings.length, prev);
+        oldX = oldX ?? auto.x;
+        oldY = oldY ?? auto.y;
+      }
+      const dx = newX - oldX;
+      const dy = newY - oldY;
+
+      // Apply to all selected if dragging a selected item
+      if (selectedIds.has(id) && selectedIds.size > 1) {
+        selectedIds.forEach((selId) => {
+          let sx = newItems[selId]?.x;
+          let sy = newItems[selId]?.y;
+          if (sx === undefined || sy === undefined) {
+            const auto = calculateAutoPosition(selId, prev.ratings.indexOf(selId), prev.ratings.length, prev);
+            sx = sx ?? auto.x;
+            sy = sy ?? auto.y;
+          }
+          
+          const selScale = getScale(prev.size) * (newItems[selId]?.scale ?? 1.0);
+          const selWidth = BASE_BADGE_W * selScale;
+          const selHeight = BASE_BADGE_H * selScale;
+          
+          // Allow 80% out of bounds
+          const bX = selWidth * 0.8;
+          const bY = selHeight * 0.8;
+
+          let nx = sx + dx;
+          let ny = sy + dy;
+          nx = Math.max(-bX, Math.min(nx, CANVAS_WIDTH - selWidth + bX));
+          ny = Math.max(-bY, Math.min(ny, CANVAS_HEIGHT - selHeight + bY));
+
+          newItems[selId] = { ...newItems[selId], x: nx, y: ny };
+        });
+      } else {
+        newItems[id] = { ...newItems[id], x: newX, y: newY };
+      }
+
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
@@ -269,7 +312,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
-        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform overflow-hidden"
+        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
       >
         {isImageLoading && !imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center">
