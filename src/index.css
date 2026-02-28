@@ -41,8 +41,11 @@ input[type='range']:focus::-webkit-slider-thumb {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
-/* --- Badge Overlap Hover Effects --- */
 .badge-item {
   transition: opacity 0.2s ease-out, box-shadow 0.2s ease-out;
   z-index: 50;
+}
+
+.badge-item:hover {
+  z-index: 60 !important;
 }

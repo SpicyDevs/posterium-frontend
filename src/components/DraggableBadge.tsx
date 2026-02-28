@@ -2,20 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   RatingType,
   PosterConfig,
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
   BASE_BADGE_W,
   BASE_BADGE_H,
 } from "../types";
 import { getScale } from "../utils";
 import { BADGE_ICONS } from "../constants";
+
 interface Props {
   badgeId: RatingType;
   config: PosterConfig;
   x: number;
   y: number;
   canvasScale: number;
-  onPositionChange: (id: RatingType, x: number, y: number) => void;
+  onDragMove: (id: RatingType, dx: number, dy: number) => void;
+  onDragEnd: (id: RatingType, dx: number, dy: number) => void;
   isSelected: boolean;
   onSelect: (id: RatingType, multi: boolean) => void;
   isObscuring?: boolean;
@@ -28,7 +28,8 @@ const DraggableBadge: React.FC<Props> = ({
   x,
   y,
   canvasScale,
-  onPositionChange,
+  onDragMove,
+  onDragEnd,
   isSelected,
   onSelect,
   isObscuring,
@@ -44,8 +45,6 @@ const DraggableBadge: React.FC<Props> = ({
   const dragStartRef = useRef<{
     mouseX: number;
     mouseY: number;
-    elemX: number;
-    elemY: number;
   } | null>(null);
 
   const handleStart = (clientX: number, clientY: number) => {
@@ -53,32 +52,40 @@ const DraggableBadge: React.FC<Props> = ({
     dragStartRef.current = {
       mouseX: clientX,
       mouseY: clientY,
-      elemX: x,
-      elemY: y,
     };
   };
 
   const handleMove = (clientX: number, clientY: number) => {
     if (!dragStartRef.current) return;
-    const { mouseX, mouseY, elemX, elemY } = dragStartRef.current;
+    const { mouseX, mouseY } = dragStartRef.current;
 
     const deltaX = (clientX - mouseX) / canvasScale;
     const deltaY = (clientY - mouseY) / canvasScale;
 
-    let nextX = elemX + deltaX;
-    let nextY = elemY + deltaY;
-
-    // Allow 80% out of bounds
-    const boundX = width * 0.8;
-    const boundY = height * 0.8;
-    nextX = Math.max(-boundX, Math.min(nextX, CANVAS_WIDTH - width + boundX));
-    nextY = Math.max(-boundY, Math.min(nextY, CANVAS_HEIGHT - height + boundY));
-
-    onPositionChange(badgeId, nextX, nextY);
+    onDragMove(badgeId, deltaX, deltaY);
   };
 
-  const handleEnd = () => {
+  const handleEnd = (e: MouseEvent | TouchEvent) => {
     setIsDragging(false);
+    if (!dragStartRef.current) return;
+    
+    const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+    const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+    
+    const dx = (clientX - dragStartRef.current.mouseX) / canvasScale;
+    const dy = (clientY - dragStartRef.current.mouseY) / canvasScale;
+
+    // Isolate selection if it was a tiny movement (click) without multi-select keys
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+      const isShift = ('shiftKey' in e) ? e.shiftKey : false;
+      const isCtrl = ('ctrlKey' in e) ? e.ctrlKey : false;
+      const isMeta = ('metaKey' in e) ? e.metaKey : false;
+      if (isSelected && !(isShift || isCtrl || isMeta)) {
+        onSelect(badgeId, false);
+      }
+    }
+
+    onDragEnd(badgeId, dx, dy);
     dragStartRef.current = null;
   };
 
@@ -86,13 +93,13 @@ const DraggableBadge: React.FC<Props> = ({
     if (!isDragging) return;
 
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
-    const onMouseUp = () => handleEnd();
+    const onMouseUp = (e: MouseEvent) => handleEnd(e);
 
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       handleMove(e.touches[0].clientX, e.touches[0].clientY);
     };
-    const onTouchEnd = () => handleEnd();
+    const onTouchEnd = (e: TouchEvent) => handleEnd(e);
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -105,14 +112,12 @@ const DraggableBadge: React.FC<Props> = ({
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [isDragging, canvasScale, width, height, x, y]);
+  }, [isDragging, canvasScale]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    // Only alter selection if the clicked badge isn't already selected, OR if the user is holding shift.
-    // This allows clicking a group to start dragging without deselecting the group.
-    if (!isSelected || e.shiftKey || e.ctrlKey || e.metaKey) {
+    if (!isSelected) {
       onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
     }
     handleStart(e.clientX, e.clientY);

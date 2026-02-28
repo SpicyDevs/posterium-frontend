@@ -19,10 +19,13 @@ const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
  const [autoScale, setAutoScale] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isImageLoading, setIsImageLoading] = useState(true);
+const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false); // New Error State
   const [isPanning, setIsPanning] = useState(false);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
+  
+  // -- DRAG SESSION STATE --
+  const [dragSession, setDragSession] = useState<{ id: RatingType, dx: number, dy: number } | null>(null);
 
   // -- GEOMETRY CALCULATION FOR HOVER OVERLAPPING --
   const getBadgeRect = (id: RatingType, index: number) => {
@@ -174,56 +177,63 @@ const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
 
-const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
+const handleDragMove = (id: RatingType, dx: number, dy: number) => {
+    setDragSession({ id, dx, dy });
+  };
+
+  const handleDragEnd = (id: RatingType, dx: number, dy: number) => {
+    setDragSession(null);
+    if (dx === 0 && dy === 0) return;
+
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
+      
+      // Deep copy to prevent direct state mutation anti-pattern
+      (Object.keys(newItems) as RatingType[]).forEach(k => {
+        newItems[k] = { ...newItems[k] };
+      });
+
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
           const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
           if (!newItems[r]) newItems[r] = { x: auto.x, y: auto.y };
           else {
-            if (newItems[r]!.x === undefined) newItems[r]!.x = auto.x;
-            if (newItems[r]!.y === undefined) newItems[r]!.y = auto.y;
+            newItems[r]!.x = newItems[r]!.x ?? auto.x;
+            newItems[r]!.y = newItems[r]!.y ?? auto.y;
           }
         });
       }
 
-      let oldX = newItems[id]?.x;
-      let oldY = newItems[id]?.y;
-      if (oldX === undefined || oldY === undefined) {
-        const auto = calculateAutoPosition(id, prev.ratings.indexOf(id), prev.ratings.length, prev);
-        oldX = oldX ?? auto.x;
-        oldY = oldY ?? auto.y;
-      }
-      const dx = newX - oldX;
-      const dy = newY - oldY;
+      const applyDelta = (targetId: RatingType) => {
+        let startX = newItems[targetId]?.x;
+        let startY = newItems[targetId]?.y;
+        
+        if (startX === undefined || startY === undefined) {
+          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
+          startX = startX ?? auto.x;
+          startY = startY ?? auto.y;
+        }
+
+        const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
+        const selWidth = BASE_BADGE_W * selScale;
+        const selHeight = BASE_BADGE_H * selScale;
+        
+        const bX = selWidth * 0.8;
+        const bY = selHeight * 0.8;
+
+        let nx = startX + dx;
+        let ny = startY + dy;
+        nx = Math.max(-bX, Math.min(nx, CANVAS_WIDTH - selWidth + bX));
+        ny = Math.max(-bY, Math.min(ny, CANVAS_HEIGHT - selHeight + bY));
+
+        newItems[targetId]!.x = nx;
+        newItems[targetId]!.y = ny;
+      };
 
       if (selectedIds.has(id) && selectedIds.size > 1) {
-        selectedIds.forEach((selId) => {
-          let sx = newItems[selId]?.x;
-          let sy = newItems[selId]?.y;
-          if (sx === undefined || sy === undefined) {
-            const auto = calculateAutoPosition(selId, prev.ratings.indexOf(selId), prev.ratings.length, prev);
-            sx = sx ?? auto.x;
-            sy = sy ?? auto.y;
-          }
-          
-          const selScale = getScale(prev.size) * (newItems[selId]?.scale ?? 1.0);
-          const selWidth = BASE_BADGE_W * selScale;
-          const selHeight = BASE_BADGE_H * selScale;
-          
-          const bX = selWidth * 0.8;
-          const bY = selHeight * 0.8;
-
-          let nx = sx + dx;
-          let ny = sy + dy;
-          nx = Math.max(-bX, Math.min(nx, CANVAS_WIDTH - selWidth + bX));
-          ny = Math.max(-bY, Math.min(ny, CANVAS_HEIGHT - selHeight + bY));
-
-          newItems[selId] = { ...newItems[selId], x: nx, y: ny };
-        });
+        selectedIds.forEach(applyDelta);
       } else {
-        newItems[id] = { ...newItems[id], x: newX, y: newY };
+        applyDelta(id);
       }
 
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
@@ -383,26 +393,45 @@ return (
           onError={handleImageError}
         />
 
-        {config.ratings.map((id: RatingType, index: number) => {
+       {config.ratings.map((id: RatingType, index: number) => {
           const auto = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
-          const hasManual = itemConfig?.x !== undefined && itemConfig?.y !== undefined;
+          let x = itemConfig?.x !== undefined ? itemConfig.x : auto.x;
+          let y = itemConfig?.y !== undefined ? itemConfig.y : auto.y;
 
-          // Check if this badge is IN FRONT OF the hovered badge AND overlapping it
-        let isObscuring = false;
+          // Check if this badge is overlapping the hovered badge
+          let isObscuring = false;
           if (hoveredBadgeId && hoveredBadgeId !== id) {
             const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
             isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
           }
+
+          // Apply transient drag visual delta
+          if (dragSession) {
+            const isTarget = dragSession.id === id;
+            const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
+            if (isTarget || isGroup) {
+              x += dragSession.dx;
+              y += dragSession.dy;
+              
+              const selScale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
+              const bX = (BASE_BADGE_W * selScale) * 0.8;
+              const bY = (BASE_BADGE_H * selScale) * 0.8;
+              x = Math.max(-bX, Math.min(x, CANVAS_WIDTH - (BASE_BADGE_W * selScale) + bX));
+              y = Math.max(-bY, Math.min(y, CANVAS_HEIGHT - (BASE_BADGE_H * selScale) + bY));
+            }
+          }
+
           return (
             <DraggableBadge
               key={id}
               badgeId={id}
               config={config}
-              x={hasManual ? itemConfig!.x! : auto.x}
-              y={hasManual ? itemConfig!.y! : auto.y}
+              x={x}
+              y={y}
               canvasScale={currentScale}
-              onPositionChange={handlePositionChange}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
               isSelected={selectedIds.has(id)}
               onSelect={onSelect}
               isObscuring={isObscuring}
