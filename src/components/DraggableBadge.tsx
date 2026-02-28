@@ -37,7 +37,7 @@ const DraggableBadge: React.FC<Props> = ({
   const width = BASE_BADGE_W * scale;
   const height = BASE_BADGE_H * scale;
 
-  const [isDragging, setIsDragging] = useState(false);
+const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{
     mouseX: number;
     mouseY: number;
@@ -46,6 +46,44 @@ const DraggableBadge: React.FC<Props> = ({
   } | null>(null);
   const [currentPos, setCurrentPos] = useState({ x, y });
   const posRef = useRef({ x, y });
+  const initialPosRef = useRef({ x, y });
+
+  // Synchronize dragging for all selected badges
+  useEffect(() => {
+    if (!isSelected || isDragging) return;
+
+    const onGroupDragStart = () => {
+      initialPosRef.current = { x: posRef.current.x, y: posRef.current.y };
+    };
+
+    const onGroupDragMove = (e: any) => {
+      const { dx, dy } = e.detail;
+      const limitX = width * 0.8;
+      const limitY = height * 0.8;
+      let nextX = initialPosRef.current.x + dx;
+      let nextY = initialPosRef.current.y + dy;
+
+      nextX = Math.max(-limitX, Math.min(nextX, CANVAS_WIDTH - width + limitX));
+      nextY = Math.max(-limitY, Math.min(nextY, CANVAS_HEIGHT - height + limitY));
+
+      setCurrentPos({ x: nextX, y: nextY });
+      posRef.current = { x: nextX, y: nextY };
+    };
+
+    const onGroupDragEnd = () => {
+      onPositionChange(badgeId, posRef.current.x, posRef.current.y);
+    };
+
+    window.addEventListener('badge-group-start', onGroupDragStart as EventListener);
+    window.addEventListener('badge-group-move', onGroupDragMove as EventListener);
+    window.addEventListener('badge-group-end', onGroupDragEnd as EventListener);
+
+    return () => {
+      window.removeEventListener('badge-group-start', onGroupDragStart as EventListener);
+      window.removeEventListener('badge-group-move', onGroupDragMove as EventListener);
+      window.removeEventListener('badge-group-end', onGroupDragEnd as EventListener);
+    };
+  }, [isSelected, isDragging, width, height, badgeId, onPositionChange]);
 
   useEffect(() => {
     if (!isDragging) {
@@ -62,6 +100,9 @@ const DraggableBadge: React.FC<Props> = ({
       elemX: currentPos.x,
       elemY: currentPos.y,
     };
+    if (isSelected) {
+      window.dispatchEvent(new CustomEvent('badge-group-start'));
+    }
   };
 
   const handleMove = (clientX: number, clientY: number) => {
@@ -71,23 +112,37 @@ const DraggableBadge: React.FC<Props> = ({
     const deltaX = (clientX - mouseX) / canvasScale;
     const deltaY = (clientY - mouseY) / canvasScale;
 
+    const limitX = width * 0.8;
+    const limitY = height * 0.8;
+
     let nextX = elemX + deltaX;
     let nextY = elemY + deltaY;
 
-    nextX = Math.max(0, Math.min(nextX, CANVAS_WIDTH - width));
-    nextY = Math.max(0, Math.min(nextY, CANVAS_HEIGHT - height));
+    nextX = Math.max(-limitX, Math.min(nextX, CANVAS_WIDTH - width + limitX));
+    nextY = Math.max(-limitY, Math.min(nextY, CANVAS_HEIGHT - height + limitY));
 
     const newPos = { x: nextX, y: nextY };
     setCurrentPos(newPos);
     posRef.current = newPos;
+
+    if (isSelected) {
+      window.dispatchEvent(
+        new CustomEvent('badge-group-move', {
+          detail: { dx: newPos.x - elemX, dy: newPos.y - elemY },
+        })
+      );
+    }
   };
 
   const handleEnd = () => {
     setIsDragging(false);
     dragStartRef.current = null;
     onPositionChange(badgeId, posRef.current.x, posRef.current.y);
+    if (isSelected) {
+      window.dispatchEvent(new CustomEvent('badge-group-end'));
+    }
   };
-
+  
   useEffect(() => {
     if (!isDragging) return;
 
@@ -260,8 +315,9 @@ const DraggableBadge: React.FC<Props> = ({
         borderRadius: `${radiusVal}px`,
         outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
         backdropFilter: `blur(${blurVal}px)`,
+        WebkitBackdropFilter: `blur(${blurVal}px)`,
         boxShadow: finalBoxShadow,
-        willChange: isDragging ? 'transform' : 'auto',
+        // Removed willChange: 'transform' here as it snaps the backdrop-filter in Chromium resulting in a duplicated/static background bug during drag
         touchAction: 'none',
         transition: isDragging ? 'none' : 'box-shadow 0.2s ease-out',
       }}
