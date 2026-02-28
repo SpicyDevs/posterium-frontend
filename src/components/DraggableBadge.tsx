@@ -38,7 +38,6 @@ const DraggableBadge: React.FC<Props> = ({
   const height = BASE_BADGE_H * scale;
 
  const [isDragging, setIsDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const dragStartRef = useRef<{
     mouseX: number;
     mouseY: number;
@@ -108,15 +107,19 @@ const DraggableBadge: React.FC<Props> = ({
   const onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
+    // Only alter selection if the clicked badge isn't already selected, OR if the user is holding shift.
+    // This allows clicking a group to start dragging without deselecting the group.
+    if (!isSelected || e.shiftKey || e.ctrlKey || e.metaKey) {
+      onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
+    }
     handleStart(e.clientX, e.clientY);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
-    // Prevent default to stop synthetic mouse events from firing after touch
-    // (but passive needs to be true/false depending on the browser, React handles this safely here)
-    onSelect(badgeId, false); // Multi-select is hard on mobile, default to false
+    if (!isSelected) {
+      onSelect(badgeId, false);
+    }
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
   };
 
@@ -235,38 +238,30 @@ const DraggableBadge: React.FC<Props> = ({
       </>
     );
   };
-
- const dropShadow = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : '';
+const dropShadow = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : '';
   const finalBoxShadow = dropShadow || 'none';
-
-  // Apply slanted watermark lines strictly when hovered
-  const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
-  const finalBackground = isHovered
-    ? `${slantPattern}, ${backgroundStyle}`
-    : backgroundStyle;
 
   return (
     <div
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`badge-item absolute top-0 left-0 select-none cursor-move z-50`}
+      className={`badge-item absolute select-none cursor-move z-50`}
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        transform: `translate(${x}px, ${y}px)`,
-        background: finalBackground,
+        left: `${x}px`,
+        top: `${y}px`,
+        background: backgroundStyle,
         borderRadius: `${radiusVal}px`,
         outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
         backdropFilter: `blur(${blurVal}px)`,
         WebkitBackdropFilter: `blur(${blurVal}px)`,
         boxShadow: finalBoxShadow,
-        willChange: isDragging ? 'transform' : 'auto',
         touchAction: 'none',
-        transition: isDragging ? 'none' : 'box-shadow 0.2s ease-out',
+        transform: 'translateZ(0)',
       }}
-    >     {renderContent()}
+    >
+         {renderContent()}
 
 {/* Selection Checkmark Indicator */}
       {isSelected && (

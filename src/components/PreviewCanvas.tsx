@@ -153,8 +153,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
-      
-      // Ensure all items have initial coordinates before applying deltas
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
           const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
@@ -166,7 +164,6 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
         });
       }
 
-      // Calculate movement delta
       let oldX = newItems[id]?.x;
       let oldY = newItems[id]?.y;
       if (oldX === undefined || oldY === undefined) {
@@ -177,7 +174,6 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
       const dx = newX - oldX;
       const dy = newY - oldY;
 
-      // Apply to all selected if dragging a selected item
       if (selectedIds.has(id) && selectedIds.size > 1) {
         selectedIds.forEach((selId) => {
           let sx = newItems[selId]?.x;
@@ -192,7 +188,6 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
           const selWidth = BASE_BADGE_W * selScale;
           const selHeight = BASE_BADGE_H * selScale;
           
-          // Allow 80% out of bounds
           const bX = selWidth * 0.8;
           const bY = selHeight * 0.8;
 
@@ -210,7 +205,7 @@ const handlePositionChange = (id: RatingType, newX: number, newY: number) => {
       return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
     });
   };
-
+  
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
     const params = new URLSearchParams();

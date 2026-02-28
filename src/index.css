@@ -41,16 +41,37 @@ input[type='range']:focus::-webkit-slider-thumb {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
-
-/* Add this at the very bottom of the file */
-
-/* --- Badge Hover Effects --- */
+/* --- Badge Overlap Hover Effects --- */
 .badge-item {
   transition: opacity 0.2s ease-out, box-shadow 0.2s ease-out;
+  z-index: 50;
 }
 
-/* When hovering a badge, decrease opacity of all badges rendered AFTER it (which sit in front of it) */
+/* Bring the hovered badge to the very front */
+.badge-item:hover {
+  z-index: 60 !important;
+}
+
+/* Create the slanted watermark overlay pseudo-element */
+.badge-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 255, 255, 0.3) 4px, rgba(255, 255, 255, 0.3) 8px);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+  z-index: 10;
+}
+
+/* When hovering a badge, lower the opacity of any badges rendered AFTER it (which sit in front of it) */
 .badge-item:hover ~ .badge-item {
   opacity: 0.35 !important;
   pointer-events: none;
+}
+
+/* Show the striped watermark ONLY on the overlapping front badges */
+.badge-item:hover ~ .badge-item::before {
+  opacity: 1;
 }
