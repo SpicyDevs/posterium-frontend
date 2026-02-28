@@ -1,18 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import webfontDownload from 'vite-plugin-webfont-dl';
-import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     webfontDownload(),
-    visualizer({
-      open: false,
-      filename: 'dist/stats.html',
-      logLevel: 'warn',
-    }),
   ],
   build: {
     target: 'ES2020',
@@ -34,14 +28,11 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
-    // Preload important modules
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000, // Warn if chunks exceed 1MB
   },
-  // Optimize resolve to reduce bundle size
   resolve: {
     alias: {
-      // Use production builds of certain dependencies
       'react/jsx-runtime': 'react/jsx-runtime',
     },
   },
