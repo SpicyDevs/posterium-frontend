@@ -1,11 +1,11 @@
 import React from 'react';
-import { Layers, Monitor, Sliders } from 'lucide-react';
+import { Film, Layers, Monitor, Sliders } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
 const MobileDock: React.FC = () => {
   const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
 
-  const handleTabClick = (tab: 'layers' | 'canvas' | 'badge') => {
+  const handleTabClick = (tab: 'source' | 'layers' | 'canvas' | 'badge') => {
     setActiveTab(tab);
     setMobileSheetMode('half'); // Open sheet on tap
   };
@@ -15,7 +15,7 @@ const MobileDock: React.FC = () => {
     icon: Icon,
     label,
   }: {
-    id: 'layers' | 'canvas' | 'badge';
+    id: 'source' | 'layers' | 'canvas' | 'badge';
     icon: any;
     label: string;
   }) => {
@@ -35,7 +35,8 @@ const MobileDock: React.FC = () => {
   };
 
   return (
-    <div className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]">
+   <div className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]">
+      <NavItem id="source" icon={Film} label="Source" />
       <NavItem id="layers" icon={Layers} label="Layers" />
       <NavItem id="canvas" icon={Monitor} label="Canvas" />
       <NavItem id="badge" icon={Sliders} label="Edit Badge" />

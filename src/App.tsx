@@ -384,7 +384,7 @@ const StudioLayout: React.FC<{
             onPointerDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            {activeTab === 'layers' && (
+            {(activeTab === 'source' || activeTab === 'layers') && (
               <LayerPanel
                 config={config}
                 setConfig={setConfig}

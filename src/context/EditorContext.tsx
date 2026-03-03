@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { RatingType } from '../types';
 
-type TabType = 'layers' | 'canvas' | 'badge';
+type TabType = 'source' | 'layers' | 'canvas' | 'badge';
 export type SheetMode = 'hidden' | 'half' | 'full';
 
 interface ViewOptions {

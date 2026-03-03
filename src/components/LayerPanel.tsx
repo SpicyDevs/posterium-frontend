@@ -8,8 +8,7 @@ import {
   Switch,
   Transition,
 } from '@headlessui/react';
-import { Check, ChevronsUpDown, Search, Loader2, CheckSquare, GripVertical } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
+import { Check, ChevronsUpDown, Search, Loader2, CheckSquare, GripVertical, Film, Layers } from 'lucide-react';import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
@@ -50,7 +49,16 @@ interface RatingsData {
 }
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-const { setBatchSelection } = useEditor();
+  const { setBatchSelection, activeTab, setActiveTab } = useEditor();
+  const [localMode, setLocalMode] = useState<'source' | 'layers'>('source');
+
+  // Synchronize internal panel view with global state active tab
+  useEffect(() => {
+    if (activeTab === 'source' || activeTab === 'layers') {
+      setLocalMode(activeTab);
+    }
+  }, [activeTab]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -381,259 +389,298 @@ className={clsx(
     <SidebarLayout
       bodyClassName="p-2 space-y-1"
       header={
-        <>
-          <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
-            <div className="relative">
-              <div className="relative w-full cursor-default overflow-hidden rounded-md border border-white/10 bg-[#18181b] text-left focus-within:border-indigo-500/50">
-                <Combobox.Input
-                  className="w-full border-none py-2 pl-9 pr-3 text-xs leading-5 text-zinc-200 bg-transparent focus:ring-0"
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  displayValue={(item: SearchResult) => item?.title || ''}
-                  placeholder="Search Movie/TV..."
-                />
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  {isSearching ? (
-                    <Loader2 className="animate-spin text-indigo-500" size={14} />
-                  ) : (
-                    <Search className="text-zinc-500" size={14} />
-                  )}
+        <div>
+          <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
+            Configuration
+          </label>
+          <div className="flex bg-zinc-900/50 p-1 rounded-md border border-white/5">
+            <button
+              onClick={() => setActiveTab('source')}
+              className={clsx(
+                'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
+                localMode === 'source'
+                  ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+              )}
+            >
+              <Film size={12} /> Source
+            </button>
+            <button
+              onClick={() => setActiveTab('layers')}
+              className={clsx(
+                'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
+                localMode === 'layers'
+                  ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+              )}
+            >
+              <Layers size={12} /> Layers
+            </button>
+          </div>
+        </div>
+      }
+    >
+      {localMode === 'source' && (
+        <div className="space-y-3 px-1 pb-4 pt-1">
+          <div>
+            <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
+              Search Media
+            </label>
+            <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
+              <div className="relative">
+                <div className="relative w-full cursor-default overflow-hidden rounded-md border border-white/10 bg-[#18181b] text-left focus-within:border-indigo-500/50">
+                  <Combobox.Input
+                    className="w-full border-none py-2 pl-9 pr-3 text-xs leading-5 text-zinc-200 bg-transparent focus:ring-0"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    displayValue={(item: SearchResult) => item?.title || ''}
+                    placeholder="Search Movie/TV..."
+                  />
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    {isSearching ? (
+                      <Loader2 className="animate-spin text-indigo-500" size={14} />
+                    ) : (
+                      <Search className="text-zinc-500" size={14} />
+                    )}
+                  </div>
                 </div>
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                  afterLeave={() => setSearchQuery('')}
+                >
+                  <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-2xl ring-1 ring-black/5 focus:outline-none z-50 border border-white/10 custom-scrollbar">
+                    {results.length === 0 && searchQuery !== '' && !isSearching ? (
+                      <div className="relative cursor-default select-none py-2 px-4 text-zinc-500">
+                        Nothing found.
+                      </div>
+                    ) : (
+                      results.map((item) => (
+                        <Combobox.Option
+                          key={item.id}
+                          value={item}
+                          className={({ active }) =>
+                            `relative cursor-default select-none py-2 pl-3 pr-4 flex items-center gap-3 ${active ? 'bg-indigo-500/20 text-white' : 'text-zinc-300'}`
+                          }
+                        >
+                          <img
+                            src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+                            alt=""
+                            className="w-8 h-10 object-cover rounded bg-zinc-800 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span className="block truncate font-medium">
+                              {item.title || item.name}
+                            </span>
+                            <span className="block truncate text-[10px] text-zinc-500">
+                              {(item.release_date || item.first_air_date)?.split('-')[0]} •{' '}
+                              {item.media_type.toUpperCase()}
+                            </span>
+                          </div>
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </Transition>
               </div>
-              <Transition
-                as={Fragment}
-                leave="transition ease-in duration-100"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-                afterLeave={() => setSearchQuery('')}
-              >
-                <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#18181b] py-1 text-xs shadow-2xl ring-1 ring-black/5 focus:outline-none z-50 border border-white/10 custom-scrollbar">
-                  {results.length === 0 && searchQuery !== '' && !isSearching ? (
-                    <div className="relative cursor-default select-none py-2 px-4 text-zinc-500">
-                      Nothing found.
-                    </div>
-                  ) : (
-                    results.map((item) => (
-                      <Combobox.Option
-                        key={item.id}
-                        value={item}
-                        className={({ active }) =>
-                          `relative cursor-default select-none py-2 pl-3 pr-4 flex items-center gap-3 ${active ? 'bg-indigo-500/20 text-white' : 'text-zinc-300'}`
-                        }
-                      >
-                        <img
-                          src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
-                          alt=""
-                          className="w-8 h-10 object-cover rounded bg-zinc-800 flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="block truncate font-medium">
-                            {item.title || item.name}
-                          </span>
-                          <span className="block truncate text-[10px] text-zinc-500">
-                            {(item.release_date || item.first_air_date)?.split('-')[0]} •{' '}
-                            {item.media_type.toUpperCase()}
-                          </span>
-                        </div>
-                      </Combobox.Option>
-                    ))
-                  )}
-                </Combobox.Options>
-              </Transition>
-            </div>
-          </Combobox>
+            </Combobox>
+          </div>
 
-          <div className="space-y-3 pt-2">
-            <div>
-              <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
-                Active Media Title
-              </label>
-              <div
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
-                title={fetchedData.title || 'Loading...'}
-              >
-                {fetchedData.title || <span className="italic text-zinc-500">Loading...</span>}
-              </div>
+          <div>
+            <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
+              Active Media Title
+            </label>
+            <div
+              className="w-full bg-zinc-900/50 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 truncate"
+              title={fetchedData.title || 'Loading...'}
+            >
+              {fetchedData.title || <span className="italic text-zinc-500">Loading...</span>}
             </div>
+          </div>
 
-            <div className="flex gap-2">
-              <div className="flex-1 space-y-1">
-                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-                  Media Type
-                </label>
-                <SelectBox
-                  value={config.mediaType}
-                  onChange={(v) => updateConfig('mediaType', v)}
-                  options={[
-                    { id: 'movie', label: 'Movie' },
-                    { id: 'tv', label: 'TV' },
-                    { id: 'anime', label: 'Anime' },
-                  ]}
-                />
-              </div>
-              <div className="w-24 space-y-1">
-                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-                  ID
-                </label>
-                <input
-                  type="text"
-                  value={config.tmdbId}
-                  onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono text-center"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
               <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-                Source API
+                Media Type
               </label>
               <SelectBox
-                value={config.source}
-                onChange={(v) => updateConfig('source', v)}
+                value={config.mediaType}
+                onChange={(v) => updateConfig('mediaType', v)}
                 options={[
-                  { id: 'tmdb', label: 'TMDB' },
-                  { id: 'fanart', label: 'Fanart.tv' },
-                  { id: 'metahub', label: 'Metahub' },
-                  { id: 'imdb', label: 'IMDb' },
-                  ...(config.mediaType === 'anime'
-                    ? [
-                        { id: 'mal', label: 'MyAnimeList' },
-                        { id: 'anilist', label: 'AniList' },
-                      ]
-                    : []),
+                  { id: 'movie', label: 'Movie' },
+                  { id: 'tv', label: 'TV' },
+                  { id: 'anime', label: 'Anime' },
                 ]}
               />
             </div>
-
-            {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
-              <div className="space-y-1 pt-1">
-                <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-                  Poster Type
-                </label>
-                <SelectBox
-                  value={config.ptype || 'auto'}
-                  onChange={(v) => updateConfig('ptype', v)}
-                  options={[
-                    { id: 'auto', label: 'Auto (Default)' },
-                    { id: 'top1', label: 'Top 1' },
-                    { id: 'top2', label: 'Top 2' },
-                    { id: 'top3', label: 'Top 3' },
-                    ...(config.source === 'tmdb' ? [{ id: 'best', label: 'Best (Bayesian)' }] : []),
-                    ...(config.source === 'fanart'
-                      ? [
-                          { id: 'latest', label: 'Latest' },
-                          { id: 'oldest', label: 'Oldest' },
-                        ]
-                      : []),
-                    { id: 'random', label: 'Random' },
-                  ]}
-                />
-              </div>
-            )}
-
-            <Switch.Group>
-              <div
-                className={clsx(
-                  'flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2',
-                  ['metahub', 'imdb'].includes(config.source) && 'opacity-50 pointer-events-none'
-                )}
-              >
-                <Switch.Label className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                  Textless Poster
-                </Switch.Label>
-                <Switch
-                  checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
-                  onChange={(checked) => updateConfig('textless', checked)}
-                  disabled={['metahub', 'imdb'].includes(config.source)}
-                  className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
-                >
-                  <span
-                    className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
-                  />
-                </Switch>
-              </div>
-            </Switch.Group>
-          </div>
-        </>
-      }
-    >
-    <div className="flex items-center justify-between px-2 mb-2 mt-1 pb-2 border-b border-white/5">
-        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-          Active Layers
-        </h3>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              handleToggleAllVisibility();
-            }}
-            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
-            title="Toggle Visibility of All Badges"
-          >
-            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Toggle All</span>
-            <div
-              className={clsx(
-                "relative inline-flex h-3 w-5 items-center rounded-full transition-colors",
-                allVisible ? "bg-indigo-600" : "bg-zinc-700"
-              )}
-            >
-              <span
-                className={clsx(
-                  "inline-block h-2 w-2 transform rounded-full bg-white transition-transform",
-                  allVisible ? "translate-x-2.5" : "translate-x-0.5"
-                )}
+            <div className="w-24 space-y-1">
+              <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
+                ID
+              </label>
+              <input
+                type="text"
+                value={config.tmdbId}
+                onChange={(e) => updateConfig('tmdbId', e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono text-center"
               />
             </div>
-          </button>
-          
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              handleSelectAll(!allVisibleSelected);
-            }}
-            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
-            title="Select All for Editing"
-          >
-            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
-            <div
-              className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
-            >
-              {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
-            </div>
-          </button>
-        </div>
-      </div>
+          </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="active-badges-list">
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
-              {activeBadges.map((badge, index) => (
-                <Draggable key={badge.id} draggableId={badge.id} index={index}>
-                  {(provided, snapshot) => renderBadgeRow(badge, true, provided, snapshot.isDragging)}
-                </Draggable>
-              ))}
-              {provided.placeholder}
+          <div className="space-y-1">
+            <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
+              Source API
+            </label>
+            <SelectBox
+              value={config.source}
+              onChange={(v) => updateConfig('source', v)}
+              options={[
+                { id: 'tmdb', label: 'TMDB' },
+                { id: 'fanart', label: 'Fanart.tv' },
+                { id: 'metahub', label: 'Metahub' },
+                { id: 'imdb', label: 'IMDb' },
+                ...(config.mediaType === 'anime'
+                  ? [
+                      { id: 'mal', label: 'MyAnimeList' },
+                      { id: 'anilist', label: 'AniList' },
+                    ]
+                  : []),
+              ]}
+            />
+          </div>
+
+          {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
+            <div className="space-y-1 pt-1">
+              <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
+                Poster Type
+              </label>
+              <SelectBox
+                value={config.ptype || 'auto'}
+                onChange={(v) => updateConfig('ptype', v)}
+                options={[
+                  { id: 'auto', label: 'Auto (Default)' },
+                  { id: 'top1', label: 'Top 1' },
+                  { id: 'top2', label: 'Top 2' },
+                  { id: 'top3', label: 'Top 3' },
+                  ...(config.source === 'tmdb' ? [{ id: 'best', label: 'Best (Bayesian)' }] : []),
+                  ...(config.source === 'fanart'
+                    ? [
+                        { id: 'latest', label: 'Latest' },
+                        { id: 'oldest', label: 'Oldest' },
+                      ]
+                    : []),
+                  { id: 'random', label: 'Random' },
+                ]}
+              />
             </div>
           )}
-        </Droppable>
-      </DragDropContext>
 
-      {inactiveBadges.length > 0 && (
-        <>
-          <div className="px-2 mt-4 mb-2 pt-4 border-t border-white/5">
+          <Switch.Group>
+            <div
+              className={clsx(
+                'flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2',
+                ['metahub', 'imdb'].includes(config.source) && 'opacity-50 pointer-events-none'
+              )}
+            >
+              <Switch.Label className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                Textless Poster
+              </Switch.Label>
+              <Switch
+                checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+                onChange={(checked) => updateConfig('textless', checked)}
+                disabled={['metahub', 'imdb'].includes(config.source)}
+                className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
+              >
+                <span
+                  className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+                />
+              </Switch>
+            </div>
+          </Switch.Group>
+        </div>
+      )}
+
+      {localMode === 'layers' && (
+        <div className="px-1 pb-4">
+          <div className="flex items-center justify-between px-1 mb-2 mt-1 pb-2 border-b border-white/5">
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-              Available Badges
+              Active Layers
             </h3>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleToggleAllVisibility();
+                }}
+                className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
+                title="Toggle Visibility of All Badges"
+              >
+                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Toggle All</span>
+                <div
+                  className={clsx(
+                    "relative inline-flex h-3 w-5 items-center rounded-full transition-colors",
+                    allVisible ? "bg-indigo-600" : "bg-zinc-700"
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      "inline-block h-2 w-2 transform rounded-full bg-white transition-transform",
+                      allVisible ? "translate-x-2.5" : "translate-x-0.5"
+                    )}
+                  />
+                </div>
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSelectAll(!allVisibleSelected);
+                }}
+                className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
+                title="Select All for Editing"
+              >
+                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
+                <div
+                  className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
+                >
+                  {allVisibleSelected && <CheckSquare size={10} className="text-white" />}
+                </div>
+              </button>
+            </div>
           </div>
-          <div className="space-y-1 pb-4">
-            {inactiveBadges.map((badge) => (
-              <React.Fragment key={badge.id}>
-                {renderBadgeRow(badge, false)}
-              </React.Fragment>
-            ))}
-          </div>
-        </>
+
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="active-badges-list">
+              {(provided) => (
+                <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
+                  {activeBadges.map((badge, index) => (
+                    <Draggable key={badge.id} draggableId={badge.id} index={index}>
+                      {(provided, snapshot) => renderBadgeRow(badge, true, provided, snapshot.isDragging)}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          {inactiveBadges.length > 0 && (
+            <>
+              <div className="px-1 mt-4 mb-2 pt-4 border-t border-white/5">
+                <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  Available Badges
+                </h3>
+              </div>
+              <div className="space-y-1 pb-4">
+                {inactiveBadges.map((badge) => (
+                  <React.Fragment key={badge.id}>
+                    {renderBadgeRow(badge, false)}
+                  </React.Fragment>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </SidebarLayout>
   );
