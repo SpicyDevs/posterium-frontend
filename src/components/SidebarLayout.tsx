@@ -2,30 +2,40 @@
 import React from 'react';
 import clsx from 'clsx';
 
-interface SidebarLayoutProps {
+interface Props {
   header: React.ReactNode;
   children: React.ReactNode;
   bodyClassName?: string;
+  /** Extra classes on the root container */
+  className?: string;
 }
 
-// FIX: Replaced `bg-app-sidebar` and `bg-app-header` with explicit hex values.
-// In Tailwind v4, utility classes that reference undefined CSS custom properties
-// (e.g. `--color-app-sidebar`) silently emit no CSS, leaving the element transparent.
-// The sidebar background was therefore inherited from whatever the nearest opaque
-// ancestor happened to be — a brittle implicit dependency. Explicit values make the
-// component self-contained and correct regardless of its parent.
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ header, children, bodyClassName }) => {
+/**
+ * Shared sidebar shell.
+ *
+ * Structure:
+ *   ┌──────────────────────────┐
+ *   │  header (sticky, shrink) │  ← always visible, never scrolls away
+ *   ├──────────────────────────┤
+ *   │  body (scrollable)       │  ← flex-1, overflow-y: auto
+ *   └──────────────────────────┘
+ *
+ * On mobile the component is rendered inside the bottom sheet whose own
+ * container already has overflow-y: auto, so we just let children flow
+ * naturally (no nested scroll trap).
+ */
+const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, className }) => {
   return (
-    <div className="flex flex-col h-full bg-[#0c0c0e] overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      {/* Header */}
-      <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-[#0c0c0e] shrink-0">
+    <div className={clsx('flex flex-col h-full min-h-0 bg-[#0d0d0f]', className)}>
+      {/* Sticky header — does NOT scroll */}
+      <div className="flex-shrink-0 px-3 pt-3 pb-2 border-b border-white/[0.06] bg-[#0d0d0f] z-10">
         {header}
       </div>
 
-      {/* Body — lg:flex-1 + lg:overflow-y-auto keeps split-scroll behaviour on desktop */}
+      {/* Scrollable body */}
       <div
         className={clsx(
-          'relative lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-24 lg:pb-0',
+          'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar',
           bodyClassName,
         )}
       >

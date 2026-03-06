@@ -3,68 +3,69 @@ import React, { memo } from 'react';
 import { Film, Layers, Monitor, Sliders } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
+type TabId = 'source' | 'layers' | 'canvas' | 'badge';
+
+const TABS: { id: TabId; Icon: React.ElementType; label: string }[] = [
+  { id: 'source',  Icon: Film,    label: 'Source'  },
+  { id: 'layers',  Icon: Layers,  label: 'Layers'  },
+  { id: 'canvas',  Icon: Monitor, label: 'Canvas'  },
+  { id: 'badge',   Icon: Sliders, label: 'Edit'    },
+];
+
 const MobileDock: React.FC = memo(() => {
   const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
 
-  const handleTabClick = (tab: 'source' | 'layers' | 'canvas' | 'badge') => {
-    setActiveTab(tab);
+  const handleTab = (id: TabId) => {
+    // If tapping the already-active tab while sheet is open → close it
+    if (id === activeTab && mobileSheetMode !== 'hidden') {
+      setMobileSheetMode('hidden');
+      return;
+    }
+    setActiveTab(id);
     setMobileSheetMode('half');
-  };
-
-  type NavId = 'source' | 'layers' | 'canvas' | 'badge';
-
-  const NavItem = ({
-    id,
-    icon: Icon,
-    label,
-    shortcut,
-  }: {
-    id: NavId;
-    icon: React.ElementType;
-    label: string;
-    shortcut?: string;
-  }) => {
-    const isActive = activeTab === id && mobileSheetMode !== 'hidden';
-
-    return (
-      <button
-        onClick={() => handleTabClick(id)}
-        role="tab"
-        aria-selected={isActive}
-        aria-label={shortcut ? `${label} (${shortcut})` : label}
-        className={`
-          flex flex-col items-center justify-center gap-1 p-2 flex-1 
-          transition-all active:scale-90 rounded-lg mx-0.5
-          ${isActive
-            ? 'text-indigo-400 bg-indigo-500/10'
-            : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
-          }
-        `}
-      >
-        <Icon size={20} aria-hidden="true" />
-        <span className="text-[10px] font-medium">{label}</span>
-        {/* Active indicator dot */}
-        <span
-          className={`
-            w-1 h-1 rounded-full transition-all duration-300
-            ${isActive ? 'bg-indigo-400 opacity-100' : 'opacity-0'}
-          `}
-          aria-hidden="true"
-        />
-      </button>
-    );
   };
 
   return (
     <nav
       role="tablist"
       aria-label="Editor panels"
-      className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]"
+      className="
+        lg:hidden flex-shrink-0
+        h-14 flex items-stretch
+        border-t border-white/[0.06] bg-[#0d0d0f] z-50
+        px-1
+        pb-[env(safe-area-inset-bottom,0px)]
+      "
     >
-      <NavItem id="source" icon={Film} label="Source" />
-      <NavItem id="layers" icon={Layers} label="Layers" />
-      <NavItem id="canvas" icon={Monitor} label="Canvas" />
-      <NavItem id="badge" icon={Sliders} label="Edit Badge" />
+      {TABS.map(({ id, Icon, label }) => {
+        const isActive = activeTab === id && mobileSheetMode !== 'hidden';
+        return (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls="mobile-sheet"
+            onClick={() => handleTab(id)}
+            className={`
+              flex-1 flex flex-col items-center justify-center gap-[3px]
+              rounded-xl mx-0.5 my-1 transition-all duration-150 active:scale-90
+              ${isActive
+                ? 'bg-indigo-500/12 text-indigo-400'
+                : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/4'
+              }
+            `}
+          >
+            <Icon
+              size={18}
+              strokeWidth={isActive ? 2.2 : 1.8}
+              aria-hidden="true"
+            />
+            <span className={`text-[9px] font-medium tracking-wide ${isActive ? 'text-indigo-400' : 'text-zinc-600'}`}>
+              {label}
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 });

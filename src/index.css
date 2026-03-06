@@ -1,181 +1,194 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   BASE
+============================================================================ */
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
-    @apply bg-[#0a0a0a] text-zinc-200 overflow-hidden;
-    /* Prevent pull-to-refresh on mobile */
-    overscroll-behavior: none;
-    /* Improve font rendering */
+    @apply bg-[#09090b] text-zinc-200 overflow-hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Prevent pull-to-refresh and elastic bounce on iOS */
+    overscroll-behavior: none;
+    /* Prevent text size change on orientation change */
+    -webkit-text-size-adjust: 100%;
   }
 
-  /* Respect user motion preferences — disable all transitions/animations */
+  /* Respect user reduced-motion preference */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
-
-  /* High-contrast mode support */
-  @media (forced-colors: active) {
-    .badge-item {
-      forced-color-adjust: none;
+    *, *::before, *::after {
+      animation-duration:       0.01ms !important;
+      animation-iteration-count: 1     !important;
+      transition-duration:      0.01ms !important;
     }
   }
 }
 
-/* --- Skip Link (accessibility) --- */
+/* ============================================================================
+   ACCESSIBILITY
+============================================================================ */
+
+/* Skip link */
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
 }
-
 .focus\:not-sr-only:focus {
   position: fixed;
-  width: auto;
-  height: auto;
-  padding: revert;
-  margin: revert;
-  overflow: visible;
-  clip: auto;
+  width: auto; height: auto;
+  padding: revert; margin: revert;
+  overflow: visible; clip: auto;
   white-space: normal;
 }
 
-/* --- Focus Visible — global ring style --- */
+/* Global focus ring — only for keyboard navigation */
 :focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.7);
+  outline: 2px solid rgba(99, 102, 241, 0.75);
   outline-offset: 2px;
+  border-radius: 4px;
 }
-
-/* Remove outline for mouse users but keep for keyboard */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* --- Custom Scrollbar --- */
+/* ============================================================================
+   SCROLLBAR — consistent across panels
+============================================================================ */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 63, 70, 0.8) transparent;
+}
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-zinc-800 rounded-full;
-  transition: background-color 0.15s ease;
+  background: rgba(63, 63, 70, 0.8);
+  border-radius: 99px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-zinc-600;
-}
-/* Firefox */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #27272a transparent;
+  background: rgba(82, 82, 91, 0.9);
 }
 
-/* --- Range Slider --- */
+/* ============================================================================
+   RANGE SLIDER — polished, consistent in WebKit + Firefox
+============================================================================ */
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
+  cursor: pointer;
+  width: 100%;
 }
 
+/* Track */
 input[type='range']::-webkit-slider-runnable-track {
-  @apply h-1.5 rounded-full bg-zinc-800;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(63, 63, 70, 0.8);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(63, 63, 70, 0.8);
 }
 
+/* Thumb */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  @apply w-3.5 h-3.5 bg-indigo-500 rounded-full cursor-pointer;
-  margin-top: -4px;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366f1;
+  margin-top: -5px;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-
-input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 14px rgba(99, 102, 241, 0.7);
-}
-
-input[type='range']::-moz-range-track {
-  @apply h-1.5 rounded-full bg-zinc-800;
-}
-
 input[type='range']::-moz-range-thumb {
-  @apply w-3.5 h-3.5 bg-indigo-500 rounded-full cursor-pointer;
+  width: 14px;
+  height: 14px;
   border: none;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-input[type='range']::-moz-range-thumb:hover {
-  transform: scale(1.2);
+input[type='range']:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
 }
-
+input[type='range']:hover::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+}
+input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.05);
+  background: #818cf8;
+}
 input[type='range']:focus-visible::-webkit-slider-thumb {
   outline: 2px solid rgba(99, 102, 241, 0.8);
   outline-offset: 2px;
 }
 
-/* --- Safe Area for Mobile Bottom Dock --- */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 20px);
-}
-
-/* --- Badge Items --- */
+/* ============================================================================
+   BADGE ITEMS
+============================================================================ */
 .badge-item {
-  transition: opacity 0.2s ease-out, box-shadow 0.2s ease-out;
-  z-index: 50;
+  will-change: transform;
+  transition: opacity 0.18s ease, box-shadow 0.18s ease;
 }
-
 .badge-item:hover {
   z-index: 60 !important;
 }
 
-/* --- Undo/Redo button disabled state — prevent tooltip flicker --- */
+/* ============================================================================
+   PANEL TRANSITIONS
+============================================================================ */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.panel-enter {
+  animation: panel-in 0.18s ease both;
+}
+
+/* ============================================================================
+   MISC
+============================================================================ */
+
+/* Disabled undo/redo — pointer-events already set via aria-disabled in React,
+   but belt-and-suspenders for CSS targeting */
 button[aria-disabled="true"] {
   pointer-events: none;
 }
 
-/* --- Subtle entrance animation for sidebar panel content --- */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.panel-enter {
-  animation: fade-in-up 0.2s ease-out both;
-}
-
-/* --- Indigo progress fill on range tracks (WebKit only) --- */
-/* Uses a gradient trick — set via JS or leave as-is for consistent look */
-
-/* --- Color swatch hover pop --- */
+/* Color input normalise */
 input[type='color'] {
   cursor: pointer;
 }
 
-/* --- Accessible dialog backdrop --- */
-[role="dialog"] {
-  isolation: isolate;
+/* Combobox/listbox dropdown scroll */
+[role='listbox'] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63,63,70,0.8) transparent;
+}
+
+/* iOS safe area bottom for dock */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

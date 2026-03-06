@@ -1,9 +1,9 @@
 // src/components/layout/Inspector.tsx
-import React from 'react';
+import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
 import { PosterConfig } from '../../types';
-import { Globe, Layers } from 'lucide-react';
+import { Globe, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';
 
@@ -12,50 +12,42 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
 
-const Inspector: React.FC<Props> = ({ config, setConfig }) => {
+const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds, clearSelection } = useEditor();
-
-  // If items are selected, force the "Selection" view mode.
-  // Otherwise, fallback to the explicitly clicked tab mode.
   const currentMode = selectedIds.size > 0 || activeTab === 'badge' ? 'selection' : 'global';
+  const selCount = selectedIds.size;
 
   return (
     <SidebarLayout
       header={
-        <>
-          <div>
-            <label className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 block">
-              Inspector View
-            </label>
-            <div className="flex bg-zinc-900/50 p-1 rounded-md border border-white/5">
-              <button
-                onClick={() => {
-                  clearSelection();
-                  setActiveTab('canvas');
-                }}
-                className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
-                  currentMode === 'global'
-                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5' // <-- transparent border fallback
-                )}
-              >
-                <Globe size={12} /> Canvas
-              </button>
-              <button
-                onClick={() => setActiveTab('badge')}
-                className={clsx(
-                  'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
-                  currentMode === 'selection'
-                    ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
-                )}
-              >
-                <Layers size={12} /> Selection {selectedIds.size > 0 && `(${selectedIds.size})`}
-              </button>
-            </div>
-          </div>
-        </>
+        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/[0.06]">
+          <button
+            onClick={() => { clearSelection(); setActiveTab('canvas'); }}
+            aria-pressed={currentMode === 'global'}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
+              currentMode === 'global'
+                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
+                : 'text-zinc-600 hover:text-zinc-400',
+            )}
+          >
+            <Globe size={11} strokeWidth={2} />
+            Canvas
+          </button>
+          <button
+            onClick={() => setActiveTab('badge')}
+            aria-pressed={currentMode === 'selection'}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
+              currentMode === 'selection'
+                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
+                : 'text-zinc-600 hover:text-zinc-400',
+            )}
+          >
+            <MousePointer2 size={11} strokeWidth={2} />
+            {selCount > 0 ? `${selCount} selected` : 'Selection'}
+          </button>
+        </div>
       }
     >
       <PropertyPanel
@@ -66,6 +58,7 @@ const Inspector: React.FC<Props> = ({ config, setConfig }) => {
       />
     </SidebarLayout>
   );
-};
+});
 
+Inspector.displayName = 'Inspector';
 export default Inspector;
