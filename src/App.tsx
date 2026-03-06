@@ -9,7 +9,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
-import { Sparkles, Github, RotateCcw, AlertTriangle, Undo2, Redo2 } from 'lucide-react';
+import { Sparkles, RotateCcw, AlertTriangle, Undo2, Redo2 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
