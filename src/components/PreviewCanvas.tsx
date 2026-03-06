@@ -13,21 +13,19 @@ interface Props {
 }
 
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
+  const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
- const [autoScale, setAutoScale] = useState(1);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-const [isImageLoading, setIsImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false); // New Error State
-  const [isPanning, setIsPanning] = useState(false);
+  const [autoScale, setAutoScale]           = useState(1);
+  const [zoom, setZoom]                     = useState(1);
+  const [pan, setPan]                       = useState({ x: 0, y: 0 });
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageError, setImageError]         = useState(false);
+  const [isPanning, setIsPanning]           = useState(false);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
-  
-  // -- DRAG SESSION STATE --
-  const [dragSession, setDragSession] = useState<{ id: RatingType, dx: number, dy: number } | null>(null);
+  const [dragSession, setDragSession]       = useState<{ id: RatingType; dx: number; dy: number } | null>(null);
 
-  // -- GEOMETRY CALCULATION FOR HOVER OVERLAPPING --
+  // --- Badge overlap detection ---
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
     const auto = calculateAutoPosition(id, index, config.ratings.length, config);
@@ -42,7 +40,6 @@ const [isImageLoading, setIsImageLoading] = useState(true);
   const checkOverlap = (id1: RatingType, idx1: number, id2: RatingType, idx2: number) => {
     const r1 = getBadgeRect(id1, idx1);
     const r2 = getBadgeRect(id2, idx2);
-    // Standard AABB (Axis-Aligned Bounding Box) Collision
     return (
       r1.x < r2.x + r2.w &&
       r1.x + r1.w > r2.x &&
@@ -51,11 +48,10 @@ const [isImageLoading, setIsImageLoading] = useState(true);
     );
   };
 
-  // -- GESTURE STATE --
   const lastDist = useRef<number | null>(null);
-  const lastPan = useRef<{ x: number; y: number } | null>(null);
+  const lastPan  = useRef<{ x: number; y: number } | null>(null);
 
-  // 1. Initial Fit-to-Screen Logic
+  // --- Fit-to-screen ---
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -69,32 +65,21 @@ const [isImageLoading, setIsImageLoading] = useState(true);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [mobileSheetMode]);
-  // --- Stop Browser Page Zoom on Ctrl+Scroll ---
+
+  // --- Prevent browser zoom on Ctrl+scroll ---
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
-    // We must use a native event listener with { passive: false }
-    // because React's synthetic onWheel is passive by default.
     const preventBrowserZoom = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault(); // Stops the browser page from zooming
-      }
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
     };
-
     container.addEventListener('wheel', preventBrowserZoom, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', preventBrowserZoom);
-    };
+    return () => container.removeEventListener('wheel', preventBrowserZoom);
   }, []);
 
   const currentScale = autoScale * zoom;
 
-  // --- NEW: Helper to keep pan within boundaries ---
   const clampPan = (newX: number, newY: number) => {
-    // Allows panning up to the canvas's own width/height.
-    // You can divide this (e.g., CANVAS_WIDTH / 1.5) to make it stricter.
     const limitX = CANVAS_WIDTH / 3;
     const limitY = CANVAS_HEIGHT / 3;
     return {
@@ -102,36 +87,26 @@ const [isImageLoading, setIsImageLoading] = useState(true);
       y: Math.max(-limitY, Math.min(limitY, newY)),
     };
   };
+
   const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      // Zooming
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
     } else {
-      // Panning
       let dx = e.deltaX;
       let dy = e.deltaY;
-
-      // If Shift is held, convert vertical scrolling (deltaY) into horizontal panning
-      if (e.shiftKey) {
-        // Browsers sometimes automatically swap deltaY to deltaX when Shift is held.
-        // This handles both native browser behavior and manual swapping.
-        dx = e.deltaY !== 0 ? e.deltaY : e.deltaX;
-        dy = 0;
-      }
-
+      if (e.shiftKey) { dx = e.deltaY !== 0 ? e.deltaY : e.deltaX; dy = 0; }
       setPan((p) => clampPan(p.x - dx, p.y - dy));
     }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
-      const dist = Math.hypot(
+      lastDist.current = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      lastDist.current = dist;
     } else if (e.touches.length === 1) {
       setIsPanning(true);
       lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -140,45 +115,66 @@ const [isImageLoading, setIsImageLoading] = useState(true);
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastDist.current) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
+      const dist  = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
       const delta = dist / lastDist.current;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
       lastDist.current = dist;
     } else if (e.touches.length === 1 && lastPan.current && isPanning) {
       const dx = e.touches[0].clientX - lastPan.current.x;
       const dy = e.touches[0].clientY - lastPan.current.y;
-
-      // <-- Updated to use clampPan -->
       setPan((p) => clampPan(p.x + dx, p.y + dy));
-
       lastPan.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
   const handleTouchEnd = () => {
     lastDist.current = null;
-    lastPan.current = null;
+    lastPan.current  = null;
     setIsPanning(false);
   };
 
-  const resetView = () => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  };
+  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 
   useEffect(() => {
     const handleResetEvent = () => resetView();
     window.addEventListener('reset-canvas-view', handleResetEvent);
-
-    // Cleanup listener on unmount
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
 
-const handleDragMove = (id: RatingType, dx: number, dy: number) => {
-    // Validate dx/dy to prevent NaN or Infinity values that could break rendering
+  // FIX: Always request the SVG endpoint for the canvas preview image.
+  //
+  // Previously `config.extension` was used (defaults to 'png'), which routed through
+  // wsrv.nl rasterization — an extra round-trip on every source/ptype/textless change.
+  // SVG is returned directly from the worker with no rasterization overhead, loads faster,
+  // and is perfectly renderable inside an <img> tag.
+  //
+  // Note: No 'r' (ratings) param is sent — badges are rendered by the React overlay, not
+  // the backend. This keeps the two concerns (poster image vs. badge overlay) independent.
+  const cleanPosterUrl = useMemo(() => {
+    const base   = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.svg`;
+    const params = new URLSearchParams();
+
+    params.set('source', config.source);
+    if (config.textless) params.set('textless', '1');
+    if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
+    // Cache buster — invalidates on source/ptype/textless changes only (not badge layout changes)
+    params.set('_t', `${config.tmdbId}-${config.source}-${config.textless}-${config.ptype}`);
+
+    return `${base}?${params.toString()}`;
+  }, [config.tmdbId, config.source, config.mediaType, config.textless, config.ptype]);
+
+  useEffect(() => {
+    setIsImageLoading(true);
+    setImageError(false);
+  }, [cleanPosterUrl]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (e.currentTarget.src.includes(config.tmdbId)) setIsImageLoading(false);
+  };
+
+  const handleImageError = () => { setIsImageLoading(false); setImageError(true); };
+
+  const handleDragMove = (id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
     setDragSession({ id, dx, dy });
   };
@@ -189,11 +185,7 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
 
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
-      
-      // Deep copy to prevent direct state mutation anti-pattern
-      (Object.keys(newItems) as RatingType[]).forEach(k => {
-        newItems[k] = { ...newItems[k] };
-      });
+      (Object.keys(newItems) as RatingType[]).forEach(k => { newItems[k] = { ...newItems[k] }; });
 
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
@@ -207,7 +199,6 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
       }
 
       const applyDelta = (targetId: RatingType) => {
-        // Guarantee the item exists so we can safely mutate its properties
         if (!newItems[targetId]) {
           const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
           newItems[targetId] = { x: auto.x, y: auto.y };
@@ -221,20 +212,14 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
           startY = startY ?? auto.y;
         }
 
-        const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
-        const selWidth = BASE_BADGE_W * selScale;
+        const selScale  = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
+        const selWidth  = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
-        
-        // Allow badges to go slightly off-screen (40% of their size) for better UX
-        const offsetX = selWidth * 0.4;
-        const offsetY = selHeight * 0.4;
+        const offsetX   = selWidth  * 0.4;
+        const offsetY   = selHeight * 0.4;
 
-        let nx = startX + dx;
-        let ny = startY + dy;
-        
-        // Ensure badges stay mostly visible on canvas
-        nx = Math.max(-offsetX, Math.min(nx, CANVAS_WIDTH - selWidth + offsetX));
-        ny = Math.max(-offsetY, Math.min(ny, CANVAS_HEIGHT - selHeight + offsetY));
+        let nx = Math.max(-offsetX, Math.min(startX + dx, CANVAS_WIDTH  - selWidth  + offsetX));
+        let ny = Math.max(-offsetY, Math.min(startY + dy, CANVAS_HEIGHT - selHeight + offsetY));
 
         newItems[targetId]!.x = nx;
         newItems[targetId]!.y = ny;
@@ -250,49 +235,7 @@ const handleDragMove = (id: RatingType, dx: number, dy: number) => {
     });
   };
 
-  const cleanPosterUrl = useMemo(() => {
-    const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.${config.extension}`;
-    const params = new URLSearchParams();
-
-    // Explicitly set source even if it is TMDB to ensure unique URL signature
-    params.set('source', config.source);
-
-    if (config.textless) params.set('textless', '1');
-    if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-
-    // Cache Buster: Uses Date.now() to ensure fresh fetch when these dependencies change.
-    params.set('_t', Date.now().toString());
-    params.set('v', '2');
-
-    return `${base}?${params.toString()}`;
-  }, [
-    config.tmdbId,
-    config.source,
-    config.mediaType,
-    config.extension,
-    config.textless,
-    config.ptype,
-  ]);
-  // Reset loading/error state when URL changes
-  useEffect(() => {
-    setIsImageLoading(true);
-    setImageError(false);
-  }, [cleanPosterUrl]);
-
-  // SMART LOAD HANDLER: Only disable loading if the loaded URL matches the current one.
-  // This prevents race conditions where an old request finishes after a new one started.
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    if (e.currentTarget.src === cleanPosterUrl || e.currentTarget.src.includes(cleanPosterUrl)) {
-      setIsImageLoading(false);
-    }
-  };
-
-  const handleImageError = () => {
-    setIsImageLoading(false);
-    setImageError(true);
-  };
-
-return (
+  return (
     <div
       ref={containerRef}
       className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b] touch-none"
@@ -300,11 +243,9 @@ return (
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) clearSelection();
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
     >
-{/* Mobile Floating Action Bar */}
+      {/* Zoom / Pan controls */}
       <div
         className="absolute right-4 lg:right-4 flex flex-col items-center gap-2 z-30 transition-all duration-500 cubic-bezier(0.32, 0.72, 0, 1)"
         style={{
@@ -318,35 +259,21 @@ return (
             Panning
           </div>
         )}
-
         <div className="flex flex-col items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
-          <button
-            onClick={() => setZoom((z) => Math.min(z + 0.1, 4))}
-            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
-          >
+          <button onClick={() => setZoom(z => Math.min(z + 0.1, 4))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform">
             <ZoomIn size={18} />
           </button>
-          <button
-            onClick={() => setZoom((z) => Math.max(z - 0.1, 0.2))}
-            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
-          >
+          <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform">
             <ZoomOut size={18} />
           </button>
-          
-          {/* Divider updated to be always horizontal */}
           <div className="w-4 h-px bg-white/10 my-1"></div>
-          
-          <button
-            onClick={resetView}
-            className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform"
-            title="Fit to Screen"
-          >
+          <button onClick={resetView} className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform" title="Fit to Screen">
             <SearchX size={18} />
           </button>
         </div>
       </div>
 
-    {/* The Poster Canvas Container */}
+      {/* Poster Canvas */}
       <div
         style={{
           width: CANVAS_WIDTH,
@@ -355,23 +282,19 @@ return (
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) clearSelection();
-        }}
+        onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
       >
         {isImageLoading && !imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center pointer-events-none">
             <Loader2 className="animate-spin text-indigo-500" size={40} />
           </div>
         )}
-
         {imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex flex-col items-center justify-center text-red-400 gap-2 pointer-events-none">
             <AlertCircle size={32} />
             <span className="text-xs font-mono">Failed to load</span>
           </div>
         )}
-
         {viewOptions?.showGrid && (
           <div className="absolute inset-0 z-30 pointer-events-none opacity-20">
             <div className="absolute top-0 bottom-0 left-1/3 border-l border-white"></div>
@@ -380,61 +303,51 @@ return (
             <div className="absolute left-0 right-0 top-2/3 border-t border-white"></div>
           </div>
         )}
-
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
             <div className="absolute inset-8 border border-red-500/30 border-dashed">
-              <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">
-                Safe Area
-              </div>
+              <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">Safe Area</div>
             </div>
           </div>
         )}
 
+        {/* Poster image — always SVG from backend, CSS filter applied for posterBlur/grayscale */}
         <img
-          key={cleanPosterUrl} // Forces React to recreate the img element on URL change, preventing ghosting
+          key={cleanPosterUrl}
           src={cleanPosterUrl}
           alt="Poster"
           className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'}`}
-          style={{
-            filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})`,
-          }}
+          style={{ filter: `blur(${config.posterBlur}px) grayscale(${config.grayscale ? 1 : 0})` }}
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
 
-       {config.ratings.map((id: RatingType, index: number) => {
-          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+        {/* React badge overlays — independent of backend SVG */}
+        {config.ratings.map((id: RatingType, index: number) => {
+          const auto       = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
           let x = itemConfig?.x !== undefined ? itemConfig.x : auto.x;
           let y = itemConfig?.y !== undefined ? itemConfig.y : auto.y;
-
-          // Ensure x and y are valid numbers (fallback to auto if invalid)
           if (!isFinite(x)) x = auto.x;
           if (!isFinite(y)) y = auto.y;
 
-          // Check if this badge is overlapping the hovered badge
           let isObscuring = false;
           if (hoveredBadgeId && hoveredBadgeId !== id) {
             const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
             isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
           }
 
-          // Apply transient drag visual delta
           if (dragSession) {
             const isTarget = dragSession.id === id;
-            const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
+            const isGroup  = selectedIds.has(dragSession.id) && selectedIds.has(id);
             if (isTarget || isGroup) {
-              x += dragSession.dx;
-              y += dragSession.dy;
-              
-              const selScale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
-              const bW = BASE_BADGE_W * selScale;
-              const bH = BASE_BADGE_H * selScale;
-              const offsetX = bW * 0.4;
-              const offsetY = bH * 0.4;
-              x = Math.max(-offsetX, Math.min(x, CANVAS_WIDTH - bW + offsetX));
-              y = Math.max(-offsetY, Math.min(y, CANVAS_HEIGHT - bH + offsetY));
+              const selScale  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
+              const bW        = BASE_BADGE_W * selScale;
+              const bH        = BASE_BADGE_H * selScale;
+              const offsetX   = bW * 0.4;
+              const offsetY   = bH * 0.4;
+              x = Math.max(-offsetX, Math.min(x + dragSession.dx, CANVAS_WIDTH  - bW + offsetX));
+              y = Math.max(-offsetY, Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH + offsetY));
             }
           }
 
@@ -455,7 +368,7 @@ return (
             />
           );
         })}
-            </div>
+      </div>
     </div>
   );
 };
