@@ -4,87 +4,80 @@
    BASE
 ============================================================================ */
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   body {
     @apply bg-[#09090b] text-zinc-200 overflow-hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    /* Prevent pull-to-refresh and elastic bounce on iOS */
     overscroll-behavior: none;
-    /* Prevent text size change on orientation change */
     -webkit-text-size-adjust: 100%;
   }
 
-  /* Respect user reduced-motion preference */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
-      animation-duration:       0.01ms !important;
-      animation-iteration-count: 1     !important;
-      transition-duration:      0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
   }
 }
 
 /* ============================================================================
-   ACCESSIBILITY
+   SKIP LINK
 ============================================================================ */
-
-/* Skip link */
 .sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
 }
 .focus\:not-sr-only:focus {
-  position: fixed;
-  width: auto; height: auto;
-  padding: revert; margin: revert;
-  overflow: visible; clip: auto;
-  white-space: normal;
-}
-
-/* Global focus ring — only for keyboard navigation */
-:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.75);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-:focus:not(:focus-visible) {
-  outline: none;
+  position: fixed; width: auto; height: auto;
+  padding: revert; margin: revert; overflow: visible;
+  clip: auto; white-space: normal;
 }
 
 /* ============================================================================
-   SCROLLBAR — consistent across panels
+   FOCUS
+============================================================================ */
+:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.7);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* ============================================================================
+   SIDEBAR LABEL — shared utility used across panels
+============================================================================ */
+.sidebar-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(113, 113, 122); /* zinc-500 */
+  margin-bottom: 6px;
+}
+
+/* ============================================================================
+   CUSTOM SCROLLBAR
 ============================================================================ */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(63, 63, 70, 0.8) transparent;
+  scrollbar-color: rgba(63, 63, 70, 0.7) transparent;
 }
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(63, 63, 70, 0.8);
+  background: rgba(63, 63, 70, 0.7);
   border-radius: 99px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(82, 82, 91, 0.9);
-}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(82, 82, 91, 0.9); }
 
 /* ============================================================================
-   RANGE SLIDER — polished, consistent in WebKit + Firefox
+   RANGE SLIDER — WebKit + Firefox cross-browser
 ============================================================================ */
 input[type='range'] {
   -webkit-appearance: none;
@@ -92,6 +85,8 @@ input[type='range'] {
   background: transparent;
   cursor: pointer;
   width: 100%;
+  height: 20px; /* hit area */
+  padding: 0;
 }
 
 /* Track */
@@ -104,45 +99,63 @@ input[type='range']::-moz-range-track {
   height: 4px;
   border-radius: 99px;
   background: rgba(63, 63, 70, 0.8);
+  border: none;
 }
 
 /* Thumb */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 14px; height: 14px;
   border-radius: 50%;
   background: #6366f1;
   margin-top: -5px;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
 }
 input[type='range']::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 14px; height: 14px;
   border: none;
   border-radius: 50%;
   background: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 input[type='range']:hover::-webkit-slider-thumb {
-  transform: scale(1.15);
+  transform: scale(1.18);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
 }
 input[type='range']:hover::-moz-range-thumb {
-  transform: scale(1.15);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+  transform: scale(1.18);
 }
 input[type='range']:active::-webkit-slider-thumb {
   transform: scale(1.05);
   background: #818cf8;
 }
+
 input[type='range']:focus-visible::-webkit-slider-thumb {
   outline: 2px solid rgba(99, 102, 241, 0.8);
   outline-offset: 2px;
+}
+
+/* ============================================================================
+   OPACITY SLIDER — checkerboard background layered under gradient
+============================================================================ */
+input[type='range'].opacity-slider::-webkit-slider-runnable-track {
+  /* The inline style sets the gradient; this adds the checkerboard pattern beneath */
+  background-image: inherit,
+    repeating-conic-gradient(#3f3f46 0% 25%, #27272a 0% 50%);
+  background-size: inherit, 8px 8px;
+  background-position: inherit, 0 0;
+}
+
+/* ============================================================================
+   COLOR SWATCH — checkerboard behind transparent colors
+============================================================================ */
+.color-swatch-bg {
+  background-image: repeating-conic-gradient(#3f3f46 0% 25%, #27272a 0% 50%);
+  background-size: 8px 8px;
 }
 
 /* ============================================================================
@@ -152,43 +165,22 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
   will-change: transform;
   transition: opacity 0.18s ease, box-shadow 0.18s ease;
 }
-.badge-item:hover {
-  z-index: 60 !important;
-}
+.badge-item:hover { z-index: 60 !important; }
 
 /* ============================================================================
-   PANEL TRANSITIONS
+   LISTBOX TRANSITION — avoid FOUC
 ============================================================================ */
-@keyframes panel-in {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: translateY(0);   }
-}
-.panel-enter {
-  animation: panel-in 0.18s ease both;
+[data-headlessui-state~='open'] [data-headlessui-state~='selected'] {
+  color: #a5b4fc;
 }
 
 /* ============================================================================
    MISC
 ============================================================================ */
+button[aria-disabled='true'] { pointer-events: none; }
+input[type='color'] { cursor: pointer; }
 
-/* Disabled undo/redo — pointer-events already set via aria-disabled in React,
-   but belt-and-suspenders for CSS targeting */
-button[aria-disabled="true"] {
-  pointer-events: none;
-}
-
-/* Color input normalise */
-input[type='color'] {
-  cursor: pointer;
-}
-
-/* Combobox/listbox dropdown scroll */
-[role='listbox'] {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(63,63,70,0.8) transparent;
-}
-
-/* iOS safe area bottom for dock */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
+/* Remove number input arrows */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
