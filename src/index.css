@@ -5,33 +5,130 @@
     @apply bg-[#0a0a0a] text-zinc-200 overflow-hidden;
     /* Prevent pull-to-refresh on mobile */
     overscroll-behavior: none;
+    /* Improve font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+
+  /* Respect user motion preferences — disable all transitions/animations */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* High-contrast mode support */
+  @media (forced-colors: active) {
+    .badge-item {
+      forced-color-adjust: none;
+    }
+  }
+}
+
+/* --- Skip Link (accessibility) --- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.focus\:not-sr-only:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: revert;
+  margin: revert;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* --- Focus Visible — global ring style --- */
+:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.7);
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse users but keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* --- Custom Scrollbar --- */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+  @apply bg-zinc-800 rounded-full;
+  transition: background-color 0.15s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-600;
+}
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
 }
 
-/* --- Range Slider Glow --- */
+/* --- Range Slider --- */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  @apply h-1.5 rounded-full bg-zinc-800;
+}
+
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  @apply w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] cursor-pointer hover:scale-110 transition-transform;
-  margin-top: -3px; /* Align with track */
+  @apply w-3.5 h-3.5 bg-indigo-500 rounded-full cursor-pointer;
+  margin-top: -4px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
+
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.7);
+}
+
+input[type='range']::-moz-range-track {
+  @apply h-1.5 rounded-full bg-zinc-800;
+}
+
 input[type='range']::-moz-range-thumb {
-  @apply w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)] cursor-pointer hover:scale-110 transition-transform;
+  @apply w-3.5 h-3.5 bg-indigo-500 rounded-full cursor-pointer;
   border: none;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-input[type='range']:focus::-webkit-slider-thumb {
-  @apply ring-2 ring-indigo-500/50;
+
+input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid rgba(99, 102, 241, 0.8);
+  outline-offset: 2px;
 }
 
 /* --- Safe Area for Mobile Bottom Dock --- */
@@ -39,6 +136,7 @@ input[type='range']:focus::-webkit-slider-thumb {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
+/* --- Badge Items --- */
 .badge-item {
   transition: opacity 0.2s ease-out, box-shadow 0.2s ease-out;
   z-index: 50;
@@ -46,4 +144,38 @@ input[type='range']:focus::-webkit-slider-thumb {
 
 .badge-item:hover {
   z-index: 60 !important;
+}
+
+/* --- Undo/Redo button disabled state — prevent tooltip flicker --- */
+button[aria-disabled="true"] {
+  pointer-events: none;
+}
+
+/* --- Subtle entrance animation for sidebar panel content --- */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-enter {
+  animation: fade-in-up 0.2s ease-out both;
+}
+
+/* --- Indigo progress fill on range tracks (WebKit only) --- */
+/* Uses a gradient trick — set via JS or leave as-is for consistent look */
+
+/* --- Color swatch hover pop --- */
+input[type='color'] {
+  cursor: pointer;
+}
+
+/* --- Accessible dialog backdrop --- */
+[role="dialog"] {
+  isolation: isolate;
 }
