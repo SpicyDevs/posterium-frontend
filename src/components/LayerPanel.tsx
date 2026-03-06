@@ -11,7 +11,6 @@ import {
 } from '@headlessui/react';
 import {
   Check,
-  ChevronsUpDown,
   Search,
   Loader2,
   GripVertical,
