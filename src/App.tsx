@@ -14,7 +14,6 @@ import { usePosterHistory } from './hooks/usePosterHistory';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 
-// --- NEW: Reset Dialog Component ---
 const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({
   isOpen,
   onClose,
@@ -58,7 +57,6 @@ const ResetDialog: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
                   undone.
                 </p>
               </div>
-
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   onClick={onClose}
@@ -100,15 +98,27 @@ const StudioLayout: React.FC<{
     selectedIds,
     handleSelection,
     clearSelection,
-    setBatchSelection, // <-- 1. Extract setBatchSelection here
+    setBatchSelection,
   } = useEditor();
 
-  const [isResetOpen, setIsResetOpen] = useState(false); // State for Dialog
+  const [isResetOpen, setIsResetOpen] = useState(false);
+
+  // FIX: Use refs so the keyboard shortcut handler always reads current values without
+  // being included in useEffect deps. Previously `selectedIds` (a Set, new reference
+  // every render) and `config.ratings` (new array every badge toggle) were both in
+  // deps, causing the listener to be removed and re-registered on every selection
+  // change and every badge visibility toggle. Now the effect only runs once on mount
+  // and when stable callbacks (undo, redo, etc.) change.
+  const selectedIdsRef = useRef<Set<typeof selectedIds extends Set<infer T> ? T : never>>(selectedIds);
+  const configRatingsRef = useRef(config.ratings);
+
+  // Keep refs in sync with current values — no deps needed (runs every render, O(1)).
+  useEffect(() => { selectedIdsRef.current = selectedIds; });
+  useEffect(() => { configRatingsRef.current = config.ratings; });
 
   // --- Global Keyboard Shortcuts ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore keypresses if the user is typing in an input or text area
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -117,21 +127,22 @@ const StudioLayout: React.FC<{
         return;
       }
 
-      // --- NEW: Select All: Ctrl+A or Cmd+A ---
+      // Select All: Ctrl/Cmd+A
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
-        e.preventDefault(); // Stop the browser from selecting all page text
-        setBatchSelection(config.ratings);
-        return; // Exit early
+        e.preventDefault();
+        // Read from ref — always current without being in deps.
+        setBatchSelection(configRatingsRef.current);
+        return;
       }
 
-      // Undo: Ctrl+Z or Cmd+Z
+      // Undo: Ctrl/Cmd+Z
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
         return;
       }
 
-      // Redo: Ctrl+Y or Cmd+Y OR Ctrl+Shift+Z or Cmd+Shift+Z
+      // Redo: Ctrl/Cmd+Y  or  Ctrl/Cmd+Shift+Z
       if (
         (e.ctrlKey || e.metaKey) &&
         (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))
@@ -141,12 +152,14 @@ const StudioLayout: React.FC<{
         return;
       }
 
-      // Disable Badge: Delete or Backspace
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
+      // Delete/Backspace — remove selected badges
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size > 0) {
         e.preventDefault();
+        // Capture ref value before the async setState to avoid mutation race.
+        const toRemove = new Set(selectedIdsRef.current);
         setConfig((prev) => ({
           ...prev,
-          ratings: prev.ratings.filter((r) => !selectedIds.has(r)), // Removes from the active list
+          ratings: prev.ratings.filter((r) => !toRemove.has(r)),
         }));
         clearSelection();
       }
@@ -154,37 +167,31 @@ const StudioLayout: React.FC<{
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, selectedIds, setConfig, clearSelection, config.ratings, setBatchSelection]); // <-- 2. Added new dependencies here
+    // selectedIds and config.ratings intentionally excluded — handled via refs.
+  }, [undo, redo, setConfig, clearSelection, setBatchSelection]);
 
-  // ... Rest of the StudioLayout component remains exactly the same ...
-
-  // ... Rest of the StudioLayout component remains exactly the same ...
   // --- SIDEBAR RESIZE LOGIC ---
-  const [leftWidth, setLeftWidth] = useState(288); // Default w-72 (288px)
-  const [rightWidth, setRightWidth] = useState(320); // Default w-80 (320px)
+  const [leftWidth, setLeftWidth] = useState(288);
+  const [rightWidth, setRightWidth] = useState(320);
 
   const startResizingLeft = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       const startX = e.clientX;
       const startWidth = leftWidth;
-
       const onMouseMove = (moveEvent: MouseEvent) => {
-        const newWidth = startWidth + (moveEvent.clientX - startX);
-        setLeftWidth(Math.max(220, Math.min(newWidth, 600))); // Min 220px, Max 600px
+        setLeftWidth(Math.max(220, Math.min(startWidth + (moveEvent.clientX - startX), 600)));
       };
-
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
         document.body.style.cursor = '';
       };
-
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
       document.body.style.cursor = 'col-resize';
     },
-    [leftWidth]
+    [leftWidth],
   );
 
   const startResizingRight = useCallback(
@@ -192,29 +199,22 @@ const StudioLayout: React.FC<{
       e.preventDefault();
       const startX = e.clientX;
       const startWidth = rightWidth;
-
       const onMouseMove = (moveEvent: MouseEvent) => {
-        const newWidth = startWidth - (moveEvent.clientX - startX);
-        setRightWidth(Math.max(260, Math.min(newWidth, 600))); // Min 260px, Max 600px
+        setRightWidth(Math.max(260, Math.min(startWidth - (moveEvent.clientX - startX), 600)));
       };
-
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
         document.body.style.cursor = '';
       };
-
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
       document.body.style.cursor = 'col-resize';
     },
-    [rightWidth]
+    [rightWidth],
   );
-  // ----------------------------------
 
-  // -- DRAG LOGIC (Retained for Physics) --
-
-  // -- DRAG LOGIC (Retained for Physics) --
+  // --- Mobile bottom-sheet physics drag ---
   const sheetRef = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
   const currentY = useRef<number>(0);
@@ -315,7 +315,6 @@ const StudioLayout: React.FC<{
             selectedIds={selectedIds}
             onSelect={handleSelection}
           />
-          {/* Resizer Handle */}
           <div
             onMouseDown={startResizingLeft}
             className="absolute top-0 right-[-3px] bottom-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
@@ -348,7 +347,6 @@ const StudioLayout: React.FC<{
           className="hidden lg:flex flex-col bg-[#0c0c0e] border-l border-white/5 z-20 relative flex-shrink-0 transition-[width] duration-0"
           style={{ width: rightWidth }}
         >
-          {/* Resizer Handle */}
           <div
             onMouseDown={startResizingRight}
             className="absolute top-0 left-[-3px] bottom-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
@@ -356,20 +354,39 @@ const StudioLayout: React.FC<{
           <Inspector config={config} setConfig={setConfig} />
         </aside>
 
-        {/* Mobile Bottom Sheet (Retained Manual Physics for UX) */}
+        {/*
+          Mobile Bottom Sheet
+
+          FIX 1 — touchAction removed from the sheet root.
+          Per the CSS spec (and MDN), `touch-action` is determined by the *intersection*
+          of an element's value and ALL its ancestors. Setting `touch-action: none` on a
+          parent means every descendant also gets `none`, regardless of their own
+          `touch-action` declaration. The sheet content (badge list, inspector sliders)
+          was therefore completely unscrollable on touch devices.
+          The drag-handle div retains the `touch-none` Tailwind class so the physics
+          drag gesture still works correctly for that specific target area.
+
+          FIX 2 — pointer-events: none when hidden.
+          The translated-off-screen sheet still occupies layout space in some browsers
+          and can intercept touch events before they reach the canvas below. Setting
+          pointer-events: none when hidden eliminates that ghost-capture problem.
+        */}
         <div
           ref={sheetRef}
           className={`
-                lg:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40
-                ${mobileSheetMode === 'hidden' ? 'translate-y-[120%]' : 'translate-y-0'}
-            `}
+            lg:hidden fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))]
+            bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl shadow-2xl z-40
+            ${mobileSheetMode === 'hidden' ? 'translate-y-[120%]' : 'translate-y-0'}
+          `}
           style={{
             height: mobileSheetMode === 'full' ? '92%' : '50%',
-            touchAction: 'none',
+            // touchAction intentionally absent from here — only the drag handle needs it.
+            pointerEvents: mobileSheetMode === 'hidden' ? 'none' : 'auto',
             transition:
               'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Drag handle — touch-none scoped here only, so content area can scroll */}
           <div
             className="h-8 w-full flex items-center justify-center cursor-grab active:cursor-grabbing border-b border-white/5 touch-none"
             onTouchStart={handleTouchStart}
@@ -398,29 +415,26 @@ const StudioLayout: React.FC<{
           </div>
         </div>
       </div>
+
       <MobileDock />
     </div>
   );
 };
 
 const App: React.FC = () => {
-  // Swapped useState for usePosterHistory
-  const {
-    state: config,
-    setState: setConfig,
-    undo,
-    redo,
-  } = usePosterHistory(() => {
+  // FIX: Read localStorage once and store in a variable — the original called
+  // localStorage.getItem(STORAGE_KEY) twice (guard check + actual parse).
+  const { state: config, setState: setConfig, undo, redo } = usePosterHistory(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY)
-        ? JSON.parse(localStorage.getItem(STORAGE_KEY)!)
-        : DEFAULT_CONFIG;
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
     } catch {
       return DEFAULT_CONFIG;
     }
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
@@ -431,7 +445,9 @@ const App: React.FC = () => {
     try {
       const urlObj = new URL(url);
       setBaseUrl(urlObj.origin);
-    } catch (e) {}
+    } catch {
+      // Malformed URL — keep current baseUrl.
+    }
   };
 
   const handleReset = () => {
@@ -454,4 +470,5 @@ const App: React.FC = () => {
     </EditorProvider>
   );
 };
+
 export default App;

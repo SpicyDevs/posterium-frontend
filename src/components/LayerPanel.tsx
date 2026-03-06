@@ -1,3 +1,4 @@
+// src/components/LayerPanel.tsx
 import React, { useState, useEffect, Fragment } from 'react';
 import {
   Combobox,
@@ -8,13 +9,24 @@ import {
   Switch,
   Transition,
 } from '@headlessui/react';
-import { Check, ChevronsUpDown, Search, Loader2, CheckSquare, GripVertical, Film, Layers } from 'lucide-react';import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
+import {
+  Check,
+  ChevronsUpDown,
+  Search,
+  Loader2,
+  CheckSquare,
+  GripVertical,
+  Film,
+  Layers,
+} from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
 import SidebarLayout from './SidebarLayout';
+
 type BadgeIconKey = keyof typeof BADGE_ICONS;
 
 interface Props {
@@ -52,7 +64,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const { setBatchSelection, activeTab, setActiveTab } = useEditor();
   const [localMode, setLocalMode] = useState<'source' | 'layers'>('source');
 
-  // Synchronize internal panel view with global state active tab
   useEffect(() => {
     if (activeTab === 'source' || activeTab === 'layers') {
       setLocalMode(activeTab);
@@ -75,16 +86,17 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       setIsSearching(true);
       try {
         const res = await fetch(
-          `https://api.spicydevs.xyz/search?q=${encodeURIComponent(searchQuery)}`
+          `https://api.spicydevs.xyz/search?q=${encodeURIComponent(searchQuery)}`,
         );
         const data = await res.json();
         if (data.results)
           setResults(
             data.results.filter(
-              (i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)
-            )
+              (i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type),
+            ),
           );
-      } catch (e) {
+      } catch {
+        // Network error — leave results unchanged.
       } finally {
         setIsSearching(false);
       }
@@ -92,69 +104,80 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
+  // FIX: Added setConfig and setFetchedData to deps. Both are stable (from useState /
+  // usePosterHistory useCallback), so this does not cause extra re-runs. Omitting them
+  // was a lint error and a correctness issue under React StrictMode double-invoke.
   useEffect(() => {
     const fetchMeta = async () => {
       if (!config.tmdbId) return;
       try {
-        const res = await fetch(`${DEFAULT_API_BASE}/ratings/${config.mediaType}/${config.tmdbId}`);
+        const res = await fetch(
+          `${DEFAULT_API_BASE}/ratings/${config.mediaType}/${config.tmdbId}`,
+        );
         if (res.ok) {
           const data = await res.json();
           if (data) {
-            // Grab title from new meta object
             setFetchedData({ ...data.ratings, title: data.meta?.title });
-
-            // Automatically update ID input to IMDb ID if it exists
             if (data.ids?.imdb && data.ids.imdb !== config.tmdbId) {
               setConfig((prev) => ({ ...prev, tmdbId: data.ids.imdb }));
             }
           }
         }
-      } catch (e) {
-        /* ignore */
+      } catch {
+        /* network error — ignore */
       }
     };
     fetchMeta();
-  }, [config.tmdbId, config.mediaType]);
+  }, [config.tmdbId, config.mediaType, setConfig, setFetchedData]);
 
   const handleSelectMedia = (item: SearchResult | null) => {
     if (!item) return;
-
     setFetchedData({ title: item.title || item.name });
-
     setConfig((prev) => ({
       ...prev,
       tmdbId: item.id.toString(),
-      mediaType: item.media_type as any,
+      mediaType: item.media_type as PosterConfig['mediaType'],
     }));
     setSearchQuery('');
   };
 
-  const updateConfig = (key: keyof PosterConfig, value: any) =>
+  const updateConfig = (key: keyof PosterConfig, value: unknown) =>
     setConfig((prev) => ({ ...prev, [key]: value }));
 
-const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
-    const currentRatings = [...config.ratings];
+  // FIX: Use functional updater pattern so that rapid toggling never operates on
+  // stale config captured from the closure. The previous code spread `{ ...config, ... }`
+  // which could silently lose a concurrent update when two toggles fired in the same
+  // render batch (e.g. toggle-all followed by a single toggle).
+  const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
     if (isVisible) {
-      if (!currentRatings.includes(id)) {
-        // Pushing to the START of the array makes it render at the bottom of the active UI list (last of toggled)
-        setConfig({ ...config, ratings: [id, ...currentRatings] });
-        setInactiveOrder(prev => prev.filter(x => x !== id));
-      }
+      setConfig((prev) => {
+        if (prev.ratings.includes(id)) return prev;
+        return { ...prev, ratings: [id, ...prev.ratings] };
+      });
+      setInactiveOrder((prev) => prev.filter((x) => x !== id));
     } else {
-      setConfig({ ...config, ratings: currentRatings.filter((r) => r !== id) });
-      // Prepending pushes it to the top of the inactive list (top of untoggled)
-      setInactiveOrder(prev => [id, ...prev.filter(x => x !== id)]);
+      setConfig((prev) => ({
+        ...prev,
+        ratings: prev.ratings.filter((r) => r !== id),
+      }));
+      setInactiveOrder((prev) => [id, ...prev.filter((x) => x !== id)]);
     }
   };
 
   const allVisible = config.ratings.length === ALL_BADGES.length;
+
+  // FIX: Same functional-updater fix as handleToggleVisibility.
   const handleToggleAllVisibility = () => {
     if (allVisible) {
-      setConfig({ ...config, ratings: [] });
-      setInactiveOrder(prev => [...[...config.ratings].reverse(), ...prev]);
+      setConfig((prev) => {
+        setInactiveOrder((io) => [...[...prev.ratings].reverse(), ...io]);
+        return { ...prev, ratings: [] };
+      });
     } else {
-      const missing = ALL_BADGES.filter(b => !config.ratings.includes(b.id)).map(b => b.id);
-      setConfig({ ...config, ratings: [...missing, ...config.ratings] });
+      setConfig((prev) => {
+        const missing = ALL_BADGES.filter((b) => !prev.ratings.includes(b.id)).map((b) => b.id);
+        return { ...prev, ratings: [...missing, ...prev.ratings] };
+      });
       setInactiveOrder([]);
     }
   };
@@ -162,16 +185,17 @@ const handleToggleVisibility = (id: RatingType, isVisible: boolean) => {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       const allVisibleIds = ALL_BADGES.filter((b) => config.ratings.includes(b.id)).map(
-        (b) => b.id
+        (b) => b.id,
       );
       setBatchSelection(allVisibleIds);
     } else {
       setBatchSelection([]);
     }
   };
-const allVisibleSelected =
+
+  const allVisibleSelected =
     config.ratings.length > 0 && config.ratings.every((r) => selectedIds.has(r));
-    
+
   const getIconKey = (id: string): BadgeIconKey => {
     if (id === 'rt') return 'rt_fresh';
     if (id === 'rt_popcorn') return 'popcorn_fresh';
@@ -184,25 +208,21 @@ const allVisibleSelected =
     if (!result.destination) return;
     const startIndex = result.source.index;
     const endIndex = result.destination.index;
-
     if (startIndex === endIndex) return;
 
-    // We reverse the array for the UI so the top of the list is the top of the Z-index stack.
-    // Apply the reorder to the reversed array, then reverse it back to save.
+    // Reversed array for UI (top of list = top of Z-stack); reorder then reverse back.
     const newRatings = [...config.ratings].reverse();
     const [removed] = newRatings.splice(startIndex, 1);
     newRatings.splice(endIndex, 0, removed);
-
     setConfig((prev) => ({ ...prev, ratings: newRatings.reverse() }));
   };
 
-  // Reversed so the top of the list is the top-most visual layer
   const activeBadges = [...config.ratings]
     .reverse()
     .map((id) => ALL_BADGES.find((b) => b.id === id))
     .filter((b): b is { id: RatingType; label: string } => b !== undefined);
 
-const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
+  const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
     const idxA = inactiveOrder.indexOf(a.id);
     const idxB = inactiveOrder.indexOf(b.id);
     if (idxA === -1 && idxB === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
@@ -210,12 +230,12 @@ const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).
     if (idxB === -1) return -1;
     return idxA - idxB;
   });
-  // Shared row renderer for both active (draggable) and inactive items
+
   const renderBadgeRow = (
     badge: { id: RatingType; label: string },
     isActive: boolean,
     provided?: DraggableProvided,
-    isDragging?: boolean
+    isDraggingItem?: boolean,
   ) => {
     const isSelected = selectedIds.has(badge.id);
     const ratingValue = fetchedData[badge.id as keyof RatingsData];
@@ -230,13 +250,13 @@ const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).
           if (!isActive) return;
           onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
         }}
-className={clsx(
+        className={clsx(
           'group flex items-center gap-3 px-2 py-2 rounded-md transition-colors border select-none',
           isSelected
             ? 'bg-indigo-900/20 border-indigo-500/30'
             : 'border-transparent hover:bg-white/5',
           !isActive ? 'opacity-40 grayscale' : 'cursor-pointer',
-          isDragging ? 'shadow-xl bg-zinc-800 border-white/10 z-50' : ''
+          isDraggingItem ? 'shadow-xl bg-zinc-800 border-white/10 z-50' : '',
         )}
         style={provided?.draggableProps.style}
       >
@@ -250,7 +270,7 @@ className={clsx(
             <GripVertical size={14} />
           </div>
         ) : (
-          <div className="w-5" /> // Spacer for alignment
+          <div className="w-5" />
         )}
 
         {/* Custom Selection Indicator */}
@@ -266,7 +286,7 @@ className={clsx(
               'w-3.5 h-3.5 rounded border flex items-center justify-center transition-all',
               isSelected
                 ? 'bg-indigo-500 border-indigo-400'
-                : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500'
+                : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-500',
             )}
           >
             {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
@@ -299,7 +319,7 @@ className={clsx(
             <span
               className={clsx(
                 'text-xs font-medium truncate',
-                isSelected ? 'text-indigo-200' : 'text-zinc-300'
+                isSelected ? 'text-indigo-200' : 'text-zinc-300',
               )}
             >
               {badge.label}
@@ -315,13 +335,13 @@ className={clsx(
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
             className={clsx(
               isActive ? 'bg-indigo-600' : 'bg-zinc-700',
-              'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500'
+              'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500',
             )}
           >
             <span
               className={clsx(
                 isActive ? 'translate-x-3.5' : 'translate-x-0.5',
-                'inline-block h-3 w-3 transform rounded-full bg-white transition-transform'
+                'inline-block h-3 w-3 transform rounded-full bg-white transition-transform',
               )}
             />
           </Switch>
@@ -330,7 +350,6 @@ className={clsx(
     );
   };
 
-  // Helper for Listbox (Existing)
   const SelectBox = ({
     value,
     onChange,
@@ -400,7 +419,7 @@ className={clsx(
                 'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
                 localMode === 'source'
                   ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5',
               )}
             >
               <Film size={12} /> Source
@@ -411,7 +430,7 @@ className={clsx(
                 'flex-1 flex items-center justify-center gap-2 py-1.5 text-[11px] font-medium rounded transition-colors outline-none focus:outline-none focus:ring-0 select-none border',
                 localMode === 'layers'
                   ? 'bg-[#18181b] text-indigo-400 shadow-sm border-white/10'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5',
               )}
             >
               <Layers size={12} /> Layers
@@ -515,9 +534,7 @@ className={clsx(
               />
             </div>
             <div className="w-24 space-y-1">
-              <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">
-                ID
-              </label>
+              <label className="text-[9px] text-zinc-500 uppercase tracking-wider block">ID</label>
               <input
                 type="text"
                 value={config.tmdbId}
@@ -579,14 +596,16 @@ className={clsx(
             <div
               className={clsx(
                 'flex items-center justify-between rounded bg-zinc-900/50 border border-zinc-800 p-2',
-                ['metahub', 'imdb'].includes(config.source) && 'opacity-50 pointer-events-none'
+                ['metahub', 'imdb'].includes(config.source) && 'opacity-50 pointer-events-none',
               )}
             >
               <Switch.Label className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                 Textless Poster
               </Switch.Label>
               <Switch
-                checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+                checked={
+                  ['metahub', 'imdb'].includes(config.source) ? false : config.textless
+                }
                 onChange={(checked) => updateConfig('textless', checked)}
                 disabled={['metahub', 'imdb'].includes(config.source)}
                 className={`${config.textless && !['metahub', 'imdb'].includes(config.source) ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
@@ -615,22 +634,24 @@ className={clsx(
                 className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
                 title="Toggle Visibility of All Badges"
               >
-                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Toggle All</span>
+                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">
+                  Toggle All
+                </span>
                 <div
                   className={clsx(
-                    "relative inline-flex h-3 w-5 items-center rounded-full transition-colors",
-                    allVisible ? "bg-indigo-600" : "bg-zinc-700"
+                    'relative inline-flex h-3 w-5 items-center rounded-full transition-colors',
+                    allVisible ? 'bg-indigo-600' : 'bg-zinc-700',
                   )}
                 >
                   <span
                     className={clsx(
-                      "inline-block h-2 w-2 transform rounded-full bg-white transition-transform",
-                      allVisible ? "translate-x-2.5" : "translate-x-0.5"
+                      'inline-block h-2 w-2 transform rounded-full bg-white transition-transform',
+                      allVisible ? 'translate-x-2.5' : 'translate-x-0.5',
                     )}
                   />
                 </div>
               </button>
-              
+
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -639,7 +660,9 @@ className={clsx(
                 className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors group outline-none"
                 title="Select All for Editing"
               >
-                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">Select All</span>
+                <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">
+                  Select All
+                </span>
                 <div
                   className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${allVisibleSelected ? 'bg-indigo-600 border-indigo-500' : 'border-zinc-600 bg-zinc-800'}`}
                 >
@@ -655,7 +678,9 @@ className={clsx(
                 <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
                   {activeBadges.map((badge, index) => (
                     <Draggable key={badge.id} draggableId={badge.id} index={index}>
-                      {(provided, snapshot) => renderBadgeRow(badge, true, provided, snapshot.isDragging)}
+                      {(provided, snapshot) =>
+                        renderBadgeRow(badge, true, provided, snapshot.isDragging)
+                      }
                     </Draggable>
                   ))}
                   {provided.placeholder}

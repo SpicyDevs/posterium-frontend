@@ -1,3 +1,4 @@
+// src/context/EditorContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { RatingType } from '../types';
 
@@ -10,21 +11,14 @@ interface ViewOptions {
 }
 
 interface EditorContextType {
-  // Navigation
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-
-  // Mobile Sheet State
   mobileSheetMode: SheetMode;
   setMobileSheetMode: (mode: SheetMode) => void;
-
-  // Selection
   selectedIds: Set<RatingType>;
   handleSelection: (id: RatingType, multi: boolean) => void;
-  setBatchSelection: (ids: RatingType[]) => void; // <--- New Batch Function
+  setBatchSelection: (ids: RatingType[]) => void;
   clearSelection: () => void;
-
-  // View Helpers
   viewOptions: ViewOptions;
   toggleViewOption: (key: keyof ViewOptions) => void;
 }
@@ -35,56 +29,68 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('canvas');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
-
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
   });
 
-  const setActiveTab = (tab: TabType) => {
+  // FIX: Memoize with stable identity (empty deps). Uses a functional updater for
+  // setMobileSheetMode so it never captures stale mobileSheetMode from its own closure.
+  // Previously this was an unstable inline function — setBatchSelection and clearSelection
+  // captured the version from mount (mobileSheetMode was always 'hidden') because their
+  // deps arrays were empty.
+  const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
-    // On mobile, switching tabs opens the sheet to 'half' if it was hidden
-    if (window.innerWidth < 768 && mobileSheetMode === 'hidden') {
-      setMobileSheetMode('half');
-    }
-  };
+    setMobileSheetMode((prev) => {
+      // Open the sheet on mobile only when it is fully hidden.
+      if (typeof window !== 'undefined' && window.innerWidth < 1024 && prev === 'hidden') {
+        return 'half';
+      }
+      return prev;
+    });
+  }, []); // Stable forever — only uses state setters (which are always stable).
 
+  // FIX: Use functional updater for setSelectedIds so we never read stale selectedIds
+  // from the closure. Remove mobileSheetMode from deps (setActiveTab handles it internally).
   const handleSelection = useCallback(
     (id: RatingType, multi: boolean) => {
-      const newSet = new Set(multi ? selectedIds : []);
-      if (newSet.has(id)) {
-        if (multi) newSet.delete(id);
-        else newSet.clear();
-      } else {
-        newSet.add(id);
-      }
-      setSelectedIds(newSet);
-
-      if (newSet.size > 0) {
-        setActiveTab('badge');
-      } else {
-        setActiveTab('canvas');
-      }
+      let nextSize = 0;
+      setSelectedIds((prev) => {
+        const next = new Set(multi ? prev : []);
+        if (next.has(id)) {
+          if (multi) next.delete(id);
+          else next.clear();
+        } else {
+          next.add(id);
+        }
+        nextSize = next.size;
+        return next;
+      });
+      // We compute nextSize synchronously inside the updater above (React flushes
+      // state setters synchronously in event handlers in React 18).
+      if (nextSize > 0) setActiveTab('badge');
+      else setActiveTab('canvas');
     },
-    [selectedIds, mobileSheetMode]
+    [setActiveTab], // No longer depends on selectedIds or mobileSheetMode
   );
 
-  // Fix for "Select All" bug: Set all IDs at once instead of toggling one by one
-  const setBatchSelection = useCallback((ids: RatingType[]) => {
-    setSelectedIds(new Set(ids));
-    if (ids.length > 0) {
-      setActiveTab('badge');
-    }
-  }, []);
+  // FIX: setActiveTab is now stable so these deps are correct and non-stale.
+  const setBatchSelection = useCallback(
+    (ids: RatingType[]) => {
+      setSelectedIds(new Set(ids));
+      if (ids.length > 0) setActiveTab('badge');
+    },
+    [setActiveTab],
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
     setActiveTab('canvas');
-  }, []);
+  }, [setActiveTab]);
 
-  const toggleViewOption = (key: keyof ViewOptions) => {
+  const toggleViewOption = useCallback((key: keyof ViewOptions) => {
     setViewOptions((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
   return (
     <EditorContext.Provider

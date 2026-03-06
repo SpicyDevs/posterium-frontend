@@ -1,3 +1,4 @@
+// src/utils.ts
 import {
   PosterConfig,
   DEFAULT_CONFIG,
@@ -10,6 +11,7 @@ import {
   PADDING,
   MediaType,
   ApiKeys,
+  ExtensionType,
 } from './types';
 
 // @ts-ignore
@@ -24,7 +26,7 @@ export const calculateAutoPosition = (
   _ratingId: RatingType,
   index: number,
   totalBadges: number,
-  config: PosterConfig
+  config: PosterConfig,
 ) => {
   const scale = getScale(config.size);
   const badgeW = BASE_BADGE_W * scale;
@@ -53,7 +55,7 @@ export const calculateAutoPosition = (
 
 export const generateApiUrl = (
   config: PosterConfig,
-  baseUrl: string = DEFAULT_API_BASE
+  baseUrl: string = DEFAULT_API_BASE,
 ): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
   const url = new URL(`${cleanBase}/${config.mediaType}/${config.tmdbId}.${config.extension}`);
@@ -73,20 +75,22 @@ export const generateApiUrl = (
   params.set('blur', config.blur.toString());
   params.set('alpha', config.alpha.toString());
   params.set('rad', config.radius.toString());
-  // shadow sent as integer (0–30) — backend now parses it correctly with getShadow()
   params.set('sh', config.shadow.toString());
 
   if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
   if (config.grayscale)      params.set('bw', '1');
 
-  // FIX: The frontend canvas sizes badges using getScale(config.size), but the backend
-  // has no concept of a "size" enum — it only knows g_scale (a float multiplier).
-  // Previously g_scale was set to config.scale alone, so lg/sm sizes rendered at 1.0x
-  // on the backend SVG while the canvas showed them at 1.2x/0.8x.
-  // Now we bake the size scale into g_scale so the backend matches the canvas.
+  // FIX: Emit layout (l) and preset (pos) params so that parseUrlToConfig can round-trip
+  // them correctly. Previously these were never emitted, so loading any generated URL
+  // clobbered layout to 'col' and preset to 'tr' (the hard-coded fallbacks in
+  // parseUrlToConfig), visually shifting the inspector controls even though per-badge
+  // x/y positions kept the poster correct.
+  // Only emit when non-custom to keep URLs short for the common default case.
+  if (config.layout !== 'custom') params.set('l', config.layout);
+  if (config.preset !== 'custom') params.set('pos', config.preset);
+
   const sizeScale = getScale(config.size);
   const effectiveGlobalScale = sizeScale * (config.scale !== undefined ? config.scale : 1.0);
-  // Always emit g_scale so backend doesn't fall back to its own default (also 1.0, but explicit is safer).
   params.set('g_scale', effectiveGlobalScale.toFixed(3));
 
   if (config.borderW !== undefined && config.borderW > 0) params.set('g_bw', config.borderW.toString());
@@ -94,8 +98,6 @@ export const generateApiUrl = (
   if (config.bg)      params.set('g_bg', config.bg);
   if (config.txt)     params.set('g_txt', config.txt);
 
-  // FIX: g_icon was never sent — the backend always defaulted to icon=true globally.
-  // Now the global icon toggle in PropertyPanel correctly propagates to the SVG renderer.
   params.set('g_icon', config.icon !== false ? '1' : '0');
 
   config.ratings.forEach((key: RatingType, index: number) => {
@@ -113,17 +115,11 @@ export const generateApiUrl = (
     if (item.blur   !== undefined) params.set(`${key}_blur`, item.blur.toString());
     if (item.alpha  !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
     if (item.radius !== undefined) params.set(`${key}_rad`, item.radius.toString());
-    // FIX: shadow sent as integer; backend now handles variable intensities per badge
     if (item.shadow !== undefined) params.set(`${key}_sh`, item.shadow.toString());
 
     const finalIcon = item.icon ?? config.icon ?? true;
     params.set(`${key}_icon`, finalIcon ? '1' : '0');
 
-    // FIX: Per-badge scale must bake in the size scale so that the backend SVG
-    // matches what the canvas preview shows.
-    //   Frontend renders: sizeScale × item.scale
-    //   Backend applies:  scaleOverride (ignores g_scale when per-badge is set)
-    // So we send the fully-resolved scale as the per-badge override.
     if (item.scale !== undefined) {
       const resolvedScale = item.scale * sizeScale;
       params.set(`${key}_scale`, resolvedScale.toFixed(3));
@@ -143,7 +139,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 
     const mediaType  = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
     const tmdbId     = match ? match[2] : DEFAULT_CONFIG.tmdbId;
-    const extension  = match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) : 'svg';
+    // FIX: Removed unnecessary `as any` — 'svg' | 'jpg' | 'png' | 'webp' are all valid ExtensionType values.
+    const extension: ExtensionType =
+      match && match[3] ? (match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType : 'svg';
 
     const params = url.searchParams;
 
@@ -175,18 +173,18 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 
       if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw) {
         items[key] = {
-          ...(x     ? { x: parseInt(x) }                                          : {}),
-          ...(y     ? { y: parseInt(y) }                                          : {}),
-          ...(bg    ? { bg }                                                       : {}),
-          ...(txt   ? { txt: txt.startsWith('#') ? txt : `#${txt}` }              : {}),
-          ...(blur  ? { blur: parseInt(blur) }                                     : {}),
-          ...(alpha ? { alpha: parseFloat(alpha) }                                 : {}),
-          ...(rad   ? { radius: parseInt(rad) }                                    : {}),
-          ...(sh    ? { shadow: parseInt(sh) }                                     : {}),
-          ...(icon  ? { icon: icon === '1' }                                       : {}),
-          ...(scale ? { scale: parseFloat(scale) }                                 : {}),
-          ...(bw    ? { borderW: parseInt(bw) }                                    : {}),
-          ...(bc    ? { borderC: bc.startsWith('#') ? bc : `#${bc}` }             : {}),
+          ...(x     ? { x: parseInt(x) }                                         : {}),
+          ...(y     ? { y: parseInt(y) }                                         : {}),
+          ...(bg    ? { bg }                                                      : {}),
+          ...(txt   ? { txt: txt.startsWith('#') ? txt : `#${txt}` }             : {}),
+          ...(blur  ? { blur: parseInt(blur) }                                    : {}),
+          ...(alpha ? { alpha: parseFloat(alpha) }                                : {}),
+          ...(rad   ? { radius: parseInt(rad) }                                   : {}),
+          ...(sh    ? { shadow: parseInt(sh) }                                    : {}),
+          ...(icon  ? { icon: icon === '1' }                                      : {}),
+          ...(scale ? { scale: parseFloat(scale) }                                : {}),
+          ...(bw    ? { borderW: parseInt(bw) }                                   : {}),
+          ...(bc    ? { borderC: bc.startsWith('#') ? bc : `#${bc}` }            : {}),
         };
       }
     });
@@ -201,16 +199,21 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     return {
       mediaType,
       tmdbId,
-      extension: extension as any,
+      extension,
       ratings: params.has('r') ? (params.get('r')?.split(',') as RatingType[]) : [],
-      source:     (params.get('source') as any) || 'tmdb',
+      source:     (params.get('source') as PosterConfig['source']) || 'tmdb',
       ptype:      params.get('ptype') || 'auto',
       textless:   params.get('textless') === '1',
       theme:      'glass',
-      size:       'md',   // size is baked into g_scale on export; reset to md on import
+      size:       'md', // size is baked into g_scale on export; reset to md on import
       shadow:     params.has('sh')    ? parseInt(params.get('sh')!)    : 6,
-      layout:     (params.get('l')   as any) || 'col',
-      preset:     (params.get('pos') as any) || 'tr',
+      // FIX: Default layout and preset to 'custom' instead of 'col'/'tr'.
+      // generateApiUrl only emits 'l' and 'pos' for non-custom values, so absence of
+      // these params means custom layout/preset (explicit per-badge x/y positions).
+      // The old defaults ('col'/'tr') were wrong for all generated URLs and caused the
+      // inspector to show incorrect layout/preset state after loading a URL.
+      layout:     (params.get('l')   as PosterConfig['layout'])  || 'custom',
+      preset:     (params.get('pos') as PosterConfig['preset'])  || 'custom',
       blur:       params.has('blur')  ? parseInt(params.get('blur')!)  : 8,
       alpha:      params.has('alpha') ? parseFloat(params.get('alpha')!) : 0.4,
       radius:     params.has('rad')   ? parseInt(params.get('rad')!)   : 12,
