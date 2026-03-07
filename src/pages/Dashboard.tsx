@@ -1,11 +1,45 @@
 // src/pages/Dashboard.tsx
-import React, { useEffect, useRef, useState, memo } from 'react';
+// Re-export shim — keeps the existing App.tsx import path working unchanged.
+export { default } from './dashboard/index';
+
+// ─── The original monolithic file has been split into ───────────────────────
+// src/pages/dashboard/
+//   index.tsx               ← thin assembler (all sections in order)
+//   types.ts                ← shared TypeScript interfaces
+//   utils.ts                ← API base URL + buildPosterUrl
+//   data.tsx                ← all static data (POSTERS, BADGE_DATA, FEATURES …)
+//   hooks/
+//     useInView.ts          ← IntersectionObserver-based visibility hook
+//     useParallax.ts        ← rAF-throttled scroll parallax hook
+//   components/
+//     FadeSection.tsx       ← scroll-triggered fade+slide wrapper
+//     PosterCard.tsx        ← lazy poster image with skeleton & hover overlay
+//     BadgeChip.tsx         ← coloured pill for a single badge
+//     DashNav.tsx           ← sticky nav with desktop links + mobile hamburger
+//     Hero.tsx              ← parallax wall, headline, CTA, floating poster row
+//     StatsBar.tsx          ← 4-stat bar (sources / formats / types / calls)
+//     LiveDemo.tsx          ← tabbed preset demo with badge chips
+//     PosterGallery.tsx     ← responsive masonry grid of all posters
+//     HowItWorks.tsx        ← 3-step cards with connector line
+//     BadgeShowcase.tsx     ← badge grid + per-badge controls preview
+//     FeaturesGrid.tsx      ← 8-card features grid
+//     ApiSection.tsx        ← syntax-highlighted code block + param reference
+//     UseCases.tsx          ← 6 use-case cards
+//     CtaSection.tsx        ← gradient CTA card with glow
+//     DashFooter.tsx        ← footer with logo and links
+// ────────────────────────────────────────────────────────────────────────────
+
+// Keeping old code below commented-out as a reference during migration.
+// Delete this file once the new structure is confirmed working.
+
+/*
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { Link } from '../Router';
 import {
-  Sparkles, ArrowRight, Github, Layers,
+  Sparkles, ArrowRight, Github, Code2, Layers,
   Zap, Globe, MousePointer2, Palette, Film, Image as ImageIcon,
   Copy, Check, Star, RefreshCw, Shield, ChevronRight,
-  PlayCircle, Tv, Menu, X, ExternalLink,
+  PlayCircle, Tv, Clapperboard, Menu, X, ExternalLink,
 } from 'lucide-react';
 
 // ── API base ─────────────────────────────────────────────────────────────────
@@ -970,3 +1004,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+*/
