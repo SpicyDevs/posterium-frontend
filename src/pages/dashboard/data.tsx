@@ -1,5 +1,4 @@
 // src/pages/dashboard/data.tsx
-import React from 'react';
 import {
   Zap, Globe, MousePointer2, Palette, Film, Image as ImageIcon,
   Star, RefreshCw, Shield,

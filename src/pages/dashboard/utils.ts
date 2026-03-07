@@ -1,54 +1,13 @@
-// src/pages/dashboard/types.ts
+// src/pages/dashboard/utils.ts
+import type { PosterItem } from './types';
 
-export interface PosterItem {
-  id: string;
-  type: 'movie' | 'tv' | 'anime';
-  title: string;
-  year: string;
-  badges: string;
-  badgeConfig?: string;
-  accent: string;
-}
+export const API = 'https://api.spicydevs.xyz';
 
-export interface BadgeData {
-  id: string;
-  label: string;
-  value: string;
-  color: string;
-  bg: string;
-  border: string;
-  icon: React.ReactNode;
-}
+export const SAMPLE_URL =
+  `${API}/movie/453395.png?r=imdb,rt,meta,tmdb&blur=8&alpha=0.45&rad=12&v=2&g_scale=1.000` +
+  `&imdb_x=310&imdb_y=20&rt_x=310&rt_y=90&meta_x=310&meta_y=160&tmdb_x=310&tmdb_y=230`;
 
-export interface Feature {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  accent: string;
-}
-
-export interface DemoConfig {
-  label: string;
-  poster: PosterItem;
-  desc: string;
-  accent: string;
-}
-
-export interface UseCase {
-  icon: string;
-  title: string;
-  desc: string;
-  tags: string[];
-}
-
-export interface ApiParam {
-  p: string;
-  d: string;
-  e: string;
-}
-
-export interface Stat {
-  v: string;
-  l: string;
-  icon: React.ReactNode;
-}
+export const buildPosterUrl = (p: PosterItem, size: 'sm' | 'full' = 'sm'): string => {
+  const ext = size === 'sm' ? 'svg' : 'png';
+  return `${API}/${p.type}/${p.id}.${ext}?source=tmdb&r=${p.badges}${p.badgeConfig ?? ''}`;
+};

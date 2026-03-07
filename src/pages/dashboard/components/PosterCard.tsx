@@ -1,5 +1,5 @@
 // src/pages/dashboard/components/PosterCard.tsx
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import { Film, Tv } from 'lucide-react';
 import type { PosterItem } from '../types';
 import { buildPosterUrl } from '../utils';
