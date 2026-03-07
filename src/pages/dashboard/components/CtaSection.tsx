@@ -1,41 +1,57 @@
-// src/pages/dashboard/components/UseCases.tsx
+// src/pages/dashboard/components/CtaSection.tsx
 import React from 'react';
+import { Sparkles, ArrowRight, Github, Star } from 'lucide-react';
+import { Link } from '../../../Router';
 import FadeSection from './FadeSection';
-import { USE_CASES } from '../data';
 
-const UseCases: React.FC = () => (
-  <section className="py-20 sm:py-28 px-4 sm:px-6">
-    <div className="max-w-5xl mx-auto">
+const CtaSection: React.FC = () => (
+  <section className="py-20 sm:py-28 px-4 sm:px-6 bg-[#0a0a0c]">
+    <div className="max-w-3xl mx-auto text-center">
       <FadeSection>
-        <div className="text-center mb-12 sm:mb-16">
-          <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-[0.15em] mb-3">Use cases</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-white">Where people use it</h2>
+        <div
+          className="relative p-8 sm:p-12 rounded-3xl border border-white/[0.08] overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 50%, transparent 100%)' }}
+        >
+          {/* Glow orbs */}
+          <div
+            className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none blur-3xl opacity-30"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.6), transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full pointer-events-none blur-3xl opacity-20"
+            style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.5), transparent 70%)' }}
+          />
+
+          <div className="relative z-10">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-indigo-500/40">
+              <Sparkles size={24} className="text-white" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">Ready to build?</h2>
+            <p className="text-[13px] sm:text-[14px] text-zinc-500 mb-8 max-w-sm mx-auto leading-relaxed">
+              Design your perfect poster in the visual editor. No account required — drag, drop, and copy your URL.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/build"
+                className="glow-btn group flex items-center gap-2 h-11 sm:h-12 px-7 sm:px-8 rounded-xl text-[13px] sm:text-[14px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all"
+              >
+                Open Builder
+                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <a
+                href="https://github.com/xdaayush/freeposterapi"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 h-11 sm:h-12 px-6 sm:px-7 rounded-xl text-[13px] sm:text-[14px] font-semibold text-zinc-400 hover:text-white bg-white/5 hover:bg-white/8 transition-all border border-white/[0.09]"
+              >
+                <Github size={14} /> Star on GitHub <Star size={11} className="text-amber-400" />
+              </a>
+            </div>
+          </div>
         </div>
       </FadeSection>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {USE_CASES.map((uc, i) => (
-          <FadeSection key={uc.title} delay={i * 60}>
-            <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0f] border border-white/[0.06] card-3d h-full">
-              <div className="text-3xl mb-3">{uc.icon}</div>
-              <h3 className="text-[14px] font-bold text-zinc-100 mb-2">{uc.title}</h3>
-              <p className="text-[12px] text-zinc-600 leading-relaxed mb-3">{uc.desc}</p>
-              <div className="flex flex-wrap gap-1">
-                {uc.tags.map(t => (
-                  <span
-                    key={t}
-                    className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-600 border border-white/[0.04]"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </FadeSection>
-        ))}
-      </div>
     </div>
   </section>
 );
 
-export default UseCases;
+export default CtaSection;
