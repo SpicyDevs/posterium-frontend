@@ -1,11 +1,11 @@
 // src/pages/Dashboard.tsx
-import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import { Link } from '../Router';
 import {
-  Sparkles, ArrowRight, Github, Code2, Layers,
+  Sparkles, ArrowRight, Github, Layers,
   Zap, Globe, MousePointer2, Palette, Film, Image as ImageIcon,
   Copy, Check, Star, RefreshCw, Shield, ChevronRight,
-  PlayCircle, Tv, Clapperboard, Menu, X, ExternalLink,
+  PlayCircle, Tv, Menu, X, ExternalLink,
 } from 'lucide-react';
 
 // ── API base ─────────────────────────────────────────────────────────────────
