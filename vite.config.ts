@@ -6,7 +6,9 @@ import webfontDownload from 'vite-plugin-webfont-dl';
 export default defineConfig({
   plugins: [
     react(),
-    webfontDownload(),
+    webfontDownload([
+      'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap'
+    ]),
   ],
   build: {
     target: 'ES2020',
