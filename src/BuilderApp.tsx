@@ -13,7 +13,7 @@ import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { Sparkles, RotateCcw, AlertTriangle, Undo2, Redo2, Home } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
-import { Link } from './router';
+import { Link } from './Router';
 
 const STORAGE_KEY = 'freeposterapi_config_v2';
 

@@ -1,6 +1,6 @@
 // src/pages/Dashboard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from '../router';
+import { Link } from '../Router';
 import {
   Sparkles, ArrowRight, Github, ExternalLink, Code2, Layers,
   Zap, Globe, MousePointer2, Palette, Film, Image, Copy, Check,
