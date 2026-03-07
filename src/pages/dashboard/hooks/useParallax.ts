@@ -1,25 +1,28 @@
-// src/pages/dashboard/hooks/useInView.ts
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-export const useInView = (threshold = 0.15) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
+export const useParallax = <T extends HTMLElement = HTMLDivElement>(speed: number = 0.25) => {
+  const ref = useRef<T>(null);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          obs.disconnect();
-        }
-      },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
+    const onScroll = () => {
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          if (ref.current) {
+            // translateZ(0) forces GPU acceleration for smoother rendering
+            ref.current.style.transform = `translateY(${window.scrollY * speed}px) translateZ(0)`;
+          }
+          rafRef.current = 0;
+        });
+      }
+    };
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [speed]);
 
-  return { ref, inView };
+  return ref;
 };
