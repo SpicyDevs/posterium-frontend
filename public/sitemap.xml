@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
                             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-                            
+
   <url>
     <loc>https://posters.spicydevs.xyz/</loc>
     <lastmod>2026-03-07T00:00:00+00:00</lastmod>
@@ -11,4 +11,11 @@
     <priority>1.0</priority>
   </url>
 
-  </urlset>
+  <url>
+    <loc>https://posters.spicydevs.xyz/build</loc>
+    <lastmod>2026-03-07T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+</urlset>

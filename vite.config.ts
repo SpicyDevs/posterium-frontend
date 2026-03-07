@@ -10,28 +10,29 @@ export default defineConfig({
       'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap'
     ]),
   ],
+  // Enable SPA history fallback so /build works on direct load
+  server: {
+    historyApiFallback: true,
+  },
   build: {
     target: 'ES2020',
     minify: 'esbuild',
-    // Optimize for Cloudflare Pages
     cssCodeSplit: true,
-    sourcemap: false, // Disable source maps in production to reduce bundle size
+    sourcemap: false,
     rollupOptions: {
       output: {
-        // Split vendor logic from app logic for better caching
         manualChunks: {
           vendor: ['react', 'react-dom'],
           ui: ['lucide-react'],
           headlessui: ['@headlessui/react'],
         },
-        // Optimize chunk naming for cache busting
         chunkFileNames: 'assets/chunk-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 1000, // Warn if chunks exceed 1MB
+    chunkSizeWarningLimit: 1000,
   },
   resolve: {
     alias: {
