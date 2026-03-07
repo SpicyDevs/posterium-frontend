@@ -26,3 +26,9 @@
 # API responses - minimal caching with revalidation
 /api/*
   Cache-Control: public, max-age=60, must-revalidate
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/robots.txt
+  Cache-Control: public, max-age=3600, must-revalidate

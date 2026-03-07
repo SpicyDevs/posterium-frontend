@@ -1,0 +1,14 @@
+# public/robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow direct crawling of backend API paths if routed through the same domain
+Disallow: /api/
+Disallow: /cdn-cgi/
+
+# Ensure search engines can access JS/CSS to properly render the SPA
+Allow: /assets/
+
+# Host your sitemap URL explicitly
+Sitemap: https://posters.spicydevs.xyz/sitemap.xml
