@@ -4,7 +4,7 @@ import { Link } from '../router';
 import {
   Sparkles, ArrowRight, Github, ExternalLink, Code2, Layers,
   Zap, Globe, MousePointer2, Palette, Film, Image, Copy, Check,
-  Star, Download, RefreshCw, Shield,
+  Star, RefreshCw, Shield,
 } from 'lucide-react';
 
 // ── Badge icons inline (subset for showcase) ──────────────────────────────
@@ -116,17 +116,6 @@ const FEATURES = [
     accent: 'cyan',
   },
 ];
-
-const CODE_EXAMPLE = `https://api.spicydevs.xyz/movie/453395.png
-  ?r=imdb,rt,meta,tmdb
-  &source=tmdb
-  &blur=8
-  &alpha=0.45
-  &rad=12
-  &imdb_x=340&imdb_y=20
-  &rt_x=340&rt_y=90
-  &meta_x=340&meta_y=160
-  &tmdb_x=340&tmdb_y=230`;
 
 const accentMap: Record<string, string> = {
   indigo: 'rgba(99,102,241,0.15)',
