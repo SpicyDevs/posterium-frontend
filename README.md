@@ -1,4 +1,4 @@
-# FreePosterAPI - Self-Hosting Guide
+# Posterium - Self-Hosting Guide
 
 This guide will walk you through deploying both the **Cloudflare Worker (Backend)** and the **React Editor (Frontend)** to your own Cloudflare account.
 

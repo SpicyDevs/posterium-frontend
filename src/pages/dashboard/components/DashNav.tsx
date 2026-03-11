@@ -24,7 +24,7 @@ const DashNav: React.FC = () => {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
             <Sparkles size={13} className="text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight">FreePosterAPI</span>
+          <span className="text-[13px] font-bold text-white tracking-tight">Posterium</span>
           <span className="hidden sm:flex text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 font-bold border border-indigo-500/20 uppercase tracking-wider">
             v2
           </span>

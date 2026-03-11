@@ -15,7 +15,7 @@ import { Sparkles, RotateCcw, AlertTriangle, Undo2, Redo2, Home } from 'lucide-r
 import { usePosterHistory } from './hooks/usePosterHistory';
 import { Link } from './Router';
 
-const STORAGE_KEY = 'freeposterapi_config_v2';
+const STORAGE_KEY = 'posterium_config_v2';
 
 // ---------------------------------------------------------------------------
 // Reset dialog
@@ -264,7 +264,7 @@ const StudioLayout: React.FC<{
                 <Sparkles size={13} className="text-white" />
               </div>
               <span className="text-[13px] font-semibold text-white tracking-tight select-none">
-                FreePosterAPI
+                Posterium
               </span>
             </div>
           </div>

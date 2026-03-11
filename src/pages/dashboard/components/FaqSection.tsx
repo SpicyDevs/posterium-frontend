@@ -13,20 +13,20 @@ interface FaqItem {
 
 const FAQS: FaqItem[] = [
   {
-    q: 'What is FreePosterAPI?',
-    a: 'FreePosterAPI is a free, open-source tool that generates custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. It provides a visual drag-and-drop editor and exports a single API URL you can use anywhere — no account required.',
+    q: 'What is Posterium?',
+    a: 'Posterium is a free, open-source tool that generates custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. It provides a visual drag-and-drop editor and exports a single API URL you can use anywhere — no account required.',
   },
   {
-    q: 'How do I use FreePosterAPI with Plex or Jellyfin?',
+    q: 'How do I use Posterium with Plex or Jellyfin?',
     a: 'Open the free builder, search for your movie or TV show, position the rating badges where you want them, then copy the generated API URL. In Plex or Jellyfin, edit the item metadata and paste the URL as a custom poster image. The poster includes live ratings and looks great in any media server.',
   },
   {
-    q: 'Is FreePosterAPI completely free?',
-    a: 'Yes — FreePosterAPI is 100% free with no rate limits, no API keys required, and no account needed. The source code is open on GitHub so you can self-host it too.',
+    q: 'Is Posterium completely free?',
+    a: 'Yes — Posterium is 100% free with no rate limits, no API keys required, and no account needed. The source code is open on GitHub so you can self-host it too.',
   },
   {
     q: 'What rating sources are supported?',
-    a: 'FreePosterAPI supports IMDb, Rotten Tomatoes Tomatometer, Rotten Tomatoes Audience Score (Popcornmeter), Metacritic, TMDB, Letterboxd, MyAnimeList, AniList, plus runtime and age rating badges.',
+    a: 'Posterium supports IMDb, Rotten Tomatoes Tomatometer, Rotten Tomatoes Audience Score (Popcornmeter), Metacritic, TMDB, Letterboxd, MyAnimeList, AniList, plus runtime and age rating badges.',
   },
   {
     q: 'What image formats does the API return?',
@@ -34,7 +34,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'Can I use this for TV shows and anime?',
-    a: 'Yes. FreePosterAPI supports movies, TV series, and anime. For anime, MyAnimeList and AniList score badges are available in addition to the standard badges.',
+    a: 'Yes. Posterium supports movies, TV series, and anime. For anime, MyAnimeList and AniList score badges are available in addition to the standard badges.',
   },
   {
     q: 'How do I embed a poster in Notion or Discord?',
@@ -55,7 +55,7 @@ const FaqSection: React.FC = () => {
               Frequently Asked Questions
             </h2>
             <p className="text-[13px] sm:text-[14px] text-zinc-600 max-w-md mx-auto">
-              Everything you need to know about FreePosterAPI.
+              Everything you need to know about Posterium.
             </p>
           </div>
         </FadeSection>

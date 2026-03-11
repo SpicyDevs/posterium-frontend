@@ -84,7 +84,7 @@ const DashFooter: React.FC = () => (
           <Sparkles size={9} className="text-white" />
         </div>
         <span className="text-[11px] text-zinc-600">
-          <strong className="text-zinc-500 font-medium">FreePosterAPI</strong>
+          <strong className="text-zinc-500 font-medium">Posterium</strong>
           {' '}— Free movie poster generator by{' '}
           <a
             href="https://spicydevs.xyz"
