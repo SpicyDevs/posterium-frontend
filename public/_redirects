@@ -1,10 +1,7 @@
-# Static files must NOT be caught by the SPA fallback.
-# List them explicitly BEFORE the SPA catch-all rule.
-# Cloudflare Pages processes rules top-to-bottom; first match wins.
+# DO NOT use self-referential rules like /sitemap.xml /sitemap.xml 200
+# DO NOT use /* /index.html 200 (Cloudflare rejects it as infinite loop)
+#
+# Cloudflare Pages serves actual files in dist/ directly — no rules needed for them.
+# Only add rules for SPA routes that have NO matching file in the build output.
 
-/sitemap.xml    /sitemap.xml    200
-/robots.txt     /robots.txt     200
-/og-image.jpg   /og-image.jpg   200
-
-# SPA fallback — serves index.html for all other routes (e.g. /build)
-/*              /index.html     200
+/build    /index.html    200

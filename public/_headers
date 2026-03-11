@@ -10,6 +10,9 @@
   Cache-Control: public, max-age=0, must-revalidate
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://api.spicydevs.xyz https://api.themoviedb.org https://image.tmdb.org
 
+/404.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 /build
   Cache-Control: public, max-age=0, must-revalidate
 
@@ -22,7 +25,6 @@
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
-  X-Robots-Tag: noindex
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
@@ -31,9 +33,3 @@
 /og-image.jpg
   Content-Type: image/jpeg
   Cache-Control: public, max-age=604800
-
-/public/*
-  Cache-Control: public, max-age=604800
-
-/api/*
-  Cache-Control: public, max-age=60, must-revalidate
