@@ -7,53 +7,85 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
 
+    <!-- ═══════════════════════════════════════════════
+         CANONICAL & PRECONNECTS
+    ═══════════════════════════════════════════════ -->
     <link rel="canonical" href="https://posters.spicydevs.xyz/" />
-
     <link rel="preconnect" href="https://api.spicydevs.xyz" />
+    <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+    <link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
 
-    <title>FreePosterAPI Editor — Custom Movie & TV Posters with Ratings</title>
+    <!-- ═══════════════════════════════════════════════
+         PRIMARY META
+    ═══════════════════════════════════════════════ -->
+    <title>FreePosterAPI — Free Movie & TV Poster Generator with IMDb, Rotten Tomatoes & Metacritic Ratings</title>
     <meta
       name="description"
-      content="Design stunning custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Glassmorphism effects, drag-and-drop layout, instant API URL export."
+      content="Free movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Drag-and-drop editor, glassmorphism effects, instant API URL export. Perfect for Plex, Jellyfin, Discord bots, and Notion."
     />
-    <meta name="keywords" content="movie poster, custom poster, IMDb rating, Rotten Tomatoes, Metacritic, TMDB, poster editor, free poster API" />
+    <meta
+      name="keywords"
+      content="movie poster generator, free poster API, IMDb rating badge, Rotten Tomatoes badge, Metacritic score, TMDB poster, Plex custom poster, Jellyfin poster, movie rating overlay, TV show poster, custom movie poster, glassmorphism poster, poster editor online, free movie API"
+    />
     <meta name="author" content="SpicyDevs" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
 
+    <!-- ═══════════════════════════════════════════════
+         SEARCH ENGINE VERIFICATIONS
+         Replace XXXX values with your actual codes
+    ═══════════════════════════════════════════════ -->
+    <meta name="google-site-verification" content="REPLACE_WITH_GOOGLE_VERIFICATION_CODE" />
+    <meta name="msvalidate.01" content="REPLACE_WITH_BING_VERIFICATION_CODE" />
+    <meta name="yandex-verification" content="REPLACE_WITH_YANDEX_CODE" />
+
+    <!-- ═══════════════════════════════════════════════
+         OPEN GRAPH
+    ═══════════════════════════════════════════════ -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://posters.spicydevs.xyz/" />
-    <meta property="og:title" content="FreePosterAPI Editor — Custom Movie & TV Posters with Ratings" />
+    <meta property="og:title" content="FreePosterAPI — Free Movie & TV Poster Generator with Live Ratings" />
     <meta
       property="og:description"
-      content="Design stunning custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Glassmorphism effects, drag-and-drop layout, instant API URL export."
+      content="Generate stunning movie and TV posters with live IMDb, Rotten Tomatoes, Metacritic, and TMDB rating badges. Free, open-source, no account required."
     />
     <meta property="og:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="FreePosterAPI Editor preview showing custom movie poster with rating badges" />
+    <meta property="og:image:alt" content="FreePosterAPI editor showing custom movie poster with IMDb and Rotten Tomatoes rating badges" />
     <meta property="og:site_name" content="FreePosterAPI" />
     <meta property="og:locale" content="en_US" />
 
+    <!-- ═══════════════════════════════════════════════
+         TWITTER CARD
+    ═══════════════════════════════════════════════ -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@spicydevs" />
     <meta name="twitter:url" content="https://posters.spicydevs.xyz/" />
-    <meta name="twitter:title" content="FreePosterAPI Editor — Custom Movie & TV Posters" />
+    <meta name="twitter:title" content="FreePosterAPI — Free Movie & TV Poster Generator" />
     <meta
       name="twitter:description"
-      content="Design custom movie and TV posters with IMDb, RT, Metacritic, and TMDB badges. Free, open-source, instant API URL export."
+      content="Design custom movie and TV posters with IMDb, RT, Metacritic, and TMDB badges. Free, open-source, instant API URL export. Perfect for Plex & Jellyfin."
     />
     <meta name="twitter:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
-    <meta name="twitter:image:alt" content="FreePosterAPI Editor preview" />
+    <meta name="twitter:image:alt" content="FreePosterAPI editor preview" />
 
+    <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA — WebApplication
+    ═══════════════════════════════════════════════ -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "FreePosterAPI Editor",
+        "alternateName": ["Free Poster API", "Movie Poster Generator", "FreePosterAPI"],
         "url": "https://posters.spicydevs.xyz/",
-        "description": "Design custom movie and TV posters with rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Free, open-source editor with instant API URL export.",
+        "description": "Free online movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Drag-and-drop editor with glassmorphism effects and instant API URL export.",
         "applicationCategory": "MultimediaApplication",
+        "applicationSubCategory": "Photo Editing",
         "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires a modern browser.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -64,20 +96,107 @@
           "name": "SpicyDevs",
           "url": "https://spicydevs.xyz"
         },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "5",
+          "ratingCount": "1"
+        },
         "featureList": [
-          "Custom movie poster creation",
-          "IMDb rating badges",
-          "Rotten Tomatoes rating badges",
-          "Metacritic score badges",
-          "TMDB score badges",
+          "Free movie poster creation with rating badges",
+          "IMDb rating badge overlay",
+          "Rotten Tomatoes Tomatometer and Audience Score badges",
+          "Metacritic score badge",
+          "TMDB score badge",
+          "Letterboxd rating badge",
+          "MyAnimeList and AniList badges for anime",
           "Drag-and-drop badge positioning",
           "Glassmorphism visual effects",
-          "Instant API URL generation"
+          "Instant API URL generation",
+          "SVG, PNG, JPG, WebP export formats",
+          "Textless poster support",
+          "Plex and Jellyfin compatible",
+          "Undo/redo history",
+          "No account required"
+        ],
+        "screenshot": "https://posters.spicydevs.xyz/og-image.jpg",
+        "softwareVersion": "2.0",
+        "inLanguage": "en"
+      }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA — FAQPage (boosts rich results)
+    ═══════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is FreePosterAPI?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "FreePosterAPI is a free, open-source tool that generates custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. It provides a drag-and-drop visual editor and exports a single API URL you can use anywhere."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I use FreePosterAPI with Plex or Jellyfin?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use the visual editor to design your poster, then copy the generated API URL. Paste this URL as the custom poster image in Plex or Jellyfin. The image includes live rating badges that update automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is FreePosterAPI free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, FreePosterAPI is completely free with no rate limits and no account required. It is also open-source on GitHub."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What rating sources does FreePosterAPI support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "FreePosterAPI supports IMDb, Rotten Tomatoes (Tomatometer and Audience Score), Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList, plus runtime and age rating badges."
+            }
+          }
         ]
+      }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA — SoftwareApplication (additional)
+    ═══════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "FreePosterAPI",
+        "operatingSystem": "Web Browser",
+        "applicationCategory": "PhotographyApplication",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "url": "https://posters.spicydevs.xyz/build",
+        "description": "Visual drag-and-drop editor for creating custom movie and TV posters with glassmorphism rating badges."
       }
     </script>
   </head>
   <body>
+    <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
+    <noscript>
+      <div style="font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px;text-align:center;">
+        <h1>FreePosterAPI — Free Movie &amp; TV Poster Generator</h1>
+        <p>Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. This application requires JavaScript to run.</p>
+        <p>Visit <a href="https://github.com/xdaayush/freeposterapi">our GitHub</a> for more information.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>

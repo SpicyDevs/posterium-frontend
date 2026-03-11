@@ -1,14 +1,41 @@
-# public/robots.txt
+# robots.txt — FreePosterAPI
+# https://posters.spicydevs.xyz
 
 User-agent: *
 Allow: /
 
-# Disallow direct crawling of backend API paths if routed through the same domain
+# Block backend API paths
 Disallow: /api/
 Disallow: /cdn-cgi/
 
-# Ensure search engines can access JS/CSS to properly render the SPA
+# Ensure crawlers can access JS/CSS for proper SPA rendering
 Allow: /assets/
+Allow: /src/
 
-# Host your sitemap URL explicitly
+# Sitemap location (all major engines read this)
 Sitemap: https://posters.spicydevs.xyz/sitemap.xml
+
+# ── Googlebot-specific ──────────────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# ── Bingbot-specific ────────────────────────────────────────────────────────
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# ── Yandex ──────────────────────────────────────────────────────────────────
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+# ── Block AI training scrapers (optional, add more as needed) ────────────────
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /

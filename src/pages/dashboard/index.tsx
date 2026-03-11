@@ -36,25 +36,47 @@ const GLOBAL_STYLES = `
 `;
 
 const Dashboard: React.FC = () => (
-  <div
-    className="min-h-screen bg-[#09090b] text-zinc-200 overflow-x-hidden"
-    style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
-  >
-    <style>{GLOBAL_STYLES}</style>
+  <>
+    {/* Skip navigation for accessibility (also helps crawlers) */}
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-indigo-600 focus:text-white focus:text-sm focus:font-medium"
+    >
+      Skip to main content
+    </a>
 
-    <DashNav />
-    <Hero />
-    <StatsBar />
-    <LiveDemo />
-    <PosterGallery />
-    <HowItWorks />
-    <BadgeShowcase />
-    <FeaturesGrid />
-    <ApiSection />
-    <UseCases />
-    <CtaSection />
-    <DashFooter />
-  </div>
+    <div
+      className="min-h-screen bg-[#09090b] text-zinc-200 overflow-x-hidden"
+      style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+    >
+      <style>{GLOBAL_STYLES}</style>
+
+      {/* ── Navigation ── */}
+      <DashNav />
+
+      {/* ── Main content landmark ── */}
+      <main id="main-content">
+        {/*
+          Each section uses a semantic <section> with an id for anchor navigation.
+          Section IDs match the nav links in DashNav.
+          h2 headings follow the h1 in Hero for correct heading hierarchy.
+        */}
+        <Hero />
+        <StatsBar />
+        <LiveDemo />
+        <PosterGallery />
+        <HowItWorks />
+        <BadgeShowcase />
+        <FeaturesGrid />
+        <ApiSection />
+        <UseCases />
+        <CtaSection />
+      </main>
+
+      {/* ── Footer ── */}
+      <DashFooter />
+    </div>
+  </>
 );
 
 export default Dashboard;
