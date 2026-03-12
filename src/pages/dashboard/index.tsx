@@ -11,7 +11,7 @@ import React, {
 import { Link } from '../../Router';
 import {
   ArrowRight, Github, Star, Zap, Globe, MousePointer2,
-  Code2, Layers, Film, Shield, RefreshCw, Image as ImageIcon,
+   Layers, Film, Shield, RefreshCw, Image as ImageIcon,
   Copy, Check, ChevronDown, Menu, X,
 } from 'lucide-react';
 
@@ -1034,7 +1034,7 @@ const FilmReelSection = memo(() => {
         </div>
         {/* Swipeable posters */}
         <div className="mobile-reel" style={{ padding: '32px 0', display: 'flex', gap: 24, paddingLeft: 24, paddingRight: 24 }}>
-          {REEL_ITEMS.map((item, i) => (
+          {REEL_ITEMS.map((item) => (
             <div
               key={item.id}
               style={{
