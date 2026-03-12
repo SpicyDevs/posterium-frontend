@@ -12,46 +12,55 @@ const DesktopReel = memo(() => {
   const trackRef        = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
 
-  useScrollReel(containerRef, trackRef, progressFillRef);
-
-  // Track width estimate: each frame is ~(frameW + gap). Heights vary so we
-  // use an average. Bug fix: original hardcoded 288px per frame regardless of
-  // actual widths, causing the container to either be too short (reel cuts off
-  // before reaching the last poster) or too long (scroll dead zone at end).
-  // We compute a reasonable estimate up front; the actual geometry is handled
-  // by the hook via live DOM reads.
-  const AVG_FRAME_W = 240; // approximate average across HEIGHT_VARIANCE ratios
-  const GAP         = 48;
-  const PAD         = 160; // paddingLeft + paddingRight on track
-  const TRACK_EST   = REEL_ITEMS.length * (AVG_FRAME_W + GAP) + PAD;
-
-  // Extra vertical scroll space. A conservative formula: track width + 30% of
-  // viewport height to ensure the last poster is fully reachable.
-  // Bug: original used TRACK_W as EXTRA_H directly, ignoring viewport width,
-  // meaning on wide screens there was a large dead-scroll zone at the bottom.
-  const [extraH, setExtraH] = useState(TRACK_EST);
+  // Container height formula:
+  //   wrapperH = (trackScrollWidth - viewportWidth) + viewportHeight
+  // Proof: scrollable = wrapperH - vh = trackW - vw
+  //        progress @ end = (trackW - vw) / (trackW - vw) = 1
+  //        translateX @ end = -(trackW - vw) ✓  — track reaches its final frame
+  //
+  // Uses ResizeObserver on the track so the state updates immediately when
+  // poster images load (which increases track.scrollWidth). The useScrollReel
+  // hook's own ResizeObserver on the container then re-triggers compute
+  // with the newly correct scrollable distance — no setTimeout needed.
+  const [wrapperH, setWrapperH] = useState(5500);
 
   useEffect(() => {
     const recalc = () => {
       const track = trackRef.current;
       if (!track) return;
-      const needed = Math.max(0, track.scrollWidth - window.innerWidth);
-      setExtraH(needed + 80); // small buffer
+      const h = Math.max(
+        window.innerHeight * 1.5,
+        track.scrollWidth - window.innerWidth + window.innerHeight,
+      );
+      setWrapperH(h);
     };
 
-    // Recalculate once images have loaded and layout is stable
-    const t = setTimeout(recalc, 600);
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(recalc);
+      if (trackRef.current) ro.observe(trackRef.current);
+    }
+
+    recalc();
     window.addEventListener('resize', recalc, { passive: true });
+    // Safety re-calc after images settle
+    const t = setTimeout(recalc, 1400);
+
     return () => {
-      clearTimeout(t);
+      ro?.disconnect();
       window.removeEventListener('resize', recalc);
+      clearTimeout(t);
     };
   }, []);
+
+  useScrollReel(containerRef, trackRef, progressFillRef);
+
+  const GAP = 48;
 
   return (
     <div
       ref={containerRef}
-      style={{ height: `calc(100vh + ${extraH}px)`, position: 'relative' }}
+      style={{ height: wrapperH, position: 'relative' }}
     >
       <div
         style={{
@@ -64,7 +73,7 @@ const DesktopReel = memo(() => {
           flexDirection: 'column',
         }}
       >
-        {/* Section header bar */}
+        {/* Section header */}
         <div
           style={{
             flexShrink: 0,
@@ -143,7 +152,7 @@ const DesktopReel = memo(() => {
           <SprocketStrip count={44} />
         </div>
 
-        {/* Scrolling content area */}
+        {/* Scroll content area */}
         <div
           style={{
             flex: 1,
@@ -153,7 +162,7 @@ const DesktopReel = memo(() => {
             alignItems: 'center',
           }}
         >
-          {/* Faint centre axis */}
+          {/* Centre axis line */}
           <div
             aria-hidden="true"
             style={{
@@ -163,12 +172,12 @@ const DesktopReel = memo(() => {
               width: 1,
               left: '50%',
               background:
-                'linear-gradient(to bottom, transparent, rgba(196,124,46,0.07), transparent)',
+                'linear-gradient(to bottom,transparent,rgba(196,124,46,0.07),transparent)',
               pointerEvents: 'none',
             }}
           />
 
-          {/* The film strip track */}
+          {/* Film strip track — translateX driven by useScrollReel */}
           <div
             ref={trackRef}
             style={{
@@ -179,6 +188,7 @@ const DesktopReel = memo(() => {
               willChange: 'transform',
               alignItems: 'flex-end',
               paddingBottom: 36,
+              // Do NOT set initial transform here — useScrollReel sets it via RAF
             }}
           >
             {REEL_ITEMS.map((item, i) => (
@@ -191,28 +201,20 @@ const DesktopReel = memo(() => {
             ))}
           </div>
 
-          {/* Edge gradient fades */}
+          {/* Edge fades */}
           <div
             aria-hidden="true"
             style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 88,
-              background: 'linear-gradient(to right, var(--film-dark), transparent)',
+              position: 'absolute', left: 0, top: 0, bottom: 0, width: 88,
+              background: 'linear-gradient(to right,var(--film-dark),transparent)',
               pointerEvents: 'none',
             }}
           />
           <div
             aria-hidden="true"
             style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: 88,
-              background: 'linear-gradient(to left, var(--film-dark), transparent)',
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 88,
+              background: 'linear-gradient(to left,var(--film-dark),transparent)',
               pointerEvents: 'none',
             }}
           />
@@ -243,32 +245,23 @@ const DesktopReel = memo(() => {
           <span
             className="syne-font"
             style={{
-              fontSize: 8,
-              color: 'var(--film-silver)',
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              flexShrink: 0,
+              fontSize: 8, color: 'var(--film-silver)',
+              letterSpacing: '0.16em', textTransform: 'uppercase', flexShrink: 0,
             }}
           >
             Reel
           </span>
           <div
             style={{
-              flex: 1,
-              height: 1,
-              background: 'rgba(255,255,255,0.05)',
-              borderRadius: 99,
-              overflow: 'hidden',
+              flex: 1, height: 1, background: 'rgba(255,255,255,0.05)',
+              borderRadius: 99, overflow: 'hidden',
             }}
           >
             <div
               ref={progressFillRef}
               style={{
-                height: '100%',
-                width: '0%',
-                borderRadius: 99,
-                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
-                // no transition here — updated every RAF frame, transition would lag
+                height: '100%', width: '0%', borderRadius: 99,
+                background: 'linear-gradient(90deg,var(--film-amber),#D4A245)',
               }}
             />
           </div>
@@ -298,11 +291,8 @@ const MobileReel = memo(() => (
       <div
         className="syne-font"
         style={{
-          fontSize: 10,
-          color: 'var(--film-silver)',
-          letterSpacing: '0.16em',
-          textTransform: 'uppercase',
-          marginTop: 3,
+          fontSize: 10, color: 'var(--film-silver)',
+          letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 3,
         }}
       >
         Swipe to browse
@@ -319,7 +309,6 @@ const MobileReel = memo(() => (
       <SprocketStrip count={22} />
     </div>
 
-    {/* Swipeable strip */}
     <div
       className="mobile-swipe"
       role="list"
@@ -327,112 +316,35 @@ const MobileReel = memo(() => (
       style={{ paddingLeft: 20, paddingRight: 20 }}
     >
       {REEL_ITEMS.map(item => (
-        <div
-          key={item.id}
-          role="listitem"
-          style={{ flexShrink: 0, width: 160 }}
-        >
+        <div key={item.id} role="listitem" style={{ flexShrink: 0, width: 160 }}>
           <div
             style={{
-              width: 160,
-              height: 240,
-              borderRadius: 4,
-              overflow: 'hidden',
+              width: 160, height: 240, borderRadius: 4, overflow: 'hidden',
               border: '1px solid rgba(255,255,255,0.07)',
               boxShadow: '0 14px 36px rgba(0,0,0,0.6)',
-              marginBottom: 9,
-              position: 'relative',
-              background: '#151310',
+              marginBottom: 9, position: 'relative', background: '#151310',
             }}
           >
+            {/* Use API with badge params so mobile shows real output */}
             <img
-              src={`${API}/${item.type}/${item.id}.svg?source=tmdb`}
+              src={`${API}/${item.type}/${item.id}.svg?r=imdb,rt&source=tmdb&blur=6&alpha=0.42&rad=10&imdb_x=88&imdb_y=14&rt_x=88&rt_y=58`}
               alt={item.title}
               loading="lazy"
               decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 86,
-                background:
-                  'linear-gradient(to top, rgba(7,7,6,0.96), transparent)',
-                padding: '8px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <div
-                className="syne-font"
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: '#F0E6CC',
-                  lineHeight: 1.2,
-                  marginBottom: 4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {item.title}
-              </div>
-              <div style={{ display: 'flex', gap: 3 }}>
-                <span
-                  className="mono-font"
-                  style={{
-                    background: 'rgba(196,124,46,0.22)',
-                    border: '1px solid rgba(196,124,46,0.45)',
-                    color: '#D4A245',
-                    fontSize: 7,
-                    fontWeight: 700,
-                    padding: '1px 4px',
-                    borderRadius: 2,
-                  }}
-                >
-                  {item.imdb}
-                </span>
-                <span
-                  className="mono-font"
-                  style={{
-                    background: 'rgba(168,32,24,0.18)',
-                    border: '1px solid rgba(168,32,24,0.36)',
-                    color: '#DC4040',
-                    fontSize: 7,
-                    fontWeight: 700,
-                    padding: '1px 4px',
-                    borderRadius: 2,
-                  }}
-                >
-                  {item.rt}
-                </span>
-              </div>
-            </div>
           </div>
           <div
             className="syne-font"
             style={{
-              fontSize: 8,
-              color: 'var(--film-amber)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              fontSize: 8, color: 'var(--film-amber)',
+              letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}
           >
             {item.genre}
           </div>
-          <div
-            className="mono-font"
-            style={{ fontSize: 8, color: 'var(--film-silver)', marginTop: 2 }}
-          >
+          <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-silver)', marginTop: 2 }}>
             {item.year}
           </div>
         </div>
@@ -451,40 +363,28 @@ const MobileReel = memo(() => (
 ));
 MobileReel.displayName = 'MobileReel';
 
-// ── Animated reel spinner icon ────────────────────────────────────
+// ── Reel spinner ──────────────────────────────────────────────────
 const ReelSpinner = memo(() => (
   <div
     style={{
-      width: 26,
-      height: 26,
-      borderRadius: '50%',
+      width: 26, height: 26, borderRadius: '50%',
       border: '1.5px solid rgba(196,124,46,0.28)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       animation: 'reel-spin 3.5s linear infinite',
     }}
   >
     <div
       style={{
-        width: 10,
-        height: 10,
-        borderRadius: '50%',
-        border: '1px solid rgba(196,124,46,0.45)',
-        position: 'relative',
+        width: 10, height: 10, borderRadius: '50%',
+        border: '1px solid rgba(196,124,46,0.45)', position: 'relative',
       }}
     >
       {[0, 120, 240].map(deg => (
         <div
           key={deg}
           style={{
-            position: 'absolute',
-            width: 3,
-            height: 3,
-            borderRadius: '50%',
-            background: 'var(--film-amber)',
-            top: '50%',
-            left: '50%',
+            position: 'absolute', width: 3, height: 3, borderRadius: '50%',
+            background: 'var(--film-amber)', top: '50%', left: '50%',
             transform: `translateX(-50%) translateY(-50%) rotate(${deg}deg) translateY(-4px)`,
           }}
         />
@@ -494,15 +394,11 @@ const ReelSpinner = memo(() => (
 ));
 ReelSpinner.displayName = 'ReelSpinner';
 
-// ── Public export: wraps both with CSS show/hide ──────────────────
+// ── Public export ─────────────────────────────────────────────────
 const FilmReelSection = memo(() => (
   <section id="reel" aria-label="Film Reel Showcase">
-    <div className="desktop-reel-section">
-      <DesktopReel />
-    </div>
-    <div className="mobile-reel-section">
-      <MobileReel />
-    </div>
+    <div className="desktop-reel-section"><DesktopReel /></div>
+    <div className="mobile-reel-section"><MobileReel /></div>
   </section>
 ));
 FilmReelSection.displayName = 'FilmReelSection';
