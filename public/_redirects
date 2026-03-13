@@ -3,5 +3,3 @@
 #
 # Cloudflare Pages serves actual files in dist/ directly — no rules needed for them.
 # Only add rules for SPA routes that have NO matching file in the build output.
-
-/build    /index.html    200
