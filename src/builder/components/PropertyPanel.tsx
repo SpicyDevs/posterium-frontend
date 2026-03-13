@@ -301,33 +301,14 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </div>
         </Section>
 
-        {/* Poster */}
-        <Section title="Poster" icon={<Layers size={11} />}>
-          <SliderRow
-            label="Blur"
-            value={config.posterBlur}
-            min={0}
-            max={20}
-            unit="px"
-            onChange={(v) => updateConfig('posterBlur', v)}
-          />
-          <ToggleRow
-            label="Grayscale"
-            sub="Desaturate the poster image"
-            checked={config.grayscale}
-            onChange={(v) => updateConfig('grayscale', v)}
-          />
-        </Section>
-
         {/* ── Logo Overlay ──────────────────────────────────────────────────── */}
-        <Section title="Logo Overlay" icon={<ImagePlay size={11} />} defaultOpen={false}>
+        <Section title="Logo Overlay" icon={<ImagePlay size={11} />} defaultOpen={true}>
           <ToggleRow
             label="Show Logo"
             sub="Title logo from Fanart, TMDB, or Metahub"
             checked={config.logo}
             onChange={(v) => updateConfig('logo', v)}
           />
-
           {config.logo && (
             <>
               {/* Source selector */}
@@ -439,6 +420,24 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               </p>
             </>
           )}
+        </Section>
+
+        {/* Poster */}
+        <Section title="Poster" icon={<Layers size={11} />}>
+          <SliderRow
+            label="Blur"
+            value={config.posterBlur}
+            min={0}
+            max={20}
+            unit="px"
+            onChange={(v) => updateConfig('posterBlur', v)}
+          />
+          <ToggleRow
+            label="Grayscale"
+            sub="Desaturate the poster image"
+            checked={config.grayscale}
+            onChange={(v) => updateConfig('grayscale', v)}
+          />
         </Section>
 
         {/* Badge defaults */}
