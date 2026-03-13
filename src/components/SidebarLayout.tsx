@@ -2,26 +2,41 @@
 import React from 'react';
 import clsx from 'clsx';
 
-interface SidebarLayoutProps {
+interface Props {
   header: React.ReactNode;
   children: React.ReactNode;
   bodyClassName?: string;
+  /** Extra classes on the root container */
+  className?: string;
 }
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ header, children, bodyClassName }) => {
+/**
+ * Shared sidebar shell.
+ *
+ * Structure:
+ *   ┌──────────────────────────┐
+ *   │  header (sticky, shrink) │  ← always visible, never scrolls away
+ *   ├──────────────────────────┤
+ *   │  body (scrollable)       │  ← flex-1, overflow-y: auto
+ *   └──────────────────────────┘
+ *
+ * On mobile the component is rendered inside the bottom sheet whose own
+ * container already has overflow-y: auto, so we just let children flow
+ * naturally (no nested scroll trap).
+ */
+const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, className }) => {
   return (
-    <div className="flex flex-col h-full bg-app-sidebar overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      {/* Header */}
-      <div className="p-3 border-b border-white/5 space-y-3 relative z-20 bg-app-header shrink-0">
+    <div className={clsx('flex flex-col h-full min-h-0 bg-[#0d0d0f]', className)}>
+      {/* Sticky header — does NOT scroll */}
+      <div className="flex-shrink-0 px-3 pt-3 pb-2 border-b border-white/[0.06] bg-[#0d0d0f] z-10">
         {header}
       </div>
 
-      {/* Body */}
-      {/* lg:flex-1 and lg:overflow-y-auto keeps the split-scroll behavior strictly for desktop */}
+      {/* Scrollable body */}
       <div
         className={clsx(
-          'relative lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-24 lg:pb-0',
-          bodyClassName
+          'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar',
+          bodyClassName,
         )}
       >
         {children}

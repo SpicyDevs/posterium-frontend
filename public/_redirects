@@ -1,0 +1,7 @@
+# DO NOT use self-referential rules like /sitemap.xml /sitemap.xml 200
+# DO NOT use /* /index.html 200 (Cloudflare rejects it as infinite loop)
+#
+# Cloudflare Pages serves actual files in dist/ directly — no rules needed for them.
+# Only add rules for SPA routes that have NO matching file in the build output.
+
+/build    /index.html    200

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Copy, Check, ArrowRight, Link, Loader2, Download } from 'lucide-react';
+// src/components/CodeBox.tsx
+import React, { useState, useEffect, useId, memo, useRef } from 'react';
+import { Copy, Check, ArrowRight, Loader2, Download, Link2 } from 'lucide-react';
 import { generateApiUrl } from '../utils';
 import { PosterConfig } from '../types';
 
@@ -9,96 +10,148 @@ interface Props {
   baseUrl: string;
 }
 
-const CodeBox: React.FC<Props> = ({ config, onLoadConfig, baseUrl }) => {
+const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
-  const [isManualTyping, setIsManualTyping] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Performance: Debounce URL generation to avoid lag during dragging
+  // Debounce URL generation — keeps drag smooth
   useEffect(() => {
-    if (isManualTyping) return;
+    if (isEditing) return;
+    const t = setTimeout(() => setUrl(generateApiUrl(config, baseUrl)), 120);
+    return () => clearTimeout(t);
+  }, [config, baseUrl, isEditing]);
 
-    const timer = setTimeout(() => {
-      setUrl(generateApiUrl(config, baseUrl));
-    }, 150); // 150ms delay makes dragging smooth
-
-    return () => clearTimeout(timer);
-  }, [config, baseUrl, isManualTyping]);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
   };
 
   const handleLoad = () => {
-    setIsProcessing(true);
-    // Small artificial delay to show the "working" state helps UX
+    if (!url.trim()) return;
+    setIsLoading(true);
     setTimeout(() => {
       onLoadConfig(url);
-      setIsManualTyping(false);
-      setIsProcessing(false);
+      setIsEditing(false);
+      setIsLoading(false);
+      inputRef.current?.blur();
     }, 300);
   };
 
   const handleDownload = () => {
-    const dlUrl = new URL(url);
-    dlUrl.searchParams.set('download', '');
-    window.open(dlUrl.toString(), '_blank');
+    try {
+      const u = new URL(url);
+      u.searchParams.set('download', '');
+      window.open(u.toString(), '_blank', 'noopener,noreferrer');
+    } catch { /* malformed url */ }
+  };
+
+  const handleBlur = () => {
+    // Reset editing state if user leaves without submitting
+    if (isEditing && !isLoading) {
+      setIsEditing(false);
+      // Regenerate clean URL
+      setUrl(generateApiUrl(config, baseUrl));
+    }
   };
 
   return (
-    <div className="w-full group relative">
-      <div className="bg-zinc-900/50 hover:bg-zinc-900 transition-colors backdrop-blur rounded-md border border-zinc-700/50 p-0.5 flex items-center shadow-sm focus-within:ring-1 focus-within:ring-blue-500/50 focus-within:border-blue-500/50">
-        <div className="pl-2 pr-1.5 text-zinc-500">
-          <Link size={12} />
-        </div>
+    <div className="w-full" role="search" aria-label="Poster URL">
+      <label htmlFor={inputId} className="sr-only">
+        Poster API URL
+      </label>
+
+      <div className="
+        flex items-center h-8
+        bg-[#111113] border border-white/[0.09] rounded-lg
+        transition-all duration-150
+        focus-within:border-indigo-500/50 focus-within:bg-[#131316]
+        hover:border-white/15
+      ">
+        {/* Icon */}
+        <span className="pl-2.5 text-zinc-600 flex-shrink-0" aria-hidden="true">
+          <Link2 size={11} strokeWidth={2} />
+        </span>
+
+        {/* Input */}
         <input
-          type="text"
+          id={inputId}
+          ref={inputRef}
+          type="url"
           value={url}
-          onChange={(e) => {
-            setIsManualTyping(true);
-            setUrl(e.target.value);
-          }}
-          onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-          className="flex-1 bg-transparent border-none text-zinc-300 text-[11px] font-mono focus:ring-0 placeholder-zinc-600 truncate h-7 py-0"
-          placeholder="https://..."
+          onChange={e => { setIsEditing(true); setUrl(e.target.value); }}
+          onKeyDown={e => e.key === 'Enter' && handleLoad()}
+          onBlur={handleBlur}
+          className="
+            flex-1 min-w-0 h-full px-2 bg-transparent border-none outline-none
+            text-[11px] font-mono text-zinc-300 placeholder-zinc-700
+            truncate
+          "
+          placeholder="https://api.spicydevs.xyz/..."
           spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
         />
-        {isManualTyping ? (
-          <button
-            onClick={handleLoad}
-            disabled={isProcessing}
-            className="p-1.5 text-blue-400 hover:bg-zinc-800 rounded disabled:opacity-50"
-          >
-            {isProcessing ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <ArrowRight size={12} />
-            )}
-          </button>
-        ) : (
-          <div className="flex items-center gap-1">
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-0.5 pr-1 flex-shrink-0">
+          {isEditing ? (
             <button
-              onClick={handleDownload}
-              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
-              title="Download Image"
+              onClick={handleLoad}
+              disabled={isLoading}
+              aria-label="Load this URL"
+              className="
+                w-6 h-6 rounded flex items-center justify-center
+                text-indigo-400 hover:bg-indigo-500/15
+                disabled:opacity-50 transition-colors
+              "
             >
-              <Download size={12} />
+              {isLoading
+                ? <Loader2 size={11} className="animate-spin" />
+                : <ArrowRight size={11} />
+              }
             </button>
-            <button
-              onClick={handleCopy}
-              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
-              title="Copy URL"
-            >
-              {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-            </button>
-          </div>
-        )}
+          ) : (
+            <>
+              <button
+                onClick={handleDownload}
+                aria-label="Download poster"
+                title="Download image"
+                className="w-6 h-6 rounded flex items-center justify-center text-zinc-600 hover:text-zinc-300 hover:bg-white/6 transition-colors"
+              >
+                <Download size={11} />
+              </button>
+              <button
+                onClick={handleCopy}
+                aria-label={copied ? 'Copied!' : 'Copy URL'}
+                title={copied ? 'Copied!' : 'Copy URL'}
+                className="w-6 h-6 rounded flex items-center justify-center text-zinc-600 hover:text-zinc-300 hover:bg-white/6 transition-colors"
+              >
+                {copied
+                  ? <Check size={11} className="text-emerald-400" />
+                  : <Copy size={11} />
+                }
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Screen reader copy announcement */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {copied ? 'URL copied to clipboard' : ''}
       </div>
     </div>
   );
-};
+});
 
+CodeBox.displayName = 'CodeBox';
 export default CodeBox;

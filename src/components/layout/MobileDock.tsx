@@ -1,46 +1,75 @@
-import React from 'react';
-import { Layers, Monitor, Sliders } from 'lucide-react';
+// src/components/layout/MobileDock.tsx
+import React, { memo } from 'react';
+import { Film, Layers, Monitor, Sliders } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
-const MobileDock: React.FC = () => {
+type TabId = 'source' | 'layers' | 'canvas' | 'badge';
+
+const TABS: { id: TabId; Icon: React.ElementType; label: string }[] = [
+  { id: 'source',  Icon: Film,    label: 'Source'  },
+  { id: 'layers',  Icon: Layers,  label: 'Layers'  },
+  { id: 'canvas',  Icon: Monitor, label: 'Canvas'  },
+  { id: 'badge',   Icon: Sliders, label: 'Edit'    },
+];
+
+const MobileDock: React.FC = memo(() => {
   const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
 
-  const handleTabClick = (tab: 'layers' | 'canvas' | 'badge') => {
-    setActiveTab(tab);
-    setMobileSheetMode('half'); // Open sheet on tap
-  };
-
-  const NavItem = ({
-    id,
-    icon: Icon,
-    label,
-  }: {
-    id: 'layers' | 'canvas' | 'badge';
-    icon: any;
-    label: string;
-  }) => {
-    // Only show active color if the tab matches AND the sheet is actually open.
-    // If sheet is hidden, user is looking at the canvas, but we want the UI to look "clean/deselected" as requested.
-    const isActive = activeTab === id && mobileSheetMode !== 'hidden';
-
-    return (
-      <button
-        onClick={() => handleTabClick(id)}
-        className={`flex flex-col items-center justify-center gap-1 p-2 flex-1 transition-all active:scale-90 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`}
-      >
-        <Icon size={20} />
-        <span className="text-[10px] font-medium">{label}</span>
-      </button>
-    );
+  const handleTab = (id: TabId) => {
+    // If tapping the already-active tab while sheet is open → close it
+    if (id === activeTab && mobileSheetMode !== 'hidden') {
+      setMobileSheetMode('hidden');
+      return;
+    }
+    setActiveTab(id);
+    setMobileSheetMode('half');
   };
 
   return (
-    <div className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom))] bg-[#0c0c0e] border-t border-white/5 flex items-start pt-2 justify-around px-2 z-50 shrink-0 pb-[env(safe-area-inset-bottom)]">
-      <NavItem id="layers" icon={Layers} label="Layers" />
-      <NavItem id="canvas" icon={Monitor} label="Canvas" />
-      <NavItem id="badge" icon={Sliders} label="Edit Badge" />
-    </div>
+    <nav
+      role="tablist"
+      aria-label="Editor panels"
+      className="
+        lg:hidden flex-shrink-0
+        h-14 flex items-stretch
+        border-t border-white/[0.06] bg-[#0d0d0f] z-50
+        px-1
+        pb-[env(safe-area-inset-bottom,0px)]
+      "
+    >
+      {TABS.map(({ id, Icon, label }) => {
+        const isActive = activeTab === id && mobileSheetMode !== 'hidden';
+        return (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls="mobile-sheet"
+            onClick={() => handleTab(id)}
+            className={`
+              flex-1 flex flex-col items-center justify-center gap-[3px]
+              rounded-xl mx-0.5 my-1 transition-all duration-150 active:scale-90
+              ${isActive
+                ? 'bg-indigo-500/12 text-indigo-400'
+                : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/4'
+              }
+            `}
+          >
+            <Icon
+              size={18}
+              strokeWidth={isActive ? 2.2 : 1.8}
+              aria-hidden="true"
+            />
+            <span className={`text-[9px] font-medium tracking-wide ${isActive ? 'text-indigo-400' : 'text-zinc-600'}`}>
+              {label}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
   );
-};
+});
+
+MobileDock.displayName = 'MobileDock';
 
 export default MobileDock;

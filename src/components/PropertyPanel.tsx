@@ -1,17 +1,13 @@
 // src/components/PropertyPanel.tsx
-import React from 'react';
-import { Disclosure, Switch, Transition } from '@headlessui/react'; // <--- Headless UI
+import React, { memo, useState } from 'react';
+import { Switch } from '@headlessui/react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
 import {
-  Layers,
-  Layout,
-  Smartphone,
-  Palette,
-  Settings,
-  ChevronUp,
-  ChevronDown,
+  Layers, Layout, Smartphone, Palette,
+  ChevronDown, ChevronRight, Eye, KeyRound,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
+import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
 
 interface Props {
@@ -21,140 +17,168 @@ interface Props {
   viewMode?: 'global' | 'selection';
 }
 
-// Collapsible Section using Headless UI Disclosure
-
-const Section: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({
-  title,
-  children,
-  defaultOpen = true,
-}) => (
-  <Disclosure defaultOpen={defaultOpen}>
-    {({ open }) => (
-      <div className="border-b border-white/5 last:border-0 p-2">
-        {/* CHANGED: Added outline-none, focus:outline-none, and focus:ring-0 to suppress the flash */}
-        <Disclosure.Button className="group flex w-full justify-between items-center px-3 py-2.5 rounded-md transition-all hover:bg-white/5 outline-none focus:outline-none focus-visible:outline-none focus:ring-0">
-          <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-            {title}
-          </h3>
-          <div className="text-zinc-500 group-hover:text-zinc-300 transition-colors">
-            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </div>
-        </Disclosure.Button>
-        <Transition
-          enter="transition duration-100 ease-out"
-          enterFrom="transform scale-95 opacity-0"
-          enterTo="transform scale-100 opacity-100"
-          leave="transition duration-75 ease-out"
-          leaveFrom="transform scale-100 opacity-100"
-          leaveTo="transform scale-95 opacity-0"
-        >
-          <Disclosure.Panel className="px-3 pb-3 pt-2 space-y-4">{children}</Disclosure.Panel>
-        </Transition>
-      </div>
-    )}
-  </Disclosure>
-);
-
-const ControlRow: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <div className="space-y-2">
-    <div className="flex justify-between items-center">
-      <label className="text-xs text-zinc-400 font-medium">{label}</label>
-    </div>
-    {children}
-  </div>
-);
-
-// Helper for Boolean Toggles
-const ToggleRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void }> = ({
-  label,
-  checked,
-  onChange,
-}) => (
-  <Switch.Group>
-    <div className="flex items-center justify-between p-2 rounded bg-zinc-900 border border-white/5 cursor-pointer hover:border-white/10 transition-all">
-      <Switch.Label className="text-xs text-zinc-300">{label}</Switch.Label>
-      <Switch
-        checked={checked}
-        onChange={onChange}
-        className={`${checked ? 'bg-indigo-600' : 'bg-zinc-700'} relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900`}
-      >
-        <span
-          className={`${checked ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
-        />
-      </Switch>
-    </div>
-  </Switch.Group>
-);
-
-const InputRange: React.FC<{
-  value: number;
-  onChange: (v: number) => void;
-  min: number;
-  max: number;
-  step?: number;
-  unit?: string;
-}> = ({ value, onChange, min, max, step = 1, unit = '' }) => (
-  <div className="flex items-center gap-3">
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="flex-1 h-1.5 bg-zinc-800 rounded-full appearance-none accent-indigo-500 cursor-pointer hover:accent-indigo-400"
-    />
-    <span className="text-xs font-mono text-zinc-500 w-10 text-right tabular-nums">
-      {value}
-      {unit}
-    </span>
-  </div>
-);
-
-const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => void }> = ({
-  value,
-  onChange,
-}) => {
-  const positions: PresetType[] = ['tl', 'tc', 'tr', 'lc', 'cc', 'rc', 'bl', 'bc', 'br'];
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+const Section: React.FC<{
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}> = ({ title, icon, children, defaultOpen = true }) => {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="grid grid-cols-3 gap-1.5 w-24">
-      {positions.map((pos) => (
-        <button
-          key={pos}
-          onClick={() => onChange(pos)}
-          className={clsx(
-            'w-6 h-6 rounded-sm border transition-all active:scale-90',
-            value === pos
-              ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]'
-              : 'bg-zinc-800/50 border-white/5 hover:border-white/20 hover:bg-zinc-700'
-          )}
-          title={`Align ${pos.toUpperCase()}`}
-        >
-          <div
-            className={clsx(
-              'w-1 h-1 bg-current rounded-full mx-auto opacity-50',
-              value === pos ? 'text-white' : 'text-zinc-500'
-            )}
-          />
-        </button>
-      ))}
+    <div className="border-b border-white/[0.05] last:border-0">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="
+          w-full flex items-center justify-between px-3 py-2.5
+          hover:bg-white/[0.03] transition-colors text-left
+          focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50
+        "
+      >
+        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+          {icon}
+          {title}
+        </span>
+        {open
+          ? <ChevronDown size={12} className="text-zinc-700" />
+          : <ChevronRight size={12} className="text-zinc-700" />
+        }
+      </button>
+      {open && (
+        <div className="px-3 pb-4 pt-1 space-y-4">
+          {children}
+        </div>
+      )}
     </div>
   );
 };
 
+// ─── Slider row ───────────────────────────────────────────────────────────────
+const SliderRow: React.FC<{
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number; max: number; step?: number;
+  unit?: string;
+  formatValue?: (v: number) => string;
+}> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
+  const display = formatValue ? formatValue(value) : `${value}${unit}`;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
+        <span className="text-[11px] font-mono text-zinc-500 tabular-nums min-w-[2.5rem] text-right">
+          {display}
+        </span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        className="w-full"
+      />
+    </div>
+  );
+};
+
+// ─── Toggle row ───────────────────────────────────────────────────────────────
+const ToggleRow: React.FC<{
+  label: string; sub?: string;
+  checked: boolean; onChange: (v: boolean) => void;
+}> = ({ label, sub, checked, onChange }) => (
+  <div className="flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium text-zinc-300">{label}</p>
+      {sub && <p className="text-[9px] text-zinc-600 mt-0.5">{sub}</p>}
+    </div>
+    <Switch
+      checked={checked} onChange={onChange}
+      className={clsx(
+        'relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
+        checked ? 'bg-indigo-500' : 'bg-zinc-800',
+      )}
+    >
+      <span className={clsx(
+        'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+        checked ? 'translate-x-[18px]' : 'translate-x-[3px]',
+      )} />
+    </Switch>
+  </div>
+);
+
+// ─── Alignment grid ───────────────────────────────────────────────────────────
+const GRID_POSITIONS: { id: PresetType; label: string }[] = [
+  { id: 'tl', label: 'Top left' },    { id: 'tc', label: 'Top center' },    { id: 'tr', label: 'Top right' },
+  { id: 'lc', label: 'Middle left' }, { id: 'cc', label: 'Center' },        { id: 'rc', label: 'Middle right' },
+  { id: 'bl', label: 'Bottom left' }, { id: 'bc', label: 'Bottom center' }, { id: 'br', label: 'Bottom right' },
+];
+
+const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => void }> = ({ value, onChange }) => (
+  <div className="grid grid-cols-3 gap-1 w-[5.5rem]">
+    {GRID_POSITIONS.map(pos => (
+      <button
+        key={pos.id}
+        type="button"
+        onClick={() => onChange(pos.id)}
+        title={pos.label}
+        className={clsx(
+          'w-full aspect-square rounded transition-all active:scale-90',
+          value === pos.id
+            ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]'
+            : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]',
+        )}
+      >
+        <div className={clsx(
+          'w-1.5 h-1.5 rounded-full mx-auto',
+          value === pos.id ? 'bg-white' : 'bg-zinc-600',
+        )} />
+      </button>
+    ))}
+  </div>
+);
+
+// ─── Password input with show/hide ───────────────────────────────────────────
+const ApiKeyInput: React.FC<{ placeholder: string; value: string; onChange: (v: string) => void }> = ({
+  placeholder, value, onChange,
+}) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="
+          w-full h-8 pl-3 pr-8 rounded-lg
+          bg-[#111113] border border-white/[0.08]
+          text-[11px] font-mono text-zinc-300 placeholder-zinc-700
+          focus:outline-none focus-visible:border-indigo-500/50 focus-visible:ring-1 focus-visible:ring-indigo-500/30
+          transition-colors
+        "
+      />
+      <button
+        type="button"
+        onClick={() => setShow(v => !v)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-zinc-400 transition-colors"
+      >
+        <Eye size={12} />
+      </button>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
 
-  const updateConfig = (key: keyof PosterConfig, value: any) => {
-    setConfig((prev) => {
+  const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
+    setConfig(prev => {
       if (key === 'layout' || key === 'preset') {
         const newItems = { ...prev.items };
-        (Object.keys(newItems) as RatingType[]).forEach((k) => {
+        (Object.keys(newItems) as RatingType[]).forEach(k => {
           if (newItems[k]) {
-            const { x, y, ...rest } = newItems[k]!;
+            const { x: _x, y: _y, ...rest } = newItems[k]!;
             newItems[k] = rest;
           }
         });
@@ -165,366 +189,298 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   };
 
   const updateKeys = (key: keyof ApiKeys, value: string) =>
-    setConfig((prev) => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
+    setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
 
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) => {
-    setConfig((prev) => {
+    setConfig(prev => {
       const newItems = { ...prev.items };
-      selectedIds.forEach((id) => {
-        newItems[id] = { ...newItems[id], ...updates };
-      });
+      selectedIds.forEach(id => { newItems[id] = { ...newItems[id], ...updates }; });
       return { ...prev, items: newItems };
     });
   };
 
-  const getCommonValue = <K extends keyof BadgeConfig>(prop: K, def: any): any => {
-    const values = Array.from(selectedIds).map(
-      (id) => config.items[id]?.[prop] ?? config[prop as keyof PosterConfig] ?? def
+  const getCommonValue = <K extends keyof BadgeConfig>(prop: K, def: BadgeConfig[K]): BadgeConfig[K] | null => {
+    const vals = Array.from(selectedIds).map(
+      id => config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def,
     );
-    return values.every((v) => v === values[0]) ? values[0] : null;
+    return vals.length > 0 && vals.every(v => v === vals[0]) ? vals[0] : null;
   };
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
 
+  // ── GLOBAL / CANVAS MODE ─────────────────────────────────────────────────
   if (showGlobal) {
     return (
-      <div className="flex flex-col pb-20">
-        <Section title="Layout & Alignment">
-          <div className="flex gap-6">
-            <div className="flex-shrink-0">
-              <div className="text-[10px] text-zinc-500 mb-2 font-medium">Preset</div>
-              <AlignmentGrid value={config.preset} onChange={(v) => updateConfig('preset', v)} />
+      <div className="pb-24">
+        {/* Layout */}
+        <Section title="Layout" icon={<Layout size={11} />}>
+          <div className="flex items-start gap-4">
+            <div>
+              <p className="text-[10px] text-zinc-600 mb-2 font-medium">Position preset</p>
+              <AlignmentGrid value={config.preset} onChange={v => updateConfig('preset', v)} />
             </div>
             <div className="flex-1">
-              <div className="text-[10px] text-zinc-500 mb-2 font-medium">Flow</div>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => updateConfig('layout', 'col')}
-                  className={clsx(
-                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors',
-                    config.layout === 'col'
-                      ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300'
-                      : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'
-                  )}
-                >
-                  <Layout size={12} className="rotate-90" /> Column
-                </button>
-                <button
-                  onClick={() => updateConfig('layout', 'row')}
-                  className={clsx(
-                    'flex items-center gap-2 px-3 py-2 rounded border text-xs transition-colors',
-                    config.layout === 'row'
-                      ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-300'
-                      : 'border-zinc-800 hover:bg-zinc-800 text-zinc-400'
-                  )}
-                >
-                  <Layout size={12} /> Row
-                </button>
+              <p className="text-[10px] text-zinc-600 mb-2 font-medium">Flow direction</p>
+              <div className="space-y-1.5">
+                {([
+                  { id: 'col', label: 'Column', icon: '⬇' },
+                  { id: 'row', label: 'Row', icon: '➡' },
+                ] as const).map(opt => (
+                  <button key={opt.id} type="button"
+                    onClick={() => updateConfig('layout', opt.id)}
+                    className={clsx(
+                      'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
+                      config.layout === opt.id
+                        ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                        : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/[0.06]',
+                    )}
+                  >
+                    <span className="text-base leading-none">{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </Section>
 
-        <Section title="Global Appearance">
-          <ControlRow label="Poster Blur">
-            <InputRange
-              value={config.posterBlur}
-              min={0}
-              max={20}
-              onChange={(v) => updateConfig('posterBlur', v)}
-            />
-          </ControlRow>
-
-          <div className="gap-3 pt-2">
-            <ToggleRow
-              label="Grayscale"
-              checked={config.grayscale}
-              onChange={(v) => updateConfig('grayscale', v)}
-            />
-            {/* <ToggleRow */}
-            {/*   label="Shadows" */}
-            {/*   checked={config.shadow} */}
-            {/*   onChange={(v) => updateConfig('shadow', v)} */}
-            {/* /> */}
-          </div>
-        </Section>
-
-        <Section title="Badge Defaults">
-          <div className="space-y-4">
-<ToggleRow
-              label="Show Icons"
-              checked={config.icon ?? true}
-              onChange={(v) => updateConfig('icon', v)}
-            />
-            <ControlRow label="Border Width">
-              <InputRange
-                value={config.borderW ?? 0}
-                min={0}
-                max={10}
-                onChange={(v) => updateConfig('borderW', v)}
-              />
-            </ControlRow>
-            <ControlRow label="Border Color">
-              <div className="relative w-full group">
-                <input
-                  type="color"
-                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
-                  onChange={(e) => updateConfig('borderC', e.target.value)}
-                />
-                <div className="w-full h-9 bg-zinc-900 border border-zinc-700 rounded flex items-center px-2 text-xs text-zinc-400 group-hover:border-zinc-500 transition-colors">
-                  <div
-                    className="w-5 h-5 rounded border border-white/10 mr-2 shadow-sm"
-                    style={{ background: config.borderC ?? '#ffffff' }}
-                  ></div>
-                  <span className="font-mono">
-                    {config.borderC ?? '#ffffff'}
-                  </span>
-                </div>
-              </div>
-            </ControlRow>
-            <ControlRow label="Shadow Intensity">
-              <InputRange
-                value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}
-                min={0}
-                max={30}
-                onChange={(v) => updateConfig('shadow', v)}
-              />
-            </ControlRow>
-            <ControlRow label="Glass Blur">
-              <InputRange
-                value={config.blur}
-                min={0}
-                max={20}
-                onChange={(v) => updateConfig('blur', v)}
-              />
-            </ControlRow>
-            <ControlRow label="Opacity">
-              <InputRange
-                value={config.alpha}
-                min={0}
-                max={1}
-                step={0.1}
-                onChange={(v) => updateConfig('alpha', v)}
-              />
-            </ControlRow>
-            <ControlRow label="Radius">
-              <InputRange
-                value={config.radius}
-                min={0}
-                max={30}
-                onChange={(v) => updateConfig('radius', v)}
-              />
-            </ControlRow>
-          </div>
-        </Section>
-
-        <Section title="View Options" defaultOpen={false}>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => toggleViewOption('showSafeArea')}
-              className={clsx(
-                'flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95',
-                viewOptions.showSafeArea
-                  ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              )}
-            >
-              <Smartphone size={14} /> Safe Area
-            </button>
-            <button
-              onClick={() => toggleViewOption('showGrid')}
-              className={clsx(
-                'flex items-center justify-center gap-2 py-2 rounded border text-xs transition-all active:scale-95',
-                viewOptions.showGrid
-                  ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              )}
-            >
-              <Layout size={14} /> Grid Lines
-            </button>
-          </div>
-        </Section>
-
-        <Section title="Advanced Settings" defaultOpen={false}>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Settings size={12} />
-              <span className="text-[10px] uppercase tracking-wider">Custom API Keys</span>
-            </div>
-            <div className="space-y-3">
-              <input
-                type="password"
-                value={config.keys?.tmdb || ''}
-                onChange={(e) => updateKeys('tmdb', e.target.value)}
-                placeholder="TMDB Key (Overrides Default)"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 focus:border-indigo-500 outline-none transition-colors"
-              />
-              <input
-                type="password"
-                value={config.keys?.fanart || ''}
-                onChange={(e) => updateKeys('fanart', e.target.value)}
-                placeholder="Fanart.tv Key"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-300 focus:border-indigo-500 outline-none transition-colors"
-              />
-            </div>
-          </div>
-        </Section>
-      </div>
-    );
-  }
-
-  if (selectedIds.size === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 p-8 text-center bg-transparent">
-        <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
-          <Layers size={20} className="opacity-40" />
-        </div>
-        <p className="text-xs max-w-[150px]">
-          Select a badge on the canvas to edit its specific properties.
-        </p>
-      </div>
-    );
-  }
-
-  const mixedVal = (val: any, def: any) => (val === null ? '' : (val ?? def));
-  const isAgeSelected = selectedIds.has('age');
-
-  return (
-    <div className="flex flex-col pb-20">
-      <Section title="Transform">
-        <ControlRow label="Scale">
-          <InputRange
-            value={getCommonValue('scale', 1.0) ?? 1.0}
-            min={0.5}
-            max={2.0}
-            step={0.1}
-            onChange={(v) => updateSelectedBadges({ scale: v })}
+        {/* Poster */}
+        <Section title="Poster" icon={<Layers size={11} />}>
+          <SliderRow
+            label="Blur" value={config.posterBlur} min={0} max={20}
+            unit="px" onChange={v => updateConfig('posterBlur', v)}
           />
-        </ControlRow>
-      </Section>
-      <Section title="Glass & Shape">
-        <div className="space-y-4">
-          <ControlRow label="Glass Blur">
-            <InputRange
-              value={getCommonValue('blur', config.blur) ?? config.blur}
-              min={0}
-              max={20}
-              onChange={(v) => updateSelectedBadges({ blur: v })}
-            />
-          </ControlRow>
-          <ControlRow label="Opacity">
-            <InputRange
-              value={getCommonValue('alpha', config.alpha) ?? config.alpha}
-              min={0}
-              max={1}
-              step={0.1}
-              onChange={(v) => updateSelectedBadges({ alpha: v })}
-            />
-          </ControlRow>
-          <ControlRow label="Radius">
-            <InputRange
-              value={getCommonValue('radius', config.radius) ?? config.radius}
-              min={0}
-              max={30}
-              onChange={(v) => updateSelectedBadges({ radius: v })}
-            />
-          </ControlRow>
-        </div>
-      </Section>
-      <Section title="Fill & Stroke">
-        <div className="space-y-4">
-          <ControlRow label="Background">
-            <div className="flex gap-2">
-              <div className="relative flex-1 group">
-                <input
-                  type="color"
-                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
-                  onChange={(e) => updateSelectedBadges({ bg: e.target.value })}
-                />
-                <div className="w-full h-9 bg-zinc-900 border border-zinc-700 rounded flex items-center px-2 text-xs text-zinc-400 group-hover:border-zinc-500 transition-colors">
-                  <div
-                    className="w-5 h-5 rounded border border-white/10 mr-2 shadow-sm"
-                    style={{ background: mixedVal(getCommonValue('bg', '#000000'), '#000') }}
-                  ></div>
-                  <span className="font-mono">
-                    {mixedVal(getCommonValue('bg', 'Default'), 'Mixed')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </ControlRow>
+          <ToggleRow
+            label="Grayscale" sub="Desaturate the poster image"
+            checked={config.grayscale} onChange={v => updateConfig('grayscale', v)}
+          />
+        </Section>
 
-          <ControlRow label="Border Width">
-            <InputRange
-              value={getCommonValue('borderW', 0) ?? 0}
-              min={0}
-              max={10}
-              onChange={(v) => updateSelectedBadges({ borderW: v })}
-            />
-          </ControlRow>
-          <ControlRow label="Border Color">
-            <div className="relative w-full group">
-              <input
-                type="color"
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
-                onChange={(e) => updateSelectedBadges({ borderC: e.target.value })}
-              />
-              <div className="w-full h-9 bg-zinc-900 border border-zinc-700 rounded flex items-center px-2 text-xs text-zinc-400 group-hover:border-zinc-500 transition-colors">
-                <div
-                  className="w-5 h-5 rounded border border-white/10 mr-2 shadow-sm"
-                  style={{ background: mixedVal(getCommonValue('borderC', '#ffffff'), '#fff') }}
-                ></div>
-                <span className="font-mono">
-                  {mixedVal(getCommonValue('borderC', '#ffffff'), 'Mixed')}
-                </span>
-              </div>
-            </div>
-          </ControlRow>
-        </div>
-      </Section>
+        {/* Badge defaults */}
+        <Section title="Badge Defaults" icon={<Palette size={11} />}>
+          <ToggleRow
+            label="Show Icons" checked={config.icon ?? true}
+            onChange={v => updateConfig('icon', v)}
+          />
 
-      <Section title="Visibility">
-        <div className="space-y-4">
-          {' '}
-          {/* CHANGED: space-y-2 to space-y-4 for slider spacing */}
-          {!isAgeSelected && (
-            <ToggleRow
-              label="Show Icon"
-              checked={getCommonValue('icon', true) ?? true}
-              onChange={(v) => updateSelectedBadges({ icon: v })}
+          <SliderRow
+            label="Glass Blur" value={config.blur} min={0} max={20} unit="px"
+            onChange={v => updateConfig('blur', v)}
+          />
+          <SliderRow
+            label="Background Opacity" value={config.alpha} min={0} max={1} step={0.05}
+            formatValue={v => `${Math.round(v * 100)}%`}
+            onChange={v => updateConfig('alpha', v)}
+          />
+          <SliderRow
+            label="Corner Radius" value={config.radius} min={0} max={30} unit="px"
+            onChange={v => updateConfig('radius', v)}
+          />
+          <SliderRow
+            label="Drop Shadow" value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}
+            min={0} max={30} onChange={v => updateConfig('shadow', v)}
+          />
+          <SliderRow
+            label="Border Width" value={config.borderW ?? 0} min={0} max={10} unit="px"
+            onChange={v => updateConfig('borderW', v)}
+          />
+          {(config.borderW ?? 0) > 0 && (
+            <ColorPicker
+              label="Border Color"
+              value={config.borderC ?? '#ffffff'}
+              onChange={v => updateConfig('borderC', v)}
             />
           )}
-          {/* CHANGED: Replaced ToggleRow with ControlRow & InputRange */}
-          <ControlRow label="Drop Shadow">
-            <InputRange
-              value={(() => {
-                const val = getCommonValue('shadow', 6);
-                return typeof val === 'boolean' ? (val ? 6 : 0) : (val ?? 6);
-              })()}
-              min={0}
-              max={30}
-              onChange={(v) => updateSelectedBadges({ shadow: v })}
-            />
-          </ControlRow>
+        </Section>
+
+        {/* View overlays */}
+        <Section title="Canvas Overlays" icon={<Smartphone size={11} />} defaultOpen={false}>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { key: 'showSafeArea' as const, label: 'Safe Area' },
+              { key: 'showGrid'    as const, label: 'Grid Lines' },
+            ]).map(({ key, label }) => (
+              <button key={key} type="button"
+                onClick={() => toggleViewOption(key)}
+                className={clsx(
+                  'h-9 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
+                  viewOptions[key]
+                    ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                    : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/[0.06]',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* API Keys */}
+        <Section title="API Keys" icon={<KeyRound size={11} />} defaultOpen={false}>
+          <div className="space-y-2.5">
+            <p className="text-[10px] text-zinc-600 leading-relaxed">
+              Optionally override the default API keys used to fetch posters and ratings.
+            </p>
+            <div>
+              <p className="sidebar-label">TMDB Key</p>
+              <ApiKeyInput
+                placeholder="Override default TMDB key"
+                value={config.keys?.tmdb ?? ''}
+                onChange={v => updateKeys('tmdb', v)}
+              />
+            </div>
+            <div>
+              <p className="sidebar-label">Fanart.tv Key</p>
+              <ApiKeyInput
+                placeholder="Your Fanart.tv key"
+                value={config.keys?.fanart ?? ''}
+                onChange={v => updateKeys('fanart', v)}
+              />
+            </div>
+          </div>
+        </Section>
+      </div>
+    );
+  }
+
+  // ── EMPTY SELECTION ─────────────────────────────────────────────────────
+  if (selectedIds.size === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3 p-8 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-[#111113] border border-white/[0.06] flex items-center justify-center">
+          <Layers size={18} strokeWidth={1.5} className="opacity-50" />
         </div>
+        <div>
+          <p className="text-[12px] font-medium text-zinc-500">No badge selected</p>
+          <p className="text-[11px] text-zinc-700 mt-1">
+            Click a badge on the canvas to edit its properties
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SELECTION MODE ──────────────────────────────────────────────────────
+  const isAgeSelected = selectedIds.has('age');
+  const multi = selectedIds.size > 1;
+
+  return (
+    <div className="pb-24">
+      {/* Selection info */}
+      <div className="px-3 py-2 bg-indigo-500/8 border-b border-indigo-500/15">
+        <p className="text-[11px] text-indigo-300 font-medium">
+          {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
+        </p>
+        <p className="text-[9px] text-indigo-400/60 mt-0.5">
+          {multi ? 'Changes apply to all selected badges' : 'Per-badge overrides'}
+        </p>
+      </div>
+
+      {/* Transform */}
+      <Section title="Transform">
+        <SliderRow
+          label="Scale" value={getCommonValue('scale', 1.0) ?? 1.0}
+          min={0.5} max={2.0} step={0.05}
+          formatValue={v => `${v.toFixed(2)}×`}
+          onChange={v => updateSelectedBadges({ scale: v })}
+        />
       </Section>
 
-      <div className="p-5">
+      {/* Glass & shape */}
+      <Section title="Glass & Shape">
+        <SliderRow
+          label="Blur" value={getCommonValue('blur', config.blur) ?? config.blur}
+          min={0} max={20} unit="px"
+          onChange={v => updateSelectedBadges({ blur: v })}
+        />
+        <SliderRow
+          label="Opacity" value={getCommonValue('alpha', config.alpha) ?? config.alpha}
+          min={0} max={1} step={0.05}
+          formatValue={v => `${Math.round(v * 100)}%`}
+          onChange={v => updateSelectedBadges({ alpha: v })}
+        />
+        <SliderRow
+          label="Radius" value={getCommonValue('radius', config.radius) ?? config.radius}
+          min={0} max={30} unit="px"
+          onChange={v => updateSelectedBadges({ radius: v })}
+        />
+      </Section>
+
+      {/* Fill & stroke */}
+      <Section title="Fill & Stroke">
+        <ColorPicker
+          label="Background"
+          value={(() => {
+            const v = getCommonValue('bg', '#000000');
+            return v === null ? '#000000' : (v ?? '#000000');
+          })()}
+          onChange={v => updateSelectedBadges({ bg: v })}
+          showOpacity
+          opacity={getCommonValue('alpha', config.alpha) ?? config.alpha}
+          onOpacityChange={v => updateSelectedBadges({ alpha: v })}
+        />
+        <SliderRow
+          label="Border Width"
+          value={getCommonValue('borderW', 0) ?? 0}
+          min={0} max={10} unit="px"
+          onChange={v => updateSelectedBadges({ borderW: v })}
+        />
+        {(getCommonValue('borderW', 0) ?? 0) > 0 && (
+          <ColorPicker
+            label="Border Color"
+            value={(() => {
+              const v = getCommonValue('borderC', '#ffffff');
+              return v === null ? '#ffffff' : (v ?? '#ffffff');
+            })()}
+            onChange={v => updateSelectedBadges({ borderC: v })}
+          />
+        )}
+      </Section>
+
+      {/* Visibility */}
+      <Section title="Visibility">
+        {!isAgeSelected && (
+          <ToggleRow
+            label="Show Icon"
+            checked={getCommonValue('icon', true) ?? true}
+            onChange={v => updateSelectedBadges({ icon: v })}
+          />
+        )}
+        <SliderRow
+          label="Drop Shadow"
+          value={(() => {
+            const v = getCommonValue('shadow', 6);
+            return v === null ? 6 : typeof v === 'boolean' ? (v ? 6 : 0) : (v ?? 6);
+          })()}
+          min={0} max={30}
+          onChange={v => updateSelectedBadges({ shadow: v })}
+        />
+      </Section>
+
+      {/* Reset overrides */}
+      <div className="px-3 pt-2">
         <button
+          type="button"
           onClick={() =>
-            setConfig((prev) => {
-              const newItems = { ...prev.items };
-              selectedIds.forEach((id) => delete newItems[id]);
-              return { ...prev, items: newItems };
+            setConfig(prev => {
+              const ni = { ...prev.items };
+              selectedIds.forEach(id => delete ni[id]);
+              return { ...prev, items: ni };
             })
           }
-          className="w-full py-2.5 border border-red-500/20 text-red-400 bg-red-500/5 rounded text-xs font-medium hover:bg-red-500/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+          className="
+            w-full h-9 rounded-xl border border-red-500/20 bg-red-500/5
+            text-[11px] font-medium text-red-400
+            hover:bg-red-500/10 hover:border-red-500/30
+            transition-colors active:scale-[0.98] flex items-center justify-center gap-2
+          "
         >
-          <Palette size={14} /> Reset Overrides to Global
+          <Palette size={12} />
+          Reset overrides to global defaults
         </button>
       </div>
     </div>
   );
 };
 
-export default PropertyPanel;
+export default memo(PropertyPanel);
