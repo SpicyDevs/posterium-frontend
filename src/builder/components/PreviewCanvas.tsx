@@ -1,6 +1,14 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
+import {
+  PosterConfig,
+  RatingType,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BASE_BADGE_W,
+  BASE_BADGE_H,
+} from '../types';
 import DraggableBadge from './DraggableBadge';
+import DraggableLogo from './DraggableLogo';
 import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
 import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
@@ -16,14 +24,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [autoScale, setAutoScale]           = useState(1);
-  const [zoom, setZoom]                     = useState(1);
-  const [pan, setPan]                       = useState({ x: 0, y: 0 });
+  const [autoScale, setAutoScale] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
-  const [imageError, setImageError]         = useState(false);
-  const [isPanning, setIsPanning]           = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
-  const [dragSession, setDragSession]       = useState<{ id: RatingType; dx: number; dy: number } | null>(null);
+  const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
+    null
+  );
 
   // --- Badge overlap detection ---
   const getBadgeRect = (id: RatingType, index: number) => {
@@ -40,16 +50,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const checkOverlap = (id1: RatingType, idx1: number, id2: RatingType, idx2: number) => {
     const r1 = getBadgeRect(id1, idx1);
     const r2 = getBadgeRect(id2, idx2);
-    return (
-      r1.x < r2.x + r2.w &&
-      r1.x + r1.w > r2.x &&
-      r1.y < r2.y + r2.h &&
-      r1.y + r1.h > r2.y
-    );
+    return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
   };
 
   const lastDist = useRef<number | null>(null);
-  const lastPan  = useRef<{ x: number; y: number } | null>(null);
+  const lastPan = useRef<{ x: number; y: number } | null>(null);
 
   // --- Fit-to-screen ---
   useEffect(() => {
@@ -96,7 +101,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     } else {
       let dx = e.deltaX;
       let dy = e.deltaY;
-      if (e.shiftKey) { dx = e.deltaY !== 0 ? e.deltaY : e.deltaX; dy = 0; }
+      if (e.shiftKey) {
+        dx = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+        dy = 0;
+      }
       setPan((p) => clampPan(p.x - dx, p.y - dy));
     }
   };
@@ -115,7 +123,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastDist.current) {
-      const dist  = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
       const delta = dist / lastDist.current;
       setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
       lastDist.current = dist;
@@ -129,11 +140,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const handleTouchEnd = () => {
     lastDist.current = null;
-    lastPan.current  = null;
+    lastPan.current = null;
     setIsPanning(false);
   };
 
-  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const resetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
 
   useEffect(() => {
     const handleResetEvent = () => resetView();
@@ -141,23 +155,15 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
 
-  // FIX: Always request the SVG endpoint for the canvas preview image.
-  //
-  // Previously `config.extension` was used (defaults to 'png'), which routed through
-  // wsrv.nl rasterization — an extra round-trip on every source/ptype/textless change.
-  // SVG is returned directly from the worker with no rasterization overhead, loads faster,
-  // and is perfectly renderable inside an <img> tag.
-  //
-  // Note: No 'r' (ratings) param is sent — badges are rendered by the React overlay, not
-  // the backend. This keeps the two concerns (poster image vs. badge overlay) independent.
+  // Poster image URL — SVG endpoint, no ratings/logo (those are React overlays).
   const cleanPosterUrl = useMemo(() => {
-    const base   = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.svg`;
+    const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.svg`;
     const params = new URLSearchParams();
 
     params.set('source', config.source);
     if (config.textless) params.set('textless', '1');
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    // Cache buster — invalidates on source/ptype/textless changes only (not badge layout changes)
+    // Cache buster — invalidates on source/ptype/textless changes only
     params.set('_t', `${config.tmdbId}-${config.source}-${config.textless}-${config.ptype}`);
 
     return `${base}?${params.toString()}`;
@@ -172,7 +178,58 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (e.currentTarget.src.includes(config.tmdbId)) setIsImageLoading(false);
   };
 
-  const handleImageError = () => { setIsImageLoading(false); setImageError(true); };
+  const handleImageError = () => {
+    setIsImageLoading(false);
+    setImageError(true);
+  };
+
+  // ── Logo preview URL ────────────────────────────────────────────────────────
+  // We render the logo as a React overlay (same strategy as badges) so position
+  // changes are instant without refetching the poster SVG.
+  //
+  // URL resolution strategy (client-side, no extra API calls):
+  //   • If the active ID starts with 'tt' → Metahub can be constructed directly.
+  //   • For fanart/tmdb sources we don't have the URL client-side; the Metahub
+  //     fallback is used so the bounding box is always draggable/visible.
+  //     The correct source-specific logo will appear in the final downloaded file.
+  const logoPreviewUrl = useMemo((): string | null => {
+    if (!config.logo) return null;
+    const id = config.tmdbId;
+    if (!id) return null;
+    // Metahub URL can be constructed from any tt-prefixed IMDb ID
+    if (id.startsWith('tt')) {
+      return `https://live.metahub.space/logo/medium/${id}/img`;
+    }
+    // TMDB numeric ID — no client-side URL available; show placeholder box
+    return null;
+  }, [config.logo, config.tmdbId]);
+
+  // ── Logo drag handler ───────────────────────────────────────────────────────
+  const handleLogoDragEnd = (dx: number, dy: number) => {
+    setConfig((prev) => {
+      const currentX =
+        prev.logoX !== null && prev.logoX !== undefined
+          ? prev.logoX
+          : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
+      const currentY = prev.logoY;
+
+      // Allow slight overflow so logos can be nudged off-edge deliberately
+      const margin = 0.3;
+      const newX = Math.round(
+        Math.max(
+          -(prev.logoW * margin),
+          Math.min(currentX + dx, CANVAS_WIDTH - prev.logoW * (1 - margin))
+        )
+      );
+      const newY = Math.round(
+        Math.max(
+          -(prev.logoH * margin),
+          Math.min(currentY + dy, CANVAS_HEIGHT - prev.logoH * (1 - margin))
+        )
+      );
+      return { ...prev, logoX: newX, logoY: newY };
+    });
+  };
 
   const handleDragMove = (id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
@@ -185,7 +242,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
     setConfig((prev: PosterConfig) => {
       const newItems = { ...prev.items };
-      (Object.keys(newItems) as RatingType[]).forEach(k => { newItems[k] = { ...newItems[k] }; });
+      (Object.keys(newItems) as RatingType[]).forEach((k) => {
+        newItems[k] = { ...newItems[k] };
+      });
 
       if (prev.layout !== 'custom' || prev.preset !== 'custom') {
         prev.ratings.forEach((r, idx) => {
@@ -200,26 +259,36 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
       const applyDelta = (targetId: RatingType) => {
         if (!newItems[targetId]) {
-          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
+          const auto = calculateAutoPosition(
+            targetId,
+            prev.ratings.indexOf(targetId),
+            prev.ratings.length,
+            prev
+          );
           newItems[targetId] = { x: auto.x, y: auto.y };
         }
 
         let startX = newItems[targetId].x;
         let startY = newItems[targetId].y;
         if (startX === undefined || startY === undefined) {
-          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
+          const auto = calculateAutoPosition(
+            targetId,
+            prev.ratings.indexOf(targetId),
+            prev.ratings.length,
+            prev
+          );
           startX = startX ?? auto.x;
           startY = startY ?? auto.y;
         }
 
-        const selScale  = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
-        const selWidth  = BASE_BADGE_W * selScale;
+        const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
+        const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
-        const offsetX   = selWidth  * 0.4;
-        const offsetY   = selHeight * 0.4;
+        const offsetX = selWidth * 0.4;
+        const offsetY = selHeight * 0.4;
 
-        let nx = Math.max(-offsetX, Math.min(startX + dx, CANVAS_WIDTH  - selWidth  + offsetX));
-        let ny = Math.max(-offsetY, Math.min(startY + dy, CANVAS_HEIGHT - selHeight + offsetY));
+        const nx = Math.max(-offsetX, Math.min(startX + dx, CANVAS_WIDTH - selWidth + offsetX));
+        const ny = Math.max(-offsetY, Math.min(startY + dy, CANVAS_HEIGHT - selHeight + offsetY));
 
         newItems[targetId]!.x = nx;
         newItems[targetId]!.y = ny;
@@ -243,7 +312,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) clearSelection();
+      }}
     >
       {/* Zoom / Pan controls */}
       <div
@@ -260,14 +331,24 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
         <div className="flex flex-col items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
-          <button onClick={() => setZoom(z => Math.min(z + 0.1, 4))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform">
+          <button
+            onClick={() => setZoom((z) => Math.min(z + 0.1, 4))}
+            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+          >
             <ZoomIn size={18} />
           </button>
-          <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))} className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform">
+          <button
+            onClick={() => setZoom((z) => Math.max(z - 0.1, 0.2))}
+            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+          >
             <ZoomOut size={18} />
           </button>
           <div className="w-4 h-px bg-white/10 my-1"></div>
-          <button onClick={resetView} className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform" title="Fit to Screen">
+          <button
+            onClick={resetView}
+            className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+            title="Fit to Screen"
+          >
             <SearchX size={18} />
           </button>
         </div>
@@ -282,7 +363,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
-        onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) clearSelection();
+        }}
       >
         {isImageLoading && !imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center pointer-events-none">
@@ -306,12 +389,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
             <div className="absolute inset-8 border border-red-500/30 border-dashed">
-              <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">Safe Area</div>
+              <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">
+                Safe Area
+              </div>
             </div>
           </div>
         )}
 
-        {/* Poster image — always SVG from backend, CSS filter applied for posterBlur/grayscale */}
+        {/* Poster image */}
         <img
           key={cleanPosterUrl}
           src={cleanPosterUrl}
@@ -322,9 +407,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           onError={handleImageError}
         />
 
-        {/* React badge overlays — independent of backend SVG */}
+        {/* React badge overlays */}
         {config.ratings.map((id: RatingType, index: number) => {
-          const auto       = calculateAutoPosition(id, index, config.ratings.length, config);
+          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
           let x = itemConfig?.x !== undefined ? itemConfig.x : auto.x;
           let y = itemConfig?.y !== undefined ? itemConfig.y : auto.y;
@@ -339,14 +424,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
           if (dragSession) {
             const isTarget = dragSession.id === id;
-            const isGroup  = selectedIds.has(dragSession.id) && selectedIds.has(id);
+            const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
             if (isTarget || isGroup) {
-              const selScale  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
-              const bW        = BASE_BADGE_W * selScale;
-              const bH        = BASE_BADGE_H * selScale;
-              const offsetX   = bW * 0.4;
-              const offsetY   = bH * 0.4;
-              x = Math.max(-offsetX, Math.min(x + dragSession.dx, CANVAS_WIDTH  - bW + offsetX));
+              const selScale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
+              const bW = BASE_BADGE_W * selScale;
+              const bH = BASE_BADGE_H * selScale;
+              const offsetX = bW * 0.4;
+              const offsetY = bH * 0.4;
+              x = Math.max(-offsetX, Math.min(x + dragSession.dx, CANVAS_WIDTH - bW + offsetX));
               y = Math.max(-offsetY, Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH + offsetY));
             }
           }
@@ -368,6 +453,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             />
           );
         })}
+
+        {/* Logo overlay — rendered above badges, below nothing */}
+        {config.logo && (
+          <DraggableLogo
+            config={config}
+            logoUrl={logoPreviewUrl}
+            canvasScale={currentScale}
+            onDragEnd={handleLogoDragEnd}
+          />
+        )}
       </div>
     </div>
   );
