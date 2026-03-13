@@ -226,7 +226,7 @@ const HeroSection = memo(() => {
             display: 'inline-flex', alignItems: 'center', gap: 8,
             border: '1px solid rgba(196,124,46,0.28)',
             background: 'rgba(196,124,46,0.055)',
-            borderRadius: 3, padding: '5px 14px', marginBottom: 26,
+            borderRadius: 3, padding: '5px 14px', margin: 16,
           }}
         >
           <span style={{
@@ -237,6 +237,7 @@ const HeroSection = memo(() => {
           <span className="syne-font" style={{
             color: 'var(--film-amber)', fontSize: 9, fontWeight: 700,
             letterSpacing: '0.18em', textTransform: 'uppercase',
+
           }}>
             Free &amp; Open Source — No Account Required
           </span>
