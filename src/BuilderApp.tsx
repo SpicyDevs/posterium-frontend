@@ -3,13 +3,13 @@ import React, {
   useState, useEffect, useRef, Fragment, useCallback, memo,
 } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import { PosterConfig, DEFAULT_CONFIG } from './types';
+import { PosterConfig, DEFAULT_CONFIG } from './builder/types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
-import PreviewCanvas from './components/PreviewCanvas';
-import CodeBox from './components/CodeBox';
-import LayerPanel from './components/LayerPanel';
-import Inspector from './components/layout/Inspector';
-import MobileDock from './components/layout/MobileDock';
+import PreviewCanvas from './builder/components/PreviewCanvas';
+import CodeBox from './builder/components/CodeBox';
+import LayerPanel from './builder/components/LayerPanel';
+import Inspector from './builder/components/layout/Inspector';
+import MobileDock from './builder/components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { Sparkles, RotateCcw, AlertTriangle, Undo2, Redo2, Home } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
