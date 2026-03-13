@@ -196,13 +196,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (!config.logo) return null;
     const id = config.tmdbId;
     if (!id) return null;
-    // Metahub URL can be constructed from any tt-prefixed IMDb ID
-    if (id.startsWith('tt')) {
-      return `https://live.metahub.space/logo/medium/${id}/img`;
+
+    const url = new URL(`${DEFAULT_API_BASE}/${config.mediaType}/${id}/logo`);
+    if (config.logoSource) {
+      url.searchParams.set('source', config.logoSource);
     }
-    // TMDB numeric ID — no client-side URL available; show placeholder box
-    return null;
-  }, [config.logo, config.tmdbId]);
+    // Cache buster for real-time updates when source changes
+    url.searchParams.set('_t', config.logoSource || 'auto');
+
+    return url.toString();
+  }, [config.logo, config.tmdbId, config.mediaType, config.logoSource]);
 
   // ── Logo drag handler ───────────────────────────────────────────────────────
   const handleLogoDragEnd = (dx: number, dy: number) => {

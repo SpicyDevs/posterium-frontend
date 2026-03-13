@@ -443,6 +443,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         ]
       : []),
   ];
+  const logoSourceOptions = [
+    { id: 'auto', label: 'Auto (Best)' },
+    { id: 'fanart', label: 'Fanart.tv' },
+    { id: 'tmdb', label: 'TMDB' },
+    { id: 'metahub', label: 'Metahub' },
+  ];
 
   const ptypeOptions = [
     { id: 'auto', label: 'Auto (Default)' },
@@ -731,6 +737,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 )}
               />
             </Switch>
+          </div>
+
+          <div className="mt-4">
+            <label className="sidebar-label">Logo Source</label>
+            <SelectBox
+              value={config.logoSource || 'auto'}
+              onChange={(v) => {
+                // If 'auto' is selected, we set it to undefined to use the API default.
+                // We cast to 'any' or the specific key type to satisfy the generic updateConfig.
+                const value = v === 'auto' ? undefined : v;
+                updateConfig('logoSource', value as PosterConfig['logoSource']);
+              }}
+              options={logoSourceOptions}
+            />
           </div>
         </div>
       )}
