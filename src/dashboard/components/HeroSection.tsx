@@ -4,7 +4,7 @@
 // at much lower opacity so it reads as ambiance, not bug.
 import { memo, useState } from 'react';
 import { Link } from '../../Router';
-import { ArrowRight, ChevronDown, Copy, Check } from 'lucide-react';
+import { ArrowRight, Copy, Check } from 'lucide-react';
 import { API, REEL_ITEMS } from '../constants';
 import { FilmEdge, AmberDivider } from './primitives';
 
@@ -299,29 +299,6 @@ const HeroSection = memo(() => {
           >
             Open Free Builder <ArrowRight size={13} />
           </Link>
-          <a
-            href="#reel"
-            className="syne-font"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              color: 'var(--film-cream)', fontWeight: 600, fontSize: 12,
-              letterSpacing: '0.09em', textTransform: 'uppercase',
-              textDecoration: 'none', padding: '12px 24px', borderRadius: 5,
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.025)',
-              transition: 'border-color 0.2s, background 0.2s',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.38)';
-              (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.055)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)';
-            }}
-          >
-            Watch the Reel <ChevronDown size={13} />
-          </a>
         </div>
 
         {/* 7-poster floating fan */}
