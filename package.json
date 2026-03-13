@@ -13,7 +13,7 @@
     "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.575.0",
+    "lucide-react": "^0.577.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-helmet-async": "^3.0.0"
@@ -22,7 +22,7 @@
     "@tailwindcss/postcss": "^4.2.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.4.35",
     "prettier": "^3.5.3",

@@ -4,15 +4,18 @@ import webfontDownload from 'vite-plugin-webfont-dl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // appType: 'spa' replaces server.historyApiFallback (removed in Vite 7).
+  // It serves index.html for any unmatched route so /build works on direct load
+  // in both dev server and `vite preview`.
+  appType: 'spa',
   plugins: [
     react(),
     webfontDownload([
-      'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap'
+      'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap',
     ]),
   ],
-  // Enable SPA history fallback so /build works on direct load
   server: {
-    historyApiFallback: true,
+    // No historyApiFallback here — appType: 'spa' handles it globally
   },
   build: {
     target: 'ES2020',

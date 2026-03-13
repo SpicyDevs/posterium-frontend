@@ -1,5 +1,0 @@
-{
-  "name": "Posterium Editor",
-  "description": "An advanced visual editor for the Posterium Cloudflare Worker, featuring draggable positioning, live preview, and full parameter configuration.",
-  "requestFramePermissions": []
-}
