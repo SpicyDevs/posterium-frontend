@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
           <HeroSection />
 
           {/* Ticker separator */}
-          <MarqueeTicker items={MARQUEE_TITLES} speed={30} />
+          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
           {/* 2 — The Reel: horizontal parallax (desktop) / swipe (mobile) */}
           <FilmReelSection />
@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
           <BadgeAtlas />
 
           {/* Ticker separator */}
-          <MarqueeTicker items={MARQUEE_TITLES} speed={22} />
+          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
           {/* 4 — The Manifest: animated stat docket */}
           <StatsBar />

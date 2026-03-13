@@ -137,16 +137,6 @@ const DesktopReel = memo(() => {
               </div>
             </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span className="syne-font" style={{
-              fontSize: 9, color: 'var(--film-silver)',
-              letterSpacing: '0.14em', textTransform: 'uppercase',
-            }}>
-              {REEL_ITEMS.length}&nbsp;titles
-            </span>
-            <ReelSpinner />
-          </div>
         </div>
 
         {/* ── Top sprocket ── */}
