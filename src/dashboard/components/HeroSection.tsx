@@ -2,11 +2,12 @@
 // FIX: film-flicker removed from the section element — it caused a jarring
 // full-section opacity pulse. The flicker now lives on a thin overlay div only,
 // at much lower opacity so it reads as ambiance, not bug.
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Link } from '../../Router';
-import { ArrowRight, Copy, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { API, REEL_ITEMS } from '../constants';
 import { FilmEdge, AmberDivider } from './primitives';
+import { QuickBuilder } from './QuickBuilder';
 
 // 7-poster fan — wider spread, more visual mass
 const HERO_POSTER_LAYOUT = [
@@ -19,132 +20,6 @@ const HERO_POSTER_LAYOUT = [
   { h: 98,  w: 65,  rot:  5.2, z: 1, delay: 0.9,  anim: 'float-a', opacity: 0.55 },
 ];
 
-// Live URL strip — cycle through badge combos as a proof-of-concept demo
-const DEMO_URLS = [
-  { label: 'FULL STACK',  url: '/movie/155.svg?r=imdb,rt,meta,tmdb&blur=8&alpha=0.45&rad=12' },
-  { label: 'DUAL',        url: '/movie/27205.svg?r=imdb,rt&blur=7&alpha=0.40&rad=10'         },
-  { label: 'SOLO',        url: '/tv/1396.svg?r=imdb&blur=6&alpha=0.38&rad=8'                 },
-];
-
-const LiveUrlStrip = memo(() => {
-  const [copied, setCopied] = useState(false);
-  const [active, setActive] = useState(0);
-
-  const full = `${API}${DEMO_URLS[active].url}`;
-
-  const copy = () => {
-    navigator.clipboard.writeText(full).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    });
-  };
-
-  return (
-    <div
-      className="h-a4"
-      style={{
-        marginBottom: 42,
-        background: 'rgba(14,13,11,0.85)',
-        border: '1px solid rgba(196,124,46,0.14)',
-        borderRadius: 6,
-        overflow: 'hidden',
-        maxWidth: 640,
-        width: '100%',
-      }}
-    >
-      {/* Tab row */}
-      <div style={{
-        display: 'flex',
-        borderBottom: '1px solid rgba(196,124,46,0.1)',
-        background: 'rgba(7,7,6,0.6)',
-      }}>
-        {DEMO_URLS.map((d, i) => (
-          <button
-            key={d.label}
-            onClick={() => setActive(i)}
-            className="mono-font"
-            style={{
-              background: 'none',
-              border: 'none',
-              borderRight: i < DEMO_URLS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-              borderBottom: active === i ? '1.5px solid var(--film-amber)' : '1.5px solid transparent',
-              color: active === i ? 'var(--film-amber)' : 'rgba(122,117,110,0.5)',
-              fontSize: 8,
-              letterSpacing: '0.14em',
-              padding: '7px 14px',
-              cursor: 'pointer',
-              transition: 'color 0.2s',
-              flexShrink: 0,
-            }}
-          >
-            {d.label}
-          </button>
-        ))}
-        <div style={{ flex: 1 }} />
-        <div className="syne-font" style={{
-          padding: '7px 12px',
-          fontSize: 8,
-          color: 'rgba(54,162,64,0.7)',
-          letterSpacing: '0.12em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-        }}>
-          <span style={{
-            width: 5, height: 5, borderRadius: '50%',
-            background: '#36A240',
-            boxShadow: '0 0 6px rgba(54,162,64,0.6)',
-            display: 'inline-block',
-          }} />
-          LIVE
-        </div>
-      </div>
-
-      {/* URL line */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '10px 14px',
-      }}>
-        <code className="mono-font" style={{
-          fontSize: 10,
-          color: 'rgba(240,230,204,0.7)',
-          flex: 1,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          letterSpacing: '0.02em',
-        }}>
-          <span style={{ color: 'rgba(196,124,46,0.55)' }}>api.spicydevs.xyz</span>
-          <span style={{ color: 'rgba(240,230,204,0.45)' }}>{DEMO_URLS[active].url}</span>
-        </code>
-        <button
-          onClick={copy}
-          style={{
-            background: copied ? 'rgba(54,162,64,0.12)' : 'rgba(196,124,46,0.1)',
-            border: `1px solid ${copied ? 'rgba(54,162,64,0.3)' : 'rgba(196,124,46,0.22)'}`,
-            borderRadius: 4,
-            color: copied ? '#36A240' : 'var(--film-amber)',
-            cursor: 'pointer',
-            padding: '4px 8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            transition: 'all 0.2s ease',
-            flexShrink: 0,
-          }}
-        >
-          {copied ? <Check size={10} /> : <Copy size={10} />}
-          <span className="mono-font" style={{ fontSize: 8, letterSpacing: '0.1em' }}>
-            {copied ? 'COPIED' : 'COPY'}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-});
-LiveUrlStrip.displayName = 'LiveUrlStrip';
 
 const HeroSection = memo(() => {
   const previewPosters = REEL_ITEMS.slice(0, 7);
@@ -272,15 +147,7 @@ const HeroSection = memo(() => {
           all from a single URL.
         </p>
 
-        <p className="h-a4 body-font" style={{
-          fontSize: 12, color: 'rgba(110,104,96,0.85)', marginBottom: 32, letterSpacing: '0.01em',
-        }}>
-          Perfect for Plex · Jellyfin · Discord Bots · Notion · And anything with an image field.
-        </p>
-
-        {/* Live URL strip */}
-        <LiveUrlStrip />
-
+          <QuickBuilder />
         {/* CTAs */}
         <div className="h-a4" style={{
           display: 'flex', gap: 10, flexWrap: 'wrap',
