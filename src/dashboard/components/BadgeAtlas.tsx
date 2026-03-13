@@ -71,7 +71,7 @@ const STRIP_PRINTS: ContactEntry[] = [
 const ContactPrint = memo<{
   entry: ContactEntry;
   size?: 'sm' | 'xs';
-}>(({ entry, size = 'sm' }) => {
+}>(({ entry }) => {
   const [loaded, setLoaded] = useState(false);
   const onLoad = useCallback(() => setLoaded(true), []);
 

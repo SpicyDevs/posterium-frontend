@@ -32,7 +32,7 @@ import {
 import clsx from 'clsx';
 import { PosterConfig, RatingType, ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
-import { DEFAULT_API_BASE } from '../../utils';
+import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
 import SidebarLayout from './SidebarLayout';
 

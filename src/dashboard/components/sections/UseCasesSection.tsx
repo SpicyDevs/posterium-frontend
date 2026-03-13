@@ -183,7 +183,7 @@ export const UseCasesSection = memo(() => {
                 key={u.title}
                 onClick={() => select(i)}
                 style={{
-                  width: '100%', background: 'none', border: 'none',
+                  width: '100%', border: 'none',
                   borderBottom: '1px solid rgba(255,255,255,0.03)',
                   borderLeft: isActive ? '2px solid var(--film-amber)' : '2px solid transparent',
                   cursor: 'pointer', textAlign: 'left',

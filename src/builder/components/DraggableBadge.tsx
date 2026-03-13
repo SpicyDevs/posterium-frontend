@@ -1,7 +1,7 @@
 // src/components/DraggableBadge.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { RatingType, PosterConfig, BASE_BADGE_W, BASE_BADGE_H } from '../types';
-import { getScale } from '../../utils';
+import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
 
 interface Props {

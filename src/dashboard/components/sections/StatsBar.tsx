@@ -3,7 +3,7 @@
 // Each panel: large stencil number + animated count-up + label.
 // Breaks the previous "memo line item" aesthetic — now reads as a
 // production-budget title card, not a spreadsheet.
-import { memo, useRef } from 'react';
+import { memo } from 'react';
 import { STATS } from '../../constants';
 import { useInView, useCounter } from '../../hooks';
 

@@ -3,7 +3,7 @@
 // Left: scrollable numbered feature list (select active row).
 // Right: large detail pane with live API preview thumbnail.
 // Ditches the exposure-sheet spreadsheet look entirely.
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { FEATURES } from '../../constants';
 import { useInView } from '../../hooks';
 import { AmberTag } from '../primitives';
@@ -141,7 +141,7 @@ export const FeaturesSection = memo(() => {
                 key={feat.title}
                 onClick={() => select(i)}
                 style={{
-                  width: '100%', background: 'none',
+                  width: '100%',
                   border: 'none', borderBottom: '1px solid rgba(255,255,255,0.03)',
                   borderLeft: isActive ? '2px solid var(--film-amber)' : '2px solid transparent',
                   cursor: 'pointer', textAlign: 'left',
@@ -205,12 +205,11 @@ export const FeaturesSection = memo(() => {
         </div>
 
         {/* RIGHT: detail pane */}
-        <div style={{
+        <div key={active} style={{
           padding: 'clamp(24px,4vw,48px) clamp(20px,4vw,48px)',
           display: 'flex', gap: 'clamp(20px,4vw,48px)',
           alignItems: 'flex-start',
           animation: 'fade-up 0.35s ease both',
-          key: active, // force re-animation on tab change
         }}>
           {/* Text content */}
           <div style={{ flex: 1, minWidth: 0 }}>

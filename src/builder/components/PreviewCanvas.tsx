@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { PosterConfig, RatingType, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
-import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../../utils';
+import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
 import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
