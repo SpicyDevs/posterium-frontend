@@ -9,9 +9,9 @@ import { MARQUEE_TITLES } from './constants';
 
 import Nav                from './components/Nav';
 import HeroSection        from './components/HeroSection';
-import FilmReelSection    from './components/FilmReelSection';
+import FilmReelSection    from './components/FilmReelSection/index';
 import BadgeAtlas         from './components/BadgeAtlas';
-import LiveAPIDemo        from './components/LiveAPIDemo';
+import PosterShowcase     from './components/PosterShowcase';
 import { MarqueeTicker }  from './components/primitives';
 import {
   StatsBar,
@@ -19,9 +19,8 @@ import {
   UseCasesSection,
   CTASection,
   FooterSection,
-} from './components/sections';
+} from './components/sections/index';
 
-// Shimmer keyframe for poster skeletons
 const SHIMMER_CSS = `
   @keyframes shimmer {
     0%   { background-position: -200% 0; }
@@ -84,28 +83,33 @@ const Dashboard: React.FC = () => {
         Skip to main content
       </a>
 
+      {/*
+        !! CRITICAL !!
+        No overflowX: hidden here — it would clip MobileReel's touch-scroll container.
+        Horizontal overflow is clipped per-section where needed (HeroSection, etc).
+        overflow-x: clip on the <html> element in global CSS handles page-level bleed.
+      */}
       <div
         style={{
           minHeight: '100dvh',
           background: 'var(--film-black)',
           color: 'var(--film-cream)',
           fontFamily: 'DM Sans, sans-serif',
-          overflowX: 'hidden',
         }}
       >
         <Nav />
 
         <main id="main-content">
-          {/* 1 — Hero: poster fan + headline */}
+          {/* 1 — Hero */}
           <HeroSection />
 
           {/* Ticker separator */}
           <MarqueeTicker items={MARQUEE_TITLES} speed={30} />
 
-          {/* 2 — The Reel: horizontal parallax strip */}
+          {/* 2 — The Reel: horizontal parallax (desktop) / swipe (mobile) */}
           <FilmReelSection />
 
-          {/* 3 — Badge Atlas: real API output images in 3×2 grid */}
+          {/* 3 — Badge Atlas: real API output 3×2 grid */}
           <BadgeAtlas />
 
           {/* Ticker separator */}
@@ -117,10 +121,10 @@ const Dashboard: React.FC = () => {
           {/* 5 — Exposure Sheet: expandable feature rows */}
           <FeaturesSection />
 
-          {/* 6 — The Darkroom: interactive API parameter builder */}
-          <LiveAPIDemo />
+          {/* 6 — The Print Room: accurate API poster output showcase */}
+          <PosterShowcase />
 
-          {/* 7 — Distribution Circuit: use cases as full-width rows */}
+          {/* 7 — Distribution Circuit: use-case rows */}
           <UseCasesSection />
 
           {/* 8 — The Slate: clapperboard CTA */}
