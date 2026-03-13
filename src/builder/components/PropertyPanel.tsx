@@ -3,8 +3,14 @@ import React, { memo, useState } from 'react';
 import { Switch } from '@headlessui/react';
 import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
 import {
-  Layers, Layout, Smartphone, Palette,
-  ChevronDown, ChevronRight, Eye, KeyRound,
+  Layers,
+  Layout,
+  Smartphone,
+  Palette,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  KeyRound,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -29,7 +35,7 @@ const Section: React.FC<{
     <div className="border-b border-white/[0.05] last:border-0">
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         className="
           w-full flex items-center justify-between px-3 py-2.5
           hover:bg-white/[0.03] transition-colors text-left
@@ -40,16 +46,13 @@ const Section: React.FC<{
           {icon}
           {title}
         </span>
-        {open
-          ? <ChevronDown size={12} className="text-zinc-700" />
-          : <ChevronRight size={12} className="text-zinc-700" />
-        }
+        {open ? (
+          <ChevronDown size={12} className="text-zinc-700" />
+        ) : (
+          <ChevronRight size={12} className="text-zinc-700" />
+        )}
       </button>
-      {open && (
-        <div className="px-3 pb-4 pt-1 space-y-4">
-          {children}
-        </div>
-      )}
+      {open && <div className="px-3 pb-4 pt-1 space-y-4">{children}</div>}
     </div>
   );
 };
@@ -59,7 +62,9 @@ const SliderRow: React.FC<{
   label: string;
   value: number;
   onChange: (v: number) => void;
-  min: number; max: number; step?: number;
+  min: number;
+  max: number;
+  step?: number;
   unit?: string;
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
@@ -73,8 +78,12 @@ const SliderRow: React.FC<{
         </span>
       </div>
       <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
         className="w-full"
       />
     </div>
@@ -83,8 +92,10 @@ const SliderRow: React.FC<{
 
 // ─── Toggle row ───────────────────────────────────────────────────────────────
 const ToggleRow: React.FC<{
-  label: string; sub?: string;
-  checked: boolean; onChange: (v: boolean) => void;
+  label: string;
+  sub?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
 }> = ({ label, sub, checked, onChange }) => (
   <div className="flex items-center justify-between gap-3">
     <div className="min-w-0">
@@ -92,30 +103,42 @@ const ToggleRow: React.FC<{
       {sub && <p className="text-[9px] text-zinc-600 mt-0.5">{sub}</p>}
     </div>
     <Switch
-      checked={checked} onChange={onChange}
+      checked={checked}
+      onChange={onChange}
       className={clsx(
-        'relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
-        checked ? 'bg-indigo-500' : 'bg-zinc-800',
+        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
+        checked ? 'bg-indigo-500' : 'bg-zinc-800'
       )}
     >
-      <span className={clsx(
-        'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-        checked ? 'translate-x-[18px]' : 'translate-x-[3px]',
-      )} />
+      <span
+        className={clsx(
+          'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+          checked ? 'translate-x-[18px]' : 'translate-x-[3px]'
+        )}
+      />
     </Switch>
   </div>
 );
 
 // ─── Alignment grid ───────────────────────────────────────────────────────────
 const GRID_POSITIONS: { id: PresetType; label: string }[] = [
-  { id: 'tl', label: 'Top left' },    { id: 'tc', label: 'Top center' },    { id: 'tr', label: 'Top right' },
-  { id: 'lc', label: 'Middle left' }, { id: 'cc', label: 'Center' },        { id: 'rc', label: 'Middle right' },
-  { id: 'bl', label: 'Bottom left' }, { id: 'bc', label: 'Bottom center' }, { id: 'br', label: 'Bottom right' },
+  { id: 'tl', label: 'Top left' },
+  { id: 'tc', label: 'Top center' },
+  { id: 'tr', label: 'Top right' },
+  { id: 'lc', label: 'Middle left' },
+  { id: 'cc', label: 'Center' },
+  { id: 'rc', label: 'Middle right' },
+  { id: 'bl', label: 'Bottom left' },
+  { id: 'bc', label: 'Bottom center' },
+  { id: 'br', label: 'Bottom right' },
 ];
 
-const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => void }> = ({ value, onChange }) => (
+const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => void }> = ({
+  value,
+  onChange,
+}) => (
   <div className="grid grid-cols-3 gap-1 w-[5.5rem]">
-    {GRID_POSITIONS.map(pos => (
+    {GRID_POSITIONS.map((pos) => (
       <button
         key={pos.id}
         type="button"
@@ -125,29 +148,33 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
           'w-full aspect-square rounded transition-all active:scale-90',
           value === pos.id
             ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]'
-            : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]',
+            : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]'
         )}
       >
-        <div className={clsx(
-          'w-1.5 h-1.5 rounded-full mx-auto',
-          value === pos.id ? 'bg-white' : 'bg-zinc-600',
-        )} />
+        <div
+          className={clsx(
+            'w-1.5 h-1.5 rounded-full mx-auto',
+            value === pos.id ? 'bg-white' : 'bg-zinc-600'
+          )}
+        />
       </button>
     ))}
   </div>
 );
 
 // ─── Password input with show/hide ───────────────────────────────────────────
-const ApiKeyInput: React.FC<{ placeholder: string; value: string; onChange: (v: string) => void }> = ({
-  placeholder, value, onChange,
-}) => {
+const ApiKeyInput: React.FC<{
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}> = ({ placeholder, value, onChange }) => {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
       <input
         type={show ? 'text' : 'password'}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="
           w-full h-8 pl-3 pr-8 rounded-lg
@@ -159,7 +186,7 @@ const ApiKeyInput: React.FC<{ placeholder: string; value: string; onChange: (v: 
       />
       <button
         type="button"
-        onClick={() => setShow(v => !v)}
+        onClick={() => setShow((v) => !v)}
         className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-zinc-400 transition-colors"
       >
         <Eye size={12} />
@@ -173,10 +200,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const { toggleViewOption, viewOptions } = useEditor();
 
   const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
-    setConfig(prev => {
+    setConfig((prev) => {
       if (key === 'layout' || key === 'preset') {
         const newItems = { ...prev.items };
-        (Object.keys(newItems) as RatingType[]).forEach(k => {
+        (Object.keys(newItems) as RatingType[]).forEach((k) => {
           if (newItems[k]) {
             const { x: _x, y: _y, ...rest } = newItems[k]!;
             newItems[k] = rest;
@@ -189,21 +216,27 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   };
 
   const updateKeys = (key: keyof ApiKeys, value: string) =>
-    setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
+    setConfig((prev) => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
 
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) => {
-    setConfig(prev => {
+    setConfig((prev) => {
       const newItems = { ...prev.items };
-      selectedIds.forEach(id => { newItems[id] = { ...newItems[id], ...updates }; });
+      selectedIds.forEach((id) => {
+        newItems[id] = { ...newItems[id], ...updates };
+      });
       return { ...prev, items: newItems };
     });
   };
 
-  const getCommonValue = <K extends keyof BadgeConfig>(prop: K, def: BadgeConfig[K]): BadgeConfig[K] | null => {
+  const getCommonValue = <K extends keyof BadgeConfig>(
+    prop: K,
+    def: BadgeConfig[K]
+  ): BadgeConfig[K] | null => {
     const vals = Array.from(selectedIds).map(
-      id => config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def,
+      (id) =>
+        config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def
     );
-    return vals.length > 0 && vals.every(v => v === vals[0]) ? vals[0] : null;
+    return vals.length > 0 && vals.every((v) => v === vals[0]) ? vals[0] : null;
   };
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
@@ -217,22 +250,26 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           <div className="flex items-start gap-4">
             <div>
               <p className="text-[10px] text-zinc-600 mb-2 font-medium">Position preset</p>
-              <AlignmentGrid value={config.preset} onChange={v => updateConfig('preset', v)} />
+              <AlignmentGrid value={config.preset} onChange={(v) => updateConfig('preset', v)} />
             </div>
             <div className="flex-1">
               <p className="text-[10px] text-zinc-600 mb-2 font-medium">Flow direction</p>
               <div className="space-y-1.5">
-                {([
-                  { id: 'col', label: 'Column', icon: '⬇' },
-                  { id: 'row', label: 'Row', icon: '➡' },
-                ] as const).map(opt => (
-                  <button key={opt.id} type="button"
+                {(
+                  [
+                    { id: 'col', label: 'Column', icon: '⬇' },
+                    { id: 'row', label: 'Row', icon: '➡' },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
                     onClick={() => updateConfig('layout', opt.id)}
                     className={clsx(
                       'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
                       config.layout === opt.id
                         ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
-                        : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/[0.06]',
+                        : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/6'
                     )}
                   >
                     <span className="text-base leading-none">{opt.icon}</span>
@@ -247,48 +284,74 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         {/* Poster */}
         <Section title="Poster" icon={<Layers size={11} />}>
           <SliderRow
-            label="Blur" value={config.posterBlur} min={0} max={20}
-            unit="px" onChange={v => updateConfig('posterBlur', v)}
+            label="Blur"
+            value={config.posterBlur}
+            min={0}
+            max={20}
+            unit="px"
+            onChange={(v) => updateConfig('posterBlur', v)}
           />
           <ToggleRow
-            label="Grayscale" sub="Desaturate the poster image"
-            checked={config.grayscale} onChange={v => updateConfig('grayscale', v)}
+            label="Grayscale"
+            sub="Desaturate the poster image"
+            checked={config.grayscale}
+            onChange={(v) => updateConfig('grayscale', v)}
           />
         </Section>
 
         {/* Badge defaults */}
         <Section title="Badge Defaults" icon={<Palette size={11} />}>
           <ToggleRow
-            label="Show Icons" checked={config.icon ?? true}
-            onChange={v => updateConfig('icon', v)}
+            label="Show Icons"
+            checked={config.icon ?? true}
+            onChange={(v) => updateConfig('icon', v)}
           />
 
           <SliderRow
-            label="Glass Blur" value={config.blur} min={0} max={20} unit="px"
-            onChange={v => updateConfig('blur', v)}
+            label="Glass Blur"
+            value={config.blur}
+            min={0}
+            max={20}
+            unit="px"
+            onChange={(v) => updateConfig('blur', v)}
           />
           <SliderRow
-            label="Background Opacity" value={config.alpha} min={0} max={1} step={0.05}
-            formatValue={v => `${Math.round(v * 100)}%`}
-            onChange={v => updateConfig('alpha', v)}
+            label="Background Opacity"
+            value={config.alpha}
+            min={0}
+            max={1}
+            step={0.05}
+            formatValue={(v) => `${Math.round(v * 100)}%`}
+            onChange={(v) => updateConfig('alpha', v)}
           />
           <SliderRow
-            label="Corner Radius" value={config.radius} min={0} max={30} unit="px"
-            onChange={v => updateConfig('radius', v)}
+            label="Corner Radius"
+            value={config.radius}
+            min={0}
+            max={30}
+            unit="px"
+            onChange={(v) => updateConfig('radius', v)}
           />
           <SliderRow
-            label="Drop Shadow" value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}
-            min={0} max={30} onChange={v => updateConfig('shadow', v)}
+            label="Drop Shadow"
+            value={typeof config.shadow === 'boolean' ? (config.shadow ? 6 : 0) : config.shadow}
+            min={0}
+            max={30}
+            onChange={(v) => updateConfig('shadow', v)}
           />
           <SliderRow
-            label="Border Width" value={config.borderW ?? 0} min={0} max={10} unit="px"
-            onChange={v => updateConfig('borderW', v)}
+            label="Border Width"
+            value={config.borderW ?? 0}
+            min={0}
+            max={10}
+            unit="px"
+            onChange={(v) => updateConfig('borderW', v)}
           />
           {(config.borderW ?? 0) > 0 && (
             <ColorPicker
               label="Border Color"
               value={config.borderC ?? '#ffffff'}
-              onChange={v => updateConfig('borderC', v)}
+              onChange={(v) => updateConfig('borderC', v)}
             />
           )}
         </Section>
@@ -296,17 +359,19 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         {/* View overlays */}
         <Section title="Canvas Overlays" icon={<Smartphone size={11} />} defaultOpen={false}>
           <div className="grid grid-cols-2 gap-2">
-            {([
+            {[
               { key: 'showSafeArea' as const, label: 'Safe Area' },
-              { key: 'showGrid'    as const, label: 'Grid Lines' },
-            ]).map(({ key, label }) => (
-              <button key={key} type="button"
+              { key: 'showGrid' as const, label: 'Grid Lines' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
                 onClick={() => toggleViewOption(key)}
                 className={clsx(
                   'h-9 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
                   viewOptions[key]
                     ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
-                    : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/[0.06]',
+                    : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/6'
                 )}
               >
                 {label}
@@ -326,7 +391,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               <ApiKeyInput
                 placeholder="Override default TMDB key"
                 value={config.keys?.tmdb ?? ''}
-                onChange={v => updateKeys('tmdb', v)}
+                onChange={(v) => updateKeys('tmdb', v)}
               />
             </div>
             <div>
@@ -334,7 +399,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               <ApiKeyInput
                 placeholder="Your Fanart.tv key"
                 value={config.keys?.fanart ?? ''}
-                onChange={v => updateKeys('fanart', v)}
+                onChange={(v) => updateKeys('fanart', v)}
               />
             </div>
           </div>
@@ -347,7 +412,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   if (selectedIds.size === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3 p-8 text-center">
-        <div className="w-12 h-12 rounded-2xl bg-[#111113] border border-white/[0.06] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-[#111113] border border-white/6 flex items-center justify-center">
           <Layers size={18} strokeWidth={1.5} className="opacity-50" />
         </div>
         <div>
@@ -379,30 +444,42 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       {/* Transform */}
       <Section title="Transform">
         <SliderRow
-          label="Scale" value={getCommonValue('scale', 1.0) ?? 1.0}
-          min={0.5} max={2.0} step={0.05}
-          formatValue={v => `${v.toFixed(2)}×`}
-          onChange={v => updateSelectedBadges({ scale: v })}
+          label="Scale"
+          value={getCommonValue('scale', 1.0) ?? 1.0}
+          min={0.5}
+          max={2.0}
+          step={0.05}
+          formatValue={(v) => `${v.toFixed(2)}×`}
+          onChange={(v) => updateSelectedBadges({ scale: v })}
         />
       </Section>
 
       {/* Glass & shape */}
       <Section title="Glass & Shape">
         <SliderRow
-          label="Blur" value={getCommonValue('blur', config.blur) ?? config.blur}
-          min={0} max={20} unit="px"
-          onChange={v => updateSelectedBadges({ blur: v })}
+          label="Blur"
+          value={getCommonValue('blur', config.blur) ?? config.blur}
+          min={0}
+          max={20}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ blur: v })}
         />
         <SliderRow
-          label="Opacity" value={getCommonValue('alpha', config.alpha) ?? config.alpha}
-          min={0} max={1} step={0.05}
-          formatValue={v => `${Math.round(v * 100)}%`}
-          onChange={v => updateSelectedBadges({ alpha: v })}
+          label="Opacity"
+          value={getCommonValue('alpha', config.alpha) ?? config.alpha}
+          min={0}
+          max={1}
+          step={0.05}
+          formatValue={(v) => `${Math.round(v * 100)}%`}
+          onChange={(v) => updateSelectedBadges({ alpha: v })}
         />
         <SliderRow
-          label="Radius" value={getCommonValue('radius', config.radius) ?? config.radius}
-          min={0} max={30} unit="px"
-          onChange={v => updateSelectedBadges({ radius: v })}
+          label="Radius"
+          value={getCommonValue('radius', config.radius) ?? config.radius}
+          min={0}
+          max={30}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ radius: v })}
         />
       </Section>
 
@@ -414,16 +491,18 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             const v = getCommonValue('bg', '#000000');
             return v === null ? '#000000' : (v ?? '#000000');
           })()}
-          onChange={v => updateSelectedBadges({ bg: v })}
+          onChange={(v) => updateSelectedBadges({ bg: v })}
           showOpacity
           opacity={getCommonValue('alpha', config.alpha) ?? config.alpha}
-          onOpacityChange={v => updateSelectedBadges({ alpha: v })}
+          onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
         />
         <SliderRow
           label="Border Width"
           value={getCommonValue('borderW', 0) ?? 0}
-          min={0} max={10} unit="px"
-          onChange={v => updateSelectedBadges({ borderW: v })}
+          min={0}
+          max={10}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ borderW: v })}
         />
         {(getCommonValue('borderW', 0) ?? 0) > 0 && (
           <ColorPicker
@@ -432,7 +511,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               const v = getCommonValue('borderC', '#ffffff');
               return v === null ? '#ffffff' : (v ?? '#ffffff');
             })()}
-            onChange={v => updateSelectedBadges({ borderC: v })}
+            onChange={(v) => updateSelectedBadges({ borderC: v })}
           />
         )}
       </Section>
@@ -443,7 +522,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           <ToggleRow
             label="Show Icon"
             checked={getCommonValue('icon', true) ?? true}
-            onChange={v => updateSelectedBadges({ icon: v })}
+            onChange={(v) => updateSelectedBadges({ icon: v })}
           />
         )}
         <SliderRow
@@ -452,8 +531,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             const v = getCommonValue('shadow', 6);
             return v === null ? 6 : typeof v === 'boolean' ? (v ? 6 : 0) : (v ?? 6);
           })()}
-          min={0} max={30}
-          onChange={v => updateSelectedBadges({ shadow: v })}
+          min={0}
+          max={30}
+          onChange={(v) => updateSelectedBadges({ shadow: v })}
         />
       </Section>
 
@@ -462,9 +542,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         <button
           type="button"
           onClick={() =>
-            setConfig(prev => {
+            setConfig((prev) => {
               const ni = { ...prev.items };
-              selectedIds.forEach(id => delete ni[id]);
+              selectedIds.forEach((id) => delete ni[id]);
               return { ...prev, items: ni };
             })
           }

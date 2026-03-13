@@ -20,15 +20,18 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   return (
     <SidebarLayout
       header={
-        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/[0.06]">
+        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
           <button
-            onClick={() => { clearSelection(); setActiveTab('canvas'); }}
+            onClick={() => {
+              clearSelection();
+              setActiveTab('canvas');
+            }}
             aria-pressed={currentMode === 'global'}
             className={clsx(
               'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
               currentMode === 'global'
                 ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
-                : 'text-zinc-600 hover:text-zinc-400',
+                : 'text-zinc-600 hover:text-zinc-400'
             )}
           >
             <Globe size={11} strokeWidth={2} />
@@ -41,7 +44,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
               'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
               currentMode === 'selection'
                 ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
-                : 'text-zinc-600 hover:text-zinc-400',
+                : 'text-zinc-600 hover:text-zinc-400'
             )}
           >
             <MousePointer2 size={11} strokeWidth={2} />

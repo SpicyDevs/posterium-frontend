@@ -28,7 +28,7 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
   return (
     <div className={clsx('flex flex-col h-full min-h-0 bg-[#0d0d0f]', className)}>
       {/* Sticky header — does NOT scroll */}
-      <div className="flex-shrink-0 px-3 pt-3 pb-2 border-b border-white/[0.06] bg-[#0d0d0f] z-10">
+      <div className="shrink-0 px-3 pt-3 pb-2 border-b border-white/6 bg-[#0d0d0f] z-10">
         {header}
       </div>
 
@@ -36,7 +36,7 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
       <div
         className={clsx(
           'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar',
-          bodyClassName,
+          bodyClassName
         )}
       >
         {children}

@@ -31,7 +31,9 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable */ }
+    } catch {
+      /* clipboard unavailable */
+    }
   };
 
   const handleLoad = () => {
@@ -50,7 +52,9 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
       const u = new URL(url);
       u.searchParams.set('download', '');
       window.open(u.toString(), '_blank', 'noopener,noreferrer');
-    } catch { /* malformed url */ }
+    } catch {
+      /* malformed url */
+    }
   };
 
   const handleBlur = () => {
@@ -68,15 +72,17 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
         Poster API URL
       </label>
 
-      <div className="
+      <div
+        className="
         flex items-center h-8
-        bg-[#111113] border border-white/[0.09] rounded-lg
+        bg-[#111113] border border-white/9 rounded-lg
         transition-all duration-150
         focus-within:border-indigo-500/50 focus-within:bg-[#131316]
         hover:border-white/15
-      ">
+      "
+      >
         {/* Icon */}
-        <span className="pl-2.5 text-zinc-600 flex-shrink-0" aria-hidden="true">
+        <span className="pl-2.5 text-zinc-600 shrink-0" aria-hidden="true">
           <Link2 size={11} strokeWidth={2} />
         </span>
 
@@ -86,8 +92,11 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
           ref={inputRef}
           type="url"
           value={url}
-          onChange={e => { setIsEditing(true); setUrl(e.target.value); }}
-          onKeyDown={e => e.key === 'Enter' && handleLoad()}
+          onChange={(e) => {
+            setIsEditing(true);
+            setUrl(e.target.value);
+          }}
+          onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
           onBlur={handleBlur}
           className="
             flex-1 min-w-0 h-full px-2 bg-transparent border-none outline-none
@@ -102,7 +111,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
         />
 
         {/* Action buttons */}
-        <div className="flex items-center gap-0.5 pr-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 pr-1 shrink-0">
           {isEditing ? (
             <button
               onClick={handleLoad}
@@ -114,10 +123,11 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
                 disabled:opacity-50 transition-colors
               "
             >
-              {isLoading
-                ? <Loader2 size={11} className="animate-spin" />
-                : <ArrowRight size={11} />
-              }
+              {isLoading ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <ArrowRight size={11} />
+              )}
             </button>
           ) : (
             <>
@@ -135,10 +145,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
                 title={copied ? 'Copied!' : 'Copy URL'}
                 className="w-6 h-6 rounded flex items-center justify-center text-zinc-600 hover:text-zinc-300 hover:bg-white/6 transition-colors"
               >
-                {copied
-                  ? <Check size={11} className="text-emerald-400" />
-                  : <Copy size={11} />
-                }
+                {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
               </button>
             </>
           )}
