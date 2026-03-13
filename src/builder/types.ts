@@ -16,6 +16,7 @@ export type LayoutType = 'row' | 'col' | 'custom';
 export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' | 'cc' | 'custom';
 export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal' | 'anilist' | 'imdb';
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
+export type LogoSourceType = 'fanart' | 'tmdb' | 'metahub' | null;
 
 export interface BadgeConfig {
   x?: number;
@@ -65,6 +66,16 @@ export interface PosterConfig {
   icon?: boolean;
   items: Partial<Record<RatingType, BadgeConfig>>;
   keys?: ApiKeys;
+
+  // ── Logo overlay ──────────────────────────────────────────────────────────
+  logo: boolean;
+  logoSource: LogoSourceType; // null = auto (fanart → tmdb → metahub)
+  logoX: number | null; // null = auto-centred: (500 - logoW) / 2
+  logoY: number; // top edge in canvas px (default: 630)
+  logoW: number; // bounding-box width  (default: 380)
+  logoH: number; // bounding-box height (default: 100)
+  logoOpacity: number; // 0–1 (default: 1.0)
+  logoShadow: number; // drop-shadow strength 0–30 (default: 6)
 }
 
 // Default Constants
@@ -92,6 +103,16 @@ export const DEFAULT_CONFIG: PosterConfig = {
     age: { x: 8, y: 683 },
   },
   keys: {},
+
+  // Logo overlay — off by default
+  logo: false,
+  logoSource: null,
+  logoX: null,
+  logoY: 630,
+  logoW: 380,
+  logoH: 100,
+  logoOpacity: 1.0,
+  logoShadow: 6,
 };
 
 export const CANVAS_WIDTH = 500;

@@ -1,7 +1,15 @@
 // src/components/PropertyPanel.tsx
 import React, { memo, useState } from 'react';
 import { Switch } from '@headlessui/react';
-import { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
+import {
+  PosterConfig,
+  RatingType,
+  PresetType,
+  BadgeConfig,
+  ApiKeys,
+  CANVAS_WIDTH,
+  LogoSourceType,
+} from '../types';
 import {
   Layers,
   Layout,
@@ -11,6 +19,7 @@ import {
   ChevronRight,
   Eye,
   KeyRound,
+  ImagePlay,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -195,6 +204,14 @@ const ApiKeyInput: React.FC<{
   );
 };
 
+// ─── Logo source button group ─────────────────────────────────────────────────
+const LOGO_SOURCES: { id: LogoSourceType; label: string; hint: string }[] = [
+  { id: null, label: 'Auto', hint: 'Fanart → TMDB → Metahub' },
+  { id: 'fanart', label: 'Fanart', hint: 'Fanart.tv HD logo' },
+  { id: 'tmdb', label: 'TMDB', hint: 'TMDB images API' },
+  { id: 'metahub', label: 'Hub', hint: 'Metahub (fast fallback)' },
+];
+
 // ─── Main component ───────────────────────────────────────────────────────────
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
@@ -240,6 +257,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   };
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
+
+  // Auto-centre X value (what the backend would compute when logoX is null)
+  const logoCentredX = Math.round((CANVAS_WIDTH - config.logoW) / 2);
 
   // ── GLOBAL / CANVAS MODE ─────────────────────────────────────────────────
   if (showGlobal) {
@@ -297,6 +317,128 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             checked={config.grayscale}
             onChange={(v) => updateConfig('grayscale', v)}
           />
+        </Section>
+
+        {/* ── Logo Overlay ──────────────────────────────────────────────────── */}
+        <Section title="Logo Overlay" icon={<ImagePlay size={11} />} defaultOpen={false}>
+          <ToggleRow
+            label="Show Logo"
+            sub="Title logo from Fanart, TMDB, or Metahub"
+            checked={config.logo}
+            onChange={(v) => updateConfig('logo', v)}
+          />
+
+          {config.logo && (
+            <>
+              {/* Source selector */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] text-zinc-400 font-medium">Logo Source</span>
+                <div className="grid grid-cols-4 gap-1">
+                  {LOGO_SOURCES.map((opt) => (
+                    <button
+                      key={String(opt.id)}
+                      type="button"
+                      title={opt.hint}
+                      onClick={() =>
+                        updateConfig('logoSource', opt.id as PosterConfig['logoSource'])
+                      }
+                      className={clsx(
+                        'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95',
+                        (config.logoSource ?? null) === opt.id
+                          ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                          : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/6'
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[9px] text-zinc-600 leading-relaxed">
+                  {LOGO_SOURCES.find((s) => (s.id ?? null) === (config.logoSource ?? null))?.hint}
+                  {(config.logoSource === 'fanart' || config.logoSource === 'tmdb') && (
+                    <span className="ml-1 text-indigo-400/60">· preview uses Metahub</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Y position */}
+              <SliderRow
+                label="Y Position"
+                value={config.logoY}
+                min={0}
+                max={748}
+                unit="px"
+                onChange={(v) => updateConfig('logoY', Math.round(v))}
+              />
+
+              {/* X position — with auto-centre toggle */}
+              <ToggleRow
+                label="Auto-centre X"
+                sub={`Centres logo horizontally (${logoCentredX} px)`}
+                checked={config.logoX === null}
+                onChange={(v) => updateConfig('logoX', v ? null : logoCentredX)}
+              />
+              {config.logoX !== null && (
+                <SliderRow
+                  label="X Position"
+                  value={config.logoX}
+                  min={0}
+                  max={490}
+                  unit="px"
+                  onChange={(v) => updateConfig('logoX', Math.round(v))}
+                />
+              )}
+
+              {/* Size */}
+              <SliderRow
+                label="Width"
+                value={config.logoW}
+                min={50}
+                max={490}
+                unit="px"
+                onChange={(v) => {
+                  const w = Math.round(v);
+                  // Keep auto-centre accurate when width changes
+                  setConfig((prev) => ({
+                    ...prev,
+                    logoW: w,
+                    logoX: prev.logoX === null ? null : prev.logoX,
+                  }));
+                }}
+              />
+              <SliderRow
+                label="Height"
+                value={config.logoH}
+                min={20}
+                max={200}
+                unit="px"
+                onChange={(v) => updateConfig('logoH', Math.round(v))}
+              />
+
+              {/* Appearance */}
+              <SliderRow
+                label="Opacity"
+                value={config.logoOpacity}
+                min={0}
+                max={1}
+                step={0.05}
+                formatValue={(v) => `${Math.round(v * 100)}%`}
+                onChange={(v) => updateConfig('logoOpacity', v)}
+              />
+              <SliderRow
+                label="Drop Shadow"
+                value={config.logoShadow}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('logoShadow', v)}
+              />
+
+              {/* Hint about drag */}
+              <p className="text-[9px] text-zinc-700 leading-relaxed">
+                Drag the logo on the canvas to reposition it.
+              </p>
+            </>
+          )}
         </Section>
 
         {/* Badge defaults */}

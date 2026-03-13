@@ -26,11 +26,7 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     window.scrollTo(0, 0);
   };
 
-  return (
-    <RouterContext.Provider value={{ path, navigate }}>
-      {children}
-    </RouterContext.Provider>
-  );
+  return <RouterContext.Provider value={{ path, navigate }}>{children}</RouterContext.Provider>;
 };
 
 export const useRouter = () => useContext(RouterContext);
@@ -41,13 +37,21 @@ export const Route: React.FC<{
   children: React.ReactNode;
 }> = ({ path, exact = true, children }) => {
   const { path: currentPath } = useRouter();
-  const match = exact ? currentPath === path : currentPath.startsWith(path);
+
+  // Normalize path to ignore trailing slashes (unless it's the root '/')
+  const normalizedPath =
+    currentPath.endsWith('/') && currentPath !== '/' ? currentPath.slice(0, -1) : currentPath;
+
+  const match = exact ? normalizedPath === path : normalizedPath.startsWith(path);
   return match ? <>{children}</> : null;
 };
 
-export const Link: React.FC<
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
-> = ({ to, children, onClick, ...props }) => {
+export const Link: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }> = ({
+  to,
+  children,
+  onClick,
+  ...props
+}) => {
   const { navigate } = useRouter();
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (to.startsWith('http') || to.startsWith('//')) return;
