@@ -383,28 +383,6 @@ const HeroSection = memo(() => {
           </span>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-          opacity: 0.35, animation: 'fade-up 2s ease-in-out 2s both',
-          zIndex: 10,
-        }}
-      >
-        <span className="syne-font" style={{
-          fontSize: 8, letterSpacing: '0.22em', color: 'var(--film-silver)', textTransform: 'uppercase',
-        }}>
-          Scroll
-        </span>
-        <div style={{
-          width: 1, height: 34,
-          background: 'linear-gradient(to bottom, var(--film-amber), transparent)',
-          animation: 'fade-up 1.4s ease-in-out infinite alternate',
-        }} />
-      </div>
     </section>
   );
 });
