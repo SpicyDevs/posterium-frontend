@@ -201,7 +201,11 @@ const HeroSection = memo(() => {
               >
                 <img
                   src={`${API}/${p.type}/${p.id}.svg?source=tmdb`}
-                  alt={p.title}
+                    alt={
+    isCenter
+      ? `${p.title} movie poster with IMDb and Rotten Tomatoes rating badges — Posterium`
+      : `${p.title} movie poster`
+  }
                   loading={isCenter ? 'eager' : 'lazy'}
                   decoding="async"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
