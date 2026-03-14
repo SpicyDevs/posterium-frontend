@@ -92,7 +92,7 @@ export const AmberDivider = memo<{ width?: number | string; opacity?: number }>(
         flexShrink: 0,
       }}
     />
-  ),
+  )
 );
 AmberDivider.displayName = 'AmberDivider';
 
@@ -117,7 +117,7 @@ export const AmberTag = memo<{ children: React.ReactNode; style?: React.CSSPrope
     >
       {children}
     </span>
-  ),
+  )
 );
 AmberTag.displayName = 'AmberTag';
 

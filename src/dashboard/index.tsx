@@ -7,12 +7,12 @@ import React, { useEffect } from 'react';
 import { GLOBAL_CSS } from './styles';
 import { MARQUEE_TITLES } from './constants';
 
-import Nav                from './components/Nav';
-import HeroSection        from './components/HeroSection';
-import FilmReelSection    from './components/FilmReelSection/index';
-import BadgeAtlas         from './components/BadgeAtlas';
-import PosterShowcase     from './components/PosterShowcase';
-import { MarqueeTicker }  from './components/primitives';
+import Nav from './components/Nav';
+import HeroSection from './components/HeroSection';
+import FilmReelSection from './components/FilmReelSection/index';
+import BadgeAtlas from './components/BadgeAtlas';
+import PosterShowcase from './components/PosterShowcase';
+import { MarqueeTicker } from './components/primitives';
 import {
   StatsBar,
   FeaturesSection,
@@ -35,20 +35,20 @@ const Dashboard: React.FC = () => {
     if (document.getElementById(FONT_ID)) return;
 
     const preconn = document.createElement('link');
-    preconn.rel  = 'preconnect';
+    preconn.rel = 'preconnect';
     preconn.href = 'https://fonts.googleapis.com';
     document.head.appendChild(preconn);
 
     const preconn2 = document.createElement('link');
-    preconn2.rel         = 'preconnect';
-    preconn2.href        = 'https://fonts.gstatic.com';
+    preconn2.rel = 'preconnect';
+    preconn2.href = 'https://fonts.gstatic.com';
     preconn2.crossOrigin = 'anonymous';
     document.head.appendChild(preconn2);
 
-    const link  = document.createElement('link');
-    link.id     = FONT_ID;
-    link.rel    = 'stylesheet';
-    link.href   =
+    const link = document.createElement('link');
+    link.id = FONT_ID;
+    link.rel = 'stylesheet';
+    link.href =
       'https://fonts.googleapis.com/css2?family=Bebas+Neue' +
       '&family=Syne:wght@400;600;700;800' +
       '&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300' +
@@ -71,14 +71,26 @@ const Dashboard: React.FC = () => {
       <a
         href="#main-content"
         style={{
-          position: 'absolute', left: -9999, top: 8, zIndex: 9999,
-          background: 'var(--film-amber)', color: '#070706',
-          padding: '8px 14px', borderRadius: 4,
-          fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 11,
-          textDecoration: 'none', letterSpacing: '0.06em',
+          position: 'absolute',
+          left: -9999,
+          top: 8,
+          zIndex: 9999,
+          background: 'var(--film-amber)',
+          color: '#070706',
+          padding: '8px 14px',
+          borderRadius: 4,
+          fontFamily: 'Syne, sans-serif',
+          fontWeight: 700,
+          fontSize: 11,
+          textDecoration: 'none',
+          letterSpacing: '0.06em',
         }}
-        onFocus={e  => { (e.currentTarget as HTMLElement).style.left = '8px'; }}
-        onBlur={e   => { (e.currentTarget as HTMLElement).style.left = '-9999px'; }}
+        onFocus={(e) => {
+          (e.currentTarget as HTMLElement).style.left = '8px';
+        }}
+        onBlur={(e) => {
+          (e.currentTarget as HTMLElement).style.left = '-9999px';
+        }}
       >
         Skip to main content
       </a>

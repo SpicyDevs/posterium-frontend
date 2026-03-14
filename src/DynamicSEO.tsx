@@ -12,13 +12,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useRouter } from './Router';
-import {
-  SITE_CONFIG,
-  SEO_DEFAULTS,
-  ROUTE_SEO,
-  OGMeta,
-  TwitterMeta,
-} from './config';
+import { SITE_CONFIG, SEO_DEFAULTS, ROUTE_SEO, OGMeta, TwitterMeta } from './config';
 
 const DynamicSEO: React.FC = () => {
   const { path } = useRouter();
@@ -29,11 +23,11 @@ const DynamicSEO: React.FC = () => {
   const routeMeta = ROUTE_SEO[normalizedPath];
 
   // ── 2. Scalar fallbacks ───────────────────────────────────────────────────
-  const title       = routeMeta?.title       ?? SEO_DEFAULTS.title;
+  const title = routeMeta?.title ?? SEO_DEFAULTS.title;
   const description = routeMeta?.description ?? SEO_DEFAULTS.description;
-  const canonical   = routeMeta?.canonical   ?? SEO_DEFAULTS.canonical;
-  const isKnownRoute = normalizedPath in ROUTE_SEO;             
-  const noindex     = routeMeta?.noindex ?? !isKnownRoute;         
+  const canonical = routeMeta?.canonical ?? SEO_DEFAULTS.canonical;
+  const isKnownRoute = normalizedPath in ROUTE_SEO;
+  const noindex = routeMeta?.noindex ?? !isKnownRoute;
 
   // ── 3. OG merge: defaults → route-level override → title/desc backfill ───
   // Priority (highest to lowest):
@@ -43,7 +37,7 @@ const DynamicSEO: React.FC = () => {
     ...(routeMeta?.og ?? {}),
     // If a route defines an og.title/description, it wins; otherwise inherit
     // the already-resolved scalar title and description so OG is never blank.
-    title:       routeMeta?.og?.title       ?? title,
+    title: routeMeta?.og?.title ?? title,
     description: routeMeta?.og?.description ?? description,
   };
 
@@ -51,7 +45,7 @@ const DynamicSEO: React.FC = () => {
   const twitter: TwitterMeta = {
     ...SEO_DEFAULTS.twitter,
     ...(routeMeta?.twitter ?? {}),
-    title:       routeMeta?.twitter?.title       ?? title,
+    title: routeMeta?.twitter?.title ?? title,
     description: routeMeta?.twitter?.description ?? description,
   };
 
@@ -60,36 +54,37 @@ const DynamicSEO: React.FC = () => {
       {/* ── Base ─────────────────────────────────────────────── */}
       <html lang="en" />
       <title>{title}</title>
-      <meta name="description"  content={description} />
-      <meta name="theme-color"  content={SITE_CONFIG.themeColor} />
-      <link rel="canonical"     href={canonical} />
+      <meta name="description" content={description} />
+      <meta name="theme-color" content={SITE_CONFIG.themeColor} />
+      <link rel="canonical" href={canonical} />
 
       {/* Prevent indexing when flagged (e.g. admin, 404 stubs) */}
-      {noindex
-        ? <meta name="robots" content="noindex, nofollow" />
-        : <meta name="robots" content="index, follow" />
-      }
+      {noindex ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <meta name="robots" content="index, follow" />
+      )}
 
       {/* ── Open Graph ───────────────────────────────────────── */}
-      <meta property="og:site_name"    content={SITE_CONFIG.name} />
-      <meta property="og:locale"       content={SITE_CONFIG.locale} />
-      <meta property="og:type"         content={og.type} />
-      <meta property="og:url"          content={og.url} />
-      <meta property="og:title"        content={og.title} />
-      <meta property="og:description"  content={og.description} />
-      <meta property="og:image"        content={og.image} />
-      <meta property="og:image:width"  content={String(og.imageWidth)} />
+      <meta property="og:site_name" content={SITE_CONFIG.name} />
+      <meta property="og:locale" content={SITE_CONFIG.locale} />
+      <meta property="og:type" content={og.type} />
+      <meta property="og:url" content={og.url} />
+      <meta property="og:title" content={og.title} />
+      <meta property="og:description" content={og.description} />
+      <meta property="og:image" content={og.image} />
+      <meta property="og:image:width" content={String(og.imageWidth)} />
       <meta property="og:image:height" content={String(og.imageHeight)} />
-      <meta property="og:image:alt"    content={og.imageAlt} />
+      <meta property="og:image:alt" content={og.imageAlt} />
 
       {/* ── Twitter Card ─────────────────────────────────────── */}
-      <meta name="twitter:card"        content={twitter.card} />
-      <meta name="twitter:site"        content={SITE_CONFIG.twitterHandle} />
-      <meta name="twitter:creator"     content={twitter.creator} />
-      <meta name="twitter:title"       content={twitter.title} />
+      <meta name="twitter:card" content={twitter.card} />
+      <meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />
+      <meta name="twitter:creator" content={twitter.creator} />
+      <meta name="twitter:title" content={twitter.title} />
       <meta name="twitter:description" content={twitter.description} />
-      <meta name="twitter:image"       content={twitter.image} />
-      <meta name="twitter:image:alt"   content={twitter.imageAlt} />
+      <meta name="twitter:image" content={twitter.image} />
+      <meta name="twitter:image:alt" content={twitter.imageAlt} />
     </Helmet>
   );
 };

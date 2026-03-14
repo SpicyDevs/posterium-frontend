@@ -1,9 +1,8 @@
 /* Tailwind v4 — single import replaces the old @tailwind directives */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ─── Global base fixes ─────────────────────────────────────────────────────── */
 @layer base {
-
   *,
   *::before,
   *::after {
@@ -78,7 +77,6 @@
 
 /* ─── Custom utilities ──────────────────────────────────────────────────────── */
 @layer utilities {
-
   /* Used throughout the sidebar panels */
   .sidebar-label {
     @apply block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5;

@@ -5,15 +5,15 @@ import { Film, ArrowRight, Github, Menu, X } from 'lucide-react';
 import { useNavScroll, useTimecode } from '../hooks';
 
 const NAV_LINKS = [
-  { label: 'Showcase', href: '#reel'       },
-  { label: 'Features', href: '#features'   },
-  { label: 'API',      href: '#api'        },
-  { label: 'Uses',     href: '#use-cases'  },
+  { label: 'Showcase', href: '#reel' },
+  { label: 'Features', href: '#features' },
+  { label: 'API', href: '#api' },
+  { label: 'Uses', href: '#use-cases' },
 ] as const;
 
 const Nav = memo(() => {
-  const scrolled  = useNavScroll(44);
-  const timecode  = useTimecode();
+  const scrolled = useNavScroll(44);
+  const timecode = useTimecode();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -34,11 +34,8 @@ const Nav = memo(() => {
           padding: '0 20px',
           background: scrolled ? 'rgba(7,7,6,0.94)' : 'transparent',
           backdropFilter: scrolled ? 'blur(18px) saturate(1.4)' : 'none',
-          borderBottom: scrolled
-            ? '1px solid rgba(196,124,46,0.11)'
-            : '1px solid transparent',
-          transition:
-            'background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.5s ease',
+          borderBottom: scrolled ? '1px solid rgba(196,124,46,0.11)' : '1px solid transparent',
+          transition: 'background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.5s ease',
           justifyContent: 'space-between',
         }}
       >
@@ -127,17 +124,13 @@ const Nav = memo(() => {
               borderRadius: 5,
               transition: 'border-color 0.2s, color 0.2s',
             }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                'rgba(196,124,46,0.28)';
-              (e.currentTarget as HTMLElement).style.color =
-                'var(--film-cream)';
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.28)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
             }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                'rgba(255,255,255,0.07)';
-              (e.currentTarget as HTMLElement).style.color =
-                'var(--film-silver)';
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-silver)';
             }}
           >
             <Github size={12} />
@@ -168,7 +161,7 @@ const Nav = memo(() => {
           {/* Mobile hamburger — display toggled by CSS */}
           <button
             className="nav-mobile-toggle"
-            onClick={() => setMenuOpen(v => !v)}
+            onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             style={{
@@ -231,17 +224,13 @@ const Nav = memo(() => {
                 border: '1px solid transparent',
                 transition: 'color 0.15s, border-color 0.15s',
               }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.color =
-                  'var(--film-cream)';
-                (e.currentTarget as HTMLElement).style.borderColor =
-                  'rgba(196,124,46,0.12)';
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.12)';
               }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.color =
-                  'var(--film-silver)';
-                (e.currentTarget as HTMLElement).style.borderColor =
-                  'transparent';
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-silver)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
               }}
             >
               {label}
@@ -254,37 +243,35 @@ const Nav = memo(() => {
 });
 
 // NavLink sub-component — extracted to avoid inline handler recreation
-const NavLink = memo<{ href: string; children: React.ReactNode }>(
-  ({ href, children }) => (
-    <a
-      href={href}
-      className="syne-font"
-      style={{
-        color: 'var(--film-silver)',
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: '0.07em',
-        textTransform: 'uppercase',
-        padding: '5px 12px',
-        borderRadius: 4,
-        textDecoration: 'none',
-        transition: 'color 0.2s, background 0.2s',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.color = 'var(--film-cream)';
-        el.style.background = 'rgba(255,255,255,0.04)';
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.color = 'var(--film-silver)';
-        el.style.background = 'transparent';
-      }}
-    >
-      {children}
-    </a>
-  ),
-);
+const NavLink = memo<{ href: string; children: React.ReactNode }>(({ href, children }) => (
+  <a
+    href={href}
+    className="syne-font"
+    style={{
+      color: 'var(--film-silver)',
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '0.07em',
+      textTransform: 'uppercase',
+      padding: '5px 12px',
+      borderRadius: 4,
+      textDecoration: 'none',
+      transition: 'color 0.2s, background 0.2s',
+    }}
+    onMouseEnter={(e) => {
+      const el = e.currentTarget as HTMLElement;
+      el.style.color = 'var(--film-cream)';
+      el.style.background = 'rgba(255,255,255,0.04)';
+    }}
+    onMouseLeave={(e) => {
+      const el = e.currentTarget as HTMLElement;
+      el.style.color = 'var(--film-silver)';
+      el.style.background = 'transparent';
+    }}
+  >
+    {children}
+  </a>
+));
 NavLink.displayName = 'NavLink';
 Nav.displayName = 'Nav';
 

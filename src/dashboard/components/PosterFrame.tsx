@@ -10,36 +10,46 @@ interface PosterFrameProps {
 
 // Animate variations — irregular to look hand-crafted
 const FLOAT_VARIANTS: Array<{ anim: string; dur: number; delay: number; rotate: number }> = [
-  { anim: 'float-a', dur: 4.2, delay: 0.0,  rotate: -1.2 },
-  { anim: 'float-b', dur: 3.8, delay: 0.5,  rotate:  0.8 },
-  { anim: 'float-c', dur: 5.1, delay: 0.2,  rotate: -0.4 },
-  { anim: 'float-a', dur: 4.6, delay: 0.9,  rotate:  1.1 },
-  { anim: 'float-b', dur: 3.5, delay: 0.3,  rotate: -0.7 },
-  { anim: 'float-c', dur: 4.9, delay: 0.7,  rotate:  0.3 },
+  { anim: 'float-a', dur: 4.2, delay: 0.0, rotate: -1.2 },
+  { anim: 'float-b', dur: 3.8, delay: 0.5, rotate: 0.8 },
+  { anim: 'float-c', dur: 5.1, delay: 0.2, rotate: -0.4 },
+  { anim: 'float-a', dur: 4.6, delay: 0.9, rotate: 1.1 },
+  { anim: 'float-b', dur: 3.5, delay: 0.3, rotate: -0.7 },
+  { anim: 'float-c', dur: 4.9, delay: 0.7, rotate: 0.3 },
 ];
 
 // Poster frame heights vary for visual rhythm — not all the same height
 const HEIGHT_VARIANCE: Record<number, number> = {
-  0: 370, 1: 350, 2: 390, 3: 360, 4: 380,
-  5: 345, 6: 375, 7: 355, 8: 395, 9: 365, 10: 372, 11: 348,
+  0: 370,
+  1: 350,
+  2: 390,
+  3: 360,
+  4: 380,
+  5: 345,
+  6: 375,
+  7: 355,
+  8: 395,
+  9: 365,
+  10: 372,
+  11: 348,
 };
 
 const PosterFrame = memo<PosterFrameProps>(({ item, index, totalCount }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError]   = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const posterUrl = `${API}/${item.type}/${item.id}.svg?source=tmdb`;
   // Fallback: try plain TMDB poster path pattern as a png if svg fails
   const fallbackUrl = `https://image.tmdb.org/t/p/w342/${item.id}.jpg`;
 
-  const onLoad  = useCallback(() => setImgLoaded(true), []);
+  const onLoad = useCallback(() => setImgLoaded(true), []);
   const onError = useCallback(() => {
     if (!imgError) setImgError(true);
   }, [imgError]);
 
-  const variant  = FLOAT_VARIANTS[index % FLOAT_VARIANTS.length];
-  const frameH   = HEIGHT_VARIANCE[index] ?? 360;
-  const frameW   = Math.round(frameH * (2 / 3)); // ~2:3 poster aspect
+  const variant = FLOAT_VARIANTS[index % FLOAT_VARIANTS.length];
+  const frameH = HEIGHT_VARIANCE[index] ?? 360;
+  const frameW = Math.round(frameH * (2 / 3)); // ~2:3 poster aspect
 
   return (
     <div
@@ -97,8 +107,7 @@ const PosterFrame = memo<PosterFrameProps>(({ item, index, totalCount }) => {
           borderRadius: 4,
           background: '#151310',
           border: '1.5px solid rgba(255,255,255,0.07)',
-          boxShadow:
-            '0 28px 64px rgba(0,0,0,0.72), 0 0 0 1px rgba(196,124,46,0.08)',
+          boxShadow: '0 28px 64px rgba(0,0,0,0.72), 0 0 0 1px rgba(196,124,46,0.08)',
         }}
       >
         {/* Skeleton shimmer — shown until image loads */}

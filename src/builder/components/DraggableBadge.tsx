@@ -44,16 +44,24 @@ const DraggableBadge: React.FC<Props> = ({
   // refs, the useEffect captured stale versions of the callbacks — particularly
   // problematic when onDragEnd / onSelect / isSelected change during an active drag
   // (e.g. another badge is selected while the user is dragging the current one).
-  const onDragEndRef   = useRef(onDragEnd);
-  const onSelectRef    = useRef(onSelect);
-  const isSelectedRef  = useRef(isSelected);
+  const onDragEndRef = useRef(onDragEnd);
+  const onSelectRef = useRef(onSelect);
+  const isSelectedRef = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
 
   // Sync refs unconditionally on every render — O(1) assignments.
-  useEffect(() => { onDragEndRef.current   = onDragEnd;   });
-  useEffect(() => { onSelectRef.current    = onSelect;    });
-  useEffect(() => { isSelectedRef.current  = isSelected;  });
-  useEffect(() => { canvasScaleRef.current = canvasScale; });
+  useEffect(() => {
+    onDragEndRef.current = onDragEnd;
+  });
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  });
+  useEffect(() => {
+    isSelectedRef.current = isSelected;
+  });
+  useEffect(() => {
+    canvasScaleRef.current = canvasScale;
+  });
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
@@ -81,9 +89,9 @@ const DraggableBadge: React.FC<Props> = ({
 
     // Treat tiny movements (< 2 px in canvas space) as clicks, not drags.
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
-      const isShift = ('shiftKey' in e) ? e.shiftKey : false;
-      const isCtrl  = ('ctrlKey'  in e) ? e.ctrlKey  : false;
-      const isMeta  = ('metaKey'  in e) ? e.metaKey  : false;
+      const isShift = 'shiftKey' in e ? e.shiftKey : false;
+      const isCtrl = 'ctrlKey' in e ? e.ctrlKey : false;
+      const isMeta = 'metaKey' in e ? e.metaKey : false;
       // Read from ref — always the current value regardless of when the drag started.
       if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
         onSelectRef.current(badgeId, false);
@@ -104,7 +112,7 @@ const DraggableBadge: React.FC<Props> = ({
     if (!isDragging) return;
 
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
-    const onMouseUp   = (e: MouseEvent) => handleEnd(e);
+    const onMouseUp = (e: MouseEvent) => handleEnd(e);
 
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
@@ -113,15 +121,15 @@ const DraggableBadge: React.FC<Props> = ({
     const onTouchEnd = (e: TouchEvent) => handleEnd(e);
 
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup',   onMouseUp);
+    window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend',  onTouchEnd);
+    window.addEventListener('touchend', onTouchEnd);
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup',   onMouseUp);
+      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend',  onTouchEnd);
+      window.removeEventListener('touchend', onTouchEnd);
     };
   }, [isDragging]); // canvasScale, onDragEnd, onSelect, isSelected accessed via refs
 
@@ -142,8 +150,8 @@ const DraggableBadge: React.FC<Props> = ({
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
   };
 
-  const blurVal   = itemConfig?.blur   ?? config.blur;
-  const alphaVal  = itemConfig?.alpha  ?? config.alpha;
+  const blurVal = itemConfig?.blur ?? config.blur;
+  const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
 
   const rawShadow = itemConfig?.shadow ?? config.shadow;
@@ -158,13 +166,13 @@ const DraggableBadge: React.FC<Props> = ({
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  const txtColor    = itemConfig?.txt || '#ffffff';
+  const txtColor = itemConfig?.txt || '#ffffff';
 
-  const iconSize  = 36 * scale;
-  const iconLeft  = 10 * scale;
-  const iconTop   = 12 * scale;
+  const iconSize = 36 * scale;
+  const iconLeft = 10 * scale;
+  const iconTop = 12 * scale;
   const textRight = 10 * scale;
-  const textTop   = '50%';
+  const textTop = '50%';
 
   const renderContent = () => {
     const dummyVals: Record<string, string> = {
@@ -222,19 +230,13 @@ const DraggableBadge: React.FC<Props> = ({
     }
 
     let iconKey: string =
-      badgeId === 'rt'
-        ? 'rt_fresh'
-        : badgeId === 'rt_popcorn'
-          ? 'popcorn_fresh'
-          : badgeId;
+      badgeId === 'rt' ? 'rt_fresh' : badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId;
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
 
     return (
       <>
         {iconData && (
-          <div
-            style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}
-          >
+          <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
             <svg
               viewBox={iconData.vb}
               width={iconSize}
@@ -264,14 +266,10 @@ const DraggableBadge: React.FC<Props> = ({
   };
 
   const dropShadow =
-    shadowVal > 0
-      ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)`
-      : '';
+    shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0, 0, 0, 0.5)` : '';
 
   const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
-  const finalBackground = isObscuring
-    ? `${slantPattern}, ${backgroundStyle}`
-    : backgroundStyle;
+  const finalBackground = isObscuring ? `${slantPattern}, ${backgroundStyle}` : backgroundStyle;
 
   return (
     <div

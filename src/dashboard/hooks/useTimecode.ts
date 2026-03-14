@@ -2,9 +2,7 @@
 import { useState, useEffect } from 'react';
 
 const fmt = (d: Date) =>
-  [d.getHours(), d.getMinutes(), d.getSeconds()]
-    .map(n => String(n).padStart(2, '0'))
-    .join(':');
+  [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
 
 /** Live HH:MM:SS timecode, updates every second. */
 export const useTimecode = () => {

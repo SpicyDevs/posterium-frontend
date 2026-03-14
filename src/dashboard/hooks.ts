@@ -7,10 +7,11 @@ export * from './hooks/index';
 import { useState, useCallback } from 'react';
 export const usePosterLoad = () => {
   const [loaded, setLoaded] = useState(false);
-  const [error,  setError]  = useState(false);
+  const [error, setError] = useState(false);
   return {
-    loaded, error,
-    onLoad:  useCallback(() => setLoaded(true), []),
-    onError: useCallback(() => setError(true),  []),
+    loaded,
+    error,
+    onLoad: useCallback(() => setLoaded(true), []),
+    onError: useCallback(() => setError(true), []),
   };
 };

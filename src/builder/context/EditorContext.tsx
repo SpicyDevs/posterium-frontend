@@ -71,7 +71,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (nextSize > 0) setActiveTab('badge');
       else setActiveTab('canvas');
     },
-    [setActiveTab], // No longer depends on selectedIds or mobileSheetMode
+    [setActiveTab] // No longer depends on selectedIds or mobileSheetMode
   );
 
   // FIX: setActiveTab is now stable so these deps are correct and non-stale.
@@ -80,7 +80,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setSelectedIds(new Set(ids));
       if (ids.length > 0) setActiveTab('badge');
     },
-    [setActiveTab],
+    [setActiveTab]
   );
 
   const clearSelection = useCallback(() => {
