@@ -326,6 +326,10 @@ const StudioLayout: React.FC<{
       </a>
 
       <div className="flex flex-col h-[100dvh] overflow-hidden font-sans bg-[#09090b] text-zinc-200 selection:bg-indigo-500/30">
+        <h1 className="sr-only">
+          Posterium Poster Builder — Drag-and-Drop Movie Poster Editor with Live Rating Badges
+        </h1>
+
         <ResetDialog
           isOpen={isResetOpen}
           onClose={() => setIsResetOpen(false)}
