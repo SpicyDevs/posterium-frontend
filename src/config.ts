@@ -9,7 +9,7 @@ export const SITE_CONFIG = {
   name: 'Posterium',
   baseUrl: 'https://posters.spicydevs.xyz',
   apiBase: 'https://api.spicydevs.xyz',
-  themeColor: '#C47C2E',
+  themeColor: '#0a0a0a',
   locale: 'en_US',
   twitterHandle: '@spicydevs',
   github: 'https://github.com/xdaayush/freeposterapi',
