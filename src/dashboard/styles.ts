@@ -1,13 +1,11 @@
-// src/pages/dashboard/styles.ts
+// src/dashboard/styles.ts
 // Global CSS injected via <style> tag on mount.
-// KEY FIX: html { overflow-x: clip } — clips horizontal bleed at the
-// document level WITHOUT creating a scroll container (unlike overflow: hidden
-// which would prevent MobileReel's touch-scroll from working).
+// KEY: html { overflow-x: clip } — clips horizontal bleed WITHOUT creating
+// a scroll container (unlike overflow:hidden which breaks MobileReel touch-scroll).
 
 export const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
 
-  /* overflow-x: clip clips horizontal bleed without blocking child scroll containers */
   html { overflow-x: clip; }
 
   :root {
@@ -37,7 +35,7 @@ export const GLOBAL_CSS = `
   /* ── Film grain overlay ── */
   .grain-layer {
     position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-    opacity: 0.032;
+    opacity: 0.03;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
     background-repeat: repeat; background-size: 186px 186px;
     animation: grain-anim 0.14s steps(1) infinite;
@@ -52,22 +50,22 @@ export const GLOBAL_CSS = `
     85%  { transform: translate(2%,-5%); }
   }
 
-  /* ── Scan line ── */
+  /* ── Scan lines ── */
   .scan-layer {
     position: fixed; inset: 0; pointer-events: none; z-index: 9998;
     background: repeating-linear-gradient(
       180deg,
       transparent 0px, transparent 3px,
-      rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px
+      rgba(0,0,0,0.01) 3px, rgba(0,0,0,0.01) 4px
     );
   }
 
-  /* ── Film flicker ── */
-   @keyframes hero-flicker-subtle {
+  /* ── Film flicker (hero overlay only) ── */
+  @keyframes hero-flicker-subtle {
     0%, 97%, 100% { background: rgba(7,7,6,0);    }
-    97.4%          { background: rgba(7,7,6,0.06); }
-    97.8%          { background: rgba(7,7,6,0.02); }
-    98.2%          { background: rgba(7,7,6,0.08); }
+    97.4%         { background: rgba(7,7,6,0.05); }
+    97.8%         { background: rgba(7,7,6,0.02); }
+    98.2%         { background: rgba(7,7,6,0.07); }
   }
 
   /* ── Reel spin ── */
@@ -75,7 +73,7 @@ export const GLOBAL_CSS = `
     to { transform: rotate(360deg); }
   }
 
-  /* ── Float variants ── */
+  /* ── Float variants (kept for any components that still use them) ── */
   @keyframes float-a {
     0%,100% { transform: translateY(0px)   rotate(-1.2deg); }
     50%     { transform: translateY(-16px) rotate(0.8deg); }
@@ -95,7 +93,7 @@ export const GLOBAL_CSS = `
     to   { transform: translateX(-50%); }
   }
 
-  /* ── Hero reveal ── */
+  /* ── Hero reveals ── */
   @keyframes hero-reveal {
     from { opacity: 0; transform: translateY(36px) skewY(0.8deg); }
     to   { opacity: 1; transform: translateY(0) skewY(0deg); }
@@ -106,10 +104,10 @@ export const GLOBAL_CSS = `
   }
 
   .h-a1 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-  .h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.22s both; }
-  .h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.38s both; }
-  .h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.52s both; }
-  .h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.68s both; }
+  .h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.2s  both; }
+  .h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
+  .h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
+  .h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
 
   /* ── Amber pulse ── */
   @keyframes amber-pulse {
@@ -123,51 +121,18 @@ export const GLOBAL_CSS = `
     100% { background-position:  200% 0; }
   }
 
-  /* ── Poster hover ── */
-  .film-frame-wrap {
-    position: relative; flex-shrink: 0; cursor: pointer;
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1),
-                z-index 0s linear 0.45s;
-  }
-  .film-frame-wrap:hover {
-    transform: scale(1.06) translateY(-10px);
-    z-index: 10;
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), z-index 0s;
-  }
-  .film-frame-wrap .poster-detail-overlay {
-    position: absolute; inset: 0; opacity: 0;
-    transition: opacity 0.3s ease; pointer-events: none;
-  }
-  .film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
-  .film-frame-wrap::after {
-    content: '';
-    position: absolute; inset: 0; border-radius: 4px;
-    background: repeating-linear-gradient(
-      0deg, transparent 0px, transparent 3px,
-      rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
-    );
-    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-  }
-  .film-frame-wrap:hover::after { opacity: 1; }
-
-  /* ── Atlas cell ── */
-  .atlas-cell {
-    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
-    background: #151310;
-  }
-
   /* ── Glow CTA ── */
   .glow-cta {
-    box-shadow: 0 0 28px rgba(196,124,46,0.22), 0 4px 18px rgba(0,0,0,0.45);
-    transition: box-shadow 0.3s ease, transform 0.25s ease, background 0.2s ease;
+    box-shadow: 0 0 26px rgba(196,124,46,0.2), 0 4px 16px rgba(0,0,0,0.42);
+    transition: box-shadow 0.3s ease, transform 0.25s ease;
   }
   .glow-cta:hover {
-    box-shadow: 0 0 48px rgba(196,124,46,0.42), 0 8px 30px rgba(0,0,0,0.55);
+    box-shadow: 0 0 44px rgba(196,124,46,0.4), 0 8px 28px rgba(0,0,0,0.52);
     transform: translateY(-2px);
   }
   .glow-cta:active { transform: translateY(0); }
 
-  /* ── Custom range input reset ── */
+  /* ── Custom range input ── */
   input[type='range'] {
     -webkit-appearance: none; appearance: none;
     background: transparent; cursor: pointer; height: 100%; margin: 0;
@@ -185,25 +150,12 @@ export const GLOBAL_CSS = `
     border: 1.5px solid rgba(7,7,6,0.8); cursor: pointer;
   }
 
-  /* ── Custom select ── */
   select option { background: #0E0D0B; color: #F0E6CC; }
-
-  /* ── Mobile swipe reel ── */
-  /* NOTE: .mobile-swipe intentionally does NOT rely on this class for its core
-     scrolling — the component uses inline styles for overflowX/touchAction to
-     prevent ancestor styles from overriding. This class only provides cosmetics. */
-  .mobile-swipe::-webkit-scrollbar { display: none; }
 
   /* ── Custom scrollbar ── */
   ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-track { background: var(--film-black); }
-  ::-webkit-scrollbar-thumb { background: rgba(196,124,46,0.25); border-radius: 99px; }
-
-  /* ── Amber divider util ── */
-  .amber-line {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(196,124,46,0.35), transparent);
-  }
+  ::-webkit-scrollbar-thumb { background: rgba(196,124,46,0.22); border-radius: 99px; }
 
   /* ── Film tag util ── */
   .film-tag {
@@ -216,10 +168,31 @@ export const GLOBAL_CSS = `
     display: inline-block;
   }
 
+  /* ── Film-frame hover (collage reel: no float animation, just scale) ── */
+  .film-frame-wrap {
+    position: relative; flex-shrink: 0;
+    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s linear 0.38s;
+  }
+  .film-frame-wrap:hover {
+    transform: scale(1.05) translateY(-8px);
+    z-index: 10;
+    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s;
+  }
+  .film-frame-wrap .poster-detail-overlay {
+    position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.28s ease; pointer-events: none;
+  }
+  .film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
+
   /* ── Responsive breakpoints ── */
   @media (max-width: 900px) {
     .film-perforation { display: none !important; }
   }
+
+  @media (max-width: 820px) {
+    /* Hero responsive handled by inline <style> in HeroSection.tsx via .hero-two-col / .hero-poster-grid */
+  }
+
   @media (max-width: 768px) {
     .nav-links-desktop   { display: none !important; }
     .nav-mobile-toggle   { display: flex !important; }
@@ -232,27 +205,17 @@ export const GLOBAL_CSS = `
     .mobile-reel-section  { display: none !important; }
   }
 
-  /* PosterShowcase: 2 columns on mobile */
-  @media (max-width: 640px) {
-    #showcase > div[style*='gridTemplateColumns: repeat(4'] {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
-  }
-
-  /* BadgeAtlas: 2 columns on mobile */
+  /* Contact sheet: 2 columns on small screens */
   @media (max-width: 600px) {
-    #atlas > div[style*='gridTemplateColumns: repeat(3'] {
+    #atlas [style*='repeat(4'] {
       grid-template-columns: repeat(2, 1fr) !important;
     }
   }
 
-  /* Distribution circuit: simplify on small screens */
+  /* Combined section integrations grid: 1 col on mobile */
   @media (max-width: 640px) {
-    #use-cases > div[style*='gridTemplateColumns'] {
-      grid-template-columns: 64px 1fr !important;
-    }
-    #use-cases > div[style*='gridTemplateColumns'] > div:last-child {
-      display: none;
+    #combined [style*='repeat(3'] {
+      grid-template-columns: 1fr !important;
     }
   }
 

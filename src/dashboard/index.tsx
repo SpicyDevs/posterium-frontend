@@ -1,9 +1,8 @@
-// src/pages/dashboard/index.tsx
+// src/dashboard/index.tsx
 // ═══════════════════════════════════════════════════════════════════
 // POSTERIUM — Cinematic Dashboard
-// Aesthetic: Film Archive / Cinematheque
 // ═══════════════════════════════════════════════════════════════════
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GLOBAL_CSS } from './styles';
 import { MARQUEE_TITLES } from './constants';
 
@@ -11,12 +10,10 @@ import Nav from './components/Nav';
 import HeroSection from './components/HeroSection';
 import FilmReelSection from './components/FilmReelSection/index';
 import BadgeAtlas from './components/BadgeAtlas';
-import PosterShowcase from './components/PosterShowcase';
 import { MarqueeTicker } from './components/primitives';
 import {
   StatsBar,
-  FeaturesSection,
-  UseCasesSection,
+  CombinedSection,
   CTASection,
   FooterSection,
 } from './components/sections/index';
@@ -28,7 +25,53 @@ const SHIMMER_CSS = `
   }
 `;
 
+// ── First-visit B&W → color flicker ─────────────────────────────
+// Applied via CSS animation on the root wrapper. Only runs once;
+// localStorage prevents repeat on reload.
+const COLORIZE_CSS = `
+  .intro-colorize {
+    animation: intro-colorize 5.2s ease-out forwards;
+  }
+  @keyframes intro-colorize {
+    /* Hold grayscale for ~60% of duration */
+    0%    { filter: grayscale(1) contrast(1.06) brightness(0.88); }
+    57%   { filter: grayscale(1) contrast(1.06) brightness(0.88); }
+
+    /* Static burst 1 */
+    58%   { filter: grayscale(0) contrast(1.18) brightness(1.12) saturate(1.3); }
+    59%   { filter: grayscale(1) contrast(0.92) brightness(0.82); }
+
+    /* Static burst 2 */
+    61%   { filter: grayscale(0) contrast(1.1) brightness(1.06); }
+    62.5% { filter: grayscale(0.85) contrast(0.96); }
+
+    /* Static burst 3 */
+    64%   { filter: grayscale(0) brightness(1.08); }
+    65.5% { filter: grayscale(0.5) contrast(1.02); }
+
+    /* Decay to full color */
+    68%   { filter: grayscale(0) brightness(1.04); }
+    72%   { filter: grayscale(0.18); }
+    76%   { filter: grayscale(0); }
+    100%  { filter: grayscale(0); }
+  }
+`;
+
 const Dashboard: React.FC = () => {
+  // Determine first-visit state once — never re-compute
+  const [isFirstVisit] = useState<boolean>(() => {
+    try {
+      const KEY = 'posterium-visited-v2';
+      if (!localStorage.getItem(KEY)) {
+        localStorage.setItem(KEY, '1');
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
   // Inject Google Fonts once — idempotent HMR guard
   useEffect(() => {
     const FONT_ID = 'posterium-gf';
@@ -59,7 +102,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS + SHIMMER_CSS }} />
+      <style
+        dangerouslySetInnerHTML={{
+          __html: GLOBAL_CSS + SHIMMER_CSS + COLORIZE_CSS,
+        }}
+      />
 
       {/* Film grain overlay */}
       <div className="grain-layer" aria-hidden="true" />
@@ -96,12 +143,12 @@ const Dashboard: React.FC = () => {
       </a>
 
       {/*
-        !! CRITICAL !!
-        No overflowX: hidden here — it would clip MobileReel's touch-scroll container.
-        Horizontal overflow is clipped per-section where needed (HeroSection, etc).
-        overflow-x: clip on the <html> element in global CSS handles page-level bleed.
+        CRITICAL: No overflowX: hidden here — clips MobileReel touch-scroll.
+        overflow-x: clip on <html> in global CSS handles page-level bleed.
       */}
       <div
+        // Apply B&W intro only on first visit
+        className={isFirstVisit ? 'intro-colorize' : undefined}
         style={{
           minHeight: '100dvh',
           background: 'var(--film-black)',
@@ -112,34 +159,28 @@ const Dashboard: React.FC = () => {
         <Nav />
 
         <main id="main-content">
-          {/* 1 — Hero */}
+          {/* 1 — Hero: left text + right poster grid */}
           <HeroSection />
 
-          {/* Ticker separator */}
+          {/* Ticker */}
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          {/* 2 — The Reel: horizontal parallax (desktop) / swipe (mobile) */}
+          {/* 2 — The Reel: collage parallax */}
           <FilmReelSection />
 
-          {/* 3 — Badge Atlas: real API output 3×2 grid */}
+          {/* 3 — Contact Sheet: 4×3 badge showcase */}
           <BadgeAtlas />
 
-          {/* Ticker separator */}
+          {/* Ticker */}
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          {/* 4 — The Manifest: animated stat docket */}
+          {/* 4 — Stats docket */}
           <StatsBar />
 
-          {/* 5 — Exposure Sheet: expandable feature rows */}
-          <FeaturesSection />
+          {/* 5 — Combined: Features + Integrations */}
+          <CombinedSection />
 
-          {/* 6 — The Print Room: accurate API poster output showcase */}
-          <PosterShowcase />
-
-          {/* 7 — Distribution Circuit: use-case rows */}
-          <UseCasesSection />
-
-          {/* 8 — The Slate: clapperboard CTA */}
+          {/* 6 — Slate CTA */}
           <CTASection />
         </main>
 

@@ -1,119 +1,215 @@
-// src/pages/dashboard/components/HeroSection.tsx
-// FIX: film-flicker removed from the section element — it caused a jarring
-// full-section opacity pulse. The flicker now lives on a thin overlay div only,
-// at much lower opacity so it reads as ambiance, not bug.
-import { memo } from 'react';
+// src/dashboard/components/HeroSection.tsx
+// Two-column: left = wordmark + tagline + CTAs, right = static poster showcase grid.
+// No floating fan posters. No QuickBuilder in hero (lives in footer).
+import { memo, useState, useCallback } from 'react';
 import { Link } from '../../Router';
 import { ArrowRight } from 'lucide-react';
-import { API, REEL_ITEMS } from '../constants';
-import { FilmEdge, AmberDivider } from './primitives';
-import { QuickBuilder } from './QuickBuilder';
+import { API } from '../constants';
+import { FilmEdge } from './primitives';
 
-// 7-poster fan — wider spread, more visual mass
-const HERO_POSTER_LAYOUT = [
-  { h: 98, w: 65, rot: -5.5, z: 1, delay: 0.9, anim: 'float-a', opacity: 0.55 },
-  { h: 132, w: 88, rot: -3.2, z: 2, delay: 0.72, anim: 'float-b', opacity: 0.72 },
-  { h: 174, w: 116, rot: -1.5, z: 3, delay: 0.58, anim: 'float-c', opacity: 0.88 },
-  { h: 210, w: 140, rot: 0.0, z: 6, delay: 0.44, anim: 'float-a', opacity: 1.0 },
-  { h: 174, w: 116, rot: 1.4, z: 3, delay: 0.58, anim: 'float-c', opacity: 0.88 },
-  { h: 132, w: 88, rot: 3.0, z: 2, delay: 0.72, anim: 'float-b', opacity: 0.72 },
-  { h: 98, w: 65, rot: 5.2, z: 1, delay: 0.9, anim: 'float-a', opacity: 0.55 },
+// Predefined static poster set — fixed badge configs, no interaction.
+// These call the API but with stable query strings (no user input).
+interface HeroPoster {
+  id: string;
+  type: 'movie' | 'tv';
+  title: string;
+  r: string;
+  pos: string;
+  blur: number;
+  alpha: number;
+  rad: number;
+}
+
+const HERO_POSTERS: HeroPoster[] = [
+  {
+    id: '155',
+    type: 'movie',
+    title: 'The Dark Knight',
+    r: 'imdb,rt',
+    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',
+    blur: 8,
+    alpha: 0.46,
+    rad: 10,
+  },
+  {
+    id: '872585',
+    type: 'movie',
+    title: 'Oppenheimer',
+    r: 'rt,meta',
+    pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86',
+    blur: 8,
+    alpha: 0.46,
+    rad: 10,
+  },
+  {
+    id: '238',
+    type: 'movie',
+    title: 'The Godfather',
+    r: 'imdb',
+    pos: 'imdb_x=10&imdb_y=12',
+    blur: 7,
+    alpha: 0.44,
+    rad: 10,
+  },
+  {
+    id: '680',
+    type: 'movie',
+    title: 'Pulp Fiction',
+    r: 'imdb,rt,meta',
+    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',
+    blur: 8,
+    alpha: 0.46,
+    rad: 10,
+  },
+  {
+    id: '27205',
+    type: 'movie',
+    title: 'Inception',
+    r: 'imdb,rt',
+    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',
+    blur: 8,
+    alpha: 0.46,
+    rad: 10,
+  },
+  {
+    id: '278',
+    type: 'movie',
+    title: 'The Shawshank Redemption',
+    r: 'imdb',
+    pos: 'imdb_x=10&imdb_y=12',
+    blur: 7,
+    alpha: 0.44,
+    rad: 10,
+  },
 ];
 
-const HeroSection = memo(() => {
-  const previewPosters = REEL_ITEMS.slice(0, 7);
+const PosterCell = memo<{ poster: HeroPoster; eager?: boolean }>(
+  ({ poster, eager = false }) => {
+    const [loaded, setLoaded] = useState(false);
+    const onLoad = useCallback(() => setLoaded(true), []);
+    const src =
+      `${API}/${poster.type}/${poster.id}.svg` +
+      `?r=${poster.r}&source=tmdb` +
+      `&blur=${poster.blur}&alpha=${poster.alpha}&rad=${poster.rad}` +
+      `&${poster.pos}`;
 
-  return (
-    <section
-      aria-label="Hero"
-      style={{
-        minHeight: '100dvh',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        paddingTop: 88,
-        paddingBottom: 64,
-        background: 'var(--film-black)',
-        // FIX: flicker removed from section — was too aggressive and read as a bug.
-        // Flicker now lives only on the .hero-flicker-overlay below.
-      }}
-    >
-      {/* Side perforations */}
-      <FilmEdge side="left" />
-      <FilmEdge side="right" />
-
-      {/* Subtle flicker overlay — far lower opacity, reads as ambiance not bug */}
-      <div
-        aria-hidden="true"
-        className="hero-flicker-overlay"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 1,
-          background: 'rgba(7,7,6,0)',
-          animation: 'hero-flicker-subtle 22s ease-in-out infinite',
-        }}
-      />
-
-      {/* Radial amber glow */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(ellipse 72% 55% at 50% 42%, rgba(196,124,46,0.048) 0%, transparent 72%)',
-        }}
-      />
-
-      {/* Dot grid — very subtle */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          opacity: 0.22,
-          backgroundImage: 'radial-gradient(rgba(196,124,46,0.12) 1px, transparent 1px)',
-          backgroundSize: '34px 34px',
-        }}
-      />
-
-      {/* Horizontal rule lines — film letterbox feel */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: 88,
-          left: 0,
-          right: 0,
-          height: 1,
-          background:
-            'linear-gradient(90deg, transparent 0%, rgba(196,124,46,0.08) 20%, rgba(196,124,46,0.08) 80%, transparent 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Content */}
+    return (
       <div
         style={{
           position: 'relative',
-          zIndex: 10,
-          maxWidth: 920,
-          width: '100%',
-          padding: '0 clamp(20px, 5vw, 56px)',
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          aspectRatio: '2/3',
+          overflow: 'hidden',
+          borderRadius: 4,
+          background: '#111009',
+          border: '1px solid rgba(196,124,46,0.14)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.72)',
         }}
       >
-        {/* Eyebrow badge */}
+        {!loaded && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.6s linear infinite',
+            }}
+          />
+        )}
+        <img
+          src={src}
+          alt={poster.title}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          onLoad={onLoad}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.45s ease',
+          }}
+        />
+      </div>
+    );
+  }
+);
+PosterCell.displayName = 'PosterCell';
+
+const HeroSection = memo(() => (
+  <section
+    aria-label="Hero"
+    style={{
+      minHeight: '100dvh',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      overflow: 'hidden',
+      paddingTop: 56,
+      background: 'var(--film-black)',
+    }}
+  >
+    {/* Side perforations */}
+    <FilmEdge side="left" />
+    <FilmEdge side="right" />
+
+    {/* Ambient glow */}
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        background:
+          'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.055) 0%, transparent 70%)',
+      }}
+    />
+
+    {/* Dot grid */}
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: 0.18,
+        backgroundImage: 'radial-gradient(rgba(196,124,46,0.15) 1px, transparent 1px)',
+        backgroundSize: '36px 36px',
+      }}
+    />
+
+    {/* Subtle flicker overlay */}
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        zIndex: 1,
+        animation: 'hero-flicker-subtle 22s ease-in-out infinite',
+      }}
+    />
+
+    {/* Two-column content */}
+    <div
+      className="hero-two-col"
+      style={{
+        position: 'relative',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: 1280,
+        margin: '0 auto',
+        padding: 'clamp(48px,8vh,100px) clamp(40px,5vw,72px)',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 'clamp(40px,6vw,80px)',
+        alignItems: 'center',
+      }}
+    >
+      {/* ── LEFT: Text content ── */}
+      <div>
+        {/* Eyebrow */}
         <div
           className="h-a1"
           style={{
@@ -123,14 +219,14 @@ const HeroSection = memo(() => {
             border: '1px solid rgba(196,124,46,0.28)',
             background: 'rgba(196,124,46,0.055)',
             borderRadius: 3,
-            padding: '5px 14px',
-            margin: 16,
+            padding: '5px 12px',
+            marginBottom: 28,
           }}
         >
           <span
             style={{
-              width: 6,
-              height: 6,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
               background: 'var(--film-amber)',
               display: 'block',
@@ -152,48 +248,63 @@ const HeroSection = memo(() => {
           </span>
         </div>
 
-        {/* Title */}
+        {/* Wordmark */}
         <h1
           className="h-a2 poster-font"
           style={{
-            fontSize: 'clamp(68px, 13.5vw, 176px)',
-            lineHeight: 0.88,
-            color: 'var(--film-cream)',
+            fontSize: 'clamp(72px,9vw,144px)',
+            lineHeight: 0.86,
             letterSpacing: '0.03em',
-            marginBottom: 6,
+            marginBottom: 0,
           }}
         >
-          POSTER
-          <span style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)' }}>
+          <span style={{ color: 'var(--film-cream)', display: 'block' }}>POSTER</span>
+          <span
+            style={{
+              color: 'transparent',
+              WebkitTextStroke: '2px var(--film-amber)',
+              display: 'block',
+            }}
+          >
             IUM
           </span>
         </h1>
 
         {/* Amber rule */}
-        <div className="h-a3" style={{ margin: '14px 0 22px' }}>
-          <AmberDivider width={178} opacity={0.55} />
-        </div>
+        <div
+          className="h-a3"
+          style={{
+            width: 120,
+            height: 1,
+            background:
+              'linear-gradient(90deg, var(--film-amber), transparent)',
+            margin: '22px 0 22px',
+            opacity: 0.6,
+          }}
+        />
 
         {/* Sub */}
         <p
           className="h-a3 syne-font"
           style={{
-            fontSize: 'clamp(13px, 2.2vw, 18px)',
+            fontSize: 'clamp(13px,1.4vw,16px)',
             color: 'var(--film-silver)',
             fontWeight: 400,
-            maxWidth: 600,
-            lineHeight: 1.68,
-            marginBottom: 10,
+            maxWidth: 480,
+            lineHeight: 1.7,
+            marginBottom: 36,
           }}
         >
-          Generate movie &amp; TV posters with glassmorphism rating badges from{' '}
+          Movie &amp; TV poster images with glassmorphism rating badges from{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>, and
-          more — all from a single URL.
+          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>
+            Rotten Tomatoes
+          </strong>
+          ,{' '}
+          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
+          , and more — all from a single URL.
         </p>
 
-        <QuickBuilder />
         {/* CTAs */}
         <div
           className="h-a4"
@@ -201,8 +312,6 @@ const HeroSection = memo(() => {
             display: 'flex',
             gap: 10,
             flexWrap: 'wrap',
-            justifyContent: 'center',
-            marginBottom: 60,
           }}
         >
           <Link
@@ -215,100 +324,130 @@ const HeroSection = memo(() => {
               background: 'var(--film-amber)',
               color: '#070706',
               fontWeight: 700,
-              fontSize: 12,
+              fontSize: 11,
               letterSpacing: '0.09em',
               textTransform: 'uppercase',
               textDecoration: 'none',
-              padding: '12px 26px',
-              borderRadius: 5,
+              padding: '12px 24px',
+              borderRadius: 4,
             }}
           >
-            Open Free Builder <ArrowRight size={13} />
+            Open Builder <ArrowRight size={12} />
           </Link>
+
+          <a
+            href="#reel"
+            className="syne-font"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              color: 'var(--film-silver)',
+              fontWeight: 600,
+              fontSize: 11,
+              letterSpacing: '0.09em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              padding: '11px 20px',
+              borderRadius: 4,
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)',
+              transition: 'border-color 0.2s, color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor =
+                'rgba(196,124,46,0.28)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor =
+                'rgba(255,255,255,0.08)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-silver)';
+            }}
+          >
+            Browse Showcase
+          </a>
         </div>
 
-        {/* 7-poster floating fan */}
+        {/* Stats inline */}
         <div
-          className="h-a5"
+          className="h-a4"
           style={{
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            gap: 'clamp(4px, 1vw, 12px)',
-            width: '100%',
-            maxWidth: 760,
+            gap: 24,
+            marginTop: 36,
           }}
         >
-          {previewPosters.map((p, i) => {
-            const layout = HERO_POSTER_LAYOUT[i];
-            const isCenter = i === 3;
-            return (
+          {[
+            ['∞', 'Free API calls'],
+            ['10+', 'Rating sources'],
+            ['0', 'Auth required'],
+          ].map(([val, label]) => (
+            <div key={label}>
               <div
-                key={p.id}
+                className="poster-font"
                 style={{
-                  width: layout.w,
-                  height: layout.h,
-                  borderRadius: 5,
-                  overflow: 'hidden',
-                  border: isCenter
-                    ? '2px solid rgba(196,124,46,0.52)'
-                    : '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: isCenter
-                    ? '0 32px 80px rgba(0,0,0,0.88), 0 0 44px rgba(196,124,46,0.14)'
-                    : '0 14px 40px rgba(0,0,0,0.7)',
-                  transform: `rotate(${layout.rot}deg)`,
-                  flexShrink: 0,
-                  position: 'relative',
-                  opacity: layout.opacity,
-                  animation: `${layout.anim} ${3.8 + i * 0.42}s ease-in-out ${layout.delay}s infinite`,
-                  zIndex: layout.z,
+                  fontSize: 28,
+                  color: 'var(--film-amber)',
+                  lineHeight: 1,
+                  letterSpacing: '0.04em',
                 }}
               >
-                <img
-                  src={`${API}/${p.type}/${p.id}.svg?source=tmdb`}
-                  alt={
-                    isCenter
-                      ? `${p.title} movie poster with IMDb and Rotten Tomatoes rating badges — Posterium`
-                      : `${p.title} movie poster`
-                  }
-                  loading={isCenter ? 'eager' : 'lazy'}
-                  decoding="async"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-                {/* Vignette on side posters */}
-                {!isCenter && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background:
-                        'linear-gradient(to center, transparent 50%, rgba(7,7,6,0.25) 100%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                )}
+                {val}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Poster count badge */}
-        <div className="h-a5" style={{ marginTop: 14 }}>
-          <span
-            className="mono-font"
-            style={{
-              fontSize: 8,
-              color: 'rgba(122,117,110,0.4)',
-              letterSpacing: '0.16em',
-            }}
-          >
-            {REEL_ITEMS.length} TITLES IN THE REEL · SCROLL TO BROWSE
-          </span>
+              <div
+                className="mono-font"
+                style={{
+                  fontSize: 8,
+                  color: 'rgba(110,104,96,0.5)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  marginTop: 3,
+                }}
+              >
+                {label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    </section>
-  );
-});
+
+      {/* ── RIGHT: Static poster showcase ── */}
+      <div
+        className="h-a5 hero-poster-grid"
+        aria-label="Poster showcase"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateRows: 'auto auto',
+          gap: 8,
+          alignItems: 'start',
+        }}
+      >
+        {/* Tall left poster — spans 2 rows */}
+        <div style={{ gridRow: 'span 2' }}>
+          <PosterCell poster={HERO_POSTERS[0]} eager />
+        </div>
+
+        {/* Top right two */}
+        <PosterCell poster={HERO_POSTERS[1]} eager />
+        <PosterCell poster={HERO_POSTERS[2]} eager />
+
+        {/* Bottom right two */}
+        <PosterCell poster={HERO_POSTERS[3]} />
+        <PosterCell poster={HERO_POSTERS[4]} />
+      </div>
+    </div>
+
+    {/* Responsive: stack on mobile */}
+    <style>{`
+      @media (max-width: 820px) {
+        .hero-two-col { grid-template-columns: 1fr !important; }
+        .hero-poster-grid { display: none !important; }
+      }
+    `}</style>
+  </section>
+));
 
 HeroSection.displayName = 'HeroSection';
 export default HeroSection;

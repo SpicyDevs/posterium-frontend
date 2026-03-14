@@ -1,6 +1,5 @@
-// components/sections/index.ts
+// src/dashboard/components/sections/index.tsx
 export { StatsBar } from './StatsBar';
-export { FeaturesSection } from './FeaturesSection';
-export { UseCasesSection } from './UseCasesSection';
+export { CombinedSection } from './CombinedSection';
 export { CTASection } from './CTASection';
 export { FooterSection } from './FooterSection';

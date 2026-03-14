@@ -1,21 +1,19 @@
-// src/pages/dashboard/components/Nav.tsx
+// src/dashboard/components/Nav.tsx
 import React, { memo, useState, useCallback } from 'react';
 import { Link } from '../../Router';
-import { Film, ArrowRight, Github, Menu, X } from 'lucide-react';
-import { useNavScroll, useTimecode } from '../hooks';
+import { Github, Menu, X } from 'lucide-react';
+import { useNavScroll } from '../hooks';
 
 const NAV_LINKS = [
-  { label: 'Showcase', href: '#reel' },
-  { label: 'Features', href: '#features' },
-  { label: 'API', href: '#api' },
-  { label: 'Uses', href: '#use-cases' },
+  { label: 'Reel', href: '#reel' },
+  { label: 'Features', href: '#combined' },
+  { label: 'API', href: '#atlas' },
+  { label: 'Integrations', href: '#combined' },
 ] as const;
 
 const Nav = memo(() => {
   const scrolled = useNavScroll(44);
-  const timecode = useTimecode();
   const [menuOpen, setMenuOpen] = useState(false);
-
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
@@ -28,137 +26,129 @@ const Nav = memo(() => {
           left: 0,
           right: 0,
           zIndex: 100,
-          height: 58,
+          height: 56,
           display: 'flex',
           alignItems: 'center',
-          padding: '0 20px',
-          background: scrolled ? 'rgba(7,7,6,0.94)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(18px) saturate(1.4)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(196,124,46,0.11)' : '1px solid transparent',
-          transition: 'background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.5s ease',
+          padding: '0 clamp(20px,4vw,56px)',
+          background: scrolled ? 'rgba(7,7,6,0.97)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(24px) saturate(1.3)' : 'none',
+          borderBottom: scrolled
+            ? '1px solid rgba(255,255,255,0.055)'
+            : '1px solid transparent',
+          transition: 'background 0.4s ease, border-color 0.4s ease',
           justifyContent: 'space-between',
+          gap: 24,
         }}
       >
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              background: 'linear-gradient(140deg, #C47C2E, #D4A245)',
-              borderRadius: 5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 3px 10px rgba(196,124,46,0.28)',
-              flexShrink: 0,
-            }}
-          >
-            <Film size={14} color="#070706" strokeWidth={2.5} />
-          </div>
+        {/* Wordmark */}
+        <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <span
             className="poster-font"
-            style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.06em' }}
+            style={{
+              fontSize: 20,
+              color: 'var(--film-cream)',
+              letterSpacing: '0.1em',
+              lineHeight: 1,
+            }}
           >
             POSTERIUM
           </span>
-          <span
-            className="mono-font"
-            style={{
-              fontSize: 8,
-              color: 'var(--film-amber)',
-              letterSpacing: '0.14em',
-              border: '1px solid rgba(196,124,46,0.28)',
-              padding: '2px 5px',
-              borderRadius: 2,
-            }}
-          >
-            v2
-          </span>
-        </div>
+        </Link>
 
-        {/* Desktop nav centre */}
+        {/* Centre links — desktop only */}
         <div
           className="nav-links-desktop"
-          style={{ display: 'flex', gap: 2, alignItems: 'center' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flex: 1,
+            justifyContent: 'center',
+            gap: 0,
+          }}
         >
           {NAV_LINKS.map(({ label, href }) => (
-            <NavLink key={label} href={href}>
+            <a
+              key={label}
+              href={href}
+              className="syne-font"
+              style={{
+                color: 'rgba(110,104,96,0.65)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                padding: '4px 14px',
+                textDecoration: 'none',
+                transition: 'color 0.18s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.65)';
+              }}
+            >
               {label}
-            </NavLink>
+            </a>
           ))}
         </div>
 
         {/* Right side */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {/* Live timecode — desktop only, adds an imperfection that feels human */}
-          <span
-            className="mono-font nav-links-desktop"
-            style={{
-              fontSize: 9,
-              color: 'rgba(122,117,110,0.45)',
-              letterSpacing: '0.1em',
-              marginRight: 4,
-              // blink the colon separator
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {timecode}
-          </span>
-
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
           <a
             href="https://github.com/xdaayush/freeposterapi"
             target="_blank"
             rel="noreferrer"
-            className="syne-font"
+            aria-label="GitHub"
+            className="nav-links-desktop"
             style={{
+              color: 'rgba(110,104,96,0.55)',
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              color: 'var(--film-silver)',
-              fontSize: 11,
-              fontWeight: 600,
-              textDecoration: 'none',
-              padding: '6px 12px',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 5,
-              transition: 'border-color 0.2s, color 0.2s',
+              padding: '6px 8px',
+              borderRadius: 4,
+              transition: 'color 0.18s',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.28)';
               (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-silver)';
+              (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)';
             }}
           >
-            <Github size={12} />
-            <span className="nav-links-desktop">GitHub</span>
+            <Github size={15} />
           </a>
 
           <Link
             to="/build"
-            className="glow-cta syne-font"
+            className="syne-font"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
               background: 'var(--film-amber)',
               color: '#070706',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.07em',
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
               textDecoration: 'none',
-              padding: '6px 16px',
-              borderRadius: 5,
+              padding: '7px 16px',
+              borderRadius: 3,
+              flexShrink: 0,
             }}
           >
-            Builder <ArrowRight size={11} />
+            Build
           </Link>
 
-          {/* Mobile hamburger — display toggled by CSS */}
+          {/* Mobile hamburger */}
           <button
             className="nav-mobile-toggle"
             onClick={() => setMenuOpen((v) => !v)}
@@ -166,19 +156,17 @@ const Nav = memo(() => {
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             style={{
               background: 'none',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.07)',
               color: 'var(--film-silver)',
               width: 34,
               height: 34,
-              borderRadius: 5,
+              borderRadius: 4,
               cursor: 'pointer',
               alignItems: 'center',
               justifyContent: 'center',
-              flexShrink: 0,
-              // display handled by CSS media query class
             }}
           >
-            {menuOpen ? <X size={15} /> : <Menu size={15} />}
+            {menuOpen ? <X size={14} /> : <Menu size={14} />}
           </button>
         </div>
       </nav>
@@ -187,21 +175,20 @@ const Nav = memo(() => {
       {menuOpen && (
         <div
           role="dialog"
-          aria-modal="true"
+          aria-modal
           aria-label="Navigation menu"
           style={{
             position: 'fixed',
-            top: 58,
+            top: 56,
             left: 0,
             right: 0,
             background: 'rgba(7,7,6,0.98)',
-            backdropFilter: 'blur(22px)',
-            borderBottom: '1px solid rgba(196,124,46,0.14)',
-            padding: '8px 16px 16px',
+            backdropFilter: 'blur(24px)',
+            borderBottom: '1px solid rgba(255,255,255,0.055)',
+            padding: '6px 20px 14px',
             zIndex: 99,
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
           }}
         >
           {NAV_LINKS.map(({ label, href }) => (
@@ -211,68 +198,53 @@ const Nav = memo(() => {
               onClick={closeMenu}
               className="syne-font"
               style={{
-                color: 'var(--film-silver)',
+                color: 'rgba(240,230,204,0.7)',
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 letterSpacing: '0.07em',
                 textTransform: 'uppercase',
-                padding: '11px 12px',
-                borderRadius: 5,
+                padding: '12px 8px',
                 textDecoration: 'none',
-                background: 'rgba(255,255,255,0.02)',
-                display: 'block',
-                border: '1px solid transparent',
-                transition: 'color 0.15s, border-color 0.15s',
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                transition: 'color 0.15s',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.12)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'var(--film-silver)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = 'rgba(240,230,204,0.7)';
               }}
             >
               {label}
             </a>
           ))}
+          <a
+            href="https://github.com/xdaayush/freeposterapi"
+            target="_blank"
+            rel="noreferrer"
+            onClick={closeMenu}
+            className="syne-font"
+            style={{
+              color: 'rgba(240,230,204,0.5)',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase',
+              padding: '12px 8px',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              marginTop: 2,
+            }}
+          >
+            <Github size={13} /> GitHub
+          </a>
         </div>
       )}
     </>
   );
 });
 
-// NavLink sub-component — extracted to avoid inline handler recreation
-const NavLink = memo<{ href: string; children: React.ReactNode }>(({ href, children }) => (
-  <a
-    href={href}
-    className="syne-font"
-    style={{
-      color: 'var(--film-silver)',
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: '0.07em',
-      textTransform: 'uppercase',
-      padding: '5px 12px',
-      borderRadius: 4,
-      textDecoration: 'none',
-      transition: 'color 0.2s, background 0.2s',
-    }}
-    onMouseEnter={(e) => {
-      const el = e.currentTarget as HTMLElement;
-      el.style.color = 'var(--film-cream)';
-      el.style.background = 'rgba(255,255,255,0.04)';
-    }}
-    onMouseLeave={(e) => {
-      const el = e.currentTarget as HTMLElement;
-      el.style.color = 'var(--film-silver)';
-      el.style.background = 'transparent';
-    }}
-  >
-    {children}
-  </a>
-));
-NavLink.displayName = 'NavLink';
 Nav.displayName = 'Nav';
-
 export default Nav;
