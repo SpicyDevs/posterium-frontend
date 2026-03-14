@@ -1,5 +1,5 @@
 // src/dashboard/components/Nav.tsx
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Link } from '../../Router';
 import { Github, Menu, X } from 'lucide-react';
 import { useNavScroll } from '../hooks';
