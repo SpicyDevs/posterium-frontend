@@ -205,23 +205,62 @@
   <body>
     <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
     <noscript>
-      <div
-        style="
-          font-family: sans-serif;
-          max-width: 600px;
-          margin: 40px auto;
-          padding: 20px;
-          text-align: center;
-        "
-      >
-        <h1>Posterium — Free Movie &amp; TV Poster Generator</h1>
+      <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px">
+        <h1>Posterium — Free Movie &amp; TV Poster Generator with Rating Badges</h1>
         <p>
-          Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes,
-          Metacritic, and TMDB. This application requires JavaScript to run.
+          Generate custom movie and TV show posters with live rating badges from IMDb, Rotten
+          Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList — all from a single API
+          URL.
         </p>
+        <h2>Features</h2>
+        <ul>
+          <li>Drag-and-drop badge positioning with pixel precision</li>
+          <li>
+            10 rating sources: IMDb, RT Tomatometer, RT Audience Score, Metacritic, TMDB,
+            Letterboxd, MAL, AniList, Runtime, Age Rating
+          </li>
+          <li>
+            Four poster sources: TMDB, Fanart.tv, Metahub, IMDb — with textless poster support
+          </li>
+          <li>Export as SVG, PNG, JPG, or WebP</li>
+          <li>
+            One URL returns the complete poster — works in Plex, Jellyfin, Discord bots, Notion, and
+            anywhere an image tag is accepted
+          </li>
+          <li>No account required, no rate limits, open source under MIT license</li>
+        </ul>
+        <h2>How to use</h2>
         <p>
-          Visit <a href="https://github.com/xdaayush/freeposterapi">our GitHub</a> for more
-          information.
+          Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to
+          open the visual editor. Search for a movie or TV show, toggle and drag rating badges, then
+          copy the generated API URL. The URL format is:
+          <code
+            >https://api.spicydevs.xyz/{type}/{id}.png?r=imdb,rt&amp;imdb_x=310&amp;imdb_y=20</code
+          >
+        </p>
+        <h2>Use cases</h2>
+        <ul>
+          <li>
+            <strong>Plex &amp; Jellyfin</strong> — paste the API URL as custom poster art; ratings
+            update automatically
+          </li>
+          <li><strong>Discord bots</strong> — use the URL directly in embed image fields</li>
+          <li>
+            <strong>Notion &amp; Obsidian</strong> — embed as an image block in watchlist databases
+          </li>
+          <li>
+            <strong>Personal websites &amp; blogs</strong> — dynamic img tag source with
+            always-fresh scores
+          </li>
+          <li>
+            <strong>Make / Zapier / n8n</strong> — auto-generate posters when you add titles to a
+            watchlist
+          </li>
+        </ul>
+        <p>
+          This application requires JavaScript to use the interactive editor. Visit
+          <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation
+          and self-hosting instructions.
         </p>
       </div>
     </noscript>
