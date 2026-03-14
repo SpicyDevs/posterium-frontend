@@ -3,34 +3,25 @@
 
 User-agent: *
 Allow: /
-
-# Block backend API paths
-Disallow: /api/
 Disallow: /cdn-cgi/
 
-# Ensure crawlers can access JS/CSS for proper SPA rendering
 Allow: /assets/
-Allow: /src/
 
-# Sitemap location (all major engines read this)
 Sitemap: https://posters.spicydevs.xyz/sitemap.xml
 
-# ── Googlebot-specific ──────────────────────────────────────────────────────
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 1
 
-# ── Bingbot-specific ────────────────────────────────────────────────────────
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
-# ── Yandex ──────────────────────────────────────────────────────────────────
 User-agent: YandexBot
 Allow: /
 Crawl-delay: 2
 
-# ── Block AI training scrapers (optional, add more as needed) ────────────────
+# Block AI training scrapers
 User-agent: GPTBot
 Disallow: /
 
@@ -38,4 +29,22 @@ User-agent: CCBot
 Disallow: /
 
 User-agent: anthropic-ai
+Disallow: /
+
+User-agent: claudebot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: PerplexityBot
 Disallow: /
