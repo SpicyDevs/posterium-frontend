@@ -143,7 +143,7 @@
             "name": "What is Posterium?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Posterium is a free, open-source tool that generates custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. It provides a drag-and-drop visual editor and exports a single API URL you can use anywhere."
+              "text": "Posterium is a free, open-source tool for generating custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, AniList, and more. It provides a visual drag-and-drop editor and generates a single API URL you can use in Plex, Jellyfin, Discord bots, Notion, or any image tag. No account is required and there are no rate limits."
             }
           },
           {
@@ -151,7 +151,7 @@
             "name": "How do I use Posterium with Plex or Jellyfin?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Use the visual editor to design your poster, then copy the generated API URL. Paste this URL as the custom poster image in Plex or Jellyfin. The image includes live rating badges that update automatically."
+              "text": "Open the free builder at posters.spicydevs.xyz/build, search for your movie or TV show, drag the rating badges to the position you want, then copy the generated API URL. Paste that URL into Plex or Jellyfin as the custom poster image field. The image includes live rating badges from IMDb and Rotten Tomatoes that update automatically whenever the poster is fetched."
             }
           },
           {
@@ -159,7 +159,7 @@
             "name": "Is Posterium free to use?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes, Posterium is completely free with no rate limits and no account required. It is also open-source on GitHub."
+              "text": "Yes. Posterium is completely free with no rate limits and no account required. The full editor, all badge types, all export formats (SVG, PNG, JPG, WebP), and the API endpoint are free. The project is also open-source on GitHub under the MIT license."
             }
           },
           {
@@ -167,7 +167,15 @@
             "name": "What rating sources does Posterium support?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Posterium supports IMDb, Rotten Tomatoes (Tomatometer and Audience Score), Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList, plus runtime and age rating badges."
+              "text": "Posterium supports ten rating sources: IMDb score, Rotten Tomatoes Tomatometer, Rotten Tomatoes Audience Score (Popcorn), Metacritic, TMDB score, Letterboxd, MyAnimeList, AniList, runtime, and age rating badges. All scores are fetched live — not from a cache — so they always reflect current values."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What poster sources does Posterium support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Posterium fetches poster artwork from four sources: TMDB, Fanart.tv, Metahub, and IMDb. It also supports textless poster variants that strip the title text from the artwork. You can choose the poster selection strategy — top-ranked, Bayesian best, latest, oldest, or random — using the ptype parameter."
             }
           }
         ]
