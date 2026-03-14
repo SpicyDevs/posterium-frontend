@@ -201,6 +201,26 @@
         "description": "Visual drag-and-drop editor for creating custom movie and TV posters with glassmorphism rating badges."
       }
     </script>
+    <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA — WebSite
+    ═══════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Posterium",
+        "url": "https://posters.spicydevs.xyz/",
+        "description": "Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://posters.spicydevs.xyz/build?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
   </head>
   <body>
     <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
@@ -259,8 +279,8 @@
         </ul>
         <p>
           This application requires JavaScript to use the interactive editor. Visit
-          <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation
-          and self-hosting instructions.
+          <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation and
+          self-hosting instructions.
         </p>
       </div>
     </noscript>
