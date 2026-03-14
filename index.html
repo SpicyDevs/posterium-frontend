@@ -1,43 +1,34 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
 
-    <!-- ═══════════════════════════════════════════════
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- ═══════════════════════════════════════════════
          CANONICAL & PRECONNECTS
     ═══════════════════════════════════════════════ -->
-    <link rel="canonical" href="https://posters.spicydevs.xyz/" />
-    <link rel="preconnect" href="https://api.spicydevs.xyz" />
-    <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
-    <link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
+  <link rel="canonical" href="https://posters.spicydevs.xyz/" />
+  <link rel="preconnect" href="https://api.spicydevs.xyz" />
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+  <link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
 
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          PRIMARY META
     ═══════════════════════════════════════════════ -->
-    <title>
-      Posterium — Free Movie & TV Poster Generator with IMDb, Rotten Tomatoes & Metacritic Ratings
-    </title>
-    <meta
-      name="description"
-      content="Free movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Drag-and-drop editor, glassmorphism effects, instant API URL export. Perfect for Plex, Jellyfin, Discord bots, and Notion."
-    />
-    <meta
-      name="keywords"
-      content="movie poster generator, free poster API, IMDb rating badge, Rotten Tomatoes badge, Plex custom poster, Jellyfin poster"
-    />
-    <meta name="author" content="SpicyDevs" />
-    <meta
-      name="robots"
-      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
-    />
-    <meta name="theme-color" content="#0a0a0a" />
-    <meta name="color-scheme" content="dark" />
+  <title>
+    Posterium — Posters with Ratings!
+  </title>
+  <meta name="description"
+    content="Free movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Drag-and-drop editor, glassmorphism effects, instant API URL export. Perfect for Plex, Jellyfin, Discord bots, and Notion." />
+  <meta name="keywords"
+    content="movie poster generator, free poster API, IMDb rating badge, Rotten Tomatoes badge, Plex custom poster, Jellyfin poster" />
+  <meta name="author" content="SpicyDevs" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="color-scheme" content="dark" />
 
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          SEARCH ENGINE VERIFICATIONS
          Replace XXXX values with your actual codes
     ═══════════════════════════════════════════════ 
@@ -45,47 +36,38 @@
     <meta name="msvalidate.01" content="REPLACE_WITH_BING_VERIFICATION_CODE" />
     <meta name="yandex-verification" content="REPLACE_WITH_YANDEX_CODE" />
 -->
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          OPEN GRAPH
     ═══════════════════════════════════════════════ -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://posters.spicydevs.xyz/" />
-    <meta
-      property="og:title"
-      content="Posterium — Free Movie & TV Poster Generator with Live Ratings"
-    />
-    <meta
-      property="og:description"
-      content="Generate stunning movie and TV posters with live IMDb, Rotten Tomatoes, Metacritic, and TMDB rating badges. Free, open-source, no account required."
-    />
-    <meta property="og:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Posterium editor showing custom movie poster with IMDb and Rotten Tomatoes rating badges"
-    />
-    <meta property="og:site_name" content="Posterium" />
-    <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://posters.spicydevs.xyz/" />
+  <meta property="og:title" content="Posterium — Free Movie & TV Poster Generator with Live Ratings" />
+  <meta property="og:description"
+    content="Generate stunning movie and TV posters with live IMDb, Rotten Tomatoes, Metacritic, and TMDB rating badges. Free, open-source, no account required." />
+  <meta property="og:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"
+    content="Posterium editor showing custom movie poster with IMDb and Rotten Tomatoes rating badges" />
+  <meta property="og:site_name" content="Posterium" />
+  <meta property="og:locale" content="en_US" />
 
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          TWITTER CARD
     ═══════════════════════════════════════════════ -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@spicydevs" />
-    <meta name="twitter:url" content="https://posters.spicydevs.xyz/" />
-    <meta name="twitter:title" content="Posterium — Free Movie & TV Poster Generator" />
-    <meta
-      name="twitter:description"
-      content="Design custom movie and TV posters with IMDb, RT, Metacritic, and TMDB badges. Free, open-source, instant API URL export. Perfect for Plex & Jellyfin."
-    />
-    <meta name="twitter:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
-    <meta name="twitter:image:alt" content="Posterium editor preview" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@spicydevs" />
+  <meta name="twitter:url" content="https://posters.spicydevs.xyz/" />
+  <meta name="twitter:title" content="Posterium — Free Movie & TV Poster Generator" />
+  <meta name="twitter:description"
+    content="Design custom movie and TV posters with IMDb, RT, Metacritic, and TMDB badges. Free, open-source, instant API URL export. Perfect for Plex & Jellyfin." />
+  <meta name="twitter:image" content="https://posters.spicydevs.xyz/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Posterium editor preview" />
 
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          STRUCTURED DATA — WebApplication
     ═══════════════════════════════════════════════ -->
-    <script type="application/ld+json">
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
@@ -125,10 +107,10 @@
       }
     </script>
 
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          STRUCTURED DATA — FAQPage (boosts rich results)
     ═══════════════════════════════════════════════ -->
-    <script type="application/ld+json">
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -176,10 +158,10 @@
         ]
       }
     </script>
-    <!-- ═══════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════
          STRUCTURED DATA — WebSite
     ═══════════════════════════════════════════════ -->
-    <script type="application/ld+json">
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
@@ -196,70 +178,70 @@
         }
       }
     </script>
-  </head>
-  <body>
-    <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
-    <noscript>
-      <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px">
-        <h1>Posterium — Free Movie &amp; TV Poster Generator with Rating Badges</h1>
-        <p>
-          Generate custom movie and TV show posters with live rating badges from IMDb, Rotten
-          Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList — all from a single API
-          URL.
-        </p>
-        <h2>Features</h2>
-        <ul>
-          <li>Drag-and-drop badge positioning with pixel precision</li>
-          <li>
-            10 rating sources: IMDb, RT Tomatometer, RT Audience Score, Metacritic, TMDB,
-            Letterboxd, MAL, AniList, Runtime, Age Rating
-          </li>
-          <li>
-            Four poster sources: TMDB, Fanart.tv, Metahub, IMDb — with textless poster support
-          </li>
-          <li>Export as SVG, PNG, JPG, or WebP</li>
-          <li>
-            One URL returns the complete poster — works in Plex, Jellyfin, Discord bots, Notion, and
-            anywhere an image tag is accepted
-          </li>
-          <li>No account required, no rate limits, open source under MIT license</li>
-        </ul>
-        <h2>How to use</h2>
-        <p>
-          Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to
-          open the visual editor. Search for a movie or TV show, toggle and drag rating badges, then
-          copy the generated API URL. The URL format is:
-          <code
-            >https://api.spicydevs.xyz/{type}/{id}.png?r=imdb,rt&amp;imdb_x=310&amp;imdb_y=20</code
-          >
-        </p>
-        <h2>Use cases</h2>
-        <ul>
-          <li>
-            <strong>Plex &amp; Jellyfin</strong> — paste the API URL as custom poster art; ratings
-            update automatically
-          </li>
-          <li><strong>Discord bots</strong> — use the URL directly in embed image fields</li>
-          <li>
-            <strong>Notion &amp; Obsidian</strong> — embed as an image block in watchlist databases
-          </li>
-          <li>
-            <strong>Personal websites &amp; blogs</strong> — dynamic img tag source with
-            always-fresh scores
-          </li>
-          <li>
-            <strong>Make / Zapier / n8n</strong> — auto-generate posters when you add titles to a
-            watchlist
-          </li>
-        </ul>
-        <p>
-          This application requires JavaScript to use the interactive editor. Visit
-          <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation and
-          self-hosting instructions.
-        </p>
-      </div>
-    </noscript>
-    <div id="root"></div>
-    <script type="module" src="/src/index.tsx"></script>
-  </body>
+</head>
+
+<body>
+  <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
+  <noscript>
+    <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px">
+      <h1>Posterium — Free Movie &amp; TV Poster Generator with Rating Badges</h1>
+      <p>
+        Generate custom movie and TV show posters with live rating badges from IMDb, Rotten
+        Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList — all from a single API
+        URL.
+      </p>
+      <h2>Features</h2>
+      <ul>
+        <li>Drag-and-drop badge positioning with pixel precision</li>
+        <li>
+          10 rating sources: IMDb, RT Tomatometer, RT Audience Score, Metacritic, TMDB,
+          Letterboxd, MAL, AniList, Runtime, Age Rating
+        </li>
+        <li>
+          Four poster sources: TMDB, Fanart.tv, Metahub, IMDb — with textless poster support
+        </li>
+        <li>Export as SVG, PNG, JPG, or WebP</li>
+        <li>
+          One URL returns the complete poster — works in Plex, Jellyfin, Discord bots, Notion, and
+          anywhere an image tag is accepted
+        </li>
+        <li>No account required, no rate limits, open source under MIT license</li>
+      </ul>
+      <h2>How to use</h2>
+      <p>
+        Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to
+        open the visual editor. Search for a movie or TV show, toggle and drag rating badges, then
+        copy the generated API URL. The URL format is:
+        <code>https://api.spicydevs.xyz/{type}/{id}.png?r=imdb,rt&amp;imdb_x=310&amp;imdb_y=20</code>
+      </p>
+      <h2>Use cases</h2>
+      <ul>
+        <li>
+          <strong>Plex &amp; Jellyfin</strong> — paste the API URL as custom poster art; ratings
+          update automatically
+        </li>
+        <li><strong>Discord bots</strong> — use the URL directly in embed image fields</li>
+        <li>
+          <strong>Notion &amp; Obsidian</strong> — embed as an image block in watchlist databases
+        </li>
+        <li>
+          <strong>Personal websites &amp; blogs</strong> — dynamic img tag source with
+          always-fresh scores
+        </li>
+        <li>
+          <strong>Make / Zapier / n8n</strong> — auto-generate posters when you add titles to a
+          watchlist
+        </li>
+      </ul>
+      <p>
+        This application requires JavaScript to use the interactive editor. Visit
+        <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation and
+        self-hosting instructions.
+      </p>
+    </div>
+  </noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
 </html>

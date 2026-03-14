@@ -59,20 +59,20 @@ export const SEO_DEFAULTS: {
   og: OGMeta;
   twitter: TwitterMeta;
 } = {
-  title: 'Posterium — Free Movie & TV Poster API with Rating Badges',
+  title: 'Posterium — Posters with Ratings!',
   description:
-    'Generate custom movie and TV show posters with glassmorphism rating badges ' +
-    'from IMDb, Rotten Tomatoes, Metacritic, TMDB, and more — all from a single ' +
+    'Generate custom movie and TV show posters with rating badges ' +
+    'from IMDb, Rotten Tomatoes, Metacritic and more! All from a single ' +
     'API URL. Free, open source, no account required.',
   canonical: SITE_CONFIG.baseUrl,
 
   og: {
     type: 'website',
     url: SITE_CONFIG.baseUrl,
-    title: 'Posterium — Free Movie & TV Poster API',
+    title: 'Posterium — Posters with Ratings!',
     description:
-      'Generate custom posters with live rating badges from IMDb, RT, Meta, TMDB ' +
-      'and more. Free API, no account needed.',
+      'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
+      'and more! Free API, no account needed.',
     image: SITE_CONFIG.ogImageUrl,
     imageWidth: SITE_CONFIG.ogImageWidth,
     imageHeight: SITE_CONFIG.ogImageHeight,
@@ -82,10 +82,10 @@ export const SEO_DEFAULTS: {
   twitter: {
     card: 'summary_large_image',
     creator: SITE_CONFIG.twitterHandle,
-    title: 'Posterium — Free Movie & TV Poster API',
+    title: 'Posterium — Posters with Ratings!',
     description:
-      'Generate custom posters with live rating badges from IMDb, RT, Meta, TMDB ' +
-      'and more. Free API, no account needed.',
+      'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
+      'and more! Free API, no account needed.',
     image: SITE_CONFIG.ogImageUrl,
     imageAlt: 'Posterium — Movie & TV Poster API with Rating Badges',
   },
@@ -97,7 +97,7 @@ export const SEO_DEFAULTS: {
 // Add new routes here — no other file needs to change.
 export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
   '/': {
-    title: 'Posterium — Free Movie & TV Poster API with Rating Badges',
+    title: 'Posterium — Posters with Ratings!',
     description:
       'Generate custom movie and TV show posters with IMDb, Rotten Tomatoes, ' +
       'Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API — no account ' +
@@ -106,7 +106,7 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
     og: {
       type: 'website',
       url: `${SITE_CONFIG.baseUrl}/`,
-      title: 'Posterium — Free Movie & TV Poster API with Rating Badges',
+      title: 'Posterium — Posters with Ratings!',
       description:
         'Generate custom posters with live rating badges from IMDb, RT, Metacritic, ' +
         'TMDB, and more. Free, open source, no account required.',
