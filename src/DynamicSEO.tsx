@@ -32,7 +32,8 @@ const DynamicSEO: React.FC = () => {
   const title       = routeMeta?.title       ?? SEO_DEFAULTS.title;
   const description = routeMeta?.description ?? SEO_DEFAULTS.description;
   const canonical   = routeMeta?.canonical   ?? SEO_DEFAULTS.canonical;
-  const noindex     = routeMeta?.noindex      ?? false;
+  const isKnownRoute = normalizedPath in ROUTE_SEO;             
+  const noindex     = routeMeta?.noindex ?? !isKnownRoute;         
 
   // ── 3. OG merge: defaults → route-level override → title/desc backfill ───
   // Priority (highest to lowest):
