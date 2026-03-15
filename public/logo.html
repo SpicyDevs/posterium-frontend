@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ps — POSTERIUM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100dvh;
+        background: #0c0b08;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .element-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        width: clamp(200px, 28vw, 320px);
+        aspect-ratio: 1 / 1;
+        padding: clamp(12px, 2.2vw, 22px);
+        border: 2px solid #c47c2e;
+      }
+
+      .infinity {
+        width: 100%;
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: clamp(15px, 1.7vw, 20px);
+        letter-spacing: 0.2em;
+        color: #c47c2e;
+        opacity: 0.6;
+      }
+
+      .symbol {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.04em;
+        line-height: 1;
+      }
+
+      .symbol-p {
+        font-size: clamp(86px, 16vw, 200px);
+        color: #f0e6cc;
+      }
+
+      .symbol-s {
+        font-size: clamp(56px, 10.5vw, 130px);
+        color: transparent;
+        -webkit-text-stroke: 2px #c47c2e;
+        paint-order: stroke fill;
+      }
+
+      .name {
+        width: 100%;
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: clamp(10px, 1.4vw, 16px);
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: #c47c2e;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="element-box">
+      <div class="infinity">∞</div>
+      <div class="symbol">
+        <span class="symbol-p">P</span>
+        <span class="symbol-s">s</span>
+      </div>
+      <div class="name">POSTERIUM</div>
+    </div>
+  </body>
+</html>
