@@ -95,7 +95,7 @@ const CyclingPoster = memo(() => {
   }, []);
 
   const poster = HERO_POSTERS[activeIdx];
-  const src = getPosterSrc(poster);
+ // const src = getPosterSrc(poster);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>

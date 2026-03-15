@@ -3,7 +3,7 @@
 // Film perforation strips top/bottom. Giant POSTERIUM wordmark.
 // End-credits metadata strip. Minimal horizontal link row.
 import { memo } from 'react';
-import { Film, Github, ArrowUpRight, ExternalLink } from 'lucide-react';
+import { Film, Github, ExternalLink } from 'lucide-react';
 import { Link } from '../../../Router';
 import { SprocketStrip } from '../primitives';
 
