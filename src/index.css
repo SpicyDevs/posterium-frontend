@@ -1,4 +1,4 @@
-/* Tailwind v4 — single import replaces the old @tailwind directives */
+/* Tailwind v4 - single import replaces the old @tailwind directives */
 @import 'tailwindcss';
 
 /* ─── Global base fixes ─────────────────────────────────────────────────────── */
@@ -16,7 +16,7 @@
   }
 
   /*
-   * Range inputs — define BOTH -webkit-appearance AND the standard appearance
+   * Range inputs - define BOTH -webkit-appearance AND the standard appearance
    * property so autoprefixer/browsers don't warn about missing the standard form.
    */
   input[type='range'] {
@@ -67,7 +67,7 @@
   }
 
   /*
-   * Select elements — same -webkit-appearance + appearance pair.
+   * Select elements - same -webkit-appearance + appearance pair.
    */
   select {
     -webkit-appearance: none;
@@ -82,7 +82,7 @@
     @apply block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5;
   }
 
-  /* Thin dark scrollbar — used in SidebarLayout and dropdowns */
+  /* Thin dark scrollbar - used in SidebarLayout and dropdowns */
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;

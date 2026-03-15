@@ -1,5 +1,5 @@
 // hooks.ts
-// Backward-compatible barrel — existing imports (`from '../hooks'`) still resolve.
+// Backward-compatible barrel - existing imports (`from '../hooks'`) still resolve.
 // All logic lives in ./hooks/ individual files.
 export * from './hooks/index';
 

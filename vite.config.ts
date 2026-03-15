@@ -15,7 +15,7 @@ export default defineConfig({
     ]),
   ],
   server: {
-    // No historyApiFallback here — appType: 'spa' handles it globally
+    // No historyApiFallback here - appType: 'spa' handles it globally
   },
   build: {
     target: 'ES2020',

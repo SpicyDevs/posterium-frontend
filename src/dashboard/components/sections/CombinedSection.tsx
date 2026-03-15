@@ -1,5 +1,5 @@
 // src/dashboard/components/sections/CombinedSection.tsx
-// "WHAT IT DOES · WHERE IT RUNS" — features + integrations in a single section.
+// "WHAT IT DOES · WHERE IT RUNS" - features + integrations in a single section.
 // Tab switcher at top toggles between the two sub-sections.
 // Features: numbered list left + detail pane right (compact).
 // Integrations: 3-column card grid.

@@ -4,7 +4,7 @@
 // router, merges per-route overrides with global defaults, and injects the
 // full tag suite via react-helmet-async.
 //
-// Route detection: uses useRouter() from src/Router.tsx — functionally
+// Route detection: uses useRouter() from src/Router.tsx - functionally
 // identical to useLocation().pathname from react-router-dom. Replacing with
 // react-router-dom would require BrowserRouter, which conflicts with the
 // custom router's direct window.history.pushState calls.

@@ -50,7 +50,7 @@ Drag. Drop. Copy URL. Done.</p>
 
 ## ✨ What is Posterium?
 
-Posterium is a **free, open-source visual editor** that generates custom movie and TV show posters with live rating badges baked directly into the image — all from a single API URL you can use anywhere.
+Posterium is a **free, open-source visual editor** that generates custom movie and TV show posters with live rating badges baked directly into the image - all from a single API URL you can use anywhere.
 
 Search any title, drag rating badges to exactly where you want them, tweak the glassmorphism effects, then copy one URL that works in Plex, Jellyfin, Discord bots, Notion, or any image tag on the web. No account. No rate limits. No nonsense.
 
@@ -62,7 +62,7 @@ https://api.spicydevs.xyz/movie/453395.png
   &rt_x=310&rt_y=90
 ```
 
-That URL above is a fully rendered poster image — live ratings included — returned directly from the edge.
+That URL above is a fully rendered poster image - live ratings included - returned directly from the edge.
 
 ---
 
@@ -91,7 +91,7 @@ That URL above is a fully rendered poster image — live ratings included — re
 
 **API & Export**
 
-- Instant API URL generation — one URL is the complete shareable poster
+- Instant API URL generation - one URL is the complete shareable poster
 - Four export formats: SVG (vector), PNG, JPG, WebP
 - Poster blur and grayscale effects baked into the output
 - Bring your own API keys for TMDB and Fanart.tv
@@ -100,7 +100,7 @@ That URL above is a fully rendered poster image — live ratings included — re
 
 ## 🚀 Quick Start (Using the Hosted Version)
 
-The fastest way is to use the live editor — no setup required.
+The fastest way is to use the live editor - no setup required.
 
 1. Go to **[posters.spicydevs.xyz/build](https://posters.spicydevs.xyz/build)**
 2. Search for a movie or TV show in the **Source** panel on the left
@@ -175,15 +175,15 @@ where `type` is `movie`, `tv`, or `anime`, `id` is the TMDB or IMDb ID, and `ext
 
 ## 🎨 Use Cases
 
-**Plex & Jellyfin** — Paste the API URL as a custom poster in your media server. Ratings update automatically as scores change over time.
+**Plex & Jellyfin** - Paste the API URL as a custom poster in your media server. Ratings update automatically as scores change over time.
 
-**Discord Bots** — Drop the URL directly into a bot embed's image field for rich, visually consistent movie recommendation cards.
+**Discord Bots** - Drop the URL directly into a bot embed's image field for rich, visually consistent movie recommendation cards.
 
-**Notion & Obsidian** — Use an Image block with the API URL to embed a live poster with ratings in your watchlist database or movie notes.
+**Notion & Obsidian** - Use an Image block with the API URL to embed a live poster with ratings in your watchlist database or movie notes.
 
-**Personal Websites & Blogs** — A dynamic image source that always shows fresh data without any server-side code on your end.
+**Personal Websites & Blogs** - A dynamic image source that always shows fresh data without any server-side code on your end.
 
-**Automation (Make / Zapier / n8n)** — Integrate into workflows to auto-generate poster cards when you add titles to a watchlist.
+**Automation (Make / Zapier / n8n)** - Integrate into workflows to auto-generate poster cards when you add titles to a watchlist.
 
 ---
 

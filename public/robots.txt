@@ -1,4 +1,4 @@
-# robots.txt — Posterium
+# robots.txt - Posterium
 # https://posters.spicydevs.xyz
 
 User-agent: *

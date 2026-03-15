@@ -36,7 +36,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // FIX: Memoize with stable identity (empty deps). Uses a functional updater for
   // setMobileSheetMode so it never captures stale mobileSheetMode from its own closure.
-  // Previously this was an unstable inline function — setBatchSelection and clearSelection
+  // Previously this was an unstable inline function - setBatchSelection and clearSelection
   // captured the version from mount (mobileSheetMode was always 'hidden') because their
   // deps arrays were empty.
   const setActiveTab = useCallback((tab: TabType) => {
@@ -48,7 +48,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       return prev;
     });
-  }, []); // Stable forever — only uses state setters (which are always stable).
+  }, []); // Stable forever - only uses state setters (which are always stable).
 
   // FIX: Use functional updater for setSelectedIds so we never read stale selectedIds
   // from the closure. Remove mobileSheetMode from deps (setActiveTab handles it internally).

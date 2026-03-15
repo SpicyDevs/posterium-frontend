@@ -352,7 +352,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 onChange={(v) => updateConfig('logoY', Math.round(v))}
               />
 
-              {/* X position — with auto-centre toggle */}
+              {/* X position - with auto-centre toggle */}
               <ToggleRow
                 label="Auto-centre X"
                 sub={`Centres logo horizontally (${logoCentredX} px)`}

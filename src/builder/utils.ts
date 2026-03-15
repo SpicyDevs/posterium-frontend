@@ -126,7 +126,7 @@ export const generateApiUrl = (
   });
 
   // ── Logo overlay params ────────────────────────────────────────────────────
-  // Only emitted when logo is enabled — backend default is off.
+  // Only emitted when logo is enabled - backend default is off.
   if (config.logo) {
     params.set('logo', '1');
     if (config.logoSource) params.set('logo_source', config.logoSource);

@@ -100,7 +100,7 @@ const ColorPicker: React.FC<Props> = memo(
 
         {/* Hex input + native picker button */}
         <div className="flex items-center gap-2">
-          {/* Color swatch button — opens native picker */}
+          {/* Color swatch button - opens native picker */}
           <button
             type="button"
             onClick={openNative}

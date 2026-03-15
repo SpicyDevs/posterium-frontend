@@ -8,7 +8,7 @@ interface PosterFrameProps {
   totalCount: number;
 }
 
-// Animate variations — irregular to look hand-crafted
+// Animate variations - irregular to look hand-crafted
 const FLOAT_VARIANTS: Array<{ anim: string; dur: number; delay: number; rotate: number }> = [
   { anim: 'float-a', dur: 4.2, delay: 0.0, rotate: -1.2 },
   { anim: 'float-b', dur: 3.8, delay: 0.5, rotate: 0.8 },
@@ -18,7 +18,7 @@ const FLOAT_VARIANTS: Array<{ anim: string; dur: number; delay: number; rotate: 
   { anim: 'float-c', dur: 4.9, delay: 0.7, rotate: 0.3 },
 ];
 
-// Poster frame heights vary for visual rhythm — not all the same height
+// Poster frame heights vary for visual rhythm - not all the same height
 const HEIGHT_VARIANCE: Record<number, number> = {
   0: 370,
   1: 350,
@@ -66,7 +66,7 @@ const PosterFrame = memo<PosterFrameProps>(({ item, index, totalCount }) => {
         animationIterationCount: 'infinite',
       }}
     >
-      {/* Frame counter — film-leader style */}
+      {/* Frame counter - film-leader style */}
       <div
         style={{
           position: 'absolute',
@@ -110,7 +110,7 @@ const PosterFrame = memo<PosterFrameProps>(({ item, index, totalCount }) => {
           boxShadow: '0 28px 64px rgba(0,0,0,0.72), 0 0 0 1px rgba(196,124,46,0.08)',
         }}
       >
-        {/* Skeleton shimmer — shown until image loads */}
+        {/* Skeleton shimmer - shown until image loads */}
         {!imgLoaded && !imgError && (
           <div
             style={{
@@ -182,7 +182,7 @@ const PosterFrame = memo<PosterFrameProps>(({ item, index, totalCount }) => {
           }}
         />
 
-        {/* Hover detail overlay — revealed by CSS .poster-detail-overlay */}
+        {/* Hover detail overlay - revealed by CSS .poster-detail-overlay */}
         <div className="poster-detail-overlay">
           <div
             style={{

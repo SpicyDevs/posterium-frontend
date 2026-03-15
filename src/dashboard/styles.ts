@@ -1,6 +1,6 @@
 // src/dashboard/styles.ts
 // Global CSS injected via <style> tag on mount.
-// KEY: html { overflow-x: clip } — clips horizontal bleed WITHOUT creating
+// KEY: html { overflow-x: clip } - clips horizontal bleed WITHOUT creating
 // a scroll container (unlike overflow:hidden which breaks MobileReel touch-scroll).
 
 export const GLOBAL_CSS = `

@@ -104,7 +104,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   },
   keys: {},
 
-  // Logo overlay — off by default
+  // Logo overlay - off by default
   logo: false,
   logoSource: null,
   logoX: null,

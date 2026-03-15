@@ -1,13 +1,13 @@
 // components/sections/StatsBar.tsx
-// "THE NUMBERS" — four stat panels in a horizontal film-strip grid.
+// "THE NUMBERS" - four stat panels in a horizontal film-strip grid.
 // Each panel: large stencil number + animated count-up + label.
-// Breaks the previous "memo line item" aesthetic — now reads as a
+// Breaks the previous "memo line item" aesthetic - now reads as a
 // production-budget title card, not a spreadsheet.
 import { memo } from 'react';
 import { STATS } from '../../constants';
 import { useInView, useCounter } from '../../hooks';
 
-// Per-panel accent tones — pulled from the film palette
+// Per-panel accent tones - pulled from the film palette
 const PANEL_ACCENTS = [
   { border: 'rgba(196,124,46,0.25)', glow: 'rgba(196,124,46,0.06)' }, // amber
   { border: 'rgba(168,32,24,0.22)', glow: 'rgba(168,32,24,0.05)' }, // red
@@ -182,7 +182,7 @@ export const StatsBar = memo(() => {
             textTransform: 'uppercase',
           }}
         >
-          SPICYDEVS / POSTERIUM — FIELD NUMBERS
+          SPICYDEVS / POSTERIUM - FIELD NUMBERS
         </span>
         <span
           className="mono-font"

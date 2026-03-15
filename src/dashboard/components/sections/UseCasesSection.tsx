@@ -1,5 +1,5 @@
 // components/sections/UseCasesSection.tsx
-// "THE CIRCUIT" — tabbed integration showcase with live API previews.
+// "THE CIRCUIT" - tabbed integration showcase with live API previews.
 // Each use case tab shows the actual API output image for that context.
 // This turns the section from a static list into a live product demo.
 import { memo, useState, useCallback } from 'react';
@@ -8,7 +8,7 @@ import { useInView } from '../../hooks';
 import { AmberTag } from '../primitives';
 import { API } from '../../constants';
 
-// Live preview panel — loads the actual API URL for the selected use case
+// Live preview panel - loads the actual API URL for the selected use case
 const LivePreview = memo<{ uc: (typeof USE_CASES)[0] }>(({ uc }) => {
   const [loaded, setLoaded] = useState(false);
 
@@ -243,7 +243,7 @@ export const UseCasesSection = memo(() => {
         </div>
       </div>
 
-      {/* Main panel — tab list + live preview */}
+      {/* Main panel - tab list + live preview */}
       <div
         style={{
           display: 'grid',

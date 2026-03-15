@@ -2,7 +2,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Interactive logo overlay rendered on top of the poster canvas.
 //
-// • Draggable — updates logoX / logoY via onDragEnd callback.
+// • Draggable - updates logoX / logoY via onDragEnd callback.
 // • Mirrors the backend's bounding-box behaviour: the image fills the box with
 //   object-fit: contain + center alignment (same as SVG preserveAspectRatio
 //   "xMidYMid meet").

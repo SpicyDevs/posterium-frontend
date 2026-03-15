@@ -1,6 +1,6 @@
 // src/dashboard/index.tsx
 // ═══════════════════════════════════════════════════════════════════
-// POSTERIUM — Cinematic Dashboard
+// POSTERIUM - Cinematic Dashboard
 // ═══════════════════════════════════════════════════════════════════
 import React, { useEffect, useState } from 'react';
 import { GLOBAL_CSS } from './styles';
@@ -58,7 +58,7 @@ const COLORIZE_CSS = `
 `;
 
 const Dashboard: React.FC = () => {
-  // Determine first-visit state once — never re-compute
+  // Determine first-visit state once - never re-compute
   const [isFirstVisit] = useState<boolean>(() => {
     try {
       const KEY = 'posterium-visited-v2';
@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
     }
   });
 
-  // Inject Google Fonts once — idempotent HMR guard
+  // Inject Google Fonts once - idempotent HMR guard
   useEffect(() => {
     const FONT_ID = 'posterium-gf';
     if (document.getElementById(FONT_ID)) return;
@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
       </a>
 
       {/*
-        CRITICAL: No overflowX: hidden here — clips MobileReel touch-scroll.
+        CRITICAL: No overflowX: hidden here - clips MobileReel touch-scroll.
         overflow-x: clip on <html> in global CSS handles page-level bleed.
       */}
       <div
@@ -159,28 +159,28 @@ const Dashboard: React.FC = () => {
         <Nav />
 
         <main id="main-content">
-          {/* 1 — Hero: left text + right poster grid */}
+          {/* 1 - Hero: left text + right poster grid */}
           <HeroSection />
 
           {/* Ticker */}
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          {/* 2 — The Reel: collage parallax */}
+          {/* 2 - The Reel: collage parallax */}
           <FilmReelSection />
 
-          {/* 3 — Contact Sheet: 4×3 badge showcase */}
+          {/* 3 - Contact Sheet: 4×3 badge showcase */}
           <BadgeAtlas />
 
           {/* Ticker */}
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          {/* 4 — Stats docket */}
+          {/* 4 - Stats docket */}
           <StatsBar />
 
-          {/* 5 — Combined: Features + Integrations */}
+          {/* 5 - Combined: Features + Integrations */}
           <CombinedSection />
 
-          {/* 6 — Slate CTA */}
+          {/* 6 - Slate CTA */}
           <CTASection />
         </main>
 

@@ -1,8 +1,8 @@
 // src/pages/dashboard/components/PosterShowcase.tsx
-// "THE DARKROOM" — asymmetric masonry contact-sheet layout.
+// "THE DARKROOM" - asymmetric masonry contact-sheet layout.
 // Breaks the uniform 4-column grid: one large anchor poster (col-span-2, row-span-2)
 // + staggered smaller prints. Red-amber safelight aesthetic.
-// All images are live API calls — zero screenshots.
+// All images are live API calls - zero screenshots.
 import { memo, useState, useCallback } from 'react';
 import { API } from '../constants';
 import { AmberTag } from './primitives';
@@ -91,7 +91,7 @@ const PRINTS: DarkroomEntry[] = [
   },
 ];
 
-// URL anatomy — color-coded breakdown
+// URL anatomy - color-coded breakdown
 const URL_PARTS = [
   { text: 'https://api.spicydevs.xyz', color: '#7a8ef0', label: 'base' },
   { text: '/movie/155', color: 'var(--film-amber)', label: 'type · id' },
@@ -185,7 +185,7 @@ const PrintCard = memo<{ entry: DarkroomEntry; eager?: boolean }>(({ entry, eage
 
         <img
           src={src}
-          alt={`${entry.title} — ${entry.label}`}
+          alt={`${entry.title} - ${entry.label}`}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
           onLoad={onLoad}
@@ -318,7 +318,7 @@ PrintCard.displayName = 'PrintCard';
 const PosterShowcase = memo(() => (
   <section
     id="showcase"
-    aria-label="The Darkroom — API Output Showcase"
+    aria-label="The Darkroom - API Output Showcase"
     style={{
       background: 'var(--film-black)',
       borderTop: '1px solid rgba(196,124,46,0.07)',
@@ -369,7 +369,7 @@ const PosterShowcase = memo(() => (
         <code className="mono-font" style={{ color: 'var(--film-amber)', fontSize: 11 }}>
           GET
         </code>{' '}
-        — not a screenshot. Hover to inspect the badge configuration.
+        - not a screenshot. Hover to inspect the badge configuration.
       </p>
     </div>
 

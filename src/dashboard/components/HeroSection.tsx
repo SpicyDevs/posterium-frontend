@@ -7,7 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import { API } from '../constants';
 import { FilmEdge } from './primitives';
 
-// Predefined static poster set — fixed badge configs, no interaction.
+// Predefined static poster set - fixed badge configs, no interaction.
 // These call the API but with stable query strings (no user input).
 interface HeroPoster {
   id: string;
@@ -244,7 +244,7 @@ const HeroSection = memo(() => (
               textTransform: 'uppercase',
             }}
           >
-            Free &amp; Open Source — No Account Required
+            Free &amp; Open Source - No Account Required
           </span>
         </div>
 
@@ -302,7 +302,7 @@ const HeroSection = memo(() => (
           </strong>
           ,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
-          , and more — all from a single URL.
+          , and more - all from a single URL.
         </p>
 
         {/* CTAs */}
@@ -424,7 +424,7 @@ const HeroSection = memo(() => (
           alignItems: 'start',
         }}
       >
-        {/* Tall left poster — spans 2 rows */}
+        {/* Tall left poster - spans 2 rows */}
         <div style={{ gridRow: 'span 2' }}>
           <PosterCell poster={HERO_POSTERS[0]} eager />
         </div>

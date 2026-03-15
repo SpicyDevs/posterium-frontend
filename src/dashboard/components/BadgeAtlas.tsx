@@ -1,5 +1,5 @@
 // src/dashboard/components/BadgeAtlas.tsx
-// "THE CONTACT SHEET" — compact 4×3 grid of predefined poster+badge combos.
+// "THE CONTACT SHEET" - compact 4×3 grid of predefined poster+badge combos.
 // No interactive badge selector. Each cell shows a real API output with a
 // film-frame aesthetic. Clean, dark, cinema-archive feel.
 import { memo, useState, useCallback } from 'react';
@@ -259,7 +259,7 @@ SheetCell.displayName = 'SheetCell';
 const BadgeAtlas = memo(() => (
   <section
     id="atlas"
-    aria-label="Contact Sheet — Badge Configurations"
+    aria-label="Contact Sheet - Badge Configurations"
     style={{ background: 'var(--film-black)', padding: '72px 0 0' }}
   >
     {/* Header */}
@@ -310,7 +310,7 @@ const BadgeAtlas = memo(() => (
           >
             GET
           </code>{' '}
-          to the API — 12 badge configurations. Hover to copy the URL.
+          to the API - 12 badge configurations. Hover to copy the URL.
         </p>
         <code
           className="mono-font"

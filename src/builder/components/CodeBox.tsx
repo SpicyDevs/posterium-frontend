@@ -19,7 +19,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Debounce URL generation — keeps drag smooth
+  // Debounce URL generation - keeps drag smooth
   useEffect(() => {
     if (isEditing) return;
     const t = setTimeout(() => setUrl(generateApiUrl(config, baseUrl)), 120);

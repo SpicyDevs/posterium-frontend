@@ -3,11 +3,11 @@
 // de-optimise when a sibling/ancestor has position:sticky or overflow:hidden.
 // This version:
 //   1. Uses overflowX:'scroll' (always enables scroll container, no browser guess)
-//   2. Removes touchAction:'pan-x' — was preventing natural scroll-direction
+//   2. Removes touchAction:'pan-x' - was preventing natural scroll-direction
 //      detection; the browser handles it correctly without the hint when the
 //      container is a proper scroll box.
 //   3. Removes scrollSnapType to avoid iOS treating snap as "not scrollable yet"
-//      on first touch — can be re-added after testing.
+//      on first touch - can be re-added after testing.
 //   4. Adds overscrollBehaviorX:'contain' to stop the swipe from leaking into
 //      the page vertical scroll when the track is at its start/end.
 import { memo } from 'react';
@@ -61,7 +61,7 @@ const MobileReel = memo(() => (
     */}
     <div
       role="list"
-      aria-label="Film posters — swipe to browse"
+      aria-label="Film posters - swipe to browse"
       style={
         {
           overflowX: 'scroll',
@@ -73,7 +73,7 @@ const MobileReel = memo(() => (
           display: 'flex',
           gap: 14,
           padding: '22px 20px 26px',
-          // No touchAction override — browser handles swipe gesture natively
+          // No touchAction override - browser handles swipe gesture natively
         } as React.CSSProperties
       }
     >

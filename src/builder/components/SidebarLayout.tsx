@@ -27,7 +27,7 @@ interface Props {
 const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, className }) => {
   return (
     <div className={clsx('flex flex-col h-full min-h-0 bg-[#0d0d0f]', className)}>
-      {/* Sticky header — does NOT scroll */}
+      {/* Sticky header - does NOT scroll */}
       <div className="shrink-0 px-3 pt-3 pb-2 border-b border-white/6 bg-[#0d0d0f] z-10">
         {header}
       </div>

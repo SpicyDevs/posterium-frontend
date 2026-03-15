@@ -155,7 +155,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => window.removeEventListener('reset-canvas-view', handleResetEvent);
   }, []);
 
-  // Poster image URL — SVG endpoint, no ratings/logo (those are React overlays).
+  // Poster image URL - SVG endpoint, no ratings/logo (those are React overlays).
   const cleanPosterUrl = useMemo(() => {
     const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.svg`;
     const params = new URLSearchParams();
@@ -163,7 +163,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     params.set('source', config.source);
     if (config.textless) params.set('textless', '1');
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    // Cache buster — invalidates on source/ptype/textless changes only
+    // Cache buster - invalidates on source/ptype/textless changes only
     params.set('_t', `${config.tmdbId}-${config.source}-${config.textless}-${config.ptype}`);
 
     return `${base}?${params.toString()}`;
@@ -457,7 +457,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           );
         })}
 
-        {/* Logo overlay — rendered above badges, below nothing */}
+        {/* Logo overlay - rendered above badges, below nothing */}
         {config.logo && (
           <DraggableLogo
             config={config}

@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 // ── SprocketStrip ─────────────────────────────────────────────────
 // A row of film sprocket holes. count controls density.
 // The gap and sizing are deliberately slightly inconsistent to avoid the
-// "too perfect" AI look — real film sprockets have slight tolerance variance.
+// "too perfect" AI look - real film sprockets have slight tolerance variance.
 interface SprocketStripProps {
   count?: number;
   vertical?: boolean;
@@ -14,7 +14,7 @@ export const SprocketStrip = memo<SprocketStripProps>(({ count = 30, vertical = 
   // Intentional: real film stock has slight hole-to-hole pitch variation
   const holes = Array.from({ length: count }, (_, i) => ({
     key: i,
-    // Every ~7th hole is very slightly wider — mimics manufacturing tolerance
+    // Every ~7th hole is very slightly wider - mimics manufacturing tolerance
     w: i % 7 === 3 ? 23 : 20,
     h: i % 11 === 5 ? 15 : 13,
   }));

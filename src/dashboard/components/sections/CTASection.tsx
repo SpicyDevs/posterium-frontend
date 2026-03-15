@@ -1,5 +1,5 @@
 // components/sections/CTASection.tsx
-// "THE SLATE" — film clapperboard aesthetic.
+// "THE SLATE" - film clapperboard aesthetic.
 import { memo } from 'react';
 import { ArrowRight, Github, Star } from 'lucide-react';
 import { Link } from '../../../Router';

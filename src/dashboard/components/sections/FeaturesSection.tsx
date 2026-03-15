@@ -1,5 +1,5 @@
 // components/sections/FeaturesSection.tsx
-// "THE FEATURE SET" — split-panel layout.
+// "THE FEATURE SET" - split-panel layout.
 // Left: scrollable numbered feature list (select active row).
 // Right: large detail pane with live API preview thumbnail.
 // Ditches the exposure-sheet spreadsheet look entirely.

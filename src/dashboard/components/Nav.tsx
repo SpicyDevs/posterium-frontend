@@ -55,7 +55,7 @@ const Nav = memo(() => {
           </span>
         </Link>
 
-        {/* Centre links — desktop only */}
+        {/* Centre links - desktop only */}
         <div
           className="nav-links-desktop"
           style={{

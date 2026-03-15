@@ -114,7 +114,7 @@ const DesktopReel = memo(() => {
   const trackRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
 
-  // Direct DOM height management — zero re-render on recalc
+  // Direct DOM height management - zero re-render on recalc
   useLayoutEffect(() => {
     const recalc = () => {
       const container = containerRef.current;
@@ -223,7 +223,7 @@ const DesktopReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* Poster wall — 3 rows */}
+        {/* Poster wall - 3 rows */}
         <div
           style={{
             flex: 1,
@@ -257,7 +257,7 @@ const DesktopReel = memo(() => {
             }}
           />
 
-          {/* Track — all 3 rows inside, flex-column so scrollWidth = widest row */}
+          {/* Track - all 3 rows inside, flex-column so scrollWidth = widest row */}
           <div
             ref={trackRef}
             style={{

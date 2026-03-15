@@ -59,7 +59,7 @@ export const FooterSection = memo(() => (
       overflow: 'hidden',
     }}
   >
-    {/* Ghost wordmark — decorative background */}
+    {/* Ghost wordmark - decorative background */}
     <div
       aria-hidden="true"
       className="poster-font"

@@ -41,7 +41,7 @@ const DraggableBadge: React.FC<Props> = ({
 
   // FIX: Keep mutable refs for all prop callbacks and the isSelected flag so that the
   // global drag useEffect (below) does not need them in its deps array. Without these
-  // refs, the useEffect captured stale versions of the callbacks — particularly
+  // refs, the useEffect captured stale versions of the callbacks - particularly
   // problematic when onDragEnd / onSelect / isSelected change during an active drag
   // (e.g. another badge is selected while the user is dragging the current one).
   const onDragEndRef = useRef(onDragEnd);
@@ -49,7 +49,7 @@ const DraggableBadge: React.FC<Props> = ({
   const isSelectedRef = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
 
-  // Sync refs unconditionally on every render — O(1) assignments.
+  // Sync refs unconditionally on every render - O(1) assignments.
   useEffect(() => {
     onDragEndRef.current = onDragEnd;
   });
@@ -92,13 +92,13 @@ const DraggableBadge: React.FC<Props> = ({
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl = 'ctrlKey' in e ? e.ctrlKey : false;
       const isMeta = 'metaKey' in e ? e.metaKey : false;
-      // Read from ref — always the current value regardless of when the drag started.
+      // Read from ref - always the current value regardless of when the drag started.
       if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
         onSelectRef.current(badgeId, false);
       }
     }
 
-    // Read from ref — always the current callback.
+    // Read from ref - always the current callback.
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
   };
@@ -106,7 +106,7 @@ const DraggableBadge: React.FC<Props> = ({
   // FIX: deps reduced to [isDragging] only. All prop callbacks and canvasScale are
   // accessed through refs which are always current without requiring the effect to
   // re-run. Previously [isDragging, canvasScale] meant the effect re-registered
-  // listeners mid-drag whenever the canvas was zoomed via pinch — briefly leaving a
+  // listeners mid-drag whenever the canvas was zoomed via pinch - briefly leaving a
   // window with no active listeners and a missed mouseup/touchend.
   useEffect(() => {
     if (!isDragging) return;

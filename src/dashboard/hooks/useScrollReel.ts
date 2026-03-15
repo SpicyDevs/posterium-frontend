@@ -11,7 +11,7 @@
 //   rawProgress = (scrollY - containerDocTop) / scrollable
 //   translateX  = -(clamp(progress, 0, 1) × maxShift)
 //
-// translate3d forces GPU compositing — avoids main-thread paint on move.
+// translate3d forces GPU compositing - avoids main-thread paint on move.
 import { useCallback, useEffect, useRef, RefObject } from 'react';
 
 interface LayoutCache {
@@ -28,7 +28,7 @@ export const useScrollReel = (
   const rafId = useRef<number | null>(null);
   const layout = useRef<LayoutCache>({ top: 0, scrollable: 0, maxShift: 0 });
 
-  // ── Measure: cache layout info — no reflow needed per scroll frame ──
+  // ── Measure: cache layout info - no reflow needed per scroll frame ──
   const measure = useCallback(() => {
     const c = containerRef.current;
     const t = trackRef.current;
@@ -43,7 +43,7 @@ export const useScrollReel = (
     };
   }, [containerRef, trackRef]);
 
-  // ── Compute: pure math + one DOM write — zero reflow ──────────────
+  // ── Compute: pure math + one DOM write - zero reflow ──────────────
   const compute = useCallback(() => {
     rafId.current = null;
     const { top, scrollable, maxShift } = layout.current;
