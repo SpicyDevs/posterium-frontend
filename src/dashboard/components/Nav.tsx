@@ -1,20 +1,30 @@
 // src/dashboard/components/Nav.tsx
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { Link } from '../../Router';
 import { Github, Menu, X } from 'lucide-react';
-import { useNavScroll } from '../hooks';
 
 const NAV_LINKS = [
   { label: 'Reel', href: '#reel' },
   { label: 'Features', href: '#combined' },
-  { label: 'API', href: '#atlas' },
   { label: 'Integrations', href: '#combined' },
 ] as const;
 
 const Nav = memo(() => {
-  const scrolled = useNavScroll(44);
+  const [visible, setVisible] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  useEffect(() => {
+    const update = () => {
+      const heroH = window.innerHeight * 0.72;
+      setVisible(window.scrollY > heroH);
+      setScrolled(window.scrollY > heroH + 20);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
 
   return (
     <>
@@ -35,9 +45,13 @@ const Nav = memo(() => {
           borderBottom: scrolled
             ? '1px solid rgba(255,255,255,0.055)'
             : '1px solid transparent',
-          transition: 'background 0.4s ease, border-color 0.4s ease',
           justifyContent: 'space-between',
           gap: 24,
+          // Hide nav during hero - slide in from top after scroll
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(-100%)',
+          pointerEvents: visible ? 'all' : 'none',
+          transition: 'opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1), background 0.35s ease, border-color 0.35s ease',
         }}
       >
         {/* Wordmark */}
@@ -94,14 +108,7 @@ const Nav = memo(() => {
         </div>
 
         {/* Right side */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <a
             href="https://github.com/xdaayush/freeposterapi"
             target="_blank"
@@ -172,7 +179,7 @@ const Nav = memo(() => {
       </nav>
 
       {/* Mobile drawer */}
-      {menuOpen && (
+      {menuOpen && visible && (
         <div
           role="dialog"
           aria-modal

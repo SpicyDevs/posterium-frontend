@@ -1,336 +1,343 @@
 // src/dashboard/components/sections/FooterSection.tsx
-// Improved footer: ghost POSTERIUM wordmark as decorative backdrop,
-// cleaner link columns, more visual interest in the bottom bar.
+// "THE END CARD" — Cinematic footer. No generic link columns.
+// Film perforation strips top/bottom. Giant POSTERIUM wordmark.
+// End-credits metadata strip. Minimal horizontal link row.
 import { memo } from 'react';
-import { Film, Github, ArrowUpRight } from 'lucide-react';
+import { Film, Github, ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Link } from '../../../Router';
-import { QuickBuilder } from '../QuickBuilder';
+import { SprocketStrip } from '../primitives';
 
-const FOOTER_LINKS = [
-  {
-    heading: 'Product',
-    links: [
-      { label: 'Poster Builder', href: '/build', internal: true },
-      { label: 'API Showcase', href: '#atlas', internal: false },
-      { label: 'Features', href: '#combined', internal: false },
-      { label: 'Integrations', href: '#combined', internal: false },
-    ],
-  },
-  {
-    heading: 'Sources',
-    links: [
-      { label: 'IMDb', href: '#atlas', internal: false },
-      { label: 'Rotten Tomatoes', href: '#atlas', internal: false },
-      { label: 'Metacritic', href: '#atlas', internal: false },
-      { label: 'TMDB · Letterboxd · MAL', href: '#atlas', internal: false },
-    ],
-  },
-  {
-    heading: 'Open Source',
-    links: [
-      { label: 'GitHub', href: 'https://github.com/xdaayush/freeposterapi', internal: false },
-      { label: 'SpicyDevs', href: 'https://spicydevs.xyz', internal: false },
-      {
-        label: 'MIT License',
-        href: 'https://github.com/xdaayush/freeposterapi/blob/main/LICENSE',
-        internal: false,
-      },
-    ],
-  },
-] as const;
-
-const linkBaseStyle: React.CSSProperties = {
-  fontSize: 11,
-  color: 'rgba(110,104,96,0.6)',
-  textDecoration: 'none',
-  fontFamily: 'DM Sans, sans-serif',
-  transition: 'color 0.18s',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-};
+const FOOTER_LINKS: Array<{
+  label: string;
+  href: string;
+  internal?: boolean;
+  external?: boolean;
+}> = [
+  { label: 'Poster Builder', href: '/build', internal: true },
+  { label: 'GitHub', href: 'https://github.com/xdaayush/freeposterapi', external: true },
+  { label: 'SpicyDevs', href: 'https://spicydevs.xyz', external: true },
+  { label: 'MIT License', href: 'https://github.com/xdaayush/freeposterapi/blob/main/LICENSE', external: true },
+  { label: 'API Docs', href: '#combined' },
+];
 
 export const FooterSection = memo(() => (
   <footer
     style={{
-      background: 'var(--film-dark)',
-      borderTop: '1px solid rgba(196,124,46,0.08)',
+      background: 'var(--film-black)',
+      borderTop: '1px solid rgba(196,124,46,0.12)',
       position: 'relative',
       overflow: 'hidden',
     }}
   >
-    {/* Ghost wordmark - decorative background */}
+    {/* Top sprocket strip */}
     <div
-      aria-hidden="true"
-      className="poster-font"
       style={{
-        position: 'absolute',
-        bottom: -20,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: 'clamp(100px, 18vw, 200px)',
-        lineHeight: 0.8,
-        letterSpacing: '0.06em',
-        color: 'transparent',
-        WebkitTextStroke: '1px rgba(196,124,46,0.055)',
-        whiteSpace: 'nowrap',
-        userSelect: 'none',
-        pointerEvents: 'none',
-        zIndex: 0,
+        background: 'rgba(255,255,255,0.012)',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}
     >
-      POSTERIUM
+      <SprocketStrip count={64} />
     </div>
 
-    <div
-      style={{
-        maxWidth: 1160,
-        margin: '0 auto',
-        padding: '48px 20px 0',
-        position: 'relative',
-        zIndex: 1,
-      }}
-    >
-      {/* Top row: logo + description + quick builder */}
+    {/* Main body */}
+    <div style={{ position: 'relative', zIndex: 1 }}>
+
+      {/* ── WORDMARK SECTION ── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 40,
-          marginBottom: 40,
-          paddingBottom: 32,
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
-          alignItems: 'start',
+          padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0',
+          position: 'relative',
         }}
       >
-        {/* Left: logo + tagline */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        {/* Ghost backdrop letters — bled off right edge */}
+        <div
+          aria-hidden="true"
+          className="poster-font"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '-2%',
+            transform: 'translateY(-50%)',
+            fontSize: 'clamp(180px,25vw,360px)',
+            lineHeight: 0.8,
+            letterSpacing: '0.04em',
+            color: 'transparent',
+            WebkitTextStroke: '1px rgba(196,124,46,0.045)',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}
+        >
+          POSTERIUM
+        </div>
+
+        {/* Foreground content */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {/* Film icon + wordmark */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 6,
-                background: 'linear-gradient(140deg,#C47C2E,#D4A245)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(196,124,46,0.26)',
+                width: 44, height: 44, borderRadius: 8,
+                background: 'linear-gradient(140deg, #C47C2E, #D4A245)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 32px rgba(196,124,46,0.28), 0 4px 16px rgba(0,0,0,0.5)',
                 flexShrink: 0,
               }}
             >
-              <Film size={16} color="#070706" strokeWidth={2.5} />
+              <Film size={20} color="#070706" strokeWidth={2.5} />
             </div>
-            <span
-              className="poster-font"
-              style={{
-                fontSize: 22,
-                color: 'var(--film-cream)',
-                letterSpacing: '0.08em',
-                lineHeight: 1,
-              }}
-            >
-              POSTERIUM
-            </span>
-          </div>
-
-          <p
-            className="body-font"
-            style={{
-              fontSize: 12,
-              color: 'rgba(110,104,96,0.6)',
-              lineHeight: 1.75,
-              maxWidth: 360,
-              marginBottom: 24,
-            }}
-          >
-            A free, open-source API for generating movie and TV poster images with live rating
-            badges. No account, no rate limits, no catch.
-          </p>
-
-          {/* Capsule stats */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['∞ Free', 'MIT License', 'No Account', 'CORS Enabled'].map((label) => (
-              <span
-                key={label}
-                className="mono-font"
+            <div>
+              <div
+                className="poster-font"
                 style={{
-                  fontSize: 7,
-                  letterSpacing: '0.1em',
-                  color: 'rgba(196,124,46,0.5)',
-                  background: 'rgba(196,124,46,0.06)',
-                  border: '1px solid rgba(196,124,46,0.14)',
-                  borderRadius: 2,
-                  padding: '3px 8px',
+                  fontSize: 'clamp(32px,5vw,52px)',
+                  color: 'var(--film-cream)',
+                  letterSpacing: '0.08em',
+                  lineHeight: 0.9,
                 }}
               >
-                {label}
-              </span>
-            ))}
+                POSTERIUM
+              </div>
+              <div
+                className="mono-font"
+                style={{
+                  fontSize: 8, color: 'rgba(196,124,46,0.5)',
+                  letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 4,
+                }}
+              >
+                Free Poster API · MIT License
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Right: Quick builder */}
-        <QuickBuilder />
+          {/* Tagline */}
+          <p
+            className="syne-font"
+            style={{
+              fontSize: 'clamp(12px,1.6vw,16px)',
+              color: 'rgba(110,104,96,0.7)',
+              lineHeight: 1.7,
+              maxWidth: 520,
+              marginBottom: 0,
+            }}
+          >
+            Generate custom movie and TV poster images with glassmorphism rating badges.
+            One URL. No account. No rate limits.
+          </p>
+        </div>
       </div>
 
-      {/* Link columns */}
+      {/* ── AMBER RULE ── */}
+      <div
+        aria-hidden="true"
+        style={{
+          margin: 'clamp(28px,4vw,44px) clamp(20px,5vw,64px)',
+          height: 1,
+          background: 'linear-gradient(90deg, var(--film-amber), rgba(196,124,46,0.12) 70%, transparent 100%)',
+          opacity: 0.45,
+        }}
+      />
+
+      {/* ── HORIZONTAL NAV LINKS ── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '0 clamp(20px,5vw,60px)',
-          marginBottom: 0,
+          padding: '0 clamp(20px,5vw,64px)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0,
+          flexWrap: 'wrap',
         }}
       >
-        {FOOTER_LINKS.map((group) => (
-          <div key={group.heading}>
-            <div
-              className="syne-font"
-              style={{
-                fontSize: 7,
-                fontWeight: 700,
-                color: 'rgba(196,124,46,0.4)',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                marginBottom: 14,
-                paddingBottom: 8,
-                borderBottom: '1px solid rgba(196,124,46,0.08)',
-              }}
+        {FOOTER_LINKS.map((link, i) => {
+          const isLast = i === FOOTER_LINKS.length - 1;
+          const baseStyle: React.CSSProperties = {
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            color: 'rgba(110,104,96,0.55)',
+            fontFamily: 'Syne, sans-serif',
+            padding: '5px 0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            transition: 'color 0.18s',
+          };
+
+          const el = link.internal ? (
+            <Link
+              key={link.label}
+              to={link.href}
+              style={baseStyle}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)'; }}
             >
-              {group.heading}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {group.links.map((link) =>
-                link.internal ? (
-                  <Link
-                    key={link.label}
-                    to={link.href}
-                    style={linkBaseStyle}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.6)';
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-                ) : (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    target={link.href.startsWith('http') ? '_blank' : undefined}
-                    rel={link.href.startsWith('http') ? 'noreferrer' : undefined}
-                    style={linkBaseStyle}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.6)';
-                    }}
-                  >
-                    {link.label}
-                    {link.href.startsWith('http') && (
-                      <ArrowUpRight size={9} style={{ opacity: 0.35 }} />
-                    )}
-                  </a>
-                )
+              {link.label}
+            </Link>
+          ) : (
+            <a
+              key={link.label}
+              href={link.href}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noreferrer' : undefined}
+              style={baseStyle}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)'; }}
+            >
+              {link.label}
+              {link.external && <ExternalLink size={8} style={{ opacity: 0.4 }} />}
+            </a>
+          );
+
+          return (
+            <span key={link.label} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {el}
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    margin: '0 16px',
+                    color: 'rgba(196,124,46,0.2)',
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  ·
+                </span>
               )}
-            </div>
-          </div>
-        ))}
+            </span>
+          );
+        })}
       </div>
 
-      {/* Bottom bar */}
+      {/* ── AMBER DIVIDER ── */}
+      <div
+        aria-hidden="true"
+        style={{
+          margin: 'clamp(24px,3.5vw,40px) clamp(20px,5vw,64px)',
+          height: 1,
+          background: 'rgba(255,255,255,0.04)',
+        }}
+      />
+
+      {/* ── PRODUCTION CREDITS ── */}
       <div
         style={{
-          marginTop: 40,
-          paddingTop: 20,
-          paddingBottom: 28,
-          borderTop: '1px solid rgba(255,255,255,0.04)',
+          padding: '0 clamp(20px,5vw,64px) clamp(40px,5vw,60px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 12,
+          gap: 16,
         }}
       >
-        {/* Left: copyright */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span
-            className="mono-font"
-            style={{
-              fontSize: 9,
-              color: 'rgba(110,104,96,0.38)',
-              letterSpacing: '0.08em',
-            }}
-          >
-            © {new Date().getFullYear()} SpicyDevs
-          </span>
-          <span
-            style={{
-              width: 3,
-              height: 3,
-              borderRadius: '50%',
-              background: 'rgba(196,124,46,0.3)',
-              flexShrink: 0,
-            }}
-          />
-          <a
-            href="https://github.com/xdaayush/freeposterapi"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              color: 'rgba(196,124,46,0.55)',
-              textDecoration: 'none',
-              fontSize: 9,
-              fontFamily: 'Syne, sans-serif',
-              fontWeight: 600,
-              letterSpacing: '0.06em',
-              transition: 'color 0.18s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.55)';
-            }}
-          >
-            <Github size={11} />
-            GitHub
-          </a>
-        </div>
-
-        {/* Right: film strip decoration */}
+        {/* Credits strip */}
         <div
           style={{
             display: 'flex',
-            gap: 2,
+            gap: 'clamp(16px,3vw,36px)',
+            flexWrap: 'wrap',
             alignItems: 'center',
           }}
         >
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: i % 3 === 0 ? 14 : 9,
-                height: 6,
-                background:
-                  i % 2 === 0
-                    ? 'rgba(196,124,46,0.14)'
-                    : 'rgba(196,124,46,0.04)',
-                borderRadius: 1,
-                border: '1px solid rgba(196,124,46,0.07)',
-              }}
-            />
+          {[
+            ['PROD', 'SpicyDevs'],
+            ['DIR', 'xdaayush'],
+            ['REL', '2.0'],
+            ['LIC', 'MIT'],
+            ['© ' + new Date().getFullYear(), ''],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span
+                className="mono-font"
+                style={{
+                  fontSize: 7, color: 'rgba(196,124,46,0.38)',
+                  letterSpacing: '0.18em', textTransform: 'uppercase',
+                }}
+              >
+                {k}
+              </span>
+              {v && (
+                <span
+                  className="syne-font"
+                  style={{
+                    fontSize: 9, fontWeight: 700,
+                    color: 'rgba(110,104,96,0.45)',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {v}
+                </span>
+              )}
+            </div>
           ))}
         </div>
+
+        {/* GitHub link — right side */}
+        <a
+          href="https://github.com/xdaayush/freeposterapi"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            color: 'rgba(196,124,46,0.45)', textDecoration: 'none',
+            fontFamily: 'Syne, sans-serif', fontWeight: 700,
+            fontSize: 9, letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            transition: 'color 0.18s',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.45)'; }}
+        >
+          <Github size={12} />
+          Open Source
+        </a>
       </div>
+    </div>
+
+    {/* Bottom sprocket strip */}
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.012)',
+        borderTop: '1px solid rgba(255,255,255,0.04)',
+      }}
+    >
+      <SprocketStrip count={64} />
+    </div>
+
+    {/* API URL strip at very bottom — film leader style */}
+    <div
+      style={{
+        background: 'rgba(5,5,4,0.95)',
+        padding: '8px clamp(20px,5vw,64px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 8,
+      }}
+    >
+      <code
+        className="mono-font"
+        style={{
+          fontSize: 8, color: 'rgba(196,124,46,0.28)',
+          letterSpacing: '0.08em',
+        }}
+      >
+        api.spicydevs.xyz/&#123;type&#125;/&#123;id&#125;.svg?r=imdb,rt&amp;source=tmdb
+      </code>
+      <span
+        className="mono-font"
+        style={{
+          fontSize: 7, color: 'rgba(122,117,110,0.2)',
+          letterSpacing: '0.14em', textTransform: 'uppercase',
+        }}
+      >
+        Free · CORS Enabled · No Auth · SVG/PNG/JPG/WebP
+      </span>
     </div>
   </footer>
 ));
+
 FooterSection.displayName = 'FooterSection';

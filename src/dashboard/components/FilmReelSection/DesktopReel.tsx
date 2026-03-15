@@ -1,23 +1,34 @@
 // src/dashboard/components/FilmReelSection/DesktopReel.tsx
-// Collage reel: 3 rows of posters at different heights, zero gap, zero float animation.
-// Posters stuck together wall-to-wall. Horizontal parallax on vertical scroll via useScrollReel.
-// Row heights: 230px / 178px / 148px → total 556px + overhead = fits 100dvh.
+// Collage reel: 3 rows of posters. Horizontal parallax on vertical scroll.
+// All posters include IMDb rating badge. Amber tint + sepia filter applied
+// to the poster wall for a unified film aesthetic.
+// Rows sized so all approximately same total pixel width → uniform right edge.
 import { memo, useRef, useLayoutEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '../../constants';
 import { useScrollReel } from '../../hooks';
 import { SprocketStrip } from '../primitives';
 import { API } from '../../constants';
 
-// ── Row configuration ─────────────────────────────────────────────
-// Each row: different height → different poster width (2:3 ratio).
-// Poster counts chosen so all three rows reach ~3300px total width.
+// ── Row configuration ──────────────────────────────────────────────
+// Target pixel width: ~3600px for all rows so the right edge is uniform.
+// Row 0 (h=234, w=156px): 24 items = 3744px
+// Row 1 (h=180, w=120px): 31 items = 3720px  (≥ max row 0, so right edge safe)
+// Row 2 (h=150, w=100px): 38 items = 3800px  (≥ max, so right edge safe)
+// Track scrollWidth = max(3744, 3720, 3800) = 3800px.
+// At max scroll rows 0 & 1 end 56px/80px before right: masked by 160px feather.
 const ROW_CONFIGS = [
-  { height: 234, count: 20 },   // width: 156px → total: 3120px
-  { height: 180, count: 24 },   // width: 120px → total: 2880px  (pad with extra)
-  { height: 150, count: 30 },   // width: 100px → total: 3000px
+  { height: 234, count: 24 },
+  { height: 180, count: 31 },
+  { height: 150, count: 38 },
 ] as const;
 
-// Build poster slots by cycling through REEL_ITEMS
+// Badge configuration per row (all IMDb, different positions for variety)
+const ROW_BADGE_PARAMS = [
+  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
+  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
+  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
+] as const;
+
 function makeRow(count: number, offset: number) {
   return Array.from({ length: count }, (_, i) => ({
     ...REEL_ITEMS[(i + offset) % REEL_ITEMS.length],
@@ -27,25 +38,26 @@ function makeRow(count: number, offset: number) {
 
 const ROWS = [
   makeRow(ROW_CONFIGS[0].count, 0),
-  makeRow(ROW_CONFIGS[1].count, 7),
-  makeRow(ROW_CONFIGS[2].count, 14),
+  makeRow(ROW_CONFIGS[1].count, 8),   // offset so different movies lead each row
+  makeRow(ROW_CONFIGS[2].count, 15),
 ];
 
-// ── Individual poster cell ────────────────────────────────────────
+// ── Individual poster cell ─────────────────────────────────────────
 const CollagePoster = memo<{
   id: string;
   type: 'movie' | 'tv';
   title: string;
   width: number;
   height: number;
+  badgeParams: string;
   eager?: boolean;
-}>(({ id, type, title, width, height, eager = false }) => {
+}>(({ id, type, title, width, height, badgeParams, eager = false }) => {
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState(false);
   const onLoad = useCallback(() => setLoaded(true), []);
   const onError = useCallback(() => setErr(true), []);
 
-  const src = `${API}/${type}/${id}.svg?source=tmdb`;
+  const src = `${API}/${type}/${id}.svg?${badgeParams}`;
 
   return (
     <div
@@ -56,15 +68,13 @@ const CollagePoster = memo<{
         position: 'relative',
         overflow: 'hidden',
         background: '#0d0c0a',
-        // 1px hairline border separating posters, reads as film strip
         borderRight: '1px solid rgba(0,0,0,0.7)',
       }}
     >
       {!loaded && !err && (
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
+            position: 'absolute', inset: 0,
             background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
             backgroundSize: '200% 100%',
             animation: 'shimmer 1.8s linear infinite',
@@ -74,11 +84,8 @@ const CollagePoster = memo<{
       {err && (
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: 0.18,
           }}
         >
@@ -93,14 +100,11 @@ const CollagePoster = memo<{
         onLoad={onLoad}
         onError={onError}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          display: 'block',
+          width: '100%', height: '100%',
+          objectFit: 'cover', display: 'block',
           opacity: loaded ? 1 : 0,
           transition: 'opacity 0.35s ease',
-          // Slight contrast boost for the wall feel
-          filter: 'contrast(1.04) saturate(0.96)',
+          filter: 'contrast(1.02)',
         }}
       />
     </div>
@@ -114,7 +118,6 @@ const DesktopReel = memo(() => {
   const trackRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
 
-  // Direct DOM height management - zero re-render on recalc
   useLayoutEffect(() => {
     const recalc = () => {
       const container = containerRef.current;
@@ -135,7 +138,6 @@ const DesktopReel = memo(() => {
       if (trackRef.current) ro.observe(trackRef.current);
     }
     window.addEventListener('resize', recalc, { passive: true });
-
     const t1 = setTimeout(recalc, 300);
     const t2 = setTimeout(recalc, 1000);
     const t3 = setTimeout(recalc, 2500);
@@ -155,13 +157,10 @@ const DesktopReel = memo(() => {
     <div ref={containerRef} style={{ position: 'relative' }}>
       <div
         style={{
-          position: 'sticky',
-          top: 0,
-          height: '100dvh',
-          overflow: 'hidden',
+          position: 'sticky', top: 0,
+          height: '100dvh', overflow: 'hidden',
           background: 'var(--film-dark)',
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'flex', flexDirection: 'column',
         }}
       >
         {/* Header */}
@@ -169,32 +168,22 @@ const DesktopReel = memo(() => {
           style={{
             flexShrink: 0,
             padding: '14px 48px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             borderBottom: '1px solid rgba(196,124,46,0.08)',
           }}
         >
           <div>
             <div
               className="poster-font"
-              style={{
-                fontSize: 20,
-                color: 'var(--film-cream)',
-                letterSpacing: '0.08em',
-                lineHeight: 1,
-              }}
+              style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}
             >
               THE REEL
             </div>
             <div
               className="syne-font"
               style={{
-                fontSize: 8,
-                color: 'var(--film-silver)',
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                marginTop: 2,
+                fontSize: 8, color: 'var(--film-silver)',
+                letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2,
               }}
             >
               Scroll to advance
@@ -202,11 +191,7 @@ const DesktopReel = memo(() => {
           </div>
           <span
             className="mono-font"
-            style={{
-              fontSize: 8,
-              color: 'rgba(122,117,110,0.35)',
-              letterSpacing: '0.12em',
-            }}
+            style={{ fontSize: 8, color: 'rgba(122,117,110,0.35)', letterSpacing: '0.12em' }}
           >
             {REEL_ITEMS.length} titles · 3 tracks
           </span>
@@ -223,66 +208,66 @@ const DesktopReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* Poster wall - 3 rows */}
+        {/* Poster wall */}
         <div
           style={{
-            flex: 1,
-            position: 'relative',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
+            flex: 1, position: 'relative', overflow: 'hidden',
+            display: 'flex', alignItems: 'center',
           }}
         >
-          {/* Edge feathers */}
+          {/* Left feather — increased opacity */}
           <div
             aria-hidden="true"
             style={{
-              position: 'absolute',
-              left: 0, top: 0, bottom: 0,
-              width: 60,
-              background: 'linear-gradient(to right, var(--film-dark), transparent)',
-              pointerEvents: 'none',
-              zIndex: 2,
+              position: 'absolute', left: 0, top: 0, bottom: 0,
+              width: 140,
+              background: 'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+              pointerEvents: 'none', zIndex: 2,
             }}
           />
+          {/* Right feather — wider + higher opacity to mask row-end gaps */}
           <div
             aria-hidden="true"
             style={{
-              position: 'absolute',
-              right: 0, top: 0, bottom: 0,
-              width: 60,
-              background: 'linear-gradient(to left, var(--film-dark), transparent)',
-              pointerEvents: 'none',
-              zIndex: 2,
+              position: 'absolute', right: 0, top: 0, bottom: 0,
+              width: 200,
+              background: 'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+              pointerEvents: 'none', zIndex: 2,
             }}
           />
 
-          {/* Track - all 3 rows inside, flex-column so scrollWidth = widest row */}
+          {/* Amber tint overlay on poster wall */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+              background: 'rgba(196,124,46,0.04)',
+              mixBlendMode: 'overlay',
+            }}
+          />
+
+          {/* Track */}
           <div
             ref={trackRef}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              willChange: 'transform',
-              gap: 0,
+              display: 'flex', flexDirection: 'column',
+              willChange: 'transform', gap: 0,
             }}
           >
             {ROWS.map((row, rowIdx) => {
               const { height, count } = ROW_CONFIGS[rowIdx];
               const width = Math.round((height * 2) / 3);
+              const badgeParams = ROW_BADGE_PARAMS[rowIdx];
               return (
                 <div
                   key={rowIdx}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    gap: 0,
-                    height,
-                    // Thin horizontal separator between rows
-                    borderBottom:
-                      rowIdx < ROWS.length - 1
-                        ? '2px solid rgba(0,0,0,0.8)'
-                        : 'none',
+                    display: 'flex', flexDirection: 'row', gap: 0,
+                    height, overflow: 'hidden',          // overflow:hidden clips row ends
+                    borderBottom: rowIdx < ROWS.length - 1
+                      ? '2px solid rgba(0,0,0,0.8)' : 'none',
+                    // Muted, unified filter: sepia tone + slight desaturation
+                    filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
                   }}
                 >
                   {row.slice(0, count).map((item, idx) => (
@@ -293,6 +278,7 @@ const DesktopReel = memo(() => {
                       title={item.title}
                       width={width}
                       height={height}
+                      badgeParams={badgeParams}
                       eager={rowIdx === 0 && idx < 6}
                     />
                   ))}
@@ -316,55 +302,38 @@ const DesktopReel = memo(() => {
         {/* Progress bar */}
         <div
           style={{
-            flexShrink: 0,
-            padding: '7px 48px',
+            flexShrink: 0, padding: '7px 48px',
             borderTop: '1px solid rgba(196,124,46,0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
+            display: 'flex', alignItems: 'center', gap: 12,
           }}
         >
           <span
             className="mono-font"
             style={{
-              fontSize: 7,
-              color: 'rgba(122,117,110,0.35)',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              flexShrink: 0,
+              fontSize: 7, color: 'rgba(122,117,110,0.35)',
+              letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0,
             }}
           >
             Reel
           </span>
           <div
             style={{
-              flex: 1,
-              height: 1,
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: 99,
-              overflow: 'hidden',
+              flex: 1, height: 1, background: 'rgba(255,255,255,0.04)',
+              borderRadius: 99, overflow: 'hidden',
             }}
           >
             <div
               ref={progressFillRef}
               style={{
-                height: '100%',
-                width: '0%',
-                borderRadius: 99,
-                background:
-                  'linear-gradient(90deg, var(--film-amber), #D4A245)',
+                height: '100%', width: '0%', borderRadius: 99,
+                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
                 transition: 'none',
               }}
             />
           </div>
           <span
             className="mono-font"
-            style={{
-              fontSize: 7,
-              color: 'rgba(122,117,110,0.28)',
-              flexShrink: 0,
-              letterSpacing: '0.1em',
-            }}
+            style={{ fontSize: 7, color: 'rgba(122,117,110,0.28)', flexShrink: 0, letterSpacing: '0.1em' }}
           >
             {ROW_CONFIGS[0].count + ROW_CONFIGS[1].count + ROW_CONFIGS[2].count} frames
           </span>
