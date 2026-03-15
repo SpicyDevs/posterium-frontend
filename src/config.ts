@@ -69,9 +69,9 @@ export const SEO_DEFAULTS: {
     'from IMDb, Rotten Tomatoes, Metacritic and more! All from a single ' +
     'API URL. Free, open source, no account required.',
   keywords:
-    'movie poster generator, TV poster API, IMDb rating badge, Rotten Tomatoes badge, ' +
+    'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
     'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
-    'Jellyfin poster, movie rating overlay, poster with ratings',
+    'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings',
   canonical: SITE_CONFIG.baseUrl,
 
   og: {
@@ -223,10 +223,9 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       'Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account ' +
       'required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more.',
     keywords:
-      'movie poster generator, free poster API, IMDb rating badge, Rotten Tomatoes poster, ' +
-      'Metacritic badge, TMDB poster generator, Plex custom poster, Jellyfin poster, ' +
-      'letterboxd badge, anime poster MAL, free movie API, rating overlay poster, ' +
-      'movie poster with ratings, TV show poster generator, rating poster database alternative',
+    'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
+    'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
+    'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings, rating poster database alternative',
     canonical: `${SITE_CONFIG.baseUrl}/`,
     og: {
       type: 'website',
