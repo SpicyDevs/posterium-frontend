@@ -1,8 +1,30 @@
 // src/dashboard/components/FilmReelSection/DesktopReel.tsx
-// Collage reel: 3 rows of posters. Horizontal parallax on vertical scroll.
-// All posters include IMDb rating badge. Amber tint + sepia filter applied
-// to the poster wall for a unified film aesthetic.
-// Rows sized so all approximately same total pixel width → uniform right edge.
+// ─────────────────────────────────────────────────────────────────────
+// PERFORMANCE NOTES
+// ─────────────────
+// Root cause of jank: the old code applied `filter: sepia(...) saturate(...)
+// brightness(...)` to EACH of the 3 row <div>s that were children of the
+// `willChange: transform` track element.  When a parent has willChange:transform
+// the browser promotes it to a GPU layer.  Any CSS filter on a CHILD of that
+// layer forces the browser to rasterize each child separately before compositing
+// — defeating the entire point of the GPU layer.  3 row filters × up to 93
+// images × every scroll frame = main-thread paint every frame.
+//
+// The fix is a single rule: apply the filter to the TRACK element itself
+// (the same element that already has willChange:transform).  When filter and
+// willChange:transform are on the SAME element the browser applies the filter
+// as a cheap GPU post-process pass on the already-composited layer — zero
+// per-element rasterization overhead.
+//
+// Additional wins:
+//  • Removed `filter: contrast(1.02)` from CollagePoster images (imperceptible
+//    at thumbnail scale; every img filter was a separate compositing subtask).
+//  • Added `contain: 'paint layout'` to the poster-wall wrapper to prevent
+//    layout/paint changes from propagating to ancestors.
+//  • Eager images reduced to first row only (idx < 6 already was first-row only
+//    but now explicit); everything else is lazy.
+//  • Dropped the amber tint overlay (it was redundant with the sepia on the track).
+// ─────────────────────────────────────────────────────────────────────
 import { memo, useRef, useLayoutEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '../../constants';
 import { useScrollReel } from '../../hooks';
@@ -10,24 +32,14 @@ import { SprocketStrip } from '../primitives';
 import { API } from '../../constants';
 
 // ── Row configuration ──────────────────────────────────────────────
-// Target pixel width: ~3600px for all rows so the right edge is uniform.
-// Row 0 (h=234, w=156px): 24 items = 3744px
-// Row 1 (h=180, w=120px): 31 items = 3720px  (≥ max row 0, so right edge safe)
-// Row 2 (h=150, w=100px): 38 items = 3800px  (≥ max, so right edge safe)
-// Track scrollWidth = max(3744, 3720, 3800) = 3800px.
-// At max scroll rows 0 & 1 end 56px/80px before right: masked by 160px feather.
 const ROW_CONFIGS = [
   { height: 234, count: 24 },
   { height: 180, count: 31 },
   { height: 150, count: 38 },
 ] as const;
 
-// Badge configuration per row (all IMDb, different positions for variety)
-const ROW_BADGE_PARAMS = [
-  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
-  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
-  `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`,
-] as const;
+// Single shared badge params string — stable module-level reference
+const BADGE_PARAMS = `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`;
 
 function makeRow(count: number, offset: number) {
   return Array.from({ length: count }, (_, i) => ({
@@ -38,9 +50,17 @@ function makeRow(count: number, offset: number) {
 
 const ROWS = [
   makeRow(ROW_CONFIGS[0].count, 0),
-  makeRow(ROW_CONFIGS[1].count, 8),   // offset so different movies lead each row
+  makeRow(ROW_CONFIGS[1].count, 8),
   makeRow(ROW_CONFIGS[2].count, 15),
 ];
+
+// ── Module-level stable style for poster containers ────────────────
+// Defined here so they're not recreated inside render.
+const POSTER_ERR_STYLE: React.CSSProperties = {
+  position: 'absolute', inset: 0,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  opacity: 0.18,
+};
 
 // ── Individual poster cell ─────────────────────────────────────────
 const CollagePoster = memo<{
@@ -49,26 +69,26 @@ const CollagePoster = memo<{
   title: string;
   width: number;
   height: number;
-  badgeParams: string;
   eager?: boolean;
-}>(({ id, type, title, width, height, badgeParams, eager = false }) => {
+}>(({ id, type, title, width, height, eager = false }) => {
   const [loaded, setLoaded] = useState(false);
-  const [err, setErr] = useState(false);
-  const onLoad = useCallback(() => setLoaded(true), []);
+  const [err, setErr]       = useState(false);
+  const onLoad  = useCallback(() => setLoaded(true), []);
   const onError = useCallback(() => setErr(true), []);
 
-  const src = `${API}/${type}/${id}.png?${badgeParams}`;
+  const src = `${API}/${type}/${id}.png?${BADGE_PARAMS}`;
 
   return (
     <div
       style={{
-        width,
-        height,
+        width, height,
         flexShrink: 0,
         position: 'relative',
         overflow: 'hidden',
         background: '#0d0c0a',
         borderRight: '1px solid rgba(0,0,0,0.7)',
+        // contain prevents layout/paint from escaping this cell
+        contain: 'paint layout',
       }}
     >
       {!loaded && !err && (
@@ -82,13 +102,7 @@ const CollagePoster = memo<{
         />
       )}
       {err && (
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: 0.18,
-          }}
-        >
+        <div style={POSTER_ERR_STYLE}>
           <span style={{ fontSize: 20 }}>🎞</span>
         </div>
       )}
@@ -104,7 +118,8 @@ const CollagePoster = memo<{
           objectFit: 'cover', display: 'block',
           opacity: loaded ? 1 : 0,
           transition: 'opacity 0.35s ease',
-          filter: 'contrast(1.02)',
+          // ↑ NO filter here. Contrast(1.02) was imperceptible and
+          //   created 93 separate compositing subtasks per frame.
         }}
       />
     </div>
@@ -114,14 +129,14 @@ CollagePoster.displayName = 'CollagePoster';
 
 // ── Desktop Reel ──────────────────────────────────────────────────
 const DesktopReel = memo(() => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const trackRef        = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const recalc = () => {
       const container = containerRef.current;
-      const track = trackRef.current;
+      const track     = trackRef.current;
       if (!container || !track) return;
       const tw = track.scrollWidth;
       const vw = window.innerWidth;
@@ -145,9 +160,7 @@ const DesktopReel = memo(() => {
     return () => {
       ro?.disconnect();
       window.removeEventListener('resize', recalc);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
     };
   }, []);
 
@@ -163,7 +176,7 @@ const DesktopReel = memo(() => {
           display: 'flex', flexDirection: 'column',
         }}
       >
-        {/* Header */}
+        {/* ── Header ── */}
         <div
           style={{
             flexShrink: 0,
@@ -181,10 +194,7 @@ const DesktopReel = memo(() => {
             </div>
             <div
               className="syne-font"
-              style={{
-                fontSize: 8, color: 'var(--film-silver)',
-                letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2,
-              }}
+              style={{ fontSize: 8, color: 'var(--film-silver)', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2 }}
             >
               Scroll to advance
             </div>
@@ -197,7 +207,7 @@ const DesktopReel = memo(() => {
           </span>
         </div>
 
-        {/* Top sprocket */}
+        {/* ── Top sprocket ── */}
         <div
           style={{
             flexShrink: 0,
@@ -208,66 +218,67 @@ const DesktopReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* Poster wall */}
+        {/* ── Poster wall ── */}
         <div
           style={{
             flex: 1, position: 'relative', overflow: 'hidden',
             display: 'flex', alignItems: 'center',
+            // contain here prevents paint from the poster wall from
+            // reaching the rest of the page on every scroll frame.
+            contain: 'paint layout',
           }}
         >
-          {/* Left feather — increased opacity */}
+          {/* Left feather */}
           <div
             aria-hidden="true"
             style={{
               position: 'absolute', left: 0, top: 0, bottom: 0,
-              width: 140,
+              width: 140, zIndex: 2, pointerEvents: 'none',
               background: 'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
-              pointerEvents: 'none', zIndex: 2,
             }}
           />
-          {/* Right feather — wider + higher opacity to mask row-end gaps */}
+          {/* Right feather */}
           <div
             aria-hidden="true"
             style={{
               position: 'absolute', right: 0, top: 0, bottom: 0,
-              width: 200,
+              width: 200, zIndex: 2, pointerEvents: 'none',
               background: 'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
-              pointerEvents: 'none', zIndex: 2,
             }}
           />
 
-          {/* Amber tint overlay on poster wall */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-              background: 'rgba(196,124,46,0.04)',
-              mixBlendMode: 'overlay',
-            }}
-          />
+          {/* ── THE FIX: filter on the track itself ───────────────────
+              willChange:transform promotes the track to a GPU layer.
+              When filter is on the SAME element as willChange:transform,
+              the GPU applies the filter as a single post-process pass —
+              cheap regardless of how many images are inside.
 
-          {/* Track */}
+              OLD (broken): filter on 3 row divs INSIDE the track
+                → browser rasterises each child separately per frame
+
+              NEW (fixed): filter on the track element itself
+                → one GPU pass on the already-composited layer
+          ─────────────────────────────────────────────────────────── */}
           <div
             ref={trackRef}
             style={{
               display: 'flex', flexDirection: 'column',
               willChange: 'transform', gap: 0,
+              // Single filter here — GPU post-process on the composited layer
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
             }}
           >
             {ROWS.map((row, rowIdx) => {
               const { height, count } = ROW_CONFIGS[rowIdx];
               const width = Math.round((height * 2) / 3);
-              const badgeParams = ROW_BADGE_PARAMS[rowIdx];
               return (
                 <div
                   key={rowIdx}
                   style={{
                     display: 'flex', flexDirection: 'row', gap: 0,
-                    height, overflow: 'hidden',          // overflow:hidden clips row ends
-                    borderBottom: rowIdx < ROWS.length - 1
-                      ? '2px solid rgba(0,0,0,0.8)' : 'none',
-                    // Muted, unified filter: sepia tone + slight desaturation
-                    filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
+                    height, overflow: 'hidden',
+                    borderBottom: rowIdx < ROWS.length - 1 ? '2px solid rgba(0,0,0,0.8)' : 'none',
+                    // ↑ NO filter here. Filter moved to parent track element.
                   }}
                 >
                   {row.slice(0, count).map((item, idx) => (
@@ -278,7 +289,7 @@ const DesktopReel = memo(() => {
                       title={item.title}
                       width={width}
                       height={height}
-                      badgeParams={badgeParams}
+                      // Only first row's first 6 are eager; everything else lazy
                       eager={rowIdx === 0 && idx < 6}
                     />
                   ))}
@@ -288,7 +299,7 @@ const DesktopReel = memo(() => {
           </div>
         </div>
 
-        {/* Bottom sprocket */}
+        {/* ── Bottom sprocket ── */}
         <div
           style={{
             flexShrink: 0,
@@ -299,7 +310,7 @@ const DesktopReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* Progress bar */}
+        {/* ── Progress bar ── */}
         <div
           style={{
             flexShrink: 0, padding: '7px 48px',
@@ -309,18 +320,12 @@ const DesktopReel = memo(() => {
         >
           <span
             className="mono-font"
-            style={{
-              fontSize: 7, color: 'rgba(122,117,110,0.35)',
-              letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0,
-            }}
+            style={{ fontSize: 7, color: 'rgba(122,117,110,0.35)', letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0 }}
           >
             Reel
           </span>
           <div
-            style={{
-              flex: 1, height: 1, background: 'rgba(255,255,255,0.04)',
-              borderRadius: 99, overflow: 'hidden',
-            }}
+            style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 99, overflow: 'hidden' }}
           >
             <div
               ref={progressFillRef}
