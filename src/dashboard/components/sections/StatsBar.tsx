@@ -1,148 +1,109 @@
-// components/sections/StatsBar.tsx
-// "THE NUMBERS" - four stat panels in a horizontal film-strip grid.
-// Each panel: large stencil number + animated count-up + label.
-// Breaks the previous "memo line item" aesthetic - now reads as a
-// production-budget title card, not a spreadsheet.
+// src/dashboard/components/sections/StatsBar.tsx
+// Performance: PANEL_ACCENTS and STATS are module-level constants (no recreate).
+// Per-panel inline styles that depend only on index are pre-computed once.
 import { memo } from 'react';
 import { STATS } from '../../constants';
 import { useInView, useCounter } from '../../hooks';
 
-// Per-panel accent tones - pulled from the film palette
+// Stable module-level constants — not recreated per render
 const PANEL_ACCENTS = [
-  { border: 'rgba(196,124,46,0.25)', glow: 'rgba(196,124,46,0.06)' }, // amber
-  { border: 'rgba(168,32,24,0.22)', glow: 'rgba(168,32,24,0.05)' }, // red
-  { border: 'rgba(60,100,200,0.2)', glow: 'rgba(60,100,200,0.05)' }, // blue
-  { border: 'rgba(54,162,64,0.22)', glow: 'rgba(54,162,64,0.05)' }, // green
+  { border: 'rgba(196,124,46,0.25)', glow: 'rgba(196,124,46,0.06)' },
+  { border: 'rgba(168,32,24,0.22)',  glow: 'rgba(168,32,24,0.05)'  },
+  { border: 'rgba(60,100,200,0.2)',  glow: 'rgba(60,100,200,0.05)' },
+  { border: 'rgba(54,162,64,0.22)',  glow: 'rgba(54,162,64,0.05)'  },
 ];
 
-const StatPanel = memo<{
-  stat: (typeof STATS)[0];
-  index: number;
-  vis: boolean;
-}>(({ stat, index, vis }) => {
-  const numeric = parseInt(stat.value.replace(/\D/g, ''), 10) || 0;
-  const isSpecial = stat.value === '∞' || stat.value === '0';
-  const count = useCounter(numeric, 1600, vis);
-  const accent = PANEL_ACCENTS[index];
-  const suffix = stat.value.replace(/[0-9]/g, '');
+// Derive the bright border string once per accent, not per render
+const BORDER_BRIGHT = PANEL_ACCENTS.map(({ border }) =>
+  border.replace(/0\.\d+\)$/, (m) => {
+    const n = parseFloat(m);
+    return `${Math.min(n * 3, 0.9)})`;
+  })
+);
 
-  return (
-    <div
-      style={{
-        position: 'relative',
-        padding: 'clamp(24px,3.5vw,40px) clamp(20px,3vw,36px)',
-        borderRight: index < STATS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-        background: vis ? accent.glow : 'transparent',
-        transition: `background 0.8s ease ${index * 0.15}s`,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        minHeight: 'clamp(140px,18vw,200px)',
-      }}
-    >
-      {/* Animated border top */}
+const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>(
+  ({ stat, index, vis }) => {
+    const numeric = parseInt(stat.value.replace(/\D/g, ''), 10) || 0;
+    const isSpecial = stat.value === '∞' || stat.value === '0';
+    const count = useCounter(numeric, 1600, vis);
+    const accent = PANEL_ACCENTS[index];
+    const suffix = stat.value.replace(/[0-9]/g, '');
+
+    return (
       <div
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: vis
-            ? `linear-gradient(90deg, transparent, ${accent.border.replace('0.25', '0.7').replace('0.22', '0.65').replace('0.2', '0.6').replace('0.22', '0.65')}, transparent)`
-            : 'transparent',
-          transition: `background 0.6s ease ${index * 0.12}s`,
-        }}
-      />
-
-      {/* Index */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          opacity: vis ? 1 : 0,
-          transform: vis ? 'translateY(0)' : 'translateY(8px)',
-          transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
+          position: 'relative',
+          padding: 'clamp(24px,3.5vw,40px) clamp(20px,3vw,36px)',
+          borderRight: index < STATS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+          background: vis ? accent.glow : 'transparent',
+          transition: `background 0.8s ease ${index * 0.15}s`,
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          minHeight: 'clamp(140px,18vw,200px)',
         }}
       >
-        <span
-          className="mono-font"
+        {/* Animated top border */}
+        <div
           style={{
-            fontSize: 8,
-            color: 'rgba(122,117,110,0.3)',
-            letterSpacing: '0.14em',
+            position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+            background: vis
+              ? `linear-gradient(90deg, transparent, ${BORDER_BRIGHT[index]}, transparent)`
+              : 'transparent',
+            transition: `background 0.6s ease ${index * 0.12}s`,
+          }}
+        />
+
+        {/* Index row */}
+        <div
+          style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+            opacity: vis ? 1 : 0, transform: vis ? 'translateY(0)' : 'translateY(8px)',
+            transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
           }}
         >
-          {String(index + 1).padStart(2, '0')}/{String(STATS.length).padStart(2, '0')}
-        </span>
-        {stat.unit && (
-          <span
-            className="mono-font"
-            style={{
-              fontSize: 7,
-              color: 'rgba(122,117,110,0.25)',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {stat.unit}
+          <span className="mono-font" style={{ fontSize: 8, color: 'rgba(122,117,110,0.3)', letterSpacing: '0.14em' }}>
+            {String(index + 1).padStart(2, '0')}/{String(STATS.length).padStart(2, '0')}
           </span>
-        )}
-      </div>
+          {stat.unit && (
+            <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              {stat.unit}
+            </span>
+          )}
+        </div>
 
-      {/* Big number */}
-      <div
-        className="poster-font"
-        style={{
-          fontSize: 'clamp(56px,8vw,96px)',
-          lineHeight: 0.88,
-          color: 'var(--film-cream)',
-          letterSpacing: '0.01em',
-          textShadow: vis ? `0 0 60px ${accent.glow}` : 'none',
-          opacity: vis ? 1 : 0,
-          transform: vis ? 'translateY(0) scale(1)' : 'translateY(18px) scale(0.92)',
-          transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${0.12 + index * 0.12}s, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${0.12 + index * 0.12}s`,
-        }}
-      >
-        {isSpecial ? stat.value : `${count}${suffix}`}
-      </div>
-
-      {/* Label + sub */}
-      <div
-        style={{
-          opacity: vis ? 1 : 0,
-          transform: vis ? 'translateY(0)' : 'translateY(10px)',
-          transition: `opacity 0.55s ease ${0.25 + index * 0.1}s, transform 0.55s ease ${0.25 + index * 0.1}s`,
-        }}
-      >
+        {/* Number */}
         <div
-          className="syne-font"
+          className="poster-font"
           style={{
-            fontSize: 'clamp(11px,1.4vw,14px)',
-            fontWeight: 700,
-            color: 'var(--film-cream)',
-            letterSpacing: '0.02em',
-            marginBottom: 4,
+            fontSize: 'clamp(56px,8vw,96px)', lineHeight: 0.88,
+            color: 'var(--film-cream)', letterSpacing: '0.01em',
+            textShadow: vis ? `0 0 60px ${accent.glow}` : 'none',
+            opacity: vis ? 1 : 0,
+            transform: vis ? 'translateY(0) scale(1)' : 'translateY(18px) scale(0.92)',
+            transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${0.12 + index * 0.12}s, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${0.12 + index * 0.12}s`,
           }}
         >
-          {stat.label}
+          {isSpecial ? stat.value : `${count}${suffix}`}
         </div>
+
+        {/* Label */}
         <div
-          className="body-font"
           style={{
-            fontSize: 10,
-            color: 'rgba(110,104,96,0.6)',
-            lineHeight: 1.4,
+            opacity: vis ? 1 : 0, transform: vis ? 'translateY(0)' : 'translateY(10px)',
+            transition: `opacity 0.55s ease ${0.25 + index * 0.1}s, transform 0.55s ease ${0.25 + index * 0.1}s`,
           }}
         >
-          {stat.sub}
+          <div className="syne-font" style={{ fontSize: 'clamp(11px,1.4vw,14px)', fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.02em', marginBottom: 4 }}>
+            {stat.label}
+          </div>
+          <div className="body-font" style={{ fontSize: 10, color: 'rgba(110,104,96,0.6)', lineHeight: 1.4 }}>
+            {stat.sub}
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 StatPanel.displayName = 'StatPanel';
 
 export const StatsBar = memo(() => {
@@ -158,64 +119,35 @@ export const StatsBar = memo(() => {
         borderBottom: '1px solid rgba(196,124,46,0.07)',
       }}
     >
-      {/* Docket header strip */}
+      {/* Header */}
       <div
         style={{
           padding: '10px clamp(20px,5vw,80px)',
           borderBottom: '1px solid rgba(255,255,255,0.035)',
           background: 'rgba(255,255,255,0.01)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 8,
-          opacity: vis ? 1 : 0,
-          transition: 'opacity 0.5s ease',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 8,
+          opacity: vis ? 1 : 0, transition: 'opacity 0.5s ease',
         }}
       >
-        <span
-          className="mono-font"
-          style={{
-            fontSize: 8,
-            color: 'rgba(196,124,46,0.38)',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-          }}
-        >
-          SPICYDEVS / POSTERIUM - FIELD NUMBERS
+        <span className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.38)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          SPICYDEVS / POSTERIUM — FIELD NUMBERS
         </span>
-        <span
-          className="mono-font"
-          style={{
-            fontSize: 7,
-            color: 'rgba(122,117,110,0.28)',
-            letterSpacing: '0.12em',
-          }}
-        >
+        <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.28)', letterSpacing: '0.12em' }}>
           REV.2 · OPEN SOURCE · MIT
         </span>
       </div>
 
       {/* 4-panel grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
         {STATS.map((s, i) => (
           <StatPanel key={s.label} stat={s} index={i} vis={vis} />
         ))}
       </div>
 
-      {/* Responsive: 2×2 on tablet */}
       <style>{`
-        @media (max-width: 700px) {
-          #stats-grid { grid-template-columns: repeat(2,1fr) !important; }
-        }
-        @media (max-width: 420px) {
-          #stats-grid { grid-template-columns: 1fr !important; }
-        }
+        @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2,1fr) !important; } }
+        @media (max-width: 420px) { .stats-grid { grid-template-columns: 1fr !important; } }
       `}</style>
     </section>
   );
