@@ -57,7 +57,7 @@ const CollagePoster = memo<{
   const onLoad = useCallback(() => setLoaded(true), []);
   const onError = useCallback(() => setErr(true), []);
 
-  const src = `${API}/${type}/${id}.svg?${badgeParams}`;
+  const src = `${API}/${type}/${id}.png?${badgeParams}`;
 
   return (
     <div
