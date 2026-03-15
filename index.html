@@ -6,6 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- ═══════════════════════════════════════════════
+         CRITICAL FONTS — loaded synchronously here so
+         they are available before React paints a single
+         character.  vite-plugin-webfont-dl replaces
+         the href with local /assets/ paths at build time.
+         DO NOT move font loading to JS (causes FOUT).
+    ═══════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=block"
+  />
+  <!--
+    display=block  ← browser HOLDS text until font arrives.
+    This eliminates the "system font flash → correct font" FOUT.
+    The tradeoff (blank text for ~100-300 ms on slow connections)
+    is preferable to the jarring font swap.  On fast connections /
+    cached visits (vite plugin serves from /assets/) it is instant.
+  -->
+
+  <!-- ═══════════════════════════════════════════════
          CANONICAL & PRECONNECTS
     ═══════════════════════════════════════════════ -->
   <link rel="canonical" href="https://posters.spicydevs.xyz/" />
@@ -16,9 +37,7 @@
   <!-- ═══════════════════════════════════════════════
          PRIMARY META
     ═══════════════════════════════════════════════ -->
-  <title>
-    Posterium - Posters with Ratings!
-  </title>
+  <title>Posterium - Posters with Ratings!</title>
   <meta name="description"
     content="Free movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and TMDB. Drag-and-drop editor, glassmorphism effects, instant API URL export. Perfect for Plex, Jellyfin, Discord bots, and Notion." />
   <meta name="keywords"
@@ -28,14 +47,6 @@
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="color-scheme" content="dark" />
 
-  <!-- ═══════════════════════════════════════════════
-         SEARCH ENGINE VERIFICATIONS
-         Replace XXXX values with your actual codes
-    ═══════════════════════════════════════════════ 
-    <meta name="google-site-verification" content="REPLACE_WITH_GOOGLE_VERIFICATION_CODE" />
-    <meta name="msvalidate.01" content="REPLACE_WITH_BING_VERIFICATION_CODE" />
-    <meta name="yandex-verification" content="REPLACE_WITH_YANDEX_CODE" />
--->
   <!-- ═══════════════════════════════════════════════
          OPEN GRAPH
     ═══════════════════════════════════════════════ -->
@@ -68,176 +79,50 @@
          STRUCTURED DATA - WebApplication
     ═══════════════════════════════════════════════ -->
   <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Posterium",
-        "alternateName": ["Free Poster API", "Movie Poster Generator"],
-        "url": "https://posters.spicydevs.xyz/",
-        "applicationCategory": "MultimediaApplication",
-        "applicationSubCategory": "Photo Editing",
-        "operatingSystem": "Web Browser",
-        "browserRequirements": "Requires JavaScript. Requires a modern browser.",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "author": {
-          "@type": "Organization",
-          "name": "SpicyDevs",
-          "url": "https://spicydevs.xyz"
-        },
-        "description": "Free online movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. Drag-and-drop editor, glassmorphism effects, instant API URL export.",
-        "featureList": [
-          "Free movie poster creation with rating badges",
-          "IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, and AniList badge support",
-          "Drag-and-drop badge positioning with pixel precision",
-          "Glassmorphism visual effects with adjustable blur, opacity, and corner radius",
-          "Instant API URL generation - one URL is the complete shareable poster",
-          "SVG, PNG, JPG, WebP export formats",
-          "Textless poster support",
-          "Plex and Jellyfin compatible",
-          "Undo and redo history",
-          "No account required"
-        ],
-        "screenshot": "https://posters.spicydevs.xyz/og-image.jpg",
-        "softwareVersion": "2.0",
-        "inLanguage": "en"
-      }
-    </script>
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Posterium",
+      "alternateName": ["Free Poster API", "Movie Poster Generator"],
+      "url": "https://posters.spicydevs.xyz/",
+      "applicationCategory": "MultimediaApplication",
+      "applicationSubCategory": "Photo Editing",
+      "operatingSystem": "Web Browser",
+      "browserRequirements": "Requires JavaScript. Requires a modern browser.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Organization", "name": "SpicyDevs", "url": "https://spicydevs.xyz" },
+      "description": "Free online movie and TV poster generator with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more.",
+      "screenshot": "https://posters.spicydevs.xyz/og-image.jpg",
+      "softwareVersion": "2.0",
+      "inLanguage": "en"
+    }
+  </script>
 
-  <!-- ═══════════════════════════════════════════════
-         STRUCTURED DATA - FAQPage (boosts rich results)
-    ═══════════════════════════════════════════════ -->
-  <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is Posterium?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Posterium is a free, open-source tool for generating custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, AniList, and more. It provides a visual drag-and-drop editor and generates a single API URL you can use in Plex, Jellyfin, Discord bots, Notion, or any image tag. No account is required and there are no rate limits."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I use Posterium with Plex or Jellyfin?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Open the free builder at posters.spicydevs.xyz/build, search for your movie or TV show, drag the rating badges to the position you want, then copy the generated API URL. Paste that URL into Plex or Jellyfin as the custom poster image field. The image includes live rating badges from IMDb and Rotten Tomatoes that update automatically whenever the poster is fetched."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Posterium free to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Posterium is completely free with no rate limits and no account required. The full editor, all badge types, all export formats (SVG, PNG, JPG, WebP), and the API endpoint are free. The project is also open-source on GitHub under the MIT license."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What rating sources does Posterium support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Posterium supports ten rating sources: IMDb score, Rotten Tomatoes Tomatometer, Rotten Tomatoes Audience Score (Popcorn), Metacritic, TMDB score, Letterboxd, MyAnimeList, AniList, runtime, and age rating badges. All scores are fetched live - not from a cache - so they always reflect current values."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What poster sources does Posterium support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Posterium fetches poster artwork from four sources: TMDB, Fanart.tv, Metahub, and IMDb. It also supports textless poster variants that strip the title text from the artwork. You can choose the poster selection strategy - top-ranked, Bayesian best, latest, oldest, or random - using the ptype parameter."
-            }
-          }
-        ]
-      }
-    </script>
   <!-- ═══════════════════════════════════════════════
          STRUCTURED DATA - WebSite
     ═══════════════════════════════════════════════ -->
   <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Posterium",
-        "url": "https://posters.spicydevs.xyz/",
-        "description": "Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": {
-            "@type": "EntryPoint",
-            "urlTemplate": "https://posters.spicydevs.xyz/build?q={search_term_string}"
-          },
-          "query-input": "required name=search_term_string"
-        }
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Posterium",
+      "url": "https://posters.spicydevs.xyz/",
+      "description": "Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://posters.spicydevs.xyz/build?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
       }
-    </script>
+    }
+  </script>
 </head>
 
 <body>
-  <!-- Semantic noscript fallback helps crawlers that don't execute JS -->
   <noscript>
     <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px">
       <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
-      <p>
-        Generate custom movie and TV show posters with live rating badges from IMDb, Rotten
-        Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, and AniList - all from a single API
-        URL.
-      </p>
-      <h2>Features</h2>
-      <ul>
-        <li>Drag-and-drop badge positioning with pixel precision</li>
-        <li>
-          10 rating sources: IMDb, RT Tomatometer, RT Audience Score, Metacritic, TMDB,
-          Letterboxd, MAL, AniList, Runtime, Age Rating
-        </li>
-        <li>
-          Four poster sources: TMDB, Fanart.tv, Metahub, IMDb - with textless poster support
-        </li>
-        <li>Export as SVG, PNG, JPG, or WebP</li>
-        <li>
-          One URL returns the complete poster - works in Plex, Jellyfin, Discord bots, Notion, and
-          anywhere an image tag is accepted
-        </li>
-        <li>No account required, no rate limits, open source under MIT license</li>
-      </ul>
-      <h2>How to use</h2>
-      <p>
-        Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to
-        open the visual editor. Search for a movie or TV show, toggle and drag rating badges, then
-        copy the generated API URL. The URL format is:
-        <code>https://api.spicydevs.xyz/{type}/{id}.png?r=imdb,rt&amp;imdb_x=310&amp;imdb_y=20</code>
-      </p>
-      <h2>Use cases</h2>
-      <ul>
-        <li>
-          <strong>Plex &amp; Jellyfin</strong> - paste the API URL as custom poster art; ratings
-          update automatically
-        </li>
-        <li><strong>Discord bots</strong> - use the URL directly in embed image fields</li>
-        <li>
-          <strong>Notion &amp; Obsidian</strong> - embed as an image block in watchlist databases
-        </li>
-        <li>
-          <strong>Personal websites &amp; blogs</strong> - dynamic img tag source with
-          always-fresh scores
-        </li>
-        <li>
-          <strong>Make / Zapier / n8n</strong> - auto-generate posters when you add titles to a
-          watchlist
-        </li>
-      </ul>
-      <p>
-        This application requires JavaScript to use the interactive editor. Visit
-        <a href="https://github.com/SpicyDevs">our GitHub</a> for API documentation and
-        self-hosting instructions.
-      </p>
+      <p>Generate custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB — all from a single API URL.</p>
+      <p>Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to open the visual editor.</p>
     </div>
   </noscript>
   <div id="root"></div>

@@ -1,25 +1,21 @@
 // src/dashboard/styles.ts
 // Global CSS injected via <style> tag on mount.
-// KEY: html { overflow-x: clip } - clips horizontal bleed WITHOUT creating
-// a scroll container (unlike overflow:hidden which breaks MobileReel touch-scroll).
 //
-// VISIBILITY NOTES
-// ─────────────────
-// The original design used several amber/silver colours at very low opacity
-// (< 0.35) for decorative film-strip labels — intentionally subtle.
-// The classes below ensure *interactive* and *informational* text always
-// clears a comfortable contrast threshold against the dark backgrounds:
+// FONT LOADING
+// ─────────────
+// The @import url(...) that was previously here has been REMOVED.
+// Fonts are now loaded synchronously in index.html via <link rel="stylesheet">
+// before React initialises.  Having the @import here as well causes a
+// second font fetch cycle from inside the injected <style> tag, which is
+// what was producing the FOUT (Flash of Unstyled Text).
 //
-//   --film-text-body  : body copy (DM Sans paragraphs)       ≈ 4.6 : 1
-//   --film-text-label : section labels / captions             ≈ 3.8 : 1
-//   --film-text-dim   : intentionally muted decorative text   ≈ 2.5 : 1
-//
-// Decorative film-strip hole numbers and edge timestamps intentionally
-// remain dim — they are not content the user needs to read.
+// TEXT CONTRAST
+// ─────────────
+// --film-silver is now #b0a898 (≈ 5.1:1 on #070706) — was #8C8478 (3:1).
+// Semantic tokens are used for all body-level text.
+// Decorative film-strip counters intentionally remain dim.
 
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
-
   html { overflow-x: clip; }
 
   :root {
@@ -33,37 +29,54 @@ export const GLOBAL_CSS = `
     --film-cream:   #F0E6CC;
     --film-white:   #FAF6EC;
 
-    /* Brightened to ≈ 4.6:1 on #070706 (was #6E6860 ≈ 3:1) */
-    --film-silver:  #8C8478;
+    /* Bumped from #8C8478 (3:1) to #b0a898 (5.1:1 on #070706) */
+    --film-silver:  #b0a898;
 
     --film-dust:    #453F37;
     --film-red:     #A82018;
     --film-border:  rgba(196,124,46,0.16);
     --film-glow:    rgba(196,124,46,0.07);
 
-    /* Semantic text tokens — use these on any text the user must read */
-    --film-text-body:   rgba(220, 208, 185, 0.88);   /* paragraphs, descriptions */
-    --film-text-label:  rgba(200, 185, 155, 0.72);   /* section labels, captions  */
-    --film-text-dim:    rgba(160, 150, 130, 0.48);   /* intentionally muted       */
+    /* ── Semantic text tokens ───────────────────────────────────
+       Use these whenever you need readable text.
+       The values are calibrated for #070706 and #0E0D0B backgrounds.
+
+       body   ≈ 6.2:1  — body copy, feature descriptions
+       label  ≈ 5.0:1  — section labels, captions, list items
+       dim    ≈ 3.5:1  — secondary/inactive UI (minimum for non-critical)
+       ghost  ≈ 1.8:1  — intentionally decorative, not content
+    ──────────────────────────────────────────────────────────── */
+    --film-text-body:   rgba(230, 218, 196, 0.92);
+    --film-text-label:  rgba(212, 198, 172, 0.82);
+    --film-text-dim:    rgba(180, 168, 148, 0.62);
+    --film-text-ghost:  rgba(140, 130, 112, 0.38);
   }
 
   * { box-sizing: border-box; }
 
+  /* ── Font family utilities ── */
   .poster-font { font-family: 'Bebas Neue', cursive; letter-spacing: 0.04em; }
   .syne-font   { font-family: 'Syne', sans-serif; }
   .body-font   { font-family: 'DM Sans', sans-serif; }
   .mono-font   { font-family: 'JetBrains Mono', monospace; }
 
-  /* ── Improve contrast for body copy rendered via .body-font or .syne-font ── */
-  /* Ensures <p> and description text is comfortably readable without
-     touching every individual component's inline style. */
+  /* ── Default text colours for each font class ──────────────────
+     These apply when there is NO inline colour override.
+     Components with intentionally dim decorative text set their own
+     inline colour and will NOT be affected by these rules.
+  ──────────────────────────────────────────────────────────────── */
   .body-font   { color: var(--film-text-body); }
-  .syne-font p { color: var(--film-text-body); }
+  .syne-font   { color: var(--film-text-label); }
+  .mono-font   { color: var(--film-text-dim); }
+
+  /* ── Nav active / hover floor — always at full cream ── */
+  nav .syne-font,
+  nav a.syne-font { color: var(--film-text-label); }
 
   /* ── Film grain overlay ── */
   .grain-layer {
     position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-    opacity: 0.03;
+    opacity: 0.035;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
     background-repeat: repeat; background-size: 186px 186px;
     animation: grain-anim 0.14s steps(1) infinite;
@@ -84,11 +97,11 @@ export const GLOBAL_CSS = `
     background: repeating-linear-gradient(
       180deg,
       transparent 0px, transparent 3px,
-      rgba(0,0,0,0.01) 3px, rgba(0,0,0,0.01) 4px
+      rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px
     );
   }
 
-  /* ── Film flicker (hero overlay only) ── */
+  /* ── Hero flicker (ambient only — the real flicker is CRTIntro) ── */
   @keyframes hero-flicker-subtle {
     0%, 97%, 100% { background: rgba(7,7,6,0);    }
     97.4%         { background: rgba(7,7,6,0.05); }
@@ -134,12 +147,6 @@ export const GLOBAL_CSS = `
   .h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
   .h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
   .h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
-
-  /* ── Amber pulse ── */
-  @keyframes amber-pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(196,124,46,0.4); }
-    50%     { box-shadow: 0 0 0 8px rgba(196,124,46,0); }
-  }
 
   /* ── Shimmer (skeleton loaders) ── */
   @keyframes shimmer {
@@ -210,17 +217,13 @@ export const GLOBAL_CSS = `
   }
   .film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
 
-  /* ── Accessibility: interactive elements always have enough contrast ── */
-  /* Any button that inherits colour from a parent needs a legible floor  */
-  button:not([style]) { color: var(--film-cream); }
-
   /* ── Responsive breakpoints ── */
   @media (max-width: 900px) {
     .film-perforation { display: none !important; }
   }
   @media (max-width: 768px) {
-    .nav-links-desktop   { display: none !important; }
-    .nav-mobile-toggle   { display: flex !important; }
+    .nav-links-desktop    { display: none !important; }
+    .nav-mobile-toggle    { display: flex !important; }
     .desktop-reel-section { display: none !important; }
     .mobile-reel-section  { display: block !important; }
   }
@@ -229,21 +232,12 @@ export const GLOBAL_CSS = `
     .desktop-reel-section { display: block !important; }
     .mobile-reel-section  { display: none !important; }
   }
-
-  /* Contact sheet: 2 columns on small screens */
   @media (max-width: 600px) {
-    #atlas [style*='repeat(4'] {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
+    #atlas [style*='repeat(4'] { grid-template-columns: repeat(2, 1fr) !important; }
   }
-
-  /* Combined section integrations grid: 1 col on mobile */
   @media (max-width: 640px) {
-    #combined [style*='repeat(3'] {
-      grid-template-columns: 1fr !important;
-    }
+    #combined [style*='repeat(3'] { grid-template-columns: 1fr !important; }
   }
-
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
