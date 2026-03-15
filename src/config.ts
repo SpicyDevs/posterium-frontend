@@ -16,6 +16,8 @@ export const SITE_CONFIG = {
   ogImageUrl: 'https://posters.spicydevs.xyz/og-image.jpg',
   ogImageWidth: 1200,
   ogImageHeight: 630,
+  author: 'SpicyDevs',
+  authorUrl: 'https://spicydevs.xyz',
 } as const;
 
 // ── Shared sub-types ──────────────────────────────────────────────────────────
@@ -40,21 +42,23 @@ export interface TwitterMeta {
 }
 
 // ── Per-route override shape ──────────────────────────────────────────────────
-// Every field is optional - missing fields fall back to SEO_DEFAULTS in the engine.
 export interface RouteSEOMeta {
   title: string;
   description: string;
+  keywords: string;
   canonical?: string;
   og?: Partial<OGMeta>;
   twitter?: Partial<TwitterMeta>;
   noindex?: boolean;
+  /** JSON-LD schema objects to inject as <script type="application/ld+json"> */
+  jsonLd?: object[];
 }
 
 // ── Global fallback defaults ──────────────────────────────────────────────────
-// Applied to any route not listed in ROUTE_SEO, or to any key not overridden.
 export const SEO_DEFAULTS: {
   title: string;
   description: string;
+  keywords: string;
   canonical: string;
   og: OGMeta;
   twitter: TwitterMeta;
@@ -64,6 +68,10 @@ export const SEO_DEFAULTS: {
     'Generate custom movie and TV show posters with rating badges ' +
     'from IMDb, Rotten Tomatoes, Metacritic and more! All from a single ' +
     'API URL. Free, open source, no account required.',
+  keywords:
+    'movie poster generator, TV poster API, IMDb rating badge, Rotten Tomatoes badge, ' +
+    'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
+    'Jellyfin poster, movie rating overlay, poster with ratings',
   canonical: SITE_CONFIG.baseUrl,
 
   og: {
@@ -91,22 +99,139 @@ export const SEO_DEFAULTS: {
   },
 };
 
+// ── Reusable JSON-LD schemas ──────────────────────────────────────────────────
+const ORGANIZATION_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'SpicyDevs',
+  url: SITE_CONFIG.authorUrl,
+  sameAs: [SITE_CONFIG.github],
+};
+
+const SOFTWARE_APP_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Posterium',
+  alternateName: ['Free Poster API', 'Movie Poster Generator', 'Rating Poster Generator'],
+  url: `${SITE_CONFIG.baseUrl}/`,
+  applicationCategory: 'MultimediaApplication',
+  applicationSubCategory: 'Photo Editing',
+  operatingSystem: 'Web Browser',
+  browserRequirements: 'Requires JavaScript. Requires a modern browser.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+  description:
+    'Free online movie and TV poster generator with live rating badges from IMDb, ' +
+    'Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. No account required.',
+  screenshot: SITE_CONFIG.ogImageUrl,
+  softwareVersion: '2.0',
+  inLanguage: 'en',
+  isAccessibleForFree: true,
+  featureList: [
+    'Live IMDb rating badges',
+    'Rotten Tomatoes score overlays',
+    'Metacritic score badges',
+    'TMDB rating display',
+    'Letterboxd rating badges',
+    'MAL and AniList anime ratings',
+    'Drag-and-drop poster editor',
+    'SVG, PNG, JPG, WebP export',
+    'Plex and Jellyfin compatible',
+    'No account or API key required',
+  ],
+};
+
+const WEBSITE_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Posterium',
+  url: `${SITE_CONFIG.baseUrl}/`,
+  description:
+    'Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.',
+  publisher: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE_CONFIG.baseUrl}/build?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const HOME_FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Posterium?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium is a free, open-source API and visual editor that generates movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, and AniList. No account or API key is required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is the Posterium API free?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Posterium is completely free with no rate limits. You can generate unlimited posters using a simple URL without creating an account.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I use Posterium with Plex or Jellyfin?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Paste the Posterium API URL directly into the custom poster field in Plex or Jellyfin. The poster will update automatically with live ratings each time it is fetched.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What rating sources does Posterium support?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList (MAL), and AniList ratings. You can display multiple badges on a single poster.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What image formats can Posterium export?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium can export posters in SVG (lossless vector), PNG, JPG, and WebP formats. SVG is ideal for Plex and Jellyfin, while PNG and JPG work universally.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Posterium support anime posters?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Posterium supports anime posters with MAL (MyAnimeList) and AniList rating badges, in addition to standard movie and TV show posters.',
+      },
+    },
+  ],
+};
+
 // ── Route dictionary ──────────────────────────────────────────────────────────
-// Keys must exactly match window.location.pathname values used by the custom
-// router in src/Router.tsx (pushState targets).
-// Add new routes here - no other file needs to change.
 export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
   '/': {
-    title: 'Posterium - Posters with Ratings!',
+    title: 'Posterium - Free Movie & TV Poster Generator with Live Ratings',
     description:
       'Generate custom movie and TV show posters with IMDb, Rotten Tomatoes, ' +
       'Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account ' +
       'required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more.',
+    keywords:
+      'movie poster generator, free poster API, IMDb rating badge, Rotten Tomatoes poster, ' +
+      'Metacritic badge, TMDB poster generator, Plex custom poster, Jellyfin poster, ' +
+      'letterboxd badge, anime poster MAL, free movie API, rating overlay poster, ' +
+      'movie poster with ratings, TV show poster generator, rating poster database alternative',
     canonical: `${SITE_CONFIG.baseUrl}/`,
     og: {
       type: 'website',
       url: `${SITE_CONFIG.baseUrl}/`,
-      title: 'Posterium - Posters with Ratings!',
+      title: 'Posterium - Free Movie & TV Poster Generator with Live Ratings',
       description:
         'Generate custom posters with live rating badges from IMDb, RT, Metacritic, ' +
         'TMDB, and more. Free, open source, no account required.',
@@ -117,27 +242,76 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
         'Generate custom posters with live rating badges. Free API, no account needed. ' +
         'Perfect for Plex, Jellyfin, and Discord bots.',
     },
+    jsonLd: [ORGANIZATION_SCHEMA, SOFTWARE_APP_SCHEMA, WEBSITE_SCHEMA, HOME_FAQ_SCHEMA],
   },
 
   '/build': {
-    title: 'Poster Builder - Posterium',
+    title: 'Poster Builder - Drag & Drop Editor | Posterium',
     description:
       'Drag-and-drop poster editor with real-time preview. Position rating badges ' +
       'pixel-perfectly on any movie or TV poster. Supports IMDb, Rotten Tomatoes, ' +
-      'Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, ' +
-      'or WebP.',
+      'Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, or WebP.',
+    keywords:
+      'poster editor, drag drop poster builder, movie poster editor online, ' +
+      'IMDb badge position, rating badge editor, custom poster builder, ' +
+      'free poster editor, movie poster designer, TV poster creator, ' +
+      'export poster SVG PNG, Plex poster builder, Jellyfin poster editor',
     canonical: `${SITE_CONFIG.baseUrl}/build`,
     og: {
       type: 'website',
       url: `${SITE_CONFIG.baseUrl}/build`,
-      title: 'Poster Builder - Posterium',
+      title: 'Poster Builder - Drag & Drop Editor | Posterium',
       description:
         'Drag-and-drop poster editor with real-time preview and live API URL ' +
         'generation. Export as SVG, PNG, JPG, or WebP.',
     },
     twitter: {
-      title: 'Poster Builder - Posterium',
+      title: 'Poster Builder - Drag & Drop Editor | Posterium',
       description: 'Drag-and-drop poster editor with live API URL generation. Free, no account.',
     },
+    jsonLd: [
+      ORGANIZATION_SCHEMA,
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Posterium Poster Builder',
+        url: `${SITE_CONFIG.baseUrl}/build`,
+        applicationCategory: 'DesignApplication',
+        operatingSystem: 'Web Browser',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        author: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+        description:
+          'Visual drag-and-drop editor for building custom movie and TV posters with ' +
+          'live rating badge overlays. Real-time preview with instant API URL export.',
+        isAccessibleForFree: true,
+        featureList: [
+          'Drag-and-drop badge positioning',
+          'Real-time poster preview',
+          'Per-badge styling controls',
+          'Undo/redo history',
+          'Keyboard shortcuts',
+          'API URL generation',
+          'Multiple export formats',
+        ],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Posterium Home',
+            item: `${SITE_CONFIG.baseUrl}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Poster Builder',
+            item: `${SITE_CONFIG.baseUrl}/build`,
+          },
+        ],
+      },
+    ],
   },
 };
