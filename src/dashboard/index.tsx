@@ -26,20 +26,56 @@ const SHIMMER_CSS = `
   }
 `;
 
+// ─────────────────────────────────────────────────────────────────────
+// COLORIZE: authentic CRT / old-TV B&W → colour flicker.
+//
+// Phase 1 (0–6 %): phosphor-tube power-on surge — two brightness spikes
+//   then stabilise to a clean B&W picture.
+// Phase 2 (6–52 %): sitting in black-and-white.
+// Phase 3 (52–64 %): colour dial turned — signal tries to lock on.
+//   Four rapid B&W ↔ colour flips with intentional oversaturation on each
+//   colour frame so the "click" is unmistakably visible against B&W.
+// Phase 4 (64–100 %): colour locked, brief oversaturation ramps back to
+//   natural.
+//
+// The total duration is 6.4 s so the viewer has ≈ 3 s in B&W before
+// the payoff — long enough to register but not long enough to frustrate.
+// ─────────────────────────────────────────────────────────────────────
 const COLORIZE_CSS = `
-  .intro-colorize { animation: intro-colorize 5.2s ease-out forwards; }
+  .intro-colorize { animation: intro-colorize 6.4s ease-out forwards; }
+
   @keyframes intro-colorize {
-    0%    { filter: grayscale(1) contrast(1.06) brightness(0.88); }
-    57%   { filter: grayscale(1) contrast(1.06) brightness(0.88); }
-    58%   { filter: grayscale(0) contrast(1.18) brightness(1.12) saturate(1.3); }
-    59%   { filter: grayscale(1) contrast(0.92) brightness(0.82); }
-    61%   { filter: grayscale(0) contrast(1.1)  brightness(1.06); }
-    62.5% { filter: grayscale(0.85) contrast(0.96); }
-    64%   { filter: grayscale(0) brightness(1.08); }
-    65.5% { filter: grayscale(0.5) contrast(1.02); }
-    68%   { filter: grayscale(0) brightness(1.04); }
-    72%   { filter: grayscale(0.18); }
-    76%   { filter: grayscale(0); }
+    /* ── Phase 1: CRT surge on ───────────────────────────── */
+    0%    { filter: grayscale(1) brightness(0)   contrast(1.2); }
+    0.8%  { filter: grayscale(1) brightness(3.2) contrast(2.4); }  /* phosphor burst  */
+    1.8%  { filter: grayscale(1) brightness(0.3) contrast(1.5); }  /* dim rebound     */
+    3.0%  { filter: grayscale(1) brightness(1.8) contrast(1.9); }  /* second surge    */
+    4.2%  { filter: grayscale(1) brightness(0.8) contrast(1.2); }  /* near-stabilised */
+    6.0%  { filter: grayscale(1) contrast(1.06) brightness(0.88); }/* stable B&W      */
+
+    /* ── Phase 2: B&W viewing ───────────────────────────── */
+    52%   { filter: grayscale(1) contrast(1.06) brightness(0.88); }
+
+    /* ── Phase 3: colour dial — rapid lock-on flickers ──── */
+    /* Flip 1: colour burst */
+    53.2% { filter: grayscale(0) brightness(1.55) contrast(1.6) saturate(3.2) hue-rotate(10deg); }
+    /* Flip 1: back to B&W */
+    54.0% { filter: grayscale(1) brightness(0.78) contrast(1.12); }
+    /* Flip 2: colour */
+    54.9% { filter: grayscale(0) brightness(1.35) contrast(1.4) saturate(2.6); }
+    /* Flip 2: back to B&W */
+    55.7% { filter: grayscale(1) brightness(0.82) contrast(1.08); }
+    /* Flip 3: colour — stays this time */
+    56.8% { filter: grayscale(0) brightness(1.22) contrast(1.3) saturate(2.1); }
+    /* Brief partial B&W slip */
+    57.8% { filter: grayscale(0.45) brightness(0.95) contrast(1.05); }
+    /* Colour locks in */
+    59.5% { filter: grayscale(0) brightness(1.14) contrast(1.18) saturate(1.7); }
+
+    /* ── Phase 4: settle to natural colour ──────────────── */
+    63%   { filter: grayscale(0) brightness(1.08) saturate(1.3); }
+    70%   { filter: grayscale(0) brightness(1.04) saturate(1.12); }
+    80%   { filter: grayscale(0) saturate(1.04); }
     100%  { filter: grayscale(0); }
   }
 `;

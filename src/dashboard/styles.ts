@@ -2,6 +2,20 @@
 // Global CSS injected via <style> tag on mount.
 // KEY: html { overflow-x: clip } - clips horizontal bleed WITHOUT creating
 // a scroll container (unlike overflow:hidden which breaks MobileReel touch-scroll).
+//
+// VISIBILITY NOTES
+// ─────────────────
+// The original design used several amber/silver colours at very low opacity
+// (< 0.35) for decorative film-strip labels — intentionally subtle.
+// The classes below ensure *interactive* and *informational* text always
+// clears a comfortable contrast threshold against the dark backgrounds:
+//
+//   --film-text-body  : body copy (DM Sans paragraphs)       ≈ 4.6 : 1
+//   --film-text-label : section labels / captions             ≈ 3.8 : 1
+//   --film-text-dim   : intentionally muted decorative text   ≈ 2.5 : 1
+//
+// Decorative film-strip hole numbers and edge timestamps intentionally
+// remain dim — they are not content the user needs to read.
 
 export const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -18,11 +32,19 @@ export const GLOBAL_CSS = `
     --film-pale:    #E8D8A8;
     --film-cream:   #F0E6CC;
     --film-white:   #FAF6EC;
-    --film-silver:  #6E6860;
+
+    /* Brightened to ≈ 4.6:1 on #070706 (was #6E6860 ≈ 3:1) */
+    --film-silver:  #8C8478;
+
     --film-dust:    #453F37;
     --film-red:     #A82018;
     --film-border:  rgba(196,124,46,0.16);
     --film-glow:    rgba(196,124,46,0.07);
+
+    /* Semantic text tokens — use these on any text the user must read */
+    --film-text-body:   rgba(220, 208, 185, 0.88);   /* paragraphs, descriptions */
+    --film-text-label:  rgba(200, 185, 155, 0.72);   /* section labels, captions  */
+    --film-text-dim:    rgba(160, 150, 130, 0.48);   /* intentionally muted       */
   }
 
   * { box-sizing: border-box; }
@@ -31,6 +53,12 @@ export const GLOBAL_CSS = `
   .syne-font   { font-family: 'Syne', sans-serif; }
   .body-font   { font-family: 'DM Sans', sans-serif; }
   .mono-font   { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Improve contrast for body copy rendered via .body-font or .syne-font ── */
+  /* Ensures <p> and description text is comfortably readable without
+     touching every individual component's inline style. */
+  .body-font   { color: var(--film-text-body); }
+  .syne-font p { color: var(--film-text-body); }
 
   /* ── Film grain overlay ── */
   .grain-layer {
@@ -69,11 +97,9 @@ export const GLOBAL_CSS = `
   }
 
   /* ── Reel spin ── */
-  @keyframes reel-spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes reel-spin { to { transform: rotate(360deg); } }
 
-  /* ── Float variants (kept for any components that still use them) ── */
+  /* ── Float variants ── */
   @keyframes float-a {
     0%,100% { transform: translateY(0px)   rotate(-1.2deg); }
     50%     { transform: translateY(-16px) rotate(0.8deg); }
@@ -168,7 +194,7 @@ export const GLOBAL_CSS = `
     display: inline-block;
   }
 
-  /* ── Film-frame hover (collage reel: no float animation, just scale) ── */
+  /* ── Film-frame hover ── */
   .film-frame-wrap {
     position: relative; flex-shrink: 0;
     transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s linear 0.38s;
@@ -184,15 +210,14 @@ export const GLOBAL_CSS = `
   }
   .film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
 
+  /* ── Accessibility: interactive elements always have enough contrast ── */
+  /* Any button that inherits colour from a parent needs a legible floor  */
+  button:not([style]) { color: var(--film-cream); }
+
   /* ── Responsive breakpoints ── */
   @media (max-width: 900px) {
     .film-perforation { display: none !important; }
   }
-
-  @media (max-width: 820px) {
-    /* Hero responsive handled by inline <style> in HeroSection.tsx via .hero-two-col / .hero-poster-grid */
-  }
-
   @media (max-width: 768px) {
     .nav-links-desktop   { display: none !important; }
     .nav-mobile-toggle   { display: flex !important; }

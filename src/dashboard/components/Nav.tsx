@@ -1,257 +1,253 @@
-// src/dashboard/components/Nav.tsx
-import { memo, useState, useCallback, useEffect } from 'react';
-import { Link } from '../../Router';
-import { Github, Menu, X } from 'lucide-react';
+// src/dashboard/styles.ts
+// Global CSS injected via <style> tag on mount.
+// KEY: html { overflow-x: clip } - clips horizontal bleed WITHOUT creating
+// a scroll container (unlike overflow:hidden which breaks MobileReel touch-scroll).
+//
+// VISIBILITY NOTES
+// ─────────────────
+// The original design used several amber/silver colours at very low opacity
+// (< 0.35) for decorative film-strip labels — intentionally subtle.
+// The classes below ensure *interactive* and *informational* text always
+// clears a comfortable contrast threshold against the dark backgrounds:
+//
+//   --film-text-body  : body copy (DM Sans paragraphs)       ≈ 4.6 : 1
+//   --film-text-label : section labels / captions             ≈ 3.8 : 1
+//   --film-text-dim   : intentionally muted decorative text   ≈ 2.5 : 1
+//
+// Decorative film-strip hole numbers and edge timestamps intentionally
+// remain dim — they are not content the user needs to read.
 
-const NAV_LINKS = [
-  { label: 'Reel', href: '#reel' },
-  { label: 'Features', href: '#combined' },
-  { label: 'Integrations', href: '#combined' },
-] as const;
+export const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
 
-const Nav = memo(() => {
-  const [visible, setVisible] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  html { overflow-x: clip; }
 
-  useEffect(() => {
-    const update = () => {
-      const heroH = window.innerHeight * 0.72;
-      setVisible(window.scrollY > heroH);
-      setScrolled(window.scrollY > heroH + 20);
-    };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, []);
+  :root {
+    --film-black:   #070706;
+    --film-dark:    #0E0D0B;
+    --film-mid:     #181612;
+    --film-char:    #222018;
+    --film-amber:   #C47C2E;
+    --film-gold:    #D4A245;
+    --film-pale:    #E8D8A8;
+    --film-cream:   #F0E6CC;
+    --film-white:   #FAF6EC;
 
-  return (
-    <>
-      <nav
-        aria-label="Main navigation"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 clamp(20px,4vw,56px)',
-          background: scrolled ? 'rgba(7,7,6,0.97)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(24px) saturate(1.3)' : 'none',
-          borderBottom: scrolled
-            ? '1px solid rgba(255,255,255,0.055)'
-            : '1px solid transparent',
-          justifyContent: 'space-between',
-          gap: 24,
-          // Hide nav during hero - slide in from top after scroll
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-          pointerEvents: visible ? 'all' : 'none',
-          transition: 'opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1), background 0.35s ease, border-color 0.35s ease',
-        }}
-      >
-        {/* Wordmark */}
-        <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-          <span
-            className="poster-font"
-            style={{
-              fontSize: 20,
-              color: 'var(--film-cream)',
-              letterSpacing: '0.1em',
-              lineHeight: 1,
-            }}
-          >
-            POSTERIUM
-          </span>
-        </Link>
+    /* Brightened to ≈ 4.6:1 on #070706 (was #6E6860 ≈ 3:1) */
+    --film-silver:  #8C8478;
 
-        {/* Centre links - desktop only */}
-        <div
-          className="nav-links-desktop"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flex: 1,
-            justifyContent: 'center',
-            gap: 0,
-          }}
-        >
-          {NAV_LINKS.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="syne-font"
-              style={{
-                color: 'rgba(110,104,96,0.65)',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '4px 14px',
-                textDecoration: 'none',
-                transition: 'color 0.18s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.65)';
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </div>
+    --film-dust:    #453F37;
+    --film-red:     #A82018;
+    --film-border:  rgba(196,124,46,0.16);
+    --film-glow:    rgba(196,124,46,0.07);
 
-        {/* Right side */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-          <a
-            href="https://github.com/xdaayush/freeposterapi"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
-            className="nav-links-desktop"
-            style={{
-              color: 'rgba(110,104,96,0.55)',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '6px 8px',
-              borderRadius: 4,
-              transition: 'color 0.18s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)';
-            }}
-          >
-            <Github size={15} />
-          </a>
+    /* Semantic text tokens — use these on any text the user must read */
+    --film-text-body:   rgba(220, 208, 185, 0.88);   /* paragraphs, descriptions */
+    --film-text-label:  rgba(200, 185, 155, 0.72);   /* section labels, captions  */
+    --film-text-dim:    rgba(160, 150, 130, 0.48);   /* intentionally muted       */
+  }
 
-          <Link
-            to="/build"
-            className="syne-font"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              background: 'var(--film-amber)',
-              color: '#070706',
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              padding: '7px 16px',
-              borderRadius: 3,
-              flexShrink: 0,
-            }}
-          >
-            Build
-          </Link>
+  * { box-sizing: border-box; }
 
-          {/* Mobile hamburger */}
-          <button
-            className="nav-mobile-toggle"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            style={{
-              background: 'none',
-              border: '1px solid rgba(255,255,255,0.07)',
-              color: 'var(--film-silver)',
-              width: 34,
-              height: 34,
-              borderRadius: 4,
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {menuOpen ? <X size={14} /> : <Menu size={14} />}
-          </button>
-        </div>
-      </nav>
+  .poster-font { font-family: 'Bebas Neue', cursive; letter-spacing: 0.04em; }
+  .syne-font   { font-family: 'Syne', sans-serif; }
+  .body-font   { font-family: 'DM Sans', sans-serif; }
+  .mono-font   { font-family: 'JetBrains Mono', monospace; }
 
-      {/* Mobile drawer */}
-      {menuOpen && visible && (
-        <div
-          role="dialog"
-          aria-modal
-          aria-label="Navigation menu"
-          style={{
-            position: 'fixed',
-            top: 56,
-            left: 0,
-            right: 0,
-            background: 'rgba(7,7,6,0.98)',
-            backdropFilter: 'blur(24px)',
-            borderBottom: '1px solid rgba(255,255,255,0.055)',
-            padding: '6px 20px 14px',
-            zIndex: 99,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          {NAV_LINKS.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              onClick={closeMenu}
-              className="syne-font"
-              style={{
-                color: 'rgba(240,230,204,0.7)',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '0.07em',
-                textTransform: 'uppercase',
-                padding: '12px 8px',
-                textDecoration: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(240,230,204,0.7)';
-              }}
-            >
-              {label}
-            </a>
-          ))}
-          <a
-            href="https://github.com/xdaayush/freeposterapi"
-            target="_blank"
-            rel="noreferrer"
-            onClick={closeMenu}
-            className="syne-font"
-            style={{
-              color: 'rgba(240,230,204,0.5)',
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase',
-              padding: '12px 8px',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              marginTop: 2,
-            }}
-          >
-            <Github size={13} /> GitHub
-          </a>
-        </div>
-      )}
-    </>
-  );
-});
+  /* ── Improve contrast for body copy rendered via .body-font or .syne-font ── */
+  /* Ensures <p> and description text is comfortably readable without
+     touching every individual component's inline style. */
+  .body-font   { color: var(--film-text-body); }
+  .syne-font p { color: var(--film-text-body); }
 
-Nav.displayName = 'Nav';
-export default Nav;
+  /* ── Film grain overlay ── */
+  .grain-layer {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 186px 186px;
+    animation: grain-anim 0.14s steps(1) infinite;
+  }
+  @keyframes grain-anim {
+    0%   { transform: translate(0,0); }
+    14%  { transform: translate(-3%,-4%); }
+    28%  { transform: translate(4%,2%); }
+    42%  { transform: translate(-2%,5%); }
+    57%  { transform: translate(5%,-3%); }
+    71%  { transform: translate(-4%,3%); }
+    85%  { transform: translate(2%,-5%); }
+  }
+
+  /* ── Scan lines ── */
+  .scan-layer {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.01) 3px, rgba(0,0,0,0.01) 4px
+    );
+  }
+
+  /* ── Film flicker (hero overlay only) ── */
+  @keyframes hero-flicker-subtle {
+    0%, 97%, 100% { background: rgba(7,7,6,0);    }
+    97.4%         { background: rgba(7,7,6,0.05); }
+    97.8%         { background: rgba(7,7,6,0.02); }
+    98.2%         { background: rgba(7,7,6,0.07); }
+  }
+
+  /* ── Reel spin ── */
+  @keyframes reel-spin { to { transform: rotate(360deg); } }
+
+  /* ── Float variants ── */
+  @keyframes float-a {
+    0%,100% { transform: translateY(0px)   rotate(-1.2deg); }
+    50%     { transform: translateY(-16px) rotate(0.8deg); }
+  }
+  @keyframes float-b {
+    0%,100% { transform: translateY(-6px)  rotate(0.5deg); }
+    50%     { transform: translateY(12px)  rotate(-0.7deg); }
+  }
+  @keyframes float-c {
+    0%,100% { transform: translateY(4px)   rotate(-0.3deg); }
+    50%     { transform: translateY(-10px) rotate(0.4deg); }
+  }
+
+  /* ── Marquee ── */
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ── Hero reveals ── */
+  @keyframes hero-reveal {
+    from { opacity: 0; transform: translateY(36px) skewY(0.8deg); }
+    to   { opacity: 1; transform: translateY(0) skewY(0deg); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .h-a1 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+  .h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.2s  both; }
+  .h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
+  .h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
+  .h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
+
+  /* ── Amber pulse ── */
+  @keyframes amber-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(196,124,46,0.4); }
+    50%     { box-shadow: 0 0 0 8px rgba(196,124,46,0); }
+  }
+
+  /* ── Shimmer (skeleton loaders) ── */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  /* ── Glow CTA ── */
+  .glow-cta {
+    box-shadow: 0 0 26px rgba(196,124,46,0.2), 0 4px 16px rgba(0,0,0,0.42);
+    transition: box-shadow 0.3s ease, transform 0.25s ease;
+  }
+  .glow-cta:hover {
+    box-shadow: 0 0 44px rgba(196,124,46,0.4), 0 8px 28px rgba(0,0,0,0.52);
+    transform: translateY(-2px);
+  }
+  .glow-cta:active { transform: translateY(0); }
+
+  /* ── Custom range input ── */
+  input[type='range'] {
+    -webkit-appearance: none; appearance: none;
+    background: transparent; cursor: pointer; height: 100%; margin: 0;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--film-amber);
+    border: 1.5px solid rgba(7,7,6,0.8);
+    margin-top: -5px; cursor: pointer;
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--film-amber);
+    border: 1.5px solid rgba(7,7,6,0.8); cursor: pointer;
+  }
+
+  select option { background: #0E0D0B; color: #F0E6CC; }
+
+  /* ── Custom scrollbar ── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--film-black); }
+  ::-webkit-scrollbar-thumb { background: rgba(196,124,46,0.22); border-radius: 99px; }
+
+  /* ── Film tag util ── */
+  .film-tag {
+    background: rgba(196,124,46,0.1);
+    border: 1px solid rgba(196,124,46,0.28);
+    color: var(--film-amber); font-size: 9px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 2px;
+    font-family: 'Syne', sans-serif;
+    display: inline-block;
+  }
+
+  /* ── Film-frame hover ── */
+  .film-frame-wrap {
+    position: relative; flex-shrink: 0;
+    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s linear 0.38s;
+  }
+  .film-frame-wrap:hover {
+    transform: scale(1.05) translateY(-8px);
+    z-index: 10;
+    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s;
+  }
+  .film-frame-wrap .poster-detail-overlay {
+    position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.28s ease; pointer-events: none;
+  }
+  .film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
+
+  /* ── Accessibility: interactive elements always have enough contrast ── */
+  /* Any button that inherits colour from a parent needs a legible floor  */
+  button:not([style]) { color: var(--film-cream); }
+
+  /* ── Responsive breakpoints ── */
+  @media (max-width: 900px) {
+    .film-perforation { display: none !important; }
+  }
+  @media (max-width: 768px) {
+    .nav-links-desktop   { display: none !important; }
+    .nav-mobile-toggle   { display: flex !important; }
+    .desktop-reel-section { display: none !important; }
+    .mobile-reel-section  { display: block !important; }
+  }
+  @media (min-width: 769px) {
+    .nav-mobile-toggle    { display: none !important; }
+    .desktop-reel-section { display: block !important; }
+    .mobile-reel-section  { display: none !important; }
+  }
+
+  /* Contact sheet: 2 columns on small screens */
+  @media (max-width: 600px) {
+    #atlas [style*='repeat(4'] {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Combined section integrations grid: 1 col on mobile */
+  @media (max-width: 640px) {
+    #combined [style*='repeat(3'] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+`;

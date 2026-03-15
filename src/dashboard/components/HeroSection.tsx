@@ -6,6 +6,9 @@
 //  • Interval ref kept stable — no effect re-registration on every render.
 //  • All 6 poster imgs are in the DOM simultaneously; only opacity toggles
 //    (no mount/unmount), eliminating repeated fetches on slide change.
+//  • CULLING: IntersectionObserver pauses the carousel interval when the
+//    hero section is fully off-screen, saving CPU/GPU cycles while the user
+//    is browsing the lower sections.
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Link } from '../../Router';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -24,12 +27,12 @@ interface HeroPoster {
 }
 
 const HERO_POSTERS: HeroPoster[] = [
-  { id: '155',    type: 'movie', title: 'The Dark Knight',        r: 'imdb,rt',     pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                          blur: 8, alpha: 0.46, rad: 10 },
-  { id: '872585', type: 'movie', title: 'Oppenheimer',            r: 'rt,meta',     pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86',                          blur: 8, alpha: 0.46, rad: 10 },
-  { id: '238',    type: 'movie', title: 'The Godfather',          r: 'imdb',        pos: 'imdb_x=10&imdb_y=12',                                           blur: 7, alpha: 0.44, rad: 10 },
-  { id: '680',    type: 'movie', title: 'Pulp Fiction',           r: 'imdb,rt,meta',pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',     blur: 8, alpha: 0.46, rad: 10 },
-  { id: '27205',  type: 'movie', title: 'Inception',              r: 'imdb,rt',     pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                          blur: 8, alpha: 0.46, rad: 10 },
-  { id: '278',    type: 'movie', title: 'The Shawshank Redemption', r: 'imdb',      pos: 'imdb_x=10&imdb_y=12',                                           blur: 7, alpha: 0.44, rad: 10 },
+  { id: '155',    type: 'movie', title: 'The Dark Knight',          r: 'imdb,rt',      pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                        blur: 8,  alpha: 0.46, rad: 10 },
+  { id: '872585', type: 'movie', title: 'Oppenheimer',              r: 'rt,meta',      pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86',                        blur: 8,  alpha: 0.46, rad: 10 },
+  { id: '238',    type: 'movie', title: 'The Godfather',            r: 'imdb',         pos: 'imdb_x=10&imdb_y=12',                                        blur: 7,  alpha: 0.44, rad: 10 },
+  { id: '680',    type: 'movie', title: 'Pulp Fiction',             r: 'imdb,rt,meta', pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',   blur: 8,  alpha: 0.46, rad: 10 },
+  { id: '27205',  type: 'movie', title: 'Inception',                r: 'imdb,rt',      pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                        blur: 8,  alpha: 0.46, rad: 10 },
+  { id: '278',    type: 'movie', title: 'The Shawshank Redemption', r: 'imdb',         pos: 'imdb_x=10&imdb_y=12',                                        blur: 7,  alpha: 0.44, rad: 10 },
 ];
 
 const TOTAL = HERO_POSTERS.length;
@@ -57,27 +60,47 @@ const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
   borderRight:  c.endsWith('r')   ? '1.5px solid rgba(196,124,46,0.45)' : 'none',
 });
 
+// ── CyclingPoster ──────────────────────────────────────────────────
+// Visible-culling: the IntersectionObserver tracks whether the hero
+// section is at all in the viewport. When it leaves (user scrolls to
+// the reel / stats / etc.) the interval callback becomes a no-op so
+// no state updates, no re-renders, and no cross-fade work while the
+// section is invisible. The interval itself keeps running at its normal
+// 4.5 s cadence to avoid a timer-restart pop when the user scrolls back.
 const CyclingPoster = memo(() => {
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [activeIdx, setActiveIdx]     = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [loaded, setLoaded] = useState<Record<number, boolean>>({ 0: false });
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loaded, setLoaded]           = useState<Record<number, boolean>>({ 0: false });
+  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sectionRef   = useRef<HTMLDivElement>(null);
+  const isVisibleRef = useRef(true); // tracks hero visibility without triggering re-renders
+
+  // ── Visibility culling ──────────────────────────────────────────
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => { isVisibleRef.current = entry.isIntersecting; },
+      { threshold: 0.05 } // fire as soon as 5 % of the section is visible / hidden
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const goTo = useCallback((next: number) => {
     setTransitioning(true);
-    // Short delay so the outgoing image can fade; then snap to new index
     setTimeout(() => {
       setActiveIdx(next);
-      // Clear will-change after transition completes to release GPU layer
       setTimeout(() => setTransitioning(false), 360);
     }, 50);
   }, []);
 
   const prev = useCallback(() => {
     setActiveIdx((i) => {
-      const next = (i - 1 + TOTAL) % TOTAL;
-      goTo(next);
-      return i; // actual change happens inside goTo timeout
+      const n = (i - 1 + TOTAL) % TOTAL;
+      goTo(n);
+      return i;
     });
   }, [goTo]);
 
@@ -89,10 +112,12 @@ const CyclingPoster = memo(() => {
     });
   }, [goTo]);
 
-  // Restart interval on manual navigation so we don't get a short cycle
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
+      // ── CULLING: skip update if hero is off-screen ────────────
+      if (!isVisibleRef.current) return;
+
       setActiveIdx((i) => {
         const n = (i + 1) % TOTAL;
         goTo(n);
@@ -108,27 +133,14 @@ const CyclingPoster = memo(() => {
     };
   }, [restartInterval]);
 
-  const handlePrev = useCallback(() => {
-    prev();
-    restartInterval();
-  }, [prev, restartInterval]);
-
-  const handleNext = useCallback(() => {
-    next();
-    restartInterval();
-  }, [next, restartInterval]);
-
-  const handleDot = useCallback((i: number) => {
-    goTo(i);
-    restartInterval();
-  }, [goTo, restartInterval]);
-
-  const onLoad = useCallback((i: number) => {
-    setLoaded((prev) => ({ ...prev, [i]: true }));
-  }, []);
+  const handlePrev = useCallback(() => { prev(); restartInterval(); }, [prev, restartInterval]);
+  const handleNext = useCallback(() => { next(); restartInterval(); }, [next, restartInterval]);
+  const handleDot  = useCallback((i: number) => { goTo(i); restartInterval(); }, [goTo, restartInterval]);
+  const onLoad     = useCallback((i: number) => { setLoaded((prev) => ({ ...prev, [i]: true })); }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+    // sectionRef is observed by IntersectionObserver for culling
+    <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       {/* Poster frame */}
       <div
         style={{
@@ -142,7 +154,6 @@ const CyclingPoster = memo(() => {
           boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)',
         }}
       >
-        {/* Corner marks */}
         {CORNERS.map((c) => (
           <div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />
         ))}
@@ -154,7 +165,6 @@ const CyclingPoster = memo(() => {
             src={POSTER_SRCS[i]}
             alt={p.title}
             loading={i === 0 ? 'eager' : 'lazy'}
-            // fetchpriority is a valid HTML attribute; cast to any for TS
             {...(i === 0 ? { fetchpriority: 'high' } as unknown as object : {})}
             decoding={i === 0 ? 'sync' : 'async'}
             onLoad={() => onLoad(i)}
@@ -163,7 +173,6 @@ const CyclingPoster = memo(() => {
               width: '100%', height: '100%',
               objectFit: 'cover', display: 'block',
               opacity: i === activeIdx ? 1 : 0,
-              // Apply will-change only during the active transition
               willChange: transitioning && i === activeIdx ? 'opacity' : 'auto',
               transition: 'opacity 0.35s ease',
               pointerEvents: 'none',
@@ -329,7 +338,7 @@ const HeroSection = memo(() => (
           {([['∞', 'Free API calls'], ['10+', 'Rating sources'], ['0', 'Auth required']] as const).map(([val, label]) => (
             <div key={label}>
               <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>{val}</div>
-              <div className="mono-font" style={{ fontSize: 8, color: 'rgba(110,104,96,0.5)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
+              <div className="mono-font" style={{ fontSize: 8, color: 'rgba(200,185,155,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
             </div>
           ))}
         </div>

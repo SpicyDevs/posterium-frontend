@@ -1,3 +1,42 @@
+# public/_headers
+# ─────────────────────────────────────────────────────────────────────
+# Cloudflare Pages — HTTP response headers
+#
+# CF CACHING PRIMER
+# ─────────────────
+# CF Pages respects standard Cache-Control.  The edge will cache any
+# response whose Cache-Control includes `public` AND either:
+#   • max-age / s-maxage > 0
+#   • immutable keyword
+#
+# Key patterns used here:
+#
+#   /index.html           — must-revalidate so deploys are reflected immediately.
+#                           CF edge always re-fetches; users get the freshest HTML.
+#
+#   /assets/*             — content-addressed hashes in filenames (Vite default).
+#                           Safe to cache for 1 year; new deploy = new filename.
+#                           `immutable` tells CF and browsers to never revalidate.
+#
+#   /fonts/*              — same as assets; font bytes never change for a given URL.
+#
+#   /og-image.jpg etc.    — stable public images; 7-day browser + 30-day edge TTL.
+#
+# EARLY HINTS (103)
+# ─────────────────
+# CF Pages automatically generates 103 Early Hints from `Link` preload
+# headers on the HTML document.  We hint the two heaviest above-the-fold
+# resources: the first poster image (served from the API worker) and the
+# critical font chunk so the browser can open connections before HTML is
+# fully parsed.
+#
+# NOTE: The API poster URL varies per user, so we hint the base origin
+# only (preconnect), not a specific image.  The font is preconnected to
+# Google Fonts.  The woff2 from vite-plugin-webfont-dl is served from
+# /fonts/ so we can preload it directly.
+# ─────────────────────────────────────────────────────────────────────
+
+# ── Universal security headers ─────────────────────────────────────
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
@@ -6,27 +45,63 @@
   X-XSS-Protection: 1; mode=block
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
+# ── HTML entry — never cache stale, emit Early Hints for CF edge ───
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
+  # CF Pages emits 103 Early Hints for these Link headers automatically.
+  # preconnect to the API origin so the first poster request skips DNS+TCP
+  Link: <https://api.spicydevs.xyz>; rel=preconnect
+  # preconnect to Google Fonts (used for the inline @import in styles.ts)
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://api.spicydevs.xyz https://api.themoviedb.org https://image.tmdb.org
 
 /404.html
   Cache-Control: public, max-age=0, must-revalidate
 
+# ── Hashed static assets — cache 1 year at edge + browser ─────────
+# Vite appends a content-hash to every asset filename, so these URLs
+# are immutable for their entire lifetime.  CF edge will store them
+# until they are purged or the zone is cleared.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
 
+# ── Self-hosted fonts (vite-plugin-webfont-dl output) ─────────────
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+  # Allow the font to be used cross-origin (e.g. if a /build sub-path
+  # is served from a different origin in future).
+  Access-Control-Allow-Origin: *
 
+# ── Sitemaps / robots ──────────────────────────────────────────────
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
+  # Short TTL — robots.txt can legitimately change at any time
   Cache-Control: public, max-age=3600, must-revalidate
 
+# ── Static images (OG, icons) ─────────────────────────────────────
+# Browser: 7 days.  CF edge: 30 days (s-maxage).
+# "stale-while-revalidate" lets CF serve a slightly stale copy while
+# it fetches a fresh one in the background, eliminating perceived latency.
 /og-image.jpg
   Content-Type: image/jpeg
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
+
+/icon-192.png
+  Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
+
+/icon-512.png
+  Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
+
+/icon.svg
+  Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
+
+# ── Web manifest ──────────────────────────────────────────────────
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400, must-revalidate
