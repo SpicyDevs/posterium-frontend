@@ -9,6 +9,11 @@
 //  • CULLING (flicker): imports crtFlickering from dashboard/index.tsx;
 //    the interval callback is a no-op during the CRT intro so the hero
 //    doesn't visibly cycle while the screen is black or B&W.
+//  • LOAD-GATED ADVANCE: goTo() checks loadedRef before transitioning.
+//    If the next image hasn't finished loading, the advance is recorded
+//    in pendingAdvanceRef and fired by onLoad() once the image arrives.
+//    loadedRef (not state) is used so goTo/restartInterval remain stable
+//    and the interval never restarts mid-cycle due to a load event.
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Link } from '../../Router';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -62,9 +67,15 @@ const CyclingPoster = memo(() => {
   const [activeIdx, setActiveIdx]         = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [loaded, setLoaded]               = useState<Record<number, boolean>>({ 0: false });
+
+  // Ref mirrors avoid stale-closure reads inside interval/timeout callbacks
+  // without causing the interval to restart on every image load.
+  const loadedRef         = useRef<Record<number, boolean>>({ 0: false });
+  const pendingAdvanceRef = useRef<number | null>(null); // waiting for this index to finish loading
+
   const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef    = useRef<HTMLDivElement>(null);
-  const isVisibleRef  = useRef(true);   // scroll visibility culling
+  const isVisibleRef  = useRef(true);
 
   // ── Scroll culling ────────────────────────────────────────────
   useEffect(() => {
@@ -78,7 +89,8 @@ const CyclingPoster = memo(() => {
     return () => obs.disconnect();
   }, []);
 
-  const goTo = useCallback((next: number) => {
+  // ── Execute the actual cross-fade (image guaranteed loaded) ───
+  const doTransition = useCallback((next: number) => {
     setTransitioning(true);
     setTimeout(() => {
       setActiveIdx(next);
@@ -86,12 +98,25 @@ const CyclingPoster = memo(() => {
     }, 50);
   }, []);
 
+  // ── goTo: advance immediately if loaded, else mark pending ────
+  // Uses loadedRef so the function stays stable (no dep on `loaded` state),
+  // preventing restartInterval from re-running every time an image loads.
+  const goTo = useCallback((next: number) => {
+    if (!loadedRef.current[next]) {
+      // Image not ready — record intent; onLoad will fire the transition.
+      pendingAdvanceRef.current = next;
+      return;
+    }
+    pendingAdvanceRef.current = null;
+    doTransition(next);
+  }, [doTransition]);
+
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       // ── Dual culling: off-screen AND CRT intro ────────────────
       if (!isVisibleRef.current || crtFlickering) return;
-      setActiveIdx((i) => { const n = (i + 1) % TOTAL; goTo(n); return i; });
+      setActiveIdx((i) => { goTo((i + 1) % TOTAL); return i; });
     }, 4500);
   }, [goTo]);
 
@@ -111,7 +136,17 @@ const CyclingPoster = memo(() => {
   }, [goTo, restartInterval]);
 
   const handleDot  = useCallback((i: number) => { goTo(i); restartInterval(); }, [goTo, restartInterval]);
-  const onLoad     = useCallback((i: number) => { setLoaded((p) => ({ ...p, [i]: true })); }, []);
+
+  // ── onLoad: sync ref + state, then fire any pending advance ──
+  const onLoad = useCallback((i: number) => {
+    loadedRef.current = { ...loadedRef.current, [i]: true };
+    setLoaded((p) => ({ ...p, [i]: true }));
+    // If the carousel was waiting on exactly this image, advance now.
+    if (pendingAdvanceRef.current === i) {
+      pendingAdvanceRef.current = null;
+      doTransition(i);
+    }
+  }, [doTransition]);
 
   return (
     <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
@@ -130,7 +165,10 @@ const CyclingPoster = memo(() => {
             key={p.id}
             src={POSTER_SRCS[i]}
             alt={p.title}
-            loading={i === 0 ? 'eager' : 'lazy'}
+            // First image: highest priority (LCP).
+            // Images 1-2: eager so they're ready before the first auto-advance.
+            // The rest: lazy — they'll be fetched progressively as needed.
+            loading={i <= 2 ? 'eager' : 'lazy'}
             {...(i === 0 ? { fetchpriority: 'high' } as unknown as object : {})}
             decoding={i === 0 ? 'sync' : 'async'}
             onLoad={() => onLoad(i)}

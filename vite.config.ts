@@ -8,8 +8,18 @@ export default defineConfig({
 
   plugins: [
     react(),
+    // Both font URLs are downloaded at build time (and proxied in dev mode)
+    // so all fonts are served from the same origin — no Google CDN round-trip,
+    // no DNS lookup, no TLS negotiation, and no FOUT even on slow connections.
+    //
+    // The plugin rewrites the <link> in index.html to point at local /assets/
+    // paths automatically; no manual changes to index.html are needed.
     webfontDownload([
+      // Builder fonts (Plus Jakarta Sans)
       'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap',
+      // Dashboard fonts — display=block keeps the existing no-swap contract;
+      // serving locally means the block period is essentially zero on cache.
+      'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=block',
     ]),
   ],
 
@@ -48,17 +58,6 @@ export default defineConfig({
           }
         },
 
-        // ── FIX: include chunk name so build output is debuggable ──
-        // Old pattern `chunk-[hash].js` stripped the name, making it
-        // impossible to tell which chunk was which in the build log.
-        // New pattern `[name]-[hash].js` gives:
-        //   react-vendor-AbCdEf.js   (react + react-dom)
-        //   icons-AbCdEf.js          (lucide-react)
-        //   headlessui-AbCdEf.js
-        //   dnd-AbCdEf.js
-        //   helmet-AbCdEf.js
-        //   index-AbCdEf.js          (dashboard entry)
-        // The hash still guarantees long-term cache busting.
         chunkFileNames:  'assets/[name]-[hash].js',
         entryFileNames:  'assets/[name]-[hash].js',
         assetFileNames:  'assets/[name]-[hash][extname]',
