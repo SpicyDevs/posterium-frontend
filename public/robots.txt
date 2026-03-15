@@ -20,31 +20,3 @@ Crawl-delay: 1
 User-agent: YandexBot
 Allow: /
 Crawl-delay: 2
-
-# Block AI training scrapers
-User-agent: GPTBot
-Disallow: /
-
-User-agent: CCBot
-Disallow: /
-
-User-agent: anthropic-ai
-Disallow: /
-
-User-agent: claudebot
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
-
-User-agent: Omgilibot
-Disallow: /
-
-User-agent: ImagesiftBot
-Disallow: /
-
-User-agent: Diffbot
-Disallow: /
-
-User-agent: PerplexityBot
-Disallow: /
