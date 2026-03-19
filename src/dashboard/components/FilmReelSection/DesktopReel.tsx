@@ -92,7 +92,7 @@ const CollagePoster = memo<{
     }
   }, [onLoad, onError]);
 
-  const src = `${API}/${type}/${id}.png?${BADGE_PARAMS}`;
+  const src = `${API}/${type}/${id}.webp?${BADGE_PARAMS}`;
 
   return (
     <div
