@@ -1,41 +1,26 @@
 // src/dashboard/components/FilmReelSection/DesktopReel.tsx
-// ─────────────────────────────────────────────────────────────────────
-// REEL PERFORMANCE — DEFINITIVE FIX
-// ──────────────────────────────────
-// The jank comes from how browsers composite CSS filter + transform.
 //
-// WRONG (two previous attempts):
-//   Attempt 1: filter on 3 row divs inside the track
-//     → 3 × filter pass per frame on composited children = expensive
-//   Attempt 2: filter + willChange:transform on the SAME element
-//     → Chrome must apply the filter BEFORE compositing, which means
-//       it has to rasterize the entire track content first.
-//       On complex content (93 images) this is a main-thread paint.
+// PERFORMANCE — IMAGE LOAD GATING
+// ─────────────────────────────────
+// Previously, 93 <img> tags were added to the DOM at mount time.
+// Even with loading="lazy", browsers fire requests for images that are
+// within their lazy-load distance threshold (~1500px on fast connections).
+// Since the reel is the first below-fold section, many of these fired
+// during page load — competing directly with the hero LCP image on
+// api.spicydevs.xyz's 6-connection pool.
 //
-// CORRECT (this version):
+// Fix: gate all CollagePoster renders behind a one-shot IntersectionObserver.
+// Before the reel section is within 400px of the viewport, the track
+// renders skeleton placeholder divs of identical dimensions. Zero API calls.
+// Once triggered, images render and load progressively (lazy for non-visible,
+// eager for the first 6 in row 0).
+//
+// COMPOSITOR ARCHITECTURE (unchanged from previous version)
+// ──────────────────────────────────────────────────────────
 //   OUTER div: filter only — no willChange, no transform.
-//   INNER div (trackRef): willChange:transform + transform only — no filter.
-//
-//   Why this works:
-//   1. trackRef is promoted to a GPU compositor layer (willChange:transform).
-//      Its content (93 images) is rasterized ONCE and uploaded to VRAM.
-//   2. On each scroll frame, the JS writes translate3d to trackRef.
-//      The GPU just multiplies the transform matrix — NO rasterization.
-//   3. The outer div with filter receives the already-composited GPU texture
-//      of the track layer and applies the sepia/saturate/brightness as a
-//      GPU shader post-process — also no rasterization.
-//
-//   The outer div itself does NOT have willChange, so it does not create
-//   its own compositor layer.  It uses the normal compositing path, which
-//   means its filter is applied during the final "flatten" step — one cheap
-//   GPU texture operation per frame.
-//
-// Additional improvements:
-//  • contain: 'paint layout' removed from individual poster cells
-//    (was creating 93 stacking contexts and actually slowing compositing)
-//  • overflow: hidden on cells is sufficient paint containment
-//  • Amber tint overlay removed (redundant with sepia on outer wrapper)
-// ─────────────────────────────────────────────────────────────────────
+//   INNER div (trackRef): willChange:transform only — no filter.
+// This keeps the sepia filter as a one-pass GPU shader rather than
+// causing per-image rasterization.
 import { memo, useRef, useLayoutEffect, useEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '../../constants';
 import { useScrollReel } from '../../hooks';
@@ -81,8 +66,6 @@ const CollagePoster = memo<{
   const onLoad  = useCallback(() => setLoaded(true), []);
   const onError = useCallback(() => setErr(true), []);
 
-  // Handle already-cached images: onLoad won't fire if the browser
-  // completed loading before React attached the handler (e.g. on page reload).
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
@@ -98,11 +81,9 @@ const CollagePoster = memo<{
     <div
       style={{
         width, height, flexShrink: 0, position: 'relative',
-        overflow: 'hidden',             // paint containment without stacking context overhead
+        overflow: 'hidden',
         background: '#0d0c0a',
         borderRight: '1px solid rgba(0,0,0,0.7)',
-        // NO contain: paint layout — that creates 93 stacking contexts and
-        // prevents the browser from batching compositing efficiently.
       }}
     >
       {!loaded && !err && (
@@ -121,8 +102,6 @@ const CollagePoster = memo<{
         style={{
           width: '100%', height: '100%', objectFit: 'cover', display: 'block',
           opacity: loaded ? 1 : 0, transition: 'opacity 0.35s ease',
-          // NO individual filter here — sepia is applied by the outer wrapper
-          // at GPU post-process time, not per-image.
         }}
       />
     </div>
@@ -130,11 +109,68 @@ const CollagePoster = memo<{
 });
 CollagePoster.displayName = 'CollagePoster';
 
+// ── SkeletonRow — placeholder rendered before reel is in view ─────
+// Same dimensions as CollagePoster rows so the layout doesn't shift
+// when real images swap in. Uses the shimmer animation from dashboard.css.
+const SkeletonRow = memo<{ count: number; width: number; height: number }>(
+  ({ count, width, height }) => (
+    <div style={{ display: 'flex', flexDirection: 'row', gap: 0, height, overflow: 'hidden' }}>
+      {Array.from({ length: count }, (_, i) => (
+        <div
+          key={i}
+          style={{
+            width, height, flexShrink: 0,
+            background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
+            backgroundSize: '200% 100%',
+            animation: `shimmer 1.8s linear infinite`,
+            animationDelay: `${(i % 8) * 0.1}s`,
+            borderRight: '1px solid rgba(0,0,0,0.7)',
+          }}
+        />
+      ))}
+    </div>
+  )
+);
+SkeletonRow.displayName = 'SkeletonRow';
+
 // ── DesktopReel ───────────────────────────────────────────────────
 const DesktopReel = memo(() => {
   const containerRef    = useRef<HTMLDivElement>(null);
   const trackRef        = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
+  // Ref on the outer sticky section used for the IntersectionObserver gate
+  const sectionRef      = useRef<HTMLDivElement>(null);
+
+  // FIX: Gate flag — no img tags in the DOM until the reel section is
+  // within 400px of the viewport. Starts false. Flips to true once and
+  // never goes back (one-shot observer, same pattern as useInView).
+  const [imagesActive, setImagesActive] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      // Fallback: no IO support → load immediately
+      setImagesActive(true);
+      return;
+    }
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImagesActive(true);
+          obs.disconnect(); // one-shot
+        }
+      },
+      {
+        // 400px pre-load margin: images start loading slightly before
+        // the section scrolls into view so there's no visible delay.
+        rootMargin: '400px 0px',
+        threshold: 0,
+      }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   useLayoutEffect(() => {
     const recalc = () => {
@@ -168,10 +204,13 @@ const DesktopReel = memo(() => {
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
-      <div style={{
-        position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden',
-        background: 'var(--film-dark)', display: 'flex', flexDirection: 'column',
-      }}>
+      <div
+        ref={sectionRef}
+        style={{
+          position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden',
+          background: 'var(--film-dark)', display: 'flex', flexDirection: 'column',
+        }}
+      >
         {/* Header */}
         <div style={{ flexShrink: 0, padding: '14px 48px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(196,124,46,0.08)' }}>
           <div>
@@ -195,18 +234,9 @@ const DesktopReel = memo(() => {
           {/* Right feather */}
           <div aria-hidden="true" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 200, zIndex: 2, pointerEvents: 'none', background: 'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)' }} />
 
-          {/*
-            ── OUTER wrapper: FILTER only — no willChange, no transform ──
-            The GPU applies sepia/saturate/brightness as a shader on the
-            already-composited texture from the inner layer.  One GPU pass
-            per frame regardless of how many images are inside.
-          */}
+          {/* OUTER wrapper: filter only */}
           <div style={{ filter: 'sepia(0.18) saturate(0.72) brightness(0.9)' }}>
-            {/*
-              ── INNER wrapper (trackRef): willChange:transform only — no filter ──
-              Promoted to GPU compositor layer.  93 images rasterized ONCE.
-              On each scroll frame: GPU matrix multiply only — no repaint.
-            */}
+            {/* INNER wrapper: willChange:transform only */}
             <div
               ref={trackRef}
               style={{ display: 'flex', flexDirection: 'column', willChange: 'transform', gap: 0 }}
@@ -221,17 +251,35 @@ const DesktopReel = memo(() => {
                       display: 'flex', flexDirection: 'row', gap: 0,
                       height, overflow: 'hidden',
                       borderBottom: rowIdx < ROWS.length - 1 ? '2px solid rgba(0,0,0,0.8)' : 'none',
-                      // NO filter on rows — moved to outer wrapper
                     }}
                   >
-                    {row.slice(0, count).map((item, idx) => (
-                      <CollagePoster
-                        key={`r${rowIdx}-${item.id}-${item._slot}`}
-                        id={item.id} type={item.type} title={item.title}
-                        width={width} height={height}
-                        eager={rowIdx === 0 && idx < 6}
-                      />
-                    ))}
+                    {imagesActive
+                      ? row.slice(0, count).map((item, idx) => (
+                          <CollagePoster
+                            key={`r${rowIdx}-${item.id}-${item._slot}`}
+                            id={item.id} type={item.type} title={item.title}
+                            width={width} height={height}
+                            eager={rowIdx === 0 && idx < 6}
+                          />
+                        ))
+                      : (
+                          // Skeleton placeholders: same dimensions as real posters.
+                          // No API calls, no network requests, no layout shift on swap.
+                          Array.from({ length: count }, (_, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                width, height, flexShrink: 0,
+                                background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
+                                backgroundSize: '200% 100%',
+                                animation: 'shimmer 1.8s linear infinite',
+                                animationDelay: `${(idx % 10) * 0.08}s`,
+                                borderRight: '1px solid rgba(0,0,0,0.7)',
+                              }}
+                            />
+                          ))
+                        )
+                    }
                   </div>
                 );
               })}

@@ -1,19 +1,16 @@
 // src/dashboard/components/HeroSection.tsx
 // Performance notes:
-//  • fetchpriority="high" on the first poster image (LCP candidate).
+//  • fetchpriority="high" + decoding="sync" on image 0 (LCP candidate).
+//  • Images 1 is eager — starts loading immediately after 0 (next carousel slide).
+//  • Images 2–5: src is withheld until image 0 finishes loading.
+//    WHY: All 6 images hit the same origin (api.spicydevs.xyz). The browser
+//    pools connections per-origin (max 6). If all 6 src attrs are set at mount,
+//    all 6 fight for connection slots simultaneously. By withholding 2–5 until
+//    image 0 is done, image 0 gets the full connection pool to itself → LCP
+//    time drops by the full queue-wait duration.
 //  • will-change:opacity applied only while a cross-fade is in progress.
-//  • Interval ref stable — no effect re-registration on every render.
-//  • All 6 poster imgs in DOM simultaneously; only opacity toggles.
-//  • CULLING (scroll): IntersectionObserver pauses carousel when hero
-//    is off-screen — zero state updates, zero re-renders.
-//  • CULLING (flicker): imports crtFlickering from dashboard/index.tsx;
-//    the interval callback is a no-op during the CRT intro so the hero
-//    doesn't visibly cycle while the screen is black or B&W.
-//  • LOAD-GATED ADVANCE: goTo() checks loadedRef before transitioning.
-//    If the next image hasn't finished loading, the advance is recorded
-//    in pendingAdvanceRef and fired by onLoad() once the image arrives.
-//    loadedRef (not state) is used so goTo/restartInterval remain stable
-//    and the interval never restarts mid-cycle due to a load event.
+//  • Interval pauses when hero is off-screen (IntersectionObserver culling).
+//  • Interval pauses during CRT intro (crtFlickering flag).
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '../constants';
@@ -67,18 +64,20 @@ const CyclingPoster = memo(() => {
   const [transitioning, setTransitioning] = useState(false);
   const [loaded, setLoaded]               = useState<Record<number, boolean>>({ 0: false });
 
-  // Ref mirrors avoid stale-closure reads inside interval/timeout callbacks
-  // without causing the interval to restart on every image load.
+  // FIX: Track whether image 0 has finished loading.
+  // Images 2–5 will not receive a src until this is true.
+  // Image 1 is always loaded (it's the first carousel slide to auto-advance to).
+  const [heroZeroLoaded, setHeroZeroLoaded] = useState(false);
+
   const loadedRef         = useRef<Record<number, boolean>>({ 0: false });
-  const pendingAdvanceRef = useRef<number | null>(null); // waiting for this index to finish loading
+  const pendingAdvanceRef = useRef<number | null>(null);
 
   const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef    = useRef<HTMLDivElement>(null);
   const isVisibleRef  = useRef(true);
-  // Ref array for img elements — used to detect already-cached images on mount
   const imgRefs       = useRef<(HTMLImageElement | null)[]>([]);
 
-  // ── Scroll culling ────────────────────────────────────────────
+  // Scroll culling
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -90,7 +89,6 @@ const CyclingPoster = memo(() => {
     return () => obs.disconnect();
   }, []);
 
-  // ── Execute the actual cross-fade (image guaranteed loaded) ───
   const doTransition = useCallback((next: number) => {
     setTransitioning(true);
     setTimeout(() => {
@@ -99,12 +97,8 @@ const CyclingPoster = memo(() => {
     }, 50);
   }, []);
 
-  // ── goTo: advance immediately if loaded, else mark pending ────
-  // Uses loadedRef so the function stays stable (no dep on `loaded` state),
-  // preventing restartInterval from re-running every time an image loads.
   const goTo = useCallback((next: number) => {
     if (!loadedRef.current[next]) {
-      // Image not ready — record intent; onLoad will fire the transition.
       pendingAdvanceRef.current = next;
       return;
     }
@@ -115,7 +109,6 @@ const CyclingPoster = memo(() => {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      // ── Dual culling: off-screen AND CRT intro ────────────────
       if (!isVisibleRef.current || crtFlickering) return;
       setActiveIdx((i) => { goTo((i + 1) % TOTAL); return i; });
     }, 4500);
@@ -136,21 +129,24 @@ const CyclingPoster = memo(() => {
     restartInterval();
   }, [goTo, restartInterval]);
 
-  const handleDot  = useCallback((i: number) => { goTo(i); restartInterval(); }, [goTo, restartInterval]);
+  const handleDot = useCallback((i: number) => { goTo(i); restartInterval(); }, [goTo, restartInterval]);
 
-  // ── onLoad: sync ref + state, then fire any pending advance ──
   const onLoad = useCallback((i: number) => {
     loadedRef.current = { ...loadedRef.current, [i]: true };
     setLoaded((p) => ({ ...p, [i]: true }));
-    // If the carousel was waiting on exactly this image, advance now.
+
+    // FIX: Once image 0 is loaded, unlock deferred images 2–5.
+    // This is the critical sequencing: image 0 has had the full
+    // connection pool to itself. Now it's safe to queue the rest.
+    if (i === 0) setHeroZeroLoaded(true);
+
     if (pendingAdvanceRef.current === i) {
       pendingAdvanceRef.current = null;
       doTransition(i);
     }
   }, [doTransition]);
 
-  // Handle already-cached images: onLoad won't fire if the browser
-  // completed loading before React attached the handler (e.g. on page reload).
+  // Handle already-cached images
   useEffect(() => {
     imgRefs.current.forEach((img, i) => {
       if (img?.complete && img.naturalWidth > 0) onLoad(i);
@@ -169,29 +165,42 @@ const CyclingPoster = memo(() => {
       >
         {CORNERS.map((c) => <div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />)}
 
-        {HERO_POSTERS.map((p, i) => (
-          <img
-            key={p.id}
-            ref={(el) => { imgRefs.current[i] = el; }}
-            src={POSTER_SRCS[i]}
-            alt={p.title}
-            // First image: highest priority (LCP).
-            // Images 1-2: eager so they're ready before the first auto-advance.
-            // The rest: lazy — they'll be fetched progressively as needed.
-            loading={i <= 2 ? 'eager' : 'lazy'}
-            {...(i === 0 ? { fetchpriority: 'high' } as unknown as object : {})}
-            decoding={i === 0 ? 'sync' : 'async'}
-            onLoad={() => onLoad(i)}
-            style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: 'cover', display: 'block',
-              opacity: i === activeIdx ? 1 : 0,
-              willChange: transitioning && i === activeIdx ? 'opacity' : 'auto',
-              transition: 'opacity 0.35s ease',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        {HERO_POSTERS.map((p, i) => {
+          // FIX: Determine whether this image should have a src yet.
+          //
+          // Priority tiers:
+          //   0 → always: LCP image, fetchpriority=high, decoding=sync
+          //   1 → always: first carousel advance target, needs to be ready
+          //   2–5 → deferred: only receive src after image 0 finishes loading
+          //
+          // By withholding src for 2–5, the browser won't open connections
+          // for them during the critical window when image 0 is loading.
+          // Without this, all 6 compete for the 6-connection pool at once
+          // and image 0 gets no priority advantage despite fetchpriority=high.
+          const shouldLoad = i <= 1 || heroZeroLoaded;
+          const src = shouldLoad ? POSTER_SRCS[i] : undefined;
+
+          return (
+            <img
+              key={p.id}
+              ref={(el) => { imgRefs.current[i] = el; }}
+              src={src}
+              alt={p.title}
+              loading="eager"
+              {...(i === 0 ? { fetchpriority: 'high' } as unknown as object : {})}
+              decoding={i === 0 ? 'sync' : 'async'}
+              onLoad={() => onLoad(i)}
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover', display: 'block',
+                opacity: i === activeIdx ? 1 : 0,
+                willChange: transitioning && i === activeIdx ? 'opacity' : 'auto',
+                transition: 'opacity 0.35s ease',
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
 
         {!loaded[0] && (
           <div
