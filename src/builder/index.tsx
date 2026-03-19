@@ -11,8 +11,6 @@ import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import { RotateCcw, AlertTriangle, Undo2, Redo2 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
-import { Link } from '../Router';
-
 const STORAGE_KEY = 'posterium_config_v2';
 
 // ---------------------------------------------------------------------------
@@ -340,8 +338,8 @@ const StudioLayout: React.FC<{
         <header className="h-14 shrink-0 flex items-center gap-2 px-3 border-b border-white/6 bg-[#09090b] z-30">
           <div className="flex items-center gap-2 shrink-0">
             {/* Logo — navigates to homepage */}
-            <Link
-              to="/"
+            <a
+              href="/"
               className="relative group flex items-center gap-2 select-none"
               aria-label="Back to home"
             >
@@ -381,7 +379,7 @@ const StudioLayout: React.FC<{
               <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-200 border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg">
                 Home
               </span>
-            </Link>
+            </a>
           </div>
 
           <div className="hidden sm:block w-px h-5 bg-white/8 mx-1 shrink-0" />

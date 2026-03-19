@@ -1,0 +1,107 @@
+/* Tailwind v4 - single import replaces the old @tailwind directives */
+@import 'tailwindcss';
+
+/* ─── Global base fixes ─────────────────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /*
+   * Range inputs - define BOTH -webkit-appearance AND the standard appearance
+   * property so autoprefixer/browsers don't warn about missing the standard form.
+   */
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    height: 4px;
+    border-radius: 9999px;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    height: 4px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: #C47C2E;
+    margin-top: -5px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    transition: background 0.15s;
+  }
+
+  input[type='range']::-webkit-slider-thumb:hover {
+    background: #D4A245;
+  }
+
+  input[type='range']::-moz-range-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    height: 4px;
+    border: none;
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: #C47C2E;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+  }
+
+  /*
+   * Select elements - same -webkit-appearance + appearance pair.
+   */
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+/* ─── Custom utilities ──────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Used throughout the sidebar panels */
+  .sidebar-label {
+    @apply block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5;
+  }
+
+  /* Thin dark scrollbar - used in SidebarLayout and dropdowns */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}

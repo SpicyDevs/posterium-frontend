@@ -3,7 +3,6 @@
 // Performance: STRIPE_COUNT and SLATE_FIELDS are module-level — not recreated per render.
 import { memo } from 'react';
 import { ArrowRight, Github, Star } from 'lucide-react';
-import { Link } from '../../../Router';
 import { useInView } from '../../hooks';
 
 // Module-level stable arrays — no allocation inside render
@@ -80,13 +79,13 @@ export const CTASection = memo(() => {
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Link
-            to="/build"
+          <a
+            href="/build"
             className="glow-cta syne-font"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', padding: '13px 30px', borderRadius: 5 }}
           >
             Open Free Builder <ArrowRight size={13} />
-          </Link>
+          </a>
           <a
             href="https://github.com/xdaayush/freeposterapi"
             target="_blank"

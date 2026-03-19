@@ -15,7 +15,6 @@
 //    loadedRef (not state) is used so goTo/restartInterval remain stable
 //    and the interval never restarts mid-cycle due to a load event.
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { Link } from '../../Router';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '../constants';
 import { FilmEdge } from './primitives';
@@ -296,9 +295,9 @@ const HeroSection = memo(() => (
         </p>
 
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Link to="/build" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
+          <a href="/build" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
             Open Builder <ArrowRight size={12} />
-          </Link>
+          </a>
           <a href="#reel" className="syne-font"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--film-silver)', fontWeight: 600, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '11px 20px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', transition: 'border-color 0.2s, color 0.2s' }}
             onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(196,124,46,0.28)'; el.style.color = 'var(--film-cream)'; }}
