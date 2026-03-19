@@ -75,6 +75,8 @@ const CyclingPoster = memo(() => {
   const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef    = useRef<HTMLDivElement>(null);
   const isVisibleRef  = useRef(true);
+  // Ref array for img elements — used to detect already-cached images on mount
+  const imgRefs       = useRef<(HTMLImageElement | null)[]>([]);
 
   // ── Scroll culling ────────────────────────────────────────────
   useEffect(() => {
@@ -147,6 +149,14 @@ const CyclingPoster = memo(() => {
     }
   }, [doTransition]);
 
+  // Handle already-cached images: onLoad won't fire if the browser
+  // completed loading before React attached the handler (e.g. on page reload).
+  useEffect(() => {
+    imgRefs.current.forEach((img, i) => {
+      if (img?.complete && img.naturalWidth > 0) onLoad(i);
+    });
+  }, [onLoad]);
+
   return (
     <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       <div
@@ -162,6 +172,7 @@ const CyclingPoster = memo(() => {
         {HERO_POSTERS.map((p, i) => (
           <img
             key={p.id}
+            ref={(el) => { imgRefs.current[i] = el; }}
             src={POSTER_SRCS[i]}
             alt={p.title}
             // First image: highest priority (LCP).
