@@ -36,7 +36,7 @@
 //  • overflow: hidden on cells is sufficient paint containment
 //  • Amber tint overlay removed (redundant with sepia on outer wrapper)
 // ─────────────────────────────────────────────────────────────────────
-import { memo, useRef, useLayoutEffect, useState, useCallback } from 'react';
+import { memo, useRef, useLayoutEffect, useEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '../../constants';
 import { useScrollReel } from '../../hooks';
 import { SprocketStrip } from '../primitives';
@@ -77,8 +77,20 @@ const CollagePoster = memo<{
 }>(({ id, type, title, width, height, eager = false }) => {
   const [loaded, setLoaded] = useState(false);
   const [err, setErr]       = useState(false);
+  const imgRef  = useRef<HTMLImageElement>(null);
   const onLoad  = useCallback(() => setLoaded(true), []);
   const onError = useCallback(() => setErr(true), []);
+
+  // Handle already-cached images: onLoad won't fire if the browser
+  // completed loading before React attached the handler (e.g. on page reload).
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    if (img.complete) {
+      if (img.naturalWidth > 0) onLoad();
+      else onError();
+    }
+  }, [onLoad, onError]);
 
   const src = `${API}/${type}/${id}.png?${BADGE_PARAMS}`;
 
@@ -102,6 +114,7 @@ const CollagePoster = memo<{
       )}
       {err && <div style={ERR_STYLE}><span style={{ fontSize: 20 }}>🎞</span></div>}
       <img
+        ref={imgRef}
         src={src} alt={title}
         loading={eager ? 'eager' : 'lazy'} decoding="async"
         onLoad={onLoad} onError={onError}

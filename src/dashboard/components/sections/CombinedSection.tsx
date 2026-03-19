@@ -4,7 +4,7 @@
 // because they lived inside the component body.
 // ThumbImg src is computed inside the component but is stable per feature
 // so it triggers no unnecessary re-fetches.
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { FEATURES, USE_CASES, API } from '../../constants';
 import { useInView } from '../../hooks';
 import { AmberTag } from '../primitives';
@@ -46,6 +46,16 @@ const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
 const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
   const [loaded, setLoaded] = useState(false);
   const src = FEATURE_SRCS[title];
+  const imgRef = useRef<HTMLImageElement>(null);
+  const handleLoad = useCallback(() => setLoaded(true), []);
+
+  // Handle already-cached images: onLoad won't fire if the browser
+  // completed loading before React attached the handler (e.g. on page reload).
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) handleLoad();
+  }, [handleLoad]);
+
   if (!src) return null;
 
   return (
@@ -67,11 +77,12 @@ const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
         />
       )}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         loading="lazy"
         decoding="async"
-        onLoad={() => setLoaded(true)}
+        onLoad={handleLoad}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: loaded ? 1 : 0, transition: 'opacity 0.4s ease' }}
       />
     </div>
