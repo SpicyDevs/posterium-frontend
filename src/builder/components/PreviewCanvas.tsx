@@ -32,6 +32,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [isPanning, setIsPanning] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
   const zoomFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
@@ -96,11 +97,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   };
 
   const handleWheel = (e: React.WheelEvent) => {
+    // Coefficient chosen so a typical 100-unit scroll step gives ~33% zoom change
+    const ZOOM_SENSITIVITY = 0.004;
+    // Damping reduces jitter on high-resolution/accelerated trackpad scroll events
+    const PAN_DAMPING_FACTOR = 0.85;
+
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      // Smoother zoom: scale factor proportional to deltaY, clamped per step
+      // Smoother zoom: scale factor proportional to deltaY using exponential mapping
       const rawDelta = -e.deltaY;
-      const factor = Math.exp(rawDelta * 0.004);
+      const factor = Math.exp(rawDelta * ZOOM_SENSITIVITY);
       setZoom((z) => Math.max(0.2, Math.min(z * factor, 4)));
       // Show zoom indicator briefly
       setIsZooming(true);
@@ -114,10 +120,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         dy = 0;
       }
       setIsPanning(true);
-      setPan((p) => clampPan(p.x - dx * 0.85, p.y - dy * 0.85));
-      // Auto-clear panning state
-      if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
-      zoomFadeTimer.current = setTimeout(() => setIsPanning(false), 150);
+      setPan((p) => clampPan(p.x - dx * PAN_DAMPING_FACTOR, p.y - dy * PAN_DAMPING_FACTOR));
+      // Auto-clear panning state using a dedicated timer (separate from zoomFadeTimer)
+      if (panFadeTimer.current) clearTimeout(panFadeTimer.current);
+      panFadeTimer.current = setTimeout(() => setIsPanning(false), 150);
     }
   };
 
