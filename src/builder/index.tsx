@@ -98,7 +98,7 @@ interface ToolbarBtnProps {
 
 const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, href, children }) => {
   const base =
-    'relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-indigo-500';
+    'relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]';
   const active = danger
     ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95'
     : 'text-zinc-500 hover:text-zinc-100 hover:bg-white/8 active:scale-95';
@@ -320,12 +320,12 @@ const StudioLayout: React.FC<{
     <>
       <a
         href="#main-canvas"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-indigo-600 focus:text-white focus:text-sm focus:font-medium"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#C47C2E] focus:text-white focus:text-sm focus:font-medium"
       >
         Skip to canvas
       </a>
 
-      <div className="flex flex-col h-[100dvh] overflow-hidden font-sans bg-[#09090b] text-zinc-200 selection:bg-indigo-500/30">
+      <div className="flex flex-col h-[100dvh] overflow-hidden font-sans bg-[#09090b] text-zinc-200 selection:bg-[#C47C2E]/30">
         <h1 className="sr-only">
           Posterium Poster Builder - Drag-and-Drop Movie Poster Editor with Live Rating Badges
         </h1>
@@ -352,7 +352,7 @@ const StudioLayout: React.FC<{
             </Link>
 
             <div className="hidden sm:flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#C47C2E] to-[#D4A245] flex items-center justify-center shadow-lg shadow-[#C47C2E]/25">
                 <Sparkles size={13} className="text-white" />
               </div>
               <span className="text-[13px] font-semibold text-white tracking-tight select-none">
@@ -409,7 +409,7 @@ const StudioLayout: React.FC<{
               className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50"
               title="Resize panel"
             >
-              <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-indigo-500/50 transition-colors" />
+              <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
             </div>
           </aside>
 
@@ -449,7 +449,7 @@ const StudioLayout: React.FC<{
               className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50"
               title="Resize panel"
             >
-              <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-indigo-500/50 transition-colors" />
+              <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
             </div>
             <Inspector config={config} setConfig={setConfig} />
           </aside>

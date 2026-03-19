@@ -77,7 +77,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
         flex items-center h-8
         bg-[#111113] border border-white/9 rounded-lg
         transition-all duration-150
-        focus-within:border-indigo-500/50 focus-within:bg-[#131316]
+        focus-within:border-[#C47C2E]/50 focus-within:bg-[#131316]
         hover:border-white/15
       "
       >
@@ -119,7 +119,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
               aria-label="Load this URL"
               className="
                 w-6 h-6 rounded flex items-center justify-center
-                text-indigo-400 hover:bg-indigo-500/15
+                text-[#D4A245] hover:bg-[#C47C2E]/15
                 disabled:opacity-50 transition-colors
               "
             >

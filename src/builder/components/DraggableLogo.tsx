@@ -133,7 +133,7 @@ const DraggableLogo: React.FC<Props> = ({ config, logoUrl, canvasScale, onDragEn
         touchAction: 'none',
         // Always show bounding-box outline so empty / transparent logos are editable
         outline: isDragging
-          ? '1.5px dashed rgba(99,102,241,0.85)'
+          ? '1.5px dashed rgba(196,124,46,0.85)'
           : '1.5px dashed rgba(255,255,255,0.2)',
         outlineOffset: 3,
         borderRadius: 2,
@@ -152,8 +152,8 @@ const DraggableLogo: React.FC<Props> = ({ config, logoUrl, canvasScale, onDragEn
       ) : (
         /* Placeholder shown when URL is null or img fails to load */
         <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded">
-          <ImageOff size={18} className="text-indigo-400/40" />
-          <span className="text-[9px] font-mono text-indigo-400/40 uppercase tracking-widest leading-none">
+          <ImageOff size={18} className="text-[#D4A245]/40" />
+          <span className="text-[9px] font-mono text-[#D4A245]/40 uppercase tracking-widest leading-none">
             logo
           </span>
           {imgError && logoUrl && (
@@ -164,7 +164,7 @@ const DraggableLogo: React.FC<Props> = ({ config, logoUrl, canvasScale, onDragEn
 
       {/* Corner indicator when selected / dragging */}
       {isDragging && (
-        <div className="absolute -top-5 left-0 px-1.5 py-0.5 rounded text-[9px] font-mono text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 whitespace-nowrap pointer-events-none">
+        <div className="absolute -top-5 left-0 px-1.5 py-0.5 rounded text-[9px] font-mono text-[#E8D8A8] bg-[#C47C2E]/20 border border-[#C47C2E]/30 whitespace-nowrap pointer-events-none">
           {Math.round(renderX)}, {Math.round(renderY)}
         </div>
       )}

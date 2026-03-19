@@ -299,7 +299,7 @@ const DraggableBadge: React.FC<Props> = ({
 
       {isSelected && (
         <div
-          className="absolute bg-indigo-500 border border-indigo-400 rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
+          className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{
             top: `${-7 * scale * 1.15}px`,
             right: `${-7 * scale * 1.15}px`,

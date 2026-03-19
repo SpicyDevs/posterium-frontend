@@ -90,7 +90,7 @@ const SelectBox = memo(
         bg-[#111113] border border-white/8
         text-[11px] text-zinc-300 font-medium
         hover:border-white/15 transition-colors
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]
       "
         >
           <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
@@ -118,8 +118,8 @@ const SelectBox = memo(
                 className={({ active, selected }) =>
                   clsx(
                     'flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors',
-                    active && 'bg-indigo-500/15 text-indigo-200',
-                    !active && selected && 'text-indigo-300',
+                    active && 'bg-[#C47C2E]/15 text-[#F0E6CC]',
+                    !active && selected && 'text-[#E8D8A8]',
                     !active && !selected && 'text-zinc-300'
                   )
                 }
@@ -127,7 +127,7 @@ const SelectBox = memo(
                 {({ selected }) => (
                   <>
                     <span className="flex-1 truncate">{opt.label}</span>
-                    {selected && <Check size={11} className="text-indigo-400 shrink-0" />}
+                    {selected && <Check size={11} className="text-[#D4A245] shrink-0" />}
                   </>
                 )}
               </ListboxOption>
@@ -340,7 +340,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         className={clsx(
           'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
           isSelected
-            ? 'bg-indigo-500/12 ring-1 ring-indigo-500/30'
+            ? 'bg-[#C47C2E]/12 ring-1 ring-[#C47C2E]/30'
             : isActive
               ? 'hover:bg-white/4 cursor-pointer'
               : 'opacity-35',
@@ -372,7 +372,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             className={clsx(
               'w-3.5 h-3.5 rounded border flex items-center justify-center transition-all',
               isSelected
-                ? 'bg-indigo-500 border-indigo-400'
+                ? 'bg-[#C47C2E] border-[#D4A245]'
                 : 'bg-[#111113] border-zinc-700 hover:border-zinc-500'
             )}
           >
@@ -401,7 +401,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <span
             className={clsx(
               'block text-[11px] font-medium truncate',
-              isSelected ? 'text-indigo-200' : 'text-zinc-300'
+              isSelected ? 'text-[#F0E6CC]' : 'text-zinc-300'
             )}
           >
             {badge.label}
@@ -570,10 +570,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <label className="sidebar-label">Search Media</label>
             <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
               <div className="relative">
-                <div className="relative flex items-center h-8 bg-[#111113] border border-white/[0.08] rounded-lg focus-within:border-indigo-500/50 transition-colors">
+                <div className="relative flex items-center h-8 bg-[#111113] border border-white/[0.08] rounded-lg focus-within:border-[#C47C2E]/50 transition-colors">
                   <div className="pl-2.5 text-zinc-600 shrink-0">
                     {isSearching ? (
-                      <Loader2 size={12} className="animate-spin text-indigo-500" />
+                      <Loader2 size={12} className="animate-spin text-[#C47C2E]" />
                     ) : (
                       <Search size={12} />
                     )}
@@ -613,7 +613,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                           className={({ active }) =>
                             clsx(
                               'flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors',
-                              active && 'bg-indigo-500/12'
+                              active && 'bg-[#C47C2E]/12'
                             )
                           }
                         >
@@ -676,7 +676,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   w-full h-8 px-2 rounded-lg
                   bg-[#111113] border border-white/[0.08]
                   text-[11px] font-mono text-zinc-300 text-center
-                  focus:outline-none focus-visible:border-indigo-500/50 focus-visible:ring-1 focus-visible:ring-indigo-500/30
+                  focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30
                   transition-colors
                 "
               />
@@ -722,9 +722,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               onChange={(checked) => updateConfig('textless', checked)}
               disabled={['metahub', 'imdb'].includes(config.source)}
               className={clsx(
-                'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
+                'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
                 config.textless && !['metahub', 'imdb'].includes(config.source)
-                  ? 'bg-indigo-500'
+                  ? 'bg-[#C47C2E]'
                   : 'bg-zinc-800'
               )}
             >
@@ -784,7 +784,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 <div
                   className={clsx(
                     'w-3 h-3 rounded border flex items-center justify-center transition-all',
-                    allVisibleSelected ? 'bg-indigo-500 border-indigo-400' : 'border-zinc-700'
+                    allVisibleSelected ? 'bg-[#C47C2E] border-[#D4A245]' : 'border-zinc-700'
                   )}
                 >
                   {allVisibleSelected && <Check size={8} className="text-white" />}

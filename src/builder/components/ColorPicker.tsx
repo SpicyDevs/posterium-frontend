@@ -20,8 +20,8 @@ const PRESETS = [
   '#3f3f46',
   '#ffffff',
   '#a1a1aa',
-  '#6366f1',
-  '#818cf8',
+  '#C47C2E',
+  '#D4A245',
   '#f43f5e',
   '#fb923c',
   '#facc15',
@@ -90,7 +90,7 @@ const ColorPicker: React.FC<Props> = memo(
               className={clsx(
                 'w-full aspect-square rounded-md border-[1.5px] transition-all active:scale-90',
                 normalize(value) === preset
-                  ? 'border-indigo-400 scale-95 shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+                  ? 'border-[#D4A245] scale-95 shadow-[0_0_6px_rgba(196,124,46,0.5)]'
                   : 'border-transparent hover:border-white/30'
               )}
               style={{ background: preset }}
@@ -139,7 +139,7 @@ const ColorPicker: React.FC<Props> = memo(
               w-full h-8 pl-6 pr-3 rounded-lg
               bg-[#111113] border border-white/8
               text-[11px] font-mono text-zinc-300 uppercase
-              focus:outline-none focus-visible:border-indigo-500/50 focus-visible:ring-1 focus-visible:ring-indigo-500/30
+              focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30
               transition-colors
             "
             />

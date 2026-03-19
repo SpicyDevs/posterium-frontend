@@ -48,7 +48,7 @@ const Section: React.FC<{
         className="
           w-full flex items-center justify-between px-3 py-2.5
           hover:bg-white/[0.03] transition-colors text-left
-          focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50
+          focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50
         "
       >
         <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
@@ -115,8 +115,8 @@ const ToggleRow: React.FC<{
       checked={checked}
       onChange={onChange}
       className={clsx(
-        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
-        checked ? 'bg-indigo-500' : 'bg-zinc-800'
+        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
+        checked ? 'bg-[#C47C2E]' : 'bg-zinc-800'
       )}
     >
       <span
@@ -156,7 +156,7 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
         className={clsx(
           'w-full aspect-square rounded transition-all active:scale-90',
           value === pos.id
-            ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]'
+            ? 'bg-[#C47C2E] shadow-[0_0_8px_rgba(196,124,46,0.5)]'
             : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]'
         )}
       >
@@ -189,7 +189,7 @@ const ApiKeyInput: React.FC<{
           w-full h-8 pl-3 pr-8 rounded-lg
           bg-[#111113] border border-white/[0.08]
           text-[11px] font-mono text-zinc-300 placeholder-zinc-700
-          focus:outline-none focus-visible:border-indigo-500/50 focus-visible:ring-1 focus-visible:ring-indigo-500/30
+          focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30
           transition-colors
         "
       />
@@ -288,7 +288,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     className={clsx(
                       'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
                       config.layout === opt.id
-                        ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                        ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
                         : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/6'
                     )}
                   >
@@ -326,7 +326,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                       className={clsx(
                         'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95',
                         (config.logoSource ?? null) === opt.id
-                          ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                          ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
                           : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/6'
                       )}
                     >
@@ -337,7 +337,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 <p className="text-[9px] text-zinc-600 leading-relaxed">
                   {LOGO_SOURCES.find((s) => (s.id ?? null) === (config.logoSource ?? null))?.hint}
                   {(config.logoSource === 'fanart' || config.logoSource === 'tmdb') && (
-                    <span className="ml-1 text-indigo-400/60">· preview uses Metahub</span>
+                    <span className="ml-1 text-[#D4A245]/60">· preview uses Metahub</span>
                   )}
                 </p>
               </div>
@@ -511,7 +511,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 className={clsx(
                   'h-9 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
                   viewOptions[key]
-                    ? 'bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30'
+                    ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
                     : 'bg-[#111113] text-zinc-500 hover:text-zinc-300 border border-white/6'
                 )}
               >
@@ -573,11 +573,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   return (
     <div className="pb-24">
       {/* Selection info */}
-      <div className="px-3 py-2 bg-indigo-500/8 border-b border-indigo-500/15">
-        <p className="text-[11px] text-indigo-300 font-medium">
+      <div className="px-3 py-2 bg-[#C47C2E]/8 border-b border-[#C47C2E]/15">
+        <p className="text-[11px] text-[#E8D8A8] font-medium">
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
         </p>
-        <p className="text-[9px] text-indigo-400/60 mt-0.5">
+        <p className="text-[9px] text-[#D4A245]/60 mt-0.5">
           {multi ? 'Changes apply to all selected badges' : 'Per-badge overrides'}
         </p>
       </div>

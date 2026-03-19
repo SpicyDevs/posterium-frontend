@@ -51,14 +51,14 @@ const MobileDock: React.FC = memo(() => {
               rounded-xl mx-0.5 my-1 transition-all duration-150 active:scale-90
               ${
                 isActive
-                  ? 'bg-indigo-500/12 text-indigo-400'
+                  ? 'bg-[#C47C2E]/12 text-[#D4A245]'
                   : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/4'
               }
             `}
           >
             <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
             <span
-              className={`text-[9px] font-medium tracking-wide ${isActive ? 'text-indigo-400' : 'text-zinc-600'}`}
+              className={`text-[9px] font-medium tracking-wide ${isActive ? 'text-[#D4A245]' : 'text-zinc-600'}`}
             >
               {label}
             </span>
