@@ -573,7 +573,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   return (
     <div className="pb-24">
       {/* Selection info */}
-      <div className="px-3 py-2 bg-[#C47C2E]/8 border-b border-[#C47C2E]/15">
+      <div className="mx-3 mt-3 mb-1 px-3 py-2 bg-[#C47C2E]/8 border border-[#C47C2E]/20 rounded-lg">
         <p className="text-[11px] text-[#E8D8A8] font-medium">
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
         </p>

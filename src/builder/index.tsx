@@ -9,7 +9,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import { EditorProvider, useEditor } from './context/EditorContext';
-import { Sparkles, RotateCcw, AlertTriangle, Undo2, Redo2, Home } from 'lucide-react';
+import { RotateCcw, AlertTriangle, Undo2, Redo2 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import { Link } from '../Router';
 
@@ -62,7 +62,7 @@ const ResetDialog = memo<{
             <div className="mt-5 flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 h-9 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:bg-white/5 transition-colors"
+                className="flex-1 h-9 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-[#C47C2E]/50 hover:text-[#E8D8A8] hover:bg-[#C47C2E]/8 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]"
               >
                 Cancel
               </button>
@@ -71,7 +71,7 @@ const ResetDialog = memo<{
                   onConfirm();
                   onClose();
                 }}
-                className="flex-1 h-9 rounded-lg bg-red-600 text-xs font-medium text-white hover:bg-red-500 transition-colors"
+                className="flex-1 h-9 rounded-lg bg-red-600 text-xs font-medium text-white hover:bg-red-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
               >
                 Reset Everything
               </button>
@@ -101,7 +101,7 @@ const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, hr
     'relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]';
   const active = danger
     ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95'
-    : 'text-zinc-500 hover:text-zinc-100 hover:bg-white/8 active:scale-95';
+    : 'text-zinc-500 hover:text-[#D4A245] hover:bg-[#C47C2E]/10 active:scale-95';
   const inactive = 'text-zinc-700 cursor-not-allowed pointer-events-none';
 
   const cls = `${base} ${disabled ? inactive : active}`;
@@ -339,26 +339,49 @@ const StudioLayout: React.FC<{
         {/* HEADER */}
         <header className="h-14 shrink-0 flex items-center gap-2 px-3 border-b border-white/6 bg-[#09090b] z-30">
           <div className="flex items-center gap-2 shrink-0">
-            {/* Home link */}
+            {/* Logo — navigates to homepage */}
             <Link
               to="/"
-              className="relative group w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-white/8 transition-all duration-150 select-none"
+              className="relative group flex items-center gap-2 select-none"
               aria-label="Back to home"
             >
-              <Home size={14} />
+              {/* Ps icon badge */}
+              <div className="w-8 h-8 rounded-lg border border-[#C47C2E]/60 bg-[#0c0b08] flex items-center justify-center shadow-md shadow-[#C47C2E]/20 transition-all duration-150 group-hover:border-[#C47C2E] group-hover:shadow-[#C47C2E]/40 shrink-0">
+                <span
+                  className="font-['Bebas_Neue',sans-serif] leading-none select-none"
+                  style={{ fontSize: 18 }}
+                  aria-hidden="true"
+                >
+                  <span style={{ color: '#f0e6cc' }}>P</span>
+                  <span
+                    style={{
+                      color: 'transparent',
+                      WebkitTextStroke: '1.5px #C47C2E',
+                    }}
+                  >
+                    s
+                  </span>
+                </span>
+              </div>
+              {/* POSTERIUM wordmark */}
+              <span
+                className="hidden sm:inline font-['Bebas_Neue',sans-serif] tracking-[0.08em] text-[18px] leading-none select-none"
+                aria-hidden="true"
+              >
+                <span style={{ color: '#f0e6cc' }}>POSTER</span>
+                <span
+                  style={{
+                    color: 'transparent',
+                    WebkitTextStroke: '1.5px #C47C2E',
+                  }}
+                >
+                  IUM
+                </span>
+              </span>
               <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-200 border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg">
                 Home
               </span>
             </Link>
-
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#C47C2E] to-[#D4A245] flex items-center justify-center shadow-lg shadow-[#C47C2E]/25">
-                <Sparkles size={13} className="text-white" />
-              </div>
-              <span className="text-[13px] font-semibold text-white tracking-tight select-none">
-                Posterium
-              </span>
-            </div>
           </div>
 
           <div className="hidden sm:block w-px h-5 bg-white/8 mx-1 shrink-0" />

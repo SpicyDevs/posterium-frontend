@@ -159,9 +159,21 @@ const DraggableBadge: React.FC<Props> = ({
 
   const showIcon = itemConfig?.icon ?? config.icon ?? true;
 
-  const bgRaw = itemConfig?.bg || `rgba(0,0,0, ${alphaVal})`;
-  const backgroundStyle = bgRaw.startsWith('grad:')
-    ? `linear-gradient(135deg, ${bgRaw.split(':')[1]}, ${bgRaw.split(':')[2]})`
+  // Apply alpha to hex bg colours so the Opacity slider always affects the preview.
+  const rawBg = itemConfig?.bg ?? config.bg;
+  const bgRaw = (() => {
+    if (!rawBg) return `rgba(0,0,0,${alphaVal})`;
+    if (rawBg.startsWith('grad:')) return rawBg; // handled below
+    if (/^#[0-9a-fA-F]{6}$/.test(rawBg)) {
+      const r = parseInt(rawBg.slice(1, 3), 16);
+      const g = parseInt(rawBg.slice(3, 5), 16);
+      const b = parseInt(rawBg.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alphaVal})`;
+    }
+    return rawBg;
+  })();
+  const backgroundStyle = rawBg?.startsWith('grad:')
+    ? `linear-gradient(135deg, ${rawBg.split(':')[1]}, ${rawBg.split(':')[2]})`
     : bgRaw;
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;

@@ -30,6 +30,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
+  const zoomFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
@@ -96,8 +98,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      setZoom((z) => Math.max(0.2, Math.min(z * delta, 4)));
+      // Smoother zoom: scale factor proportional to deltaY, clamped per step
+      const rawDelta = -e.deltaY;
+      const factor = Math.exp(rawDelta * 0.004);
+      setZoom((z) => Math.max(0.2, Math.min(z * factor, 4)));
+      // Show zoom indicator briefly
+      setIsZooming(true);
+      if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
+      zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
     } else {
       let dx = e.deltaX;
       let dy = e.deltaY;
@@ -105,7 +113,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         dx = e.deltaY !== 0 ? e.deltaY : e.deltaX;
         dy = 0;
       }
-      setPan((p) => clampPan(p.x - dx, p.y - dy));
+      setIsPanning(true);
+      setPan((p) => clampPan(p.x - dx * 0.85, p.y - dy * 0.85));
+      // Auto-clear panning state
+      if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
+      zoomFadeTimer.current = setTimeout(() => setIsPanning(false), 150);
     }
   };
 
@@ -328,28 +340,42 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
         }}
       >
-        {isPanning && (
-          <div className="bg-black/50 backdrop-blur text-white text-[10px] px-2 py-1 rounded-full mb-2 pointer-events-none">
-            Panning
-          </div>
-        )}
+        {/* Zoom level badge */}
+        <div
+          className="bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-400 pointer-events-none transition-opacity duration-300"
+          style={{ opacity: isZooming ? 1 : 0 }}
+        >
+          {Math.round(zoom * 100)}%
+        </div>
         <div className="flex flex-col items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
           <button
-            onClick={() => setZoom((z) => Math.min(z + 0.1, 4))}
-            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+            onClick={() => {
+              const next = Math.min(zoom + 0.15, 4);
+              setZoom(next);
+              setIsZooming(true);
+              if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
+              zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
+            }}
+            className="p-2 text-zinc-400 hover:text-[#D4A245] rounded-full hover:bg-[#C47C2E]/10 active:scale-95 transition-all"
           >
             <ZoomIn size={18} />
           </button>
           <button
-            onClick={() => setZoom((z) => Math.max(z - 0.1, 0.2))}
-            className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+            onClick={() => {
+              const next = Math.max(zoom - 0.15, 0.2);
+              setZoom(next);
+              setIsZooming(true);
+              if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
+              zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
+            }}
+            className="p-2 text-zinc-400 hover:text-[#D4A245] rounded-full hover:bg-[#C47C2E]/10 active:scale-95 transition-all"
           >
             <ZoomOut size={18} />
           </button>
           <div className="w-4 h-px bg-white/10 my-1"></div>
           <button
             onClick={resetView}
-            className="p-2 text-zinc-400 hover:text-red-400 rounded-full hover:bg-white/10 active:scale-95 transition-transform"
+            className="p-2 text-zinc-400 hover:text-[#C47C2E] rounded-full hover:bg-[#C47C2E]/10 active:scale-95 transition-all"
             title="Fit to Screen"
           >
             <SearchX size={18} />
