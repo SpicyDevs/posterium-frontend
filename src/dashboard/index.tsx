@@ -1,19 +1,19 @@
 // src/dashboard/index.tsx
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { GLOBAL_CSS } from './styles';
+import React, { lazy, Suspense, useEffect, useState, useCallback, useRef } from 'react';
+import './dashboard.css';
 import { MARQUEE_TITLES } from './constants';
 
 import Nav from './components/Nav';
 import HeroSection from './components/HeroSection';
 import FilmReelSection from './components/FilmReelSection/index';
 import { MarqueeTicker } from './components/primitives';
-import {
-  StatsBar,
-  CombinedSection,
-  CTASection,
-  FooterSection,
-  ComparisonSection,
-} from './components/sections/index';
+import { CTASection } from './components/sections/index';
+
+// Below-fold sections — code-split so their JS is only loaded when needed.
+const StatsBar        = lazy(() => import('./components/sections/StatsBar').then(m => ({ default: m.StatsBar })));
+const CombinedSection = lazy(() => import('./components/sections/CombinedSection').then(m => ({ default: m.CombinedSection })));
+const ComparisonSection = lazy(() => import('./components/sections/ComparisonSection').then(m => ({ default: m.ComparisonSection })));
+const FooterSection   = lazy(() => import('./components/sections/FooterSection').then(m => ({ default: m.FooterSection })));
 
 // ─────────────────────────────────────────────────────────────────────
 // FLICKER STATE — module-level boolean so HeroSection can check it
@@ -291,8 +291,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      {/* Inject global CSS + shimmer + CRT keyframes */}
-      <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS + SHIMMER_CSS + (isFirstVisit ? CRT_CSS : '') }} />
+      {/* Inject CRT keyframes (conditional — first visit only) */}
+      {isFirstVisit && <style dangerouslySetInnerHTML={{ __html: isFirstVisit ? CRT_CSS : '' }} />}
 
       {/* Invisible SVG filter definition — needed by noise layer */}
       {showCRT && <SvgNoiseFilter />}

@@ -193,16 +193,6 @@ const CyclingPoster = memo(() => {
           />
         ))}
 
-        {!loaded[0] && (
-          <div
-            style={{
-              position: 'absolute', inset: 0, zIndex: 1,
-              background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
-              backgroundSize: '200% 100%', animation: 'shimmer 1.6s linear infinite',
-            }}
-          />
-        )}
-
         <div
           style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,

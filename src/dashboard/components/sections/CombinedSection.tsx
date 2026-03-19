@@ -71,8 +71,7 @@ const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
         <div
           style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-            backgroundSize: '200% 100%', animation: 'shimmer 1.6s linear infinite',
+            background: '#0d0c0a',
           }}
         />
       )}

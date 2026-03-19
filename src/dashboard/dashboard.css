@@ -1,0 +1,228 @@
+html { overflow-x: clip; }
+
+:root {
+  --film-black:   #070706;
+  --film-dark:    #0E0D0B;
+  --film-mid:     #181612;
+  --film-char:    #222018;
+  --film-amber:   #C47C2E;
+  --film-gold:    #D4A245;
+  --film-pale:    #E8D8A8;
+  --film-cream:   #F0E6CC;
+  --film-white:   #FAF6EC;
+
+  /* Bumped from #8C8478 (3:1) to #b0a898 (5.1:1 on #070706) */
+  --film-silver:  #b0a898;
+
+  --film-dust:    #453F37;
+  --film-red:     #A82018;
+  --film-border:  rgba(196,124,46,0.16);
+  --film-glow:    rgba(196,124,46,0.07);
+
+  /* ── Semantic text tokens ───────────────────────────────────
+     Use these whenever you need readable text.
+     The values are calibrated for #070706 and #0E0D0B backgrounds.
+
+     body   ≈ 6.2:1  — body copy, feature descriptions
+     label  ≈ 5.0:1  — section labels, captions, list items
+     dim    ≈ 3.5:1  — secondary/inactive UI (minimum for non-critical)
+     ghost  ≈ 1.8:1  — intentionally decorative, not content
+  ──────────────────────────────────────────────────────────── */
+  --film-text-body:   rgba(230, 218, 196, 0.92);
+  --film-text-label:  rgba(212, 198, 172, 0.82);
+  --film-text-dim:    rgba(180, 168, 148, 0.62);
+  --film-text-ghost:  rgba(140, 130, 112, 0.38);
+}
+
+* { box-sizing: border-box; }
+
+/* ── Font family utilities ── */
+.poster-font { font-family: 'Bebas Neue', cursive; letter-spacing: 0.04em; }
+.syne-font   { font-family: 'Syne', sans-serif; }
+.body-font   { font-family: 'DM Sans', sans-serif; }
+.mono-font   { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Default text colours for each font class ──────────────────
+   These apply when there is NO inline colour override.
+   Components with intentionally dim decorative text set their own
+   inline colour and will NOT be affected by these rules.
+──────────────────────────────────────────────────────────────── */
+.body-font   { color: var(--film-text-body); }
+.syne-font   { color: var(--film-text-label); }
+.mono-font   { color: var(--film-text-dim); }
+
+/* ── Nav active / hover floor — always at full cream ── */
+nav .syne-font,
+nav a.syne-font { color: var(--film-text-label); }
+
+/* ── Film grain overlay ── */
+.grain-layer {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-repeat: repeat; background-size: 186px 186px;
+  animation: grain-anim 0.14s steps(1) infinite;
+}
+@keyframes grain-anim {
+  0%   { transform: translate(0,0); }
+  14%  { transform: translate(-3%,-4%); }
+  28%  { transform: translate(4%,2%); }
+  42%  { transform: translate(-2%,5%); }
+  57%  { transform: translate(5%,-3%); }
+  71%  { transform: translate(-4%,3%); }
+  85%  { transform: translate(2%,-5%); }
+}
+
+/* ── Scan lines ── */
+.scan-layer {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px
+  );
+}
+
+/* ── Hero flicker (ambient only — the real flicker is CRTIntro) ── */
+@keyframes hero-flicker-subtle {
+  0%, 97%, 100% { background: rgba(7,7,6,0);    }
+  97.4%         { background: rgba(7,7,6,0.05); }
+  97.8%         { background: rgba(7,7,6,0.02); }
+  98.2%         { background: rgba(7,7,6,0.07); }
+}
+
+/* ── Reel spin ── */
+@keyframes reel-spin { to { transform: rotate(360deg); } }
+
+/* ── Float variants ── */
+@keyframes float-a {
+  0%,100% { transform: translateY(0px)   rotate(-1.2deg); }
+  50%     { transform: translateY(-16px) rotate(0.8deg); }
+}
+@keyframes float-b {
+  0%,100% { transform: translateY(-6px)  rotate(0.5deg); }
+  50%     { transform: translateY(12px)  rotate(-0.7deg); }
+}
+@keyframes float-c {
+  0%,100% { transform: translateY(4px)   rotate(-0.3deg); }
+  50%     { transform: translateY(-10px) rotate(0.4deg); }
+}
+
+/* ── Marquee ── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Hero reveals ── */
+@keyframes hero-reveal {
+  from { opacity: 0; transform: translateY(36px) skewY(0.8deg); }
+  to   { opacity: 1; transform: translateY(0) skewY(0deg); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.h-a1 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+.h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.2s  both; }
+.h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
+.h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
+.h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
+
+/* ── Shimmer (skeleton loaders) ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Glow CTA ── */
+.glow-cta {
+  box-shadow: 0 0 26px rgba(196,124,46,0.2), 0 4px 16px rgba(0,0,0,0.42);
+  transition: box-shadow 0.3s ease, transform 0.25s ease;
+}
+.glow-cta:hover {
+  box-shadow: 0 0 44px rgba(196,124,46,0.4), 0 8px 28px rgba(0,0,0,0.52);
+  transform: translateY(-2px);
+}
+.glow-cta:active { transform: translateY(0); }
+
+/* ── Custom range input ── */
+input[type='range'] {
+  -webkit-appearance: none; appearance: none;
+  background: transparent; cursor: pointer; height: 100%; margin: 0;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--film-amber);
+  border: 1.5px solid rgba(7,7,6,0.8);
+  margin-top: -5px; cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--film-amber);
+  border: 1.5px solid rgba(7,7,6,0.8); cursor: pointer;
+}
+
+select option { background: #0E0D0B; color: #F0E6CC; }
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--film-black); }
+::-webkit-scrollbar-thumb { background: rgba(196,124,46,0.22); border-radius: 99px; }
+
+/* ── Film tag util ── */
+.film-tag {
+  background: rgba(196,124,46,0.1);
+  border: 1px solid rgba(196,124,46,0.28);
+  color: var(--film-amber); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 2px;
+  font-family: 'Syne', sans-serif;
+  display: inline-block;
+}
+
+/* ── Film-frame hover ── */
+.film-frame-wrap {
+  position: relative; flex-shrink: 0;
+  transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s linear 0.38s;
+}
+.film-frame-wrap:hover {
+  transform: scale(1.05) translateY(-8px);
+  z-index: 10;
+  transition: transform 0.38s cubic-bezier(0.16,1,0.3,1), z-index 0s;
+}
+.film-frame-wrap .poster-detail-overlay {
+  position: absolute; inset: 0; opacity: 0;
+  transition: opacity 0.28s ease; pointer-events: none;
+}
+.film-frame-wrap:hover .poster-detail-overlay { opacity: 1; }
+
+/* ── Responsive breakpoints ── */
+@media (max-width: 900px) {
+  .film-perforation { display: none !important; }
+}
+@media (max-width: 768px) {
+  .nav-links-desktop    { display: none !important; }
+  .nav-mobile-toggle    { display: flex !important; }
+  .desktop-reel-section { display: none !important; }
+  .mobile-reel-section  { display: block !important; }
+}
+@media (min-width: 769px) {
+  .nav-mobile-toggle    { display: none !important; }
+  .desktop-reel-section { display: block !important; }
+  .mobile-reel-section  { display: none !important; }
+}
+@media (max-width: 600px) {
+  #atlas [style*='repeat(4'] { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  #combined [style*='repeat(3'] { grid-template-columns: 1fr !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

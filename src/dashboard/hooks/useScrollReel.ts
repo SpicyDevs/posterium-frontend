@@ -24,10 +24,15 @@ interface LayoutCache {
 export const useScrollReel = (
   containerRef: RefObject<HTMLDivElement | null>,
   trackRef: RefObject<HTMLDivElement | null>,
-  progressFillRef?: RefObject<HTMLDivElement | null>
+  progressFillRef?: RefObject<HTMLDivElement | null>,
+  onTranslateX?: (tx: number) => void
 ) => {
   const rafId = useRef<number | null>(null);
   const layout = useRef<LayoutCache>({ top: 0, scrollable: 0, maxShift: 0 });
+  // Store callback in a ref so it is always up-to-date without appearing
+  // in `compute`'s dep array (avoids infinite effect re-registrations).
+  const onTranslateXRef = useRef(onTranslateX);
+  onTranslateXRef.current = onTranslateX;
 
   // ── Measure: cache layout info - no reflow needed per scroll frame ──
   const measure = useCallback(() => {
@@ -52,8 +57,10 @@ export const useScrollReel = (
     if (!track || scrollable <= 0) return;
 
     const progress = Math.max(0, Math.min(1, (window.scrollY - top) / scrollable));
+    const tx = -(progress * maxShift);
     // translate3d puts the element on its own GPU layer → silky motion
-    track.style.transform = `translate3d(${-progress * maxShift}px,0,0)`;
+    track.style.transform = `translate3d(${tx}px,0,0)`;
+    onTranslateXRef.current?.(tx);
 
     if (progressFillRef?.current) {
       progressFillRef.current.style.width = `${progress * 100}%`;

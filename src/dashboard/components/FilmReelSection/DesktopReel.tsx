@@ -50,6 +50,9 @@ const ROW_CONFIGS = [
 
 const BADGE_PARAMS = `r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10`;
 
+// Virtualization: 5-item buffer based on the widest row's item width (row 0 = 156px)
+const BUFFER_PX = 5 * Math.round((234 * 2) / 3); // 780px
+
 function makeRow(count: number, offset: number) {
   return Array.from({ length: count }, (_, i) => ({
     ...REEL_ITEMS[(i + offset) % REEL_ITEMS.length],
@@ -92,7 +95,7 @@ const CollagePoster = memo<{
     }
   }, [onLoad, onError]);
 
-  const src = `${API}/${type}/${id}.png?${BADGE_PARAMS}`;
+  const src = `${API}/${type}/${id}.webp?${BADGE_PARAMS}`;
 
   return (
     <div
@@ -105,13 +108,6 @@ const CollagePoster = memo<{
         // prevents the browser from batching compositing efficiently.
       }}
     >
-      {!loaded && !err && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-          backgroundSize: '200% 100%', animation: 'shimmer 1.8s linear infinite',
-        }} />
-      )}
       {err && <div style={ERR_STYLE}><span style={{ fontSize: 20 }}>🎞</span></div>}
       <img
         ref={imgRef}
@@ -135,6 +131,37 @@ const DesktopReel = memo(() => {
   const containerRef    = useRef<HTMLDivElement>(null);
   const trackRef        = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
+
+  // ── Virtualization: track the currently-visible window ───────────
+  // Start with a wide-open range so all above-fold items render on
+  // first paint; it is tightened once the reel receives its first
+  // scroll event and the real viewport width is known.
+  const [visRange, setVisRange] = useState<{ left: number; right: number }>(
+    { left: 0, right: 4000 }
+  );
+  const visRangeRef = useRef<{ left: number; right: number }>({ left: 0, right: 4000 });
+
+  // Called by useScrollReel on every animation frame (via the ref pattern,
+  // so it never causes the effect inside useScrollReel to re-register).
+  const handleTranslateX = useCallback((tx: number) => {
+    const vw = window.innerWidth;
+    const trackLeft = -tx; // positive: how many px of track are scrolled off-screen
+    const newLeft  = Math.max(0, trackLeft - BUFFER_PX);
+    const newRight = trackLeft + vw + BUFFER_PX;
+    const curr = visRangeRef.current;
+    // Only schedule a React re-render when the range moves by more than
+    // one item-width (156 px = widest item in row 0), reducing renders to
+    // at most one per ~156 px of scroll travel.
+    if (Math.abs(newLeft - curr.left) > 156 || Math.abs(newRight - curr.right) > 156) {
+      visRangeRef.current = { left: newLeft, right: newRight };
+      setVisRange({ left: newLeft, right: newRight });
+    }
+  }, []);
+
+  // Seed the visible range on mount so the initial render already reflects
+  // the real viewport width (guards against the 4000px over-estimate on
+  // small screens, and ensures items at the right edge are unmounted early).
+  useEffect(() => { handleTranslateX(0); }, [handleTranslateX]);
 
   useLayoutEffect(() => {
     const recalc = () => {
@@ -164,7 +191,7 @@ const DesktopReel = memo(() => {
     };
   }, []);
 
-  useScrollReel(containerRef, trackRef, progressFillRef);
+  useScrollReel(containerRef, trackRef, progressFillRef, handleTranslateX);
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -224,14 +251,28 @@ const DesktopReel = memo(() => {
                       // NO filter on rows — moved to outer wrapper
                     }}
                   >
-                    {row.slice(0, count).map((item, idx) => (
-                      <CollagePoster
-                        key={`r${rowIdx}-${item.id}-${item._slot}`}
-                        id={item.id} type={item.type} title={item.title}
-                        width={width} height={height}
-                        eager={rowIdx === 0 && idx < 6}
-                      />
-                    ))}
+                    {row.slice(0, count).map((item, idx) => {
+                        const itemX = idx * width;
+                        // Virtualise: replace off-screen posters with lightweight
+                        // placeholder divs that preserve layout geometry.
+                        if (itemX + width <= visRange.left || itemX >= visRange.right) {
+                          return (
+                            <div
+                              key={`r${rowIdx}-${item.id}-${item._slot}`}
+                              aria-hidden="true"
+                              style={{ width, height, flexShrink: 0, background: '#0d0c0a', borderRight: '1px solid rgba(0,0,0,0.7)' }}
+                            />
+                          );
+                        }
+                        return (
+                          <CollagePoster
+                            key={`r${rowIdx}-${item.id}-${item._slot}`}
+                            id={item.id} type={item.type} title={item.title}
+                            width={width} height={height}
+                            eager={rowIdx === 0 && idx < 6}
+                          />
+                        );
+                      })}
                   </div>
                 );
               })}
