@@ -1,15 +1,15 @@
 // src/components/PropertyPanel.tsx
 import React, { memo, useState } from 'react';
 import { Switch } from '@headlessui/react';
-import {
+import type {
   PosterConfig,
   RatingType,
   PresetType,
   BadgeConfig,
   ApiKeys,
-  CANVAS_WIDTH,
   LogoSourceType,
 } from '../types';
+import { CANVAS_WIDTH } from '../types';
 import {
   Layers,
   Layout,

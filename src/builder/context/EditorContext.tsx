@@ -1,6 +1,6 @@
 // src/context/EditorContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { RatingType } from '../types';
+import type { RatingType } from '../types';
 
 type TabType = 'source' | 'layers' | 'canvas' | 'badge';
 export type SheetMode = 'hidden' | 'half' | 'full';
