@@ -1,0 +1,141 @@
+---
+// src/pages/index.astro
+// Homepage — Dashboard as a React island with client:load.
+// SEO is handled here in Astro's head; no react-helmet-async needed.
+import Layout from '../layouts/Layout.astro';
+import Dashboard from '../dashboard/index.tsx';
+
+const HOME_KEYWORDS =
+  'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
+  'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
+  'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings, rating poster database alternative';
+
+const ORGANIZATION_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'SpicyDevs',
+  url: 'https://spicydevs.xyz',
+  sameAs: ['https://github.com/xdaayush/freeposterapi'],
+};
+
+const SOFTWARE_APP_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Posterium',
+  alternateName: ['Free Poster API', 'Movie Poster Generator', 'Rating Poster Generator'],
+  url: 'https://posters.spicydevs.xyz/',
+  applicationCategory: 'MultimediaApplication',
+  applicationSubCategory: 'Photo Editing',
+  operatingSystem: 'Web Browser',
+  browserRequirements: 'Requires JavaScript. Requires a modern browser.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Organization', name: 'SpicyDevs', url: 'https://spicydevs.xyz' },
+  description:
+    'Free online movie and TV poster generator with live rating badges from IMDb, ' +
+    'Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. No account required.',
+  screenshot: 'https://posters.spicydevs.xyz/og-image.jpg',
+  softwareVersion: '2.0',
+  inLanguage: 'en',
+  isAccessibleForFree: true,
+  featureList: [
+    'Live IMDb rating badges',
+    'Rotten Tomatoes score overlays',
+    'Metacritic score badges',
+    'TMDB rating display',
+    'Letterboxd rating badges',
+    'MAL and AniList anime ratings',
+    'Drag-and-drop poster editor',
+    'SVG, PNG, JPG, WebP export',
+    'Plex and Jellyfin compatible',
+    'No account or API key required',
+  ],
+};
+
+const WEBSITE_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Posterium',
+  url: 'https://posters.spicydevs.xyz/',
+  description:
+    'Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.',
+  publisher: { '@type': 'Organization', name: 'SpicyDevs', url: 'https://spicydevs.xyz' },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://posters.spicydevs.xyz/build?q={search_term_string}',
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const HOME_FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Posterium?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium is a free, open-source API and visual editor that generates movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, and AniList. No account or API key is required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is the Posterium API free?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Posterium is completely free with no rate limits. You can generate unlimited posters using a simple URL without creating an account.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I use Posterium with Plex or Jellyfin?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Paste the Posterium API URL directly into the custom poster field in Plex or Jellyfin. The poster will update automatically with live ratings each time it is fetched.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What rating sources does Posterium support?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList (MAL), and AniList ratings. You can display multiple badges on a single poster.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What image formats can Posterium export?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Posterium can export posters in SVG (lossless vector), PNG, JPG, and WebP formats. SVG is ideal for Plex and Jellyfin, while PNG and JPG work universally.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Posterium support anime posters?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Posterium supports anime posters with MAL (MyAnimeList) and AniList rating badges, in addition to standard movie and TV show posters.',
+      },
+    },
+  ],
+};
+---
+
+<Layout
+  title="Posterium - Free Movie & TV Poster Generator with Live Ratings"
+  description="Generate custom movie and TV show posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more."
+  keywords={HOME_KEYWORDS}
+  canonical="https://posters.spicydevs.xyz/"
+  ogTitle="Posterium - Free Movie & TV Poster Generator with Live Ratings"
+  ogDescription="Generate custom posters with live rating badges from IMDb, RT, Metacritic, TMDB, and more. Free, open source, no account required."
+  ogUrl="https://posters.spicydevs.xyz/"
+  twitterTitle="Posterium - Free Movie & TV Poster API with Rating Badges"
+  twitterDescription="Generate custom posters with live rating badges. Free API, no account needed. Perfect for Plex, Jellyfin, and Discord bots."
+  jsonLd={[ORGANIZATION_SCHEMA, SOFTWARE_APP_SCHEMA, WEBSITE_SCHEMA, HOME_FAQ_SCHEMA]}
+>
+  <Dashboard client:load />
+</Layout>

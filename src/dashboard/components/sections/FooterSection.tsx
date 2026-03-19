@@ -4,7 +4,6 @@
 // End-credits metadata strip. Minimal horizontal link row.
 import { memo } from 'react';
 import { Film, Github, ExternalLink } from 'lucide-react';
-import { Link } from '../../../Router';
 import { SprocketStrip } from '../primitives';
 
 const FOOTER_LINKS: Array<{
@@ -166,15 +165,15 @@ export const FooterSection = memo(() => (
           };
 
           const el = link.internal ? (
-            <Link
+            <a
               key={link.label}
-              to={link.href}
+              href={link.href}
               style={baseStyle}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)'; }}
             >
               {link.label}
-            </Link>
+            </a>
           ) : (
             <a
               key={link.label}

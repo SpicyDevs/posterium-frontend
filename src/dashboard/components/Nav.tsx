@@ -1,6 +1,5 @@
 // src/dashboard/components/Nav.tsx
 import { memo, useState, useCallback, useEffect } from 'react';
-import { Link } from '../../Router';
 import { Github, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -83,7 +82,7 @@ const Nav = memo(() => {
         }}
       >
         {/* ── Wordmark ── */}
-        <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+        <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <span
             className="poster-font"
             style={{
@@ -97,7 +96,7 @@ const Nav = memo(() => {
           >
             POSTERIUM
           </span>
-        </Link>
+        </a>
 
         {/* ── Centre links — desktop ── */}
         <div
@@ -138,8 +137,8 @@ const Nav = memo(() => {
             <Github size={15} />
           </a>
 
-          <Link
-            to="/build"
+          <a
+            href="/build"
             className="syne-font"
             style={{
               display: 'inline-flex',
@@ -160,7 +159,7 @@ const Nav = memo(() => {
             }}
           >
             Build
-          </Link>
+          </a>
 
           {/* ── Mobile hamburger ── */}
           <button

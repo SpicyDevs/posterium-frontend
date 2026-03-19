@@ -1,0 +1,340 @@
+---
+// src/pages/404.astro
+// 404 Not Found page — static Astro page with client-side redirect timer.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="404 - Page Not Found | Posterium"
+  description="The page you're looking for doesn't exist."
+  noindex={true}
+>
+  <div
+    class="not-found-container text-zinc-200 font-sans h-[100dvh] overflow-hidden relative"
+    style="background: #09090b;"
+  >
+    <style>
+      .not-found-container {
+        --bg: #09090b;
+        --surface: #0d0d0f;
+        --border: rgba(255, 255, 255, 0.07);
+        --amber: #c47c2e;
+        --amber-light: #d4a245;
+        --zinc-200: #e4e4e7;
+        --zinc-400: #a1a1aa;
+        --zinc-500: #71717a;
+        --zinc-600: #52525b;
+        --zinc-700: #3f3f46;
+        --zinc-800: #27272a;
+      }
+      .not-found-container::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        background-size: 28px 28px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .orb-1 {
+        width: 500px;
+        height: 500px;
+        top: -150px;
+        left: -100px;
+        background: radial-gradient(circle, rgba(196, 124, 46, 0.2), transparent 70%);
+        animation: drift-a 8s ease-in-out infinite alternate;
+      }
+      .orb-2 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        right: -80px;
+        background: radial-gradient(circle, rgba(212, 162, 69, 0.15), transparent 70%);
+        animation: drift-b 10s ease-in-out infinite alternate;
+      }
+      @keyframes drift-a {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(40px, 30px);
+        }
+      }
+      @keyframes drift-b {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(-30px, -20px);
+        }
+      }
+      .wrapper {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .error-code {
+        font-family: 'Bebas Neue', cursive;
+        font-size: clamp(96px, 18vw, 180px);
+        line-height: 1;
+        letter-spacing: 0.04em;
+        color: var(--film-cream, #f0e6cc);
+        opacity: 0;
+        animation: rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+        position: relative;
+      }
+      .error-code .outline {
+        color: transparent;
+        -webkit-text-stroke: 2px var(--amber);
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .redirect-flash {
+        position: absolute;
+        inset: 0;
+        background: var(--bg);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 100;
+        transition: opacity 0.4s ease;
+      }
+      .redirect-flash.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .countdown-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 20px;
+        border-radius: 16px;
+        background: rgba(196, 124, 46, 0.06);
+        border: 1px solid rgba(196, 124, 46, 0.18);
+        margin-bottom: 28px;
+        opacity: 0;
+        animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 10px;
+        background: var(--amber);
+        color: #070706;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 0 24px rgba(196, 124, 46, 0.3);
+        transition:
+          background 0.15s,
+          box-shadow 0.15s,
+          transform 0.1s;
+        font-family: 'Syne', sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .btn-primary:hover {
+        background: var(--amber-light);
+        box-shadow: 0 0 36px rgba(196, 124, 46, 0.5);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--zinc-400);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid var(--border);
+        transition:
+          color 0.15s,
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.1s;
+        font-family: 'Syne', sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .btn-secondary:hover {
+        color: var(--zinc-200);
+        border-color: rgba(196, 124, 46, 0.3);
+        background: rgba(196, 124, 46, 0.05);
+        transform: translateY(-1px);
+      }
+      .actions {
+        opacity: 0;
+        animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+      }
+      .h1-404 {
+        opacity: 0;
+        animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+      }
+      .p-404 {
+        opacity: 0;
+        animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+      }
+    </style>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="redirect-flash" id="redirect-flash"></div>
+
+    <div class="wrapper">
+      <div class="error-code" aria-label="Error 404">
+        <span>4</span><span class="outline">0</span><span>4</span>
+      </div>
+
+      <h1
+        class="h1-404"
+        style="font-size: clamp(18px,3vw,22px); font-weight: 700; color: #e4e4e7; letter-spacing: -0.02em; margin-bottom: 10px;"
+      >
+        This reel is missing
+      </h1>
+      <p
+        class="p-404"
+        style="font-size: 13px; color: #71717a; line-height: 1.6; max-width: 340px; margin: 0 auto 36px;"
+      >
+        The page you&apos;re looking for doesn&apos;t exist or was moved.<br />
+        Redirecting you back to the homepage.
+      </p>
+
+      <div class="countdown-card">
+        <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0;">
+          <svg width="44" height="44" viewBox="0 0 44 44" style="transform: rotate(-90deg);">
+            <circle
+              cx="22"
+              cy="22"
+              r="19"
+              fill="none"
+              stroke="rgba(196,124,46,0.15)"
+              stroke-width="3"></circle>
+            <circle
+              id="countdown-circle"
+              cx="22"
+              cy="22"
+              r="19"
+              fill="none"
+              stroke="#C47C2E"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-dasharray="119.38"
+              stroke-dashoffset="0"
+              style="transition: stroke-dashoffset 1s linear;"></circle>
+          </svg>
+          <div
+            id="countdown-number"
+            style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #D4A245; font-variant-numeric: tabular-nums;"
+          >
+            5
+          </div>
+        </div>
+        <div style="text-align: left;">
+          <strong style="display: block; font-size: 12px; font-weight: 600; color: #D4A245; margin-bottom: 2px;"
+            >Redirecting automatically</strong
+          >
+          <span id="countdown-label" style="font-size: 11px; color: #52525b;"
+            >Taking you home in 5 seconds</span
+          >
+        </div>
+      </div>
+
+      <div class="actions" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;">
+        <a href="/" class="btn-primary">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Go Home
+        </a>
+        <a href="/build" class="btn-secondary">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M9 9h6M9 12h6M9 15h4"></path>
+          </svg>
+          Open Builder
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Countdown timer and auto-redirect
+    const DURATION = 5;
+    const CIRCUMFERENCE = 119.38;
+    let remaining = DURATION;
+
+    const circle = document.getElementById('countdown-circle') as SVGCircleElement | null;
+    const numberEl = document.getElementById('countdown-number');
+    const labelEl = document.getElementById('countdown-label');
+    const flashEl = document.getElementById('redirect-flash');
+
+    function updateUI() {
+      const pct = Math.max(remaining / DURATION, 0);
+      if (circle) circle.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - pct));
+      if (numberEl) numberEl.textContent = String(remaining);
+      if (labelEl) labelEl.textContent = `Taking you home in ${remaining} second${remaining !== 1 ? 's' : ''}`;
+    }
+
+    updateUI();
+
+    const interval = setInterval(() => {
+      remaining -= 1;
+      updateUI();
+      if (remaining <= 0) {
+        clearInterval(interval);
+        if (flashEl) flashEl.classList.add('active');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 400);
+      }
+    }, 1000);
+  </script>
+</Layout>
