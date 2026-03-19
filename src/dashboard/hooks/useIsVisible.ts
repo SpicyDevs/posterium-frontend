@@ -20,7 +20,8 @@
 //   const visibleRef = useRef(true);
 //   useIsVisibleRef(elementRef, visibleRef);  ← see overload below
 // ─────────────────────────────────────────────────────────────────────
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 
 interface Options {
   threshold?: number;

@@ -12,7 +12,8 @@
 //   translateX  = -(clamp(progress, 0, 1) × maxShift)
 //
 // translate3d forces GPU compositing - avoids main-thread paint on move.
-import { useCallback, useEffect, useRef, RefObject } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 
 interface LayoutCache {
   top: number; // container's absolute document top

@@ -12,7 +12,8 @@
 //   placeholder so the user knows the logo region is still active.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useRef, useEffect } from 'react';
-import { PosterConfig, CANVAS_WIDTH } from '../types';
+import type { PosterConfig } from '../types';
+import { CANVAS_WIDTH } from '../types';
 import { ImageOff } from 'lucide-react';
 
 interface Props {

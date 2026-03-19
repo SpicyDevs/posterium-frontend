@@ -26,11 +26,11 @@ import {
   DragDropContext,
   Droppable,
   Draggable,
-  DropResult,
-  DraggableProvided,
 } from '@hello-pangea/dnd';
+import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
-import { PosterConfig, RatingType, ALL_BADGES } from '../types';
+import type { PosterConfig, RatingType } from '../types';
+import { ALL_BADGES } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';

@@ -1,18 +1,20 @@
 // src/utils.ts
-import {
+import type {
   PosterConfig,
-  DEFAULT_CONFIG,
   RatingType,
+  MediaType,
+  ApiKeys,
+  ExtensionType,
+  LogoSourceType,
+} from './types';
+import {
+  DEFAULT_CONFIG,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   BASE_BADGE_W,
   BASE_BADGE_H,
   GAP,
   PADDING,
-  MediaType,
-  ApiKeys,
-  ExtensionType,
-  LogoSourceType,
 } from './types';
 
 // @ts-ignore

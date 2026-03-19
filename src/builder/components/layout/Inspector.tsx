@@ -2,7 +2,7 @@
 import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
-import { PosterConfig } from '../../types';
+import type { PosterConfig } from '../../types';
 import { Globe, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';

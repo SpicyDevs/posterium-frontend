@@ -1,7 +1,8 @@
 // src/BuilderApp.tsx
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import { PosterConfig, DEFAULT_CONFIG } from './types';
+import type { PosterConfig } from './types';
+import { DEFAULT_CONFIG } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
 import CodeBox from './components/CodeBox';

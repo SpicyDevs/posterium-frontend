@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useId, memo, useRef } from 'react';
 import { Copy, Check, ArrowRight, Loader2, Download, Link2 } from 'lucide-react';
 import { generateApiUrl } from '../utils';
-import { PosterConfig } from '../types';
+import type { PosterConfig } from '../types';
 
 interface Props {
   config: PosterConfig;

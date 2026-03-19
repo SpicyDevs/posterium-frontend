@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
+import type { PosterConfig, RatingType } from '../types';
 import {
-  PosterConfig,
-  RatingType,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   BASE_BADGE_W,
