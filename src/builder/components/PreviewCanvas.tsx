@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { PosterConfig, RatingType } from '../types';
 import {
   CANVAS_WIDTH,
@@ -36,6 +36,29 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
+
+  // FIX: rAF throttle for drag move updates.
+  //
+  // Previously, handleDragMove called setDragSession on every mousemove event.
+  // Modern mice fire 200-400 pointer events per second; each one triggered a
+  // full React reconcile + all badge position calculations. This is the root
+  // cause of sluggish drag performance.
+  //
+  // Solution: buffer the latest drag values in a ref, and only flush to React
+  // state once per animation frame (~60fps). The visual result is identical —
+  // the browser can only paint at ~60fps anyway — but the JS work drops from
+  // 200-400 reconciles/sec to 60.
+  const pendingDragRef = useRef<{ id: RatingType; dx: number; dy: number } | null>(null);
+  const dragRafRef = useRef<number | null>(null);
+
+  // Cleanup pending rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+      }
+    };
+  }, []);
 
   // --- Badge overlap detection ---
   const getBadgeRect = (id: RatingType, index: number) => {
@@ -96,18 +119,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    // Coefficient chosen so a typical 100-unit scroll step gives ~33% zoom change
     const ZOOM_SENSITIVITY = 0.004;
-    // Damping reduces jitter on high-resolution/accelerated trackpad scroll events
     const PAN_DAMPING_FACTOR = 0.85;
 
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      // Smoother zoom: scale factor proportional to deltaY using exponential mapping
       const rawDelta = -e.deltaY;
       const factor = Math.exp(rawDelta * ZOOM_SENSITIVITY);
       setZoom((z) => Math.max(0.2, Math.min(z * factor, 4)));
-      // Show zoom indicator briefly
       setIsZooming(true);
       if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
       zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
@@ -120,7 +139,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       }
       setIsPanning(true);
       setPan((p) => clampPan(p.x - dx * PAN_DAMPING_FACTOR, p.y - dy * PAN_DAMPING_FACTOR));
-      // Auto-clear panning state using a dedicated timer (separate from zoomFadeTimer)
       if (panFadeTimer.current) clearTimeout(panFadeTimer.current);
       panFadeTimer.current = setTimeout(() => setIsPanning(false), 150);
     }
@@ -180,7 +198,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     params.set('source', config.source);
     if (config.textless) params.set('textless', '1');
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    // Cache buster - invalidates on source/ptype/textless changes only
     params.set('_t', `${config.tmdbId}-${config.source}-${config.textless}-${config.ptype}`);
 
     return `${base}?${params.toString()}`;
@@ -200,15 +217,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     setImageError(true);
   };
 
-  // ── Logo preview URL ────────────────────────────────────────────────────────
-  // We render the logo as a React overlay (same strategy as badges) so position
-  // changes are instant without refetching the poster SVG.
-  //
-  // URL resolution strategy (client-side, no extra API calls):
-  //   • If the active ID starts with 'tt' → Metahub can be constructed directly.
-  //   • For fanart/tmdb sources we don't have the URL client-side; the Metahub
-  //     fallback is used so the bounding box is always draggable/visible.
-  //     The correct source-specific logo will appear in the final downloaded file.
   const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
     const id = config.tmdbId;
@@ -218,13 +226,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (config.logoSource) {
       url.searchParams.set('source', config.logoSource);
     }
-    // Cache buster for real-time updates when source changes
     url.searchParams.set('_t', config.logoSource || 'auto');
 
     return url.toString();
   }, [config.logo, config.tmdbId, config.mediaType, config.logoSource]);
 
-  // ── Logo drag handler ───────────────────────────────────────────────────────
   const handleLogoDragEnd = (dx: number, dy: number) => {
     setConfig((prev) => {
       const currentX =
@@ -233,7 +239,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
 
-      // Allow slight overflow so logos can be nudged off-edge deliberately
       const margin = 0.3;
       const newX = Math.round(
         Math.max(
@@ -251,13 +256,31 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     });
   };
 
-  const handleDragMove = (id: RatingType, dx: number, dy: number) => {
+  // FIX: rAF-throttled drag move handler.
+  // Stores the latest drag values in a ref and schedules a single state update
+  // per animation frame. Drops excess events without losing the final position.
+  const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
-    setDragSession({ id, dx, dy });
-  };
+    pendingDragRef.current = { id, dx, dy };
+    if (dragRafRef.current === null) {
+      dragRafRef.current = requestAnimationFrame(() => {
+        dragRafRef.current = null;
+        if (pendingDragRef.current) {
+          setDragSession(pendingDragRef.current);
+        }
+      });
+    }
+  }, []);
 
   const handleDragEnd = (id: RatingType, dx: number, dy: number) => {
+    // Cancel any pending rAF so we don't get a stale dragSession update after drop
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+    pendingDragRef.current = null;
     setDragSession(null);
+
     if (dx === 0 && dy === 0) return;
 
     setConfig((prev: PosterConfig) => {
@@ -345,7 +368,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
         }}
       >
-        {/* Zoom level badge */}
         <div
           className="bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-400 pointer-events-none transition-opacity duration-300"
           style={{ opacity: isZooming ? 1 : 0 }}

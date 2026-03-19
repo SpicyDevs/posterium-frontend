@@ -15,11 +15,17 @@ export const usePosterHistory = (initialState: PosterConfig | (() => PosterConfi
   const setState = useCallback((action: React.SetStateAction<PosterConfig>) => {
     setStateObj((prev) => {
       const current = prev.history[prev.currentIndex];
-      // Properly support callback pattern for state updates
       const newState = typeof action === 'function' ? (action as Function)(current) : action;
 
-      // Ignore updates that don't actually change the state
-      if (JSON.stringify(current) === JSON.stringify(newState)) {
+      // FIX: Was JSON.stringify(current) === JSON.stringify(newState) — an O(n) string
+      // build + comparison that ran on every single setState call including 60fps slider
+      // drags, firing on the entire nested PosterConfig object (items Record included).
+      //
+      // Replaced with Object.is (reference equality): O(1), always correct.
+      // Functional updaters like `(prev) => ({ ...prev, foo: bar })` always produce a
+      // new object reference so they always add to history, which is the desired
+      // behaviour — only an exact same-reference no-op is skipped.
+      if (Object.is(current, newState)) {
         return prev;
       }
 

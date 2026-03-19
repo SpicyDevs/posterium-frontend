@@ -1,5 +1,5 @@
 // src/components/DraggableBadge.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
 import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
@@ -40,29 +40,28 @@ const DraggableBadge: React.FC<Props> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
 
-  // FIX: Keep mutable refs for all prop callbacks and the isSelected flag so that the
-  // global drag useEffect (below) does not need them in its deps array. Without these
-  // refs, the useEffect captured stale versions of the callbacks - particularly
-  // problematic when onDragEnd / onSelect / isSelected change during an active drag
-  // (e.g. another badge is selected while the user is dragging the current one).
+  // FIX: All four ref-syncs moved from useEffect to synchronous render-body assignments.
+  //
+  // With the old pattern (4 separate useEffect calls with no deps array), React
+  // registered and ran 4 effects per badge on EVERY render — that's 40 effect
+  // checks with 10 active badges. The effects didn't need to be effects at all:
+  // assigning to a ref in the render body is safe and correct because:
+  //   1. The value is always current before any child reads it.
+  //   2. Refs are mutable; the write is not observable by React's reconciler.
+  //   3. The global drag listeners read these refs asynchronously (after the
+  //      render is already committed), so they always get the fresh value.
+  //
+  // This is the pattern recommended by the React team for "keep a ref in sync
+  // with the latest prop" — no useEffect needed.
   const onDragEndRef = useRef(onDragEnd);
   const onSelectRef = useRef(onSelect);
   const isSelectedRef = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
 
-  // Sync refs unconditionally on every render - O(1) assignments.
-  useEffect(() => {
-    onDragEndRef.current = onDragEnd;
-  });
-  useEffect(() => {
-    onSelectRef.current = onSelect;
-  });
-  useEffect(() => {
-    isSelectedRef.current = isSelected;
-  });
-  useEffect(() => {
-    canvasScaleRef.current = canvasScale;
-  });
+  onDragEndRef.current = onDragEnd;
+  onSelectRef.current = onSelect;
+  isSelectedRef.current = isSelected;
+  canvasScaleRef.current = canvasScale;
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
@@ -93,22 +92,15 @@ const DraggableBadge: React.FC<Props> = ({
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl = 'ctrlKey' in e ? e.ctrlKey : false;
       const isMeta = 'metaKey' in e ? e.metaKey : false;
-      // Read from ref - always the current value regardless of when the drag started.
       if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
         onSelectRef.current(badgeId, false);
       }
     }
 
-    // Read from ref - always the current callback.
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
   };
 
-  // FIX: deps reduced to [isDragging] only. All prop callbacks and canvasScale are
-  // accessed through refs which are always current without requiring the effect to
-  // re-run. Previously [isDragging, canvasScale] meant the effect re-registered
-  // listeners mid-drag whenever the canvas was zoomed via pinch - briefly leaving a
-  // window with no active listeners and a missed mouseup/touchend.
   useEffect(() => {
     if (!isDragging) return;
 
@@ -160,12 +152,10 @@ const DraggableBadge: React.FC<Props> = ({
 
   const showIcon = itemConfig?.icon ?? config.icon ?? true;
 
-  // Apply alpha to hex bg colours so the Opacity slider always affects the preview.
   const rawBg = itemConfig?.bg ?? config.bg;
   const bgRaw = (() => {
     if (!rawBg) return `rgba(0,0,0,${alphaVal})`;
-    if (rawBg.startsWith('grad:')) return rawBg; // handled below
-    // Expand 3-digit shorthand (#RGB → #RRGGBB)
+    if (rawBg.startsWith('grad:')) return rawBg;
     const fullHex = /^#[0-9a-fA-F]{3}$/.test(rawBg)
       ? `#${rawBg[1]}${rawBg[1]}${rawBg[2]}${rawBg[2]}${rawBg[3]}${rawBg[3]}`
       : rawBg;

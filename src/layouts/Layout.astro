@@ -73,16 +73,28 @@ const resolvedTwitterImageAlt = twitterImageAlt ?? ogImageAlt;
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-    <!-- CRITICAL FONTS -->
+    <!--
+      FONTS
+      ─────
+      A single combined request for all font families.
+
+      CRITICAL FIX: Was previously two separate requests, the second using
+      display=block. display=block gives fonts a 3-second "block period"
+      during which ALL TEXT IS INVISIBLE — the primary cause of the
+      "sluggish" feel reported after the Vite→Astro migration.
+
+      display=swap: zero block period, unlimited swap period. Text renders
+      immediately in the fallback font then swaps when the webfont arrives.
+      This is the correct default for any content font.
+
+      Combined into ONE request to save a full DNS + TLS + HTTP round-trip.
+      The preconnect hints open the TCP connection before the link fires.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=block"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
     />
 
     <!-- PRECONNECTS (performance) -->
