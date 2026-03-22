@@ -1,6 +1,6 @@
 // src/components/builder/components/CodeBox.tsx
 import React, { useState, useEffect, useId, memo, useRef } from 'react';
-import { Copy, Check, ArrowRight, Loader2, Download, Link2, Braces } from 'lucide-react';
+import { Copy, Check, ArrowRight, Loader2, Download, Link2, Braces, ChevronDown } from 'lucide-react';
 import { generateApiUrl, toTemplateUrl, isTemplateUrl, parseUrlToConfig } from '../utils';
 import type { PosterConfig, ExtensionType } from '../types';
 import clsx from 'clsx';
@@ -22,17 +22,33 @@ const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
 const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtensionChange }) => {
   const inputId  = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const [url, setUrl]                 = useState('');
   const [copied, setCopied]           = useState(false);
   const [templateCopied, setTemplateCopied] = useState(false);
   const [isEditing, setIsEditing]     = useState(false);
   const [isLoading, setIsLoading]     = useState(false);
+  const [showFormatDropdown, setShowFormatDropdown] = useState(false);
 
   useEffect(() => {
     if (isEditing) return;
     const t = setTimeout(() => setUrl(generateApiUrl(config, baseUrl)), 120);
     return () => clearTimeout(t);
   }, [config, baseUrl, isEditing]);
+
+  // ── Handle outside click for format dropdown ───────────────────────────────
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowFormatDropdown(false);
+      }
+    };
+    if (showFormatDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFormatDropdown]);
 
   // ── Copy the live URL ──────────────────────────────────────────────────────
   const handleCopy = async () => {
@@ -119,7 +135,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
           autoCapitalize="none"
         />
 
-        <div className="flex items-center gap-0.5 pr-1 shrink-0">
+        <div className="flex items-center gap-0.5 pr-1 shrink-0 relative">
           {isEditing ? (
             <button
               onClick={handleLoad}
@@ -132,6 +148,43 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
             </button>
           ) : (
             <>
+              {/* Format Dropdown Button */}
+              {onExtensionChange && (
+                <div className="relative flex items-center" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowFormatDropdown(!showFormatDropdown)}
+                    title="Change image format"
+                    className="h-6 px-1.5 rounded flex items-center justify-center gap-0.5 text-[10px] font-mono uppercase text-zinc-500 hover:text-zinc-300 hover:bg-white/6 transition-colors select-none"
+                  >
+                    {config.extension}
+                    <ChevronDown size={10} className="opacity-70" />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showFormatDropdown && (
+                    <div className="absolute top-full right-0 mt-1.5 w-16 bg-[#131316] border border-white/10 rounded-md shadow-xl overflow-hidden z-20 flex flex-col p-1">
+                      {EXT_OPTIONS.map(ext => (
+                        <button
+                          key={ext.id}
+                          onClick={() => {
+                            onExtensionChange(ext.id);
+                            setShowFormatDropdown(false);
+                          }}
+                          className={clsx(
+                            'px-2 py-1.5 text-[10px] font-mono text-center rounded-sm transition-colors uppercase',
+                            config.extension === ext.id
+                              ? 'bg-[#C47C2E]/20 text-[#D4A245] font-semibold'
+                              : 'text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
+                          )}
+                        >
+                          {ext.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleDownload}
                 aria-label="Download poster"
@@ -166,34 +219,12 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
         </div>
       </div>
 
-      {/* ── Format / extension selector ─────────────────────────────────── */}
-      {onExtensionChange && (
-        <div className="flex items-center gap-0.5">
-          <span className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest pr-1.5 select-none">
-            fmt
+      {/* Template hint (only shown when copied) */}
+      {templateCopied && (
+        <div className="flex justify-end pr-1">
+          <span className="text-[9px] font-mono text-[#D4A245]/70 whitespace-nowrap">
+            Copied with <span className="font-bold">{'{imdb_id}'}</span>
           </span>
-          {EXT_OPTIONS.map(ext => (
-            <button
-              key={ext.id}
-              type="button"
-              onClick={() => onExtensionChange(ext.id)}
-              className={clsx(
-                'h-[18px] px-2 rounded text-[9px] font-mono uppercase tracking-wide transition-all active:scale-95 select-none',
-                config.extension === ext.id
-                  ? 'bg-[#C47C2E]/18 text-[#D4A245] ring-1 ring-[#C47C2E]/35 font-semibold'
-                  : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/4'
-              )}
-            >
-              {ext.label}
-            </button>
-          ))}
-
-          {/* Template hint — inline, no absolute positioning */}
-          {templateCopied && (
-            <span className="ml-auto text-[9px] font-mono text-[#D4A245]/70 whitespace-nowrap pr-0.5">
-              Copied with <span className="font-bold">{'{imdb_id}'}</span>
-            </span>
-          )}
         </div>
       )}
 
