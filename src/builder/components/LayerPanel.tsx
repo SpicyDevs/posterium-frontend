@@ -137,18 +137,8 @@ const InlineSlider: React.FC<{
   );
 };
 
-// ─── Logo size presets ────────────────────────────────────────────────────────
-const LOGO_SIZES = [
-  { key: 'sm', label: 'S',  w: 220, h: 58  },
-  { key: 'md', label: 'M',  w: 320, h: 84  },
-  { key: 'lg', label: 'L',  w: 400, h: 105 },
-  { key: 'xl', label: 'XL', w: 460, h: 121 },
-] as const;
-
-function getLogoSizeKey(w: number, h: number) {
-  for (const s of LOGO_SIZES) { if (s.w === w && s.h === h) return s.key; }
-  return 'custom';
-}
+// Logo aspect ratio used when the size slider changes (matches backend default 380×100)
+const LOGO_ASPECT = 100 / 380;
 
 const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
   { id: null,      label: 'Auto'   },
@@ -162,16 +152,13 @@ const LogoPanel: React.FC<{
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }> = ({ config, setConfig }) => {
-  const [showCustomSize, setShowCustomSize] = useState(false);
-
   const update = useCallback(
     <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
       setConfig((prev) => ({ ...prev, [key]: value })),
     [setConfig]
   );
 
-  const logoCentredX  = Math.round((CANVAS_WIDTH - config.logoW) / 2);
-  const currentSizeKey = getLogoSizeKey(config.logoW, config.logoH);
+  const logoCentredX = Math.round((CANVAS_WIDTH - config.logoW) / 2);
 
   return (
     <div className="space-y-4 pt-1">
@@ -201,50 +188,19 @@ const LogoPanel: React.FC<{
         </p>
       </div>
 
-      {/* ── Size presets ── */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Size</p>
-          <button
-            type="button"
-            onClick={() => setShowCustomSize((v) => !v)}
-            className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            {showCustomSize || currentSizeKey === 'custom' ? 'Presets' : 'Custom'}
-          </button>
-        </div>
-        <div className="grid grid-cols-4 gap-1">
-          {LOGO_SIZES.map((sz) => (
-            <button
-              key={sz.key}
-              type="button"
-              onClick={() => {
-                setConfig((prev) => ({ ...prev, logoW: sz.w, logoH: sz.h }));
-                setShowCustomSize(false);
-              }}
-              className={clsx(
-                'flex flex-col items-center justify-center h-12 rounded-lg transition-all active:scale-95 border',
-                currentSizeKey === sz.key && !showCustomSize
-                  ? 'bg-[#C47C2E]/15 text-[#E8D8A8] border-[#C47C2E]/30 ring-1 ring-[#C47C2E]/20'
-                  : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border-white/6 hover:border-white/15'
-              )}
-            >
-              <span className="text-[12px] font-bold leading-tight">{sz.label}</span>
-              <span className="text-[8px] opacity-50 leading-tight">{sz.w}px</span>
-            </button>
-          ))}
-        </div>
-        {(showCustomSize || currentSizeKey === 'custom') && (
-          <div className="space-y-3 pt-2 pl-2 border-l-2 border-white/5">
-            <InlineSlider label="Width" value={config.logoW} min={50} max={490} unit="px"
-              onChange={(v) => setConfig((p) => ({ ...p, logoW: Math.round(v) }))}
-            />
-            <InlineSlider label="Height" value={config.logoH} min={20} max={200} unit="px"
-              onChange={(v) => update('logoH', Math.round(v))}
-            />
-          </div>
-        )}
-      </div>
+      {/* ── Size ── */}
+      <InlineSlider
+        label="Size"
+        value={config.logoW}
+        min={80}
+        max={490}
+        step={10}
+        formatValue={(v) => `${v}px wide`}
+        onChange={(v) => {
+          const w = Math.round(v);
+          setConfig((prev) => ({ ...prev, logoW: w, logoH: Math.round(w * LOGO_ASPECT) }));
+        }}
+      />
 
       {/* ── Position ── */}
       <div className="space-y-3">
