@@ -1,37 +1,6 @@
-# public/_headers
-# ─────────────────────────────────────────────────────────────────────
-# Cloudflare Pages — HTTP response headers
-#
-# FONT PATH BUG FIX
-# ─────────────────
-# vite-plugin-webfont-dl downloads fonts into the Vite assets directory
-# (/assets/), NOT a separate /fonts/ directory.  The build output confirms:
-#   dist/assets/LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yyygA-lLTsRRxN.woff2
-#   dist/assets/LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yyygA-qRpaaN48.woff2
-#   ...
-# The previous /fonts/* header block was dead code — fonts never landed
-# there, so the Access-Control-Allow-Origin and Cache headers were never
-# applied.  Fix: handle fonts under /assets/* (where they actually are)
-# by adding Access-Control-Allow-Origin: * to that rule.
-#
-# CLOUDFLARE CACHING PRIMER
-# ─────────────────────────
-# CF Pages respects standard Cache-Control directives.  The edge caches
-# any response whose Cache-Control includes `public` AND max-age > 0.
-#
-#   /index.html     — must-revalidate; fresh HTML on every deploy
-#   /assets/*       — content-hash filenames (Vite) → immutable 1-year cache
-#                     Also includes downloaded woff2 fonts → needs CORS
-#   Static images   — 7-day browser, 30-day edge with stale-while-revalidate
-#
-# EARLY HINTS (103)
-# ─────────────────
-# CF Pages automatically upgrades `Link` preload headers on /index.html
-# to HTTP/2 Server Push and HTTP 103 Early Hints.  We hint the API origin
-# and Google Fonts to open TCP connections before HTML is fully parsed.
-# ─────────────────────────────────────────────────────────────────────
+# public/_headers — Cloudflare Pages HTTP response headers
 
-# ── Universal security headers ─────────────────────────────────────
+# Universal security headers
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
@@ -40,7 +9,7 @@
   X-XSS-Protection: 1; mode=block
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
-# ── HTML entry — never cache stale ────────────────────────────────
+# HTML entry — never cache stale
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
   Link: <https://api.spicydevs.xyz>; rel=preconnect
@@ -50,16 +19,13 @@
 /404.html
   Cache-Control: public, max-age=0, must-revalidate
 
-# ── Hashed static assets (JS, CSS, fonts) ─────────────────────────
-# vite-plugin-webfont-dl places woff2 files here too — Access-Control-
-# Allow-Origin is required for cross-origin font loading (e.g. if the
-# site is embedded in an iframe on a different origin).
+# Hashed static assets (JS, CSS, fonts)
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
   Access-Control-Allow-Origin: *
 
-# ── Sitemaps / robots ──────────────────────────────────────────────
+# Sitemaps / robots
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
@@ -68,9 +34,7 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600, must-revalidate
 
-# ── Static images ─────────────────────────────────────────────────
-# Browser: 7 days. CF edge: 30 days (s-maxage).
-# stale-while-revalidate lets CF serve instantly while refreshing.
+# Static images
 /og-image.jpg
   Content-Type: image/jpeg
   Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
@@ -84,7 +48,7 @@
 /icon.svg
   Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
 
-# ── Web manifest ──────────────────────────────────────────────────
+# Web manifest
 /manifest.webmanifest
   Content-Type: application/manifest+json
   Cache-Control: public, max-age=86400, must-revalidate

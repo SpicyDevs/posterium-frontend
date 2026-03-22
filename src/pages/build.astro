@@ -1,73 +1,18 @@
 ---
 // src/pages/build.astro
-// Poster Builder page — entire Builder as a React island with client:load
-// (immediate hydration required for interactive canvas).
-import Layout from '../layouts/Layout.astro';
-import BuilderApp from '../builder/index.tsx';
-
-const ORGANIZATION_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'SpicyDevs',
-  url: 'https://spicydevs.xyz',
-  sameAs: ['https://github.com/xdaayush/freeposterapi'],
-};
-
-const WEB_APP_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Posterium Poster Builder',
-  url: 'https://posters.spicydevs.xyz/build',
-  applicationCategory: 'DesignApplication',
-  operatingSystem: 'Web Browser',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  author: { '@type': 'Organization', name: 'SpicyDevs', url: 'https://spicydevs.xyz' },
-  description:
-    'Visual drag-and-drop editor for building custom movie and TV posters with ' +
-    'live rating badge overlays. Real-time preview with instant API URL export.',
-  isAccessibleForFree: true,
-  featureList: [
-    'Drag-and-drop badge positioning',
-    'Real-time poster preview',
-    'Per-badge styling controls',
-    'Undo/redo history',
-    'Keyboard shortcuts',
-    'API URL generation',
-    'Multiple export formats',
-  ],
-};
-
-const BREADCRUMB_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      name: 'Posterium Home',
-      item: 'https://posters.spicydevs.xyz/',
-    },
-    {
-      '@type': 'ListItem',
-      position: 2,
-      name: 'Poster Builder',
-      item: 'https://posters.spicydevs.xyz/build',
-    },
-  ],
-};
+// Poster Builder — full React island, client:only (no SSR flash, localStorage safe)
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
+import BuilderApp from '@/components/builder/index.tsx';
+import '@/styles/global.css';
 ---
 
-<Layout
+<BaseLayout
   title="Poster Builder - Drag & Drop Editor | Posterium"
   description="Drag-and-drop poster editor with real-time preview. Position rating badges pixel-perfectly on any movie or TV poster. Supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, or WebP."
-  keywords="poster editor, drag drop poster builder, movie poster editor online, IMDb badge position, rating badge editor, custom poster builder, free poster editor, movie poster designer, TV poster creator, export poster SVG PNG, Plex poster builder, Jellyfin poster editor"
   canonical="https://posters.spicydevs.xyz/build"
-  ogTitle="Poster Builder - Drag & Drop Editor | Posterium"
-  ogDescription="Drag-and-drop poster editor with real-time preview and live API URL generation. Export as SVG, PNG, JPG, or WebP."
-  ogUrl="https://posters.spicydevs.xyz/build"
-  twitterTitle="Poster Builder - Drag & Drop Editor | Posterium"
-  twitterDescription="Drag-and-drop poster editor with live API URL generation. Free, no account."
-  jsonLd={[ORGANIZATION_SCHEMA, WEB_APP_SCHEMA, BREADCRUMB_SCHEMA]}
+  bodyClass="overflow-hidden"
 >
-  <BuilderApp client:load />
-</Layout>
+  <PageSEO slot="head" routeKey="/build" />
+  <BuilderApp client:only="react" />
+</BaseLayout>

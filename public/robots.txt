@@ -4,9 +4,7 @@
 User-agent: *
 Allow: /
 Disallow: /cdn-cgi/
-
 Allow: /assets/
-
 Sitemap: https://posters.spicydevs.xyz/sitemap.xml
 
 User-agent: Googlebot

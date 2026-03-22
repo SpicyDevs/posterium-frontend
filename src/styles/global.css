@@ -15,10 +15,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /*
-   * Range inputs - define BOTH -webkit-appearance AND the standard appearance
-   * property so autoprefixer/browsers don't warn about missing the standard form.
-   */
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
@@ -40,14 +36,14 @@
     width: 14px;
     height: 14px;
     border-radius: 9999px;
-    background: #C47C2E;
+    background: #c47c2e;
     margin-top: -5px;
     border: 2px solid rgba(255, 255, 255, 0.15);
     transition: background 0.15s;
   }
 
   input[type='range']::-webkit-slider-thumb:hover {
-    background: #D4A245;
+    background: #d4a245;
   }
 
   input[type='range']::-moz-range-track {
@@ -61,28 +57,100 @@
     width: 14px;
     height: 14px;
     border-radius: 9999px;
-    background: #C47C2E;
+    background: #c47c2e;
     border: 2px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
   }
 
-  /*
-   * Select elements - same -webkit-appearance + appearance pair.
-   */
   select {
     -webkit-appearance: none;
     appearance: none;
   }
 }
 
+/* ─── Film CSS variables — available on ALL pages including /build ──────────── */
+@layer base {
+  :root {
+    --film-black: #070706;
+    --film-dark: #0e0d0b;
+    --film-mid: #181612;
+    --film-char: #222018;
+    --film-amber: #c47c2e;
+    --film-gold: #d4a245;
+    --film-pale: #e8d8a8;
+    --film-cream: #f0e6cc;
+    --film-white: #faf6ec;
+    --film-silver: #b0a898;
+    --film-dust: #453f37;
+    --film-red: #a82018;
+    --film-border: rgba(196, 124, 46, 0.16);
+    --film-glow: rgba(196, 124, 46, 0.07);
+    --film-text-body: rgba(230, 218, 196, 0.92);
+    --film-text-label: rgba(212, 198, 172, 0.82);
+    --film-text-dim: rgba(180, 168, 148, 0.62);
+    --film-text-ghost: rgba(140, 130, 112, 0.38);
+  }
+
+  /* Font utility classes — available on all pages */
+  .poster-font {
+    font-family: 'Bebas Neue', cursive;
+    letter-spacing: 0.04em;
+  }
+  .syne-font {
+    font-family: 'Syne', sans-serif;
+  }
+  .body-font {
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mono-font {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Film grain overlay — persistent, CSS-only, zero JS cost */
+  .grain-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 186px 186px;
+    animation: grain-anim 0.14s steps(1) infinite;
+  }
+
+  /* Scanlines overlay */
+  .scan-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(0, 0, 0, 0.012) 3px,
+      rgba(0, 0, 0, 0.012) 4px
+    );
+  }
+
+  @keyframes grain-anim {
+    0% { transform: translate(0, 0); }
+    14% { transform: translate(-3%, -4%); }
+    28% { transform: translate(4%, 2%); }
+    42% { transform: translate(-2%, 5%); }
+    57% { transform: translate(5%, -3%); }
+    71% { transform: translate(-4%, 3%); }
+    85% { transform: translate(2%, -5%); }
+  }
+}
+
 /* ─── Custom utilities ──────────────────────────────────────────────────────── */
 @layer utilities {
-  /* Used throughout the sidebar panels */
   .sidebar-label {
     @apply block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5;
   }
 
-  /* Thin dark scrollbar - used in SidebarLayout and dropdowns */
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
