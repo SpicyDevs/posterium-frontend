@@ -112,11 +112,21 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     let cancelled = false;
     const img = new Image();
     let safetyTimer: ReturnType<typeof setTimeout>;
-    const done = (error: boolean) => { if (cancelled) return; setIsImageLoading(false); if (error) setImageError(true); };
+
+    const done = (error: boolean) => { 
+      clearTimeout(safetyTimer);
+      if (cancelled) return; 
+      setIsImageLoading(false); 
+      if (error) setImageError(true); 
+    };
+
     img.onload  = () => done(false);
     img.onerror = () => done(true);
-    img.src     = cleanPosterUrl;
+    
+    // Initialize timer BEFORE setting src to handle synchronous cache loads
     safetyTimer = setTimeout(() => done(true), PRELOAD_TIMEOUT_MS);
+    img.src     = cleanPosterUrl;
+
     return () => { cancelled = true; clearTimeout(safetyTimer); img.onload = null; img.onerror = null; img.src = ''; };
   }, [cleanPosterUrl]);
 
