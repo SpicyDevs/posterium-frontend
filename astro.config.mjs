@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   site: 'https://posters.spicydevs.xyz',
   output: 'static',
-  trailingSlash: 'never', // Forces Astro to generate URLs without trailing slashes
+  trailingSlash: 'never',
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
@@ -20,19 +20,13 @@ export default defineConfig({
     react(),
     sitemap({
       serialize(item) {
-        // 1. Strip trailing slashes to perfectly match your <link rel="canonical"> tags.
-        // The root domain ('/') inherently requires a trailing slash in valid URLs.
         if (item.url !== 'https://posters.spicydevs.xyz/' && item.url.endsWith('/')) {
           item.url = item.url.slice(0, -1);
         }
         
-        // 2. Automatically inject the current build timestamp
         item.lastmod = new Date().toISOString();
-        
-        // 3. Apply change frequency
         item.changefreq = 'weekly';
         
-        // 4. Assign priority based on the route
         if (item.url === 'https://posters.spicydevs.xyz/') {
           item.priority = 1.0;
         } else if (item.url === 'https://posters.spicydevs.xyz/build') {
@@ -47,7 +41,20 @@ export default defineConfig({
     AstroPWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      manifest: false,
+      manifest: {
+        name: "Posterium - Posters with Ratings!",
+        short_name: "Posterium",
+        description: "Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#0a0a0a",
+        theme_color: "#0a0a0a",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
+        ]
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         runtimeCaching: [
