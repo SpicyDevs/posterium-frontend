@@ -1,18 +1,31 @@
-// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import path from 'path';
+import compress from 'astro-compress';
 import { fileURLToPath } from 'url';
+import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   output: 'static',
-  integrations: [react()],
-  prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport',
-  },
+  integrations: [
+    react(),
+    compress({
+      HTML: {
+        "html-minifier-terser": {
+          removeAttributeQuotes: false,
+          collapseWhitespace: true,
+          removeComments: true,
+          minifyJS: true,
+          minifyCSS: true,
+        }
+      },
+      CSS: true,
+      JS: true,
+      SVG: false,
+      Image: false,
+    })
+  ],
   vite: {
     resolve: {
       alias: {
