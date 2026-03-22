@@ -14,14 +14,6 @@ import {
   ComparisonSection,
 } from './sections/index';
 
-// Skeleton shimmer for poster card loading states — kept from original
-const SHIMMER_CSS = `
-  @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position:  200% 0; }
-  }
-`;
-
 // ─────────────────────────────────────────────────────────────────────
 // ContentSection — content-visibility:auto for below-fold sections
 // ─────────────────────────────────────────────────────────────────────
@@ -45,9 +37,6 @@ const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number 
 const Dashboard: React.FC = () => {
   return (
     <>
-      {/* Inject dashboard-specific styles */}
-      <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS + SHIMMER_CSS }} />
-
       <a
         href="#main-content"
         style={{
