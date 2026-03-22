@@ -6,7 +6,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { DropResult, DraggableProvided } from "@hello-pangea/dnd";
 import clsx from "clsx";
 import type { PosterConfig, RatingType, LogoSourceType } from "../types";
-import { ALL_BADGES, CANVAS_WIDTH } from "../types";
+import { ALL_BADGES } from "../types";
 import { BADGE_ICONS } from "../constants";
 import { DEFAULT_API_BASE } from "../utils";
 import { useEditor } from "../context/EditorContext";
@@ -48,19 +48,22 @@ SelectBox.displayName = "SelectBox";
 const InlineSlider: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
-}> = ({ label, value, onChange, min, max, step = 1, unit = "", formatValue }) => {
-  const display = formatValue ? formatValue(value) : `${value}${unit}`;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] text-zinc-500 font-medium">{label}</span>
-        <span className="text-[10px] font-mono text-zinc-600 tabular-nums">{display}</span>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))} className="w-full" />
+}> = ({ label, value, onChange, min, max, step = 1, unit = "", formatValue }) => (
+  <div className="space-y-1">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] text-zinc-500 font-medium">{label}</span>
+      <span className="text-[10px] font-mono text-zinc-600 tabular-nums">
+        {formatValue ? formatValue(value) : `${value}${unit}`}
+      </span>
     </div>
-  );
-};
+    <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(parseFloat(e.target.value))} className="w-full" />
+  </div>
+);
+
+// Base logo dimensions — the slider scales both proportionally from this
+const LOGO_BASE_W = 320;
+const LOGO_BASE_H = 84;
+const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H; // ≈ 3.81
 
 const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
   { id: null,      label: "Auto"   },
@@ -70,12 +73,20 @@ const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
 ];
 
 /**
- * LogoPanel — Source, W/H size sliders, Appearance.
- * Position is handled exclusively by dragging on the canvas.
+ * LogoPanel — Source, single Size slider (scales W+H proportionally), Appearance.
+ * Position is drag-only on the canvas.
  */
 const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<React.SetStateAction<PosterConfig>> }> = ({ config, setConfig }) => {
   const update = useCallback(<K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
     setConfig(prev => ({ ...prev, [key]: value })), [setConfig]);
+
+  // Derive a single "size" value (width in px) from logoW.
+  // Changing the slider updates BOTH logoW and logoH proportionally.
+  const handleSizeChange = (newW: number) => {
+    const w = Math.round(newW);
+    const h = Math.round(w / LOGO_ASPECT);
+    setConfig(prev => ({ ...prev, logoW: w, logoH: h }));
+  };
 
   return (
     <div className="space-y-4 pt-1">
@@ -96,13 +107,17 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
         <p className="text-[9px] text-zinc-700">Falls back automatically if source has no logo</p>
       </div>
 
-      {/* Size — simple sliders, no presets */}
-      <div className="space-y-3">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Size</p>
-        <InlineSlider label="Width"  value={config.logoW} min={50}  max={490} unit="px"
-          onChange={v => update("logoW", Math.round(v))} />
-        <InlineSlider label="Height" value={config.logoH} min={20}  max={200} unit="px"
-          onChange={v => update("logoH", Math.round(v))} />
+      {/* Single proportional size slider */}
+      <div className="space-y-1">
+        <InlineSlider
+          label="Size"
+          value={config.logoW}
+          min={100}
+          max={490}
+          unit="px"
+          onChange={handleSizeChange}
+        />
+        <p className="text-[9px] text-zinc-700">{config.logoW} × {config.logoH} px</p>
       </div>
 
       {/* Appearance */}
@@ -114,7 +129,7 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
           onChange={v => update("logoShadow", v)} />
       </div>
 
-      {/* Hint */}
+      {/* Drag hint */}
       <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
         <span className="text-amber-400/50 mt-px shrink-0 text-[11px]">⟠</span>
         <p className="text-[9px] text-zinc-600 leading-relaxed">
@@ -126,7 +141,7 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
 };
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection, activeTab, setActiveTab, setLiveRatings, setLivePosterUrl } = useEditor();
+  const { setBatchSelection, activeTab, setActiveTab, setLiveRatings } = useEditor();
   const [localMode, setLocalMode] = useState<"source" | "layers">("source");
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
   useEffect(() => { if (activeTab === "source" || activeTab === "layers") setLocalMode(activeTab); }, [activeTab]);
@@ -139,7 +154,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true);
       try {
-        const res  = await fetch(`https://api.spicydevs.xyz/search?q=${encodeURIComponent(searchQuery)}`);
+        const res  = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ["movie","tv"].includes(i.media_type)));
       } catch { } finally { setIsSearching(false); }
@@ -147,28 +162,21 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Sidebar metadata state (ratings, title, thumbnail)
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const [thumbUrl,    setThumbUrl]    = useState("");
 
-  // Fetch metadata + ratings from JSON endpoint.
-  // Also extracts imdbId for /poster/ URL migration.
-  // source/ptype/textless are NOT watched here — PreviewCanvas has its own fetch
-  // for the poster image that watches those params.
   useEffect(() => {
-    if (!config.tmdbId) return;
+    if (!config.tmdbId && !config.imdbId) return;
     const ctrl = new AbortController();
     (async () => {
       try {
         const idPath  = config.imdbId
           ? `/poster/${config.imdbId}`
           : `/${config.mediaType}/${config.tmdbId}`;
-        const jsonUrl = `${DEFAULT_API_BASE}${idPath}.json?source=${config.source}`;
-        const res     = await fetch(jsonUrl, { signal: ctrl.signal });
+        const res = await fetch(`${DEFAULT_API_BASE}${idPath}.json?source=${config.source}`, { signal: ctrl.signal });
         if (!res.ok) return;
         const data = await res.json();
 
-        // Populate sidebar ratings/title
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
         if (data.meta?.year)  merged.year  = String(data.meta.year);
@@ -176,56 +184,37 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setFetchedData(merged);
         setLiveRatings(data.ratings || {});
 
-        // Small thumbnail for the info card (w92 — minimal transfer)
-        const rawPoster = data.poster?.selected || "";
-        if (rawPoster) {
-          const thumbFull = rawPoster.startsWith("http")
-            ? rawPoster.replace(/\/w\d+\//, '/w92/')
-            : `https://image.tmdb.org/t/p/w92${rawPoster}`;
-          setThumbUrl(thumbFull);
-          // Also push a w500 URL to livePosterUrl so other components can use it
-          const previewFull = rawPoster.startsWith("http")
-            ? rawPoster
-            : `https://image.tmdb.org/t/p/w500${rawPoster}`;
-          setLivePosterUrl(previewFull);
+        // w92 thumbnail for info card
+        const raw = data.poster?.selected || "";
+        if (raw) {
+          setThumbUrl(raw.startsWith("http")
+            ? raw.replace(/\/w\d+\//, '/w92/')
+            : `https://image.tmdb.org/t/p/w92${raw}`
+          );
         }
 
         // Resolve imdbId for /poster/ URL generation
-        const resolvedImdbId = data.ids?.imdb;
-        if (resolvedImdbId && resolvedImdbId !== config.imdbId) {
-          setConfig(prev => ({ ...prev, imdbId: resolvedImdbId }));
+        if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
+          setConfig(prev => ({ ...prev, imdbId: data.ids.imdb }));
         }
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
       }
     })();
     return () => ctrl.abort();
-  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setLivePosterUrl, setConfig]);
+  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
 
   useEffect(() => {
-    if (!config.tmdbId) {
-      setThumbUrl("");
-      setLivePosterUrl(null);
-    }
-  }, [config.tmdbId, setLivePosterUrl]);
+    if (!config.tmdbId && !config.imdbId) { setThumbUrl(""); }
+  }, [config.tmdbId, config.imdbId]);
 
   const handleSelectMedia = useCallback((item: SearchResult | null) => {
     if (!item) return;
-    const year = (item.release_date || item.first_air_date)?.split("-")[0] || "";
-    setFetchedData({ title: item.title || item.name || "", year });
-    const thumb = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : "";
-    setThumbUrl(thumb);
-    if (item.poster_path) {
-      setLivePosterUrl(`https://image.tmdb.org/t/p/w500${item.poster_path}`);
-    }
-    setConfig(prev => ({
-      ...prev,
-      tmdbId: item.id.toString(),
-      imdbId: undefined,
-      mediaType: item.media_type as PosterConfig["mediaType"],
-    }));
+    setFetchedData({ title: item.title || item.name || "", year: (item.release_date || item.first_air_date)?.split("-")[0] || "" });
+    setThumbUrl(item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : "");
+    setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), imdbId: undefined, mediaType: item.media_type as PosterConfig["mediaType"] }));
     setSearchQuery(""); setResults([]);
-  }, [setConfig, setLivePosterUrl]);
+  }, [setConfig]);
 
   const updateConfig = useCallback(<K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
     setConfig(prev => ({ ...prev, [key]: value })), [setConfig]);
@@ -275,17 +264,15 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const getIconKey = (id: string): BadgeIconKey =>
     id === "rt" ? "rt_fresh" : id === "rt_popcorn" ? "popcorn_fresh" : (id as BadgeIconKey);
-
   const MediaIcon = config.mediaType === "tv" ? Tv : config.mediaType === "anime" ? Clapperboard : Film;
 
   const sourceOptions = [
-    { id: "tmdb",    label: "TMDB"        },
-    { id: "fanart",  label: "Fanart.tv"   },
-    { id: "metahub", label: "Metahub"     },
-    { id: "imdb",    label: "IMDb"        },
+    { id: "tmdb",    label: "TMDB"       },
+    { id: "fanart",  label: "Fanart.tv"  },
+    { id: "metahub", label: "Metahub"    },
+    { id: "imdb",    label: "IMDb"       },
     ...(config.mediaType === "anime" ? [{ id: "mal", label: "MyAnimeList" }, { id: "anilist", label: "AniList" }] : []),
   ];
-
   const ptypeOptions = [
     { id: "auto",   label: "Auto (Default)" },
     { id: "top1",   label: "Top 1"          },
@@ -302,33 +289,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     const iconKey   = getIconKey(badge.id);
     const iconData  = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
     const iconColor = isActive ? (iconData?.color ?? "#a1a1aa") : "#4a4a52";
-
     return (
-      <div
-        ref={provided?.innerRef}
-        {...provided?.draggableProps}
-        style={provided?.draggableProps.style}
+      <div ref={provided?.innerRef} {...provided?.draggableProps} style={provided?.draggableProps.style}
         onClick={e => { if (isActive) onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey); }}
         className={clsx("flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none",
           isSel ? "bg-[#C47C2E]/12 ring-1 ring-[#C47C2E]/30" : isActive ? "hover:bg-white/4 cursor-pointer" : "opacity-50",
           isDraggingItem && "shadow-2xl bg-[#1c1c1f] ring-1 ring-white/10 rotate-[0.5deg]"
-        )}
-      >
-        {isActive ? (
-          <div {...provided?.dragHandleProps} onClick={e => e.stopPropagation()}
-            className="text-zinc-700 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0">
-            <GripVertical size={13} />
-          </div>
-        ) : <div className="w-5 shrink-0" />}
-
+        )}>
+        {isActive
+          ? <div {...provided?.dragHandleProps} onClick={e => e.stopPropagation()} className="text-zinc-700 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"><GripVertical size={13} /></div>
+          : <div className="w-5 shrink-0" />
+        }
         <div className="shrink-0" onClick={e => { e.stopPropagation(); if (isActive) onSelect(badge.id, true); }}>
-          <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-all",
-            isSel ? "bg-[#C47C2E] border-[#D4A245]" : "bg-[#111113] border-zinc-600 hover:border-zinc-400"
-          )}>
+          <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-all", isSel ? "bg-[#C47C2E] border-[#D4A245]" : "bg-[#111113] border-zinc-600 hover:border-zinc-400")}>
             {isSel && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
           </div>
         </div>
-
         <div className="w-7 h-7 shrink-0 rounded-md bg-[#111113] border border-white/6 flex items-center justify-center">
           {badge.id === "age"
             ? <span className="text-[8px] font-bold" style={{ color: iconColor }}>PG</span>
@@ -337,19 +313,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               : <span className="text-[8px] font-bold text-zinc-500">{badge.label.slice(0, 2)}</span>
           }
         </div>
-
         <div className="flex-1 min-w-0">
-          <span className={clsx("block text-[11px] font-medium truncate",
-            isSel ? "text-[#F0E6CC]" : isActive ? "text-zinc-200" : "text-zinc-400"
-          )}>{badge.label}</span>
+          <span className={clsx("block text-[11px] font-medium truncate", isSel ? "text-[#F0E6CC]" : isActive ? "text-zinc-200" : "text-zinc-400")}>{badge.label}</span>
           {isActive && ratingVal && <span className="text-[9px] font-mono text-zinc-600">{ratingVal}</span>}
         </div>
-
         <div onClick={e => e.stopPropagation()} className="shrink-0">
           <button onClick={() => handleToggleVisibility(badge.id, !isActive)}
-            className={clsx("w-8 h-8 rounded-md flex items-center justify-center transition-colors",
-              isActive ? "text-zinc-400 hover:text-zinc-100 hover:bg-white/8" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-            )}
+            className={clsx("w-8 h-8 rounded-md flex items-center justify-center transition-colors", isActive ? "text-zinc-400 hover:text-zinc-100 hover:bg-white/8" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5")}
             title={isActive ? "Hide badge" : "Show badge"}>
             {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -359,8 +329,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   };
 
   return (
-    <SidebarLayout
-      bodyClassName="px-2 pt-2 pb-8"
+    <SidebarLayout bodyClassName="px-2 pt-2 pb-8"
       header={
         <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
           {(["source", "layers"] as const).map(tab => (
@@ -373,15 +342,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </button>
           ))}
         </div>
-      }
-    >
+      }>
+
       {/* ── Source Tab ─────────────────────────────────────────────────────── */}
       {localMode === "source" && (
         <div className="space-y-4">
-          {/* Media info card */}
+          {/* Info card */}
           {(fetchedData.title || config.tmdbId) && (
             <div className="flex gap-3 p-2.5 rounded-xl bg-[#111113] border border-white/6">
-              {/* w92 thumbnail — small enough to be a fast transfer */}
               <div className="w-12 h-[4.5rem] shrink-0 rounded-lg overflow-hidden bg-zinc-900 border border-white/6">
                 {thumbUrl
                   ? <img src={thumbUrl} alt={fetchedData.title || "Poster"} className="w-full h-full object-cover" loading="lazy" />
@@ -443,7 +411,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </Combobox>
           </div>
 
-          {/* Media type + TMDB ID */}
+          {/* Media type + ID */}
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <div>
               <label className="sidebar-label">Media Type</label>
@@ -532,14 +500,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <div className="flex items-center justify-between mb-3 px-1">
             <span className="sidebar-label mb-0">Badges</span>
             <div className="flex items-center gap-2">
-              <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors" title={allVisible ? "Hide all" : "Show all"}>
+              <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
                 {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}{allVisible ? "Hide all" : "Show all"}
               </button>
               <div className="w-px h-3 bg-white/10" />
               <button onClick={() => handleSelectAll(!allVisibleSelected)} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
-                <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all",
-                  allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600"
-                )}>
+                <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600")}>
                   {allVisibleSelected && <Check size={9} className="text-white" />}
                 </div>
                 Select all
