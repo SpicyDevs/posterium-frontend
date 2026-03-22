@@ -127,6 +127,12 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
           onChange={(e) => { setIsEditing(true); setUrl(e.target.value); }}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
           onBlur={handleBlur}
+          onScroll={(e) => {
+            // Prevent visual glitches from horizontal wheel-scrolling on a truncated, unfocused input
+            if (document.activeElement !== e.currentTarget) {
+              e.currentTarget.scrollLeft = 0;
+            }
+          }}
           className="flex-1 min-w-0 h-full px-2 bg-transparent border-none outline-none text-[11px] font-mono text-zinc-300 placeholder-zinc-700 truncate"
           placeholder="https://api.spicydevs.xyz/…"
           spellCheck={false}
