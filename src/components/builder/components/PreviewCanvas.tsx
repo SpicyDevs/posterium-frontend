@@ -15,25 +15,8 @@ interface Props {
 
 const PRELOAD_TIMEOUT_MS = 20_000;
 
-/**
- * Build a direct TMDB image URL for the preview background.
- * This is faster than the SVG API endpoint and shows the raw poster
- * without any overlay badges — DraggableBadge components are overlaid on top.
- */
-function buildDirectPosterUrl(config: PosterConfig): string {
-  if (!config.tmdbId && !config.imdbId) return '';
-  // If we have a direct TMDB ID (numeric), use TMDB's image CDN directly
-  // The JSON endpoint will provide the actual URL; this is the fallback.
-  if (config.tmdbId && /^\d+$/.test(config.tmdbId)) {
-    // We can't know the poster_path without fetching — return empty to let
-    // livePosterUrl (set by LayerPanel) take precedence.
-    return '';
-  }
-  return '';
-}
-
 const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { viewOptions, mobileSheetMode, clearSelection, liveRatings, livePosterUrl } = useEditor();
+  const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
   const [zoom,      setZoom]      = useState(1);
@@ -42,14 +25,94 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [isZooming, setIsZooming] = useState(false);
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  // ── Poster image URL — fetched from API JSON endpoint ────────────────────
+  // This respects source, ptype, textless, etc. exactly like the final output.
+  const [posterImageUrl, setPosterImageUrl] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError,     setImageError]     = useState(false);
+
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession,    setDragSession]    = useState<{ id: RatingType; dx: number; dy: number } | null>(null);
   const pendingDragRef = useRef<{ id: RatingType; dx: number; dy: number } | null>(null);
   const dragRafRef     = useRef<number | null>(null);
   useEffect(() => () => { if (dragRafRef.current !== null) cancelAnimationFrame(dragRafRef.current); }, []);
 
+  // ── Build the JSON URL that resolves to the correct poster image ──────────
+  // Watches source, ptype, textless so changing them in the UI re-fetches.
+  const posterJsonUrl = useMemo(() => {
+    if (!config.tmdbId && !config.imdbId) return '';
+    const idPath = config.imdbId
+      ? `/poster/${config.imdbId}`
+      : `/${config.mediaType}/${config.tmdbId}`;
+    const u = new URL(`${DEFAULT_API_BASE}${idPath}.json`);
+    u.searchParams.set('source', config.source);
+    if (config.ptype && config.ptype !== 'auto') u.searchParams.set('ptype', config.ptype);
+    if (config.textless) u.searchParams.set('textless', '1');
+    return u.toString();
+  }, [
+    config.tmdbId, config.imdbId, config.mediaType,
+    config.source, config.ptype, config.textless,
+  ]);
+
+  // Fetch poster URL from JSON endpoint whenever the relevant params change
+  useEffect(() => {
+    if (!posterJsonUrl) {
+      setPosterImageUrl(null);
+      setIsImageLoading(false);
+      setImageError(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    setIsImageLoading(true);
+    setImageError(false);
+
+    fetch(posterJsonUrl, { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then(data => {
+        const raw = data.poster?.selected || null;
+        if (raw) {
+          // Ensure absolute URL
+          const full = raw.startsWith('http') ? raw : `https://image.tmdb.org/t/p/w500${raw}`;
+          setPosterImageUrl(full);
+        } else {
+          setImageError(true);
+        }
+        setIsImageLoading(false);
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError') {
+          setImageError(true);
+          setIsImageLoading(false);
+        }
+      });
+
+    return () => ctrl.abort();
+  }, [posterJsonUrl]);
+
+  // Safety timeout for actual image preload
+  useEffect(() => {
+    if (!posterImageUrl) return;
+    let cancelled = false;
+    const img = new Image();
+    const t   = setTimeout(() => { if (!cancelled) setImageError(true); }, PRELOAD_TIMEOUT_MS);
+    img.onload  = () => { clearTimeout(t); };
+    img.onerror = () => { clearTimeout(t); if (!cancelled) setImageError(true); };
+    img.src = posterImageUrl;
+    return () => { cancelled = true; clearTimeout(t); img.onload = null; img.onerror = null; };
+  }, [posterImageUrl]);
+
+  // ── CSS filter — posterBlur + grayscale ───────────────────────────────────
+  // Applied in-browser on the <img> tag, matching the SVG feGaussianBlur +
+  // feColorMatrix filters that the API applies server-side.
+  const posterCssFilter = useMemo(() => {
+    const parts: string[] = [];
+    if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
+    if (config.grayscale)      parts.push('grayscale(1)');
+    return parts.length ? parts.join(' ') : undefined;
+  }, [config.posterBlur, config.grayscale]);
+
+  // ── Canvas resize ─────────────────────────────────────────────────────────
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current) return;
@@ -135,64 +198,24 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => window.removeEventListener('reset-canvas-view', resetView);
   }, [resetView]);
 
-  // ── Poster URL resolution ─────────────────────────────────────────────────
-  // Prefer livePosterUrl (direct TMDB/source image) over the SVG API endpoint.
-  // This avoids loading the overlay SVG for the background and correctly shows
-  // just the poster — DraggableBadge components are rendered on top as overlays.
-  const posterImageUrl = livePosterUrl || null;
-
-  // Build the CSS filter string for posterBlur + grayscale applied in-browser,
-  // matching what the SVG API does server-side via feGaussianBlur + feColorMatrix.
-  const posterCssFilter = useMemo(() => {
-    const parts: string[] = [];
-    if (config.posterBlur > 0)  parts.push(`blur(${config.posterBlur}px)`);
-    if (config.grayscale)       parts.push('grayscale(1)');
-    return parts.length > 0 ? parts.join(' ') : undefined;
-  }, [config.posterBlur, config.grayscale]);
-
-  // Track image loading state for the direct poster URL
-  useEffect(() => {
-    if (!posterImageUrl) {
-      setIsImageLoading(false);
-      setImageError(false);
-      return;
-    }
-    setIsImageLoading(true);
-    setImageError(false);
-    let cancelled = false;
-    const img = new Image();
-    const safetyTimer = setTimeout(() => {
-      if (!cancelled) { setIsImageLoading(false); setImageError(true); }
-    }, PRELOAD_TIMEOUT_MS);
-
-    img.onload  = () => { clearTimeout(safetyTimer); if (!cancelled) setIsImageLoading(false); };
-    img.onerror = () => { clearTimeout(safetyTimer); if (!cancelled) { setIsImageLoading(false); setImageError(true); } };
-    img.src     = posterImageUrl;
-
-    return () => { cancelled = true; clearTimeout(safetyTimer); img.onload = null; img.onerror = null; };
-  }, [posterImageUrl]);
-
-  // ── Logo preview URL ──────────────────────────────────────────────────────
+  // ── Logo preview URL via API ───────────────────────────────────────────────
   const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
-    // Use imdbId for /poster/ path, fall back to mediaType+tmdbId
-    const idSegment = config.imdbId
+    const idPath = config.imdbId
       ? `/poster/${config.imdbId}`
-      : `/${config.mediaType}/${config.tmdbId}`;
-    if (!idSegment.includes('undefined') && (config.tmdbId || config.imdbId)) {
-      const url = new URL(`${DEFAULT_API_BASE}${idSegment}/logo`);
-      if (config.logoSource) url.searchParams.set('source', config.logoSource);
-      return url.toString();
-    }
-    return null;
+      : config.tmdbId ? `/${config.mediaType}/${config.tmdbId}` : null;
+    if (!idPath) return null;
+    const u = new URL(`${DEFAULT_API_BASE}${idPath}/logo`);
+    if (config.logoSource) u.searchParams.set('source', config.logoSource);
+    return u.toString();
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
+  // ── Drag handlers ─────────────────────────────────────────────────────────
   const handleLogoDragEnd = useCallback((dx: number, dy: number) => {
     setConfig(prev => {
       const margin   = 0.3;
       const currentX = prev.logoX !== null && prev.logoX !== undefined
-        ? prev.logoX
-        : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
+        ? prev.logoX : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       return {
         ...prev,
         logoX: Math.round(Math.max(-(prev.logoW * margin), Math.min(currentX + dx, CANVAS_WIDTH  - prev.logoW  * (1 - margin)))),
@@ -223,27 +246,18 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         prev.ratings.forEach((r, idx) => {
           const auto = calculateAutoPosition(r, idx, prev.ratings.length, prev);
           if (!newItems[r]) newItems[r] = { x: auto.x, y: auto.y };
-          else {
-            newItems[r]!.x = newItems[r]!.x ?? auto.x;
-            newItems[r]!.y = newItems[r]!.y ?? auto.y;
-          }
+          else { newItems[r]!.x = newItems[r]!.x ?? auto.x; newItems[r]!.y = newItems[r]!.y ?? auto.y; }
         });
       }
       const applyDelta = (targetId: RatingType) => {
-        if (!newItems[targetId]) {
-          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
-          newItems[targetId] = { x: auto.x, y: auto.y };
-        }
-        let sx = newItems[targetId].x, sy = newItems[targetId].y;
-        if (sx === undefined || sy === undefined) {
-          const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
-          sx = sx ?? auto.x; sy = sy ?? auto.y;
-        }
+        const auto = calculateAutoPosition(targetId, prev.ratings.indexOf(targetId), prev.ratings.length, prev);
+        if (!newItems[targetId]) newItems[targetId] = { x: auto.x, y: auto.y };
+        const sx = newItems[targetId]!.x ?? auto.x;
+        const sy = newItems[targetId]!.y ?? auto.y;
         const s  = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
         const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-        const offX = bW * 0.4, offY = bH * 0.4;
-        newItems[targetId]!.x = Math.max(-offX, Math.min(sx + dx, CANVAS_WIDTH  - bW  + offX));
-        newItems[targetId]!.y = Math.max(-offY, Math.min(sy + dy, CANVAS_HEIGHT - bH  + offY));
+        newItems[targetId]!.x = Math.max(-(bW * 0.4), Math.min(sx + dx, CANVAS_WIDTH  - bW * 0.6));
+        newItems[targetId]!.y = Math.max(-(bH * 0.4), Math.min(sy + dy, CANVAS_HEIGHT - bH * 0.6));
       };
       if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
       else applyDelta(id);
@@ -291,16 +305,19 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           {Math.round(zoom * 100)}%
         </div>
         <div className="flex flex-col items-center gap-0.5 bg-black/80 backdrop-blur-sm border border-white/10 rounded-2xl p-1.5 shadow-2xl">
-          {([
-            { icon: <ZoomIn size={17} />,  action: () => setZoomFlash(zoom + 0.15) },
+          {[
+            { icon: <ZoomIn  size={17} />, action: () => setZoomFlash(zoom + 0.15) },
             { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15) },
-          ] as const).map((b, i) => (
-            <button key={i} onClick={b.action} className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#D4A245] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all">
+          ].map((b, i) => (
+            <button key={i} onClick={b.action}
+              className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#D4A245] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all">
               {b.icon}
             </button>
           ))}
           <div className="w-5 h-px bg-white/10 mx-auto my-0.5" />
-          <button onClick={resetView} className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#C47C2E] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all" title="Fit to screen">
+          <button onClick={resetView}
+            className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#C47C2E] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all"
+            title="Fit to screen">
             <SearchX size={15} />
           </button>
         </div>
@@ -318,7 +335,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
       >
         {/* Loading overlay */}
-        {isImageLoading && posterImageUrl && (
+        {isImageLoading && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm pointer-events-none">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="animate-spin text-[#C47C2E]" size={36} strokeWidth={2} />
@@ -328,16 +345,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         )}
 
         {/* Error / empty state */}
-        {(imageError || !posterImageUrl) && !isImageLoading && (
+        {!isImageLoading && (imageError || !posterImageUrl) && (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-zinc-900/70 pointer-events-none">
             <AlertCircle size={26} className="text-zinc-600" strokeWidth={1.5} />
             <span className="text-[11px] text-zinc-600 font-mono">
-              {!hasMedia ? 'search for a title to preview' : !posterImageUrl ? 'searching…' : 'failed to load poster'}
+              {!hasMedia ? 'search for a title to preview' : imageError ? 'failed to load poster' : 'searching…'}
             </span>
           </div>
         )}
 
-        {/* Overlay helpers */}
+        {/* Grid overlay */}
         {viewOptions?.showGrid && (
           <div className="absolute inset-0 z-30 pointer-events-none opacity-15">
             <div className="absolute top-0 bottom-0 left-1/3  border-l border-white" />
@@ -346,6 +363,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             <div className="absolute left-0 right-0 top-2/3  border-t border-white" />
           </div>
         )}
+
+        {/* Safe area overlay */}
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
             <div className="absolute inset-8 border border-red-500/30 border-dashed">
@@ -354,11 +373,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
 
-        {/* ── POSTER BACKGROUND ──────────────────────────────────────────────
-            Using the direct poster URL (livePosterUrl) instead of the SVG API
-            endpoint means no overlap with DraggableBadge overlay components.
-            posterCssFilter applies blur/grayscale in-browser, matching the API's
-            feGaussianBlur + feColorMatrix filters in the SVG renderer.          */}
+        {/* ── Poster background ───────────────────────────────────────────────
+            URL comes from the API JSON endpoint — respects source, ptype,
+            textless exactly like the final rasterized output.
+            CSS filter handles posterBlur + grayscale to match the SVG renderer's
+            feGaussianBlur + feColorMatrix filters.                             */}
         {posterImageUrl && (
           <img
             key={posterImageUrl}
@@ -390,9 +409,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             if (isTarget || isGroup) {
               const s  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
               const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-              const offX = bW * 0.4, offY = bH * 0.4;
-              x = Math.max(-offX, Math.min(x + dragSession.dx, CANVAS_WIDTH  - bW  + offX));
-              y = Math.max(-offY, Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH  + offY));
+              x = Math.max(-(bW * 0.4), Math.min(x + dragSession.dx, CANVAS_WIDTH  - bW * 0.6));
+              y = Math.max(-(bH * 0.4), Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH * 0.6));
             }
           }
 

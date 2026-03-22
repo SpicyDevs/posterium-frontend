@@ -28,89 +28,103 @@ export const calculateAutoPosition = (_ratingId: RatingType, index: number, tota
 };
 
 /**
+ * Returns true when the URL string contains a `{placeholder}` template token.
+ */
+export const isTemplateUrl = (urlString: string): boolean => /\{[^}]+\}/.test(urlString);
+
+/**
+ * Replace the ID segment of a poster API URL with `{imdb_id}` to create a
+ * shareable template string.  Always normalises to /poster/{imdb_id} format.
+ */
+export const toTemplateUrl = (urlString: string): string => {
+  try {
+    const u = new URL(urlString);
+    const newPath = u.pathname.replace(
+      /\/(movie|tv|anime|poster)\/(tt\d+|\d+)/i,
+      '/poster/{imdb_id}'
+    );
+    return u.origin + newPath + u.search;
+  } catch {
+    return urlString;
+  }
+};
+
+/**
  * Generate the API URL for the current poster configuration.
- * Prefers /poster/{imdbId} when an IMDb ID is available (auto-detects type on backend),
- * falls back to /{mediaType}/{tmdbId}.
+ *
+ * Color values are passed WITH their leading '#' — URLSearchParams encodes '#'
+ * as '%23' automatically and the backend parseConfig/svg.js expect '#rrggbb'.
+ *
+ * Uses /poster/{imdbId} when an IMDb ID is available (backend auto-detects
+ * media type), falls back to /{mediaType}/{tmdbId}.
  */
 export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_API_BASE): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
 
-  // Use /poster/{imdbId} when available — backend resolves type automatically
   const pathSegment = config.imdbId
     ? `/poster/${config.imdbId}`
     : `/${config.mediaType}/${config.tmdbId}`;
 
   const url = new URL(`${cleanBase}${pathSegment}.${config.extension}`);
-  const params = url.searchParams;
+  const p   = url.searchParams;
 
-  if (config.ratings.length > 0) params.set('r', config.ratings.join(','));
-  if (config.source !== 'tmdb')  params.set('source', config.source);
-  if (config.textless && !['metahub', 'imdb'].includes(config.source)) params.set('textless', '1');
-  if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-  if (config.keys?.tmdb)    params.set('tmdb_key',    config.keys.tmdb);
-  if (config.keys?.fanart)  params.set('fanart_key',  config.keys.fanart);
-  if (config.keys?.omdb)    params.set('omdb_key',    config.keys.omdb);
-  if (config.keys?.mdblist) params.set('mdblist_key', config.keys.mdblist);
+  if (config.ratings.length > 0) p.set('r', config.ratings.join(','));
+  if (config.source !== 'tmdb')  p.set('source', config.source);
+  if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('textless', '1');
+  if (config.ptype && config.ptype !== 'auto') p.set('ptype', config.ptype);
+  if (config.keys?.tmdb)    p.set('tmdb_key',    config.keys.tmdb);
+  if (config.keys?.fanart)  p.set('fanart_key',  config.keys.fanart);
+  if (config.keys?.omdb)    p.set('omdb_key',    config.keys.omdb);
+  if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
 
-  params.set('v', '2');
-  params.set('blur',  config.blur.toString());
-  params.set('alpha', config.alpha.toString());
-  params.set('rad',   config.radius.toString());
-  params.set('sh',    config.shadow.toString());
+  p.set('v',     '2');
+  p.set('blur',  config.blur.toString());
+  p.set('alpha', config.alpha.toString());
+  p.set('rad',   config.radius.toString());
+  p.set('sh',    config.shadow.toString());
 
-  if (config.posterBlur > 0) params.set('bg_blur', config.posterBlur.toString());
-  if (config.grayscale)      params.set('bw', '1');
-  if (config.layout !== 'custom') params.set('l',   config.layout);
-  if (config.preset !== 'custom') params.set('pos', config.preset);
+  if (config.posterBlur > 0) p.set('bg_blur', config.posterBlur.toString());
+  if (config.grayscale)      p.set('bw', '1');
+  if (config.layout !== 'custom') p.set('l',   config.layout);
+  if (config.preset !== 'custom') p.set('pos', config.preset);
 
   const sizeScale = getScale(config.size);
-  const effectiveGlobalScale = sizeScale * (config.scale !== undefined ? config.scale : 1.0);
-  params.set('g_scale', effectiveGlobalScale.toFixed(3));
+  p.set('g_scale', (sizeScale * (config.scale ?? 1.0)).toFixed(3));
 
-  if (config.borderW !== undefined && config.borderW > 0) {
-    params.set('g_bw', config.borderW.toString());
-  }
-  if (config.borderC) params.set('g_bc', config.borderC.replace('#', ''));
-  if (config.bg)      params.set('g_bg', config.bg.replace('#', ''));
-  if (config.txt)     params.set('g_txt', config.txt.replace('#', ''));
-  params.set('g_icon', config.icon !== false ? '1' : '0');
+  if ((config.borderW ?? 0) > 0) p.set('g_bw', config.borderW!.toString());
+  // Send colors WITH '#' — '#' becomes '%23' in the URL, backend expects that
+  if (config.borderC) p.set('g_bc',  config.borderC);
+  if (config.bg)      p.set('g_bg',  config.bg);
+  if (config.txt)     p.set('g_txt', config.txt);
+  p.set('g_icon', config.icon !== false ? '1' : '0');
 
   config.ratings.forEach((key: RatingType, index: number) => {
     const item    = config.items[key] || {};
     const autoPos = calculateAutoPosition(key, index, config.ratings.length, config);
-    const finalX  = item.x !== undefined ? item.x : autoPos.x;
-    const finalY  = item.y !== undefined ? item.y : autoPos.y;
+    p.set(`${key}_x`, Math.round(item.x ?? autoPos.x).toString());
+    p.set(`${key}_y`, Math.round(item.y ?? autoPos.y).toString());
 
-    params.set(`${key}_x`, Math.round(finalX).toString());
-    params.set(`${key}_y`, Math.round(finalY).toString());
-
-    // Only send per-badge overrides (not undefined = use global)
-    if (item.bg      !== undefined) params.set(`${key}_bg`,    item.bg.replace('#', ''));
-    if (item.txt     !== undefined) params.set(`${key}_txt`,   item.txt.replace('#', ''));
-    if (item.blur    !== undefined) params.set(`${key}_blur`,  item.blur.toString());
-    if (item.alpha   !== undefined) params.set(`${key}_alpha`, item.alpha.toString());
-    if (item.radius  !== undefined) params.set(`${key}_rad`,   item.radius.toString());
-    if (item.shadow  !== undefined) params.set(`${key}_sh`,    item.shadow.toString());
-
-    const finalIcon = item.icon ?? config.icon ?? true;
-    params.set(`${key}_icon`, finalIcon ? '1' : '0');
-
-    if (item.scale   !== undefined) params.set(`${key}_scale`, (item.scale * sizeScale).toFixed(3));
-    if (item.borderW !== undefined) params.set(`${key}_bw`,    item.borderW.toString());
-    if (item.borderC !== undefined) params.set(`${key}_bc`,    item.borderC.replace('#', ''));
+    if (item.bg      !== undefined) p.set(`${key}_bg`,    item.bg);
+    if (item.txt     !== undefined) p.set(`${key}_txt`,   item.txt);
+    if (item.blur    !== undefined) p.set(`${key}_blur`,  item.blur.toString());
+    if (item.alpha   !== undefined) p.set(`${key}_alpha`, item.alpha.toString());
+    if (item.radius  !== undefined) p.set(`${key}_rad`,   item.radius.toString());
+    if (item.shadow  !== undefined) p.set(`${key}_sh`,    item.shadow.toString());
+    p.set(`${key}_icon`, (item.icon ?? config.icon ?? true) ? '1' : '0');
+    if (item.scale   !== undefined) p.set(`${key}_scale`, (item.scale * sizeScale).toFixed(3));
+    if (item.borderW !== undefined) p.set(`${key}_bw`,    item.borderW.toString());
+    if (item.borderC !== undefined) p.set(`${key}_bc`,    item.borderC);
   });
 
   if (config.logo) {
-    params.set('logo', '1');
-    if (config.logoSource) params.set('logo_source', config.logoSource);
-    if (config.logoX !== null && config.logoX !== undefined) {
-      params.set('logo_x', config.logoX.toString());
-    }
-    params.set('logo_y', config.logoY.toString());
-    params.set('logo_w', config.logoW.toString());
-    params.set('logo_h', config.logoH.toString());
-    if (config.logoOpacity !== 1.0) params.set('logo_opacity', config.logoOpacity.toFixed(2));
-    if (config.logoShadow  !== 6)   params.set('logo_sh',      config.logoShadow.toString());
+    p.set('logo', '1');
+    if (config.logoSource) p.set('logo_source', config.logoSource);
+    if (config.logoX !== null && config.logoX !== undefined) p.set('logo_x', config.logoX.toString());
+    p.set('logo_y', config.logoY.toString());
+    p.set('logo_w', config.logoW.toString());
+    p.set('logo_h', config.logoH.toString());
+    if (config.logoOpacity !== 1.0) p.set('logo_opacity', config.logoOpacity.toFixed(2));
+    if (config.logoShadow  !== 6)   p.set('logo_sh',      config.logoShadow.toString());
   }
 
   return url.toString();
@@ -118,19 +132,34 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
 
 /**
  * Parse a poster API URL back into a PosterConfig object.
- * Handles /{mediaType}/{tmdbId} and /poster/{imdbId} path formats.
+ *
+ * Handles:
+ *   /{mediaType}/{tmdbId}[.ext]     e.g. /movie/453395.png
+ *   /poster/{imdbId}[.ext]          e.g. /poster/tt12042730.png
+ *   /poster/{imdb_id}[.ext]         template — caller substitutes placeholder first
+ *
+ * @param urlString       The URL to parse
+ * @param currentConfig   If provided, template placeholders are substituted with
+ *                        the current config's ID before parsing.
  */
-export const parseUrlToConfig = (urlString: string): PosterConfig => {
+export const parseUrlToConfig = (urlString: string, currentConfig?: PosterConfig): PosterConfig => {
   try {
-    const url   = new URL(urlString);
-    // Support /movie|tv|anime|poster / tmdbId|imdbId [.ext]
+    // Substitute {imdb_id} (or any {placeholder}) with the current media ID
+    // so that all style params in the template URL are correctly applied.
+    let resolved = urlString;
+    if (isTemplateUrl(urlString)) {
+      const fallbackId = currentConfig?.imdbId || currentConfig?.tmdbId || DEFAULT_CONFIG.tmdbId;
+      resolved = urlString.replace(/\{[^}]+\}/g, fallbackId);
+    }
+
+    const url   = new URL(resolved);
     const match = url.pathname.match(
       /^\/(movie|tv|anime|poster)\/(tt\d+|\d+)(?:\.(jpg|jpeg|png|svg|webp))?$/i
     );
 
     if (!match) {
       console.warn('[parseUrlToConfig] Unrecognised URL path:', url.pathname);
-      return DEFAULT_CONFIG;
+      return currentConfig ?? DEFAULT_CONFIG;
     }
 
     const pathType = match[1].toLowerCase();
@@ -139,96 +168,90 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       ? ((match[3].toLowerCase() === 'jpeg' ? 'jpg' : match[3].toLowerCase()) as ExtensionType)
       : 'svg';
 
-    // /poster/{imdbId} path — mediaType unknown until resolved, default to 'movie'
     const isImdbPath = pathType === 'poster';
     const mediaType: MediaType = isImdbPath ? 'movie' : (pathType as MediaType);
     const imdbId  = (isImdbPath || rawId.startsWith('tt')) ? rawId : undefined;
-    const tmdbId  = !isImdbPath && !rawId.startsWith('tt') ? rawId : DEFAULT_CONFIG.tmdbId;
+    const tmdbId  = !isImdbPath && !rawId.startsWith('tt') ? rawId : (currentConfig?.tmdbId ?? DEFAULT_CONFIG.tmdbId);
 
-    const params = url.searchParams;
+    const q = url.searchParams;
+
+    // Normalize a color param — add '#' prefix if absent
+    const nc = (v: string | null): string | undefined => {
+      if (!v) return undefined;
+      return v.startsWith('#') ? v : `#${v}`;
+    };
 
     const keys: ApiKeys = {};
-    if (params.has('tmdb_key'))    keys.tmdb    = params.get('tmdb_key')!;
-    if (params.has('fanart_key'))  keys.fanart  = params.get('fanart_key')!;
-    if (params.has('omdb_key'))    keys.omdb    = params.get('omdb_key')!;
-    if (params.has('mdblist_key')) keys.mdblist = params.get('mdblist_key')!;
+    if (q.has('tmdb_key'))    keys.tmdb    = q.get('tmdb_key')!;
+    if (q.has('fanart_key'))  keys.fanart  = q.get('fanart_key')!;
+    if (q.has('omdb_key'))    keys.omdb    = q.get('omdb_key')!;
+    if (q.has('mdblist_key')) keys.mdblist = q.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
     const ratingKeys: RatingType[] = ['imdb','rt','rt_popcorn','letterboxd','meta','tmdb','mal','anilist','age','runtime'];
-
     ratingKeys.forEach((key) => {
-      const xp  = params.get(`${key}_x`),   yp  = params.get(`${key}_y`);
-      const bgp = params.get(`${key}_bg`),   txtp = params.get(`${key}_txt`);
-      const blurp = params.get(`${key}_blur`), alphap = params.get(`${key}_alpha`);
-      const radp  = params.get(`${key}_rad`),  shp  = params.get(`${key}_sh`);
-      const iconp = params.get(`${key}_icon`), scalep = params.get(`${key}_scale`);
-      const bwp   = params.get(`${key}_bw`),   bcp  = params.get(`${key}_bc`);
-
+      const xp = q.get(`${key}_x`), yp = q.get(`${key}_y`);
+      const bgp = q.get(`${key}_bg`), txtp = q.get(`${key}_txt`);
+      const blurp = q.get(`${key}_blur`), alphap = q.get(`${key}_alpha`);
+      const radp = q.get(`${key}_rad`), shp = q.get(`${key}_sh`);
+      const iconp = q.get(`${key}_icon`), scalep = q.get(`${key}_scale`);
+      const bwp = q.get(`${key}_bw`), bcp = q.get(`${key}_bc`);
       if (xp || yp || bgp || txtp || blurp || alphap || radp || shp || iconp || scalep || bwp) {
-        const normalizeColor = (v: string | null) => v ? (v.startsWith('#') ? v : `#${v}`) : undefined;
         items[key] = {
-          ...(xp     ? { x:      parseInt(xp)     } : {}),
-          ...(yp     ? { y:      parseInt(yp)     } : {}),
-          ...(bgp    ? { bg:     normalizeColor(bgp)!  } : {}),
-          ...(txtp   ? { txt:    normalizeColor(txtp)! } : {}),
-          ...(blurp  ? { blur:   parseInt(blurp)   } : {}),
-          ...(alphap ? { alpha:  parseFloat(alphap)} : {}),
-          ...(radp   ? { radius: parseInt(radp)    } : {}),
-          ...(shp    ? { shadow: parseInt(shp)     } : {}),
-          ...(iconp  ? { icon:   iconp === '1'     } : {}),
-          ...(scalep ? { scale:  parseFloat(scalep)} : {}),
-          ...(bwp    ? { borderW: parseInt(bwp)    } : {}),
-          ...(bcp    ? { borderC: normalizeColor(bcp)! } : {}),
+          ...(xp     ? { x:       parseInt(xp)      } : {}),
+          ...(yp     ? { y:       parseInt(yp)      } : {}),
+          ...(bgp    ? { bg:      nc(bgp)!           } : {}),
+          ...(txtp   ? { txt:     nc(txtp)!          } : {}),
+          ...(blurp  ? { blur:    parseInt(blurp)    } : {}),
+          ...(alphap ? { alpha:   parseFloat(alphap) } : {}),
+          ...(radp   ? { radius:  parseInt(radp)     } : {}),
+          ...(shp    ? { shadow:  parseInt(shp)      } : {}),
+          ...(iconp  ? { icon:    iconp === '1'      } : {}),
+          ...(scalep ? { scale:   parseFloat(scalep) } : {}),
+          ...(bwp    ? { borderW: parseInt(bwp)      } : {}),
+          ...(bcp    ? { borderC: nc(bcp)!           } : {}),
         };
       }
     });
 
-    const normalizeColor = (v: string | null) => v ? (v.startsWith('#') ? v : `#${v}`) : undefined;
-
-    const VALID_LOGO_SOURCES: LogoSourceType[] = ['fanart', 'tmdb', 'metahub'];
-    const rawLogoSource = params.get('logo_source')?.trim().toLowerCase() || null;
-    const logoSource: LogoSourceType = VALID_LOGO_SOURCES.includes(rawLogoSource as LogoSourceType)
-      ? (rawLogoSource as LogoSourceType)
-      : null;
+    const VALID_LOGO: LogoSourceType[] = ['fanart', 'tmdb', 'metahub'];
+    const rawLS = q.get('logo_source')?.trim().toLowerCase() || null;
+    const logoSource: LogoSourceType = VALID_LOGO.includes(rawLS as LogoSourceType)
+      ? (rawLS as LogoSourceType) : null;
 
     return {
-      mediaType,
-      tmdbId,
-      imdbId,
-      extension,
-      ratings:   params.has('r') ? (params.get('r')?.split(',') as RatingType[]) : [],
-      source:    (params.get('source') as PosterConfig['source']) || 'tmdb',
-      ptype:     params.get('ptype') || 'auto',
-      textless:  params.get('textless') === '1',
-      theme:     'glass',
-      size:      'md',
-      shadow:    params.has('sh')      ? parseInt(params.get('sh')!)        : 6,
-      layout:    (params.get('l')   as PosterConfig['layout'])  || 'custom',
-      preset:    (params.get('pos') as PosterConfig['preset']) || 'custom',
-      blur:      params.has('blur')    ? parseInt(params.get('blur')!)      : 8,
-      alpha:     params.has('alpha')   ? parseFloat(params.get('alpha')!)   : 0.4,
-      radius:    params.has('rad')     ? parseInt(params.get('rad')!)       : 12,
-      posterBlur: params.has('bg_blur') ? parseInt(params.get('bg_blur')!)  : 0,
-      grayscale:  params.get('bw') === '1',
-      scale:      params.get('g_scale')  ? parseFloat(params.get('g_scale')!)  : 1.0,
-      borderW:    params.get('g_bw')     ? parseInt(params.get('g_bw')!)       : 0,
-      borderC:    normalizeColor(params.get('g_bc')),
-      bg:         normalizeColor(params.get('g_bg')),
-      txt:        normalizeColor(params.get('g_txt')),
-      icon:       params.get('g_icon') ? params.get('g_icon') === '1' : true,
-      keys,
-      items,
-      logo:       params.get('logo') === '1',
+      mediaType, tmdbId, imdbId, extension,
+      ratings:    q.has('r') ? (q.get('r')!.split(',') as RatingType[]) : [],
+      source:     (q.get('source') as PosterConfig['source']) || 'tmdb',
+      ptype:      q.get('ptype') || 'auto',
+      textless:   q.get('textless') === '1',
+      theme:      'glass', size: 'md',
+      shadow:     q.has('sh')       ? parseInt(q.get('sh')!)        : 6,
+      layout:     (q.get('l')   as PosterConfig['layout'])  || 'custom',
+      preset:     (q.get('pos') as PosterConfig['preset']) || 'custom',
+      blur:       q.has('blur')     ? parseInt(q.get('blur')!)      : 8,
+      alpha:      q.has('alpha')    ? parseFloat(q.get('alpha')!)   : 0.4,
+      radius:     q.has('rad')      ? parseInt(q.get('rad')!)       : 12,
+      posterBlur: q.has('bg_blur')  ? parseInt(q.get('bg_blur')!)   : 0,
+      grayscale:  q.get('bw') === '1',
+      scale:      q.get('g_scale')  ? parseFloat(q.get('g_scale')!) : 1.0,
+      borderW:    q.get('g_bw')     ? parseInt(q.get('g_bw')!)      : 0,
+      borderC:    nc(q.get('g_bc')),
+      bg:         nc(q.get('g_bg')),
+      txt:        nc(q.get('g_txt')),
+      icon:       q.get('g_icon')   ? q.get('g_icon') === '1'       : true,
+      keys, items,
+      logo:        q.get('logo') === '1',
       logoSource,
-      logoX:       params.has('logo_x')       ? parseInt(params.get('logo_x')!)         : null,
-      logoY:       params.has('logo_y')       ? parseInt(params.get('logo_y')!)         : 630,
-      logoW:       params.has('logo_w')       ? parseInt(params.get('logo_w')!)         : 380,
-      logoH:       params.has('logo_h')       ? parseInt(params.get('logo_h')!)         : 100,
-      logoOpacity: params.has('logo_opacity') ? parseFloat(params.get('logo_opacity')!) : 1.0,
-      logoShadow:  params.has('logo_sh')      ? parseInt(params.get('logo_sh')!)        : 6,
+      logoX:       q.has('logo_x')       ? parseInt(q.get('logo_x')!)         : null,
+      logoY:       q.has('logo_y')       ? parseInt(q.get('logo_y')!)         : 630,
+      logoW:       q.has('logo_w')       ? parseInt(q.get('logo_w')!)         : 380,
+      logoH:       q.has('logo_h')       ? parseInt(q.get('logo_h')!)         : 100,
+      logoOpacity: q.has('logo_opacity') ? parseFloat(q.get('logo_opacity')!) : 1.0,
+      logoShadow:  q.has('logo_sh')      ? parseInt(q.get('logo_sh')!)        : 6,
     };
   } catch (e) {
     console.error('[parseUrlToConfig] Failed to parse URL:', e);
-    return DEFAULT_CONFIG;
+    return currentConfig ?? DEFAULT_CONFIG;
   }
 };
