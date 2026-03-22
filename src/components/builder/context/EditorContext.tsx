@@ -24,6 +24,10 @@ interface EditorContextType {
   setLiveRatings: (r: LiveRatings) => void;
   resolvedLogoSource: string | null;
   setResolvedLogoSource: (src: string | null) => void;
+  /** Direct poster image URL (TMDB/fanart/etc.) — set by LayerPanel when media loads.
+   *  Used by PreviewCanvas to show the raw poster without going through the SVG API. */
+  livePosterUrl: string | null;
+  setLivePosterUrl: (url: string | null) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -35,6 +39,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [viewOptions, setViewOptions] = useState<ViewOptions>({ showSafeArea: false, showGrid: false });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
+  const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
 
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
@@ -72,7 +77,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   return (
-    <EditorContext.Provider value={{ activeTab, setActiveTab, mobileSheetMode, setMobileSheetMode, selectedIds, handleSelection, setBatchSelection, clearSelection, viewOptions, toggleViewOption, liveRatings, setLiveRatings, resolvedLogoSource, setResolvedLogoSource }}>
+    <EditorContext.Provider value={{
+      activeTab, setActiveTab, mobileSheetMode, setMobileSheetMode,
+      selectedIds, handleSelection, setBatchSelection, clearSelection,
+      viewOptions, toggleViewOption,
+      liveRatings, setLiveRatings,
+      resolvedLogoSource, setResolvedLogoSource,
+      livePosterUrl, setLivePosterUrl,
+    }}>
       {children}
     </EditorContext.Provider>
   );

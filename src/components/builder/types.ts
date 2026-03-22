@@ -17,21 +17,35 @@ export interface BadgeConfig {
 export interface ApiKeys { tmdb?: string; fanart?: string; omdb?: string; mdblist?: string; }
 
 export interface PosterConfig {
-  mediaType: MediaType; tmdbId: string; ratings: RatingType[];
+  mediaType: MediaType;
+  tmdbId: string;
+  /** Resolved IMDb ID (tt-prefixed). When set, generateApiUrl uses /poster/{imdbId} */
+  imdbId?: string;
+  ratings: RatingType[];
   source: SourceType; ptype: string; textless: boolean; theme: ThemeType;
-  size: SizeType; shadow: number; layout: LayoutType; preset: PresetType;
+  size: SizeType;
+  /** Drop-shadow intensity 0–30. Default 6 to match backend parseConfig default. */
+  shadow: number;
+  layout: LayoutType; preset: PresetType;
   blur: number; alpha: number; radius: number; extension: ExtensionType;
   posterBlur: number; grayscale: boolean; scale?: number; borderW?: number;
-  borderC?: string; bg?: string; txt?: string; icon?: boolean;
+  borderC?: string;
+  /** Global badge background color. Maps to g_bg query param. */
+  bg?: string;
+  /** Global badge text color. Maps to g_txt query param. */
+  txt?: string;
+  icon?: boolean;
   items: Partial<Record<RatingType, BadgeConfig>>; keys?: ApiKeys;
   logo: boolean; logoSource: LogoSourceType; logoX: number | null;
   logoY: number; logoW: number; logoH: number; logoOpacity: number; logoShadow: number;
 }
 
 export const DEFAULT_CONFIG: PosterConfig = {
-  mediaType: 'movie', tmdbId: '453395', ratings: ['imdb', 'rt', 'age'],
+  mediaType: 'movie', tmdbId: '453395', imdbId: 'tt12042730',
+  ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb', ptype: 'auto', textless: false, theme: 'glass', size: 'md',
-  shadow: 5, layout: 'custom', preset: 'custom', blur: 8, alpha: 0.4, radius: 12,
+  shadow: 6, // matches backend parseConfig default
+  layout: 'custom', preset: 'custom', blur: 8, alpha: 0.4, radius: 12,
   extension: 'png', posterBlur: 0, grayscale: false,
   items: { imdb: { x: 340, y: 20 }, rt: { x: 340, y: 90 }, age: { x: 8, y: 683 } },
   keys: {},
