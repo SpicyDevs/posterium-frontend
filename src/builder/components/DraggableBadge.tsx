@@ -5,48 +5,42 @@ import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
 
-// Dummy values shown when real ratings have not yet loaded
-const DUMMY_VALS: Record<string, string> = {
-  imdb:       '8.7',
-  rt:         '73%',
-  rt_popcorn: '88%',
-  letterboxd: '4.2',
-  meta:       '74',
-  tmdb:       '85%',
-  runtime:    '2h 15m',
-  mal:        '8.5',
-  anilist:    '85%',
+// Plausible placeholder values shown while live ratings are still loading.
+// These look realistic so the badge design reads correctly in the builder.
+const PLACEHOLDER: Record<string, string> = {
+  imdb:       '8.4',
+  rt:         '76%',
+  rt_popcorn: '91%',
+  letterboxd: '4.1',
+  meta:       '72',
+  tmdb:       '83%',
+  runtime:    '2h 8m',
+  mal:        '8.2',
+  anilist:    '82%',
   age:        'PG-13',
 };
 
 interface Props {
-  badgeId: RatingType;
-  config: PosterConfig;
-  x: number;
-  y: number;
+  badgeId:     RatingType;
+  config:      PosterConfig;
+  x:           number;
+  y:           number;
   canvasScale: number;
-  onDragMove: (id: RatingType, dx: number, dy: number) => void;
-  onDragEnd: (id: RatingType, dx: number, dy: number) => void;
-  isSelected: boolean;
-  onSelect: (id: RatingType, multi: boolean) => void;
+  onDragMove:  (id: RatingType, dx: number, dy: number) => void;
+  onDragEnd:   (id: RatingType, dx: number, dy: number) => void;
+  isSelected:  boolean;
+  onSelect:    (id: RatingType, multi: boolean) => void;
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
-  /** Live rating value from the API (e.g. "8.5", "73%", "PG-13"). */
+  /** Real value from the API (e.g. "8.5", "73%", "PG-13"). Falls back to placeholder. */
   liveRating?: string;
 }
 
 const DraggableBadge: React.FC<Props> = ({
-  badgeId,
-  config,
-  x,
-  y,
-  canvasScale,
-  onDragMove,
-  onDragEnd,
-  isSelected,
-  onSelect,
-  isObscuring,
-  onHoverChange,
+  badgeId, config, x, y, canvasScale,
+  onDragMove, onDragEnd,
+  isSelected, onSelect,
+  isObscuring, onHoverChange,
   liveRating,
 }) => {
   const itemConfig = config.items[badgeId];
@@ -57,104 +51,27 @@ const DraggableBadge: React.FC<Props> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
 
-  const onDragEndRef    = useRef(onDragEnd);
-  const onSelectRef     = useRef(onSelect);
-  const isSelectedRef   = useRef(isSelected);
-  const canvasScaleRef  = useRef(canvasScale);
-
+  // Keep latest prop values in refs so event handlers don't become stale
+  const onDragEndRef   = useRef(onDragEnd);
+  const onSelectRef    = useRef(onSelect);
+  const isSelectedRef  = useRef(isSelected);
+  const canvasScaleRef = useRef(canvasScale);
   onDragEndRef.current   = onDragEnd;
   onSelectRef.current    = onSelect;
   isSelectedRef.current  = isSelected;
   canvasScaleRef.current = canvasScale;
 
-  const handleStart = (clientX: number, clientY: number) => {
-    setIsDragging(true);
-    dragStartRef.current = { mouseX: clientX, mouseY: clientY };
-  };
+  // Display value: live API data > placeholder. No "no data" zeros.
+  const displayVal = liveRating ?? PLACEHOLDER[badgeId] ?? '—';
 
-  const handleMove = (clientX: number, clientY: number) => {
-    if (!dragStartRef.current) return;
-    const deltaX = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
-    const deltaY = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
-    if (isFinite(deltaX) && isFinite(deltaY)) {
-      onDragMove(badgeId, deltaX, deltaY);
-    }
-  };
-
-  const handleEnd = (e: MouseEvent | TouchEvent) => {
-    setIsDragging(false);
-    if (!dragStartRef.current) return;
-
-    const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
-    const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
-
-    const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
-    const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
-
-    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
-      const isShift = 'shiftKey' in e ? e.shiftKey : false;
-      const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
-      const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
-      if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
-        onSelectRef.current(badgeId, false);
-      }
-    }
-
-    onDragEndRef.current(badgeId, dx, dy);
-    dragStartRef.current = null;
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
-    const onMouseUp   = (e: MouseEvent) => handleEnd(e);
-    const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    };
-    const onTouchEnd = (e: TouchEvent) => handleEnd(e);
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [isDragging]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!isSelected) onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
-    handleStart(e.clientX, e.clientY);
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    if (!isSelected) onSelect(badgeId, false);
-    handleStart(e.touches[0].clientX, e.touches[0].clientY);
-  };
-
-  // ── Resolve the display value ─────────────────────────────────────────────
-  // Use the live API rating if available; otherwise show a plausible dummy.
-  const displayVal = liveRating ?? DUMMY_VALS[badgeId] ?? '—';
-  const isLive     = !!liveRating;
-
-  // ── Badge style resolution ────────────────────────────────────────────────
+  // ── Style resolution ─────────────────────────────────────────────────────────
   const blurVal   = itemConfig?.blur   ?? config.blur;
   const alphaVal  = itemConfig?.alpha  ?? config.alpha;
   const radiusVal = itemConfig?.radius ?? config.radius;
-
   const rawShadow = itemConfig?.shadow ?? config.shadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-
-  const showIcon = itemConfig?.icon ?? config.icon ?? true;
+  const showIcon  = itemConfig?.icon ?? config.icon ?? true;
+  const txtColor  = itemConfig?.txt  || '#ffffff';
 
   const rawBg = itemConfig?.bg ?? config.bg;
   const bgRaw = (() => {
@@ -178,15 +95,8 @@ const DraggableBadge: React.FC<Props> = ({
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  const txtColor    = itemConfig?.txt || '#ffffff';
 
-  const iconSize = 36 * scale;
-  const iconLeft = 10 * scale;
-  const iconTop  = 12 * scale;
-  const textRight = 10 * scale;
-  const textTop   = '50%';
-
-  // ── Icon key — use live value to determine fresh/rotten accurately ────────
+  // Icon key — RT fresh/rotten determined by actual score
   let iconKey: string = badgeId;
   if (badgeId === 'rt') {
     const pct = parseInt(displayVal);
@@ -195,25 +105,83 @@ const DraggableBadge: React.FC<Props> = ({
     const pct = parseInt(displayVal);
     iconKey = (!isNaN(pct) && pct >= 60) ? 'popcorn_fresh' : 'popcorn_rotten';
   }
-
   const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
 
+  const iconSize  = 36 * scale;
+  const iconLeft  = 10 * scale;
+  const iconTop   = 12 * scale;
+  const textRight = 10 * scale;
+
+  // ── Drag handling ────────────────────────────────────────────────────────────
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStartRef.current = { mouseX: clientX, mouseY: clientY };
+  };
+
+  const handleMove = (clientX: number, clientY: number) => {
+    if (!dragStartRef.current) return;
+    const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
+    const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
+    if (isFinite(dx) && isFinite(dy)) onDragMove(badgeId, dx, dy);
+  };
+
+  const handleEnd = (e: MouseEvent | TouchEvent) => {
+    setIsDragging(false);
+    if (!dragStartRef.current) return;
+    const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+    const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+    const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
+    const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+      const isShift = 'shiftKey' in e ? e.shiftKey : false;
+      const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
+      const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
+      if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
+        onSelectRef.current(badgeId, false);
+      }
+    }
+    onDragEndRef.current(badgeId, dx, dy);
+    dragStartRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMM = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onMU = (e: MouseEvent) => handleEnd(e);
+    const onTM = (e: TouchEvent) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
+    const onTE = (e: TouchEvent) => handleEnd(e);
+    window.addEventListener('mousemove', onMM);
+    window.addEventListener('mouseup', onMU);
+    window.addEventListener('touchmove', onTM, { passive: false });
+    window.addEventListener('touchend', onTE);
+    return () => {
+      window.removeEventListener('mousemove', onMM);
+      window.removeEventListener('mouseup', onMU);
+      window.removeEventListener('touchmove', onTM);
+      window.removeEventListener('touchend', onTE);
+    };
+  }, [isDragging]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation(); e.preventDefault();
+    if (!isSelected) onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
+    handleStart(e.clientX, e.clientY);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (!isSelected) onSelect(badgeId, false);
+    handleStart(e.touches[0].clientX, e.touches[0].clientY);
+  };
+
+  // ── Badge content ────────────────────────────────────────────────────────────
   const renderContent = () => {
     if (badgeId === 'age') {
+      const fontSize = Math.min(28, displayVal.length > 4 ? 20 : 28) * scale;
       return (
         <div className="w-full h-full flex items-center justify-center relative">
-          <div
-            className="absolute inset-0 m-2.5 border-2 rounded opacity-50"
-            style={{ borderColor: txtColor }}
-          />
-          <span
-            style={{
-              fontSize: `${Math.min(28, (displayVal.length > 4 ? 22 : 28)) * scale}px`,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 'bold',
-              color: txtColor,
-            }}
-          >
+          <div className="absolute inset-0 m-[10%] border-2 rounded opacity-50" style={{ borderColor: txtColor }} />
+          <span style={{ fontSize, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>
             {displayVal}
           </span>
         </div>
@@ -222,56 +190,37 @@ const DraggableBadge: React.FC<Props> = ({
 
     if (!showIcon) {
       return (
-        <span
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: textTop,
-            transform: 'translate(-50%, -50%)',
-            fontSize: `${28 * scale}px`,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: 'bold',
-            color: txtColor,
-            lineHeight: 1,
-          }}
-        >
+        <span style={{
+          position: 'absolute', left: '50%', top: '50%',
+          transform: 'translate(-50%,-50%)',
+          fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontWeight: 'bold', color: txtColor, lineHeight: 1,
+        }}>
           {displayVal}
         </span>
       );
     }
 
-    const isRuntime = badgeId === 'runtime';
-    const hasIcon   = showIcon && iconData;
-
-    if (hasIcon) {
+    if (iconData) {
       let fSize = 28;
-      if (isRuntime && displayVal.length > 5) fSize = 22;
+      if (badgeId === 'runtime' && displayVal.length > 5) fSize = 22;
       else if (displayVal.length > 5) fSize = 24;
-
       return (
         <>
           <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
             <svg
               viewBox={iconData.vb}
-              width={iconSize}
-              height={iconSize}
+              width={iconSize} height={iconSize}
               style={{ display: 'block', color: txtColor }}
               dangerouslySetInnerHTML={{ __html: iconData.body }}
             />
           </div>
-          <span
-            style={{
-              position: 'absolute',
-              right: textRight,
-              top: textTop,
-              transform: 'translateY(-50%)',
-              fontSize: `${fSize * scale}px`,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 'bold',
-              color: txtColor,
-              lineHeight: 1,
-            }}
-          >
+          <span style={{
+            position: 'absolute', right: textRight, top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: `${fSize * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 'bold', color: txtColor, lineHeight: 1,
+          }}>
             {displayVal}
           </span>
         </>
@@ -279,28 +228,20 @@ const DraggableBadge: React.FC<Props> = ({
     }
 
     return (
-      <span
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: textTop,
-          transform: 'translate(-50%, -50%)',
-          fontSize: `${28 * scale}px`,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontWeight: 'bold',
-          color: txtColor,
-          lineHeight: 1,
-        }}
-      >
+      <span style={{
+        position: 'absolute', left: '50%', top: '50%',
+        transform: 'translate(-50%,-50%)',
+        fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontWeight: 'bold', color: txtColor, lineHeight: 1,
+      }}>
         {displayVal}
       </span>
     );
   };
 
-  const dropShadow     = shadowVal > 0
-    ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0,0,0,0.5)` : '';
-  const slantPattern   = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
-  const finalBackground = isObscuring ? `${slantPattern}, ${backgroundStyle}` : backgroundStyle;
+  const dropShadow   = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0,0,0,0.55)` : '';
+  const slantPattern = `repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,0.08) 4px,rgba(255,255,255,0.08) 8px)`;
+  const finalBg      = isObscuring ? `${slantPattern}, ${backgroundStyle}` : backgroundStyle;
 
   return (
     <div
@@ -310,21 +251,20 @@ const DraggableBadge: React.FC<Props> = ({
       onMouseLeave={() => onHoverChange?.(false)}
       className="badge-item absolute select-none cursor-move z-50"
       style={{
-        width:            `${width}px`,
-        height:           `${height}px`,
-        left:             `${x}px`,
-        top:              `${y}px`,
-        background:       finalBackground,
-        borderRadius:     `${radiusVal}px`,
-        outline:          borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
-        backdropFilter:   `blur(${blurVal}px)`,
-        WebkitBackdropFilter: `blur(${blurVal}px)`,
-        boxShadow:        dropShadow || 'none',
-        opacity:          isObscuring ? 0.35 : 1,
-        pointerEvents:    isObscuring ? 'none' : 'auto',
-        touchAction:      'none',
-        transform:        'translateZ(0)',
-        transition:       isDragging ? 'none' : 'box-shadow 0.15s',
+        width:               `${width}px`,
+        height:              `${height}px`,
+        left:                `${x}px`,
+        top:                 `${y}px`,
+        background:          finalBg,
+        borderRadius:        `${radiusVal}px`,
+        outline:             borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
+        backdropFilter:      `blur(${blurVal}px)`,
+        WebkitBackdropFilter:`blur(${blurVal}px)`,
+        boxShadow:           dropShadow || 'none',
+        opacity:             isObscuring ? 0.3 : 1,
+        pointerEvents:       isObscuring ? 'none' : 'auto',
+        touchAction:         'none',
+        transform:           'translateZ(0)',
       }}
     >
       {renderContent()}
@@ -349,22 +289,6 @@ const DraggableBadge: React.FC<Props> = ({
             }}
           />
         </div>
-      )}
-
-      {/* Live indicator dot — subtle pulse when real data is showing */}
-      {isLive && !isObscuring && (
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            bottom:       `${2 * scale}px`,
-            left:         `${5 * scale}px`,
-            width:        `${4 * scale}px`,
-            height:       `${4 * scale}px`,
-            borderRadius: '50%',
-            background:   '#4ade80',
-            opacity:      0.8,
-          }}
-        />
       )}
     </div>
   );
