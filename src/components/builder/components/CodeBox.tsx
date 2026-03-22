@@ -1,7 +1,7 @@
 // src/components/builder/components/CodeBox.tsx
 import React, { useState, useEffect, useId, memo, useRef } from 'react';
 import { Copy, Check, ArrowRight, Loader2, Download, Link2, Braces, ChevronDown } from 'lucide-react';
-import { generateApiUrl, toTemplateUrl, isTemplateUrl, parseUrlToConfig } from '../utils';
+import { generateApiUrl, toTemplateUrl, isTemplateUrl } from '../utils';
 import type { PosterConfig, ExtensionType } from '../types';
 import clsx from 'clsx';
 
