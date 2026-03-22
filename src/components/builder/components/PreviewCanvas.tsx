@@ -98,9 +98,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   }, []);
 
   const currentScale = autoScale * zoom;
+  
+  // Clamped to 50% of the canvas size
   const clampPan = (x: number, y: number) => ({
-    x: Math.max(-CANVAS_WIDTH/3,  Math.min(CANVAS_WIDTH/3,  x)),
-    y: Math.max(-CANVAS_HEIGHT/3, Math.min(CANVAS_HEIGHT/3, y)),
+    x: Math.max(-CANVAS_WIDTH / 2, Math.min(CANVAS_WIDTH / 2, x)),
+    y: Math.max(-CANVAS_HEIGHT / 2, Math.min(CANVAS_HEIGHT / 2, y)),
   });
 
   const setZoomFlash = useCallback((next: number) => {
