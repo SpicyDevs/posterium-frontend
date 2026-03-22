@@ -1,20 +1,14 @@
-# robots.txt - Posterium
-# https://posters.spicydevs.xyz
-
 User-agent: *
 Allow: /
 Disallow: /cdn-cgi/
 Allow: /assets/
-Sitemap: https://posters.spicydevs.xyz/sitemap.xml
+Sitemap: https://posters.spicydevs.xyz/sitemap-index.xml
 
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
-Crawl-delay: 1
 
 User-agent: YandexBot
 Allow: /
-Crawl-delay: 2
