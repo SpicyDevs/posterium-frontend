@@ -1,4 +1,4 @@
-// src/context/EditorContext.tsx
+// src/builder/context/EditorContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { RatingType } from '../types';
 
@@ -9,6 +9,8 @@ interface ViewOptions {
   showSafeArea: boolean;
   showGrid: boolean;
 }
+
+export type LiveRatings = Partial<Record<string, string>>;
 
 interface EditorContextType {
   activeTab: TabType;
@@ -21,6 +23,12 @@ interface EditorContextType {
   clearSelection: () => void;
   viewOptions: ViewOptions;
   toggleViewOption: (key: keyof ViewOptions) => void;
+  /** Live ratings fetched from the API for the current media. */
+  liveRatings: LiveRatings;
+  setLiveRatings: (r: LiveRatings) => void;
+  /** Actual logo source used by the server (may differ from config.logoSource due to fallback). */
+  resolvedLogoSource: string | null;
+  setResolvedLogoSource: (src: string | null) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -33,25 +41,19 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     showSafeArea: false,
     showGrid: false,
   });
+  const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
+  const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
 
-  // FIX: Memoize with stable identity (empty deps). Uses a functional updater for
-  // setMobileSheetMode so it never captures stale mobileSheetMode from its own closure.
-  // Previously this was an unstable inline function - setBatchSelection and clearSelection
-  // captured the version from mount (mobileSheetMode was always 'hidden') because their
-  // deps arrays were empty.
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
     setMobileSheetMode((prev) => {
-      // Open the sheet on mobile only when it is fully hidden.
       if (typeof window !== 'undefined' && window.innerWidth < 1024 && prev === 'hidden') {
         return 'half';
       }
       return prev;
     });
-  }, []); // Stable forever - only uses state setters (which are always stable).
+  }, []);
 
-  // FIX: Use functional updater for setSelectedIds so we never read stale selectedIds
-  // from the closure. Remove mobileSheetMode from deps (setActiveTab handles it internally).
   const handleSelection = useCallback(
     (id: RatingType, multi: boolean) => {
       let nextSize = 0;
@@ -66,15 +68,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         nextSize = next.size;
         return next;
       });
-      // We compute nextSize synchronously inside the updater above (React flushes
-      // state setters synchronously in event handlers in React 18).
       if (nextSize > 0) setActiveTab('badge');
       else setActiveTab('canvas');
     },
-    [setActiveTab] // No longer depends on selectedIds or mobileSheetMode
+    [setActiveTab]
   );
 
-  // FIX: setActiveTab is now stable so these deps are correct and non-stale.
   const setBatchSelection = useCallback(
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
@@ -105,6 +104,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         clearSelection,
         viewOptions,
         toggleViewOption,
+        liveRatings,
+        setLiveRatings,
+        resolvedLogoSource,
+        setResolvedLogoSource,
       }}
     >
       {children}
