@@ -1,7 +1,4 @@
 ---
-// src/pages/index.astro
-// Landing page — Dashboard React island with client:only="react"
-// SEO resolved at build time via PageSEO.astro, no runtime JS
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import Dashboard from '@/components/dashboard/Dashboard.tsx';
@@ -15,5 +12,6 @@ import '@/styles/global.css';
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/" />
-  <Dashboard client:only="react" />
+  {/* Changed from client:only to client:load to enable static HTML generation */}
+  <Dashboard client:load />
 </BaseLayout>

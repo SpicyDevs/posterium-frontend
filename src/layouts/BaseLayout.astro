@@ -1,8 +1,4 @@
 ---
-// src/layouts/BaseLayout.astro
-// HTML shell for all pages. Title, SEO tags and JSON-LD are injected by
-// PageSEO.astro via the "head" slot on a per-page basis.
-
 interface Props {
   title: string;
   description: string;
@@ -21,20 +17,17 @@ const {
   bodyClass,
 } = Astro.props;
 ---
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- COLOR SCHEME & THEME -->
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="msapplication-TileColor" content="#0a0a0a" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
 
-    <!-- PWA / MANIFEST / ICONS -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
@@ -42,42 +35,23 @@ const {
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-    <!--
-      FONTS
-      ─────
-      Single combined request for all font families.
-      display=swap: zero block period — text renders in fallback immediately,
-      swaps to web font when loaded. No invisible-text period.
-      Preconnects open TCP connections before the link fires.
-    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
-    />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" />
 
-    <!-- API / IMAGE PRECONNECTS -->
     <link rel="preconnect" href="https://api.spicydevs.xyz" />
     <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
     <link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
     <link rel="dns-prefetch" href="https://image.tmdb.org" />
 
-    <!-- Per-page SEO tags (title, description, OG, Twitter, JSON-LD, canonical) -->
     <slot name="head" />
   </head>
   <body class={bodyClass}>
     <noscript>
-      <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px">
+      <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
-        <p>
-          Generate custom movie and TV show posters with live rating badges from IMDb, Rotten
-          Tomatoes, Metacritic, TMDB — all from a single API URL.
-        </p>
-        <p>
-          Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to
-          open the visual editor.
-        </p>
+        <p>Generate custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB — all from a single API URL.</p>
+        <p>Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to open the visual editor.</p>
       </div>
     </noscript>
     <slot />

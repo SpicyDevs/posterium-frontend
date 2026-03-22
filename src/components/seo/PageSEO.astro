@@ -1,9 +1,4 @@
 ---
-// src/components/seo/PageSEO.astro
-// Build-time SEO tag generation. Replaces DynamicSEO.tsx.
-// Renders into the <head> via BaseLayout's head slot.
-// All values resolved from ROUTE_SEO with SEO_DEFAULTS fallback — zero runtime JS.
-
 import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
 
 interface Props {
@@ -13,83 +8,74 @@ interface Props {
 const { routeKey } = Astro.props;
 
 const routeMeta = ROUTE_SEO[routeKey];
-
-// Resolve with fallback logic identical to original DynamicSEO.tsx
-const title       = routeMeta?.title       ?? SEO_DEFAULTS.title;
+const title = routeMeta?.title ?? SEO_DEFAULTS.title;
 const description = routeMeta?.description ?? SEO_DEFAULTS.description;
-const keywords    = routeMeta?.keywords    ?? SEO_DEFAULTS.keywords;
-const canonical   = routeMeta?.canonical   ?? SEO_DEFAULTS.canonical;
-const noindex     = routeMeta?.noindex     ?? false;
+const keywords = routeMeta?.keywords ?? SEO_DEFAULTS.keywords;
+const canonical = routeMeta?.canonical ?? SEO_DEFAULTS.canonical;
+const noindex = routeMeta?.noindex ?? false;
 
 const og = {
   ...SEO_DEFAULTS.og,
   ...routeMeta?.og,
-  title:       routeMeta?.og?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.og.title,
+  title: routeMeta?.og?.title ?? routeMeta?.title ?? SEO_DEFAULTS.og.title,
   description: routeMeta?.og?.description ?? routeMeta?.description ?? SEO_DEFAULTS.og.description,
 };
 
 const twitter = {
   ...SEO_DEFAULTS.twitter,
   ...routeMeta?.twitter,
-  title:       routeMeta?.twitter?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.twitter.title,
+  title: routeMeta?.twitter?.title ?? routeMeta?.title ?? SEO_DEFAULTS.twitter.title,
   description: routeMeta?.twitter?.description ?? routeMeta?.description ?? SEO_DEFAULTS.twitter.description,
 };
 
 const jsonLdSchemas = routeMeta?.jsonLd ?? [];
 ---
-
-<!-- Primary -->
 <title>{title}</title>
-<meta name="description"        content={description} />
-<meta name="keywords"           content={keywords} />
-<meta name="author"             content={SITE_CONFIG.author} />
-<meta name="application-name"   content={SITE_CONFIG.name} />
-<meta name="generator"          content="Astro + React" />
-<meta name="theme-color"        content="#0a0a0a" />
-<meta name="color-scheme"       content="dark" />
-<meta name="format-detection"   content="telephone=no, date=no, email=no, address=no" />
-<link rel="canonical"           href={canonical} />
+<meta name="description" content={description} />
+<meta name="keywords" content={keywords} />
+<meta name="author" content={SITE_CONFIG.author} />
+<meta name="application-name" content={SITE_CONFIG.name} />
+<meta name="generator" content="Astro + React" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="color-scheme" content="dark" />
+<meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+<link rel="canonical" href={canonical} />
 
-<!-- Robots -->
-{noindex
-  ? <meta name="robots" content="noindex, nofollow" />
-  : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-}
+{noindex ? (
+  <meta name="robots" content="noindex, nofollow" />
+) : (
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+)}
 
-<!-- Apple / PWA -->
-<meta name="mobile-web-app-capable"            content="yes" />
-<meta name="apple-mobile-web-app-capable"      content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title"        content={SITE_CONFIG.name} />
+<meta name="apple-mobile-web-app-title" content={SITE_CONFIG.name} />
 
-<!-- Microsoft / Windows -->
-<meta name="msapplication-TileColor"    content="#0a0a0a" />
-<meta name="msapplication-TileImage"    content="/icon-192.png" />
+<meta name="msapplication-TileColor" content="#0a0a0a" />
+<meta name="msapplication-TileImage" content="/icon-192.png" />
 <meta name="msapplication-tap-highlight" content="no" />
 
-<!-- Open Graph -->
-<meta property="og:site_name"    content={SITE_CONFIG.name} />
-<meta property="og:locale"       content={SITE_CONFIG.locale} />
-<meta property="og:type"         content={og.type} />
-<meta property="og:url"          content={og.url} />
-<meta property="og:title"        content={og.title} />
-<meta property="og:description"  content={og.description} />
-<meta property="og:image"        content={og.image} />
-<meta property="og:image:width"  content={String(og.imageWidth)} />
+<meta property="og:site_name" content={SITE_CONFIG.name} />
+<meta property="og:locale" content={SITE_CONFIG.locale} />
+<meta property="og:type" content={og.type} />
+<meta property="og:url" content={og.url} />
+<meta property="og:title" content={og.title} />
+<meta property="og:description" content={og.description} />
+<meta property="og:image" content={og.image} />
+<meta property="og:image:width" content={String(og.imageWidth)} />
 <meta property="og:image:height" content={String(og.imageHeight)} />
-<meta property="og:image:alt"    content={og.imageAlt} />
-<meta property="og:image:type"   content="image/jpeg" />
+<meta property="og:image:alt" content={og.imageAlt} />
+<meta property="og:image:type" content="image/jpeg" />
 
-<!-- Twitter Card -->
-<meta name="twitter:card"        content={twitter.card} />
-<meta name="twitter:site"        content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:creator"     content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:title"       content={twitter.title} />
+<meta name="twitter:card" content={twitter.card} />
+<meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />
+<meta name="twitter:creator" content={SITE_CONFIG.twitterHandle} />
+<meta name="twitter:title" content={twitter.title} />
 <meta name="twitter:description" content={twitter.description} />
-<meta name="twitter:image"       content={twitter.image} />
-<meta name="twitter:image:alt"   content={twitter.imageAlt} />
+<meta name="twitter:image" content={twitter.image} />
+<meta name="twitter:image:alt" content={twitter.imageAlt} />
 
-<!-- JSON-LD Structured Data -->
 {jsonLdSchemas.map((schema) => (
   <script type="application/ld+json" set:html={JSON.stringify(schema)} />
 ))}
