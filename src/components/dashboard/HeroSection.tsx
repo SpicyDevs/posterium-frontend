@@ -151,7 +151,7 @@ const CyclingPoster = memo(() => {
               src={src}
               alt={p.title}
               loading="eager"
-              {...(i === 0 ? { fetchpriority: 'high' } as unknown as object : {})}
+              fetchPriority={i === 0 ? 'high' : undefined}
               decoding={i === 0 ? 'sync' : 'async'}
               onLoad={() => onLoad(i)}
               style={{

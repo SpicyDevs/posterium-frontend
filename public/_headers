@@ -52,3 +52,13 @@
 /manifest.webmanifest
   Content-Type: application/manifest+json
   Cache-Control: public, max-age=86400, must-revalidate
+
+# Static images
+/*.jpg
+  X-Robots-Tag: noimageindex, noarchive
+/*.png
+  X-Robots-Tag: noimageindex, noarchive
+/*.svg
+  X-Robots-Tag: noimageindex, noarchive
+/*.webp
+  X-Robots-Tag: noimageindex, noarchive

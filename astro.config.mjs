@@ -15,6 +15,8 @@ export default defineConfig({
         "html-minifier-terser": {
           removeAttributeQuotes: false,
           collapseWhitespace: true,
+          conservativeCollapse: true, 
+          preserveLineBreaks: true,  
           removeComments: true,
           minifyJS: true,
           minifyCSS: true,

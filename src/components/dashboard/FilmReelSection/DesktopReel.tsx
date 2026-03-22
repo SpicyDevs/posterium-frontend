@@ -1,6 +1,5 @@
 // src/components/dashboard/FilmReelSection/DesktopReel.tsx
-// Import paths corrected: ../../constants → @/lib/dashboard/constants
-import { memo, useRef, useLayoutEffect, useEffect, useState, useCallback } from 'react';
+import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 import { useScrollReel } from '@/lib/dashboard/hooks/index';
 import { SprocketStrip } from '../primitives';
@@ -87,7 +86,7 @@ const DesktopReel = memo(() => {
     return () => obs.disconnect();
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const recalc = () => {
       const container = containerRef.current, track = trackRef.current;
       if (!container || !track) return;
