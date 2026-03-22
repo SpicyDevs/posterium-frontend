@@ -1,7 +1,6 @@
 // src/components/dashboard/Dashboard.tsx
 import React from 'react';
 import './dashboard.css';
-import { GLOBAL_CSS } from '@/lib/dashboard/styles';
 import { MARQUEE_TITLES } from '@/lib/dashboard/constants';
 import Nav from './Nav';
 import HeroSection from './HeroSection';
