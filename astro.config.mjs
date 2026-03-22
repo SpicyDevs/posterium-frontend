@@ -9,19 +9,45 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  site: 'https://posters.spicydevs.xyz', // Required for sitemap generation
+  site: 'https://posters.spicydevs.xyz',
   output: 'static',
+  trailingSlash: 'never', // Forces Astro to generate URLs without trailing slashes
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
   },
   integrations: [
     react(),
-    sitemap(),
+    sitemap({
+      serialize(item) {
+        // 1. Strip trailing slashes to perfectly match your <link rel="canonical"> tags.
+        // The root domain ('/') inherently requires a trailing slash in valid URLs.
+        if (item.url !== 'https://posters.spicydevs.xyz/' && item.url.endsWith('/')) {
+          item.url = item.url.slice(0, -1);
+        }
+        
+        // 2. Automatically inject the current build timestamp
+        item.lastmod = new Date().toISOString();
+        
+        // 3. Apply change frequency
+        item.changefreq = 'weekly';
+        
+        // 4. Assign priority based on the route
+        if (item.url === 'https://posters.spicydevs.xyz/') {
+          item.priority = 1.0;
+        } else if (item.url === 'https://posters.spicydevs.xyz/build') {
+          item.priority = 0.9;
+        } else {
+          item.priority = 0.8;
+        }
+        
+        return item;
+      }
+    }),
     AstroPWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      manifest: false, // Assumes you maintain public/manifest.webmanifest independently
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         runtimeCaching: [
@@ -32,7 +58,7 @@ export default defineConfig({
               cacheName: 'tmdb-image-cache',
               expiration: {
                 maxEntries: 300,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -46,7 +72,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -61,7 +87,7 @@ export default defineConfig({
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day fallback
+                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: {
                 statuses: [0, 200],
