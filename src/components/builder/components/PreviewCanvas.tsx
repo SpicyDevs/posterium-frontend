@@ -206,8 +206,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         const sy = newItems[targetId]!.y ?? auto.y;
         const s  = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
         const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-        newItems[targetId]!.x = Math.max(-(bW * 0.4), Math.min(sx + dx, CANVAS_WIDTH  - bW * 0.6));
-        newItems[targetId]!.y = Math.max(-(bH * 0.4), Math.min(sy + dy, CANVAS_HEIGHT - bH * 0.6));
+        // Allow badge to be dragged out up to the 1 pixel limit
+        newItems[targetId]!.x = Math.max(-bW + 1, Math.min(sx + dx, CANVAS_WIDTH - 1));
+        newItems[targetId]!.y = Math.max(-bH + 1, Math.min(sy + dy, CANVAS_HEIGHT - 1));
       };
       if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
       else applyDelta(id);
@@ -327,8 +328,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             if (isTarget || isGroup) {
               const s  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
               const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-              x = Math.max(-(bW * 0.4), Math.min(x + dragSession.dx, CANVAS_WIDTH  - bW * 0.6));
-              y = Math.max(-(bH * 0.4), Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH * 0.6));
+              // Limit active drag calculation directly on render
+              x = Math.max(-bW + 1, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
+              y = Math.max(-bH + 1, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
             }
           }
 
