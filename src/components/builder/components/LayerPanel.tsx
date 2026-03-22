@@ -1,5 +1,5 @@
 // src/components/builder/components/LayerPanel.tsx
-import React, { useState, useEffect, Fragment, memo, useCallback } from 'react';
+import React, { useState, useEffect, Fragment, memo, useCallback, useRef } from 'react';
 import { Combobox, Listbox, ListboxButton, ListboxOptions, ListboxOption, Switch, Transition } from '@headlessui/react';
 import { Check, Search, Loader2, GripVertical, Film, Layers, Tv, Clapperboard, Eye, EyeOff, ChevronDown, ImagePlay } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -45,20 +45,56 @@ const SelectBox = memo(({ value, onChange, options }: { value: string; onChange:
 ));
 SelectBox.displayName = "SelectBox";
 
+// ── InlineSlider: editable value on the left of the track ──────────────────
 const InlineSlider: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
-}> = ({ label, value, onChange, min, max, step = 1, unit = "", formatValue }) => (
-  <div className="space-y-1">
-    <div className="flex items-center justify-between">
+}> = ({ label, value, onChange, min, max, step = 1, unit = "", formatValue }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const display = formatValue ? formatValue(value) : `${value}${unit}`;
+
+  const commit = () => {
+    const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
+    if (!isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
+    setEditing(false);
+  };
+
+  return (
+    <div className="space-y-1">
       <span className="text-[10px] text-zinc-500 font-medium">{label}</span>
-      <span className="text-[10px] font-mono text-zinc-600 tabular-nums">
-        {formatValue ? formatValue(value) : `${value}${unit}`}
-      </span>
+      <div className="flex items-center gap-2">
+        {editing ? (
+          <input
+            type="text"
+            value={draft}
+            autoFocus
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); commit(); }
+              if (e.key === 'Escape') setEditing(false);
+            }}
+            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#0d0d0f] border border-[#C47C2E]/60 text-[10px] font-mono text-zinc-200 text-center focus:outline-none shrink-0"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setEditing(true); setDraft(String(value)); }}
+            title="Click to edit"
+            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+          >
+            {display}
+          </button>
+        )}
+        <input type="range" min={min} max={max} step={step} value={value}
+          onChange={e => onChange(parseFloat(e.target.value))}
+          className="flex-1 min-w-0"
+        />
+      </div>
     </div>
-    <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(parseFloat(e.target.value))} className="w-full" />
-  </div>
-);
+  );
+};
 
 // Base logo dimensions — the slider scales both proportionally from this
 const LOGO_BASE_W = 320;
@@ -72,16 +108,10 @@ const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
   { id: "metahub", label: "Hub"    },
 ];
 
-/**
- * LogoPanel — Source, single Size slider (scales W+H proportionally), Appearance.
- * Position is drag-only on the canvas.
- */
 const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<React.SetStateAction<PosterConfig>> }> = ({ config, setConfig }) => {
   const update = useCallback(<K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
     setConfig(prev => ({ ...prev, [key]: value })), [setConfig]);
 
-  // Derive a single "size" value (width in px) from logoW.
-  // Changing the slider updates BOTH logoW and logoH proportionally.
   const handleSizeChange = (newW: number) => {
     const w = Math.round(newW);
     const h = Math.round(w / LOGO_ASPECT);
@@ -97,7 +127,7 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
           {LOGO_SOURCES.map(opt => (
             <button key={String(opt.id)} type="button"
               onClick={() => update("logoSource", opt.id as PosterConfig["logoSource"])}
-              className={clsx("h-9 rounded-lg text-[11px] font-medium transition-all active:scale-95",
+              className={clsx("h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95",
                 (config.logoSource ?? null) === opt.id
                   ? "bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30"
                   : "bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6 hover:border-white/15"
@@ -163,7 +193,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
-  const [thumbUrl,    setThumbUrl]    = useState("");
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -184,16 +213,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setFetchedData(merged);
         setLiveRatings(data.ratings || {});
 
-        // w92 thumbnail for info card
-        const raw = data.poster?.selected || "";
-        if (raw) {
-          setThumbUrl(raw.startsWith("http")
-            ? raw.replace(/\/w\d+\//, '/w92/')
-            : `https://image.tmdb.org/t/p/w92${raw}`
-          );
-        }
-
-        // Resolve imdbId for /poster/ URL generation
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig(prev => ({ ...prev, imdbId: data.ids.imdb }));
         }
@@ -204,14 +223,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return () => ctrl.abort();
   }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
 
-  useEffect(() => {
-    if (!config.tmdbId && !config.imdbId) { setThumbUrl(""); }
-  }, [config.tmdbId, config.imdbId]);
-
   const handleSelectMedia = useCallback((item: SearchResult | null) => {
     if (!item) return;
     setFetchedData({ title: item.title || item.name || "", year: (item.release_date || item.first_air_date)?.split("-")[0] || "" });
-    setThumbUrl(item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : "");
     setConfig(prev => ({ ...prev, tmdbId: item.id.toString(), imdbId: undefined, mediaType: item.media_type as PosterConfig["mediaType"] }));
     setSearchQuery(""); setResults([]);
   }, [setConfig]);
@@ -319,7 +333,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </div>
         <div onClick={e => e.stopPropagation()} className="shrink-0">
           <button onClick={() => handleToggleVisibility(badge.id, !isActive)}
-            className={clsx("w-8 h-8 rounded-md flex items-center justify-center transition-colors", isActive ? "text-zinc-400 hover:text-zinc-100 hover:bg-white/8" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5")}
+            className={clsx("w-7 h-7 rounded-md flex items-center justify-center transition-colors", isActive ? "text-zinc-400 hover:text-zinc-100 hover:bg-white/8" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5")}
             title={isActive ? "Hide badge" : "Show badge"}>
             {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -347,35 +361,40 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Source Tab ─────────────────────────────────────────────────────── */}
       {localMode === "source" && (
         <div className="space-y-4">
-          {/* Info card */}
+          {/* Info card — text only, no poster thumbnail */}
           {(fetchedData.title || config.tmdbId) && (
-            <div className="flex gap-3 p-2.5 rounded-xl bg-[#111113] border border-white/6">
-              <div className="w-12 h-[4.5rem] shrink-0 rounded-lg overflow-hidden bg-zinc-900 border border-white/6">
-                {thumbUrl
-                  ? <img src={thumbUrl} alt={fetchedData.title || "Poster"} className="w-full h-full object-cover" loading="lazy" />
-                  : <div className="w-full h-full flex items-center justify-center"><Film size={16} className="text-zinc-600" /></div>
-                }
-              </div>
-              <div className="flex-1 min-w-0 py-0.5">
-                <p className="text-[12px] font-semibold text-zinc-100 leading-tight line-clamp-2">
-                  {fetchedData.title || <span className="text-zinc-500 italic">Untitled</span>}
-                </p>
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  {fetchedData.year && <span className="text-[10px] text-zinc-500 font-mono">{fetchedData.year}</span>}
-                  <span className={clsx("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide",
-                    config.mediaType === "tv" ? "bg-blue-500/15 text-blue-400" : config.mediaType === "anime" ? "bg-purple-500/15 text-purple-400" : "bg-amber-500/15 text-amber-400"
-                  )}>
-                    <MediaIcon size={9} />{config.mediaType}
-                  </span>
-                  {config.imdbId && <span className="text-[9px] font-mono text-zinc-600">{config.imdbId}</span>}
-                </div>
-                {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && (
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    {fetchedData.imdb && <span className="text-[9px] font-mono text-zinc-500">IMDb {fetchedData.imdb}</span>}
-                    {fetchedData.rt   && <span className="text-[9px] font-mono text-zinc-500">RT {fetchedData.rt}</span>}
-                    {fetchedData.tmdb && <span className="text-[9px] font-mono text-zinc-500">TMDB {fetchedData.tmdb}</span>}
+            <div className="p-2.5 rounded-xl bg-[#111113] border border-white/6">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-zinc-100 leading-tight line-clamp-2">
+                    {fetchedData.title || <span className="text-zinc-500 italic">Untitled</span>}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    {fetchedData.year && <span className="text-[10px] text-zinc-500 font-mono">{fetchedData.year}</span>}
+                    <span className={clsx("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide",
+                      config.mediaType === "tv" ? "bg-blue-500/15 text-blue-400" : config.mediaType === "anime" ? "bg-purple-500/15 text-purple-400" : "bg-amber-500/15 text-amber-400"
+                    )}>
+                      <MediaIcon size={9} />{config.mediaType}
+                    </span>
+                    {config.imdbId && <span className="text-[9px] font-mono text-zinc-600">{config.imdbId}</span>}
                   </div>
-                )}
+                  {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {fetchedData.imdb && <span className="text-[9px] font-mono text-zinc-500">IMDb {fetchedData.imdb}</span>}
+                      {fetchedData.rt   && <span className="text-[9px] font-mono text-zinc-500">RT {fetchedData.rt}</span>}
+                      {fetchedData.tmdb && <span className="text-[9px] font-mono text-zinc-500">TMDB {fetchedData.tmdb}</span>}
+                    </div>
+                  )}
+                </div>
+                {/* Media type icon badge */}
+                <div className={clsx(
+                  "w-8 h-8 shrink-0 rounded-lg flex items-center justify-center",
+                  config.mediaType === "tv" ? "bg-blue-500/10" : config.mediaType === "anime" ? "bg-purple-500/10" : "bg-amber-500/10"
+                )}>
+                  <MediaIcon size={16} className={
+                    config.mediaType === "tv" ? "text-blue-400/70" : config.mediaType === "anime" ? "text-purple-400/70" : "text-amber-400/70"
+                  } />
+                </div>
               </div>
             </div>
           )}

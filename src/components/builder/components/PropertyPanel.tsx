@@ -1,8 +1,11 @@
 // src/components/builder/components/PropertyPanel.tsx
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useRef } from 'react';
 import { Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
-import { Layers, Layout, Smartphone, Palette, ChevronDown, ChevronRight, Eye, KeyRound, RotateCcw } from 'lucide-react';
+import {
+  Layers, Layout, Smartphone, Palette, ChevronDown, ChevronRight,
+  Eye, KeyRound, RotateCcw, Rows2, Columns2,
+} from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
@@ -20,7 +23,7 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
     <div className="border-b border-white/[0.05] last:border-0">
       <button type="button" onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.03] transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50">
-        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">{icon}{title}</span>
+        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">{icon}{title}</span>
         {open ? <ChevronDown size={12} className="text-zinc-600" /> : <ChevronRight size={12} className="text-zinc-600" />}
       </button>
       {open && <div className="px-3 pb-4 pt-1 space-y-4">{children}</div>}
@@ -28,19 +31,63 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
   );
 };
 
+// ── SliderRow: value box on the left of the track, click-to-edit ──────────────
 const SliderRow: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const display = formatValue ? formatValue(value) : `${value}${unit}`;
+
+  const startEdit = () => {
+    setDraft(String(value));
+    setEditing(true);
+    // Focus handled by autoFocus
+  };
+
+  const commit = () => {
+    const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
+    if (!isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
+    setEditing(false);
+  };
+
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
-        <span className="text-[11px] font-mono text-zinc-500 tabular-nums min-w-[2.5rem] text-right">{display}</span>
+    <div className="space-y-1">
+      <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
+      <div className="flex items-center gap-2">
+        {/* Editable value on far left of the slider */}
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={draft}
+            autoFocus
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); commit(); }
+              if (e.key === 'Escape') setEditing(false);
+            }}
+            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#0d0d0f] border border-[#C47C2E]/60 text-[10px] font-mono text-zinc-200 text-center focus:outline-none shrink-0"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={startEdit}
+            title="Click to edit value"
+            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+          >
+            {display}
+          </button>
+        )}
+        <input
+          type="range" min={min} max={max} step={step} value={value}
+          onChange={e => onChange(parseFloat(e.target.value))}
+          className="flex-1 min-w-0"
+        />
       </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))} className="w-full" />
     </div>
   );
 };
@@ -175,14 +222,21 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           <div className="flex-1">
             <p className="text-[10px] text-zinc-500 mb-2 font-medium">Flow direction</p>
             <div className="space-y-1.5">
-              {([{ id: 'col', label: 'Column', icon: '⬇' }, { id: 'row', label: 'Row', icon: '➡' }] as const).map(opt => (
+              {([
+                { id: 'col' as const, label: 'Column', icon: <Rows2 size={13} /> },
+                { id: 'row' as const, label: 'Row',    icon: <Columns2 size={13} /> },
+              ]).map(opt => (
                 <button key={opt.id} type="button" onClick={() => updateConfig('layout', opt.id)}
-                  className={clsx('w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
+                  className={clsx(
+                    'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
                     config.layout === opt.id
                       ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
                       : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/6'
                   )}>
-                  <span className="text-base leading-none">{opt.icon}</span>{opt.label}
+                  <span className={config.layout === opt.id ? 'text-[#D4A245]' : 'text-zinc-600'}>
+                    {opt.icon}
+                  </span>
+                  {opt.label}
                 </button>
               ))}
             </div>
@@ -212,9 +266,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             onChange={v => updateConfig('borderC', v)} />
         )}
 
-        {/* ── Global background color (g_bg) ─────────────────────────────
-            When set, overrides the computed rgba(0,0,0,alpha) background
-            for all badges — maps to the g_bg API query param.             */}
+        {/* ── Global background color (g_bg) ─────────────────────────────── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Badge Background</span>
@@ -237,8 +289,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           )}
         </div>
 
-        {/* ── Global text color (g_txt) ────────────────────────────────────
-            Maps to g_txt API query param. Default is #ffffff.              */}
+        {/* ── Global text color (g_txt) ────────────────────────────────────── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Badge Text Color</span>
@@ -260,10 +311,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         <div className="grid grid-cols-2 gap-2">
           {([{ key: 'showSafeArea' as const, label: 'Safe Area' }, { key: 'showGrid' as const, label: 'Grid Lines' }]).map(({ key, label }) => (
             <button key={key} type="button" onClick={() => toggleViewOption(key)}
-              className={clsx('h-9 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
+              className={clsx('h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
                 viewOptions[key]
                   ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
-                  : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6'
+                  : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6 hover:border-white/12'
               )}>
               {label}
             </button>
@@ -306,7 +357,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const isAgeSelected = selectedIds.has('age');
   const multi = selectedIds.size > 1;
 
-  // Resolve common values with fallback to global config defaults
   const commonBlur   = getCommonValue('blur',   config.blur)   ?? config.blur;
   const commonAlpha  = getCommonValue('alpha',  config.alpha)  ?? config.alpha;
   const commonRadius = getCommonValue('radius', config.radius) ?? config.radius;
@@ -314,13 +364,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const commonScale  = (getCommonValue('scale', 1.0) ?? 1.0) as number;
   const commonBorderW = (getCommonValue('borderW', 0) ?? 0) as number;
 
-  // bg: per-badge value or fallback to global bg or '#000000'
   const commonBg = (() => {
     const v = getCommonValue('bg', config.bg ?? '#000000');
     return (v === null ? (config.bg ?? '#000000') : v) as string;
   })();
 
-  // txt: per-badge value or fallback to global txt or '#ffffff'
   const commonTxt = (() => {
     const v = getCommonValue('txt', config.txt ?? '#ffffff');
     return (v === null ? (config.txt ?? '#ffffff') : v) as string;
@@ -328,7 +376,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   return (
     <div className="pb-24">
-      {/* Header */}
+      {/* Selection header */}
       <div className="mx-3 mt-3 mb-1 px-3 py-2.5 bg-[#C47C2E]/8 border border-[#C47C2E]/20 rounded-lg">
         <p className="text-[11px] text-[#E8D8A8] font-medium">
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
@@ -351,8 +399,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       </Section>
 
       <Section title="Fill & Stroke">
-        {/* Per-badge background color — maps to {key}_bg ──────────────────
-            Includes alpha/opacity slider since bg and alpha work together. */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Background</span>
@@ -370,8 +416,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           />
         </div>
 
-        {/* Per-badge text color — maps to {key}_txt ───────────────────────
-            This was previously missing! Default #ffffff.                   */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Text Color</span>
@@ -417,9 +461,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             selectedIds.forEach(id => delete ni[id]);
             return { ...prev, items: ni };
           })}
-          className="w-full h-9 rounded-xl border border-red-500/20 bg-red-500/5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+          className="w-full h-8 rounded-lg border border-red-500/20 bg-red-500/5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
         >
-          <RotateCcw size={12} /> Reset to global defaults
+          <RotateCcw size={11} /> Reset to global defaults
         </button>
       </div>
     </div>

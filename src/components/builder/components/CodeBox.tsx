@@ -2,15 +2,24 @@
 import React, { useState, useEffect, useId, memo, useRef } from 'react';
 import { Copy, Check, ArrowRight, Loader2, Download, Link2, Braces } from 'lucide-react';
 import { generateApiUrl, toTemplateUrl, isTemplateUrl, parseUrlToConfig } from '../utils';
-import type { PosterConfig } from '../types';
+import type { PosterConfig, ExtensionType } from '../types';
+import clsx from 'clsx';
 
 interface Props {
   config: PosterConfig;
   onLoadConfig: (url: string) => void;
   baseUrl: string;
+  onExtensionChange?: (ext: ExtensionType) => void;
 }
 
-const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
+const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
+  { id: 'svg',  label: 'SVG'  },
+  { id: 'png',  label: 'PNG'  },
+  { id: 'jpg',  label: 'JPG'  },
+  { id: 'webp', label: 'WEBP' },
+];
+
+const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtensionChange }) => {
   const inputId  = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl]                 = useState('');
@@ -49,8 +58,6 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
     if (!url.trim()) return;
     setIsLoading(true);
 
-    // If the pasted URL is a template, substitute the placeholder with the
-    // current config's media ID so the import resolves against live data.
     let resolvedUrl = url;
     if (isTemplateUrl(url)) {
       const currentId = config.imdbId || config.tmdbId;
@@ -80,17 +87,19 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
     }
   };
 
-  // Whether current URL in box is a template
   const showingTemplate = isTemplateUrl(url);
 
   return (
-    <div className="w-full" role="search" aria-label="Poster URL">
+    <div className="w-full space-y-1" role="search" aria-label="Poster URL">
       <label htmlFor={inputId} className="sr-only">Poster API URL</label>
-      <div className={`flex items-center h-8 border rounded-lg transition-all duration-150 focus-within:bg-[#131316] hover:border-white/15 ${
+
+      {/* ── URL bar ─────────────────────────────────────────────────────── */}
+      <div className={clsx(
+        'flex items-center h-8 border rounded-lg transition-all duration-150 focus-within:bg-[#131316] hover:border-white/15',
         showingTemplate
           ? 'bg-[#111113] border-[#C47C2E]/30'
           : 'bg-[#111113] border-white/9 focus-within:border-[#C47C2E]/50'
-      }`}>
+      )}>
         <span className="pl-2.5 text-zinc-600 shrink-0" aria-hidden="true">
           <Link2 size={11} strokeWidth={2} />
         </span>
@@ -132,9 +141,6 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
                 <Download size={11} />
               </button>
 
-              {/* Template export button ────────────────────────────────────
-                  Copies the URL with the media ID replaced by {imdb_id}.
-                  Useful for Plex/Jellyfin automations that inject the ID.  */}
               <button
                 onClick={handleExportTemplate}
                 aria-label={templateCopied ? 'Template copied!' : 'Copy as template (replaces ID with {imdb_id})'}
@@ -160,10 +166,34 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl }) => {
         </div>
       </div>
 
-      {/* Template hint toast */}
-      {templateCopied && (
-        <div className="absolute mt-1 right-0 px-2 py-1 rounded-md text-[10px] font-mono bg-zinc-800/90 text-[#D4A245] border border-[#C47C2E]/30 whitespace-nowrap shadow-lg z-50 pointer-events-none">
-          Copied with <span className="font-bold">{'{imdb_id}'}</span> placeholder
+      {/* ── Format / extension selector ─────────────────────────────────── */}
+      {onExtensionChange && (
+        <div className="flex items-center gap-0.5">
+          <span className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest pr-1.5 select-none">
+            fmt
+          </span>
+          {EXT_OPTIONS.map(ext => (
+            <button
+              key={ext.id}
+              type="button"
+              onClick={() => onExtensionChange(ext.id)}
+              className={clsx(
+                'h-[18px] px-2 rounded text-[9px] font-mono uppercase tracking-wide transition-all active:scale-95 select-none',
+                config.extension === ext.id
+                  ? 'bg-[#C47C2E]/18 text-[#D4A245] ring-1 ring-[#C47C2E]/35 font-semibold'
+                  : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/4'
+              )}
+            >
+              {ext.label}
+            </button>
+          ))}
+
+          {/* Template hint — inline, no absolute positioning */}
+          {templateCopied && (
+            <span className="ml-auto text-[9px] font-mono text-[#D4A245]/70 whitespace-nowrap pr-0.5">
+              Copied with <span className="font-bold">{'{imdb_id}'}</span>
+            </span>
+          )}
         </div>
       )}
 

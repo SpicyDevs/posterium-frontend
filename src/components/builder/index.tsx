@@ -1,11 +1,7 @@
 // src/components/builder/index.tsx
-// Changes vs original src/builder/index.tsx:
-//   1. Router import removed
-//   2. Header Home button + brand div → single <a href="/"> with poster-font wordmark
-//   3. Header background → var(--film-dark) with amber border (matches dashboard Nav)
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import type { PosterConfig } from './types';
+import type { PosterConfig, ExtensionType } from './types';
 import { DEFAULT_CONFIG } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
@@ -61,17 +57,19 @@ const ResetDialog = memo<{
               All settings will be restored to defaults. This action cannot be undone.
             </p>
             <div className="mt-5 flex gap-2">
+              {/* Cancel — secondary style matching dashboard secondary button */}
               <button
                 onClick={onClose}
-                className="flex-1 h-9 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-[#C47C2E]/50 hover:text-[#E8D8A8] hover:bg-[#C47C2E]/8 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]"
+                className="flex-1 h-9 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-semibold text-zinc-300 hover:border-[#C47C2E]/35 hover:text-[#E8D8A8] hover:bg-[#C47C2E]/6 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase"
               >
                 Cancel
               </button>
+              {/* Confirm — destructive */}
               <button
                 onClick={() => { onConfirm(); onClose(); }}
-                className="flex-1 h-9 rounded-lg bg-red-600 text-xs font-medium text-white hover:bg-red-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 hover:border-red-400/50 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase"
               >
-                Reset Everything
+                Reset All
               </button>
             </div>
           </DialogPanel>
@@ -97,8 +95,8 @@ interface ToolbarBtnProps {
 const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, href, children }) => {
   const base = 'relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]';
   const active = danger
-    ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95'
-    : 'text-zinc-500 hover:text-[#D4A245] hover:bg-[#C47C2E]/10 active:scale-95';
+    ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95 cursor-pointer'
+    : 'text-zinc-500 hover:text-[#D4A245] hover:bg-[#C47C2E]/10 active:scale-95 cursor-pointer';
   const inactive = 'text-zinc-700 cursor-not-allowed pointer-events-none';
   const cls = `${base} ${disabled ? inactive : active}`;
 
@@ -251,6 +249,11 @@ const StudioLayout: React.FC<{
     if (next !== cur) setMobileSheetMode(next);
   };
 
+  // Extension change handler — updates config.extension
+  const handleExtensionChange = useCallback((ext: ExtensionType) => {
+    setConfig(prev => ({ ...prev, extension: ext }));
+  }, [setConfig]);
+
   return (
     <>
       <a
@@ -267,12 +270,12 @@ const StudioLayout: React.FC<{
 
         <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
 
-        {/* HEADER — film-dark background with amber border, matching dashboard Nav */}
+        {/* HEADER */}
         <header
           className="h-14 shrink-0 flex items-center gap-2 px-3 z-30"
           style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(196,124,46,0.08)' }}
         >
-          {/* Wordmark link — Bebas Neue, identical to dashboard Nav wordmark */}
+          {/* Wordmark */}
           <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
             <span
               className="poster-font"
@@ -290,8 +293,14 @@ const StudioLayout: React.FC<{
 
           <div className="w-px h-5 bg-white/8 mx-1 shrink-0" />
 
+          {/* CodeBox with extension selector */}
           <div className="flex-1 min-w-0">
-            <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} />
+            <CodeBox
+              config={config}
+              onLoadConfig={handleLoadConfig}
+              baseUrl={baseUrl}
+              onExtensionChange={handleExtensionChange}
+            />
           </div>
 
           <div className="w-px h-5 bg-white/8 mx-1 shrink-0" />
