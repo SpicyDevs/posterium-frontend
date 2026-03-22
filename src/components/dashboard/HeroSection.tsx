@@ -1,13 +1,7 @@
 // src/components/dashboard/HeroSection.tsx
-// Changes vs original:
-//   1. Removed: import { crtFlickering } from '../index'
-//   2. Removed: || crtFlickering guard from carousel interval
-//   3. display=swap font loading (no invisible-text period)
-// Performance: fetchpriority="high" + deferred src for images 2-5 until image 0 loads.
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
-import { FilmEdge } from './primitives';
 
 interface HeroPoster {
   id: string;
@@ -96,7 +90,6 @@ const CyclingPoster = memo(() => {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      // crtFlickering guard removed — no CRT animation in Astro migration
       if (!isVisibleRef.current) return;
       setActiveIdx((i) => { goTo((i + 1) % TOTAL); return i; });
     }, 4500);
@@ -148,8 +141,6 @@ const CyclingPoster = memo(() => {
         {CORNERS.map((c) => <div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />)}
 
         {HERO_POSTERS.map((p, i) => {
-          // Images 0 and 1 always get src. Images 2-5 deferred until image 0 loads.
-          // Prevents 6 connections competing for the same origin pool during LCP.
           const shouldLoad = i <= 1 || heroZeroLoaded;
           const src = shouldLoad ? POSTER_SRCS[i] : undefined;
 
@@ -244,10 +235,6 @@ const DOT_GRID_STYLE: React.CSSProperties = {
   backgroundImage: 'radial-gradient(rgba(196,124,46,0.15) 1px, transparent 1px)',
   backgroundSize: '36px 36px',
 };
-const FLICKER_STYLE: React.CSSProperties = {
-  position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-  animation: 'hero-flicker-subtle 22s ease-in-out infinite',
-};
 const AMBER_RULE_STYLE: React.CSSProperties = {
   width: 120, height: 1,
   background: 'linear-gradient(90deg, var(--film-amber), transparent)',
@@ -256,11 +243,8 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 
 const HeroSection = memo(() => (
   <section aria-label="Hero" style={HERO_SECTION_STYLE}>
-    <FilmEdge side="left" />
-    <FilmEdge side="right" />
     <div aria-hidden="true" style={AMBIENT_STYLE} />
     <div aria-hidden="true" style={DOT_GRID_STYLE} />
-    <div aria-hidden="true" style={FLICKER_STYLE} />
 
     <div
       className="hero-two-col"

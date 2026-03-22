@@ -1,9 +1,5 @@
 // src/components/dashboard/Dashboard.tsx
-// CRT intro animation permanently removed (see GLOBAL_INSTRUCTIONS §4).
-// Reasons: brightness(0) at start = 500ms black screen; grayscale(1) filter
-// forced full repaint every frame for 7.5s; feTurbulence SVG added GPU shader.
-// All CRT state, components, and CSS are gone. SHIMMER_CSS retained.
-import React, { useEffect } from 'react';
+import React from 'react';
 import './dashboard.css';
 import { GLOBAL_CSS } from '@/lib/dashboard/styles';
 import { MARQUEE_TITLES } from '@/lib/dashboard/constants';
@@ -50,10 +46,6 @@ const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number 
 const Dashboard: React.FC = () => {
   return (
     <>
-      {/* Film grain + scanlines (persistent, CSS-only, zero LCP impact) */}
-      <div className="grain-layer" aria-hidden="true" />
-      <div className="scan-layer"  aria-hidden="true" />
-
       {/* Inject dashboard-specific styles */}
       <style dangerouslySetInnerHTML={{ __html: GLOBAL_CSS + SHIMMER_CSS }} />
 

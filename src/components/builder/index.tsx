@@ -3,7 +3,6 @@
 //   1. Router import removed
 //   2. Header Home button + brand div → single <a href="/"> with poster-font wordmark
 //   3. Header background → var(--film-dark) with amber border (matches dashboard Nav)
-//   4. grain-layer + scan-layer divs added to root (film aesthetic parity with dashboard)
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import type { PosterConfig } from './types';
@@ -254,10 +253,6 @@ const StudioLayout: React.FC<{
 
   return (
     <>
-      {/* Film overlays — consistent with dashboard aesthetic */}
-      <div className="grain-layer" aria-hidden="true" />
-      <div className="scan-layer"  aria-hidden="true" />
-
       <a
         href="#main-canvas"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#C47C2E] focus:text-white focus:text-sm focus:font-medium"
