@@ -11,7 +11,15 @@ export default defineConfig({
   integrations: [
     react(),
     compress({
-      HTML: false,
+      HTML: {
+        "html-minifier-terser": {
+          removeAttributeQuotes: false,
+          collapseWhitespace: false,
+          removeComments: true,
+          minifyJS: true,
+          minifyCSS: true,
+        }
+      },
       CSS: true,
       JS: true,
       SVG: false,

@@ -1,4 +1,3 @@
-// src/components/dashboard/FilmReelSection/DesktopReel.tsx
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 import { useScrollReel } from '@/lib/dashboard/hooks/index';
@@ -59,7 +58,9 @@ const CollagePoster = memo<{
       <img
         ref={imgRef}
         src={src} alt={title}
-        loading={eager ? 'eager' : 'lazy'} decoding="async"
+        loading={eager ? undefined : 'lazy'}
+        fetchPriority={eager ? 'high' : 'auto'}
+        decoding="async"
         onLoad={onLoad} onError={onError}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: loaded ? 1 : 0, transition: 'opacity 0.35s ease' }}
       />
@@ -88,21 +89,44 @@ const DesktopReel = memo(() => {
 
   useEffect(() => {
     const recalc = () => {
-      const container = containerRef.current, track = trackRef.current;
+      const container = containerRef.current;
+      const track = trackRef.current;
       if (!container || !track) return;
-      const tw = track.scrollWidth, vw = window.innerWidth, vh = window.innerHeight;
+      
+      // READ phase
+      const tw = track.scrollWidth;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      
       if (tw <= vw) return;
-      container.style.height = `${tw - vw + vh}px`;
+      
+      // WRITE phase batched
+      requestAnimationFrame(() => {
+        container.style.height = `${tw - vw + vh}px`;
+      });
     };
+    
     recalc();
+    
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(recalc);
       if (trackRef.current) ro.observe(trackRef.current);
     }
+    
     window.addEventListener('resize', recalc, { passive: true });
-    const t1 = setTimeout(recalc, 300), t2 = setTimeout(recalc, 1000), t3 = setTimeout(recalc, 2500);
-    return () => { ro?.disconnect(); window.removeEventListener('resize', recalc); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    
+    const t1 = setTimeout(recalc, 300);
+    const t2 = setTimeout(recalc, 1000);
+    const t3 = setTimeout(recalc, 2500);
+    
+    return () => { 
+      ro?.disconnect(); 
+      window.removeEventListener('resize', recalc); 
+      clearTimeout(t1); 
+      clearTimeout(t2); 
+      clearTimeout(t3); 
+    };
   }, []);
 
   useScrollReel(containerRef, trackRef, progressFillRef);
@@ -113,7 +137,6 @@ const DesktopReel = memo(() => {
         ref={sectionRef}
         style={{ position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden', background: 'var(--film-dark)', display: 'flex', flexDirection: 'column' }}
       >
-        {/* Header */}
         <div style={{ flexShrink: 0, padding: '14px 48px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(196,124,46,0.08)' }}>
           <div>
             <div className="poster-font" style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}>THE REEL</div>
@@ -124,12 +147,10 @@ const DesktopReel = memo(() => {
           </span>
         </div>
 
-        {/* Top sprocket */}
         <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.045)' }}>
           <SprocketStrip count={48} />
         </div>
 
-        {/* Poster wall */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
           <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 140, zIndex: 2, pointerEvents: 'none', background: 'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)' }} />
           <div aria-hidden="true" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 200, zIndex: 2, pointerEvents: 'none', background: 'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)' }} />
@@ -156,12 +177,10 @@ const DesktopReel = memo(() => {
           </div>
         </div>
 
-        {/* Bottom sprocket */}
         <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.045)' }}>
           <SprocketStrip count={48} />
         </div>
 
-        {/* Progress bar */}
         <div style={{ flexShrink: 0, padding: '7px 48px', borderTop: '1px solid rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span className="mono-font" style={{ fontSize: 7, color: 'var(--film-text-ghost)', letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0 }}>Reel</span>
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 99, overflow: 'hidden' }}>

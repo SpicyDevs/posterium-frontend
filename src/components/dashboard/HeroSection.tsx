@@ -1,4 +1,3 @@
-// src/components/dashboard/HeroSection.tsx
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
@@ -150,8 +149,8 @@ const CyclingPoster = memo(() => {
               ref={(el) => { imgRefs.current[i] = el; }}
               src={src}
               alt={p.title}
-              loading="eager"
-              fetchPriority={i === 0 ? 'high' : undefined}
+              loading={i === 0 ? undefined : 'lazy'}
+              fetchPriority={i === 0 ? 'high' : 'auto'}
               decoding={i === 0 ? 'sync' : 'async'}
               onLoad={() => onLoad(i)}
               style={{
@@ -190,10 +189,9 @@ const CyclingPoster = memo(() => {
         </div>
       </div>
 
-      {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={handlePrev} aria-label="Previous poster"
-          style={{ background: 'none', border: '1px solid rgba(196,124,46,0.22)', borderRadius: 3, cursor: 'pointer', color: 'rgba(196,124,46,0.5)', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.18s, color 0.18s', flexShrink: 0 }}
+          style={{ background: 'none', border: '1px solid rgba(196,124,46,0.22)', borderRadius: 3, cursor: 'pointer', color: 'rgba(196,124,46,0.5)', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyItems: 'center', transition: 'border-color 0.18s, color 0.18s', flexShrink: 0 }}
           onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(196,124,46,0.6)'; el.style.color = 'var(--film-amber)'; }}
           onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(196,124,46,0.22)'; el.style.color = 'rgba(196,124,46,0.5)'; }}
         >
@@ -209,7 +207,7 @@ const CyclingPoster = memo(() => {
         </div>
 
         <button onClick={handleNext} aria-label="Next poster"
-          style={{ background: 'none', border: '1px solid rgba(196,124,46,0.22)', borderRadius: 3, cursor: 'pointer', color: 'rgba(196,124,46,0.5)', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.18s, color 0.18s', flexShrink: 0 }}
+          style={{ background: 'none', border: '1px solid rgba(196,124,46,0.22)', borderRadius: 3, cursor: 'pointer', color: 'rgba(196,124,46,0.5)', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyItems: 'center', transition: 'border-color 0.18s, color 0.18s', flexShrink: 0 }}
           onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(196,124,46,0.6)'; el.style.color = 'var(--film-amber)'; }}
           onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(196,124,46,0.22)'; el.style.color = 'rgba(196,124,46,0.5)'; }}
         >
@@ -221,7 +219,6 @@ const CyclingPoster = memo(() => {
 });
 CyclingPoster.displayName = 'CyclingPoster';
 
-// ── Module-level stable styles ────────────────────────────────────
 const HERO_SECTION_STYLE: React.CSSProperties = {
   minHeight: '100dvh', position: 'relative', display: 'flex',
   alignItems: 'center', overflow: 'hidden', background: 'var(--film-black)',
