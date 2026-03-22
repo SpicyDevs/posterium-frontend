@@ -45,7 +45,7 @@ export default defineConfig({
         name: "Posterium - Posters with Ratings!",
         short_name: "Posterium",
         description: "Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.",
-        start_url: "/",
+        start_url: "/build",
         display: "standalone",
         background_color: "#0a0a0a",
         theme_color: "#0a0a0a",
