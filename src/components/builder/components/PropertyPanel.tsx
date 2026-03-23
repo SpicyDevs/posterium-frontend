@@ -1,10 +1,10 @@
 // src/components/builder/components/PropertyPanel.tsx
-import React, { memo, useState, useRef } from 'react';
+import React, { memo, useState, useRef, useCallback } from 'react';
 import { Switch } from '@headlessui/react';
-import type { PosterConfig, RatingType, PresetType, BadgeConfig, ApiKeys } from '../types';
+import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
 import {
   Layers, Layout, Smartphone, Palette, ChevronDown, ChevronRight,
-  Eye, KeyRound, RotateCcw, Rows2, Columns2,
+  Eye, RotateCcw, Rows2, Columns2,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -17,35 +17,72 @@ interface Props {
   viewMode?: 'global' | 'selection';
 }
 
-const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, icon, children, defaultOpen = true }) => {
-  const [open, setOpen] = useState(defaultOpen);
+// ── Persist section open/closed state in localStorage ─────────────────────────
+const SECTION_STORAGE_KEY = 'posterium_section_states_v1';
+
+const readSectionStates = (): Record<string, boolean> => {
+  try { return JSON.parse(localStorage.getItem(SECTION_STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+};
+
+const writeSectionState = (id: string, open: boolean) => {
+  try {
+    const s = readSectionStates();
+    localStorage.setItem(SECTION_STORAGE_KEY, JSON.stringify({ ...s, [id]: open }));
+  } catch {}
+};
+
+// FIX: Section with rounded hover bg + localStorage persistence
+const Section: React.FC<{
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  sectionId?: string;
+}> = ({ title, icon, children, defaultOpen = true, sectionId }) => {
+  const [open, setOpen] = useState(() => {
+    if (!sectionId) return defaultOpen;
+    const states = readSectionStates();
+    return sectionId in states ? states[sectionId] : defaultOpen;
+  });
+
+  const toggle = useCallback(() => {
+    setOpen(v => {
+      const next = !v;
+      if (sectionId) writeSectionState(sectionId, next);
+      return next;
+    });
+  }, [sectionId]);
+
   return (
     <div className="border-b border-white/[0.05] last:border-0">
-      <button type="button" onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.03] transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50">
-        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">{icon}{title}</span>
-        {open ? <ChevronDown size={12} className="text-zinc-600" /> : <ChevronRight size={12} className="text-zinc-600" />}
+      {/* FIX: rounded-lg on the button so hover bg is clipped */}
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50 mx-0"
+      >
+        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+          {icon}{title}
+        </span>
+        {open
+          ? <ChevronDown size={12} className="text-zinc-700 shrink-0" />
+          : <ChevronRight size={12} className="text-zinc-700 shrink-0" />
+        }
       </button>
       {open && <div className="px-3 pb-4 pt-1 space-y-4">{children}</div>}
     </div>
   );
 };
 
-// ── SliderRow: value box on the left of the track, click-to-edit ──────────────
+// ── SliderRow: click-to-edit value label ──────────────────────────────────────
 const SliderRow: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
   const display = formatValue ? formatValue(value) : `${value}${unit}`;
-
-  const startEdit = () => {
-    setDraft(String(value));
-    setEditing(true);
-    // Focus handled by autoFocus
-  };
 
   const commit = () => {
     const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
@@ -57,10 +94,8 @@ const SliderRow: React.FC<{
     <div className="space-y-1">
       <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
       <div className="flex items-center gap-2">
-        {/* Editable value on far left of the slider */}
         {editing ? (
           <input
-            ref={inputRef}
             type="text"
             value={draft}
             autoFocus
@@ -75,9 +110,9 @@ const SliderRow: React.FC<{
         ) : (
           <button
             type="button"
-            onClick={startEdit}
-            title="Click to edit value"
-            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+            onClick={() => { setDraft(String(value)); setEditing(true); }}
+            title="Click to edit"
+            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/30 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
           >
             {display}
           </button>
@@ -100,7 +135,7 @@ const ToggleRow: React.FC<{ label: string; sub?: string; checked: boolean; onCha
     </div>
     <Switch checked={checked} onChange={onChange}
       className={clsx('relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-        checked ? 'bg-[#C47C2E]' : 'bg-zinc-700'
+        checked ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
       )}>
       <span className={clsx('inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
         checked ? 'translate-x-[18px]' : 'translate-x-[3px]'
@@ -125,29 +160,14 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
             : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]'
         )}>
         <div className={clsx('w-1.5 h-1.5 rounded-full mx-auto',
-          value === pos.id ? 'bg-white' : 'bg-zinc-500'
+          value === pos.id ? 'bg-white' : 'bg-zinc-600'
         )} />
       </button>
     ))}
   </div>
 );
 
-const ApiKeyInput: React.FC<{ placeholder: string; value: string; onChange: (v: string) => void }> = ({ placeholder, value, onChange }) => {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative">
-      <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full h-8 pl-3 pr-8 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors" />
-      <button type="button" onClick={() => setShow(v => !v)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors">
-        <Eye size={12} />
-      </button>
-    </div>
-  );
-};
-
-// ── Helper: resolve badge shadow value from mixed number/boolean ──────────────
+// ── Helper: resolve badge shadow value ────────────────────────────────────────
 function resolveShadow(v: number | boolean | undefined, fallback: number): number {
   if (v === undefined) return fallback;
   if (typeof v === 'boolean') return v ? 6 : 0;
@@ -177,9 +197,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     setConfig(prev => { const n = { ...prev }; delete n[key]; return n; });
   };
 
-  const updateKeys = (key: keyof ApiKeys, value: string) =>
-    setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } }));
-
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) =>
     setConfig(prev => {
       const newItems = { ...prev.items };
@@ -200,7 +217,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       return { ...prev, items: newItems };
     });
 
-  /** Get a common value across all selected badges, or null if they differ. */
   const getCommonValue = <K extends keyof BadgeConfig>(prop: K, def: BadgeConfig[K]): BadgeConfig[K] | null => {
     const vals = Array.from(selectedIds).map(id =>
       config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def
@@ -213,7 +229,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   // ── Global (Canvas) view ──────────────────────────────────────────────────
   if (showGlobal) return (
     <div className="pb-24">
-      <Section title="Layout" icon={<Layout size={11} />}>
+      <Section title="Layout" icon={<Layout size={11} />} sectionId="global-layout">
         <div className="flex items-start gap-4">
           <div>
             <p className="text-[10px] text-zinc-500 mb-2 font-medium">Position preset</p>
@@ -244,14 +260,14 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </div>
       </Section>
 
-      <Section title="Poster" icon={<Layers size={11} />}>
+      <Section title="Poster" icon={<Layers size={11} />} sectionId="global-poster">
         <SliderRow label="Background Blur" value={config.posterBlur} min={0} max={20} unit="px"
           onChange={v => updateConfig('posterBlur', v)} />
         <ToggleRow label="Grayscale" sub="Desaturate the poster image"
           checked={config.grayscale} onChange={v => updateConfig('grayscale', v)} />
       </Section>
 
-      <Section title="Badge Defaults" icon={<Palette size={11} />}>
+      <Section title="Badge Defaults" icon={<Palette size={11} />} sectionId="global-badge-defaults">
         <ToggleRow label="Show Icons" checked={config.icon ?? true} onChange={v => updateConfig('icon', v)} />
         <SliderRow label="Glass Blur"          value={config.blur}   min={0}  max={20} unit="px"    onChange={v => updateConfig('blur', v)} />
         <SliderRow label="Background Opacity"  value={config.alpha}  min={0}  max={1}  step={0.05} formatValue={v => `${Math.round(v*100)}%`} onChange={v => updateConfig('alpha', v)} />
@@ -266,7 +282,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             onChange={v => updateConfig('borderC', v)} />
         )}
 
-        {/* ── Global background color (g_bg) ─────────────────────────────── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Badge Background</span>
@@ -289,7 +304,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           )}
         </div>
 
-        {/* ── Global text color (g_txt) ────────────────────────────────────── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Badge Text Color</span>
@@ -307,7 +321,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </div>
       </Section>
 
-      <Section title="Canvas Overlays" icon={<Smartphone size={11} />} defaultOpen={false}>
+      {/* FIX: Canvas Overlays — sectionId for localStorage */}
+      <Section title="Canvas Overlays" icon={<Smartphone size={11} />} defaultOpen={false} sectionId="global-overlays">
         <div className="grid grid-cols-2 gap-2">
           {([{ key: 'showSafeArea' as const, label: 'Safe Area' }, { key: 'showGrid' as const, label: 'Grid Lines' }]).map(({ key, label }) => (
             <button key={key} type="button" onClick={() => toggleViewOption(key)}
@@ -316,27 +331,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                   ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
                   : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6 hover:border-white/12'
               )}>
+              <Eye size={11} className={viewOptions[key] ? 'text-[#D4A245]' : 'text-zinc-600'} />
               {label}
             </button>
           ))}
         </div>
-      </Section>
-
-      <Section title="API Keys" icon={<KeyRound size={11} />} defaultOpen={false}>
-        <p className="text-[10px] text-zinc-500 leading-relaxed">
-          Override the global API keys used to fetch ratings and posters.
+        <p className="text-[9px] text-zinc-700 leading-relaxed">
+          Overlays are canvas-only guides — they don't appear in exported images.
         </p>
-        <div>
-          <p className="sidebar-label">TMDB Key</p>
-          <ApiKeyInput placeholder="Override default TMDB key"
-            value={config.keys?.tmdb ?? ''} onChange={v => updateKeys('tmdb', v)} />
-        </div>
-        <div>
-          <p className="sidebar-label">Fanart.tv Key</p>
-          <ApiKeyInput placeholder="Your Fanart.tv key"
-            value={config.keys?.fanart ?? ''} onChange={v => updateKeys('fanart', v)} />
-        </div>
       </Section>
+      {/* API Keys section has moved to the left sidebar (Source tab) */}
     </div>
   );
 
@@ -344,7 +348,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   if (selectedIds.size === 0) return (
     <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3 p-8 text-center">
       <div className="w-12 h-12 rounded-2xl bg-[#111113] border border-white/6 flex items-center justify-center">
-        <Layers size={18} strokeWidth={1.5} className="opacity-50" />
+        <Layers size={18} strokeWidth={1.5} className="opacity-40" />
       </div>
       <div>
         <p className="text-[12px] font-medium text-zinc-400">No badge selected</p>
@@ -377,28 +381,28 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   return (
     <div className="pb-24">
       {/* Selection header */}
-      <div className="mx-3 mt-3 mb-1 px-3 py-2.5 bg-[#C47C2E]/8 border border-[#C47C2E]/20 rounded-lg">
+      <div className="mx-3 mt-3 mb-1 px-3 py-2.5 bg-[#C47C2E]/8 border border-[#C47C2E]/18 rounded-lg">
         <p className="text-[11px] text-[#E8D8A8] font-medium">
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
         </p>
-        <p className="text-[9px] text-[#D4A245]/60 mt-0.5">
+        <p className="text-[9px] text-[#D4A245]/55 mt-0.5">
           {multi ? 'Changes apply to all selected badges' : 'Per-badge overrides — unset fields inherit global defaults'}
         </p>
       </div>
 
-      <Section title="Transform">
+      <Section title="Transform" sectionId="badge-transform">
         <SliderRow label="Scale" value={commonScale} min={0.5} max={2.0} step={0.05}
           formatValue={v => `${v.toFixed(2)}×`}
           onChange={v => updateSelectedBadges({ scale: v })} />
       </Section>
 
-      <Section title="Glass & Shape">
+      <Section title="Glass & Shape" sectionId="badge-glass">
         <SliderRow label="Blur"    value={commonBlur}   min={0} max={20}  unit="px"   onChange={v => updateSelectedBadges({ blur: v })} />
         <SliderRow label="Opacity" value={commonAlpha}  min={0} max={1}   step={0.05} formatValue={v => `${Math.round(v*100)}%`} onChange={v => updateSelectedBadges({ alpha: v })} />
         <SliderRow label="Radius"  value={commonRadius} min={0} max={30}  unit="px"   onChange={v => updateSelectedBadges({ radius: v })} />
       </Section>
 
-      <Section title="Fill & Stroke">
+      <Section title="Fill & Stroke" sectionId="badge-fill">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-400 font-medium">Background</span>
@@ -443,7 +447,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         )}
       </Section>
 
-      <Section title="Visibility">
+      <Section title="Visibility" sectionId="badge-visibility">
         {!isAgeSelected && (
           <ToggleRow label="Show Icon"
             checked={getCommonValue('icon', true) as boolean ?? true}
@@ -453,7 +457,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onChange={v => updateSelectedBadges({ shadow: v })} />
       </Section>
 
-      {/* Reset to global */}
       <div className="px-3 pt-2">
         <button type="button"
           onClick={() => setConfig(prev => {
@@ -461,7 +464,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             selectedIds.forEach(id => delete ni[id]);
             return { ...prev, items: ni };
           })}
-          className="w-full h-8 rounded-lg border border-red-500/20 bg-red-500/5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full h-8 rounded-lg border border-red-500/15 bg-red-500/5 text-[11px] font-medium text-red-400/80 hover:bg-red-500/10 hover:border-red-500/25 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
         >
           <RotateCcw size={11} /> Reset to global defaults
         </button>

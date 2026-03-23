@@ -33,10 +33,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const dragRafRef     = useRef<number | null>(null);
   useEffect(() => () => { if (dragRafRef.current !== null) cancelAnimationFrame(dragRafRef.current); }, []);
 
-  // ── Build the poster-only SVG URL ─────────────────────────────────────────
-  // Omitting `r` param entirely means the backend renders ZERO badges,
-  // giving us a clean poster background that respects source/ptype/textless/
-  // posterBlur/grayscale — exactly matching what the final output will look like.
   const posterSvgUrl = useMemo(() => {
     const id = config.imdbId || config.tmdbId;
     if (!id) return '';
@@ -44,14 +40,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       ? `/poster/${config.imdbId}`
       : `/${config.mediaType}/${config.tmdbId}`;
     const u = new URL(`${DEFAULT_API_BASE}${pathSegment}.svg`);
-    // Poster selection params
     u.searchParams.set('source', config.source);
     if (config.ptype && config.ptype !== 'auto') u.searchParams.set('ptype', config.ptype);
     if (config.textless && !['metahub','imdb'].includes(config.source)) u.searchParams.set('textless', '1');
-    // Visual effects that the API applies to the poster background
     if (config.posterBlur > 0) u.searchParams.set('bg_blur', config.posterBlur.toString());
     if (config.grayscale)      u.searchParams.set('bw', '1');
-    // NO `r` param → backend renders no badges; we draw them ourselves
     return u.toString();
   }, [
     config.imdbId, config.tmdbId, config.mediaType,
@@ -59,7 +52,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     config.posterBlur, config.grayscale,
   ]);
 
-  // Preload the SVG — reset loading state whenever the URL changes
   useEffect(() => {
     if (!posterSvgUrl) { setIsImageLoading(false); setImageError(false); return; }
     setIsImageLoading(true);
@@ -73,7 +65,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => { cancelled = true; clearTimeout(safetyTimer); img.onload = null; img.onerror = null; img.src = ''; };
   }, [posterSvgUrl]);
 
-  // ── Container resize → autoScale ─────────────────────────────────────────
   useEffect(() => {
     const resize = () => {
       if (!containerRef.current) return;
@@ -99,7 +90,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const currentScale = autoScale * zoom;
   
-  // Clamped to 50% of the canvas size
   const clampPan = (x: number, y: number) => ({
     x: Math.max(-CANVAS_WIDTH / 2, Math.min(CANVAS_WIDTH / 2, x)),
     y: Math.max(-CANVAS_HEIGHT / 2, Math.min(CANVAS_HEIGHT / 2, y)),
@@ -147,15 +137,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
   useEffect(() => { window.addEventListener('reset-canvas-view', resetView); return () => window.removeEventListener('reset-canvas-view', resetView); }, [resetView]);
 
-  // ── Logo preview URL ──────────────────────────────────────────────────────
-  // ── Logo URL via API ───────────────────────────────────────────────────────
-  // Backend logo route: /(movie|tv|anime)/{id}/logo  — the /poster/ prefix is
-  // NOT supported.  We use the resolved imdbId (tt-prefixed) when available
-  // since the route regex accepts tt\d+ as well as numeric TMDB IDs.
-  // ?source= controls which logo source the API tries first (fanart/tmdb/metahub).
   const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
-    // Prefer imdbId so the API can always resolve — it accepts tt-prefixed IDs
     const id = config.imdbId || config.tmdbId;
     if (!id) return null;
     const u = new URL(`${DEFAULT_API_BASE}/${config.mediaType}/${id}/logo`);
@@ -163,15 +146,16 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return u.toString();
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
-  // ── Drag handlers ─────────────────────────────────────────────────────────
+  // FIX: limit logo to 1px visible (matching badge constraint)
   const handleLogoDragEnd = useCallback((dx: number, dy: number) => {
     setConfig(prev => {
-      const margin   = 0.3;
-      const currentX = prev.logoX !== null && prev.logoX !== undefined ? prev.logoX : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
+      const currentX = prev.logoX !== null && prev.logoX !== undefined
+        ? prev.logoX
+        : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       return {
         ...prev,
-        logoX: Math.round(Math.max(-(prev.logoW * margin), Math.min(currentX + dx, CANVAS_WIDTH  - prev.logoW  * (1 - margin)))),
-        logoY: Math.round(Math.max(-(prev.logoH * margin), Math.min(prev.logoY  + dy, CANVAS_HEIGHT - prev.logoH * (1 - margin)))),
+        logoX: Math.round(Math.max(-(prev.logoW - 1), Math.min(currentX + dx, CANVAS_WIDTH - 1))),
+        logoY: Math.round(Math.max(-(prev.logoH - 1), Math.min(prev.logoY + dy, CANVAS_HEIGHT - 1))),
       };
     });
   }, [setConfig]);
@@ -208,7 +192,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         const sy = newItems[targetId]!.y ?? auto.y;
         const s  = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
         const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-        // Allow badge to be dragged out up to the 1 pixel limit
         newItems[targetId]!.x = Math.max(-bW + 1, Math.min(sx + dx, CANVAS_WIDTH - 1));
         newItems[targetId]!.y = Math.max(-bH + 1, Math.min(sy + dy, CANVAS_HEIGHT - 1));
       };
@@ -237,18 +220,20 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       onWheel={handleWheel} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
       onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
     >
-      {/* Zoom controls */}
+      {/* Zoom controls — sidebar-matched bg */}
       <div className="absolute right-3 flex flex-col items-center gap-1.5 z-30 transition-all duration-300"
         style={{ bottom: mobileSheetMode === 'half' ? '58%' : 'calc(4rem + env(safe-area-inset-bottom, 0px))', opacity: mobileSheetMode === 'full' ? 0 : 1, pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto' }}>
-        <div className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-300 pointer-events-none transition-opacity duration-300" style={{ opacity: isZooming ? 1 : 0 }}>
+        {/* FIX: zoom % label bg matches sidebar */}
+        <div className="bg-[#0d0d0f] border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-300 pointer-events-none transition-opacity duration-300" style={{ opacity: isZooming ? 1 : 0 }}>
           {Math.round(zoom * 100)}%
         </div>
-        <div className="flex flex-col items-center gap-0.5 bg-black/80 backdrop-blur-sm border border-white/10 rounded-2xl p-1.5 shadow-2xl">
+        {/* FIX: zoom controls bg matches sidebar */}
+        <div className="flex flex-col items-center gap-0.5 bg-[#0d0d0f] border border-white/10 rounded-2xl p-1.5 shadow-xl">
           {[{ icon: <ZoomIn size={17} />, action: () => setZoomFlash(zoom + 0.15) }, { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15) }].map((b, i) => (
-            <button key={i} onClick={b.action} className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#D4A245] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all">{b.icon}</button>
+            <button key={i} onClick={b.action} className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-[#D4A245] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all">{b.icon}</button>
           ))}
-          <div className="w-5 h-px bg-white/10 mx-auto my-0.5" />
-          <button onClick={resetView} className="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-[#C47C2E] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all" title="Fit to screen"><SearchX size={15} /></button>
+          <div className="w-5 h-px bg-white/8 mx-auto my-0.5" />
+          <button onClick={resetView} className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-[#C47C2E] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all" title="Fit to screen"><SearchX size={15} /></button>
         </div>
       </div>
 
@@ -278,29 +263,29 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
 
-        {/* Grid */}
+        {/* FIX: Grid — more visible, with centre crosshair */}
         {viewOptions?.showGrid && (
-          <div className="absolute inset-0 z-30 pointer-events-none opacity-15">
-            <div className="absolute top-0 bottom-0 left-1/3  border-l border-white" />
-            <div className="absolute top-0 bottom-0 left-2/3  border-l border-white" />
-            <div className="absolute left-0 right-0 top-1/3  border-t border-white" />
-            <div className="absolute left-0 right-0 top-2/3  border-t border-white" />
+          <div className="absolute inset-0 z-30 pointer-events-none">
+            <div className="absolute top-0 bottom-0 left-1/3  border-l border-white/30" />
+            <div className="absolute top-0 bottom-0 left-2/3  border-l border-white/30" />
+            <div className="absolute left-0 right-0 top-1/3  border-t border-white/30" />
+            <div className="absolute left-0 right-0 top-2/3  border-t border-white/30" />
+            {/* Centre guides */}
+            <div className="absolute top-0 bottom-0 left-1/2  border-l border-[#C47C2E]/25" />
+            <div className="absolute left-0 right-0 top-1/2  border-t border-[#C47C2E]/25" />
           </div>
         )}
 
-        {/* Safe area */}
+        {/* FIX: Safe area — more visible */}
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
-            <div className="absolute inset-8 border border-red-500/30 border-dashed">
-              <div className="absolute top-1.5 left-2 text-[9px] text-red-500/50 font-mono uppercase tracking-wide">Safe</div>
+            <div className="absolute inset-8 border-2 border-red-400/50 border-dashed rounded-sm">
+              <div className="absolute top-1.5 left-2 text-[9px] text-red-400/60 font-mono uppercase tracking-wide bg-black/50 px-1 rounded">Safe</div>
             </div>
           </div>
         )}
 
-        {/* ── Poster background — API SVG with NO badges ─────────────────────
-            The .svg URL has no `r=` param so the backend renders zero badges.
-            source/ptype/textless/bg_blur/bw are included so this preview
-            matches the final rasterized output exactly.                       */}
+        {/* Poster background */}
         {posterSvgUrl && (
           <img
             key={posterSvgUrl}
@@ -311,7 +296,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           />
         )}
 
-        {/* Badge overlays — rendered in React, NOT by the API */}
+        {/* Badge overlays */}
         {config.ratings.map((id: RatingType, index: number) => {
           const auto       = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
@@ -330,7 +315,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             if (isTarget || isGroup) {
               const s  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
               const bW = BASE_BADGE_W * s, bH = BASE_BADGE_H * s;
-              // Limit active drag calculation directly on render
               x = Math.max(-bW + 1, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
               y = Math.max(-bH + 1, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
             }

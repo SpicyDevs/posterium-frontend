@@ -1,7 +1,7 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import type { PosterConfig, ExtensionType } from './types';
+import type { PosterConfig, ExtensionType, ApiKeys } from './types';
 import { DEFAULT_CONFIG } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
@@ -14,6 +14,24 @@ import { RotateCcw, AlertTriangle, Undo2, Redo2 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 
 const STORAGE_KEY = 'posterium_config_v2';
+// ── Cookie helpers for API keys ───────────────────────────────────────────────
+const COOKIE_KEY = 'posterium_apikeys_v1';
+
+const saveKeysToCookie = (keys: ApiKeys) => {
+  try {
+    const val = encodeURIComponent(JSON.stringify(keys));
+    const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${COOKIE_KEY}=${val}; expires=${exp}; path=/; SameSite=Strict`;
+  } catch {}
+};
+
+const loadKeysFromCookie = (): ApiKeys => {
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_KEY}=([^;]*)`));
+    if (!match) return {};
+    return JSON.parse(decodeURIComponent(match[1])) || {};
+  } catch { return {}; }
+};
 
 // ---------------------------------------------------------------------------
 // Reset dialog
@@ -57,14 +75,12 @@ const ResetDialog = memo<{
               All settings will be restored to defaults. This action cannot be undone.
             </p>
             <div className="mt-5 flex gap-2">
-              {/* Cancel — secondary style matching dashboard secondary button */}
               <button
                 onClick={onClose}
-                className="flex-1 h-9 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-semibold text-zinc-300 hover:border-[#C47C2E]/35 hover:text-[#E8D8A8] hover:bg-[#C47C2E]/6 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase"
+                className="flex-1 h-9 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-semibold text-zinc-300 hover:border-[#C47C2E]/30 hover:text-[#E8D8A8] hover:bg-[#C47C2E]/6 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase"
               >
                 Cancel
               </button>
-              {/* Confirm — destructive */}
               <button
                 onClick={() => { onConfirm(); onClose(); }}
                 className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 hover:border-red-400/50 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase"
@@ -101,7 +117,7 @@ const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, hr
   const cls = `${base} ${disabled ? inactive : active}`;
 
   const tooltip = !disabled && (
-    <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-200 border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg">
+    <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium bg-[#1c1c1f] text-zinc-200 border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg">
       {label}
     </span>
   );
@@ -249,7 +265,6 @@ const StudioLayout: React.FC<{
     if (next !== cur) setMobileSheetMode(next);
   };
 
-  // Extension change handler — updates config.extension
   const handleExtensionChange = useCallback((ext: ExtensionType) => {
     setConfig(prev => ({ ...prev, extension: ext }));
   }, [setConfig]);
@@ -275,7 +290,6 @@ const StudioLayout: React.FC<{
           className="h-14 shrink-0 flex items-center gap-2 px-3 z-30"
           style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(196,124,46,0.08)' }}
         >
-          {/* Wordmark */}
           <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
             <span
               className="poster-font"
@@ -293,7 +307,6 @@ const StudioLayout: React.FC<{
 
           <div className="w-px h-5 bg-white/8 mx-1 shrink-0" />
 
-          {/* CodeBox with extension selector */}
           <div className="flex-1 min-w-0">
             <CodeBox
               config={config}
@@ -412,7 +425,13 @@ const BuilderApp: React.FC = () => {
   const { state: config, setState: setConfig, undo, redo, canUndo, canRedo } = usePosterHistory(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
+      const cfg = saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
+      // FIX: merge API keys from cookie so they persist across sessions
+      const cookieKeys = loadKeysFromCookie();
+      if (cookieKeys && Object.keys(cookieKeys).some(k => cookieKeys[k as keyof ApiKeys])) {
+        return { ...cfg, keys: { ...cookieKeys, ...cfg.keys } };
+      }
+      return cfg;
     } catch {
       return DEFAULT_CONFIG;
     }
@@ -423,6 +442,14 @@ const BuilderApp: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
+
+  // FIX: save API keys to cookie whenever they change
+  useEffect(() => {
+    if (config.keys) {
+      const hasAnyKey = Object.values(config.keys).some(v => v && v.trim());
+      if (hasAnyKey) saveKeysToCookie(config.keys);
+    }
+  }, [config.keys]);
 
   const handleLoadConfig = useCallback((url: string) => {
     setConfig(parseUrlToConfig(url));

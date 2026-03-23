@@ -1,11 +1,11 @@
 // src/components/builder/components/LayerPanel.tsx
 import React, { useState, useEffect, Fragment, memo, useCallback, useRef } from 'react';
 import { Combobox, Listbox, ListboxButton, ListboxOptions, ListboxOption, Switch, Transition } from '@headlessui/react';
-import { Check, Search, Loader2, GripVertical, Film, Layers, Tv, Clapperboard, Eye, EyeOff, ChevronDown, ImagePlay } from 'lucide-react';
+import { Check, Search, Loader2, GripVertical, Film, Layers, Tv, Clapperboard, Eye, EyeOff, ChevronDown, ImagePlay, KeyRound, ChevronRight } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { DropResult, DraggableProvided } from "@hello-pangea/dnd";
 import clsx from "clsx";
-import type { PosterConfig, RatingType, LogoSourceType } from "../types";
+import type { PosterConfig, RatingType, LogoSourceType, ApiKeys } from "../types";
 import { ALL_BADGES } from "../types";
 import { BADGE_ICONS } from "../constants";
 import { DEFAULT_API_BASE } from "../utils";
@@ -45,7 +45,6 @@ const SelectBox = memo(({ value, onChange, options }: { value: string; onChange:
 ));
 SelectBox.displayName = "SelectBox";
 
-// ── InlineSlider: editable value on the left of the track ──────────────────
 const InlineSlider: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
@@ -66,9 +65,7 @@ const InlineSlider: React.FC<{
       <div className="flex items-center gap-2">
         {editing ? (
           <input
-            type="text"
-            value={draft}
-            autoFocus
+            type="text" value={draft} autoFocus
             onChange={e => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={e => {
@@ -82,7 +79,7 @@ const InlineSlider: React.FC<{
             type="button"
             onClick={() => { setEditing(true); setDraft(String(value)); }}
             title="Click to edit"
-            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/30 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
           >
             {display}
           </button>
@@ -96,10 +93,9 @@ const InlineSlider: React.FC<{
   );
 };
 
-// Base logo dimensions — the slider scales both proportionally from this
 const LOGO_BASE_W = 320;
 const LOGO_BASE_H = 84;
-const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H; // ≈ 3.81
+const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
 
 const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
   { id: null,      label: "Auto"   },
@@ -120,7 +116,6 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
 
   return (
     <div className="space-y-4 pt-1">
-      {/* Source */}
       <div className="space-y-1.5">
         <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Source</p>
         <div className="grid grid-cols-4 gap-1">
@@ -137,20 +132,11 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
         <p className="text-[9px] text-zinc-700">Falls back automatically if source has no logo</p>
       </div>
 
-      {/* Single proportional size slider */}
       <div className="space-y-1">
-        <InlineSlider
-          label="Size"
-          value={config.logoW}
-          min={100}
-          max={490}
-          unit="px"
-          onChange={handleSizeChange}
-        />
+        <InlineSlider label="Size" value={config.logoW} min={100} max={490} unit="px" onChange={handleSizeChange} />
         <p className="text-[9px] text-zinc-700">{config.logoW} × {config.logoH} px</p>
       </div>
 
-      {/* Appearance */}
       <div className="space-y-3">
         <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Appearance</p>
         <InlineSlider label="Opacity"     value={config.logoOpacity} min={0} max={1} step={0.05}
@@ -159,13 +145,91 @@ const LogoPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<Reac
           onChange={v => update("logoShadow", v)} />
       </div>
 
-      {/* Drag hint */}
       <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-        <span className="text-amber-400/50 mt-px shrink-0 text-[11px]">⟠</span>
+        <span className="text-amber-400/40 mt-px shrink-0 text-[11px]">⟠</span>
         <p className="text-[9px] text-zinc-600 leading-relaxed">
           Drag the logo on the canvas to reposition. Snap guides appear near the centre.
         </p>
       </div>
+    </div>
+  );
+};
+
+// ── API Keys panel — moved from Inspector right sidebar to here ───────────────
+const ApiKeysPanel: React.FC<{ config: PosterConfig; setConfig: React.Dispatch<React.SetStateAction<PosterConfig>> }> = ({ config, setConfig }) => {
+  const [showTmdb,   setShowTmdb]   = useState(false);
+  const [showFanart, setShowFanart] = useState(false);
+
+  const updateKeys = useCallback((key: keyof ApiKeys, value: string) =>
+    setConfig(prev => ({ ...prev, keys: { ...prev.keys, [key]: value } })), [setConfig]);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[9px] text-zinc-600 leading-relaxed">
+        Override the default API keys used to fetch ratings and posters. Stored in a browser cookie.
+      </p>
+      <div className="space-y-2">
+        <p className="sidebar-label">TMDB Key</p>
+        <div className="relative">
+          <input
+            type={showTmdb ? 'text' : 'password'}
+            value={config.keys?.tmdb ?? ''}
+            onChange={e => updateKeys('tmdb', e.target.value)}
+            placeholder="Override default TMDB key"
+            className="w-full h-8 pl-3 pr-8 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
+          />
+          <button type="button" onClick={() => setShowTmdb(v => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors">
+            <Eye size={12} />
+          </button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <p className="sidebar-label">Fanart.tv Key</p>
+        <div className="relative">
+          <input
+            type={showFanart ? 'text' : 'password'}
+            value={config.keys?.fanart ?? ''}
+            onChange={e => updateKeys('fanart', e.target.value)}
+            placeholder="Your Fanart.tv key"
+            className="w-full h-8 pl-3 pr-8 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
+          />
+          <button type="button" onClick={() => setShowFanart(v => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors">
+            <Eye size={12} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Simple collapsible — reused for API Keys in the source tab ────────────────
+const Disclosure: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, icon, children, defaultOpen = false }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-white/6 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between w-full px-3 py-3 bg-[#111113] text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-white/4 text-zinc-500 flex items-center justify-center shrink-0">
+            {icon}
+          </div>
+          <p className="text-[11px] font-semibold text-zinc-300">{title}</p>
+        </div>
+        {open
+          ? <ChevronDown size={12} className="text-zinc-600 shrink-0" />
+          : <ChevronRight size={12} className="text-zinc-600 shrink-0" />
+        }
+      </button>
+      {open && (
+        <div className="px-3 pb-4 pt-1 bg-[#0f0f11] border-t border-white/[0.05]">
+          {children}
+        </div>
+      )}
     </div>
   );
 };
@@ -209,9 +273,23 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
         if (data.meta?.year)  merged.year  = String(data.meta.year);
-        if (data.ratings)     Object.assign(merged, data.ratings);
+        // FIX: only merge valid rating keys to avoid logo/other data polluting badge display
+        const VALID_RATING_KEYS = ['imdb','rt','rt_popcorn','letterboxd','meta','tmdb','mal','anilist','age','runtime'];
+        if (data.ratings) {
+          Object.entries(data.ratings).forEach(([k, v]) => {
+            if (VALID_RATING_KEYS.includes(k)) merged[k] = String(v);
+            else if (['imdb','rt','tmdb'].includes(k)) merged[k] = String(v); // keep display scores
+          });
+        }
         setFetchedData(merged);
-        setLiveRatings(data.ratings || {});
+        // Only pass recognized rating keys to liveRatings
+        const liveRatingsFiltered: Record<string, string> = {};
+        if (data.ratings) {
+          Object.entries(data.ratings).forEach(([k, v]) => {
+            if (VALID_RATING_KEYS.includes(k)) liveRatingsFiltered[k] = String(v);
+          });
+        }
+        setLiveRatings(liveRatingsFiltered);
 
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig(prev => ({ ...prev, imdbId: data.ids.imdb }));
@@ -266,7 +344,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setConfig(prev => ({ ...prev, ratings: rev.reverse() }));
   }, [config.ratings, setConfig]);
 
-  const activeBadges = [...config.ratings].reverse()
+  // FIX: filter activeBadges to only valid ALL_BADGES entries (prevents logo-as-age display)
+  const activeBadges = [...config.ratings]
+    .filter(id => ALL_BADGES.some(b => b.id === id)) // guard against invalid IDs in storage
+    .reverse()
     .map(id => ALL_BADGES.find(b => b.id === id))
     .filter((b): b is { id: RatingType; label: string } => !!b);
 
@@ -333,7 +414,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </div>
         <div onClick={e => e.stopPropagation()} className="shrink-0">
           <button onClick={() => handleToggleVisibility(badge.id, !isActive)}
-            className={clsx("w-7 h-7 rounded-md flex items-center justify-center transition-colors", isActive ? "text-zinc-400 hover:text-zinc-100 hover:bg-white/8" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5")}
+            className={clsx("w-7 h-7 rounded-md flex items-center justify-center transition-colors", isActive ? "text-zinc-500 hover:text-zinc-200 hover:bg-white/8" : "text-zinc-600 hover:text-zinc-400 hover:bg-white/5")}
             title={isActive ? "Hide badge" : "Show badge"}>
             {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -361,7 +442,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Source Tab ─────────────────────────────────────────────────────── */}
       {localMode === "source" && (
         <div className="space-y-4">
-          {/* Info card — text only, no poster thumbnail */}
+          {/* Info card */}
           {(fetchedData.title || config.tmdbId) && (
             <div className="p-2.5 rounded-xl bg-[#111113] border border-white/6">
               <div className="flex items-start justify-between gap-2">
@@ -386,7 +467,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     </div>
                   )}
                 </div>
-                {/* Media type icon badge */}
                 <div className={clsx(
                   "w-8 h-8 shrink-0 rounded-lg flex items-center justify-center",
                   config.mediaType === "tv" ? "bg-blue-500/10" : config.mediaType === "anime" ? "bg-purple-500/10" : "bg-amber-500/10"
@@ -489,9 +569,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   <ImagePlay size={14} />
                 </div>
                 <div>
+                  {/* FIX: explicit "Logo Overlay" label — never shows badge data */}
                   <p className="text-[11px] font-semibold text-zinc-200 leading-tight">Logo Overlay</p>
                   <p className="text-[9px] text-zinc-600">
-                    {config.logo ? `${config.logoSource ?? "Auto"} · ${config.logoW}×${config.logoH}` : "Transparent title art overlay"}
+                    {config.logo
+                      ? `${config.logoSource ?? "Auto"} · ${config.logoW}×${config.logoH}px`
+                      : "Transparent title art overlay"}
                   </p>
                 </div>
               </div>
@@ -510,6 +593,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </div>
             )}
           </div>
+
+          {/* FIX: API Keys moved here from Inspector — stored in cookies */}
+          <Disclosure title="API Keys" icon={<KeyRound size={14} />}>
+            <ApiKeysPanel config={config} setConfig={setConfig} />
+          </Disclosure>
         </div>
       )}
 

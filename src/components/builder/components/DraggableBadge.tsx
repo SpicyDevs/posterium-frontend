@@ -79,7 +79,10 @@ const DraggableBadge: React.FC<Props> = ({
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
       const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
-      if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) onSelectRef.current(badgeId, false);
+      const multi   = isShift || isCtrl || isMeta;
+      // FIX: ctrl/shift/meta click toggles the badge in multi-select mode (deselects if already selected)
+      if (multi) onSelectRef.current(badgeId, true);
+      else if (isSelectedRef.current) onSelectRef.current(badgeId, false);
     }
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
