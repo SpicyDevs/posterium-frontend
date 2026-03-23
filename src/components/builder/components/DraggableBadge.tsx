@@ -26,13 +26,20 @@ const DraggableBadge: React.FC<Props> = ({
   const scale  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
   const width  = BASE_BADGE_W * scale, height = BASE_BADGE_H * scale;
   const [isDragging, setIsDragging] = useState(false);
+  
   const dragStartRef   = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const justSelectedRef = useRef(false); // Track if selection happened on mouse down
+  
   const onDragEndRef   = useRef(onDragEnd);
   const onSelectRef    = useRef(onSelect);
   const isSelectedRef  = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
-  onDragEndRef.current   = onDragEnd;   onSelectRef.current    = onSelect;
-  isSelectedRef.current  = isSelected; canvasScaleRef.current = canvasScale;
+  
+  onDragEndRef.current   = onDragEnd;   
+  onSelectRef.current    = onSelect;
+  isSelectedRef.current  = isSelected; 
+  canvasScaleRef.current = canvasScale;
+  
   const displayVal = liveRating ?? PLACEHOLDER[badgeId] ?? '—';
   const blurVal    = itemConfig?.blur   ?? config.blur;
   const alphaVal   = itemConfig?.alpha  ?? config.alpha;
@@ -41,6 +48,7 @@ const DraggableBadge: React.FC<Props> = ({
   const shadowVal  = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
   const showIcon   = itemConfig?.icon ?? config.icon ?? true;
   const txtColor   = itemConfig?.txt  || '#ffffff';
+  
   const rawBg = itemConfig?.bg ?? config.bg;
   const bgRaw = (() => {
     if (!rawBg) return `rgba(0,0,0,${alphaVal})`;
@@ -52,38 +60,53 @@ const DraggableBadge: React.FC<Props> = ({
     }
     return rawBg;
   })();
+  
   const backgroundStyle = rawBg?.startsWith('grad:') ? `linear-gradient(135deg, ${rawBg.split(':')[1]}, ${rawBg.split(':')[2]})` : bgRaw;
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
+  
   let iconKey: string = badgeId;
   if (badgeId === 'rt') { const pct = parseInt(displayVal); iconKey = (!isNaN(pct) && pct >= 60) ? 'rt_fresh' : 'rt_rotten'; }
   else if (badgeId === 'rt_popcorn') { const pct = parseInt(displayVal); iconKey = (!isNaN(pct) && pct >= 60) ? 'popcorn_fresh' : 'popcorn_rotten'; }
+  
   const iconData  = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
   const iconSize  = 36 * scale, iconLeft = 10 * scale, iconTop = 12 * scale, textRight = 10 * scale;
 
-  const handleStart = (clientX: number, clientY: number) => { setIsDragging(true); dragStartRef.current = { mouseX: clientX, mouseY: clientY }; };
+  const handleStart = (clientX: number, clientY: number) => { 
+    setIsDragging(true); 
+    dragStartRef.current = { mouseX: clientX, mouseY: clientY }; 
+  };
+  
   const handleMove  = (clientX: number, clientY: number) => {
     if (!dragStartRef.current) return;
     const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
     if (isFinite(dx) && isFinite(dy)) onDragMove(badgeId, dx, dy);
   };
+  
   const handleEnd = (e: MouseEvent | TouchEvent) => {
     setIsDragging(false);
     if (!dragStartRef.current) return;
+    
     const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
     const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
     const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
+    
+    // Check if the interaction was purely a click and not a drag
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
       const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
       const multi   = isShift || isCtrl || isMeta;
-      // FIX: ctrl/shift/meta click toggles the badge in multi-select mode (deselects if already selected)
-      if (multi) onSelectRef.current(badgeId, true);
-      else if (isSelectedRef.current) onSelectRef.current(badgeId, false);
+      
+      // If we didn't just select it on MouseDown, it means it was already selected.
+      // So since this is just a click, we cleanly toggle the selection off.
+      if (!justSelectedRef.current) {
+        onSelectRef.current(badgeId, multi);
+      }
     }
+    
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
   };
@@ -94,13 +117,45 @@ const DraggableBadge: React.FC<Props> = ({
     const onMU = (e: MouseEvent) => handleEnd(e);
     const onTM = (e: TouchEvent) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
     const onTE = (e: TouchEvent) => handleEnd(e);
-    window.addEventListener('mousemove', onMM); window.addEventListener('mouseup', onMU);
-    window.addEventListener('touchmove', onTM, { passive: false }); window.addEventListener('touchend', onTE);
-    return () => { window.removeEventListener('mousemove', onMM); window.removeEventListener('mouseup', onMU); window.removeEventListener('touchmove', onTM); window.removeEventListener('touchend', onTE); };
+    
+    window.addEventListener('mousemove', onMM); 
+    window.addEventListener('mouseup', onMU);
+    window.addEventListener('touchmove', onTM, { passive: false }); 
+    window.addEventListener('touchend', onTE);
+    
+    return () => { 
+      window.removeEventListener('mousemove', onMM); 
+      window.removeEventListener('mouseup', onMU); 
+      window.removeEventListener('touchmove', onTM); 
+      window.removeEventListener('touchend', onTE); 
+    };
   }, [isDragging]);
 
-  const onMouseDown = (e: React.MouseEvent) => { e.stopPropagation(); e.preventDefault(); if (!isSelected) onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey); handleStart(e.clientX, e.clientY); };
-  const onTouchStart = (e: React.TouchEvent) => { e.stopPropagation(); if (!isSelected) onSelect(badgeId, false); handleStart(e.touches[0].clientX, e.touches[0].clientY); };
+  const onMouseDown = (e: React.MouseEvent) => { 
+    e.stopPropagation(); 
+    e.preventDefault(); 
+    
+    const multi = e.shiftKey || e.ctrlKey || e.metaKey;
+    if (!isSelected) {
+      onSelect(badgeId, multi); 
+      justSelectedRef.current = true;
+    } else {
+      justSelectedRef.current = false;
+    }
+    
+    handleStart(e.clientX, e.clientY); 
+  };
+  
+  const onTouchStart = (e: React.TouchEvent) => { 
+    e.stopPropagation(); 
+    if (!isSelected) {
+      onSelect(badgeId, false); 
+      justSelectedRef.current = true;
+    } else {
+      justSelectedRef.current = false;
+    }
+    handleStart(e.touches[0].clientX, e.touches[0].clientY); 
+  };
 
   const renderContent = () => {
     if (badgeId === 'age') {
