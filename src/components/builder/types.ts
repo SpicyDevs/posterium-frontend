@@ -38,6 +38,10 @@ export interface PosterConfig {
   items: Partial<Record<RatingType, BadgeConfig>>; keys?: ApiKeys;
   logo: boolean; logoSource: LogoSourceType; logoX: number | null;
   logoY: number; logoW: number; logoH: number; logoOpacity: number; logoShadow: number;
+  /** Whether fallback badges are enabled (v3 fb= param). */
+  fallbackEnabled: boolean;
+  /** Priority-ordered pool of disabled badges used as fallbacks when fallbackEnabled is true. */
+  fallbackPool: RatingType[];
 }
 
 export const DEFAULT_CONFIG: PosterConfig = {
@@ -51,6 +55,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   keys: {},
   logo: false, logoSource: null, logoX: null, logoY: 630,
   logoW: 380, logoH: 100, logoOpacity: 1.0, logoShadow: 6,
+  fallbackEnabled: false, fallbackPool: [],
 };
 
 export const CANVAS_WIDTH  = 500;

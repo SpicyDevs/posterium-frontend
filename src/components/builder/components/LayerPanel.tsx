@@ -235,7 +235,7 @@ const Disclosure: React.FC<{ title: string; icon: React.ReactNode; children: Rea
 };
 
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
-  const { setBatchSelection, activeTab, setActiveTab, setLiveRatings } = useEditor();
+  const { setBatchSelection, activeTab, setActiveTab, setLiveRatings, fallbackEnabled, setFallbackEnabled } = useEditor();
   const [localMode, setLocalMode] = useState<"source" | "layers">("source");
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
   useEffect(() => { if (activeTab === "source" || activeTab === "layers") setLocalMode(activeTab); }, [activeTab]);
@@ -336,14 +336,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setBatchSelection(checked ? ALL_BADGES.filter(b => config.ratings.includes(b.id)).map(b => b.id) : []);
   }, [setBatchSelection, config.ratings]);
 
-  const handleDragEnd = useCallback((result: DropResult) => {
-    if (!result.destination || result.source.index === result.destination.index) return;
-    const rev = [...config.ratings].reverse();
-    const [removed] = rev.splice(result.source.index, 1);
-    rev.splice(result.destination.index, 0, removed);
-    setConfig(prev => ({ ...prev, ratings: rev.reverse() }));
-  }, [config.ratings, setConfig]);
-
   // FIX: filter activeBadges to only valid ALL_BADGES entries (prevents logo-as-age display)
   const activeBadges = [...config.ratings]
     .filter(id => ALL_BADGES.some(b => b.id === id)) // guard against invalid IDs in storage
@@ -356,6 +348,24 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     if (ia === -1 && ib === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
     if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib;
   });
+
+  const handleDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) return;
+    if (result.source.droppableId === 'active' && result.destination.droppableId === 'active') {
+      if (result.source.index === result.destination.index) return;
+      const rev = [...config.ratings].reverse();
+      const [removed] = rev.splice(result.source.index, 1);
+      rev.splice(result.destination.index, 0, removed);
+      setConfig(prev => ({ ...prev, ratings: rev.reverse() }));
+    } else if (result.source.droppableId === 'inactive' && result.destination.droppableId === 'inactive' && fallbackEnabled) {
+      if (result.source.index === result.destination.index) return;
+      const nextOrder = inactiveBadges.map(b => b.id);
+      const [removed] = nextOrder.splice(result.source.index, 1);
+      nextOrder.splice(result.destination.index, 0, removed);
+      setInactiveOrder(nextOrder);
+      setConfig(prev => ({ ...prev, fallbackPool: nextOrder }));
+    }
+  }, [config.ratings, inactiveBadges, fallbackEnabled, setConfig]);
 
   const getIconKey = (id: string): BadgeIconKey =>
     id === "rt" ? "rt_fresh" : id === "rt_popcorn" ? "popcorn_fresh" : (id as BadgeIconKey);
@@ -384,16 +394,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     const iconKey   = getIconKey(badge.id);
     const iconData  = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
     const iconColor = isActive ? (iconData?.color ?? "#a1a1aa") : "#4a4a52";
+    const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-30';
     return (
       <div ref={provided?.innerRef} {...provided?.draggableProps} style={provided?.draggableProps.style}
         onClick={e => { if (isActive) onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey); }}
         className={clsx("flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none",
-          isSel ? "bg-[#C47C2E]/12 ring-1 ring-[#C47C2E]/30" : isActive ? "hover:bg-white/4 cursor-pointer" : "opacity-50",
+          isSel ? "bg-[#C47C2E]/12 ring-1 ring-[#C47C2E]/30" : isActive ? "hover:bg-white/4 cursor-pointer" : inactiveOpacity,
           isDraggingItem && "shadow-2xl bg-[#1c1c1f] ring-1 ring-white/10 rotate-[0.5deg]"
         )}>
         {isActive
           ? <div {...provided?.dragHandleProps} onClick={e => e.stopPropagation()} className="text-zinc-700 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"><GripVertical size={13} /></div>
-          : <div className="w-5 shrink-0" />
+          : fallbackEnabled
+            ? <div {...provided?.dragHandleProps} onClick={e => e.stopPropagation()} className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"><GripVertical size={13} /></div>
+            : <div className="w-5 shrink-0" />
         }
         <div className="shrink-0" onClick={e => { e.stopPropagation(); if (isActive) onSelect(badge.id, true); }}>
           <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-all", isSel ? "bg-[#C47C2E] border-[#D4A245]" : "bg-[#111113] border-zinc-600 hover:border-zinc-400")}>
@@ -606,22 +619,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <span className="sidebar-label mb-0">Badges</span>
-            <div className="flex items-center gap-2">
-              <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
-                {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}{allVisible ? "Hide all" : "Show all"}
-              </button>
-              <div className="w-px h-3 bg-white/10" />
-              <button onClick={() => handleSelectAll(!allVisibleSelected)} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
-                <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600")}>
-                  {allVisibleSelected && <Check size={9} className="text-white" />}
-                </div>
-                Select all
-              </button>
-            </div>
           </div>
 
-          {activeBadges.length > 0 ? (
-            <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            {activeBadges.length > 0 ? (
               <Droppable droppableId="active">
                 {provided => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
@@ -634,23 +635,77 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </div>
                 )}
               </Droppable>
-            </DragDropContext>
-          ) : (
-            <div className="flex flex-col items-center py-10 text-zinc-600 gap-2">
-              <EyeOff size={22} strokeWidth={1.5} />
-              <p className="text-[11px] text-zinc-500">No active badges</p>
-              <p className="text-[9px] text-zinc-700">Enable some from the list below</p>
-            </div>
-          )}
-
-          {inactiveBadges.length > 0 && (
-            <>
-              <div className="mt-5 mb-2 px-1"><span className="sidebar-label mb-0">Available</span></div>
-              <div className="space-y-0.5">
-                {inactiveBadges.map(badge => <React.Fragment key={badge.id}>{renderBadgeRow(badge, false)}</React.Fragment>)}
+            ) : (
+              <div className="flex flex-col items-center py-10 text-zinc-600 gap-2">
+                <EyeOff size={22} strokeWidth={1.5} />
+                <p className="text-[11px] text-zinc-500">No active badges</p>
+                <p className="text-[9px] text-zinc-700">Enable some from the list below</p>
               </div>
-            </>
-          )}
+            )}
+
+            {inactiveBadges.length > 0 && (
+              <>
+                {/* Available header with Show All / Select All buttons */}
+                <div className="mt-5 mb-1 px-1 flex items-center justify-between">
+                  <span className="sidebar-label mb-0">Available</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
+                      {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}{allVisible ? "Hide all" : "Show all"}
+                    </button>
+                    <div className="w-px h-3 bg-white/10" />
+                    <button onClick={() => handleSelectAll(!allVisibleSelected)} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
+                      <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600")}>
+                        {allVisibleSelected && <Check size={9} className="text-white" />}
+                      </div>
+                      Select all
+                    </button>
+                  </div>
+                </div>
+                {/* Fallback Badges toggle */}
+                <div className="flex items-center justify-between px-1 mb-2">
+                  <span className="text-[10px] text-zinc-500 font-medium">Fallback Badges</span>
+                  <Switch
+                    checked={fallbackEnabled}
+                    onChange={v => {
+                      setFallbackEnabled(v);
+                      setConfig(prev => ({
+                        ...prev,
+                        fallbackEnabled: v,
+                        fallbackPool: v ? inactiveBadges.map(b => b.id) : [],
+                      }));
+                    }}
+                    className={clsx(
+                      "relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]",
+                      fallbackEnabled ? "bg-[#C47C2E]" : "bg-zinc-700"
+                    )}
+                  >
+                    <span className={clsx(
+                      "inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform",
+                      fallbackEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                    )} />
+                  </Switch>
+                </div>
+                {fallbackEnabled ? (
+                  <Droppable droppableId="inactive">
+                    {provided => (
+                      <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
+                        {inactiveBadges.map((badge, idx) => (
+                          <Draggable key={badge.id} draggableId={`fb-${badge.id}`} index={idx}>
+                            {(prov, snap) => renderBadgeRow(badge, false, prov, snap.isDragging)}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                ) : (
+                  <div className="space-y-0.5">
+                    {inactiveBadges.map(badge => <React.Fragment key={badge.id}>{renderBadgeRow(badge, false)}</React.Fragment>)}
+                  </div>
+                )}
+              </>
+            )}
+          </DragDropContext>
         </div>
       )}
     </SidebarLayout>

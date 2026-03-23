@@ -6,6 +6,15 @@ import { DEFAULT_CONFIG, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H
 const envApiUrl = import.meta.env.VITE_API_URL;
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
 
+/** Short IDs for v3 compact URL r= and fb= params, per migration.md */
+const PROVIDER_SHORT: Record<RatingType, string> = {
+  tmdb: 't', imdb: 'i', rt: 'r', rt_popcorn: 'p', letterboxd: 'l',
+  meta: 'm', age: 'a', runtime: 'n', mal: 'M', anilist: 'A',
+};
+
+const toShortList = (ids: RatingType[]): string =>
+  ids.map(id => PROVIDER_SHORT[id]).filter(Boolean).join(',');
+
 export const getScale = (size: string) => size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0;
 
 export const calculateAutoPosition = (_ratingId: RatingType, index: number, totalBadges: number, config: PosterConfig) => {
@@ -68,7 +77,8 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   const url = new URL(`${cleanBase}${pathSegment}.${config.extension}`);
   const p   = url.searchParams;
 
-  if (config.ratings.length > 0) p.set('r', config.ratings.join(','));
+  if (config.ratings.length > 0) p.set('r', toShortList(config.ratings));
+  if (config.fallbackEnabled && config.fallbackPool.length > 0) p.set('fb', toShortList(config.fallbackPool));
   if (config.source !== 'tmdb')  p.set('source', config.source);
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('textless', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('ptype', config.ptype);
@@ -77,7 +87,7 @@ export const generateApiUrl = (config: PosterConfig, baseUrl: string = DEFAULT_A
   if (config.keys?.omdb)    p.set('omdb_key',    config.keys.omdb);
   if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
 
-  p.set('v',     '2');
+  p.set('v',     '3');
   p.set('blur',  config.blur.toString());
   p.set('alpha', config.alpha.toString());
   p.set('rad',   config.radius.toString());
@@ -249,6 +259,8 @@ export const parseUrlToConfig = (urlString: string, currentConfig?: PosterConfig
       logoH:       q.has('logo_h')       ? parseInt(q.get('logo_h')!)         : 100,
       logoOpacity: q.has('logo_opacity') ? parseFloat(q.get('logo_opacity')!) : 1.0,
       logoShadow:  q.has('logo_sh')      ? parseInt(q.get('logo_sh')!)        : 6,
+      fallbackEnabled: false,
+      fallbackPool: [],
     };
   } catch (e) {
     console.error('[parseUrlToConfig] Failed to parse URL:', e);
