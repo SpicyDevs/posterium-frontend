@@ -28,6 +28,8 @@ interface EditorContextType {
    *  Used by PreviewCanvas to show the raw poster without going through the SVG API. */
   livePosterUrl: string | null;
   setLivePosterUrl: (url: string | null) => void;
+  fallbackEnabled: boolean;
+  setFallbackEnabled: (v: boolean) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
+  const [fallbackEnabled, setFallbackEnabled] = useState(false);
 
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
@@ -84,6 +87,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       liveRatings, setLiveRatings,
       resolvedLogoSource, setResolvedLogoSource,
       livePosterUrl, setLivePosterUrl,
+      fallbackEnabled, setFallbackEnabled,
     }}>
       {children}
     </EditorContext.Provider>

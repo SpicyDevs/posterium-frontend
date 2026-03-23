@@ -31,6 +31,10 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
   const [isLoading, setIsLoading]     = useState(false);
   const [showFormatDropdown, setShowFormatDropdown] = useState(false);
 
+  const totalSlots = config.ratings.length + (config.fallbackEnabled ? config.fallbackPool.length : 0);
+  // Warn when total active + fallback slots exceeds 12 (very long URLs can cause rendering issues or be rejected)
+  const showLengthWarn = totalSlots > 12;
+
   useEffect(() => {
     if (isEditing) return;
     const t = setTimeout(() => setUrl(generateApiUrl(config, baseUrl)), 120);
@@ -232,6 +236,13 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
             Copied with <span className="font-bold">{'{imdb_id}'}</span>
           </span>
         </div>
+      )}
+
+      {/* URL length warning */}
+      {showLengthWarn && (
+        <p className="text-[9px] text-amber-400/70 text-right pr-1">
+          Long URL: consider fewer badges/fallbacks for reliability.
+        </p>
       )}
 
       {/* Accessibility live region */}
