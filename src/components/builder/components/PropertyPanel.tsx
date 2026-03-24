@@ -60,7 +60,7 @@ const Section: React.FC<{
       <button
         type="button"
         onClick={toggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50 mx-0"
+        className="w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.05] hover:text-zinc-400 transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50"
       >
         <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
           {icon}{title}
@@ -270,7 +270,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       <Section title="Badge Defaults" icon={<Palette size={11} />} sectionId="global-badge-defaults">
         <ToggleRow label="Show Icons" checked={config.icon ?? true} onChange={v => updateConfig('icon', v)} />
         <SliderRow label="Glass Blur"          value={config.blur}   min={0}  max={20} unit="px"    onChange={v => updateConfig('blur', v)} />
-        <SliderRow label="Background Opacity"  value={config.alpha}  min={0}  max={1}  step={0.05} formatValue={v => `${Math.round(v*100)}%`} onChange={v => updateConfig('alpha', v)} />
         <SliderRow label="Corner Radius"       value={config.radius} min={0}  max={30} unit="px"    onChange={v => updateConfig('radius', v)} />
         <SliderRow label="Drop Shadow"
           value={resolveShadow(config.shadow as number | boolean, 6)}
@@ -398,7 +397,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
       <Section title="Glass & Shape" sectionId="badge-glass">
         <SliderRow label="Blur"    value={commonBlur}   min={0} max={20}  unit="px"   onChange={v => updateSelectedBadges({ blur: v })} />
-        <SliderRow label="Opacity" value={commonAlpha}  min={0} max={1}   step={0.05} formatValue={v => `${Math.round(v*100)}%`} onChange={v => updateSelectedBadges({ alpha: v })} />
         <SliderRow label="Radius"  value={commonRadius} min={0} max={30}  unit="px"   onChange={v => updateSelectedBadges({ radius: v })} />
       </Section>
 

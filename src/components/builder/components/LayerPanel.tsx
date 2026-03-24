@@ -400,6 +400,15 @@ useEffect(() => {
     const iconData  = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
     const iconColor = isActive ? (iconData?.color ?? "#a1a1aa") : "#4a4a52";
     const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-30';
+    const handleCheckboxClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isActive) {
+        onSelect(badge.id, true);
+      } else {
+        handleToggleVisibility(badge.id, true);
+        onSelect(badge.id, false);
+      }
+    };
     return (
       <div ref={provided?.innerRef} {...provided?.draggableProps} style={provided?.draggableProps.style}
         onClick={e => { if (isActive) onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey); }}
@@ -413,7 +422,7 @@ useEffect(() => {
             ? <div {...provided?.dragHandleProps} onClick={e => e.stopPropagation()} className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"><GripVertical size={13} /></div>
             : <div className="w-5 shrink-0" />
         }
-        <div className="shrink-0" onClick={e => { e.stopPropagation(); if (isActive) onSelect(badge.id, true); }}>
+        <div className="shrink-0" onClick={handleCheckboxClick}>
           <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-all", isSel ? "bg-[#C47C2E] border-[#D4A245]" : "bg-[#111113] border-zinc-600 hover:border-zinc-400")}>
             {isSel && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
           </div>
@@ -624,6 +633,18 @@ useEffect(() => {
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <span className="sidebar-label mb-0">Badges</span>
+            <div className="flex items-center gap-2">
+              <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
+                {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}{allVisible ? "Hide all" : "Show all"}
+              </button>
+              <div className="w-px h-3 bg-white/10" />
+              <button onClick={() => handleSelectAll(!allVisibleSelected)} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
+                <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600")}>
+                  {allVisibleSelected && <Check size={9} className="text-white" />}
+                </div>
+                Select all
+              </button>
+            </div>
           </div>
 
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -650,21 +671,9 @@ useEffect(() => {
 
             {inactiveBadges.length > 0 && (
               <>
-                {/* Available header with Show All / Select All buttons */}
+                {/* Available header */}
                 <div className="mt-5 mb-1 px-1 flex items-center justify-between">
                   <span className="sidebar-label mb-0">Available</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleToggleAll} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
-                      {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}{allVisible ? "Hide all" : "Show all"}
-                    </button>
-                    <div className="w-px h-3 bg-white/10" />
-                    <button onClick={() => handleSelectAll(!allVisibleSelected)} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
-                      <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", allVisibleSelected ? "bg-[#C47C2E] border-[#D4A245]" : "border-zinc-600")}>
-                        {allVisibleSelected && <Check size={9} className="text-white" />}
-                      </div>
-                      Select all
-                    </button>
-                  </div>
                 </div>
                 {/* Fallback Badges toggle */}
                 <div className="flex items-center justify-between px-1 mb-2">
