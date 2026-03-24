@@ -11,35 +11,43 @@ const PLACEHOLDER: Record<string, string> = {
 };
 
 interface Props {
-  badgeId: RatingType; config: PosterConfig; x: number; y: number;
-  canvasScale: number; onDragMove: (id: RatingType, dx: number, dy: number) => void;
+  badgeId: RatingType;
+  config: PosterConfig;
+  x: number; y: number;
+  canvasScale: number;
+  onDragMove: (id: RatingType, dx: number, dy: number) => void;
   onDragEnd: (id: RatingType, dx: number, dy: number) => void;
-  isSelected: boolean; onSelect: (id: RatingType, multi: boolean) => void;
-  isObscuring?: boolean; onHoverChange?: (isHovered: boolean) => void; liveRating?: string;
+  isSelected: boolean;
+  onSelect: (id: RatingType, multi: boolean) => void;
+  isObscuring?: boolean;
+  onHoverChange?: (isHovered: boolean) => void;
+  liveRating?: string;
+  /** Called on right-click: passes the badge id and mouse event for context menu positioning */
+  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
 }
 
 const DraggableBadge: React.FC<Props> = ({
   badgeId, config, x, y, canvasScale, onDragMove, onDragEnd,
-  isSelected, onSelect, isObscuring, onHoverChange, liveRating,
+  isSelected, onSelect, isObscuring, onHoverChange, liveRating, onContextMenu,
 }) => {
   const itemConfig = config.items[badgeId];
   const scale  = getScale(config.size) * (itemConfig?.scale ?? 1.0);
   const width  = BASE_BADGE_W * scale, height = BASE_BADGE_H * scale;
   const [isDragging, setIsDragging] = useState(false);
-  
-  const dragStartRef   = useRef<{ mouseX: number; mouseY: number } | null>(null);
-  const justSelectedRef = useRef(false); // Track if selection happened on mouse down
-  
+
+  const dragStartRef    = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const justSelectedRef = useRef(false);
+
   const onDragEndRef   = useRef(onDragEnd);
   const onSelectRef    = useRef(onSelect);
   const isSelectedRef  = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
-  
-  onDragEndRef.current   = onDragEnd;   
+
+  onDragEndRef.current   = onDragEnd;
   onSelectRef.current    = onSelect;
-  isSelectedRef.current  = isSelected; 
+  isSelectedRef.current  = isSelected;
   canvasScaleRef.current = canvasScale;
-  
+
   const displayVal = liveRating ?? PLACEHOLDER[badgeId] ?? '—';
   const blurVal    = itemConfig?.blur   ?? config.blur;
   const alphaVal   = itemConfig?.alpha  ?? config.alpha;
@@ -48,65 +56,63 @@ const DraggableBadge: React.FC<Props> = ({
   const shadowVal  = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
   const showIcon   = itemConfig?.icon ?? config.icon ?? true;
   const txtColor   = itemConfig?.txt  || '#ffffff';
-  
+
   const rawBg = itemConfig?.bg ?? config.bg;
   const bgRaw = (() => {
     if (!rawBg) return `rgba(0,0,0,${alphaVal})`;
     if (rawBg.startsWith('grad:')) return rawBg;
-    const fullHex = /^#[0-9a-fA-F]{3}$/.test(rawBg) ? `#${rawBg[1]}${rawBg[1]}${rawBg[2]}${rawBg[2]}${rawBg[3]}${rawBg[3]}` : rawBg;
+    const fullHex = /^#[0-9a-fA-F]{3}$/.test(rawBg)
+      ? `#${rawBg[1]}${rawBg[1]}${rawBg[2]}${rawBg[2]}${rawBg[3]}${rawBg[3]}`
+      : rawBg;
     if (/^#[0-9a-fA-F]{6}$/.test(fullHex)) {
       const r = parseInt(fullHex.slice(1,3),16), g = parseInt(fullHex.slice(3,5),16), b = parseInt(fullHex.slice(5,7),16);
       return `rgba(${r},${g},${b},${alphaVal})`;
     }
     return rawBg;
   })();
-  
-  const backgroundStyle = rawBg?.startsWith('grad:') ? `linear-gradient(135deg, ${rawBg.split(':')[1]}, ${rawBg.split(':')[2]})` : bgRaw;
+
+  const backgroundStyle = rawBg?.startsWith('grad:')
+    ? `linear-gradient(135deg, ${rawBg.split(':')[1]}, ${rawBg.split(':')[2]})`
+    : bgRaw;
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  
+
   let iconKey: string = badgeId;
-  if (badgeId === 'rt') { const pct = parseInt(displayVal); iconKey = (!isNaN(pct) && pct >= 60) ? 'rt_fresh' : 'rt_rotten'; }
-  else if (badgeId === 'rt_popcorn') { const pct = parseInt(displayVal); iconKey = (!isNaN(pct) && pct >= 60) ? 'popcorn_fresh' : 'popcorn_rotten'; }
-  
+  if (badgeId === 'rt') {
+    const pct = parseInt(displayVal);
+    iconKey = (!isNaN(pct) && pct >= 60) ? 'rt_fresh' : 'rt_rotten';
+  } else if (badgeId === 'rt_popcorn') {
+    const pct = parseInt(displayVal);
+    iconKey = (!isNaN(pct) && pct >= 60) ? 'popcorn_fresh' : 'popcorn_rotten';
+  }
+
   const iconData  = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
   const iconSize  = 36 * scale, iconLeft = 10 * scale, iconTop = 12 * scale, textRight = 10 * scale;
 
-  const handleStart = (clientX: number, clientY: number) => { 
-    setIsDragging(true); 
-    dragStartRef.current = { mouseX: clientX, mouseY: clientY }; 
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStartRef.current = { mouseX: clientX, mouseY: clientY };
   };
-  
-  const handleMove  = (clientX: number, clientY: number) => {
+  const handleMove = (clientX: number, clientY: number) => {
     if (!dragStartRef.current) return;
     const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
     if (isFinite(dx) && isFinite(dy)) onDragMove(badgeId, dx, dy);
   };
-  
   const handleEnd = (e: MouseEvent | TouchEvent) => {
     setIsDragging(false);
     if (!dragStartRef.current) return;
-    
     const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
     const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
     const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
-    
-    // Check if the interaction was purely a click and not a drag
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
       const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
       const multi   = isShift || isCtrl || isMeta;
-      
-      // If we didn't just select it on MouseDown, it means it was already selected.
-      // So since this is just a click, we cleanly toggle the selection off.
-      if (!justSelectedRef.current) {
-        onSelectRef.current(badgeId, multi);
-      }
+      if (!justSelectedRef.current) onSelectRef.current(badgeId, multi);
     }
-    
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
   };
@@ -117,44 +123,36 @@ const DraggableBadge: React.FC<Props> = ({
     const onMU = (e: MouseEvent) => handleEnd(e);
     const onTM = (e: TouchEvent) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
     const onTE = (e: TouchEvent) => handleEnd(e);
-    
-    window.addEventListener('mousemove', onMM); 
+    window.addEventListener('mousemove', onMM);
     window.addEventListener('mouseup', onMU);
-    window.addEventListener('touchmove', onTM, { passive: false }); 
+    window.addEventListener('touchmove', onTM, { passive: false });
     window.addEventListener('touchend', onTE);
-    
-    return () => { 
-      window.removeEventListener('mousemove', onMM); 
-      window.removeEventListener('mouseup', onMU); 
-      window.removeEventListener('touchmove', onTM); 
-      window.removeEventListener('touchend', onTE); 
+    return () => {
+      window.removeEventListener('mousemove', onMM);
+      window.removeEventListener('mouseup', onMU);
+      window.removeEventListener('touchmove', onTM);
+      window.removeEventListener('touchend', onTE);
     };
   }, [isDragging]);
 
-  const onMouseDown = (e: React.MouseEvent) => { 
-    e.stopPropagation(); 
-    e.preventDefault(); 
-    
+  const onMouseDown = (e: React.MouseEvent) => {
+    // Context menu on right-click
+    if (e.button === 2) return; // let onContextMenu handle it
+    e.stopPropagation(); e.preventDefault();
     const multi = e.shiftKey || e.ctrlKey || e.metaKey;
-    if (!isSelected) {
-      onSelect(badgeId, multi); 
-      justSelectedRef.current = true;
-    } else {
-      justSelectedRef.current = false;
-    }
-    
-    handleStart(e.clientX, e.clientY); 
+    if (!isSelected) { onSelect(badgeId, multi); justSelectedRef.current = true; }
+    else             { justSelectedRef.current = false; }
+    handleStart(e.clientX, e.clientY);
   };
-  
-  const onTouchStart = (e: React.TouchEvent) => { 
-    e.stopPropagation(); 
-    if (!isSelected) {
-      onSelect(badgeId, false); 
-      justSelectedRef.current = true;
-    } else {
-      justSelectedRef.current = false;
-    }
-    handleStart(e.touches[0].clientX, e.touches[0].clientY); 
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (!isSelected) { onSelect(badgeId, false); justSelectedRef.current = true; }
+    else             { justSelectedRef.current = false; }
+    handleStart(e.touches[0].clientX, e.touches[0].clientY);
+  };
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    onContextMenu?.(badgeId, e);
   };
 
   const renderContent = () => {
@@ -167,7 +165,11 @@ const DraggableBadge: React.FC<Props> = ({
         </div>
       );
     }
-    if (!showIcon) return <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{displayVal}</span>;
+    if (!showIcon) return (
+      <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>
+        {displayVal}
+      </span>
+    );
     if (iconData) {
       let fSize = 28;
       if (badgeId === 'runtime' && displayVal.length > 5) fSize = 22;
@@ -177,29 +179,89 @@ const DraggableBadge: React.FC<Props> = ({
           <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
             <svg viewBox={iconData.vb} width={iconSize} height={iconSize} style={{ display: 'block', color: txtColor }} dangerouslySetInnerHTML={{ __html: iconData.body }} />
           </div>
-          <span style={{ position: 'absolute', right: textRight, top: '50%', transform: 'translateY(-50%)', fontSize: `${fSize * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{displayVal}</span>
+          <span style={{ position: 'absolute', right: textRight, top: '50%', transform: 'translateY(-50%)', fontSize: `${fSize * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>
+            {displayVal}
+          </span>
         </>
       );
     }
-    return <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>{displayVal}</span>;
+    return (
+      <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: `${28 * scale}px`, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor, lineHeight: 1 }}>
+        {displayVal}
+      </span>
+    );
   };
 
-  const dropShadow    = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0,0,0,0.55)` : '';
-  const slantPattern  = `repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,0.08) 4px,rgba(255,255,255,0.08) 8px)`;
-  const finalBg       = isObscuring ? `${slantPattern}, ${backgroundStyle}` : backgroundStyle;
+  const dropShadow   = shadowVal > 0 ? `0 ${shadowVal * 0.5}px ${shadowVal}px -1px rgba(0,0,0,0.55)` : '';
+  const slantPattern = `repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,0.08) 4px,rgba(255,255,255,0.08) 8px)`;
+  const finalBg      = isObscuring ? `${slantPattern}, ${backgroundStyle}` : backgroundStyle;
+
+  // Selection ring: amber glow
+  const selectionOutline = isSelected
+    ? `0 0 0 2px rgba(196,124,46,0.8), 0 0 12px rgba(196,124,46,0.3)`
+    : '';
+  const combinedShadow = [selectionOutline, dropShadow].filter(Boolean).join(', ');
 
   return (
     <div
-      onMouseDown={onMouseDown} onTouchStart={onTouchStart}
-      onMouseEnter={() => onHoverChange?.(true)} onMouseLeave={() => onHoverChange?.(false)}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onContextMenu={handleContextMenu}
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
       className="badge-item absolute select-none cursor-move z-50"
-      style={{ width: `${width}px`, height: `${height}px`, left: `${x}px`, top: `${y}px`, background: finalBg, borderRadius: `${radiusVal}px`, outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none', backdropFilter: `blur(${blurVal}px)`, WebkitBackdropFilter: `blur(${blurVal}px)`, boxShadow: dropShadow || 'none', opacity: isObscuring ? 0.3 : 1, pointerEvents: isObscuring ? 'none' : 'auto', touchAction: 'none', transform: 'translateZ(0)' }}
+      style={{
+        width: `${width}px`, height: `${height}px`,
+        left: `${x}px`, top: `${y}px`,
+        background: finalBg,
+        borderRadius: `${radiusVal}px`,
+        outline: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
+        backdropFilter: `blur(${blurVal}px)`,
+        WebkitBackdropFilter: `blur(${blurVal}px)`,
+        boxShadow: combinedShadow || 'none',
+        opacity: isObscuring ? 0.3 : 1,
+        pointerEvents: isObscuring ? 'none' : 'auto',
+        touchAction: 'none',
+        transform: 'translateZ(0)',
+        transition: 'box-shadow 0.15s ease',
+      }}
     >
       {renderContent()}
+
+      {/* Selection indicator — film amber square */}
       {isSelected && (
-        <div className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
-          style={{ top: `${-7 * scale * 1.15}px`, right: `${-7 * scale * 1.15}px`, width: `${14 * scale * 1.15}px`, height: `${14 * scale * 1.15}px` }}>
-          <div className="bg-white" style={{ width: `${6 * scale * 1.15}px`, height: `${6 * scale * 1.15}px`, borderRadius: `${1.5 * scale * 1.15}px` }} />
+        <div
+          className="absolute flex items-center justify-center shadow-sm z-10 pointer-events-none"
+          style={{
+            top: `${-7 * scale * 1.15}px`, right: `${-7 * scale * 1.15}px`,
+            width: `${14 * scale * 1.15}px`, height: `${14 * scale * 1.15}px`,
+            background: 'var(--film-amber)',
+            border: '1px solid var(--film-gold)',
+            borderRadius: `${2 * scale}px`,
+            boxShadow: '0 0 8px rgba(196,124,46,0.5)',
+          }}
+        >
+          <div className="bg-white" style={{
+            width: `${6 * scale * 1.15}px`, height: `${6 * scale * 1.15}px`,
+            borderRadius: `${1.5 * scale * 1.15}px`,
+          }} />
+        </div>
+      )}
+
+      {/* Drag position tooltip */}
+      {isDragging && (
+        <div style={{
+          position: 'absolute', bottom: `${height + 4}px`, left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(14,13,11,0.9)',
+          border: '1px solid rgba(196,124,46,0.25)',
+          borderRadius: 5, padding: '2px 7px',
+          fontSize: 9, fontFamily: 'JetBrains Mono, monospace',
+          color: 'var(--film-pale)', whiteSpace: 'nowrap',
+          pointerEvents: 'none', zIndex: 100,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        }}>
+          {Math.round(x)}, {Math.round(y)}
         </div>
       )}
     </div>

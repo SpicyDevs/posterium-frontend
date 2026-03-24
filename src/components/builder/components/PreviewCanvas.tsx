@@ -9,13 +9,16 @@ import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
-  config: PosterConfig; setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
-  selectedIds: Set<RatingType>; onSelect: (id: RatingType, multi: boolean) => void;
+  config: PosterConfig;
+  setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+  selectedIds: Set<RatingType>;
+  onSelect: (id: RatingType, multi: boolean) => void;
+  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
 }
 
 const PRELOAD_TIMEOUT_MS = 25_000;
 
-const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onContextMenu }) => {
   const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
@@ -46,16 +49,11 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     if (config.posterBlur > 0) u.searchParams.set('bg_blur', config.posterBlur.toString());
     if (config.grayscale)      u.searchParams.set('bw', '1');
     return u.toString();
-  }, [
-    config.imdbId, config.tmdbId, config.mediaType,
-    config.source, config.ptype, config.textless,
-    config.posterBlur, config.grayscale,
-  ]);
+  }, [config.imdbId, config.tmdbId, config.mediaType, config.source, config.ptype, config.textless, config.posterBlur, config.grayscale]);
 
   useEffect(() => {
     if (!posterSvgUrl) { setIsImageLoading(false); setImageError(false); return; }
-    setIsImageLoading(true);
-    setImageError(false);
+    setIsImageLoading(true); setImageError(false);
     let cancelled = false;
     const img = new Image();
     const safetyTimer = setTimeout(() => { if (!cancelled) { setIsImageLoading(false); setImageError(true); } }, PRELOAD_TIMEOUT_MS);
@@ -89,9 +87,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   }, []);
 
   const currentScale = autoScale * zoom;
-  
+
   const clampPan = (x: number, y: number) => ({
-    x: Math.max(-CANVAS_WIDTH / 2, Math.min(CANVAS_WIDTH / 2, x)),
+    x: Math.max(-CANVAS_WIDTH / 2,  Math.min(CANVAS_WIDTH / 2,  x)),
     y: Math.max(-CANVAS_HEIGHT / 2, Math.min(CANVAS_HEIGHT / 2, y)),
   });
 
@@ -135,7 +133,18 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const handleTouchEnd = () => { lastDist.current = null; lastPan.current = null; setIsPanning(false); };
 
   const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
-  useEffect(() => { window.addEventListener('reset-canvas-view', resetView); return () => window.removeEventListener('reset-canvas-view', resetView); }, [resetView]);
+
+  // Listen to event bus from keyboard shortcuts
+  useEffect(() => {
+    const onReset = () => resetView();
+    const onZoom  = (e: Event) => { const delta = (e as CustomEvent).detail as number; setZoomFlash(zoom + delta); };
+    window.addEventListener('reset-canvas-view', onReset);
+    window.addEventListener('canvas-zoom', onZoom);
+    return () => {
+      window.removeEventListener('reset-canvas-view', onReset);
+      window.removeEventListener('canvas-zoom', onZoom);
+    };
+  }, [resetView, setZoomFlash, zoom]);
 
   const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
@@ -146,12 +155,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return u.toString();
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
-  // FIX: limit logo to 1px visible (matching badge constraint)
   const handleLogoDragEnd = useCallback((dx: number, dy: number) => {
     setConfig(prev => {
       const currentX = prev.logoX !== null && prev.logoX !== undefined
-        ? prev.logoX
-        : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
+        ? prev.logoX : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       return {
         ...prev,
         logoX: Math.round(Math.max(-(prev.logoW - 1), Math.min(currentX + dx, CANVAS_WIDTH - 1))),
@@ -216,76 +223,126 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b] touch-none select-none"
-      onWheel={handleWheel} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+      className="w-full h-full flex items-center justify-center relative overflow-hidden touch-none select-none"
+      style={{ background: '#18181b' }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
     >
-      {/* Zoom controls — sidebar-matched bg */}
-      <div className="absolute right-3 flex flex-col items-center gap-1.5 z-30 transition-all duration-300"
-        style={{ bottom: mobileSheetMode === 'half' ? '58%' : 'calc(4rem + env(safe-area-inset-bottom, 0px))', opacity: mobileSheetMode === 'full' ? 0 : 1, pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto' }}>
-        {/* FIX: zoom % label bg matches sidebar */}
-        <div className="bg-[#0d0d0f] border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-300 pointer-events-none transition-opacity duration-300" style={{ opacity: isZooming ? 1 : 0 }}>
+      {/* Zoom % indicator */}
+      <div
+        className="absolute right-3 flex flex-col items-center gap-1.5 z-30 transition-all duration-300"
+        style={{
+          bottom: mobileSheetMode === 'half' ? '58%' : 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+          opacity: mobileSheetMode === 'full' ? 0 : 1,
+          pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
+        }}
+      >
+        <div
+          className="rounded-full px-2 py-0.5 text-[10px] font-mono pointer-events-none transition-opacity duration-300"
+          style={{
+            background: 'rgba(14,13,11,0.9)',
+            border: '1px solid rgba(196,124,46,0.15)',
+            color: 'var(--film-silver)',
+            opacity: isZooming ? 1 : 0,
+          }}
+        >
           {Math.round(zoom * 100)}%
         </div>
-        {/* FIX: zoom controls bg matches sidebar */}
-        <div className="flex flex-col items-center gap-0.5 bg-[#0d0d0f] border border-white/10 rounded-2xl p-1.5 shadow-xl">
-          {[{ icon: <ZoomIn size={17} />, action: () => setZoomFlash(zoom + 0.15) }, { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15) }].map((b, i) => (
-            <button key={i} onClick={b.action} className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-[#D4A245] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all">{b.icon}</button>
+        <div
+          className="flex flex-col items-center gap-0.5 rounded-2xl p-1.5 shadow-xl"
+          style={{
+            background: 'rgba(14,13,11,0.9)',
+            border: '1px solid rgba(196,124,46,0.12)',
+          }}
+        >
+          {[
+            { icon: <ZoomIn size={17} />, action: () => setZoomFlash(zoom + 0.15), label: 'Zoom in' },
+            { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15), label: 'Zoom out' },
+          ].map((b, i) => (
+            <button key={i} onClick={b.action} aria-label={b.label}
+              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-90"
+              style={{ color: 'rgba(176,168,152,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
+              onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.6)'; (e.currentTarget).style.background = 'transparent'; }}
+            >
+              {b.icon}
+            </button>
           ))}
-          <div className="w-5 h-px bg-white/8 mx-auto my-0.5" />
-          <button onClick={resetView} className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-[#C47C2E] rounded-xl hover:bg-[#C47C2E]/10 active:scale-90 transition-all" title="Fit to screen"><SearchX size={15} /></button>
+          <div className="w-5 h-px mx-auto my-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <button onClick={resetView} title="Fit to screen (⌘1)"
+            className="w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-90"
+            style={{ color: 'rgba(176,168,152,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => { (e.currentTarget).style.color = 'var(--film-amber)'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
+            onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.6)'; (e.currentTarget).style.background = 'transparent'; }}
+          >
+            <SearchX size={15} />
+          </button>
         </div>
       </div>
 
       {/* Canvas */}
       <div
-        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`, transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0,0,0.2,1)' }}
-        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/8 will-change-transform"
+        style={{
+          width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
+          transition: isPanning ? 'none' : 'transform 0.18s cubic-bezier(0,0,0.2,1)',
+          background: '#0c0c0e',
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 32px 80px rgba(0,0,0,0.8)',
+        }}
+        className="relative shrink-0 will-change-transform"
         onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
       >
         {/* Loading */}
         {isImageLoading && posterSvgUrl && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm pointer-events-none">
+          <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+            style={{ background: 'rgba(9,9,11,0.6)', backdropFilter: 'blur(4px)' }}>
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="animate-spin text-[#C47C2E]" size={36} strokeWidth={2} />
-              <span className="text-[10px] text-zinc-500 font-mono">loading poster…</span>
+              <Loader2 className="animate-spin" size={36} strokeWidth={2} style={{ color: 'var(--film-amber)' }} />
+              <span className="text-[10px] font-mono" style={{ color: 'rgba(176,168,152,0.5)' }}>loading poster…</span>
             </div>
           </div>
         )}
 
-        {/* Empty / error */}
+        {/* Error / Empty */}
         {(imageError || !posterSvgUrl) && !isImageLoading && (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-zinc-900/70 pointer-events-none">
-            <AlertCircle size={26} className="text-zinc-600" strokeWidth={1.5} />
-            <span className="text-[11px] text-zinc-600 font-mono">
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 pointer-events-none"
+            style={{ background: 'rgba(9,9,11,0.7)' }}>
+            <AlertCircle size={26} strokeWidth={1.5} style={{ color: 'rgba(140,130,112,0.4)' }} />
+            <span className="text-[11px] font-mono" style={{ color: 'rgba(140,130,112,0.4)' }}>
               {!posterSvgUrl ? 'search for a title to preview' : 'failed to load poster'}
             </span>
           </div>
         )}
 
-        {/* FIX: Grid — more visible, with centre crosshair */}
+        {/* Grid overlay */}
         {viewOptions?.showGrid && (
           <div className="absolute inset-0 z-30 pointer-events-none">
-            <div className="absolute top-0 bottom-0 left-1/3  border-l border-white/30" />
-            <div className="absolute top-0 bottom-0 left-2/3  border-l border-white/30" />
-            <div className="absolute left-0 right-0 top-1/3  border-t border-white/30" />
-            <div className="absolute left-0 right-0 top-2/3  border-t border-white/30" />
-            {/* Centre guides */}
-            <div className="absolute top-0 bottom-0 left-1/2  border-l border-[#C47C2E]/25" />
-            <div className="absolute left-0 right-0 top-1/2  border-t border-[#C47C2E]/25" />
+            <div className="absolute top-0 bottom-0 left-1/3  border-l" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+            <div className="absolute top-0 bottom-0 left-2/3  border-l" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+            <div className="absolute left-0 right-0 top-1/3  border-t" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+            <div className="absolute left-0 right-0 top-2/3  border-t" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+            {/* Centre guides — amber */}
+            <div className="absolute top-0 bottom-0 left-1/2  border-l" style={{ borderColor: 'rgba(196,124,46,0.25)' }} />
+            <div className="absolute left-0 right-0 top-1/2  border-t" style={{ borderColor: 'rgba(196,124,46,0.25)' }} />
           </div>
         )}
 
-        {/* FIX: Safe area — more visible */}
+        {/* Safe area overlay */}
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
-            <div className="absolute inset-8 border-2 border-red-400/50 border-dashed rounded-sm">
-              <div className="absolute top-1.5 left-2 text-[9px] text-red-400/60 font-mono uppercase tracking-wide bg-black/50 px-1 rounded">Safe</div>
+            <div className="absolute inset-8 border-2 border-dashed rounded-sm" style={{ borderColor: 'rgba(248,113,113,0.5)' }}>
+              <div className="absolute top-1.5 left-2 text-[9px] font-mono uppercase tracking-wide rounded px-1"
+                style={{ color: 'rgba(248,113,113,0.6)', background: 'rgba(0,0,0,0.5)' }}>
+                Safe
+              </div>
             </div>
           </div>
         )}
 
-        {/* Poster background */}
+        {/* Poster image */}
         {posterSvgUrl && (
           <img
             key={posterSvgUrl}
@@ -321,15 +378,23 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           }
 
           return (
-            <DraggableBadge key={id} badgeId={id} config={config} x={x} y={y} canvasScale={currentScale}
-              onDragMove={handleDragMove} onDragEnd={handleDragEnd}
-              isSelected={selectedIds.has(id)} onSelect={onSelect}
-              isObscuring={isObscuring} onHoverChange={hovered => setHoveredBadgeId(hovered ? id : null)}
-              liveRating={liveRatings[id]} />
+            <DraggableBadge
+              key={id}
+              badgeId={id} config={config} x={x} y={y}
+              canvasScale={currentScale}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              isSelected={selectedIds.has(id)}
+              onSelect={onSelect}
+              isObscuring={isObscuring}
+              onHoverChange={hovered => setHoveredBadgeId(hovered ? id : null)}
+              liveRating={liveRatings[id]}
+              onContextMenu={onContextMenu}
+            />
           );
         })}
 
-        {/* Logo */}
+        {/* Logo overlay */}
         {config.logo && (
           <DraggableLogo
             config={config}
@@ -337,7 +402,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
             onLogoLoad={(w, h) => {
-              // Auto-fit logo height to natural aspect ratio when first loaded
               if (w > 0 && h > 0) {
                 setConfig(prev => ({ ...prev, logoH: Math.round(prev.logoW * (h / w)) }));
               }

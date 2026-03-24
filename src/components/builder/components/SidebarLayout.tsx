@@ -11,8 +11,17 @@ interface Props {
 
 const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, className }) => {
   return (
-    <div className={clsx('flex flex-col h-full min-h-0 bg-[#0d0d0f]', className)}>
-      <div className="shrink-0 px-3 pt-3 pb-2 border-b border-white/6 bg-[#0d0d0f] z-10">
+    <div
+      className={clsx('flex flex-col h-full min-h-0', className)}
+      style={{ background: 'var(--film-dark)' }}
+    >
+      <div
+        className="shrink-0 px-3 pt-3 pb-2 z-10"
+        style={{
+          background: 'var(--film-dark)',
+          borderBottom: '1px solid rgba(196,124,46,0.08)',
+        }}
+      >
         {header}
       </div>
       <div className={clsx('flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar', bodyClassName)}>
