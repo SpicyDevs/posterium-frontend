@@ -331,7 +331,18 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
         {/* Logo */}
         {config.logo && (
-          <DraggableLogo config={config} logoUrl={logoPreviewUrl} canvasScale={currentScale} onDragEnd={handleLogoDragEnd} />
+          <DraggableLogo
+            config={config}
+            logoUrl={logoPreviewUrl}
+            canvasScale={currentScale}
+            onDragEnd={handleLogoDragEnd}
+            onLogoLoad={(w, h) => {
+              // Auto-fit logo height to natural aspect ratio when first loaded
+              if (w > 0 && h > 0) {
+                setConfig(prev => ({ ...prev, logoH: Math.round(prev.logoW * (h / w)) }));
+              }
+            }}
+          />
         )}
       </div>
     </div>

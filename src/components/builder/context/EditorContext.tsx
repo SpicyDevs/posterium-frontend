@@ -61,8 +61,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       nextSize = next.size;
       return next;
     });
-    if (nextSize > 0) setActiveTab('badge');
-    else setActiveTab('canvas');
+    // Use queueMicrotask so we read nextSize after the setter has run,
+    // avoiding stale-closure issues in React 18 concurrent mode.
+    queueMicrotask(() => {
+      if (nextSize > 0) setActiveTab('badge');
+      else setActiveTab('canvas');
+    });
   }, [setActiveTab]);
 
   const setBatchSelection = useCallback((ids: RatingType[]) => {

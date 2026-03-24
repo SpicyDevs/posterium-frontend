@@ -243,17 +243,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [searchQuery, setSearchQuery] = useState("");
   const [results,     setResults]     = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  useEffect(() => {
+useEffect(() => {
+    const ctrl = new AbortController();
     const t = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true);
       try {
-        const res  = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`);
+        const res  = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`, { signal: ctrl.signal });
         const data = await res.json();
         if (data.results) setResults(data.results.filter((i: SearchResult) => i.poster_path && ["movie","tv"].includes(i.media_type)));
-      } catch { } finally { setIsSearching(false); }
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') return;
+      } finally { setIsSearching(false); }
     }, 400);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); ctrl.abort(); };
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
@@ -300,7 +303,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     })();
     return () => ctrl.abort();
   }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
-
+  useEffect(() => {
+    setFallbackEnabled(config.fallbackEnabled);
+  }, [config.fallbackEnabled, setFallbackEnabled]);
   const handleSelectMedia = useCallback((item: SearchResult | null) => {
     if (!item) return;
     setFetchedData({ title: item.title || item.name || "", year: (item.release_date || item.first_air_date)?.split("-")[0] || "" });
@@ -506,7 +511,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     <Combobox.Options className="absolute top-full mt-1 z-50 w-full bg-[#1c1c1f] border border-white/10 rounded-xl shadow-2xl shadow-black/50 max-h-64 overflow-y-auto custom-scrollbar py-1.5 focus:outline-none">
                       {results.map(item => (
                         <Combobox.Option key={item.id} value={item} className={({ active }) => clsx("flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors", active && "bg-[#C47C2E]/12")}>
-                          <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt="" className="w-8 h-11 object-cover rounded-md bg-zinc-800 shrink-0" />
+                          <img src={item.poster_path} alt="" className="w-8 h-11 object-cover rounded-md bg-zinc-800 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-medium text-zinc-200 truncate">{item.title || item.name}</p>
                             <div className="flex items-center gap-1.5 mt-0.5">

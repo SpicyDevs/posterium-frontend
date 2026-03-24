@@ -14,8 +14,10 @@ export const usePosterHistory = (initialState: PosterConfig | (() => PosterConfi
       const current  = prev.history[prev.currentIndex];
       const newState = typeof action === 'function' ? (action as Function)(current) : action;
       if (Object.is(current, newState)) return prev;
-      const newHistory = prev.history.slice(0, prev.currentIndex + 1);
-      return { history: [...newHistory, newState], currentIndex: newHistory.length };
+      const MAX_HISTORY = 100;
+      const trimmed = prev.history.slice(0, prev.currentIndex + 1);
+      const capped  = trimmed.length >= MAX_HISTORY ? trimmed.slice(trimmed.length - MAX_HISTORY + 1) : trimmed;
+      return { history: [...capped, newState], currentIndex: capped.length };
     });
   }, []);
 

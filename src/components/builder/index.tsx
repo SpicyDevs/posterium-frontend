@@ -456,9 +456,11 @@ const BuilderApp: React.FC = () => {
     try { setBaseUrl(new URL(url).origin); } catch { /* keep */ }
   }, [setConfig]);
 
-  const handleReset = useCallback(() => {
+const handleReset = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
     localStorage.removeItem(STORAGE_KEY);
+    // Clear the API-keys cookie so it isn't merged back on next load
+    document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   }, [setConfig]);
 

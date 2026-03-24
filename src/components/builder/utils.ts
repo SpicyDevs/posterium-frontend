@@ -185,6 +185,19 @@ export const parseUrlToConfig = (urlString: string, currentConfig?: PosterConfig
 
     const q = url.searchParams;
 
+    const apiVersion = parseInt(q.get('v') || '2', 10);
+    const isV3 = apiVersion >= 3;
+
+    const SHORT_TO_FULL: Record<string, RatingType> = {
+      t: 'tmdb', i: 'imdb', r: 'rt', p: 'rt_popcorn', l: 'letterboxd',
+      m: 'meta', a: 'age', n: 'runtime', M: 'mal', A: 'anilist',
+    };
+    const decodeRatings = (raw: string): RatingType[] => {
+      const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+      if (isV3) return parts.map(c => SHORT_TO_FULL[c]).filter(Boolean) as RatingType[];
+      return parts as RatingType[];
+    };
+
     // Normalize a color param — add '#' prefix if absent
     const nc = (v: string | null): string | undefined => {
       if (!v) return undefined;
@@ -231,7 +244,7 @@ export const parseUrlToConfig = (urlString: string, currentConfig?: PosterConfig
 
     return {
       mediaType, tmdbId, imdbId, extension,
-      ratings:    q.has('r') ? (q.get('r')!.split(',') as RatingType[]) : [],
+      ratings:    q.has('r') ? decodeRatings(q.get('r')!) : [],
       source:     (q.get('source') as PosterConfig['source']) || 'tmdb',
       ptype:      q.get('ptype') || 'auto',
       textless:   q.get('textless') === '1',
@@ -259,8 +272,8 @@ export const parseUrlToConfig = (urlString: string, currentConfig?: PosterConfig
       logoH:       q.has('logo_h')       ? parseInt(q.get('logo_h')!)         : 100,
       logoOpacity: q.has('logo_opacity') ? parseFloat(q.get('logo_opacity')!) : 1.0,
       logoShadow:  q.has('logo_sh')      ? parseInt(q.get('logo_sh')!)        : 6,
-      fallbackEnabled: false,
-      fallbackPool: [],
+      fallbackEnabled: isV3 && q.has('fb') && q.get('fb')!.trim() !== '',
+      fallbackPool:    isV3 && q.has('fb') ? decodeRatings(q.get('fb')!) : [],
     };
   } catch (e) {
     console.error('[parseUrlToConfig] Failed to parse URL:', e);
