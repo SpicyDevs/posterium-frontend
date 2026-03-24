@@ -45,7 +45,7 @@
 /icon-512.png
   Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
 
-/icon.svg
+/favicon.ico
   Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
 
 # Web manifest
