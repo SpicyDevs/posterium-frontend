@@ -1,10 +1,10 @@
 // src/components/builder/components/PropertyPanel.tsx
-import React, { memo, useState, useRef, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
 import {
   Layers, Layout, Smartphone, Palette, ChevronDown, ChevronRight,
-  Eye, RotateCcw, Rows2, Columns2,
+  Eye, RotateCcw, Rows2, Columns2, Type,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -17,8 +17,7 @@ interface Props {
   viewMode?: 'global' | 'selection';
 }
 
-// ── Persist section open/closed state in localStorage ─────────────────────────
-const SECTION_STORAGE_KEY = 'posterium_section_states_v1';
+const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
 
 const readSectionStates = (): Record<string, boolean> => {
   try { return JSON.parse(localStorage.getItem(SECTION_STORAGE_KEY) || '{}'); }
@@ -32,7 +31,7 @@ const writeSectionState = (id: string, open: boolean) => {
   } catch {}
 };
 
-// FIX: Section with rounded hover bg + localStorage persistence
+// ── Section accordion ────────────────────────────────────────────────────────
 const Section: React.FC<{
   title: string;
   icon?: React.ReactNode;
@@ -55,19 +54,19 @@ const Section: React.FC<{
   }, [sectionId]);
 
   return (
-    <div className="border-b border-white/[0.05] last:border-0">
-      {/* FIX: rounded-lg on the button so hover bg is clipped */}
+    <div style={{ borderBottom: '1px solid rgba(196,124,46,0.06)' }} className="last:border-0">
       <button
         type="button"
         onClick={toggle}
-        className="w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.05] hover:text-zinc-400 transition-colors text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50"
+        className="w-full flex items-center justify-between px-3 py-2.5 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50 transition-colors rounded-md hover:bg-white/[0.03] mx-0"
       >
-        <span className="flex items-center gap-2 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
-          {icon}{title}
+        <span className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          {icon && <span className="text-zinc-600">{icon}</span>}
+          {title}
         </span>
         {open
-          ? <ChevronDown size={12} className="text-zinc-700 shrink-0" />
-          : <ChevronRight size={12} className="text-zinc-700 shrink-0" />
+          ? <ChevronDown size={11} className="text-zinc-700 shrink-0" />
+          : <ChevronRight size={11} className="text-zinc-700 shrink-0" />
         }
       </button>
       {open && <div className="px-3 pb-4 pt-1 space-y-4">{children}</div>}
@@ -75,7 +74,7 @@ const Section: React.FC<{
   );
 };
 
-// ── SliderRow: click-to-edit value label ──────────────────────────────────────
+// ── Slider row ────────────────────────────────────────────────────────────────
 const SliderRow: React.FC<{
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step?: number; unit?: string; formatValue?: (v: number) => string;
@@ -91,8 +90,8 @@ const SliderRow: React.FC<{
   };
 
   return (
-    <div className="space-y-1">
-      <span className="text-[11px] text-zinc-400 font-medium">{label}</span>
+    <div className="space-y-1.5">
+      <span className="text-[10px] text-zinc-500 font-medium">{label}</span>
       <div className="flex items-center gap-2">
         {editing ? (
           <input
@@ -105,14 +104,14 @@ const SliderRow: React.FC<{
               if (e.key === 'Enter') { e.preventDefault(); commit(); }
               if (e.key === 'Escape') setEditing(false);
             }}
-            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#0d0d0f] border border-[#C47C2E]/60 text-[10px] font-mono text-zinc-200 text-center focus:outline-none shrink-0"
+            className="w-[52px] h-[22px] px-1.5 rounded bg-[#0d0d0f] border border-[#C47C2E]/60 text-[10px] font-mono text-zinc-200 text-center focus:outline-none shrink-0"
           />
         ) : (
           <button
             type="button"
             onClick={() => { setDraft(String(value)); setEditing(true); }}
             title="Click to edit"
-            className="w-[52px] h-[22px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/30 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+            className="w-[52px] h-[22px] px-1.5 rounded bg-white/[0.04] border border-white/[0.07] hover:border-[#C47C2E]/30 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
           >
             {display}
           </button>
@@ -127,11 +126,15 @@ const SliderRow: React.FC<{
   );
 };
 
-const ToggleRow: React.FC<{ label: string; sub?: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, sub, checked, onChange }) => (
+// ── Toggle row ────────────────────────────────────────────────────────────────
+const ToggleRow: React.FC<{
+  label: string; sub?: string; checked: boolean; onChange: (v: boolean) => void;
+  small?: boolean;
+}> = ({ label, sub, checked, onChange, small }) => (
   <div className="flex items-center justify-between gap-3">
     <div className="min-w-0">
-      <p className="text-[11px] font-medium text-zinc-300">{label}</p>
-      {sub && <p className="text-[9px] text-zinc-500 mt-0.5">{sub}</p>}
+      <p className={clsx('font-medium text-zinc-300', small ? 'text-[10px]' : 'text-[11px]')}>{label}</p>
+      {sub && <p className="text-[9px] text-zinc-600 mt-0.5">{sub}</p>}
     </div>
     <Switch checked={checked} onChange={onChange}
       className={clsx('relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
@@ -144,6 +147,7 @@ const ToggleRow: React.FC<{ label: string; sub?: string; checked: boolean; onCha
   </div>
 );
 
+// ── Alignment grid ────────────────────────────────────────────────────────────
 const GRID_POSITIONS: { id: PresetType; label: string }[] = [
   { id: 'tl', label: 'Top left'    }, { id: 'tc', label: 'Top centre'    }, { id: 'tr', label: 'Top right'    },
   { id: 'lc', label: 'Middle left' }, { id: 'cc', label: 'Centre'         }, { id: 'rc', label: 'Middle right' },
@@ -156,8 +160,8 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
       <button key={pos.id} type="button" onClick={() => onChange(pos.id)} title={pos.label}
         className={clsx('w-full aspect-square rounded transition-all active:scale-90',
           value === pos.id
-            ? 'bg-[#C47C2E] shadow-[0_0_8px_rgba(196,124,46,0.5)]'
-            : 'bg-zinc-800/60 hover:bg-zinc-700/60 border border-white/[0.05]'
+            ? 'bg-[#C47C2E] shadow-[0_0_8px_rgba(196,124,46,0.4)]'
+            : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06]'
         )}>
         <div className={clsx('w-1.5 h-1.5 rounded-full mx-auto',
           value === pos.id ? 'bg-white' : 'bg-zinc-600'
@@ -167,7 +171,6 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
   </div>
 );
 
-// ── Helper: resolve badge shadow value ────────────────────────────────────────
 function resolveShadow(v: number | boolean | undefined, fallback: number): number {
   if (v === undefined) return fallback;
   if (typeof v === 'boolean') return v ? 6 : 0;
@@ -226,17 +229,17 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
 
-  // ── Global (Canvas) view ──────────────────────────────────────────────────
+  // ── Global view ────────────────────────────────────────────────────────────
   if (showGlobal) return (
     <div className="pb-24">
       <Section title="Layout" icon={<Layout size={11} />} sectionId="global-layout">
         <div className="flex items-start gap-4">
           <div>
-            <p className="text-[10px] text-zinc-500 mb-2 font-medium">Position preset</p>
+            <p className="text-[10px] text-zinc-600 mb-2 font-medium">Position preset</p>
             <AlignmentGrid value={config.preset} onChange={v => updateConfig('preset', v)} />
           </div>
           <div className="flex-1">
-            <p className="text-[10px] text-zinc-500 mb-2 font-medium">Flow direction</p>
+            <p className="text-[10px] text-zinc-600 mb-2 font-medium">Flow direction</p>
             <div className="space-y-1.5">
               {([
                 { id: 'col' as const, label: 'Column', icon: <Rows2 size={13} /> },
@@ -246,8 +249,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                   className={clsx(
                     'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors',
                     config.layout === opt.id
-                      ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
-                      : 'bg-[#111113] text-zinc-400 hover:bg-white/5 border border-white/6'
+                      ? 'bg-[#C47C2E]/12 text-[#E8D8A8] ring-1 ring-[#C47C2E]/25'
+                      : 'bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] border border-white/[0.06]'
                   )}>
                   <span className={config.layout === opt.id ? 'text-[#D4A245]' : 'text-zinc-600'}>
                     {opt.icon}
@@ -269,8 +272,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
       <Section title="Badge Defaults" icon={<Palette size={11} />} sectionId="global-badge-defaults">
         <ToggleRow label="Show Icons" checked={config.icon ?? true} onChange={v => updateConfig('icon', v)} />
-        <SliderRow label="Glass Blur"          value={config.blur}   min={0}  max={20} unit="px"    onChange={v => updateConfig('blur', v)} />
-        <SliderRow label="Corner Radius"       value={config.radius} min={0}  max={30} unit="px"    onChange={v => updateConfig('radius', v)} />
+        <ToggleRow label="Show Rating Text" sub="Hide to show icons only" checked={config.showText !== false} onChange={v => updateConfig('showText', v)} />
+        <SliderRow label="Glass Blur"    value={config.blur}   min={0} max={20} unit="px" onChange={v => updateConfig('blur', v)} />
+        <SliderRow label="Corner Radius" value={config.radius} min={0} max={30} unit="px" onChange={v => updateConfig('radius', v)} />
         <SliderRow label="Drop Shadow"
           value={resolveShadow(config.shadow as number | boolean, 6)}
           min={0} max={30} onChange={v => updateConfig('shadow', v)} />
@@ -283,7 +287,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-zinc-400 font-medium">Badge Background</span>
+            <span className="text-[10px] text-zinc-500 font-medium">Badge Background</span>
             {config.bg && (
               <button onClick={() => clearGlobalColor('bg')}
                 className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">
@@ -298,14 +302,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             opacity={config.alpha}
             onOpacityChange={v => updateConfig('alpha', v)}
           />
-          {!config.bg && (
-            <p className="text-[9px] text-zinc-700">Using computed rgba(0,0,0,{config.alpha.toFixed(2)})</p>
-          )}
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-zinc-400 font-medium">Badge Text Color</span>
+            <span className="text-[10px] text-zinc-500 font-medium">Badge Text Color</span>
             {config.txt && (
               <button onClick={() => clearGlobalColor('txt')}
                 className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">
@@ -320,15 +321,14 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </div>
       </Section>
 
-      {/* FIX: Canvas Overlays — sectionId for localStorage */}
       <Section title="Canvas Overlays" icon={<Smartphone size={11} />} defaultOpen={false} sectionId="global-overlays">
         <div className="grid grid-cols-2 gap-2">
           {([{ key: 'showSafeArea' as const, label: 'Safe Area' }, { key: 'showGrid' as const, label: 'Grid Lines' }]).map(({ key, label }) => (
             <button key={key} type="button" onClick={() => toggleViewOption(key)}
               className={clsx('h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95',
                 viewOptions[key]
-                  ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
-                  : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6 hover:border-white/12'
+                  ? 'bg-[#C47C2E]/12 text-[#E8D8A8] ring-1 ring-[#C47C2E]/25'
+                  : 'bg-white/[0.03] text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:border-white/10'
               )}>
               <Eye size={11} className={viewOptions[key] ? 'text-[#D4A245]' : 'text-zinc-600'} />
               {label}
@@ -336,27 +336,26 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           ))}
         </div>
         <p className="text-[9px] text-zinc-700 leading-relaxed">
-          Overlays are canvas-only guides — they don't appear in exported images.
+          Canvas-only guides — not visible in exported images.
         </p>
       </Section>
-      {/* API Keys section has moved to the left sidebar (Source tab) */}
     </div>
   );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
   if (selectedIds.size === 0) return (
     <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3 p-8 text-center">
-      <div className="w-12 h-12 rounded-2xl bg-[#111113] border border-white/6 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
         <Layers size={18} strokeWidth={1.5} className="opacity-40" />
       </div>
       <div>
         <p className="text-[12px] font-medium text-zinc-400">No badge selected</p>
-        <p className="text-[11px] text-zinc-600 mt-1">Click a badge on the canvas to edit its properties</p>
+        <p className="text-[11px] text-zinc-600 mt-1">Click a badge on the canvas to edit</p>
       </div>
     </div>
   );
 
-  // ── Per-badge / selection view ────────────────────────────────────────────
+  // ── Per-badge / selection view ─────────────────────────────────────────────
   const isAgeSelected = selectedIds.has('age');
   const multi = selectedIds.size > 1;
 
@@ -366,6 +365,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const commonShadow = resolveShadow(getCommonValue('shadow', 6) as number | boolean | null ?? 6, 6);
   const commonScale  = (getCommonValue('scale', 1.0) ?? 1.0) as number;
   const commonBorderW = (getCommonValue('borderW', 0) ?? 0) as number;
+  const commonShowText = getCommonValue('showText', true) as boolean | null ?? true;
 
   const commonBg = (() => {
     const v = getCommonValue('bg', config.bg ?? '#000000');
@@ -380,12 +380,13 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   return (
     <div className="pb-24">
       {/* Selection header */}
-      <div className="mx-3 mt-3 mb-1 px-3 py-2.5 bg-[#C47C2E]/8 border border-[#C47C2E]/18 rounded-lg">
-        <p className="text-[11px] text-[#E8D8A8] font-medium">
+      <div className="mx-3 mt-3 mb-1 px-3 py-2.5 rounded-xl"
+        style={{ background: 'rgba(196,124,46,0.06)', border: '1px solid rgba(196,124,46,0.15)' }}>
+        <p className="text-[11px] font-semibold" style={{ color: 'var(--film-pale)' }}>
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
         </p>
-        <p className="text-[9px] text-[#D4A245]/55 mt-0.5">
-          {multi ? 'Changes apply to all selected badges' : 'Per-badge overrides — unset fields inherit global defaults'}
+        <p className="text-[9px] mt-0.5" style={{ color: 'rgba(212,162,69,0.5)' }}>
+          {multi ? 'Changes apply to all selected badges' : 'Per-badge overrides inherit global defaults'}
         </p>
       </div>
 
@@ -396,18 +397,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       </Section>
 
       <Section title="Glass & Shape" sectionId="badge-glass">
-        <SliderRow label="Blur"    value={commonBlur}   min={0} max={20}  unit="px"   onChange={v => updateSelectedBadges({ blur: v })} />
-        <SliderRow label="Radius"  value={commonRadius} min={0} max={30}  unit="px"   onChange={v => updateSelectedBadges({ radius: v })} />
+        <SliderRow label="Blur"    value={commonBlur}   min={0} max={20} unit="px" onChange={v => updateSelectedBadges({ blur: v })} />
+        <SliderRow label="Radius"  value={commonRadius} min={0} max={30} unit="px" onChange={v => updateSelectedBadges({ radius: v })} />
       </Section>
 
       <Section title="Fill & Stroke" sectionId="badge-fill">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-zinc-400 font-medium">Background</span>
+            <span className="text-[10px] text-zinc-500 font-medium">Background</span>
             <button onClick={() => clearSelectedBadgeProp('bg')}
-              className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">
-              Reset
-            </button>
+              className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">Reset</button>
           </div>
           <ColorPicker
             value={commonBg}
@@ -420,11 +419,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-zinc-400 font-medium">Text Color</span>
+            <span className="text-[10px] text-zinc-500 font-medium">Text / Icon Color</span>
             <button onClick={() => clearSelectedBadgeProp('txt')}
-              className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">
-              Reset
-            </button>
+              className="text-[9px] text-zinc-600 hover:text-zinc-400 transition-colors">Reset</button>
           </div>
           <ColorPicker
             value={commonTxt}
@@ -445,12 +442,18 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         )}
       </Section>
 
-      <Section title="Visibility" sectionId="badge-visibility">
+      <Section title="Visibility" icon={<Eye size={11} />} sectionId="badge-visibility">
         {!isAgeSelected && (
           <ToggleRow label="Show Icon"
             checked={getCommonValue('icon', true) as boolean ?? true}
             onChange={v => updateSelectedBadges({ icon: v })} />
         )}
+        <ToggleRow
+          label="Show Rating Text"
+          sub="Hide number, show icon only"
+          checked={commonShowText !== false}
+          onChange={v => updateSelectedBadges({ showText: v })}
+        />
         <SliderRow label="Drop Shadow" value={commonShadow} min={0} max={30}
           onChange={v => updateSelectedBadges({ shadow: v })} />
       </Section>
@@ -462,7 +465,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             selectedIds.forEach(id => delete ni[id]);
             return { ...prev, items: ni };
           })}
-          className="w-full h-8 rounded-lg border border-red-500/15 bg-red-500/5 text-[11px] font-medium text-red-400/80 hover:bg-red-500/10 hover:border-red-500/25 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full h-8 rounded-lg text-[11px] font-medium hover:opacity-90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+          style={{ border: '1px solid rgba(248,113,113,0.15)', background: 'rgba(248,113,113,0.05)', color: 'rgba(248,113,113,0.7)' }}
         >
           <RotateCcw size={11} /> Reset to global defaults
         </button>

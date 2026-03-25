@@ -5,7 +5,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../type
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo  from './DraggableLogo';
 import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
-import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -14,11 +14,13 @@ interface Props {
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  /** When true, hides the built-in zoom controls (fullscreen overlay provides its own) */
+  isFullscreen?: boolean;
 }
 
 const PRELOAD_TIMEOUT_MS = 25_000;
 
-const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onContextMenu }) => {
+const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onContextMenu, isFullscreen = false }) => {
   const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
@@ -134,7 +136,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
   const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
 
-  // Listen to event bus from keyboard shortcuts
   useEffect(() => {
     const onReset = () => resetView();
     const onZoom  = (e: Event) => { const delta = (e as CustomEvent).detail as number; setZoomFlash(zoom + delta); };
@@ -161,8 +162,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         ? prev.logoX : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       return {
         ...prev,
-        logoX: Math.round(Math.max(-(prev.logoW - 1), Math.min(currentX + dx, CANVAS_WIDTH - 1))),
-        logoY: Math.round(Math.max(-(prev.logoH - 1), Math.min(prev.logoY + dy, CANVAS_HEIGHT - 1))),
+        // Clamp logo within canvas bounds
+        logoX: Math.round(Math.max(0, Math.min(currentX + dx, CANVAS_WIDTH - prev.logoW))),
+        logoY: Math.round(Math.max(0, Math.min(prev.logoY + dy, CANVAS_HEIGHT - prev.logoH))),
       };
     });
   }, [setConfig]);
@@ -220,6 +222,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
   };
 
+  // Hide built-in zoom bar when fullscreen (fullscreen overlay provides its own)
+  const showZoomControls = !isFullscreen;
+
   return (
     <div
       ref={containerRef}
@@ -231,57 +236,59 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       onTouchEnd={handleTouchEnd}
       onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
     >
-      {/* Zoom % indicator */}
-      <div
-        className="absolute right-3 flex flex-col items-center gap-1.5 z-30 transition-all duration-300"
-        style={{
-          bottom: mobileSheetMode === 'half' ? '58%' : 'calc(4rem + env(safe-area-inset-bottom, 0px))',
-          opacity: mobileSheetMode === 'full' ? 0 : 1,
-          pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
-        }}
-      >
+      {/* Zoom controls — only shown when not in fullscreen */}
+      {showZoomControls && (
         <div
-          className="rounded-full px-2 py-0.5 text-[10px] font-mono pointer-events-none transition-opacity duration-300"
+          className="absolute right-3 flex flex-col items-center gap-1.5 z-30 transition-all duration-300"
           style={{
-            background: 'rgba(14,13,11,0.9)',
-            border: '1px solid rgba(196,124,46,0.15)',
-            color: 'var(--film-silver)',
-            opacity: isZooming ? 1 : 0,
+            bottom: mobileSheetMode === 'half' ? '58%' : 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+            opacity: mobileSheetMode === 'full' ? 0 : 1,
+            pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
           }}
         >
-          {Math.round(zoom * 100)}%
-        </div>
-        <div
-          className="flex flex-col items-center gap-0.5 rounded-2xl p-1.5 shadow-xl"
-          style={{
-            background: 'rgba(14,13,11,0.9)',
-            border: '1px solid rgba(196,124,46,0.12)',
-          }}
-        >
-          {[
-            { icon: <ZoomIn size={17} />, action: () => setZoomFlash(zoom + 0.15), label: 'Zoom in' },
-            { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15), label: 'Zoom out' },
-          ].map((b, i) => (
-            <button key={i} onClick={b.action} aria-label={b.label}
+          {/* Zoom % badge */}
+          <div
+            className="rounded-full px-2 py-0.5 text-[10px] font-mono pointer-events-none transition-opacity duration-300"
+            style={{
+              background: 'rgba(14,13,11,0.9)',
+              border: '1px solid rgba(196,124,46,0.15)',
+              color: 'var(--film-silver)',
+              opacity: isZooming ? 1 : 0,
+            }}
+          >
+            {Math.round(zoom * 100)}%
+          </div>
+
+          <div
+            className="flex flex-col items-center gap-0.5 rounded-2xl p-1.5 shadow-xl"
+            style={{ background: 'rgba(14,13,11,0.9)', border: '1px solid rgba(196,124,46,0.12)' }}
+          >
+            {[
+              { icon: <ZoomIn size={17} />, action: () => setZoomFlash(zoom + 0.15), label: 'Zoom in' },
+              { icon: <ZoomOut size={17} />, action: () => setZoomFlash(zoom - 0.15), label: 'Zoom out' },
+            ].map((b, i) => (
+              <button key={i} onClick={b.action} aria-label={b.label}
+                className="w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-90"
+                style={{ color: 'rgba(176,168,152,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
+                onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.6)'; (e.currentTarget).style.background = 'transparent'; }}
+              >
+                {b.icon}
+              </button>
+            ))}
+            <div className="w-5 h-px mx-auto my-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            {/* Reset view icon — Maximize2 for consistency with fullscreen overlay */}
+            <button onClick={resetView} title="Fit to screen (⌘1)"
               className="w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-90"
               style={{ color: 'rgba(176,168,152,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
+              onMouseEnter={e => { (e.currentTarget).style.color = 'var(--film-amber)'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
               onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.6)'; (e.currentTarget).style.background = 'transparent'; }}
             >
-              {b.icon}
+              <Maximize2 size={15} />
             </button>
-          ))}
-          <div className="w-5 h-px mx-auto my-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
-          <button onClick={resetView} title="Fit to screen (⌘1)"
-            className="w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-90"
-            style={{ color: 'rgba(176,168,152,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-            onMouseEnter={e => { (e.currentTarget).style.color = 'var(--film-amber)'; (e.currentTarget).style.background = 'rgba(196,124,46,0.1)'; }}
-            onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.6)'; (e.currentTarget).style.background = 'transparent'; }}
-          >
-            <SearchX size={15} />
-          </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Canvas */}
       <div
@@ -295,7 +302,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         className="relative shrink-0 will-change-transform"
         onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
       >
-        {/* Loading */}
         {isImageLoading && posterSvgUrl && (
           <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
             style={{ background: 'rgba(9,9,11,0.6)', backdropFilter: 'blur(4px)' }}>
@@ -306,7 +312,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
 
-        {/* Error / Empty */}
         {(imageError || !posterSvgUrl) && !isImageLoading && (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 pointer-events-none"
             style={{ background: 'rgba(9,9,11,0.7)' }}>
@@ -317,20 +322,17 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
 
-        {/* Grid overlay */}
         {viewOptions?.showGrid && (
           <div className="absolute inset-0 z-30 pointer-events-none">
             <div className="absolute top-0 bottom-0 left-1/3  border-l" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
             <div className="absolute top-0 bottom-0 left-2/3  border-l" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
             <div className="absolute left-0 right-0 top-1/3  border-t" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
             <div className="absolute left-0 right-0 top-2/3  border-t" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
-            {/* Centre guides — amber */}
             <div className="absolute top-0 bottom-0 left-1/2  border-l" style={{ borderColor: 'rgba(196,124,46,0.25)' }} />
             <div className="absolute left-0 right-0 top-1/2  border-t" style={{ borderColor: 'rgba(196,124,46,0.25)' }} />
           </div>
         )}
 
-        {/* Safe area overlay */}
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
             <div className="absolute inset-8 border-2 border-dashed rounded-sm" style={{ borderColor: 'rgba(248,113,113,0.5)' }}>
@@ -342,7 +344,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           </div>
         )}
 
-        {/* Poster image */}
         {posterSvgUrl && (
           <img
             key={posterSvgUrl}
@@ -353,7 +354,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           />
         )}
 
-        {/* Badge overlays */}
         {config.ratings.map((id: RatingType, index: number) => {
           const auto       = calculateAutoPosition(id, index, config.ratings.length, config);
           const itemConfig = config.items[id];
@@ -394,7 +394,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           );
         })}
 
-        {/* Logo overlay */}
         {config.logo && (
           <DraggableLogo
             config={config}

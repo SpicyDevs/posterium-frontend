@@ -11,6 +11,7 @@ import CodeBox from './components/CodeBox';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
   RotateCcw, AlertTriangle, Undo2, Redo2,
@@ -18,7 +19,7 @@ import {
   Command, ZoomIn, ZoomOut, Grid3x3, ShieldCheck,
   Eye, EyeOff, Layers, CheckSquare, MousePointer2Off,
   Download, Image as ImageIcon, Contrast, ArrowUpToLine,
-  ArrowDownToLine, ScanLine, RefreshCw,
+  ArrowDownToLine, ScanLine, RefreshCw, Keyboard, Type,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
@@ -76,18 +77,12 @@ const ResetDialog = memo<{
             <div className="mt-5 flex gap-2">
               <button onClick={onClose}
                 className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none"
-                style={{
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.03)',
-                  color: 'var(--film-silver)',
-                }}
+                style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'var(--film-silver)' }}
                 onMouseEnter={e => { (e.currentTarget).style.borderColor = 'rgba(196,124,46,0.3)'; (e.currentTarget).style.color = 'var(--film-pale)'; }}
                 onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget).style.color = 'var(--film-silver)'; }}
-              >
-                Cancel
-              </button>
+              >Cancel</button>
               <button onClick={() => { onConfirm(); onClose(); }}
-                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 hover:border-red-400/50 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none">
+                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none">
                 Reset All
               </button>
             </div>
@@ -99,13 +94,14 @@ const ResetDialog = memo<{
 ));
 ResetDialog.displayName = 'ResetDialog';
 
-// ── Toolbar button ────────────────────────────────────────────────────────────
+// ── Toolbar button ─────────────────────────────────────────────────────────────
 interface ToolbarBtnProps {
   onClick?: () => void; disabled?: boolean; label: string;
   danger?: boolean; href?: string; active?: boolean; children: React.ReactNode;
+  hideOnMobile?: boolean;
 }
-const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, href, active, children }) => {
-  const base = 'relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]';
+const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, href, active, children, hideOnMobile = false }) => {
+  const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
   const cls = `${base} ${
     disabled
       ? 'text-zinc-700 cursor-not-allowed pointer-events-none'
@@ -135,62 +131,57 @@ const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, hr
 ToolbarBtn.displayName = 'ToolbarBtn';
 
 // ── Fullscreen floating overlay controls ──────────────────────────────────────
-const FullscreenOverlay = memo<{ onExit: () => void; onZoomIn: () => void; onZoomOut: () => void; onResetView: () => void; }>(
-  ({ onExit, onZoomIn, onZoomOut, onResetView }) => (
-    <div
-      className="fixed z-40 flex items-center gap-1 rounded-xl select-none"
-      style={{
-        bottom: 20, right: 20,
-        background: 'rgba(14,13,11,0.88)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(196,124,46,0.18)',
-        padding: '6px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      {[
-        { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
-        { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-        { icon: <RefreshCw size={14} />, label: 'Reset View', action: onResetView },
-      ].map(({ icon, label, action }) => (
-        <button key={label} onClick={action} title={label}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-          style={{ color: 'rgba(176,168,152,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-          onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.12)'; }}
-          onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.7)'; (e.currentTarget).style.background = 'transparent'; }}
-        >
-          {icon}
-        </button>
-      ))}
-      <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
-      <button onClick={onExit} title="Exit Fullscreen (F or Esc)"
+const FullscreenOverlay = memo<{
+  onExit: () => void; onZoomIn: () => void; onZoomOut: () => void; onResetView: () => void;
+}>(({ onExit, onZoomIn, onZoomOut, onResetView }) => (
+  <div
+    className="fixed z-40 flex items-center gap-1 rounded-xl select-none"
+    style={{
+      bottom: 20, right: 20,
+      background: 'rgba(14,13,11,0.88)',
+      backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(196,124,46,0.18)',
+      padding: '6px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+    }}
+  >
+    {[
+      { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
+      { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
+      { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
+    ].map(({ icon, label, action }) => (
+      <button key={label} onClick={action} title={label}
         className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-        style={{ color: 'rgba(196,124,46,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+        style={{ color: 'rgba(176,168,152,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
         onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.12)'; }}
-        onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(196,124,46,0.7)'; (e.currentTarget).style.background = 'transparent'; }}
+        onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(176,168,152,0.7)'; (e.currentTarget).style.background = 'transparent'; }}
       >
-        <Minimize2 size={15} />
+        {icon}
       </button>
+    ))}
+    <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
+    <button onClick={onExit} title="Exit Fullscreen (F or Esc)"
+      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+      style={{ color: 'rgba(196,124,46,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+      onMouseEnter={e => { (e.currentTarget).style.color = '#D4A245'; (e.currentTarget).style.background = 'rgba(196,124,46,0.12)'; }}
+      onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(196,124,46,0.7)'; (e.currentTarget).style.background = 'transparent'; }}
+    >
+      <Minimize2 size={15} />
+    </button>
 
-      {/* Shortcut hint */}
-      <div className="absolute -top-8 right-0 flex items-center gap-2 pointer-events-none">
-        {[['F', 'exit'], ['G', 'grid'], ['Esc', 'exit']].map(([k, l]) => (
-          <div key={k} className="flex items-center gap-1">
-            <kbd style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 3, padding: '1px 5px', fontSize: 8,
-              fontFamily: 'JetBrains Mono, monospace', color: 'rgba(196,124,46,0.5)',
-            }}>{k}</kbd>
-            <span style={{ fontSize: 8, color: 'rgba(140,130,112,0.4)', fontFamily: 'Syne, sans-serif' }}>{l}</span>
-          </div>
-        ))}
-      </div>
+    <div className="absolute -top-8 right-0 flex items-center gap-2 pointer-events-none">
+      {[['F', 'exit'], ['Esc', 'exit']].map(([k, l]) => (
+        <div key={k} className="flex items-center gap-1">
+          <kbd style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '1px 5px', fontSize: 8, fontFamily: 'JetBrains Mono, monospace', color: 'rgba(196,124,46,0.5)' }}>{k}</kbd>
+          <span style={{ fontSize: 8, color: 'rgba(140,130,112,0.4)', fontFamily: 'Syne, sans-serif' }}>{l}</span>
+        </div>
+      ))}
     </div>
-  )
-);
+  </div>
+));
 FullscreenOverlay.displayName = 'FullscreenOverlay';
 
-// ── Studio layout (the real app shell) ────────────────────────────────────────
+// ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
@@ -206,48 +197,38 @@ const StudioLayout: React.FC<{
   } = useEditor();
 
   const [isResetOpen, setIsResetOpen] = useState(false);
-
-  // ── Sidebar visibility ─────────────────────────────────────────────────────
   const [leftVisible,  setLeftVisible]  = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
-
-  // ── Fullscreen ─────────────────────────────────────────────────────────────
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), []);
 
-  // ── Context menu ───────────────────────────────────────────────────────────
-  const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
-    visible: false, x: 0, y: 0, badgeId: null,
-  });
+  const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, badgeId: null });
   const openCtxMenu = useCallback((badgeId: RatingType, e: React.MouseEvent) => {
     e.preventDefault();
     setCtxMenu({ visible: true, x: e.clientX, y: e.clientY, badgeId });
   }, []);
   const closeCtxMenu = useCallback(() => setCtxMenu(s => ({ ...s, visible: false })), []);
 
-  // ── Command palette ────────────────────────────────────────────────────────
   const [paletteOpen, setPaletteOpen] = useState(false);
 
-  // ── Resize refs ────────────────────────────────────────────────────────────
   const selectedIdsRef   = useRef(selectedIds);
   const configRatingsRef = useRef(config.ratings);
   useEffect(() => { selectedIdsRef.current = selectedIds; });
   useEffect(() => { configRatingsRef.current = config.ratings; });
 
-  // ── Zoom/pan event bus ─────────────────────────────────────────────────────
   const dispatchZoom = useCallback((delta: number) =>
     window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })), []);
   const dispatchResetView = useCallback(() =>
     window.dispatchEvent(new CustomEvent('reset-canvas-view')), []);
 
-  // ── Layer manipulation helpers ─────────────────────────────────────────────
   const moveLayer = useCallback((id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
     setConfig(prev => {
       const arr = [...prev.ratings];
       const idx = arr.indexOf(id);
       if (idx === -1) return prev;
       arr.splice(idx, 1);
-      if (direction === 'front')   arr.push(id);
+      if (direction === 'front')        arr.push(id);
       else if (direction === 'forward') arr.splice(Math.min(idx + 1, arr.length), 0, id);
       else if (direction === 'back')    arr.splice(Math.max(idx - 1, 0), 0, id);
       else                              arr.unshift(id);
@@ -282,17 +263,33 @@ const StudioLayout: React.FC<{
     clearSelection();
   }, [setConfig, clearSelection]);
 
-  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
       const mod = e.ctrlKey || e.metaKey;
 
-      // Command palette (works even in inputs for Ctrl+K)
+      // ESC — exit fullscreen or deselect (highest priority, runs even in inputs)
+      if (e.key === 'Escape') {
+        if (shortcutsOpen) { setShortcutsOpen(false); return; }
+        if (paletteOpen)   { setPaletteOpen(false); return; }
+        if (isFullscreen)  { setIsFullscreen(false); return; }
+        if (selectedIds.size > 0) { clearSelection(); return; }
+        return;
+      }
+
+      // Command palette (runs even in inputs)
       if (mod && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'p')) {
         e.preventDefault();
         setPaletteOpen(v => !v);
+        return;
+      }
+
+      // Keyboard shortcuts modal (Ctrl+/ or Ctrl+?)
+      if (mod && (e.key === '/' || e.key === '?')) {
+        e.preventDefault();
+        setShortcutsOpen(v => !v);
         return;
       }
 
@@ -331,7 +328,6 @@ const StudioLayout: React.FC<{
         if (mod && e.key === ']') { e.preventDefault(); sel.forEach(id => moveLayer(id as RatingType, 'forward')); return; }
         if (mod && e.key === '[') { e.preventDefault(); sel.forEach(id => moveLayer(id as RatingType, 'back')); return; }
 
-        // ── Hide selected (H) ──
         if (e.key.toLowerCase() === 'h' && !mod) {
           e.preventDefault();
           sel.forEach(id => hideBadge(id as RatingType));
@@ -375,15 +371,23 @@ const StudioLayout: React.FC<{
         setBatchSelection([next]);
         return;
       }
+
+      // ── Canvas properties shortcuts ──
+      if (mod && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setConfig(p => ({ ...p, posterBlur: p.posterBlur > 0 ? 0 : 8 }));
+        return;
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
     undo, redo, setConfig, clearSelection, setBatchSelection,
     moveLayer, hideBadge, toggleViewOption, dispatchZoom, dispatchResetView,
+    isFullscreen, paletteOpen, shortcutsOpen, selectedIds,
   ]);
 
-  // ── Panel widths ───────────────────────────────────────────────────────────
+  // ── Panel widths ──────────────────────────────────────────────────────────
   const [leftW,  setLeftW]  = useState(272);
   const [rightW, setRightW] = useState(308);
 
@@ -405,7 +409,7 @@ const StudioLayout: React.FC<{
     document.body.style.cursor = 'col-resize';
   }, [rightW]);
 
-  // ── Mobile sheet ───────────────────────────────────────────────────────────
+  // ── Mobile sheet ──────────────────────────────────────────────────────────
   const sheetRef        = useRef<HTMLDivElement>(null);
   const dragStartY      = useRef<number | null>(null);
   const dragDelta       = useRef(0);
@@ -455,49 +459,76 @@ const StudioLayout: React.FC<{
     setConfig(prev => ({ ...prev, extension: ext }));
   }, [setConfig]);
 
-  // ── Command palette commands ───────────────────────────────────────────────
+  // ── Command palette commands ──────────────────────────────────────────────
   const paletteCommands: PaletteCommand[] = [
     // View & Canvas
-    { id: 'zoom-fit',      label: 'Zoom to Fit',        category: 'View & Canvas', icon: <RefreshCw size={13} />, shortcut: '⌘1', keywords: ['reset', 'fit', 'view'], action: dispatchResetView },
-    { id: 'zoom-in',       label: 'Zoom In',             category: 'View & Canvas', icon: <ZoomIn size={13} />,    shortcut: '⌘+', action: () => dispatchZoom(0.25) },
-    { id: 'zoom-out',      label: 'Zoom Out',            category: 'View & Canvas', icon: <ZoomOut size={13} />,   shortcut: '⌘-', action: () => dispatchZoom(-0.25) },
-    { id: 'fullscreen',    label: isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Canvas', category: 'View & Canvas', icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />, shortcut: 'F', action: toggleFullscreen },
-    { id: 'grid',          label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid`, category: 'View & Canvas', icon: <Grid3x3 size={13} />, shortcut: 'G', action: () => toggleViewOption('showGrid') },
-    { id: 'safe-area',     label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`, category: 'View & Canvas', icon: <ShieldCheck size={13} />, shortcut: "'", action: () => toggleViewOption('showSafeArea') },
-    { id: 'sidebar-left',  label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`, category: 'View & Canvas', icon: <PanelLeft size={13} />, shortcut: '[', action: () => setLeftVisible(v => !v) },
-    { id: 'sidebar-right', label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`, category: 'View & Canvas', icon: <PanelRight size={13} />, shortcut: ']', action: () => setRightVisible(v => !v) },
+    { id: 'zoom-fit',      label: 'Zoom to Fit',                    category: 'View & Canvas', icon: <Maximize2 size={13} />,      shortcut: '⌘1',  keywords: ['reset','fit','view'], action: dispatchResetView },
+    { id: 'zoom-in',       label: 'Zoom In',                         category: 'View & Canvas', icon: <ZoomIn size={13} />,         shortcut: '⌘+',  action: () => dispatchZoom(0.25) },
+    { id: 'zoom-out',      label: 'Zoom Out',                        category: 'View & Canvas', icon: <ZoomOut size={13} />,        shortcut: '⌘-',  action: () => dispatchZoom(-0.25) },
+    { id: 'fullscreen',    label: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen Canvas', category: 'View & Canvas', icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />, shortcut: 'F', action: toggleFullscreen },
+    { id: 'grid',          label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid Overlay`,    category: 'View & Canvas', icon: <Grid3x3 size={13} />,        shortcut: 'G',   keywords: ['grid','lines'],          action: () => toggleViewOption('showGrid') },
+    { id: 'safe-area',     label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`,   category: 'View & Canvas', icon: <ShieldCheck size={13} />,    shortcut: "'",   keywords: ['safe','area','zone'],     action: () => toggleViewOption('showSafeArea') },
+    { id: 'sidebar-left',  label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`,             category: 'View & Canvas', icon: <PanelLeft size={13} />,      shortcut: '[',   keywords: ['layers','source','panel'], action: () => setLeftVisible(v => !v) },
+    { id: 'sidebar-right', label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`,           category: 'View & Canvas', icon: <PanelRight size={13} />,     shortcut: ']',   keywords: ['inspector','panel'],      action: () => setRightVisible(v => !v) },
+    { id: 'shortcuts-help',label: 'Show Keyboard Shortcuts',                                   category: 'View & Canvas', icon: <Keyboard size={13} />,       shortcut: '⌘/',  keywords: ['help','keys','hotkeys'],  action: () => setShortcutsOpen(true) },
 
     // Layers & Selection
-    { id: 'select-all',   label: 'Select All Badges',   category: 'Layers & Selection', icon: <CheckSquare size={13} />, shortcut: '⌘A', action: () => setBatchSelection(config.ratings) },
-    { id: 'deselect-all', label: 'Deselect All',         category: 'Layers & Selection', icon: <MousePointer2Off size={13} />, shortcut: '⌘D', action: clearSelection },
-    { id: 'show-all',     label: 'Show All Badges',       category: 'Layers & Selection', icon: <Eye size={13} />, action: showAllBadges },
-    { id: 'hide-sel',     label: 'Hide Selected Badges',  category: 'Layers & Selection', icon: <EyeOff size={13} />, shortcut: 'H',
-      action: () => { Array.from(selectedIds).forEach(id => hideBadge(id as RatingType)); } },
-    { id: 'layer-front',  label: 'Bring to Front',        category: 'Layers & Selection', icon: <ArrowUpToLine size={13} />, shortcut: '⌘⇧]',
-      action: () => { Array.from(selectedIds).forEach(id => moveLayer(id as RatingType, 'front')); } },
-    { id: 'layer-back',   label: 'Send to Back',           category: 'Layers & Selection', icon: <ArrowDownToLine size={13} />, shortcut: '⌘⇧[',
-      action: () => { Array.from(selectedIds).forEach(id => moveLayer(id as RatingType, 'toback')); } },
+    { id: 'select-all',    label: 'Select All Badges',         category: 'Layers & Selection', icon: <CheckSquare size={13} />,   shortcut: '⌘A',  action: () => setBatchSelection(config.ratings) },
+    { id: 'deselect-all',  label: 'Deselect All',              category: 'Layers & Selection', icon: <MousePointer2Off size={13} />, shortcut: '⌘D', action: clearSelection },
+    { id: 'show-all',      label: 'Show All Badges',           category: 'Layers & Selection', icon: <Eye size={13} />,           keywords: ['reveal','unhide'],    action: showAllBadges },
+    { id: 'hide-sel',      label: 'Hide Selected Badges',      category: 'Layers & Selection', icon: <EyeOff size={13} />,        shortcut: 'H',   keywords: ['hide','selected'],    action: () => Array.from(selectedIds).forEach(id => hideBadge(id as RatingType)) },
+    { id: 'layer-front',   label: 'Bring to Front',            category: 'Layers & Selection', icon: <ArrowUpToLine size={13} />, shortcut: '⌘⇧]', action: () => Array.from(selectedIds).forEach(id => moveLayer(id as RatingType, 'front')) },
+    { id: 'layer-back',    label: 'Send to Back',              category: 'Layers & Selection', icon: <ArrowDownToLine size={13} />, shortcut: '⌘⇧[', action: () => Array.from(selectedIds).forEach(id => moveLayer(id as RatingType, 'toback')) },
+    { id: 'delete-sel',    label: 'Delete Selected Badges',    category: 'Layers & Selection', icon: <Layers size={13} />,        shortcut: 'Del', keywords: ['remove','delete'],
+      action: () => { const rm = new Set(selectedIds); setConfig(p => ({ ...p, ratings: p.ratings.filter(r => !rm.has(r)) })); clearSelection(); }
+    },
+
+    // Badges
+    { id: 'add-imdb',        label: 'Add IMDb Badge',         category: 'Badges', icon: <Layers size={13} />, keywords: ['add','badge','imdb'],
+      action: () => setConfig(p => p.ratings.includes('imdb') ? p : { ...p, ratings: ['imdb', ...p.ratings] }) },
+    { id: 'add-rt',          label: 'Add Rotten Tomatoes',    category: 'Badges', icon: <Layers size={13} />, keywords: ['add','badge','rt','rotten','tomatoes'],
+      action: () => setConfig(p => p.ratings.includes('rt') ? p : { ...p, ratings: ['rt', ...p.ratings] }) },
+    { id: 'add-meta',        label: 'Add Metacritic',         category: 'Badges', icon: <Layers size={13} />, keywords: ['add','badge','meta','metacritic'],
+      action: () => setConfig(p => p.ratings.includes('meta') ? p : { ...p, ratings: ['meta', ...p.ratings] }) },
+    { id: 'add-tmdb',        label: 'Add TMDB Badge',         category: 'Badges', icon: <Layers size={13} />, keywords: ['add','badge','tmdb'],
+      action: () => setConfig(p => p.ratings.includes('tmdb') ? p : { ...p, ratings: ['tmdb', ...p.ratings] }) },
+    { id: 'add-age',         label: 'Add Age Rating Badge',   category: 'Badges', icon: <Layers size={13} />, keywords: ['add','age','rating','pg','certificate'],
+      action: () => setConfig(p => p.ratings.includes('age') ? p : { ...p, ratings: ['age', ...p.ratings] }) },
+    { id: 'add-runtime',     label: 'Add Runtime Badge',      category: 'Badges', icon: <Layers size={13} />, keywords: ['add','runtime','duration','time'],
+      action: () => setConfig(p => p.ratings.includes('runtime') ? p : { ...p, ratings: ['runtime', ...p.ratings] }) },
+    { id: 'clear-all-badges',label: 'Remove All Badges',      category: 'Badges', icon: <EyeOff size={13} />, keywords: ['clear','remove','all','badges'],
+      action: () => { setConfig(p => ({ ...p, ratings: [] })); clearSelection(); } },
+    { id: 'toggle-icons',    label: `${config.icon !== false ? 'Hide' : 'Show'} All Badge Icons`, category: 'Badges', icon: <Eye size={13} />, keywords: ['icons','show','hide'],
+      action: () => setConfig(p => ({ ...p, icon: !(p.icon !== false) })) },
+    { id: 'toggle-text',     label: `${config.showText !== false ? 'Hide' : 'Show'} Rating Text`, category: 'Badges', icon: <Type size={13} />, keywords: ['text','numbers','rating','show','hide'],
+      action: () => setConfig(p => ({ ...p, showText: !(p.showText !== false) })) },
 
     // Canvas Properties
-    { id: 'grayscale',   label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`, category: 'Canvas Properties', icon: <Contrast size={13} />,
-      action: () => setConfig(p => ({ ...p, grayscale: !p.grayscale })) },
-    { id: 'blur-0',      label: 'Remove Poster Blur',    category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur', 'clear'],
-      action: () => setConfig(p => ({ ...p, posterBlur: 0 })) },
-    { id: 'blur-8',      label: 'Poster Blur: 8px',      category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur'],
-      action: () => setConfig(p => ({ ...p, posterBlur: 8 })) },
+    { id: 'grayscale',     label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`,       category: 'Canvas Properties', icon: <Contrast size={13} />,   keywords: ['grayscale','bw','black','white'],  action: () => setConfig(p => ({ ...p, grayscale: !p.grayscale })) },
+    { id: 'blur-0',        label: 'Remove Poster Blur',          category: 'Canvas Properties', icon: <ScanLine size={13} />,   keywords: ['blur','clear','sharp'],  action: () => setConfig(p => ({ ...p, posterBlur: 0 })) },
+    { id: 'blur-4',        label: 'Poster Blur: Light (4px)',    category: 'Canvas Properties', icon: <ScanLine size={13} />,   keywords: ['blur','light'],          action: () => setConfig(p => ({ ...p, posterBlur: 4 })) },
+    { id: 'blur-8',        label: 'Poster Blur: Medium (8px)',   category: 'Canvas Properties', icon: <ScanLine size={13} />,   keywords: ['blur','medium'],         action: () => setConfig(p => ({ ...p, posterBlur: 8 })) },
+    { id: 'blur-16',       label: 'Poster Blur: Heavy (16px)',   category: 'Canvas Properties', icon: <ScanLine size={13} />,   keywords: ['blur','heavy','strong'], action: () => setConfig(p => ({ ...p, posterBlur: 16 })) },
+    { id: 'textless-on',   label: 'Enable Textless Poster',      category: 'Canvas Properties', icon: <ImageIcon size={13} />,  keywords: ['textless','clean'],      action: () => setConfig(p => ({ ...p, textless: true })) },
+    { id: 'textless-off',  label: 'Disable Textless Poster',     category: 'Canvas Properties', icon: <ImageIcon size={13} />,  keywords: ['textless','text'],       action: () => setConfig(p => ({ ...p, textless: false })) },
+    { id: 'source-tmdb',   label: 'Switch Poster Source: TMDB',  category: 'Canvas Properties', icon: <ImageIcon size={13} />,  keywords: ['source','tmdb','poster'], action: () => setConfig(p => ({ ...p, source: 'tmdb' })) },
+    { id: 'source-fanart', label: 'Switch Poster Source: Fanart',category: 'Canvas Properties', icon: <ImageIcon size={13} />,  keywords: ['source','fanart','poster'],action: () => setConfig(p => ({ ...p, source: 'fanart' })) },
+    { id: 'radius-0',      label: 'Remove Badge Corner Radius',  category: 'Canvas Properties', icon: <Grid3x3 size={13} />,    keywords: ['radius','round','square'],action: () => setConfig(p => ({ ...p, radius: 0 })) },
+    { id: 'radius-12',     label: 'Set Badge Radius: Rounded',   category: 'Canvas Properties', icon: <Grid3x3 size={13} />,    keywords: ['radius','round'],         action: () => setConfig(p => ({ ...p, radius: 12 })) },
+    { id: 'radius-max',    label: 'Set Badge Radius: Pill',      category: 'Canvas Properties', icon: <Grid3x3 size={13} />,    keywords: ['radius','pill','circle'], action: () => setConfig(p => ({ ...p, radius: 30 })) },
 
     // Export
-    { id: 'export-png',  label: 'Export as PNG',  category: 'Export', icon: <ImageIcon size={13} />, action: () => setConfig(p => ({ ...p, extension: 'png'  })) },
-    { id: 'export-jpg',  label: 'Export as JPG',  category: 'Export', icon: <ImageIcon size={13} />, action: () => setConfig(p => ({ ...p, extension: 'jpg'  })) },
-    { id: 'export-webp', label: 'Export as WebP', category: 'Export', icon: <ImageIcon size={13} />, action: () => setConfig(p => ({ ...p, extension: 'webp' })) },
-    { id: 'export-svg',  label: 'Export as SVG',  category: 'Export', icon: <ImageIcon size={13} />, action: () => setConfig(p => ({ ...p, extension: 'svg'  })) },
+    { id: 'export-svg',    label: 'Export as SVG',  category: 'Export', icon: <Download size={13} />,  action: () => setConfig(p => ({ ...p, extension: 'svg'  })) },
+    { id: 'export-png',    label: 'Export as PNG',  category: 'Export', icon: <Download size={13} />,  action: () => setConfig(p => ({ ...p, extension: 'png'  })) },
+    { id: 'export-jpg',    label: 'Export as JPG',  category: 'Export', icon: <Download size={13} />,  action: () => setConfig(p => ({ ...p, extension: 'jpg'  })) },
+    { id: 'export-webp',   label: 'Export as WebP', category: 'Export', icon: <Download size={13} />,  action: () => setConfig(p => ({ ...p, extension: 'webp' })) },
 
     // File
-    { id: 'reset', label: 'Reset Configuration', category: 'File', icon: <RotateCcw size={13} />, keywords: ['clear', 'default'],
-      action: () => setIsResetOpen(true) },
+    { id: 'reset',         label: 'Reset All Settings',     category: 'File', icon: <RotateCcw size={13} />, keywords: ['reset','clear','default'],  action: () => setIsResetOpen(true) },
+    { id: 'undo',          label: 'Undo',                   category: 'File', icon: <Undo2 size={13} />,     shortcut: '⌘Z',    action: undo },
+    { id: 'redo',          label: 'Redo',                   category: 'File', icon: <Redo2 size={13} />,     shortcut: '⌘Y',    action: redo },
   ];
 
-  // ── Selected badge context menu flag ──────────────────────────────────────
   const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
   const ctxBadgeVisible  = ctxMenu.badgeId ? config.ratings.includes(ctxMenu.badgeId) : false;
 
@@ -506,120 +537,107 @@ const StudioLayout: React.FC<{
       <a href="#main-canvas"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium select-none"
         style={{ background: 'var(--film-amber)', color: '#070706' }}
-      >
-        Skip to canvas
-      </a>
+      >Skip to canvas</a>
 
-      {/* Global unselectable style for the builder UI */}
       <style>{`
         .builder-ui, .builder-ui * { user-select: none; -webkit-user-select: none; }
         .builder-ui input, .builder-ui textarea, .builder-ui [contenteditable] {
           user-select: text; -webkit-user-select: text;
         }
         .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
-        .sidebar-hidden { width: 0 !important; overflow: hidden; opacity: 0; pointer-events: none; }
-        @keyframes zoom-flash { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
       `}</style>
 
       <div className="builder-ui flex flex-col overflow-hidden"
         style={{ height: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)', fontFamily: 'DM Sans, sans-serif' }}>
-        <h1 className="sr-only">Posterium Poster Builder — Drag-and-Drop Movie Poster Editor</h1>
+        <h1 className="sr-only">Posterium Poster Builder</h1>
 
         <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
+        <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-        {/* Context menu */}
         <ContextMenu
-          state={ctxMenu}
-          onClose={closeCtxMenu}
-          isSelected={ctxBadgeSelected}
-          isVisible={ctxBadgeVisible}
+          state={ctxMenu} onClose={closeCtxMenu}
+          isSelected={ctxBadgeSelected} isVisible={ctxBadgeVisible}
           onBringToFront={id => moveLayer(id, 'front')}
           onBringForward={id => moveLayer(id, 'forward')}
           onSendBackward={id => moveLayer(id, 'back')}
           onSendToBack={id => moveLayer(id, 'toback')}
-          onHide={hideBadge}
-          onShowAll={showAllBadges}
+          onHide={hideBadge} onShowAll={showAllBadges}
           onSelect={id => handleSelection(id, false)}
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
-          onResetBadge={resetBadge}
-          onDelete={deleteBadge}
+          onResetBadge={resetBadge} onDelete={deleteBadge}
         />
 
-        {/* Command palette */}
-        <CommandPalette
-          isOpen={paletteOpen}
-          onClose={() => setPaletteOpen(false)}
-          commands={paletteCommands}
-        />
+        <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteCommands} />
 
         {/* ── HEADER (hidden in fullscreen) ── */}
         {!isFullscreen && (
-          <header className="h-14 shrink-0 flex items-center gap-2 px-3 z-30 relative"
-            style={{
-              background: 'var(--film-dark)',
-              borderBottom: '1px solid rgba(196,124,46,0.1)',
-            }}
-          >
-            {/* Film sprocket strip at header bottom edge */}
+          <header className="h-12 shrink-0 flex items-center gap-2 px-3 z-30 relative"
+            style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(196,124,46,0.1)' }}>
             <div className="absolute bottom-0 left-0 right-0 h-px"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.2), transparent)' }} />
 
             {/* Logo */}
             <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-              <span className="poster-font select-none" style={{
-                fontSize: 20, color: 'var(--film-cream)',
-                letterSpacing: '0.12em', lineHeight: 1,
-                textShadow: '0 0 32px rgba(196,124,46,0.18)',
-              }}>
+              <span className="poster-font select-none hidden sm:block"
+                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1 }}>
                 POSTERIUM
+              </span>
+              {/* Mobile: just icon */}
+              <span className="poster-font select-none sm:hidden"
+                style={{ fontSize: 14, color: 'var(--film-amber)', letterSpacing: '0.12em', lineHeight: 1 }}>
+                P
               </span>
             </a>
 
-            <div className="w-px h-5 mx-1 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-4 mx-1 shrink-0 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-            {/* URL bar */}
+            {/* URL bar — takes available space */}
             <div className="flex-1 min-w-0">
               <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} onExtensionChange={handleExtensionChange} />
             </div>
 
-            <div className="w-px h-5 mx-1 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-4 mx-0.5 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-            {/* Toolbar actions */}
+            {/* Toolbar — desktop shows all, mobile shows only essential */}
             <div className="flex items-center gap-0.5 shrink-0">
-              {/* Command palette */}
+              {/* Command palette — always visible */}
               <ToolbarBtn onClick={() => setPaletteOpen(v => !v)} label="Command Palette (⌘K)" active={paletteOpen}>
                 <Command size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              {/* Keyboard shortcuts — always visible */}
+              <ToolbarBtn onClick={() => setShortcutsOpen(v => !v)} label="Keyboard Shortcuts (⌘/)" active={shortcutsOpen}>
+                <Keyboard size={14} />
+              </ToolbarBtn>
 
-              {/* Sidebar toggles */}
-              <ToolbarBtn onClick={() => setLeftVisible(v => !v)} label={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`} active={!leftVisible}>
+              <div className="w-px h-4 mx-0.5 hidden lg:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+
+              {/* Sidebar toggles — desktop only */}
+              <ToolbarBtn onClick={() => setLeftVisible(v => !v)} label={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`} active={!leftVisible} hideOnMobile>
                 <PanelLeft size={14} />
               </ToolbarBtn>
-              <ToolbarBtn onClick={() => setRightVisible(v => !v)} label={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`} active={!rightVisible}>
+              <ToolbarBtn onClick={() => setRightVisible(v => !v)} label={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`} active={!rightVisible} hideOnMobile>
                 <PanelRight size={14} />
               </ToolbarBtn>
 
-              {/* Fullscreen */}
-              <ToolbarBtn onClick={toggleFullscreen} label="Fullscreen (F)" active={isFullscreen}>
+              {/* Fullscreen — desktop only */}
+              <ToolbarBtn onClick={toggleFullscreen} label="Fullscreen (F)" active={isFullscreen} hideOnMobile>
                 <Maximize2 size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
               {/* Undo / Redo */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)"><Undo2 size={15} /></ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)"><Redo2 size={15} /></ToolbarBtn>
+              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)"><Undo2 size={14} /></ToolbarBtn>
+              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)"><Redo2 size={14} /></ToolbarBtn>
 
-              <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-0.5 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <ToolbarBtn onClick={() => setIsResetOpen(true)} danger label="Reset to defaults" hideOnMobile><RotateCcw size={14} /></ToolbarBtn>
 
-              <ToolbarBtn onClick={() => setIsResetOpen(true)} danger label="Reset to defaults"><RotateCcw size={14} /></ToolbarBtn>
-
-              <ToolbarBtn href="https://github.com/xdaayush/freeposterapi" label="GitHub">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+              <ToolbarBtn href="https://github.com/xdaayush/freeposterapi" label="GitHub" hideOnMobile>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                   <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
                 </svg>
               </ToolbarBtn>
@@ -644,7 +662,7 @@ const StudioLayout: React.FC<{
             >
               <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
               <div onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50" title="Resize panel">
+                className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50">
                 <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
               </div>
             </aside>
@@ -656,8 +674,7 @@ const StudioLayout: React.FC<{
             style={{ background: '#111113' }}
             onClick={e => { if (e.target === e.currentTarget) clearSelection(); }}
           >
-            {/* Dot grid */}
-            <div aria-hidden="true" className="absolute inset-0 pointer-events-none opacity-100"
+            <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
               style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
             <PreviewCanvas
@@ -666,9 +683,10 @@ const StudioLayout: React.FC<{
               selectedIds={selectedIds}
               onSelect={handleSelection}
               onContextMenu={openCtxMenu}
+              isFullscreen={isFullscreen}
             />
 
-            {/* Film corner accents on canvas area */}
+            {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map(c => (
               <div key={c} aria-hidden="true" style={{
                 position: 'absolute',
@@ -699,7 +717,7 @@ const StudioLayout: React.FC<{
               }}
             >
               <div onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50" title="Resize panel">
+                className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50">
                 <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
               </div>
               <Inspector config={config} setConfig={setConfig} />
@@ -719,7 +737,7 @@ const StudioLayout: React.FC<{
             height: HEIGHTS[mobileSheetMode],
             transform: `translateY(${SNAPS[mobileSheetMode]})`,
             background: 'var(--film-dark)',
-            border: '1px solid rgba(196,124,46,0.1)',
+            border: '1px solid rgba(196,124,46,0.12)',
             borderBottom: 'none',
             pointerEvents: mobileSheetMode === 'hidden' ? 'none' : 'auto',
             willChange: 'transform, height',
@@ -793,7 +811,7 @@ const BuilderApp: React.FC = () => {
     try { setBaseUrl(new URL(url).origin); } catch { /* keep */ }
   }, [setConfig]);
 
-const handleReset = useCallback(() => {
+  const handleReset = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
     localStorage.removeItem(STORAGE_KEY);
     document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
