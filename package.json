@@ -9,7 +9,9 @@
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -20,18 +22,19 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "astro": "^5.0.0",
-    "astro-compress": "^2.4.0",
-    "@astrojs/sitemap": "^3.7.1",
-    "@vite-pwa/astro": "^1.2.0",
     "@astrojs/react": "^4.0.0",
+    "@astrojs/sitemap": "^3.7.1",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vite-pwa/astro": "^1.2.0",
+    "astro": "^5.0.0",
+    "astro-compress": "^2.4.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.4.35",
     "prettier": "^3.5.3",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^4.1.1"
   }
 }

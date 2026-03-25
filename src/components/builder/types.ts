@@ -14,6 +14,20 @@ export interface BadgeConfig {
   scale?: number; borderW?: number; borderC?: string;
   /** Whether to show the rating text (number/value). Defaults true. */
   showText?: boolean;
+  /** Normalize score to /10 (ignored for age/runtime). */
+  normalize?: boolean;
+  /** Append denominator after the value, e.g. /10. When normalize is set defaults to 10. */
+  outOf?: number;
+  /** Icon variant index (>1 selects alternate; falls back to type 1 if variant missing). */
+  iconType?: number;
+  /** Position of the label relative to the value: above | below | left | right. */
+  labelPos?: 'above' | 'below' | 'left' | 'right';
+  /** Custom label string override. */
+  labelText?: string;
+  /** Label font size (6–32, default 11). */
+  labelSize?: number;
+  /** Label color override. */
+  labelColor?: string;
 }
 
 export interface ApiKeys { tmdb?: string; fanart?: string; omdb?: string; mdblist?: string; }
@@ -40,6 +54,22 @@ export interface PosterConfig {
   logoY: number; logoW: number; logoH: number; logoOpacity: number; logoShadow: number;
   fallbackEnabled: boolean;
   fallbackPool: RatingType[];
+  /** Normalize all provider scores to /10 (ignored for age/runtime). */
+  normalize?: boolean;
+  /** Append denominator after every badge value. When normalize is set, defaults to 10. */
+  outOf?: number;
+  /** Global icon variant index (>1 selects alternate; falls back to 1 if missing). */
+  iconType?: number;
+  /** Global label position relative to value: above | below | left | right. */
+  labelPos?: 'above' | 'below' | 'left' | 'right';
+  /** Global custom label string override. */
+  labelText?: string;
+  /** Global label font size (6–32, default 11). */
+  labelSize?: number;
+  /** Global label color override. */
+  labelColor?: string;
+  /** v3 display preset: 'b' = badge (default), 'm' = minimal. */
+  uiPreset?: 'b' | 'm';
 }
 
 export const DEFAULT_CONFIG: PosterConfig = {
