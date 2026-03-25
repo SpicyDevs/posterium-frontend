@@ -1,6 +1,15 @@
 /* Tailwind v4 - single import replaces the old @tailwind directives */
 @import 'tailwindcss';
 
+@theme {
+  /* Migrate from tailwind.config.js */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-glass-100: rgba(255, 255, 255, 0.1);
+  --color-glass-200: rgba(255, 255, 255, 0.2);
+  --color-glass-300: rgba(255, 255, 255, 0.3);
+--color-glass-900: rgba(0, 0, 0, 0.8);
+}
 /* ─── Global base fixes ─────────────────────────────────────────────────────── */
 @layer base {
   *,

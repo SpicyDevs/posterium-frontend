@@ -31,15 +31,16 @@ const SelectBox = memo(({ value, onChange, options }: { value: string; onChange:
         <span className="truncate">{options.find(o => o.id === value)?.label ?? value}</span>
         <ChevronDown size={11} className="text-zinc-500 shrink-0" />
       </ListboxButton>
-      <Transition as={Fragment} leave="transition ease-in duration-75" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-        <ListboxOptions className="absolute z-50 mt-1 w-full py-1 rounded-xl bg-[#1c1c1f] border border-white/10 shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none">
-          {options.map(opt => (
-            <ListboxOption key={opt.id} value={opt.id} className={({ active, selected }) => clsx("flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors", active && "bg-[#C47C2E]/15 text-[#F0E6CC]", !active && selected && "text-[#E8D8A8]", !active && !selected && "text-zinc-300")}>
-              {({ selected }) => (<><span className="flex-1 truncate">{opt.label}</span>{selected && <Check size={11} className="text-[#D4A245] shrink-0" />}</>)}
-            </ListboxOption>
-          ))}
-        </ListboxOptions>
-      </Transition>
+      <ListboxOptions 
+  transition 
+  className="absolute z-50 mt-1 w-full py-1 rounded-xl bg-[#1c1c1f] border border-white/10 shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
+>
+  {options.map(opt => (
+    <ListboxOption key={opt.id} value={opt.id} className={({ active, selected }) => clsx("flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors", active && "bg-[#C47C2E]/15 text-[#F0E6CC]", !active && selected && "text-[#E8D8A8]", !active && !selected && "text-zinc-300")}>
+      {({ selected }) => (<><span className="flex-1 truncate">{opt.label}</span>{selected && <Check size={11} className="text-[#D4A245] shrink-0" />}</>)}
+    </ListboxOption>
+  ))}
+</ListboxOptions>
     </div>
   </Listbox>
 ));
@@ -516,22 +517,24 @@ useEffect(() => {
                   <Combobox.Input className="flex-1 bg-transparent border-none text-[11px] text-zinc-200 placeholder-zinc-600 px-2 focus:outline-none focus:ring-0 h-full" onChange={e => setSearchQuery(e.target.value)} displayValue={() => ""} placeholder="Movie or TV show…" />
                 </div>
                 {results.length > 0 && (
-                  <Transition as={Fragment} leave="transition ease-in duration-75" leaveFrom="opacity-100" leaveTo="opacity-0" afterLeave={() => { setSearchQuery(""); setResults([]); }}>
-                    <Combobox.Options className="absolute top-full mt-1 z-50 w-full bg-[#1c1c1f] border border-white/10 rounded-xl shadow-2xl shadow-black/50 max-h-64 overflow-y-auto custom-scrollbar py-1.5 focus:outline-none">
-                      {results.map(item => (
-                        <Combobox.Option key={item.id} value={item} className={({ active }) => clsx("flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors", active && "bg-[#C47C2E]/12")}>
-                          <img src={item.poster_path} alt="" className="w-8 h-11 object-cover rounded-md bg-zinc-800 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-medium text-zinc-200 truncate">{item.title || item.name}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[9px] text-zinc-500">{(item.release_date || item.first_air_date)?.split("-")[0]}</span>
-                              <span className={clsx("text-[9px] px-1 py-px rounded font-semibold uppercase", item.media_type === "tv" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400")}>{item.media_type}</span>
-                            </div>
-                          </div>
-                        </Combobox.Option>
-                      ))}
-                    </Combobox.Options>
-                  </Transition>
+                  <Combobox.Options 
+  transition
+  className="absolute top-full mt-1 z-50 w-full bg-[#1c1c1f] border border-white/10 rounded-xl shadow-2xl shadow-black/50 max-h-64 overflow-y-auto custom-scrollbar py-1.5 focus:outline-none transition duration-75 ease-in data-[closed]:opacity-0"
+  afterLeave={() => { setSearchQuery(""); setResults([]); }}
+>
+  {results.map(item => (
+    <Combobox.Option key={item.id} value={item} className={({ active }) => clsx("flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors", active && "bg-[#C47C2E]/12")}>
+      <img src={item.poster_path} alt="" className="w-8 h-11 object-cover rounded-md bg-zinc-800 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-medium text-zinc-200 truncate">{item.title || item.name}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-[9px] text-zinc-500">{(item.release_date || item.first_air_date)?.split("-")[0]}</span>
+          <span className={clsx("text-[9px] px-1 py-px rounded font-semibold uppercase", item.media_type === "tv" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400")}>{item.media_type}</span>
+        </div>
+      </div>
+    </Combobox.Option>
+  ))}
+</Combobox.Options>
                 )}
               </div>
             </Combobox>
