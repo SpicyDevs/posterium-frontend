@@ -101,10 +101,10 @@ interface ToolbarBtnProps {
   hideOnMobile?: boolean;
 }
 const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, href, active, children, hideOnMobile = false }) => {
-  const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
+  const base = `relative group w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
   const cls = `${base} ${
     disabled
-      ? 'text-zinc-700 cursor-not-allowed pointer-events-none border border-white/[0.05] bg-black/10'
+      ? 'text-zinc-500 cursor-not-allowed pointer-events-none border border-white/[0.05] bg-black/10'
       : active
         ? 'text-[#D4A245] bg-[#C47C2E]/16 ring-1 ring-[#C47C2E]/30 border border-[#C47C2E]/25 cursor-pointer shadow-[0_0_18px_rgba(196,124,46,0.18)]'
         : danger
@@ -588,7 +588,7 @@ const StudioLayout: React.FC<{
             {/* Logo */}
             <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
               <span className="poster-font select-none hidden sm:block"
-                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1, textShadow: '0 0 18px rgba(196,124,46,0.18)' }}>
+                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1, textShadow: '0 0 10px rgba(196,124,46,0.12)' }}>
                 POSTERIUM
               </span>
               {/* Mobile: just icon */}
