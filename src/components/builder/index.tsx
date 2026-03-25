@@ -104,18 +104,18 @@ const ToolbarBtn = memo<ToolbarBtnProps>(({ onClick, disabled, label, danger, hr
   const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
   const cls = `${base} ${
     disabled
-      ? 'text-zinc-700 cursor-not-allowed pointer-events-none'
+      ? 'text-zinc-700 cursor-not-allowed pointer-events-none border border-white/[0.05] bg-black/10'
       : active
-        ? 'text-[#D4A245] bg-[#C47C2E]/15 ring-1 ring-[#C47C2E]/25 cursor-pointer'
+        ? 'text-[#D4A245] bg-[#C47C2E]/16 ring-1 ring-[#C47C2E]/30 border border-[#C47C2E]/25 cursor-pointer shadow-[0_0_18px_rgba(196,124,46,0.18)]'
         : danger
-          ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95 cursor-pointer'
-          : 'text-zinc-500 hover:text-[#D4A245] hover:bg-[#C47C2E]/10 active:scale-95 cursor-pointer'
+          ? 'text-zinc-500 border border-transparent hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 active:scale-95 cursor-pointer'
+          : 'text-zinc-500 border border-white/[0.04] bg-white/[0.01] hover:text-[#D4A245] hover:bg-[#C47C2E]/10 hover:border-[#C47C2E]/20 active:scale-95 cursor-pointer'
   }`;
   const tooltip = !disabled && (
-    <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg"
-      style={{ background: 'var(--film-mid)', color: 'var(--film-cream)', borderColor: 'rgba(255,255,255,0.1)' }}>
-      {label}
-    </span>
+      <span className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg"
+        style={{ background: 'rgba(14,13,11,0.95)', color: 'var(--film-cream)', borderColor: 'rgba(196,124,46,0.2)' }}>
+        {label}
+      </span>
   );
   if (href) return (
     <a href={href} target="_blank" rel="noreferrer noopener" className={cls} aria-label={label}>
@@ -573,15 +573,22 @@ const StudioLayout: React.FC<{
 
         {/* ── HEADER (hidden in fullscreen) ── */}
         {!isFullscreen && (
-          <header className="h-12 shrink-0 flex items-center gap-2 px-3 z-30 relative"
-            style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(196,124,46,0.1)' }}>
+          <header className="h-14 shrink-0 flex items-center gap-2 px-3 z-30 relative"
+            style={{
+              background: 'linear-gradient(180deg, rgba(14,13,11,0.95) 0%, rgba(9,8,7,0.95) 100%)',
+              borderBottom: '1px solid rgba(196,124,46,0.14)',
+              backdropFilter: 'blur(20px) saturate(1.25)',
+              WebkitBackdropFilter: 'blur(20px) saturate(1.25)',
+            }}>
+            <div className="absolute inset-x-0 top-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.36), transparent)' }} />
             <div className="absolute bottom-0 left-0 right-0 h-px"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.2), transparent)' }} />
 
             {/* Logo */}
             <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
               <span className="poster-font select-none hidden sm:block"
-                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1 }}>
+                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1, textShadow: '0 0 18px rgba(196,124,46,0.18)' }}>
                 POSTERIUM
               </span>
               {/* Mobile: just icon */}
@@ -591,14 +598,29 @@ const StudioLayout: React.FC<{
               </span>
             </a>
 
-            <div className="w-px h-4 mx-1 shrink-0 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <span
+              className="hidden md:inline-flex items-center px-1.5 h-5 rounded border border-[#C47C2E]/25 shrink-0"
+              style={{
+                background: 'rgba(196,124,46,0.08)',
+                color: 'rgba(196,124,46,0.8)',
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                fontFamily: 'Syne, sans-serif',
+              }}
+            >
+              Builder
+            </span>
+
+            <div className="w-px h-4 mx-1 shrink-0 hidden sm:block" style={{ background: 'rgba(196,124,46,0.18)' }} />
 
             {/* URL bar — takes available space */}
             <div className="flex-1 min-w-0">
               <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} onExtensionChange={handleExtensionChange} />
             </div>
 
-            <div className="w-px h-4 mx-0.5 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-4 mx-0.5 shrink-0" style={{ background: 'rgba(196,124,46,0.16)' }} />
 
             {/* Toolbar — desktop shows all, mobile shows only essential */}
             <div className="flex items-center gap-0.5 shrink-0">
@@ -612,7 +634,7 @@ const StudioLayout: React.FC<{
                 <Keyboard size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-4 mx-0.5 hidden lg:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-0.5 hidden lg:block" style={{ background: 'rgba(196,124,46,0.16)' }} />
 
               {/* Sidebar toggles — desktop only */}
               <ToolbarBtn onClick={() => setLeftVisible(v => !v)} label={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`} active={!leftVisible} hideOnMobile>
@@ -627,13 +649,13 @@ const StudioLayout: React.FC<{
                 <Maximize2 size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-4 mx-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-0.5" style={{ background: 'rgba(196,124,46,0.16)' }} />
 
               {/* Undo / Redo */}
               <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)"><Undo2 size={14} /></ToolbarBtn>
               <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)"><Redo2 size={14} /></ToolbarBtn>
 
-              <div className="w-px h-4 mx-0.5 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-0.5 hidden sm:block" style={{ background: 'rgba(196,124,46,0.16)' }} />
               <ToolbarBtn onClick={() => setIsResetOpen(true)} danger label="Reset to defaults" hideOnMobile><RotateCcw size={14} /></ToolbarBtn>
 
               <ToolbarBtn href="https://github.com/xdaayush/freeposterapi" label="GitHub" hideOnMobile>
@@ -654,16 +676,31 @@ const StudioLayout: React.FC<{
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: leftVisible ? leftW : 0,
-                background: 'var(--film-dark)',
-                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                background: 'linear-gradient(180deg, rgba(14,13,11,0.96) 0%, rgba(10,9,8,0.96) 100%)',
+                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.14)' : 'none',
                 overflow: 'hidden',
                 opacity: leftVisible ? 1 : 0,
+                boxShadow: leftVisible ? '6px 0 28px rgba(0,0,0,0.35)' : 'none',
               }}
             >
+              {leftVisible && (
+                <>
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 left-0 w-px pointer-events-none"
+                    style={{ background: 'linear-gradient(180deg, transparent, rgba(196,124,46,0.2), transparent)' }}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-px pointer-events-none"
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.28), transparent)' }}
+                  />
+                </>
+              )}
               <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
               <div onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50">
-                <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                <div className="absolute inset-y-0 right-0 w-[1px] bg-[#C47C2E]/15 group-hover:bg-[#C47C2E]/55 transition-colors" />
               </div>
             </aside>
           )}
@@ -710,15 +747,30 @@ const StudioLayout: React.FC<{
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: rightVisible ? rightW : 0,
-                background: 'var(--film-dark)',
-                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                background: 'linear-gradient(180deg, rgba(14,13,11,0.96) 0%, rgba(10,9,8,0.96) 100%)',
+                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.14)' : 'none',
                 overflow: 'hidden',
                 opacity: rightVisible ? 1 : 0,
+                boxShadow: rightVisible ? '-6px 0 28px rgba(0,0,0,0.35)' : 'none',
               }}
             >
+              {rightVisible && (
+                <>
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 right-0 w-px pointer-events-none"
+                    style={{ background: 'linear-gradient(180deg, transparent, rgba(196,124,46,0.2), transparent)' }}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-px pointer-events-none"
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.28), transparent)' }}
+                  />
+                </>
+              )}
               <div onMouseDown={startResizeRight}
                 className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50">
-                <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                <div className="absolute inset-y-0 left-0 w-[1px] bg-[#C47C2E]/15 group-hover:bg-[#C47C2E]/55 transition-colors" />
               </div>
               <Inspector config={config} setConfig={setConfig} />
             </aside>
