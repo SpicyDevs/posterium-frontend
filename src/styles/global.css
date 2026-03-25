@@ -101,6 +101,12 @@
     --film-text-label: rgba(212, 198, 172, 0.82);
     --film-text-dim: rgba(180, 168, 148, 0.62);
     --film-text-ghost: rgba(140, 130, 112, 0.38);
+
+    /* Glass & accent tokens shared by header, sidebars, palette, and shortcut sheets */
+    --film-glass: rgba(20, 20, 22, 0.82);
+    --film-glass-strong: rgba(16, 16, 18, 0.9);
+    --film-amber-glow: 0 0 0 1px rgba(196, 124, 46, 0.18), 0 10px 30px rgba(0, 0, 0, 0.45);
+    --film-hairline: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   /* Font utility classes — available on all pages */
@@ -157,6 +163,40 @@
   }
 }
 
+/* ─── Glass surface component classes — shared by header, sidebars, palette ─── */
+@layer components {
+  /* Full glass shell — used on the header bar and sidebar outer wrappers */
+  .glass-surface {
+    background: linear-gradient(145deg, var(--film-glass), var(--film-glass-strong));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: var(--film-hairline);
+    box-shadow: var(--film-amber-glow);
+  }
+
+  /* Inset card — used for section groups within glass surfaces (e.g. toolbar pills, form groups) */
+  .glass-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+
+  /* Resize handle rail — amber gradient strip on sidebar edges */
+  .sidebar-handle {
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(196, 124, 46, 0.35) 50%,
+      transparent 100%
+    );
+    opacity: 0.3;
+    transition: opacity 120ms ease;
+  }
+  .sidebar-handle:hover {
+    opacity: 0.8;
+  }
+}
+
 /* ─── Custom utilities ──────────────────────────────────────────────────────── */
 @layer utilities {
   .sidebar-label {
@@ -165,7 +205,7 @@
 
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-color: rgba(196, 124, 46, 0.25) transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -176,12 +216,21 @@
     background: transparent;
   }
 
+  /* Amber-tinted scrollbar thumb to match palette aesthetic */
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(
+      180deg,
+      rgba(196, 124, 46, 0.35),
+      rgba(255, 255, 255, 0.08)
+    );
     border-radius: 9999px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: linear-gradient(
+      180deg,
+      rgba(196, 124, 46, 0.55),
+      rgba(255, 255, 255, 0.14)
+    );
   }
 }

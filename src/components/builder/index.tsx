@@ -573,15 +573,17 @@ const StudioLayout: React.FC<{
 
         {/* ── HEADER (hidden in fullscreen) ── */}
         {!isFullscreen && (
-          <header className="h-12 shrink-0 flex items-center gap-2 px-3 z-30 relative"
-            style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(196,124,46,0.1)' }}>
+          <header className="h-14 shrink-0 flex items-center gap-2 px-3 z-30 relative glass-surface"
+            style={{ borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none' }}>
+            {/* Amber rim strip at bottom — film sprocket motif */}
             <div className="absolute bottom-0 left-0 right-0 h-px"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.2), transparent)' }} />
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.3), transparent)' }} />
 
             {/* Logo */}
             <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
               <span className="poster-font select-none hidden sm:block"
-                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1 }}>
+                style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.12em', lineHeight: 1,
+                         textShadow: '0 0 28px rgba(196,124,46,0.2)' }}>
                 POSTERIUM
               </span>
               {/* Mobile: just icon */}
@@ -591,17 +593,15 @@ const StudioLayout: React.FC<{
               </span>
             </a>
 
-            <div className="w-px h-4 mx-1 shrink-0 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <div className="w-px h-5 mx-1 shrink-0 hidden sm:block" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-            {/* URL bar — takes available space */}
-            <div className="flex-1 min-w-0">
+            {/* URL bar — takes available space, wrapped in glass-section pill */}
+            <div className="flex-1 min-w-0 glass-section px-2 py-1 rounded-lg">
               <CodeBox config={config} onLoadConfig={handleLoadConfig} baseUrl={baseUrl} onExtensionChange={handleExtensionChange} />
             </div>
 
-            <div className="w-px h-4 mx-0.5 shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-
-            {/* Toolbar — desktop shows all, mobile shows only essential */}
-            <div className="flex items-center gap-0.5 shrink-0">
+            {/* Toolbar cluster — glass pill matching command palette chip style */}
+            <div className="flex items-center gap-0.5 shrink-0 glass-section px-1.5 py-1 rounded-lg">
               {/* Command palette — always visible */}
               <ToolbarBtn onClick={() => setPaletteOpen(v => !v)} label="Command Palette (⌘K)" active={paletteOpen}>
                 <Command size={14} />
@@ -654,16 +654,22 @@ const StudioLayout: React.FC<{
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: leftVisible ? leftW : 0,
-                background: 'var(--film-dark)',
+                background: 'transparent',
                 borderRight: leftVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
                 overflow: 'hidden',
                 opacity: leftVisible ? 1 : 0,
+                padding: leftVisible ? '8px 8px 8px 8px' : 0,
               }}
             >
-              <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
+              {/* Glass shell wrapping the panel content */}
+              <div className="flex-1 min-h-0 glass-surface rounded-xl overflow-hidden flex flex-col">
+                <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelection} />
+              </div>
+              {/* Resize handle — amber gradient rail */}
               <div onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50">
-                <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                className="absolute inset-y-0 right-0 cursor-col-resize group z-50"
+                style={{ width: 8 }}>
+                <div className="sidebar-handle h-full w-1 ml-auto" />
               </div>
             </aside>
           )}
@@ -710,17 +716,23 @@ const StudioLayout: React.FC<{
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: rightVisible ? rightW : 0,
-                background: 'var(--film-dark)',
+                background: 'transparent',
                 borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
                 overflow: 'hidden',
                 opacity: rightVisible ? 1 : 0,
+                padding: rightVisible ? '8px 8px 8px 8px' : 0,
               }}
             >
+              {/* Resize handle — amber gradient rail */}
               <div onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50">
-                <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                className="absolute inset-y-0 left-0 cursor-col-resize group z-50"
+                style={{ width: 8 }}>
+                <div className="sidebar-handle h-full w-1" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              {/* Glass shell wrapping the panel content */}
+              <div className="flex-1 min-h-0 glass-surface rounded-xl overflow-hidden flex flex-col">
+                <Inspector config={config} setConfig={setConfig} />
+              </div>
             </aside>
           )}
         </div>
