@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
   locale: 'en_US',
   twitterHandle: '@spicydevs',
   github: 'https://github.com/xdaayush/freeposterapi',
-  ogImageUrl: 'https://posters.spicydevs.xyz/og-image.jpg',
+  ogImageUrl: 'https://posters.spicydevs.xyz/og-image.png',
   ogImageWidth: 1200,
   ogImageHeight: 630,
   author: 'SpicyDevs',
