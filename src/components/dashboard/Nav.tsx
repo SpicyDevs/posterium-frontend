@@ -6,7 +6,7 @@ import { Github, Menu, X } from 'lucide-react';
 const NAV_LINKS = [
   { label: 'Reel',         href: '#reel' },
   { label: 'Features',     href: '#combined' },
-  { label: 'Integrations', href: '#combined' },
+  { label: 'Integrations', href: '#integrations' },
 ] as const;
 
 const LINK_BASE: React.CSSProperties = {
