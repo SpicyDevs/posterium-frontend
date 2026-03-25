@@ -20,11 +20,20 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   return (
     <SidebarLayout
       header={
-        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
+        <div
+          className="flex w-full rounded-xl p-0.5 shadow-lg shadow-black/40"
+          style={{
+            background: 'linear-gradient(120deg, rgba(196,124,46,0.08), rgba(18,16,13,0.9))',
+            border: '1px solid rgba(196,124,46,0.15)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          }}
+        >
           <button
             onClick={() => { clearSelection(); setActiveTab('canvas'); }}
             aria-pressed={currentMode === 'global'}
-            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'global' ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm' : 'text-zinc-600 hover:text-zinc-400')}
+            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'global'
+              ? 'bg-[#1c1c1f] text-[#F0E6CC] shadow-[0_12px_28px_rgba(0,0,0,0.35)] ring-1 ring-[#C47C2E]/35'
+              : 'text-zinc-600 hover:text-zinc-400')}
           >
             <Globe size={11} strokeWidth={2} />
             Canvas
@@ -32,7 +41,9 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
           <button
             onClick={() => setActiveTab('badge')}
             aria-pressed={currentMode === 'selection'}
-            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'selection' ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm' : 'text-zinc-600 hover:text-zinc-400')}
+            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'selection'
+              ? 'bg-[#1c1c1f] text-[#F0E6CC] shadow-[0_12px_28px_rgba(0,0,0,0.35)] ring-1 ring-[#C47C2E]/35'
+              : 'text-zinc-600 hover:text-zinc-400')}
           >
             <MousePointer2 size={11} strokeWidth={2} />
             {selCount > 0 ? `${selCount} selected` : 'Selection'}
