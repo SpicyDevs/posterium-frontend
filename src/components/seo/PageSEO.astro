@@ -14,6 +14,10 @@ const keywords = routeMeta?.keywords ?? SEO_DEFAULTS.keywords;
 const canonical = routeMeta?.canonical ?? SEO_DEFAULTS.canonical;
 const noindex = routeMeta?.noindex ?? false;
 
+// 1. Generate the clean URL after 'canonical' is defined
+const currentUrl = new URL(Astro.request.url);
+const cleanCanonical = canonical || `${currentUrl.origin}${currentUrl.pathname}`;
+
 const og = {
   ...SEO_DEFAULTS.og,
   ...routeMeta?.og,
@@ -30,6 +34,7 @@ const twitter = {
 
 const jsonLdSchemas = routeMeta?.jsonLd ?? [];
 ---
+
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="keywords" content={keywords} />
@@ -39,7 +44,8 @@ const jsonLdSchemas = routeMeta?.jsonLd ?? [];
 <meta name="theme-color" content="#0a0a0a" />
 <meta name="color-scheme" content="dark" />
 <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-<link rel="canonical" href={canonical} />
+
+<link rel="canonical" href={cleanCanonical} />
 
 {noindex ? (
   <meta name="robots" content="noindex, nofollow" />

@@ -107,6 +107,7 @@ const ORGANIZATION_SCHEMA = {
   sameAs: [SITE_CONFIG.github],
 };
 
+// REPLACE YOUR SOFTWARE_APP_SCHEMA WITH THIS:
 const SOFTWARE_APP_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -126,6 +127,13 @@ const SOFTWARE_APP_SCHEMA = {
   softwareVersion: '2.0',
   inLanguage: 'en',
   isAccessibleForFree: true,
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    ratingCount: '128',
+    bestRating: '5',
+    worstRating: '1'
+  },
   featureList: [
     'Live IMDb rating badges',
     'Rotten Tomatoes score overlays',

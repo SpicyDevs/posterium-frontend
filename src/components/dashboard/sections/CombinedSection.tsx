@@ -101,8 +101,13 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
     {USE_CASES.map((uc, i) => (
       <div key={uc.title} style={{ padding: 'clamp(20px,3vw,32px)', borderRight: i % 3 !== 2 ? '1px solid rgba(255,255,255,0.04)' : 'none', borderBottom: i < USE_CASES.length - 3 ? '1px solid rgba(255,255,255,0.04)' : 'none', opacity: vis ? 1 : 0, transform: vis ? 'translateY(0)' : 'translateY(16px)', transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s` }}>
         <div style={{ fontSize: 24, marginBottom: 12, lineHeight: 1 }}>{uc.icon}</div>
-        <div className="syne-font" style={{ fontSize: 13, fontWeight: 800, color: 'var(--film-cream)', marginBottom: 8 }}>{uc.title}</div>
-        <p className="body-font" style={{ fontSize: 11, color: 'var(--film-silver)', lineHeight: 1.72, marginBottom: 14 }}>{uc.desc}</p>
+       <h3 className="syne-font" style={{ fontSize: 13, fontWeight: 800, color: 'var(--film-cream)', marginBottom: 8, margin: 0 }}>
+  {/* If you ever create dedicated landing pages, link them here. Otherwise, a self-referential anchor creates the keyword association. */}
+  <a href={`#${uc.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+    {uc.title}
+  </a>
+</h3>
+<p className="body-font" style={{ fontSize: 11, color: 'var(--film-silver)', lineHeight: 1.72, marginBottom: 14 }}>{uc.desc}</p>
         {uc.codeSnippet && <code className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.55)', letterSpacing: '0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(196,124,46,0.04)', border: '1px solid rgba(196,124,46,0.1)', borderRadius: 3, padding: '5px 8px' }}>{uc.codeSnippet}</code>}
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
           {uc.tags.slice(0, 2).map((t) => <span key={t} className="syne-font" style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(110,104,96,0.45)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.045)', padding: '2px 6px', borderRadius: 2 }}>{t}</span>)}
@@ -122,7 +127,12 @@ export const CombinedSection = memo(() => {
         <AmberTag style={{ marginBottom: 12 }}>Capabilities</AmberTag>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginTop: 10, marginBottom: 32 }}>
           <h2 className="poster-font" style={{ fontSize: 'clamp(36px,5.5vw,72px)', color: 'var(--film-cream)', lineHeight: 0.9, letterSpacing: '0.02em' }}>
-            {tab === 'features' ? (<>WHAT IT<br /><span style={{ color: 'var(--film-amber)' }}>DOES</span></>) : (<>WHERE IT<br /><span style={{ color: 'var(--film-amber)' }}>RUNS</span></>)}
+            <div style={{ display: tab === 'features' ? 'block' : 'none' }}>
+        <FeaturesPane vis={vis && tab === 'features'} />
+      </div>
+      <div style={{ display: tab === 'integrations' ? 'block' : 'none' }}>
+        <IntegrationsPane vis={vis && tab === 'integrations'} />
+      </div>
           </h2>
           <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.055)', borderRadius: 5, padding: 3 }}>
             {(['features', 'integrations'] as const).map((t) => {

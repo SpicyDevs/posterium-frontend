@@ -65,8 +65,9 @@ export const CTASection = memo(() => {
         }}
       >
         <h2 className="poster-font" style={{ fontSize: 'clamp(60px,13vw,160px)', color: 'var(--film-cream)', lineHeight: 0.86, letterSpacing: '0.01em', marginBottom: 36 }}>
-          READY<br />
-          <span style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)' }}>TO BUILD?</span>
+          <span className="sr-only">Ready to build custom movie posters?</span>
+          <span aria-hidden="true">READY<br /></span>
+          <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)' }}>TO BUILD?</span>
         </h2>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 36 }}>
@@ -79,13 +80,15 @@ export const CTASection = memo(() => {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <a
             href="/build"
+            title="Open Free Movie Poster Builder"
+            aria-label="Open Free Movie Poster Builder"
             className="glow-cta syne-font"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', padding: '13px 30px', borderRadius: 5 }}
           >
             Open Free Builder <ArrowRight size={13} />
           </a>
           <a
-            href="https://github.com/xdaayush/freeposterapi"
+            href="https://github.com/spicydevs/posterium"
             target="_blank"
             rel="noreferrer"
             className="syne-font"

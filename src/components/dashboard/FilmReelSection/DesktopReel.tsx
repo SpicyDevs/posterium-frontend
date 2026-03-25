@@ -57,7 +57,7 @@ const CollagePoster = memo<{
       {err && <div style={ERR_STYLE}><span style={{ fontSize: 20 }}>🎞</span></div>}
       <img
         ref={imgRef}
-        src={src} alt={title}
+        src={src} alt={`Textless ${type === 'movie' ? 'movie' : 'TV'} poster art for ${title} with custom rating overlays`}
         loading={eager ? undefined : 'lazy'}
         fetchPriority={eager ? 'high' : 'auto'}
         decoding="async"

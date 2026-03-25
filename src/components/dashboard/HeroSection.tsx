@@ -148,7 +148,7 @@ const CyclingPoster = memo(() => {
               key={p.id}
               ref={(el) => { imgRefs.current[i] = el; }}
               src={src}
-              alt={p.title}
+              alt={`Custom ${p.type === 'movie' ? 'movie' : 'TV show'} poster for ${p.title} featuring live IMDb and Rotten Tomatoes rating badges`}
               loading={i === 0 ? undefined : 'lazy'}
               fetchPriority={i === 0 ? 'high' : 'auto'}
               decoding={i === 0 ? 'sync' : 'async'}
@@ -273,7 +273,7 @@ const HeroSection = memo(() => (
         </p>
 
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a href="/build" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
+          <a href="/build" title="Open Poster Builder" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
             Open Builder <ArrowRight size={12} />
           </a>
           <a href="#reel" className="syne-font"
