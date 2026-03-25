@@ -121,18 +121,28 @@ IntegrationsPane.displayName = 'IntegrationsPane';
 export const CombinedSection = memo(() => {
   const { ref, vis } = useInView(0.04);
   const [tab, setTab] = useState<'features' | 'integrations'>('features');
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#integrations') {
+        setTab('integrations');
+      } else {
+        setTab('features');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   return (
-    <section id="combined" ref={ref} aria-label="Features and Integrations" style={{ background: 'var(--film-dark)', borderTop: '1px solid rgba(196,124,46,0.06)' }}>
+    <section id="combined" ref={ref} aria-label="Features and Integrations" style={{ background: 'var(--film-dark)', borderTop: '1px solid rgba(196,124,46,0.06)', position: 'relative' }}>
+      <span id="integrations" aria-hidden="true" style={{ position: 'absolute', top: 0 }} />
       <div style={{ padding: 'clamp(48px,6vw,72px) clamp(20px,5vw,64px) 0', opacity: vis ? 1 : 0, transition: 'opacity 0.55s ease' }}>
         <AmberTag style={{ marginBottom: 12 }}>Capabilities</AmberTag>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginTop: 10, marginBottom: 32 }}>
           <h2 className="poster-font" style={{ fontSize: 'clamp(36px,5.5vw,72px)', color: 'var(--film-cream)', lineHeight: 0.9, letterSpacing: '0.02em' }}>
-            <div style={{ display: tab === 'features' ? 'block' : 'none' }}>
-        <FeaturesPane vis={vis && tab === 'features'} />
-      </div>
-      <div style={{ display: tab === 'integrations' ? 'block' : 'none' }}>
-        <IntegrationsPane vis={vis && tab === 'integrations'} />
-      </div>
+            {tab === 'features' ? 'Features' : 'Integrations'}
           </h2>
           <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.055)', borderRadius: 5, padding: 3 }}>
             {(['features', 'integrations'] as const).map((t) => {
