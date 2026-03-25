@@ -254,9 +254,13 @@ const HeroSection = memo(() => (
       }}
     >
       <div>
-        <h1 className="h-a1 poster-font" style={{ fontSize: 'clamp(88px,13vw,200px)', lineHeight: 0.84, letterSpacing: '0.03em', marginBottom: 0 }}>
-          <span style={{ color: 'var(--film-cream)', display: 'block' }}>POSTER</span>
-          <span style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
+        <h1 
+          className="h-a1 poster-font" 
+          style={{ fontSize: 'clamp(88px,13vw,200px)', lineHeight: 0.84, letterSpacing: '0.03em', marginBottom: 0 }}
+          aria-label="Posterium"
+        >
+          <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>POSTER</span>
+          <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
         </h1>
 
         <div className="h-a2" style={AMBER_RULE_STYLE} />

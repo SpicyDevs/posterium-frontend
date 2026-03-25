@@ -1,6 +1,5 @@
 ---
 // src/pages/build.astro
-// Poster Builder — full React island, client:only (no SSR flash, localStorage safe)
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import BuilderApp from '@/components/builder/index.tsx';
@@ -14,5 +13,12 @@ import '@/styles/global.css';
   bodyClass="overflow-hidden"
 >
   <PageSEO slot="head" routeKey="/build" />
+  
+  {/* ADDED: SSR-rendered structural context for Googlebot before React hydrates */}
+  <div class="sr-only">
+    <h2>Posterium Interactive Builder</h2>
+    <p>Use our visual editor to search for TMDB, Fanart, or IMDb posters. Drag and drop glassmorphism rating badges onto the canvas. Adjust scale, corner radius, blur, and opacity. Export your final design instantly via a shareable API URL or download it as PNG, WebP, JPG, or SVG.</p>
+  </div>
+
   <BuilderApp client:only="react" />
 </BaseLayout>
