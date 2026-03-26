@@ -4,10 +4,10 @@
  * Generates optimal v3 API URLs using short-form param aliases and automatic
  * hoisting of shared per-badge values to global params.
  *
- * Usage:
- *   import { buildOptimalUrl, cleanValue } from '../utils/v3Builder';
- *   const url = buildOptimalUrl(config);          // shortest equivalent URL
- *   const display = cleanValue('85.0%');          // → '85%'
+ * ── CRITICAL: source has NO v3 short alias ─────────────────────────────────
+ *   The backend reads `source` directly. `so` = source_ORDER (poster priority
+ *   list), NOT the poster source provider.  Always emit `source=fanart`,
+ *   never `so=fanart`.
  */
 
 import type { PosterConfig, RatingType } from '../components/builder/types';
@@ -28,10 +28,6 @@ function ps(val: number): string { return val.toString(); }
 /**
  * Detect per-badge property values that are identical across ALL selected
  * badges.  Returns an object of hoistable key→value pairs.
- *
- * Only hoists when every badge in `ratings` explicitly has the same value
- * (i.e. hoisting is only triggered by intentional per-badge overrides, not
- * by the absence of a value).
  */
 function detectHoistable(config: PosterConfig): Partial<Record<string, string | number | boolean>> {
   const { ratings, items } = config;
@@ -57,9 +53,10 @@ function detectHoistable(config: PosterConfig): Partial<Record<string, string | 
 /**
  * Generates the shortest possible v3 API URL for the given config.
  *
- * - Uses short-form aliases for all global and per-badge params.
+ * - Short-form aliases for all global and per-badge params.
  * - Hoists common per-badge values to global params (one key instead of N).
- * - Uses short provider prefixes for per-badge positional/style params.
+ * - Short provider prefixes for per-badge positional/style params.
+ * - source is ALWAYS emitted as `source` (no v3 alias).
  */
 export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spicydevs.xyz'): string {
   const cleanBase = baseUrl.replace(/\/$/, '');
@@ -78,7 +75,11 @@ export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spi
   if (config.fallbackEnabled && config.fallbackPool.length > 0) {
     p.set('fb', config.fallbackPool.map(r => PROVIDER_SHORT[r] ?? r).join(','));
   }
-  if (config.source !== 'tmdb') p.set('so', config.source);
+
+  // CRITICAL: source → always `source`, never `so`.
+  // `so` on the backend = source_ORDER, not the poster source provider.
+  if (config.source !== 'tmdb') p.set('source', config.source);
+
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
   if (config.keys?.tmdb)    p.set('tmdb_key',    config.keys.tmdb);
@@ -117,7 +118,10 @@ export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spi
   if (config.labelText)                                         p.set('lt', config.labelText);
   if (config.labelSize !== undefined && config.labelSize !== 11)p.set('ls', ps(config.labelSize));
   if (config.labelColor)                                        p.set('lc', config.labelColor);
-  if (config.uiPreset && config.uiPreset !== 'b')               p.set('p', config.uiPreset);
+  if (config.uiPreset && config.uiPreset !== 'b')               p.set('p',  config.uiPreset);
+  // noText / nt
+  if ((config as any).noText)                                   p.set('nt', '1');
+  if (config.showText === false)                                 p.set('nt', '1');
 
   // ── Hoist common per-badge values ────────────────────────────────────
   const hoisted = detectHoistable(config);
@@ -125,22 +129,21 @@ export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spi
   if (hoisted.alpha   !== undefined) p.set('al', ps(hoisted.alpha as number));
   if (hoisted.radius  !== undefined) p.set('ra', ps(hoisted.radius as number));
   if (hoisted.shadow  !== undefined) p.set('sh', ps(hoisted.shadow as number));
-  if (hoisted.bg)     p.set('bg', hoisted.bg as string);
-  if (hoisted.txt)    p.set('tx', hoisted.txt as string);
-  if (hoisted.borderC)p.set('bc', hoisted.borderC as string);
+  if (hoisted.bg)      p.set('bg', hoisted.bg as string);
+  if (hoisted.txt)     p.set('tx', hoisted.txt as string);
+  if (hoisted.borderC) p.set('bc', hoisted.borderC as string);
   if (hoisted.icon !== undefined) p.set('ic', hoisted.icon ? '1' : '0');
 
   // ── Per-badge params (short prefix + short suffix) ────────────────────
   config.ratings.forEach((key: RatingType, index: number) => {
     const item    = config.items[key] ?? {};
-    const sp      = PROVIDER_SHORT[key] ?? key; // short provider prefix: 'i', 'r', 't', …
+    const sp      = PROVIDER_SHORT[key] ?? key;
     const autoX   = 20;
     const autoY   = 20 + index * 70;
 
     p.set(`${sp}_x`, ps(Math.round(item.x ?? autoX)));
     p.set(`${sp}_y`, ps(Math.round(item.y ?? autoY)));
 
-    // Only set per-badge overrides that differ from the hoisted global
     if (item.bg      !== undefined && item.bg      !== hoisted.bg)      p.set(`${sp}_bg`,  item.bg);
     if (item.txt     !== undefined && item.txt     !== hoisted.txt)     p.set(`${sp}_tx`,  item.txt);
     if (item.blur    !== undefined && item.blur    !== hoisted.blur)    p.set(`${sp}_bl`,  ps(item.blur));
@@ -160,6 +163,7 @@ export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spi
     if (item.labelText)               p.set(`${sp}_lt`, item.labelText);
     if (item.labelSize !== undefined) p.set(`${sp}_ls`, ps(item.labelSize));
     if (item.labelColor)              p.set(`${sp}_lc`, item.labelColor);
+    if (item.showText === false)      p.set(`${sp}_nt`, '1');
   });
 
   // ── Logo ──────────────────────────────────────────────────────────────
