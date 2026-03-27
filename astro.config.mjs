@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   site: 'https://posters.spicydevs.xyz',
   output: 'static',
-  trailingSlash: 'never',
+  trailingSlash: 'always',
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
