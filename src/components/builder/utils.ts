@@ -455,3 +455,34 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     return DEFAULT_CONFIG;
   }
 };
+
+// ── Template URL Helpers ─────────────────────────────────────────────────
+
+/**
+ * Checks if a URL string contains the template variable.
+ */
+export const isTemplateUrl = (url: string): boolean => {
+  return url.includes('{imdb_id}') || url.includes('{tmdb_id}');
+};
+
+/**
+ * Converts a standard API URL with hardcoded IDs into a template URL.
+ * Example: /movie/tt1234567.jpg -> /movie/{imdb_id}.jpg
+ */
+export const toTemplateUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    
+    // This regex looks for /movie/, /tv/, or /anime/ followed by any word characters
+    // up to the file extension, and replaces the ID portion with {imdb_id}
+    urlObj.pathname = urlObj.pathname.replace(
+      /(\/(?:movie|tv|anime)\/)[^.]+(\.[a-z]+)$/i,
+      '$1{imdb_id}$2'
+    );
+    
+    return urlObj.toString();
+  } catch (e) {
+    console.error('Failed to convert to template URL', e);
+    return url;
+  }
+};
