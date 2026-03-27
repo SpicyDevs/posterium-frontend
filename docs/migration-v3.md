@@ -257,12 +257,12 @@ GET /movie/155/backdrop.webp?source=tmdb&width=1920&textless=1
 import { buildOptimalUrl, cleanValue } from './src/utils/v3Builder';
 
 const url = buildOptimalUrl({
-  mediaType: 'movie', tmdbId: '453395', imdbId: 'tt12042730',
+  mediaType: 'movie', tmdbId: '453395', imdbId: 'tt9419884',
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb', blur: 8, alpha: 0.4, radius: 12, shadow: 6,
   // … other fields
 });
-// → https://api.spicydevs.xyz/poster/tt12042730.png?r=i,r,a&v=3&bl=8&al=0.4&ra=12&sh=6…
+// → https://api.spicydevs.xyz/poster/tt9419884.png?r=i,r,a&v=3&bl=8&al=0.4&ra=12&sh=6…
 ```
 
 ---

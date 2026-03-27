@@ -118,7 +118,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const mediaType: MediaType = match
       ? (match[1] as MediaType)
       : DEFAULT_CONFIG.mediaType;
-    const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
+    const tmdbId = match ? match[2] : DEFAULT_CONFIG.imdbId;
     const extension: ExtensionType = match && match[3]
       ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType)
       : 'svg';
