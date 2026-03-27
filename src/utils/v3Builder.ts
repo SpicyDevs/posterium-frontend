@@ -6,8 +6,6 @@ import { PROVIDER_SHORT } from '../components/builder/utils';
 export { cleanValue } from '../components/builder/utils';
 
 const V3_KEY_TO_CODE: Record<RatingType, string> = {
-
-const V3_KEY_TO_CODE: Record<RatingType, string> = {
   imdb: 'im',
   rt: 'rt',
   rt_popcorn: 'rp',
