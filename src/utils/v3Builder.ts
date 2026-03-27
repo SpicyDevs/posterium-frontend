@@ -2,7 +2,10 @@
  * src/utils/v3Builder.ts
  */
 import type { PosterConfig, RatingType } from '../components/builder/types';
+import { PROVIDER_SHORT } from '../components/builder/utils';
 export { cleanValue } from '../components/builder/utils';
+
+const V3_KEY_TO_CODE: Record<RatingType, string> = {
 
 const V3_KEY_TO_CODE: Record<RatingType, string> = {
   imdb: 'im',
@@ -51,6 +54,10 @@ export function buildOptimalUrl(config: PosterConfig, baseUrl = 'https://api.spi
   // Backend expects FULL string comma-separated ratings, not acronyms
   if (config.ratings.length > 0) {
     p.set('r', config.ratings.join(','));
+  }
+
+  if (config.fallbackEnabled && config.fallbackPool && config.fallbackPool.length > 0) {
+    p.set('fb', config.fallbackPool.map(r => PROVIDER_SHORT[r] ?? r).join(','));
   }
 
   // V3 uses 's' for source

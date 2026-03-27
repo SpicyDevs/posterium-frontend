@@ -112,13 +112,22 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url   = new URL(urlString);
     const match = url.pathname.match(
-      /\/(movie|tv|anime)\/([a-zA-Z0-9_-]+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/
+      /\/(movie|tv|anime|poster)\/([a-zA-Z0-9_-]+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/
     );
 
-    const mediaType: MediaType = match
-      ? (match[1] as MediaType)
-      : DEFAULT_CONFIG.mediaType;
-    const tmdbId = match ? match[2] : DEFAULT_CONFIG.imdbId;
+    let mediaType: MediaType = DEFAULT_CONFIG.mediaType;
+    let tmdbId = DEFAULT_CONFIG.tmdbId;
+    let imdbId: string | undefined = undefined;
+
+    if (match) {
+      if (match[1] === 'poster') {
+        imdbId = match[2];
+      } else {
+        mediaType = match[1] as MediaType;
+        tmdbId = match[2];
+      }
+    }
+
     const extension: ExtensionType = match && match[3]
       ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType)
       : 'svg';
@@ -181,7 +190,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         ? (p.get('ls') || p.get('logo_source') as LogoSourceType) : null;
 
       return {
-        mediaType, tmdbId, extension,
+        mediaType, tmdbId, ...(imdbId ? { imdbId } : {}), extension,
         ratings:     parsedRatings,
         source:      (p.get('source') as PosterConfig['source']) || (p.get('so') as PosterConfig['source']) || 'tmdb',
         ptype:       p.get('ptype') || p.get('pt') || 'auto',
@@ -217,7 +226,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         logoW:       p.has('logo_w') ? parseInt(p.get('logo_w')!) : p.has('lw') ? parseInt(p.get('lw')!) : DEFAULTS.logoW,
         logoH:       p.has('logo_h') ? parseInt(p.get('logo_h')!) : p.has('lh') ? parseInt(p.get('lh')!) : DEFAULTS.logoH,
         logoOpacity: p.has('logo_opacity') ? parseFloat(p.get('logo_opacity')!) : p.has('la') ? parseFloat(p.get('la')!) : DEFAULTS.logoOpacity,
-        logoShadow:  p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : p.has('lsh') ? parseInt(p.get('lsh')!) : DEFAULTS.logoShadow,
+        logoShadow:  p.has('lsh') ? parseInt(p.get('lsh')!) : DEFAULTS.logoShadow,
         fallbackEnabled: p.has('fb') && p.get('fb')!.length > 0 ? true : false,
         fallbackPool: p.has('fb') && p.get('fb')!.length > 0 ? p.get('fb')!.split(',').map(r => SHORT_PROVIDER[r] || r) as RatingType[] : [],
       };
@@ -279,7 +288,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       : null;
 
     return {
-      mediaType, tmdbId, extension,
+      mediaType, tmdbId, ...(imdbId ? { imdbId } : {}), extension,
       ratings:     p.has('r') ? (p.get('r')!.split(',') as RatingType[]) : [],
       source:      (p.get('source') as PosterConfig['source']) || 'tmdb',
       ptype:       p.get('ptype') || 'auto',
@@ -324,7 +333,7 @@ export const isTemplateUrl = (url: string): boolean => {
 export const toTemplateUrl = (urlString: string): string => {
   try {
     const url = new URL(urlString);
-    const match = url.pathname.match(/\/(movie|tv|anime)\/([a-zA-Z0-9_-]+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
+    const match = url.pathname.match(/\/(movie|tv|anime|poster)\/([a-zA-Z0-9_-]+)(?:\.(jpg|jpeg|png|svg|webp|json))?$/);
     if (match) {
       const id = match[2];
       url.pathname = url.pathname.replace(`/${id}`, '/{imdb_id}');
