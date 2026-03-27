@@ -157,7 +157,7 @@ const CyclingPoster = memo(() => {
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 objectFit: 'cover', display: 'block',
                 opacity: i === activeIdx ? 1 : 0,
-                willChange: transitioning && i === activeIdx ? 'opacity' : 'auto',
+                willChange: transitioning ? 'opacity' : 'auto',
                 transition: 'opacity 0.35s ease',
                 pointerEvents: 'none',
               }}

@@ -101,11 +101,17 @@ nav a.syne-font { color: var(--film-text-label); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.h-a1 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-.h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.2s  both; }
-.h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
-.h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
-.h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
+.h-a1 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.05s both; backface-visibility: hidden;
+  transform: translateZ(0); }
+.h-a2 { animation: hero-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.2s  both; backface-visibility: hidden;
+  transform: translateZ(0);
+}
+.h-a3 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.34s both; backface-visibility: hidden;
+  transform: translateZ(0); }
+.h-a4 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.48s both; backface-visibility: hidden;
+  transform: translateZ(0); }
+.h-a5 { animation: fade-up    0.9s cubic-bezier(0.16,1,0.3,1) 0.62s both; backface-visibility: hidden;
+  transform: translateZ(0); }
 
 /* ── Shimmer (skeleton loaders) ── */
 @keyframes shimmer {
