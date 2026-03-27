@@ -20,8 +20,9 @@ export default defineConfig({
     react(),
     sitemap({
       serialize(item) {
-        if (item.url !== 'https://posters.spicydevs.xyz/' && item.url.endsWith('/')) {
-          item.url = item.url.slice(0, -1);
+        // Ensure all URLs end with a trailing slash
+        if (!item.url.endsWith('/')) {
+          item.url = `${item.url}/`;
         }
         
         item.lastmod = new Date().toISOString();
@@ -29,7 +30,7 @@ export default defineConfig({
         
         if (item.url === 'https://posters.spicydevs.xyz/') {
           item.priority = 1.0;
-        } else if (item.url === 'https://posters.spicydevs.xyz/build') {
+        } else if (item.url === 'https://posters.spicydevs.xyz/build/') { 
           item.priority = 0.9;
         } else {
           item.priority = 0.8;
@@ -45,7 +46,7 @@ export default defineConfig({
         name: "Posterium - Posters with Ratings!",
         short_name: "Posterium",
         description: "Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.",
-        start_url: "/build",
+        start_url: "/build/", // You may also want to update the start_url here
         display: "standalone",
         background_color: "#0a0a0a",
         theme_color: "#0a0a0a",
