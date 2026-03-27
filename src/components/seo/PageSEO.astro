@@ -16,7 +16,11 @@ const noindex = routeMeta?.noindex ?? false;
 
 // 1. Generate the clean URL after 'canonical' is defined
 const currentUrl = new URL(Astro.request.url);
-const cleanCanonical = canonical || `${currentUrl.origin}${currentUrl.pathname}`;
+const cleanCanonical = canonical || (
+  currentUrl.pathname === '/' 
+    ? currentUrl.origin 
+    : `${currentUrl.origin}${currentUrl.pathname.replace(/\/$/, '')}`
+);
 
 const og = {
   ...SEO_DEFAULTS.og,
