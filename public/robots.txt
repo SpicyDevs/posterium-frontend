@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://posters.spicydevs.xyz/sitemap-index.xml
+Sitemap: https://posters.spicydevs.xyz/sitemap-0.xml

@@ -11,7 +11,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   site: 'https://posters.spicydevs.xyz',
   output: 'static',
-  trailingSlash: 'always',
+  trailingSlash: 'never', // Enforce no trailing slashes
+  build: {
+    format: 'file', // Generates about.html instead of about/index.html to prevent host-level redirects
+  },
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
@@ -20,17 +23,16 @@ export default defineConfig({
     react(),
     sitemap({
       serialize(item) {
-        // Ensure all URLs end with a trailing slash
-        if (!item.url.endsWith('/')) {
-          item.url = `${item.url}/`;
-        }
+        // Aggressively strip trailing slash from every URL in the sitemap
+        item.url = item.url.replace(/\/$/, '');
         
         item.lastmod = new Date().toISOString();
         item.changefreq = 'weekly';
         
-        if (item.url === 'https://posters.spicydevs.xyz/') {
+        // Updated conditions to match the new slash-free URLs
+        if (item.url === 'https://posters.spicydevs.xyz') {
           item.priority = 1.0;
-        } else if (item.url === 'https://posters.spicydevs.xyz/build/') { 
+        } else if (item.url === 'https://posters.spicydevs.xyz/build') { 
           item.priority = 0.9;
         } else {
           item.priority = 0.8;
@@ -46,7 +48,7 @@ export default defineConfig({
         name: "Posterium - Posters with Ratings!",
         short_name: "Posterium",
         description: "Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.",
-        start_url: "/build/", // You may also want to update the start_url here
+        start_url: "/build", // Removed trailing slash here as well
         display: "standalone",
         background_color: "#0a0a0a",
         theme_color: "#0a0a0a",
