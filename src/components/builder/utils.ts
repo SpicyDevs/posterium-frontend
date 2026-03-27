@@ -455,3 +455,23 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     return DEFAULT_CONFIG;
   }
 };
+
+
+export const isTemplateUrl = (url: string): boolean => {
+  return /\{[^}]+\}|%7B[^}]+%7D/.test(url);
+};
+
+export const toTemplateUrl = (urlString: string): string => {
+  try {
+    const url = new URL(urlString);
+    const match = url.pathname.match(/\/(movie|tv|anime)\/([a-zA-Z0-9_-]+)(?:\.(jpg|jpeg|png|svg|webp))?$/);
+    if (match) {
+      const id = match[2];
+      url.pathname = url.pathname.replace(`/${id}`, '/{imdb_id}');
+      // Prevent URL encoding from breaking the template braces
+      return url.toString().replace('%7Bimdb_id%7D', '{imdb_id}');
+    }
+    return urlString;
+  } catch {
+    return urlString;
+  }
