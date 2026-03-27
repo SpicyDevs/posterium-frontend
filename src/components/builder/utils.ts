@@ -474,4 +474,4 @@ export const toTemplateUrl = (urlString: string): string => {
     return urlString;
   } catch {
     return urlString;
-  }
+  };
