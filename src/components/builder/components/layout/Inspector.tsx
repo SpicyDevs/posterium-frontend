@@ -20,7 +20,13 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   return (
     <SidebarLayout
       header={
-        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
+        <div
+          className="flex rounded-lg p-0.5"
+          style={{
+            background: 'var(--film-char)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
           <button
             onClick={() => {
               clearSelection();
@@ -28,11 +34,14 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             }}
             aria-pressed={currentMode === 'global'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
-              currentMode === 'global'
-                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
-                : 'text-zinc-600 hover:text-zinc-400'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
             )}
+            style={{
+              background: currentMode === 'global' ? 'var(--film-mid)' : 'transparent',
+              color:
+                currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
+              boxShadow: currentMode === 'global' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+            }}
           >
             <Globe size={11} strokeWidth={2} />
             Canvas
@@ -41,11 +50,14 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             onClick={() => setActiveTab('badge')}
             aria-pressed={currentMode === 'selection'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
-              currentMode === 'selection'
-                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
-                : 'text-zinc-600 hover:text-zinc-400'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
             )}
+            style={{
+              background: currentMode === 'selection' ? 'var(--film-mid)' : 'transparent',
+              color:
+                currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
+              boxShadow: currentMode === 'selection' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+            }}
           >
             <MousePointer2 size={11} strokeWidth={2} />
             {selCount > 0 ? `${selCount} selected` : 'Selection'}

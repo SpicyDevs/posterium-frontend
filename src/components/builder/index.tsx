@@ -36,14 +36,18 @@ import {
   ArrowUpToLine,
   ArrowDownToLine,
   ScanLine,
-  RefreshCw,
   Keyboard,
   Type,
+  ChevronDown,
+  Copy,
+  Check,
+  X,
+  Film,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
-import { SprocketStrip } from '@/components/shared/primitives';
+import { generateApiUrl } from './utils';
 
 const STORAGE_KEY = 'posterium_config_v2';
 
@@ -54,18 +58,14 @@ const saveKeysToCookie = (keys: ApiKeys) => {
     const val = encodeURIComponent(JSON.stringify(keys));
     const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
     document.cookie = `${COOKIE_KEY}=${val}; expires=${exp}; path=/; SameSite=Strict`;
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
 };
 const loadKeysFromCookie = (): ApiKeys => {
   try {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_KEY}=([^;]*)`));
     if (!match) return {};
     return JSON.parse(decodeURIComponent(match[1])) || {};
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 };
 
 // ── Reset dialog ──────────────────────────────────────────────────────────────
@@ -103,43 +103,46 @@ const ResetDialog = memo<{
           >
             <DialogTitle
               as="h3"
-              className="text-sm font-semibold flex items-center gap-3"
+              className="text-sm font-semibold flex items-center gap-3 syne-font"
               style={{ color: 'var(--film-cream)' }}
             >
-              <span className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center shrink-0">
+              <span
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(248,113,113,0.12)' }}
+              >
                 <AlertTriangle size={14} className="text-red-400" />
               </span>
               Reset Configuration
             </DialogTitle>
-            <p className="mt-3 text-xs leading-5" style={{ color: 'var(--film-silver)' }}>
+            <p
+              className="mt-3 text-xs leading-5 body-font"
+              style={{ color: 'var(--film-text-dim)' }}
+            >
               All settings will be restored to defaults. This action cannot be undone.
             </p>
             <div className="mt-5 flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none"
+                className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none syne-font"
                 style={{
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.08)',
                   background: 'rgba(255,255,255,0.03)',
-                  color: 'var(--film-silver)',
+                  color: 'var(--film-text-dim)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
-                  e.currentTarget.style.color = 'var(--film-pale)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.25)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-pale)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.color = 'var(--film-silver)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
                 }}
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  onConfirm();
-                  onClose();
-                }}
-                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none"
+                onClick={() => { onConfirm(); onClose(); }}
+                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none syne-font"
               >
                 Reset All
               </button>
@@ -152,7 +155,7 @@ const ResetDialog = memo<{
 ));
 ResetDialog.displayName = 'ResetDialog';
 
-// ── Toolbar button ─────────────────────────────────────────────────────────────
+// ── Toolbar button ──────────────────────────────────────────────────────────
 interface ToolbarBtnProps {
   onClick?: () => void;
   disabled?: boolean;
@@ -168,40 +171,62 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
     const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
     const cls = `${base} ${
       disabled
-        ? 'text-zinc-700 cursor-not-allowed pointer-events-none'
+        ? 'cursor-not-allowed pointer-events-none'
         : active
-          ? 'text-[#D4A245] bg-[#C47C2E]/15 ring-1 ring-[#C47C2E]/25 cursor-pointer'
-          : danger
-            ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10 active:scale-95 cursor-pointer'
-            : 'text-zinc-500 hover:text-[#D4A245] hover:bg-[#C47C2E]/10 active:scale-95 cursor-pointer'
+        ? 'cursor-pointer'
+        : 'active:scale-95 cursor-pointer'
     }`;
+
+    const activeStyle = active
+      ? { color: 'var(--film-amber)', background: 'rgba(196,124,46,0.1)', border: '1px solid rgba(196,124,46,0.2)' }
+      : disabled
+      ? { color: 'rgba(255,255,255,0.15)' }
+      : danger
+      ? { color: 'var(--film-text-ghost)', border: '1px solid transparent' }
+      : { color: 'var(--film-text-ghost)', border: '1px solid transparent' };
+
     const tooltip = !disabled && (
       <span
-        className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg"
+        className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg syne-font"
         style={{
           background: 'var(--film-mid)',
           color: 'var(--film-cream)',
-          borderColor: 'rgba(255,255,255,0.1)',
+          borderColor: 'rgba(255,255,255,0.08)',
         }}
       >
         {label}
       </span>
     );
+
+    const hoverEvents = !disabled && !active
+      ? {
+          onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+            const el = e.currentTarget as HTMLElement;
+            if (danger) {
+              el.style.color = 'rgba(248,113,113,0.8)';
+              el.style.background = 'rgba(248,113,113,0.08)';
+            } else {
+              el.style.color = 'var(--film-text-label)';
+              el.style.background = 'rgba(196,124,46,0.07)';
+            }
+          },
+          onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.color = 'var(--film-text-ghost)';
+            el.style.background = 'transparent';
+          },
+        }
+      : {};
+
     if (href)
       return (
-        <a href={href} target="_blank" rel="noreferrer noopener" className={cls} aria-label={label}>
+        <a href={href} target="_blank" rel="noreferrer noopener" className={cls} aria-label={label} style={activeStyle} {...hoverEvents}>
           {children}
           {tooltip}
         </a>
       );
     return (
-      <button
-        onClick={onClick}
-        disabled={!!disabled}
-        className={cls}
-        aria-label={label}
-        aria-disabled={disabled}
-      >
+      <button onClick={onClick} disabled={!!disabled} className={cls} aria-label={label} aria-disabled={disabled} style={activeStyle} {...hoverEvents}>
         {children}
         {tooltip}
       </button>
@@ -210,7 +235,273 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
 );
 ToolbarBtn.displayName = 'ToolbarBtn';
 
-// ── Fullscreen floating overlay controls ──────────────────────────────────────
+// ── Export Popover — clean export panel ──────────────────────────────────────
+const ExportPopover = memo<{
+  config: PosterConfig;
+  onLoadConfig: (url: string) => void;
+  baseUrl: string;
+  onExtensionChange: (ext: ExtensionType) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+}>(({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef }) => {
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const EXT_OPTIONS: { id: ExtensionType; label: string; hint: string }[] = [
+    { id: 'svg', label: 'SVG', hint: 'Vector · Plex / Jellyfin' },
+    { id: 'png', label: 'PNG', hint: 'Lossless · Universal' },
+    { id: 'jpg', label: 'JPG', hint: 'Compressed · Small' },
+    { id: 'webp', label: 'WEBP', hint: 'Modern · Discord' },
+  ];
+
+  // Generate current URL for display
+  const currentUrl = React.useMemo(() => {
+    try { return generateApiUrl(config, baseUrl); } catch { return ''; }
+  }, [config, baseUrl]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  };
+
+  const handleDownload = () => {
+    setDownloading(true);
+    try {
+      const u = new URL(currentUrl);
+      u.searchParams.set('download', '');
+      window.open(u.toString(), '_blank', 'noopener,noreferrer');
+    } catch { /* malformed */ }
+    setTimeout(() => setDownloading(false), 800);
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen, onClose, anchorRef]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={popoverRef}
+      className="fixed z-50"
+      style={{
+        top: 52,
+        right: 12,
+        width: 320,
+        background: 'rgba(18,17,14,0.98)',
+        border: '1px solid rgba(196,124,46,0.18)',
+        borderRadius: 14,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
+        overflow: 'hidden',
+        animation: 'export-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
+      }}
+    >
+      <style>{`
+        @keyframes export-panel-in {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Download size={13} style={{ color: 'var(--film-amber)' }} />
+          <span
+            className="syne-font font-bold uppercase tracking-widest"
+            style={{ fontSize: 10, color: 'var(--film-cream)' }}
+          >
+            Export
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+          style={{ color: 'var(--film-text-ghost)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+        >
+          <X size={12} />
+        </button>
+      </div>
+
+      {/* Format selector */}
+      <div className="px-4 pt-3 pb-2">
+        <p
+          className="syne-font uppercase tracking-widest mb-2"
+          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
+          Format
+        </p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {EXT_OPTIONS.map((ext) => (
+            <button
+              key={ext.id}
+              onClick={() => onExtensionChange(ext.id)}
+              className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all active:scale-95 syne-font"
+              style={{
+                background:
+                  config.extension === ext.id
+                    ? 'rgba(196,124,46,0.12)'
+                    : 'rgba(255,255,255,0.02)',
+                border:
+                  config.extension === ext.id
+                    ? '1px solid rgba(196,124,46,0.25)'
+                    : '1px solid rgba(255,255,255,0.05)',
+                color:
+                  config.extension === ext.id
+                    ? 'var(--film-pale)'
+                    : 'var(--film-text-dim)',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700 }}>{ext.label}</span>
+              <span
+                className="body-font text-center leading-tight"
+                style={{
+                  fontSize: 7,
+                  color:
+                    config.extension === ext.id
+                      ? 'rgba(196,124,46,0.6)'
+                      : 'var(--film-text-ghost)',
+                }}
+              >
+                {ext.hint}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* URL display */}
+      <div className="px-4 pt-1 pb-3">
+        <p
+          className="syne-font uppercase tracking-widest mb-1.5"
+          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
+          API URL
+        </p>
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg"
+          style={{
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <span
+            className="mono-font flex-1 min-w-0 truncate"
+            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+            title={currentUrl}
+          >
+            {currentUrl.replace('https://api.spicydevs.xyz', '…')}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 transition-colors"
+            style={{ color: copied ? '#34d399' : 'var(--film-text-ghost)' }}
+            title={copied ? 'Copied!' : 'Copy URL'}
+            onMouseEnter={(e) => {
+              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+            onMouseLeave={(e) => {
+              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+            }}
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div
+        className="flex gap-2 px-4 pb-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+      >
+        <button
+          onClick={handleCopy}
+          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'var(--film-text-dim)',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.2)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+          }}
+        >
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? 'Copied' : 'Copy URL'}
+        </button>
+        <button
+          onClick={handleDownload}
+          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+          style={{
+            background: downloading ? 'rgba(196,124,46,0.2)' : 'var(--film-amber)',
+            color: downloading ? 'var(--film-pale)' : '#070706',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            boxShadow: downloading ? 'none' : '0 0 20px rgba(196,124,46,0.25)',
+            border: 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (!downloading) (e.currentTarget as HTMLElement).style.background = '#d4a245';
+          }}
+          onMouseLeave={(e) => {
+            if (!downloading) (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+          }}
+        >
+          <Download size={12} />
+          Download
+        </button>
+      </div>
+
+      {/* Advanced: load from URL */}
+      <div
+        className="px-4 pb-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+      >
+        <CodeBox
+          config={config}
+          onLoadConfig={onLoadConfig}
+          baseUrl={baseUrl}
+          onExtensionChange={onExtensionChange}
+        />
+      </div>
+    </div>
+  );
+});
+ExportPopover.displayName = 'ExportPopover';
+
+// ── Fullscreen overlay ────────────────────────────────────────────────────────
 const FullscreenOverlay = memo<{
   onExit: () => void;
   onZoomIn: () => void;
@@ -222,7 +513,7 @@ const FullscreenOverlay = memo<{
     style={{
       bottom: 20,
       right: 20,
-      background: 'rgba(14,13,11,0.88)',
+      background: 'rgba(14,13,11,0.92)',
       backdropFilter: 'blur(16px)',
       border: '1px solid rgba(196,124,46,0.18)',
       padding: '6px',
@@ -239,19 +530,14 @@ const FullscreenOverlay = memo<{
         onClick={action}
         title={label}
         className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-        style={{
-          color: 'rgba(176,168,152,0.7)',
-          cursor: 'pointer',
-          background: 'transparent',
-          border: 'none',
-        }}
+        style={{ color: 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#D4A245';
-          e.currentTarget.style.background = 'rgba(196,124,46,0.12)';
+          (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+          (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = 'rgba(176,168,152,0.7)';
-          e.currentTarget.style.background = 'transparent';
+          (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+          (e.currentTarget as HTMLElement).style.background = 'transparent';
         }}
       >
         {icon}
@@ -262,51 +548,18 @@ const FullscreenOverlay = memo<{
       onClick={onExit}
       title="Exit Fullscreen (F or Esc)"
       className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-      style={{
-        color: 'rgba(196,124,46,0.7)',
-        cursor: 'pointer',
-        background: 'transparent',
-        border: 'none',
-      }}
+      style={{ color: 'rgba(196,124,46,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.color = '#D4A245';
-        e.currentTarget.style.background = 'rgba(196,124,46,0.12)';
+        (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+        (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = 'rgba(196,124,46,0.7)';
-        e.currentTarget.style.background = 'transparent';
+        (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.7)';
+        (e.currentTarget as HTMLElement).style.background = 'transparent';
       }}
     >
       <Minimize2 size={15} />
     </button>
-
-    <div className="absolute -top-8 right-0 flex items-center gap-2 pointer-events-none">
-      {[
-        ['F', 'exit'],
-        ['Esc', 'exit'],
-      ].map(([k, l]) => (
-        <div key={k} className="flex items-center gap-1">
-          <kbd
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 3,
-              padding: '1px 5px',
-              fontSize: 8,
-              fontFamily: 'JetBrains Mono, monospace',
-              color: 'rgba(196,124,46,0.5)',
-            }}
-          >
-            {k}
-          </kbd>
-          <span
-            style={{ fontSize: 8, color: 'rgba(140,130,112,0.4)', fontFamily: 'Syne, sans-serif' }}
-          >
-            {l}
-          </span>
-        </div>
-      ))}
-    </div>
   </div>
 ));
 FullscreenOverlay.displayName = 'FullscreenOverlay';
@@ -322,6 +575,7 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  mediaTitle?: string;
 }> = ({
   config,
   setConfig,
@@ -332,6 +586,7 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
+  mediaTitle,
 }) => {
   const {
     activeTab,
@@ -351,30 +606,24 @@ const StudioLayout: React.FC<{
   const [rightVisible, setRightVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
-    visible: false,
-    x: 0,
-    y: 0,
-    badgeId: null,
+    visible: false, x: 0, y: 0, badgeId: null,
   });
   const openCtxMenu = useCallback((badgeId: RatingType, e: React.MouseEvent) => {
     e.preventDefault();
     setCtxMenu({ visible: true, x: e.clientX, y: e.clientY, badgeId });
   }, []);
   const closeCtxMenu = useCallback(() => setCtxMenu((s) => ({ ...s, visible: false })), []);
-
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const selectedIdsRef = useRef(selectedIds);
   const configRatingsRef = useRef(config.ratings);
-  useEffect(() => {
-    selectedIdsRef.current = selectedIds;
-  });
-  useEffect(() => {
-    configRatingsRef.current = config.ratings;
-  });
+  useEffect(() => { selectedIdsRef.current = selectedIds; });
+  useEffect(() => { configRatingsRef.current = config.ratings; });
 
   const dispatchZoom = useCallback(
     (delta: number) => window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })),
@@ -438,75 +687,32 @@ const StudioLayout: React.FC<{
     [setConfig, clearSelection]
   );
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
       const mod = e.ctrlKey || e.metaKey;
 
-      // ESC — exit fullscreen or deselect (highest priority, runs even in inputs)
       if (e.key === 'Escape') {
-        if (shortcutsOpen) {
-          setShortcutsOpen(false);
-          return;
-        }
-        if (paletteOpen) {
-          setPaletteOpen(false);
-          return;
-        }
-        if (isFullscreen) {
-          setIsFullscreen(false);
-          return;
-        }
-        if (selectedIds.size > 0) {
-          clearSelection();
-          return;
-        }
+        if (shortcutsOpen) { setShortcutsOpen(false); return; }
+        if (paletteOpen) { setPaletteOpen(false); return; }
+        if (exportOpen) { setExportOpen(false); return; }
+        if (isFullscreen) { setIsFullscreen(false); return; }
+        if (selectedIds.size > 0) { clearSelection(); return; }
         return;
       }
-
-      // Command palette (runs even in inputs)
       if (mod && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'p')) {
-        e.preventDefault();
-        setPaletteOpen((v) => !v);
-        return;
+        e.preventDefault(); setPaletteOpen((v) => !v); return;
       }
-
-      // Keyboard shortcuts modal (Ctrl+/ or Ctrl+?)
       if (mod && (e.key === '/' || e.key === '?')) {
-        e.preventDefault();
-        setShortcutsOpen((v) => !v);
-        return;
+        e.preventDefault(); setShortcutsOpen((v) => !v); return;
       }
-
       if (inInput) return;
-
-      // ── Selection ──
-      if (mod && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        setBatchSelection(configRatingsRef.current);
-        return;
-      }
-      if (mod && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        clearSelection();
-        return;
-      }
-
-      // ── History ──
-      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-        return;
-      }
-      if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-        return;
-      }
-
-      // ── Delete selected ──
+      if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); setBatchSelection(configRatingsRef.current); return; }
+      if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); clearSelection(); return; }
+      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size > 0) {
         e.preventDefault();
         const rm = new Set(selectedIdsRef.current);
@@ -514,83 +720,22 @@ const StudioLayout: React.FC<{
         clearSelection();
         return;
       }
-
-      // ── Layering (selected badges) ──
       if (selectedIdsRef.current.size > 0) {
         const sel = Array.from(selectedIdsRef.current);
-        if (mod && e.shiftKey && e.key === ']') {
-          e.preventDefault();
-          sel.forEach((id) => moveLayer(id as RatingType, 'front'));
-          return;
-        }
-        if (mod && e.shiftKey && e.key === '[') {
-          e.preventDefault();
-          sel.forEach((id) => moveLayer(id as RatingType, 'toback'));
-          return;
-        }
-        if (mod && e.key === ']') {
-          e.preventDefault();
-          sel.forEach((id) => moveLayer(id as RatingType, 'forward'));
-          return;
-        }
-        if (mod && e.key === '[') {
-          e.preventDefault();
-          sel.forEach((id) => moveLayer(id as RatingType, 'back'));
-          return;
-        }
-
-        if (e.key.toLowerCase() === 'h' && !mod) {
-          e.preventDefault();
-          sel.forEach((id) => hideBadge(id as RatingType));
-          return;
-        }
+        if (mod && e.shiftKey && e.key === ']') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'front')); return; }
+        if (mod && e.shiftKey && e.key === '[') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'toback')); return; }
+        if (mod && e.key === ']') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'forward')); return; }
+        if (mod && e.key === '[') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'back')); return; }
+        if (e.key.toLowerCase() === 'h' && !mod) { e.preventDefault(); sel.forEach((id) => hideBadge(id as RatingType)); return; }
       }
-
-      // ── View / Canvas ──
-      if (e.key.toLowerCase() === 'f' && !mod) {
-        e.preventDefault();
-        setIsFullscreen((v) => !v);
-        return;
-      }
-      if (e.key.toLowerCase() === 'g' && !mod) {
-        e.preventDefault();
-        toggleViewOption('showGrid');
-        return;
-      }
-      if (e.key === "'" && !mod) {
-        e.preventDefault();
-        toggleViewOption('showSafeArea');
-        return;
-      }
-      if (mod && e.key === '1') {
-        e.preventDefault();
-        dispatchResetView();
-        return;
-      }
-      if (mod && (e.key === '+' || e.key === '=')) {
-        e.preventDefault();
-        dispatchZoom(0.25);
-        return;
-      }
-      if (mod && e.key === '-') {
-        e.preventDefault();
-        dispatchZoom(-0.25);
-        return;
-      }
-
-      // ── Sidebar toggles ──
-      if (e.key === '[' && !mod && !e.shiftKey) {
-        e.preventDefault();
-        setLeftVisible((v) => !v);
-        return;
-      }
-      if (e.key === ']' && !mod && !e.shiftKey) {
-        e.preventDefault();
-        setRightVisible((v) => !v);
-        return;
-      }
-
-      // ── Tab: cycle badge selection ──
+      if (e.key.toLowerCase() === 'f' && !mod) { e.preventDefault(); setIsFullscreen((v) => !v); return; }
+      if (e.key.toLowerCase() === 'g' && !mod) { e.preventDefault(); toggleViewOption('showGrid'); return; }
+      if (e.key === "'" && !mod) { e.preventDefault(); toggleViewOption('showSafeArea'); return; }
+      if (mod && e.key === '1') { e.preventDefault(); dispatchResetView(); return; }
+      if (mod && (e.key === '+' || e.key === '=')) { e.preventDefault(); dispatchZoom(0.25); return; }
+      if (mod && e.key === '-') { e.preventDefault(); dispatchZoom(-0.25); return; }
+      if (e.key === '[' && !mod && !e.shiftKey) { e.preventDefault(); setLeftVisible((v) => !v); return; }
+      if (e.key === ']' && !mod && !e.shiftKey) { e.preventDefault(); setRightVisible((v) => !v); return; }
       if (e.key === 'Tab' && !mod) {
         const ratings = configRatingsRef.current;
         if (ratings.length === 0) return;
@@ -602,8 +747,6 @@ const StudioLayout: React.FC<{
         setBatchSelection([next]);
         return;
       }
-
-      // ── Canvas properties shortcuts ──
       if (mod && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         setConfig((p) => ({ ...p, posterBlur: p.posterBlur > 0 ? 0 : 8 }));
@@ -613,20 +756,9 @@ const StudioLayout: React.FC<{
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
-    undo,
-    redo,
-    setConfig,
-    clearSelection,
-    setBatchSelection,
-    moveLayer,
-    hideBadge,
-    toggleViewOption,
-    dispatchZoom,
-    dispatchResetView,
-    isFullscreen,
-    paletteOpen,
-    shortcutsOpen,
-    selectedIds,
+    undo, redo, setConfig, clearSelection, setBatchSelection,
+    moveLayer, hideBadge, toggleViewOption, dispatchZoom, dispatchResetView,
+    isFullscreen, paletteOpen, shortcutsOpen, exportOpen, selectedIds,
   ]);
 
   // ── Panel widths ──────────────────────────────────────────────────────────
@@ -636,14 +768,9 @@ const StudioLayout: React.FC<{
   const startResizeLeft = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      const sx = e.clientX,
-        sw = leftW;
+      const sx = e.clientX, sw = leftW;
       const move = (m: MouseEvent) => setLeftW(Math.max(220, Math.min(sw + m.clientX - sx, 540)));
-      const up = () => {
-        document.removeEventListener('mousemove', move);
-        document.removeEventListener('mouseup', up);
-        document.body.style.cursor = '';
-      };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -654,15 +781,9 @@ const StudioLayout: React.FC<{
   const startResizeRight = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      const sx = e.clientX,
-        sw = rightW;
-      const move = (m: MouseEvent) =>
-        setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
-      const up = () => {
-        document.removeEventListener('mousemove', move);
-        document.removeEventListener('mouseup', up);
-        document.body.style.cursor = '';
-      };
+      const sx = e.clientX, sw = rightW;
+      const move = (m: MouseEvent) => setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -676,16 +797,10 @@ const StudioLayout: React.FC<{
   const dragDelta = useRef(0);
   const isSheetDragging = useRef(false);
   const modeRef = useRef(mobileSheetMode);
-  useEffect(() => {
-    modeRef.current = mobileSheetMode;
-  });
+  useEffect(() => { modeRef.current = mobileSheetMode; });
 
-  const SNAPS: { hidden: string; half: string; full: string } = {
-    hidden: '100%',
-    half: '0%',
-    full: '0%',
-  };
-  const HEIGHTS: { hidden: string; half: string; full: string } = {
+  const SNAPS = { hidden: '100%', half: '0%', full: '0%' };
+  const HEIGHTS = {
     hidden: 'min(58dvh, 460px)',
     half: 'min(58dvh, 460px)',
     full: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))',
@@ -736,404 +851,38 @@ const StudioLayout: React.FC<{
   };
 
   const handleExtensionChange = useCallback(
-    (ext: ExtensionType) => {
-      setConfig((prev) => ({ ...prev, extension: ext }));
-    },
+    (ext: ExtensionType) => { setConfig((prev) => ({ ...prev, extension: ext })); },
     [setConfig]
   );
 
   // ── Command palette commands ──────────────────────────────────────────────
   const paletteCommands: PaletteCommand[] = [
-    // View & Canvas
-    {
-      id: 'zoom-fit',
-      label: 'Zoom to Fit',
-      category: 'View & Canvas',
-      icon: <Maximize2 size={13} />,
-      shortcut: '⌘1',
-      keywords: ['reset', 'fit', 'view'],
-      action: dispatchResetView,
-    },
-    {
-      id: 'zoom-in',
-      label: 'Zoom In',
-      category: 'View & Canvas',
-      icon: <ZoomIn size={13} />,
-      shortcut: '⌘+',
-      action: () => dispatchZoom(0.25),
-    },
-    {
-      id: 'zoom-out',
-      label: 'Zoom Out',
-      category: 'View & Canvas',
-      icon: <ZoomOut size={13} />,
-      shortcut: '⌘-',
-      action: () => dispatchZoom(-0.25),
-    },
-    {
-      id: 'fullscreen',
-      label: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen Canvas',
-      category: 'View & Canvas',
-      icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />,
-      shortcut: 'F',
-      action: toggleFullscreen,
-    },
-    {
-      id: 'grid',
-      label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid Overlay`,
-      category: 'View & Canvas',
-      icon: <Grid3x3 size={13} />,
-      shortcut: 'G',
-      keywords: ['grid', 'lines'],
-      action: () => toggleViewOption('showGrid'),
-    },
-    {
-      id: 'safe-area',
-      label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`,
-      category: 'View & Canvas',
-      icon: <ShieldCheck size={13} />,
-      shortcut: "'",
-      keywords: ['safe', 'area', 'zone'],
-      action: () => toggleViewOption('showSafeArea'),
-    },
-    {
-      id: 'sidebar-left',
-      label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`,
-      category: 'View & Canvas',
-      icon: <PanelLeft size={13} />,
-      shortcut: '[',
-      keywords: ['layers', 'source', 'panel'],
-      action: () => setLeftVisible((v) => !v),
-    },
-    {
-      id: 'sidebar-right',
-      label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`,
-      category: 'View & Canvas',
-      icon: <PanelRight size={13} />,
-      shortcut: ']',
-      keywords: ['inspector', 'panel'],
-      action: () => setRightVisible((v) => !v),
-    },
-    {
-      id: 'shortcuts-help',
-      label: 'Show Keyboard Shortcuts',
-      category: 'View & Canvas',
-      icon: <Keyboard size={13} />,
-      shortcut: '⌘/',
-      keywords: ['help', 'keys', 'hotkeys'],
-      action: () => setShortcutsOpen(true),
-    },
-
-    // Layers & Selection
-    {
-      id: 'select-all',
-      label: 'Select All Badges',
-      category: 'Layers & Selection',
-      icon: <CheckSquare size={13} />,
-      shortcut: '⌘A',
-      action: () => setBatchSelection(config.ratings),
-    },
-    {
-      id: 'deselect-all',
-      label: 'Deselect All',
-      category: 'Layers & Selection',
-      icon: <MousePointer2Off size={13} />,
-      shortcut: '⌘D',
-      action: clearSelection,
-    },
-    {
-      id: 'show-all',
-      label: 'Show All Badges',
-      category: 'Layers & Selection',
-      icon: <Eye size={13} />,
-      keywords: ['reveal', 'unhide'],
-      action: showAllBadges,
-    },
-    {
-      id: 'hide-sel',
-      label: 'Hide Selected Badges',
-      category: 'Layers & Selection',
-      icon: <EyeOff size={13} />,
-      shortcut: 'H',
-      keywords: ['hide', 'selected'],
-      action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)),
-    },
-    {
-      id: 'layer-front',
-      label: 'Bring to Front',
-      category: 'Layers & Selection',
-      icon: <ArrowUpToLine size={13} />,
-      shortcut: '⌘⇧]',
-      action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'front')),
-    },
-    {
-      id: 'layer-back',
-      label: 'Send to Back',
-      category: 'Layers & Selection',
-      icon: <ArrowDownToLine size={13} />,
-      shortcut: '⌘⇧[',
-      action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'toback')),
-    },
-    {
-      id: 'delete-sel',
-      label: 'Delete Selected Badges',
-      category: 'Layers & Selection',
-      icon: <Layers size={13} />,
-      shortcut: 'Del',
-      keywords: ['remove', 'delete'],
-      action: () => {
-        const rm = new Set(selectedIds);
-        setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) }));
-        clearSelection();
-      },
-    },
-
-    // Badges
-    {
-      id: 'add-imdb',
-      label: 'Add IMDb Badge',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'badge', 'imdb'],
-      action: () =>
-        setConfig((p) =>
-          p.ratings.includes('imdb') ? p : { ...p, ratings: ['imdb', ...p.ratings] }
-        ),
-    },
-    {
-      id: 'add-rt',
-      label: 'Add Rotten Tomatoes',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'badge', 'rt', 'rotten', 'tomatoes'],
-      action: () =>
-        setConfig((p) => (p.ratings.includes('rt') ? p : { ...p, ratings: ['rt', ...p.ratings] })),
-    },
-    {
-      id: 'add-meta',
-      label: 'Add Metacritic',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'badge', 'meta', 'metacritic'],
-      action: () =>
-        setConfig((p) =>
-          p.ratings.includes('meta') ? p : { ...p, ratings: ['meta', ...p.ratings] }
-        ),
-    },
-    {
-      id: 'add-tmdb',
-      label: 'Add TMDB Badge',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'badge', 'tmdb'],
-      action: () =>
-        setConfig((p) =>
-          p.ratings.includes('tmdb') ? p : { ...p, ratings: ['tmdb', ...p.ratings] }
-        ),
-    },
-    {
-      id: 'add-age',
-      label: 'Add Age Rating Badge',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'age', 'rating', 'pg', 'certificate'],
-      action: () =>
-        setConfig((p) =>
-          p.ratings.includes('age') ? p : { ...p, ratings: ['age', ...p.ratings] }
-        ),
-    },
-    {
-      id: 'add-runtime',
-      label: 'Add Runtime Badge',
-      category: 'Badges',
-      icon: <Layers size={13} />,
-      keywords: ['add', 'runtime', 'duration', 'time'],
-      action: () =>
-        setConfig((p) =>
-          p.ratings.includes('runtime') ? p : { ...p, ratings: ['runtime', ...p.ratings] }
-        ),
-    },
-    {
-      id: 'clear-all-badges',
-      label: 'Remove All Badges',
-      category: 'Badges',
-      icon: <EyeOff size={13} />,
-      keywords: ['clear', 'remove', 'all', 'badges'],
-      action: () => {
-        setConfig((p) => ({ ...p, ratings: [] }));
-        clearSelection();
-      },
-    },
-    {
-      id: 'toggle-icons',
-      label: `${config.icon !== false ? 'Hide' : 'Show'} All Badge Icons`,
-      category: 'Badges',
-      icon: <Eye size={13} />,
-      keywords: ['icons', 'show', 'hide'],
-      action: () => setConfig((p) => ({ ...p, icon: !(p.icon !== false) })),
-    },
-    {
-      id: 'toggle-text',
-      label: `${config.showText !== false ? 'Hide' : 'Show'} Rating Text`,
-      category: 'Badges',
-      icon: <Type size={13} />,
-      keywords: ['text', 'numbers', 'rating', 'show', 'hide'],
-      action: () => setConfig((p) => ({ ...p, showText: !(p.showText !== false) })),
-    },
-
-    // Canvas Properties
-    {
-      id: 'grayscale',
-      label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`,
-      category: 'Canvas Properties',
-      icon: <Contrast size={13} />,
-      keywords: ['grayscale', 'bw', 'black', 'white'],
-      action: () => setConfig((p) => ({ ...p, grayscale: !p.grayscale })),
-    },
-    {
-      id: 'blur-0',
-      label: 'Remove Poster Blur',
-      category: 'Canvas Properties',
-      icon: <ScanLine size={13} />,
-      keywords: ['blur', 'clear', 'sharp'],
-      action: () => setConfig((p) => ({ ...p, posterBlur: 0 })),
-    },
-    {
-      id: 'blur-4',
-      label: 'Poster Blur: Light (4px)',
-      category: 'Canvas Properties',
-      icon: <ScanLine size={13} />,
-      keywords: ['blur', 'light'],
-      action: () => setConfig((p) => ({ ...p, posterBlur: 4 })),
-    },
-    {
-      id: 'blur-8',
-      label: 'Poster Blur: Medium (8px)',
-      category: 'Canvas Properties',
-      icon: <ScanLine size={13} />,
-      keywords: ['blur', 'medium'],
-      action: () => setConfig((p) => ({ ...p, posterBlur: 8 })),
-    },
-    {
-      id: 'blur-16',
-      label: 'Poster Blur: Heavy (16px)',
-      category: 'Canvas Properties',
-      icon: <ScanLine size={13} />,
-      keywords: ['blur', 'heavy', 'strong'],
-      action: () => setConfig((p) => ({ ...p, posterBlur: 16 })),
-    },
-    {
-      id: 'textless-on',
-      label: 'Enable Textless Poster',
-      category: 'Canvas Properties',
-      icon: <ImageIcon size={13} />,
-      keywords: ['textless', 'clean'],
-      action: () => setConfig((p) => ({ ...p, textless: true })),
-    },
-    {
-      id: 'textless-off',
-      label: 'Disable Textless Poster',
-      category: 'Canvas Properties',
-      icon: <ImageIcon size={13} />,
-      keywords: ['textless', 'text'],
-      action: () => setConfig((p) => ({ ...p, textless: false })),
-    },
-    {
-      id: 'source-tmdb',
-      label: 'Switch Poster Source: TMDB',
-      category: 'Canvas Properties',
-      icon: <ImageIcon size={13} />,
-      keywords: ['source', 'tmdb', 'poster'],
-      action: () => setConfig((p) => ({ ...p, source: 'tmdb' })),
-    },
-    {
-      id: 'source-fanart',
-      label: 'Switch Poster Source: Fanart',
-      category: 'Canvas Properties',
-      icon: <ImageIcon size={13} />,
-      keywords: ['source', 'fanart', 'poster'],
-      action: () => setConfig((p) => ({ ...p, source: 'fanart' })),
-    },
-    {
-      id: 'radius-0',
-      label: 'Remove Badge Corner Radius',
-      category: 'Canvas Properties',
-      icon: <Grid3x3 size={13} />,
-      keywords: ['radius', 'round', 'square'],
-      action: () => setConfig((p) => ({ ...p, radius: 0 })),
-    },
-    {
-      id: 'radius-12',
-      label: 'Set Badge Radius: Rounded',
-      category: 'Canvas Properties',
-      icon: <Grid3x3 size={13} />,
-      keywords: ['radius', 'round'],
-      action: () => setConfig((p) => ({ ...p, radius: 12 })),
-    },
-    {
-      id: 'radius-max',
-      label: 'Set Badge Radius: Pill',
-      category: 'Canvas Properties',
-      icon: <Grid3x3 size={13} />,
-      keywords: ['radius', 'pill', 'circle'],
-      action: () => setConfig((p) => ({ ...p, radius: 30 })),
-    },
-
-    // Export
-    {
-      id: 'export-svg',
-      label: 'Export as SVG',
-      category: 'Export',
-      icon: <Download size={13} />,
-      action: () => setConfig((p) => ({ ...p, extension: 'svg' })),
-    },
-    {
-      id: 'export-png',
-      label: 'Export as PNG',
-      category: 'Export',
-      icon: <Download size={13} />,
-      action: () => setConfig((p) => ({ ...p, extension: 'png' })),
-    },
-    {
-      id: 'export-jpg',
-      label: 'Export as JPG',
-      category: 'Export',
-      icon: <Download size={13} />,
-      action: () => setConfig((p) => ({ ...p, extension: 'jpg' })),
-    },
-    {
-      id: 'export-webp',
-      label: 'Export as WebP',
-      category: 'Export',
-      icon: <Download size={13} />,
-      action: () => setConfig((p) => ({ ...p, extension: 'webp' })),
-    },
-
-    // File
-    {
-      id: 'reset',
-      label: 'Reset All Settings',
-      category: 'File',
-      icon: <RotateCcw size={13} />,
-      keywords: ['reset', 'clear', 'default'],
-      action: () => setIsResetOpen(true),
-    },
-    {
-      id: 'undo',
-      label: 'Undo',
-      category: 'File',
-      icon: <Undo2 size={13} />,
-      shortcut: '⌘Z',
-      action: undo,
-    },
-    {
-      id: 'redo',
-      label: 'Redo',
-      category: 'File',
-      icon: <Redo2 size={13} />,
-      shortcut: '⌘Y',
-      action: redo,
-    },
+    { id: 'zoom-fit', label: 'Zoom to Fit', category: 'View & Canvas', icon: <Maximize2 size={13} />, shortcut: '⌘1', keywords: ['reset', 'fit', 'view'], action: dispatchResetView },
+    { id: 'zoom-in', label: 'Zoom In', category: 'View & Canvas', icon: <ZoomIn size={13} />, shortcut: '⌘+', action: () => dispatchZoom(0.25) },
+    { id: 'zoom-out', label: 'Zoom Out', category: 'View & Canvas', icon: <ZoomOut size={13} />, shortcut: '⌘-', action: () => dispatchZoom(-0.25) },
+    { id: 'fullscreen', label: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen Canvas', category: 'View & Canvas', icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />, shortcut: 'F', action: toggleFullscreen },
+    { id: 'grid', label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid Overlay`, category: 'View & Canvas', icon: <Grid3x3 size={13} />, shortcut: 'G', keywords: ['grid', 'lines'], action: () => toggleViewOption('showGrid') },
+    { id: 'safe-area', label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`, category: 'View & Canvas', icon: <ShieldCheck size={13} />, shortcut: "'", keywords: ['safe', 'area', 'zone'], action: () => toggleViewOption('showSafeArea') },
+    { id: 'sidebar-left', label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`, category: 'View & Canvas', icon: <PanelLeft size={13} />, shortcut: '[', keywords: ['layers', 'source', 'panel'], action: () => setLeftVisible((v) => !v) },
+    { id: 'sidebar-right', label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`, category: 'View & Canvas', icon: <PanelRight size={13} />, shortcut: ']', keywords: ['inspector', 'panel'], action: () => setRightVisible((v) => !v) },
+    { id: 'shortcuts-help', label: 'Show Keyboard Shortcuts', category: 'View & Canvas', icon: <Keyboard size={13} />, shortcut: '⌘/', keywords: ['help', 'keys', 'hotkeys'], action: () => setShortcutsOpen(true) },
+    { id: 'select-all', label: 'Select All Badges', category: 'Layers & Selection', icon: <CheckSquare size={13} />, shortcut: '⌘A', action: () => setBatchSelection(config.ratings) },
+    { id: 'deselect-all', label: 'Deselect All', category: 'Layers & Selection', icon: <MousePointer2Off size={13} />, shortcut: '⌘D', action: clearSelection },
+    { id: 'show-all', label: 'Show All Badges', category: 'Layers & Selection', icon: <Eye size={13} />, keywords: ['reveal', 'unhide'], action: showAllBadges },
+    { id: 'hide-sel', label: 'Hide Selected Badges', category: 'Layers & Selection', icon: <EyeOff size={13} />, shortcut: 'H', keywords: ['hide', 'selected'], action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)) },
+    { id: 'layer-front', label: 'Bring to Front', category: 'Layers & Selection', icon: <ArrowUpToLine size={13} />, shortcut: '⌘⇧]', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'front')) },
+    { id: 'layer-back', label: 'Send to Back', category: 'Layers & Selection', icon: <ArrowDownToLine size={13} />, shortcut: '⌘⇧[', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'toback')) },
+    { id: 'delete-sel', label: 'Delete Selected Badges', category: 'Layers & Selection', icon: <Layers size={13} />, shortcut: 'Del', keywords: ['remove', 'delete'], action: () => { const rm = new Set(selectedIds); setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) })); clearSelection(); } },
+    { id: 'grayscale', label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`, category: 'Canvas Properties', icon: <Contrast size={13} />, keywords: ['grayscale', 'bw', 'black', 'white'], action: () => setConfig((p) => ({ ...p, grayscale: !p.grayscale })) },
+    { id: 'blur-0', label: 'Remove Poster Blur', category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur', 'clear', 'sharp'], action: () => setConfig((p) => ({ ...p, posterBlur: 0 })) },
+    { id: 'blur-8', label: 'Poster Blur: Medium (8px)', category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur', 'medium'], action: () => setConfig((p) => ({ ...p, posterBlur: 8 })) },
+    { id: 'toggle-text', label: `${config.showText !== false ? 'Hide' : 'Show'} Rating Text`, category: 'Badges', icon: <Type size={13} />, keywords: ['text', 'numbers', 'rating', 'show', 'hide'], action: () => setConfig((p) => ({ ...p, showText: !(p.showText !== false) })) },
+    { id: 'export-svg', label: 'Export as SVG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'svg' })); setExportOpen(true); } },
+    { id: 'export-png', label: 'Export as PNG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'png' })); setExportOpen(true); } },
+    { id: 'export-jpg', label: 'Export as JPG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'jpg' })); setExportOpen(true); } },
+    { id: 'reset', label: 'Reset All Settings', category: 'File', icon: <RotateCcw size={13} />, keywords: ['reset', 'clear', 'default'], action: () => setIsResetOpen(true) },
+    { id: 'undo', label: 'Undo', category: 'File', icon: <Undo2 size={13} />, shortcut: '⌘Z', action: undo },
+    { id: 'redo', label: 'Redo', category: 'File', icon: <Redo2 size={13} />, shortcut: '⌘Y', action: redo },
   ];
 
   const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
@@ -1168,13 +917,8 @@ const StudioLayout: React.FC<{
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        <ResetDialog
-          isOpen={isResetOpen}
-          onClose={() => setIsResetOpen(false)}
-          onConfirm={handleReset}
-        />
+        <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
         <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-
         <ContextMenu
           state={ctxMenu}
           onClose={closeCtxMenu}
@@ -1193,31 +937,38 @@ const StudioLayout: React.FC<{
           onResetBadge={resetBadge}
           onDelete={deleteBadge}
         />
+        <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteCommands} />
 
-        <CommandPalette
-          isOpen={paletteOpen}
-          onClose={() => setPaletteOpen(false)}
-          commands={paletteCommands}
+        {/* Export popover */}
+        <ExportPopover
+          config={config}
+          onLoadConfig={handleLoadConfig}
+          baseUrl={baseUrl}
+          onExtensionChange={handleExtensionChange}
+          isOpen={exportOpen}
+          onClose={() => setExportOpen(false)}
+          anchorRef={exportBtnRef}
         />
 
-        {/* ── HEADER (hidden in fullscreen) ── */}
+        {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
             className="h-12 shrink-0 flex items-center gap-2 px-3 z-30 relative"
             style={{
               background: 'var(--film-dark)',
-              borderBottom: '1px solid rgba(196,124,46,0.1)',
+              borderBottom: '1px solid rgba(196,124,46,0.08)',
             }}
           >
+            {/* Ambient gradient rule */}
             <div
-              className="absolute bottom-0 left-0 right-0 h-px"
+              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
               style={{
-                background:
-                  'linear-gradient(90deg, transparent, rgba(196,124,46,0.2), transparent)',
+                background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
               }}
+              aria-hidden="true"
             />
 
-            {/* Logo */}
+            {/* Wordmark */}
             <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
               <span
                 className="poster-font select-none hidden sm:block"
@@ -1230,7 +981,6 @@ const StudioLayout: React.FC<{
               >
                 POSTERIUM
               </span>
-              {/* Mobile: just icon */}
               <span
                 className="poster-font select-none sm:hidden"
                 style={{
@@ -1244,29 +994,39 @@ const StudioLayout: React.FC<{
               </span>
             </a>
 
+            {/* Vertical divider */}
             <div
-              className="w-px h-4 mx-1 shrink-0 hidden sm:block"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
+              className="hidden sm:block w-px h-4 mx-1 shrink-0"
+              style={{ background: 'rgba(196,124,46,0.15)' }}
+              aria-hidden="true"
             />
 
-            {/* URL bar — takes available space */}
-            <div className="flex-1 min-w-0">
-              <CodeBox
-                config={config}
-                onLoadConfig={handleLoadConfig}
-                baseUrl={baseUrl}
-                onExtensionChange={handleExtensionChange}
-              />
-            </div>
+            {/* Film title — contextual breadcrumb */}
+            {mediaTitle && (
+              <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+                <Film size={10} style={{ color: 'var(--film-amber)', opacity: 0.6, flexShrink: 0 }} />
+                <span
+                  className="syne-font truncate"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--film-text-dim)',
+                    maxWidth: 160,
+                    letterSpacing: '0.02em',
+                  }}
+                  title={mediaTitle}
+                >
+                  {mediaTitle}
+                </span>
+              </div>
+            )}
 
-            <div
-              className="w-px h-4 mx-0.5 shrink-0"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            />
+            {/* Spacer */}
+            <div className="flex-1" />
 
-            {/* Toolbar — desktop shows all, mobile shows only essential */}
+            {/* Toolbar cluster */}
             <div className="flex items-center gap-0.5 shrink-0">
-              {/* Command palette — always visible */}
+              {/* Utility group */}
               <ToolbarBtn
                 onClick={() => setPaletteOpen((v) => !v)}
                 label="Command Palette (⌘K)"
@@ -1274,8 +1034,6 @@ const StudioLayout: React.FC<{
               >
                 <Command size={14} />
               </ToolbarBtn>
-
-              {/* Keyboard shortcuts — always visible */}
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
@@ -1284,12 +1042,9 @@ const StudioLayout: React.FC<{
                 <Keyboard size={14} />
               </ToolbarBtn>
 
-              <div
-                className="w-px h-4 mx-0.5 hidden lg:block"
-                style={{ background: 'rgba(255,255,255,0.08)' }}
-              />
+              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
-              {/* Sidebar toggles — desktop only */}
+              {/* Sidebar toggles */}
               <ToolbarBtn
                 onClick={() => setLeftVisible((v) => !v)}
                 label={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
@@ -1306,8 +1061,6 @@ const StudioLayout: React.FC<{
               >
                 <PanelRight size={14} />
               </ToolbarBtn>
-
-              {/* Fullscreen — desktop only */}
               <ToolbarBtn
                 onClick={toggleFullscreen}
                 label="Fullscreen (F)"
@@ -1317,9 +1070,9 @@ const StudioLayout: React.FC<{
                 <Maximize2 size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-4 mx-0.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-4 mx-1" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
-              {/* Undo / Redo */}
+              {/* History */}
               <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
                 <Undo2 size={14} />
               </ToolbarBtn>
@@ -1327,19 +1080,9 @@ const StudioLayout: React.FC<{
                 <Redo2 size={14} />
               </ToolbarBtn>
 
-              <div
-                className="w-px h-4 mx-0.5 hidden sm:block"
-                style={{ background: 'rgba(255,255,255,0.08)' }}
-              />
-              <ToolbarBtn
-                onClick={() => setIsResetOpen(true)}
-                danger
-                label="Reset to defaults"
-                hideOnMobile
-              >
-                <RotateCcw size={14} />
-              </ToolbarBtn>
+              <div className="w-px h-4 mx-1" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
+              {/* GitHub — desktop only */}
               <ToolbarBtn
                 href="https://github.com/xdaayush/freeposterapi"
                 label="GitHub"
@@ -1349,6 +1092,44 @@ const StudioLayout: React.FC<{
                   <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
                 </svg>
               </ToolbarBtn>
+
+              {/* Export CTA — amber, always visible */}
+              <button
+                ref={exportBtnRef}
+                onClick={() => setExportOpen((v) => !v)}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
+                style={{
+                  background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
+                  color: '#070706',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  boxShadow: exportOpen
+                    ? 'none'
+                    : '0 0 16px rgba(196,124,46,0.2)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  if (!exportOpen)
+                    (e.currentTarget as HTMLElement).style.background = '#d4a245';
+                }}
+                onMouseLeave={(e) => {
+                  if (!exportOpen)
+                    (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+                }}
+              >
+                <Download size={12} />
+                <span className="hidden sm:inline">Export</span>
+                <ChevronDown
+                  size={10}
+                  style={{
+                    transform: exportOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.15s',
+                  }}
+                />
+              </button>
             </div>
           </header>
         )}
@@ -1363,7 +1144,7 @@ const StudioLayout: React.FC<{
               style={{
                 width: leftVisible ? leftW : 0,
                 background: 'var(--film-dark)',
-                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
                 overflow: 'hidden',
                 opacity: leftVisible ? 1 : 0,
               }}
@@ -1378,7 +1159,7 @@ const StudioLayout: React.FC<{
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50"
               >
-                <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[rgba(196,124,46,0.3)] transition-colors" />
               </div>
             </aside>
           )}
@@ -1390,20 +1171,16 @@ const StudioLayout: React.FC<{
             aria-label="Poster canvas"
             className="flex-1 relative overflow-hidden"
             style={{ background: '#111113' }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) clearSelection();
-            }}
+            onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
           >
             <div
               aria-hidden="true"
               className="absolute inset-0 pointer-events-none"
               style={{
-                backgroundImage:
-                  'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
                 backgroundSize: '20px 20px',
               }}
             />
-
             <PreviewCanvas
               config={config}
               setConfig={setConfig}
@@ -1412,7 +1189,6 @@ const StudioLayout: React.FC<{
               onContextMenu={openCtxMenu}
               isFullscreen={isFullscreen}
             />
-
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
               <div
@@ -1427,10 +1203,10 @@ const StudioLayout: React.FC<{
                   width: 12,
                   height: 12,
                   pointerEvents: 'none',
-                  borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.2)' : 'none',
-                  borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.2)' : 'none',
-                  borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.2)' : 'none',
-                  borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.2)' : 'none',
+                  borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.18)' : 'none',
                 }}
               />
             ))}
@@ -1444,7 +1220,7 @@ const StudioLayout: React.FC<{
               style={{
                 width: rightVisible ? rightW : 0,
                 background: 'var(--film-dark)',
-                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
                 overflow: 'hidden',
                 opacity: rightVisible ? 1 : 0,
               }}
@@ -1453,7 +1229,7 @@ const StudioLayout: React.FC<{
                 onMouseDown={startResizeRight}
                 className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50"
               >
-                <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[#C47C2E]/50 transition-colors" />
+                <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[rgba(196,124,46,0.3)] transition-colors" />
               </div>
               <Inspector config={config} setConfig={setConfig} />
             </aside>
@@ -1475,7 +1251,7 @@ const StudioLayout: React.FC<{
             height: HEIGHTS[mobileSheetMode],
             transform: `translateY(${SNAPS[mobileSheetMode]})`,
             background: 'var(--film-dark)',
-            border: '1px solid rgba(196,124,46,0.12)',
+            border: '1px solid rgba(196,124,46,0.1)',
             borderBottom: 'none',
             pointerEvents: mobileSheetMode === 'hidden' ? 'none' : 'auto',
             willChange: 'transform, height',
@@ -1490,16 +1266,13 @@ const StudioLayout: React.FC<{
             aria-label="Drag to resize"
           >
             <div
-              className="w-9 h-0.75 rounded-full"
-              style={{ background: 'rgba(196,124,46,0.3)' }}
+              className="w-9 rounded-full"
+              style={{ height: 3, background: 'rgba(196,124,46,0.25)' }}
             />
           </div>
           <div
             className="flex-1 overflow-y-auto overscroll-contain min-h-0"
-            style={{
-              touchAction: 'pan-y',
-              WebkitOverflowScrolling: 'touch' as React.CSSProperties['WebkitOverflowScrolling'],
-            }}
+            style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' as any }}
             onTouchStart={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -1549,16 +1322,17 @@ const BuilderApp: React.FC = () => {
         return { ...cfg, keys: { ...cookieKeys, ...cfg.keys } };
       }
       return cfg;
-    } catch {
-      return DEFAULT_CONFIG;
-    }
+    } catch { return DEFAULT_CONFIG; }
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+  // Track media title from fetched data to show in header
+  const [mediaTitle, setMediaTitle] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
+
   useEffect(() => {
     if (config.keys) {
       const hasAnyKey = Object.values(config.keys).some((v) => v && v.trim());
@@ -1566,20 +1340,37 @@ const BuilderApp: React.FC = () => {
     }
   }, [config.keys]);
 
+  // Fetch media title for header display
+  useEffect(() => {
+    if (!config.tmdbId && !config.imdbId) { setMediaTitle(undefined); return; }
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const idPath = config.imdbId
+          ? `/poster/${config.imdbId}`
+          : `/${config.mediaType}/${config.tmdbId}`;
+        const res = await fetch(`${DEFAULT_API_BASE}${idPath}.json?source=${config.source}`, {
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.meta?.title) setMediaTitle(data.meta.title);
+      } catch { /* ignore */ }
+    })();
+    return () => ctrl.abort();
+  }, [config.tmdbId, config.imdbId, config.mediaType, config.source]);
+
   const handleLoadConfig = useCallback(
     (url: string) => {
       setConfig(parseUrlToConfig(url));
-      try {
-        setBaseUrl(new URL(url).origin);
-      } catch {
-        /* keep */
-      }
+      try { setBaseUrl(new URL(url).origin); } catch { /* keep */ }
     },
     [setConfig]
   );
 
   const handleReset = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
+    setMediaTitle(undefined);
     localStorage.removeItem(STORAGE_KEY);
     document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
@@ -1597,6 +1388,7 @@ const BuilderApp: React.FC = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        mediaTitle={mediaTitle}
       />
     </EditorProvider>
   );

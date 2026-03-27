@@ -54,6 +54,7 @@ interface SearchResult {
   media_type: 'movie' | 'tv';
 }
 
+// ── SelectBox ────────────────────────────────────────────────────────────────
 const SelectBox = memo(
   ({
     value,
@@ -66,13 +67,30 @@ const SelectBox = memo(
   }) => (
     <Listbox value={value} onChange={onChange}>
       <div className="relative">
-        <ListboxButton className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg bg-[#111113] border border-white/8 text-[11px] text-zinc-300 font-medium hover:border-white/18 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]">
+        <ListboxButton
+          className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
+          style={{
+            background: 'var(--film-char)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            color: 'var(--film-cream)',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+          }}
+        >
           <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
-          <ChevronDown size={11} className="text-zinc-500 shrink-0" />
+          <ChevronDown size={10} style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }} />
         </ListboxButton>
         <ListboxOptions
           transition
-          className="absolute z-50 mt-1 w-full py-1 rounded-xl bg-[#1c1c1f] border border-white/10 shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
+          className="absolute z-50 mt-1 w-full py-1 rounded-xl shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
+          style={{
+            background: 'var(--film-mid)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
         >
           {options.map((opt) => (
             <ListboxOption
@@ -80,17 +98,17 @@ const SelectBox = memo(
               value={opt.id}
               className={({ active, selected }) =>
                 clsx(
-                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors',
-                  active && 'bg-[#C47C2E]/15 text-[#F0E6CC]',
-                  !active && selected && 'text-[#E8D8A8]',
-                  !active && !selected && 'text-zinc-300'
+                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors syne-font',
+                  active && 'bg-[rgba(196,124,46,0.1)]',
+                  !active && selected && 'text-[var(--film-pale)]',
+                  !active && !selected && 'text-[var(--film-text-label)]'
                 )
               }
             >
               {({ selected }) => (
                 <>
                   <span className="flex-1 truncate">{opt.label}</span>
-                  {selected && <Check size={11} className="text-[#D4A245] shrink-0" />}
+                  {selected && <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />}
                 </>
               )}
             </ListboxOption>
@@ -102,6 +120,7 @@ const SelectBox = memo(
 );
 SelectBox.displayName = 'SelectBox';
 
+// ── InlineSlider ─────────────────────────────────────────────────────────────
 const InlineSlider: React.FC<{
   label: string;
   value: number;
@@ -124,7 +143,12 @@ const InlineSlider: React.FC<{
 
   return (
     <div className="space-y-1">
-      <span className="text-[10px] text-zinc-500 font-medium">{label}</span>
+      <span
+        className="body-font block"
+        style={{ fontSize: 10, color: 'var(--film-text-dim)', fontWeight: 500 }}
+      >
+        {label}
+      </span>
       <div className="flex items-center gap-2">
         {editing ? (
           <input
@@ -134,23 +158,49 @@ const InlineSlider: React.FC<{
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commit();
-              }
+              if (e.key === 'Enter') { e.preventDefault(); commit(); }
               if (e.key === 'Escape') setEditing(false);
             }}
-            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#0d0d0f] border border-[#C47C2E]/60 text-[10px] font-mono text-zinc-200 text-center focus:outline-none shrink-0"
+            className="mono-font focus:outline-none shrink-0"
+            style={{
+              width: 48,
+              height: 20,
+              paddingInline: 5,
+              borderRadius: 3,
+              background: 'var(--film-char)',
+              border: '1px solid rgba(196,124,46,0.5)',
+              fontSize: 10,
+              color: 'var(--film-cream)',
+              textAlign: 'center',
+            }}
           />
         ) : (
           <button
             type="button"
-            onClick={() => {
-              setEditing(true);
-              setDraft(String(value));
-            }}
+            onClick={() => { setEditing(true); setDraft(String(value)); }}
             title="Click to edit"
-            className="w-[48px] h-[20px] px-1.5 rounded-md bg-[#111113] border border-white/8 hover:border-[#C47C2E]/30 text-[10px] font-mono text-zinc-500 tabular-nums text-center cursor-text transition-colors shrink-0 select-none"
+            className="mono-font tabular-nums shrink-0"
+            style={{
+              width: 48,
+              height: 20,
+              paddingInline: 5,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
+              fontSize: 10,
+              color: 'var(--film-text-ghost)',
+              textAlign: 'center',
+              cursor: 'text',
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderBottomColor = 'rgba(196,124,46,0.35)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderBottomColor = 'rgba(255,255,255,0.07)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+            }}
           >
             {display}
           </button>
@@ -165,6 +215,53 @@ const InlineSlider: React.FC<{
           className="flex-1 min-w-0"
         />
       </div>
+    </div>
+  );
+};
+
+// ── SubSection — flat collapsible, no card border ────────────────────────────
+const SubSection: React.FC<{
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}> = ({ title, icon, children, defaultOpen = false }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div
+      className="mt-4"
+      style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full focus:outline-none mb-2"
+      >
+        <div className="flex items-center gap-2">
+          {icon && (
+            <span
+              className="flex items-center justify-center w-6 h-6 rounded-md"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                color: 'var(--film-text-ghost)',
+                lineHeight: 0,
+              }}
+            >
+              {icon}
+            </span>
+          )}
+          <span
+            className="syne-font font-semibold"
+            style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+          >
+            {title}
+          </span>
+        </div>
+        <span style={{ color: 'var(--film-text-ghost)', lineHeight: 0 }}>
+          {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        </span>
+      </button>
+      {open && <div className="space-y-3">{children}</div>}
     </div>
   );
 };
@@ -197,45 +294,62 @@ const LogoPanel: React.FC<{
   };
 
   return (
-    <div className="space-y-4 pt-1">
+    <div className="space-y-4 pt-2">
       <div className="space-y-1.5">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Source</p>
+        <p
+          className="syne-font uppercase tracking-widest"
+          style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
+          Source
+        </p>
         <div className="grid grid-cols-4 gap-1">
           {LOGO_SOURCES.map((opt) => (
             <button
               key={String(opt.id)}
               type="button"
               onClick={() => update('logoSource', opt.id as PosterConfig['logoSource'])}
-              className={clsx(
-                'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95',
-                (config.logoSource ?? null) === opt.id
-                  ? 'bg-[#C47C2E]/15 text-[#E8D8A8] ring-1 ring-[#C47C2E]/30'
-                  : 'bg-[#111113] text-zinc-400 hover:text-zinc-200 border border-white/6 hover:border-white/15'
-              )}
+              className="h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font"
+              style={{
+                background:
+                  (config.logoSource ?? null) === opt.id
+                    ? 'rgba(196,124,46,0.12)'
+                    : 'rgba(255,255,255,0.02)',
+                color:
+                  (config.logoSource ?? null) === opt.id
+                    ? 'var(--film-pale)'
+                    : 'var(--film-text-dim)',
+                border:
+                  (config.logoSource ?? null) === opt.id
+                    ? '1px solid rgba(196,124,46,0.25)'
+                    : '1px solid rgba(255,255,255,0.05)',
+              }}
             >
               {opt.label}
             </button>
           ))}
         </div>
-        <p className="text-[9px] text-zinc-700">Falls back automatically if source has no logo</p>
-      </div>
-
-      <div className="space-y-1">
-        <InlineSlider
-          label="Size"
-          value={config.logoW}
-          min={100}
-          max={490}
-          unit="px"
-          onChange={handleSizeChange}
-        />
-        <p className="text-[9px] text-zinc-700">
-          {config.logoW} × {config.logoH} px
+        <p
+          className="body-font"
+          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+        >
+          Falls back automatically if source has no logo
         </p>
       </div>
 
+      <InlineSlider
+        label="Size"
+        value={config.logoW}
+        min={100}
+        max={490}
+        unit="px"
+        onChange={handleSizeChange}
+      />
+
       <div className="space-y-3">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+        <p
+          className="syne-font uppercase tracking-widest"
+          style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
           Appearance
         </p>
         <InlineSlider
@@ -256,17 +370,17 @@ const LogoPanel: React.FC<{
         />
       </div>
 
-      <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-        <span className="text-amber-400/40 mt-px shrink-0 text-[11px]">⟠</span>
-        <p className="text-[9px] text-zinc-600 leading-relaxed">
-          Drag the logo on the canvas to reposition. Snap guides appear near the centre.
-        </p>
-      </div>
+      <p
+        className="body-font leading-relaxed"
+        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+      >
+        ⟠ Drag the logo on the canvas to reposition. Snap guides appear near the centre.
+      </p>
     </div>
   );
 };
 
-// ── API Keys panel — moved from Inspector right sidebar to here ───────────────
+// ── API Keys panel ────────────────────────────────────────────────────────────
 const ApiKeysPanel: React.FC<{
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
@@ -280,87 +394,68 @@ const ApiKeysPanel: React.FC<{
     [setConfig]
   );
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: 32,
+    paddingLeft: 10,
+    paddingRight: 32,
+    borderRadius: 8,
+    background: 'var(--film-char)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    fontSize: 11,
+    fontFamily: 'JetBrains Mono, monospace',
+    color: 'var(--film-cream)',
+  };
+
   return (
     <div className="space-y-3">
-      <p className="text-[9px] text-zinc-600 leading-relaxed">
+      <p
+        className="body-font leading-relaxed"
+        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+      >
         Override the default API keys used to fetch ratings and posters. Stored in a browser cookie.
       </p>
-      <div className="space-y-2">
-        <p className="sidebar-label">TMDB Key</p>
-        <div className="relative">
-          <input
-            type={showTmdb ? 'text' : 'password'}
-            value={config.keys?.tmdb ?? ''}
-            onChange={(e) => updateKeys('tmdb', e.target.value)}
-            placeholder="Override default TMDB key"
-            className="w-full h-8 pl-3 pr-8 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
-          />
-          <button
-            type="button"
-            onClick={() => setShowTmdb((v) => !v)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            <Eye size={12} />
-          </button>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <p className="sidebar-label">Fanart.tv Key</p>
-        <div className="relative">
-          <input
-            type={showFanart ? 'text' : 'password'}
-            value={config.keys?.fanart ?? ''}
-            onChange={(e) => updateKeys('fanart', e.target.value)}
-            placeholder="Your Fanart.tv key"
-            className="w-full h-8 pl-3 pr-8 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
-          />
-          <button
-            type="button"
-            onClick={() => setShowFanart((v) => !v)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            <Eye size={12} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-// ── Simple collapsible — reused for API Keys in the source tab ────────────────
-const Disclosure: React.FC<{
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}> = ({ title, icon, children, defaultOpen = false }) => {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="rounded-xl border border-white/6 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-between w-full px-3 py-3 bg-[#111113] text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#C47C2E]/50"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-white/4 text-zinc-500 flex items-center justify-center shrink-0">
-            {icon}
+      {[
+        { key: 'tmdb' as const, label: 'TMDB Key', show: showTmdb, setShow: setShowTmdb },
+        { key: 'fanart' as const, label: 'Fanart.tv Key', show: showFanart, setShow: setShowFanart },
+      ].map(({ key, label, show, setShow }) => (
+        <div key={key} className="space-y-1.5">
+          <p
+            className="body-font"
+            style={{ fontSize: 10, color: 'var(--film-text-dim)', fontWeight: 500 }}
+          >
+            {label}
+          </p>
+          <div className="relative">
+            <input
+              type={show ? 'text' : 'password'}
+              value={config.keys?.[key] ?? ''}
+              onChange={(e) => updateKeys(key, e.target.value)}
+              placeholder={`Override default ${key === 'tmdb' ? 'TMDB' : 'Fanart.tv'} key`}
+              style={inputStyle}
+              className="focus:outline-none"
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
+            />
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
+              style={{ color: 'var(--film-text-ghost)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+            >
+              <Eye size={12} />
+            </button>
           </div>
-          <p className="text-[11px] font-semibold text-zinc-300">{title}</p>
         </div>
-        {open ? (
-          <ChevronDown size={12} className="text-zinc-600 shrink-0" />
-        ) : (
-          <ChevronRight size={12} className="text-zinc-600 shrink-0" />
-        )}
-      </button>
-      {open && (
-        <div className="px-3 pb-4 pt-1 bg-[#0f0f11] border-t border-white/[0.05]">{children}</div>
-      )}
+      ))}
     </div>
   );
 };
 
+// ── Main LayerPanel component ─────────────────────────────────────────────────
 const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
   const {
     setBatchSelection,
@@ -370,8 +465,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     fallbackEnabled,
     setFallbackEnabled,
   } = useEditor();
+
   const [localMode, setLocalMode] = useState<'source' | 'layers'>('source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
+
   useEffect(() => {
     if (activeTab === 'source' || activeTab === 'layers') setLocalMode(activeTab);
   }, [activeTab]);
@@ -379,13 +476,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
   useEffect(() => {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
-      if (!searchQuery || searchQuery.length < 2) {
-        setResults([]);
-        return;
-      }
+      if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
       setIsSearching(true);
       try {
         const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`, {
@@ -404,10 +499,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setIsSearching(false);
       }
     }, 400);
-    return () => {
-      clearTimeout(t);
-      ctrl.abort();
-    };
+    return () => { clearTimeout(t); ctrl.abort(); };
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
@@ -425,31 +517,16 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         });
         if (!res.ok) return;
         const data = await res.json();
-
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
         if (data.meta?.year) merged.year = String(data.meta.year);
-        // FIX: only merge valid rating keys to avoid logo/other data polluting badge display
-        const VALID_RATING_KEYS = [
-          'imdb',
-          'rt',
-          'rt_popcorn',
-          'letterboxd',
-          'meta',
-          'tmdb',
-          'mal',
-          'anilist',
-          'age',
-          'runtime',
-        ];
+        const VALID_RATING_KEYS = ['imdb','rt','rt_popcorn','letterboxd','meta','tmdb','mal','anilist','age','runtime'];
         if (data.ratings) {
           Object.entries(data.ratings).forEach(([k, v]) => {
             if (VALID_RATING_KEYS.includes(k)) merged[k] = String(v);
-            else if (['imdb', 'rt', 'tmdb'].includes(k)) merged[k] = String(v); // keep display scores
           });
         }
         setFetchedData(merged);
-        // Only pass recognized rating keys to liveRatings
         const liveRatingsFiltered: Record<string, string> = {};
         if (data.ratings) {
           Object.entries(data.ratings).forEach(([k, v]) => {
@@ -457,7 +534,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           });
         }
         setLiveRatings(liveRatingsFiltered);
-
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig((prev) => ({ ...prev, imdbId: data.ids.imdb }));
         }
@@ -467,9 +543,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     })();
     return () => ctrl.abort();
   }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
+
   useEffect(() => {
     setFallbackEnabled(config.fallbackEnabled);
   }, [config.fallbackEnabled, setFallbackEnabled]);
+
   const handleSelectMedia = useCallback(
     (item: SearchResult | null) => {
       if (!item) return;
@@ -528,6 +606,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const allVisibleSelected =
     config.ratings.length > 0 && config.ratings.every((r) => selectedIds.has(r));
+
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       setBatchSelection(
@@ -537,16 +616,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     [setBatchSelection, config.ratings]
   );
 
-  // FIX: filter activeBadges to only valid ALL_BADGES entries (prevents logo-as-age display)
   const activeBadges = [...config.ratings]
-    .filter((id) => ALL_BADGES.some((b) => b.id === id)) // guard against invalid IDs in storage
+    .filter((id) => ALL_BADGES.some((b) => b.id === id))
     .reverse()
     .map((id) => ALL_BADGES.find((b) => b.id === id))
     .filter((b): b is { id: RatingType; label: string } => !!b);
 
   const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
-    const ia = inactiveOrder.indexOf(a.id),
-      ib = inactiveOrder.indexOf(b.id);
+    const ia = inactiveOrder.indexOf(a.id), ib = inactiveOrder.indexOf(b.id);
     if (ia === -1 && ib === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
     if (ia === -1) return 1;
     if (ib === -1) return -1;
@@ -580,6 +657,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const getIconKey = (id: string): BadgeIconKey =>
     id === 'rt' ? 'rt_fresh' : id === 'rt_popcorn' ? 'popcorn_fresh' : (id as BadgeIconKey);
+
   const MediaIcon =
     config.mediaType === 'tv' ? Tv : config.mediaType === 'anime' ? Clapperboard : Film;
 
@@ -589,12 +667,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     { id: 'metahub', label: 'Metahub' },
     { id: 'imdb', label: 'IMDb' },
     ...(config.mediaType === 'anime'
-      ? [
-          { id: 'mal', label: 'MyAnimeList' },
-          { id: 'anilist', label: 'AniList' },
-        ]
+      ? [{ id: 'mal', label: 'MyAnimeList' }, { id: 'anilist', label: 'AniList' }]
       : []),
   ];
+
   const ptypeOptions = [
     { id: 'auto', label: 'Auto (Default)' },
     { id: 'top1', label: 'Top 1' },
@@ -602,10 +678,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     { id: 'top3', label: 'Top 3' },
     ...(config.source === 'tmdb' ? [{ id: 'best', label: 'Best (Bayesian)' }] : []),
     ...(config.source === 'fanart'
-      ? [
-          { id: 'latest', label: 'Latest' },
-          { id: 'oldest', label: 'Oldest' },
-        ]
+      ? [{ id: 'latest', label: 'Latest' }, { id: 'oldest', label: 'Oldest' }]
       : []),
     { id: 'random', label: 'Random' },
   ];
@@ -620,8 +693,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     const ratingVal = fetchedData[badge.id];
     const iconKey = getIconKey(badge.id);
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
-    const iconColor = isActive ? (iconData?.color ?? '#a1a1aa') : '#4a4a52';
+    const iconColor = isActive
+      ? (iconData?.color ?? 'var(--film-text-dim)')
+      : 'rgba(74,74,82,0.6)';
     const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-30';
+
     const handleCheckboxClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       if (isActive) {
@@ -631,58 +707,67 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         onSelect(badge.id, false);
       }
     };
+
     return (
       <div
         ref={provided?.innerRef}
         {...provided?.draggableProps}
-        style={provided?.draggableProps.style}
         onClick={(e) => {
           if (isActive) onSelect(badge.id, e.shiftKey || e.ctrlKey || e.metaKey);
         }}
         className={clsx(
           'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
           isSel
-            ? 'bg-[#C47C2E]/12 ring-1 ring-[#C47C2E]/30'
+            ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
             : isActive
-              ? 'hover:bg-white/4 cursor-pointer'
-              : inactiveOpacity,
-          isDraggingItem && 'shadow-2xl bg-[#1c1c1f] ring-1 ring-white/10 rotate-[0.5deg]'
+            ? 'hover:bg-white/[0.03] cursor-pointer'
+            : inactiveOpacity,
+          isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
         )}
+        style={isDraggingItem ? { background: 'var(--film-mid)', ...(provided?.draggableProps.style ?? {}) } : (provided?.draggableProps.style ?? {})}
       >
-        {isActive ? (
+        {/* Drag handle */}
+        {isActive || fallbackEnabled ? (
           <div
             {...provided?.dragHandleProps}
             onClick={(e) => e.stopPropagation()}
-            className="text-zinc-700 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"
-          >
-            <GripVertical size={13} />
-          </div>
-        ) : fallbackEnabled ? (
-          <div
-            {...provided?.dragHandleProps}
-            onClick={(e) => e.stopPropagation()}
-            className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5 outline-none transition-colors shrink-0"
+            className="p-0.5 outline-none transition-colors shrink-0"
+            style={{ color: 'var(--film-text-ghost)', cursor: 'grab' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
           >
             <GripVertical size={13} />
           </div>
         ) : (
           <div className="w-5 shrink-0" />
         )}
+
+        {/* Checkbox */}
         <div className="shrink-0" onClick={handleCheckboxClick}>
           <div
-            className={clsx(
-              'w-4 h-4 rounded border flex items-center justify-center transition-all',
-              isSel
-                ? 'bg-[#C47C2E] border-[#D4A245]'
-                : 'bg-[#111113] border-zinc-600 hover:border-zinc-400'
-            )}
+            className="w-4 h-4 rounded border flex items-center justify-center transition-all"
+            style={{
+              background: isSel ? '#C47C2E' : 'var(--film-char)',
+              borderColor: isSel ? '#D4A245' : 'rgba(255,255,255,0.15)',
+            }}
           >
             {isSel && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
           </div>
         </div>
-        <div className="w-7 h-7 shrink-0 rounded-md bg-[#111113] border border-white/6 flex items-center justify-center">
+
+        {/* Icon */}
+        <div
+          className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
           {badge.id === 'age' ? (
-            <span className="text-[8px] font-bold" style={{ color: iconColor }}>
+            <span
+              className="mono-font"
+              style={{ fontSize: 8, fontWeight: 700, color: iconColor }}
+            >
               PG
             </span>
           ) : iconData ? (
@@ -693,32 +778,58 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               dangerouslySetInnerHTML={{ __html: iconData.body }}
             />
           ) : (
-            <span className="text-[8px] font-bold text-zinc-500">{badge.label.slice(0, 2)}</span>
+            <span
+              className="mono-font"
+              style={{ fontSize: 8, fontWeight: 700, color: 'var(--film-text-ghost)' }}
+            >
+              {badge.label.slice(0, 2)}
+            </span>
           )}
         </div>
+
+        {/* Label + rating */}
         <div className="flex-1 min-w-0">
           <span
-            className={clsx(
-              'block text-[11px] font-medium truncate',
-              isSel ? 'text-[#F0E6CC]' : isActive ? 'text-zinc-200' : 'text-zinc-400'
-            )}
+            className="block syne-font truncate"
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: isSel
+                ? 'var(--film-cream)'
+                : isActive
+                ? 'var(--film-text-label)'
+                : 'var(--film-text-dim)',
+            }}
           >
             {badge.label}
           </span>
           {isActive && ratingVal && (
-            <span className="text-[9px] font-mono text-zinc-600">{ratingVal}</span>
+            <span
+              className="mono-font"
+              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+            >
+              {ratingVal}
+            </span>
           )}
         </div>
+
+        {/* Visibility toggle */}
         <div onClick={(e) => e.stopPropagation()} className="shrink-0">
           <button
             onClick={() => handleToggleVisibility(badge.id, !isActive)}
-            className={clsx(
-              'w-7 h-7 rounded-md flex items-center justify-center transition-colors',
-              isActive
-                ? 'text-zinc-500 hover:text-zinc-200 hover:bg-white/8'
-                : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/5'
-            )}
+            className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+            style={{ color: isActive ? 'var(--film-text-ghost)' : 'rgba(74,74,82,0.5)' }}
             title={isActive ? 'Hide badge' : 'Show badge'}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = isActive
+                ? 'var(--film-text-ghost)'
+                : 'rgba(74,74,82,0.5)';
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+            }}
           >
             {isActive ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -731,17 +842,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     <SidebarLayout
       bodyClassName="px-2 pt-2 pb-8"
       header={
-        <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
+        <div
+          className="flex rounded-lg p-0.5"
+          style={{
+            background: 'var(--film-char)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
           {(['source', 'layers'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize',
-                localMode === tab
-                  ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font'
               )}
+              style={{
+                background: localMode === tab ? 'var(--film-mid)' : 'transparent',
+                color: localMode === tab ? 'var(--film-cream)' : 'var(--film-text-ghost)',
+                boxShadow: localMode === tab ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+              }}
             >
               {tab === 'source' ? (
                 <Film size={11} strokeWidth={2} />
@@ -754,54 +873,86 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </div>
       }
     >
-      {/* ── Source Tab ─────────────────────────────────────────────────────── */}
+      {/* ── Source Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'source' && (
-        <div className="space-y-4">
-          {/* Info card */}
+        <div className="space-y-4 px-1">
+          {/* Media info card */}
           {(fetchedData.title || config.tmdbId) && (
-            <div className="p-2.5 rounded-xl bg-[#111113] border border-white/6">
+            <div
+              className="p-2.5 rounded-xl"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-semibold text-zinc-100 leading-tight line-clamp-2">
-                    {fetchedData.title || <span className="text-zinc-500 italic">Untitled</span>}
+                  <p
+                    className="syne-font font-semibold leading-tight line-clamp-2"
+                    style={{ fontSize: 12, color: 'var(--film-cream)' }}
+                  >
+                    {fetchedData.title || (
+                      <span style={{ color: 'var(--film-text-ghost)', fontStyle: 'italic' }}>
+                        Untitled
+                      </span>
+                    )}
                   </p>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                     {fetchedData.year && (
-                      <span className="text-[10px] text-zinc-500 font-mono">
+                      <span
+                        className="mono-font"
+                        style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                      >
                         {fetchedData.year}
                       </span>
                     )}
                     <span
-                      className={clsx(
-                        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide',
-                        config.mediaType === 'tv'
-                          ? 'bg-blue-500/15 text-blue-400'
-                          : config.mediaType === 'anime'
-                            ? 'bg-purple-500/15 text-purple-400'
-                            : 'bg-amber-500/15 text-amber-400'
-                      )}
+                      className="syne-font inline-flex items-center gap-1 px-1.5 py-0.5 rounded"
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        background:
+                          config.mediaType === 'tv'
+                            ? 'rgba(59,130,246,0.12)'
+                            : config.mediaType === 'anime'
+                            ? 'rgba(168,85,247,0.12)'
+                            : 'rgba(196,124,46,0.12)',
+                        color:
+                          config.mediaType === 'tv'
+                            ? '#60a5fa'
+                            : config.mediaType === 'anime'
+                            ? '#c084fc'
+                            : 'var(--film-amber)',
+                      }}
                     >
                       <MediaIcon size={9} />
                       {config.mediaType}
                     </span>
                     {config.imdbId && (
-                      <span className="text-[9px] font-mono text-zinc-600">{config.imdbId}</span>
+                      <span
+                        className="mono-font"
+                        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                      >
+                        {config.imdbId}
+                      </span>
                     )}
                   </div>
                   {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && (
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       {fetchedData.imdb && (
-                        <span className="text-[9px] font-mono text-zinc-500">
+                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
                           IMDb {fetchedData.imdb}
                         </span>
                       )}
                       {fetchedData.rt && (
-                        <span className="text-[9px] font-mono text-zinc-500">
+                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
                           RT {fetchedData.rt}
                         </span>
                       )}
                       {fetchedData.tmdb && (
-                        <span className="text-[9px] font-mono text-zinc-500">
+                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
                           TMDB {fetchedData.tmdb}
                         </span>
                       )}
@@ -809,24 +960,26 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   )}
                 </div>
                 <div
-                  className={clsx(
-                    'w-8 h-8 shrink-0 rounded-lg flex items-center justify-center',
-                    config.mediaType === 'tv'
-                      ? 'bg-blue-500/10'
-                      : config.mediaType === 'anime'
-                        ? 'bg-purple-500/10'
-                        : 'bg-amber-500/10'
-                  )}
+                  className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
+                  style={{
+                    background:
+                      config.mediaType === 'tv'
+                        ? 'rgba(59,130,246,0.08)'
+                        : config.mediaType === 'anime'
+                        ? 'rgba(168,85,247,0.08)'
+                        : 'rgba(196,124,46,0.08)',
+                  }}
                 >
                   <MediaIcon
                     size={16}
-                    className={
-                      config.mediaType === 'tv'
-                        ? 'text-blue-400/70'
-                        : config.mediaType === 'anime'
-                          ? 'text-purple-400/70'
-                          : 'text-amber-400/70'
-                    }
+                    style={{
+                      color:
+                        config.mediaType === 'tv'
+                          ? 'rgba(96,165,250,0.6)'
+                          : config.mediaType === 'anime'
+                          ? 'rgba(192,132,252,0.6)'
+                          : 'rgba(196,124,46,0.6)',
+                    }}
                   />
                 </div>
               </div>
@@ -835,19 +988,37 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
           {/* Search */}
           <div>
-            <label className="sidebar-label">Search Media</label>
+            <p
+              className="syne-font uppercase tracking-widest mb-1.5"
+              style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+            >
+              Search Media
+            </p>
             <Combobox value={null as SearchResult | null} onChange={handleSelectMedia}>
               <div className="relative">
-                <div className="relative flex items-center h-9 bg-[#111113] border border-white/[0.08] rounded-lg focus-within:border-[#C47C2E]/50 transition-colors">
-                  <div className="pl-3 text-zinc-500 shrink-0">
+                <div
+                  className="relative flex items-center h-9 rounded-lg transition-colors"
+                  style={{
+                    background: 'var(--film-char)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                  onFocusCapture={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                  }}
+                  onBlurCapture={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                  }}
+                >
+                  <div className="pl-3" style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }}>
                     {isSearching ? (
-                      <Loader2 size={12} className="animate-spin text-[#C47C2E]" />
+                      <Loader2 size={12} className="animate-spin" style={{ color: 'var(--film-amber)' }} />
                     ) : (
                       <Search size={12} />
                     )}
                   </div>
                   <Combobox.Input
-                    className="flex-1 bg-transparent border-none text-[11px] text-zinc-200 placeholder-zinc-600 px-2 focus:outline-none focus:ring-0 h-full"
+                    className="flex-1 bg-transparent border-none text-[11px] placeholder-[var(--film-text-ghost)] px-2 focus:outline-none focus:ring-0 h-full syne-font"
+                    style={{ color: 'var(--film-cream)' }}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     displayValue={() => ''}
                     placeholder="Movie or TV show…"
@@ -856,11 +1027,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 {results.length > 0 && (
                   <Combobox.Options
                     transition
-                    className="absolute top-full mt-1 z-50 w-full bg-[#1c1c1f] border border-white/10 rounded-xl shadow-2xl shadow-black/50 max-h-64 overflow-y-auto custom-scrollbar py-1.5 focus:outline-none transition duration-75 ease-in data-[closed]:opacity-0"
-                    afterLeave={() => {
-                      setSearchQuery('');
-                      setResults([]);
+                    className="absolute top-full mt-1 z-50 w-full custom-scrollbar py-1.5 focus:outline-none transition duration-75 ease-in data-[closed]:opacity-0 max-h-64 overflow-y-auto"
+                    style={{
+                      background: 'var(--film-mid)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
                     }}
+                    afterLeave={() => { setSearchQuery(''); setResults([]); }}
                   >
                     {results.map((item) => (
                       <Combobox.Option
@@ -869,30 +1043,43 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         className={({ active }) =>
                           clsx(
                             'flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors',
-                            active && 'bg-[#C47C2E]/12'
+                            active && 'bg-[rgba(196,124,46,0.08)]'
                           )
                         }
                       >
                         <img
                           src={item.poster_path}
                           alt=""
-                          className="w-8 h-11 object-cover rounded-md bg-zinc-800 shrink-0"
+                          className="w-8 h-11 object-cover rounded-md shrink-0"
+                          style={{ background: 'var(--film-char)' }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium text-zinc-200 truncate">
+                          <p
+                            className="syne-font font-medium truncate"
+                            style={{ fontSize: 11, color: 'var(--film-cream)' }}
+                          >
                             {item.title || item.name}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] text-zinc-500">
+                            <span
+                              className="mono-font"
+                              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                            >
                               {(item.release_date || item.first_air_date)?.split('-')[0]}
                             </span>
                             <span
-                              className={clsx(
-                                'text-[9px] px-1 py-px rounded font-semibold uppercase',
-                                item.media_type === 'tv'
-                                  ? 'bg-blue-500/15 text-blue-400'
-                                  : 'bg-amber-500/15 text-amber-400'
-                              )}
+                              className="syne-font px-1 py-px rounded"
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                background:
+                                  item.media_type === 'tv'
+                                    ? 'rgba(59,130,246,0.12)'
+                                    : 'rgba(196,124,46,0.12)',
+                                color:
+                                  item.media_type === 'tv' ? '#60a5fa' : 'var(--film-amber)',
+                              }}
                             >
                               {item.media_type}
                             </span>
@@ -909,7 +1096,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Media type + ID */}
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <div>
-              <label className="sidebar-label">Media Type</label>
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+              >
+                Media Type
+              </p>
               <SelectBox
                 value={config.mediaType}
                 onChange={(v) => updateConfig('mediaType', v as PosterConfig['mediaType'])}
@@ -921,12 +1113,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               />
             </div>
             <div className="w-24">
-              <label className="sidebar-label">TMDB ID</label>
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+              >
+                TMDB ID
+              </p>
               <input
                 type="text"
                 value={config.tmdbId}
                 onChange={(e) => updateConfig('tmdbId', e.target.value)}
-                className="w-full h-9 px-2 rounded-lg bg-[#111113] border border-white/[0.08] text-[11px] font-mono text-zinc-300 text-center focus:outline-none focus-visible:border-[#C47C2E]/50 transition-colors"
+                className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none"
+                style={{
+                  background: 'var(--film-char)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  fontSize: 11,
+                  color: 'var(--film-cream)',
+                }}
+                onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
               />
             </div>
           </div>
@@ -934,7 +1139,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Source + ptype */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="sidebar-label">Poster Source</label>
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+              >
+                Poster Source
+              </p>
               <SelectBox
                 value={config.source}
                 onChange={(v) => updateConfig('source', v as PosterConfig['source'])}
@@ -943,7 +1153,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </div>
             {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
               <div>
-                <label className="sidebar-label">Poster Type</label>
+                <p
+                  className="syne-font uppercase tracking-widest mb-1.5"
+                  style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                >
+                  Poster Type
+                </p>
                 <SelectBox
                   value={config.ptype || 'auto'}
                   onChange={(v) => updateConfig('ptype', v)}
@@ -953,16 +1168,26 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             )}
           </div>
 
-          {/* Textless */}
+          {/* Textless toggle — flat row */}
           <div
             className={clsx(
-              'flex items-center justify-between px-3 py-3 rounded-xl bg-[#111113] border border-white/6 transition-opacity',
-              ['metahub', 'imdb'].includes(config.source) && 'opacity-50 pointer-events-none'
+              'flex items-center justify-between',
+              ['metahub', 'imdb'].includes(config.source) && 'opacity-40 pointer-events-none'
             )}
           >
             <div>
-              <p className="text-[11px] font-medium text-zinc-300">Textless Poster</p>
-              <p className="text-[9px] text-zinc-500 mt-0.5">Remove title text from image</p>
+              <p
+                className="syne-font font-medium"
+                style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+              >
+                Textless Poster
+              </p>
+              <p
+                className="body-font mt-0.5"
+                style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+              >
+                Remove title text from image
+              </p>
             </div>
             <Switch
               checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
@@ -986,26 +1211,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </Switch>
           </div>
 
-          <div className="border-t border-white/[0.06] pt-1" />
-
-          {/* Logo overlay */}
-          <div className="rounded-xl border border-white/6 overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-3 bg-[#111113]">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={clsx(
-                    'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
-                    config.logo ? 'bg-[#C47C2E]/20 text-[#D4A245]' : 'bg-white/4 text-zinc-600'
-                  )}
-                >
-                  <ImagePlay size={14} />
-                </div>
+          {/* Logo overlay — SubSection (flat, no card border) */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <ImagePlay
+                  size={13}
+                  style={{ color: config.logo ? 'var(--film-amber)' : 'var(--film-text-ghost)' }}
+                />
                 <div>
-                  {/* FIX: explicit "Logo Overlay" label — never shows badge data */}
-                  <p className="text-[11px] font-semibold text-zinc-200 leading-tight">
+                  <p
+                    className="syne-font font-semibold"
+                    style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+                  >
                     Logo Overlay
                   </p>
-                  <p className="text-[9px] text-zinc-600">
+                  <p
+                    className="body-font"
+                    style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                  >
                     {config.logo
                       ? `${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`
                       : 'Transparent title art overlay'}
@@ -1028,43 +1252,51 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 />
               </Switch>
             </div>
-            {config.logo && (
-              <div className="px-3 pb-4 bg-[#0f0f11] border-t border-white/[0.05]">
-                <LogoPanel config={config} setConfig={setConfig} />
-              </div>
-            )}
+            {config.logo && <LogoPanel config={config} setConfig={setConfig} />}
           </div>
 
-          {/* FIX: API Keys moved here from Inspector — stored in cookies */}
-          <Disclosure title="API Keys" icon={<KeyRound size={14} />}>
+          {/* API Keys — SubSection (flat, no card border) */}
+          <SubSection title="API Keys" icon={<KeyRound size={13} />}>
             <ApiKeysPanel config={config} setConfig={setConfig} />
-          </Disclosure>
+          </SubSection>
         </div>
       )}
 
-      {/* ── Layers Tab ─────────────────────────────────────────────────────── */}
+      {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="sidebar-label mb-0">Badges</span>
+        <div className="px-1">
+          <div className="flex items-center justify-between mb-3">
+            <span
+              className="syne-font uppercase tracking-widest"
+              style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+            >
+              Badges
+            </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleToggleAll}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors"
+                className="flex items-center gap-1.5 transition-colors body-font"
+                style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
               >
                 {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
                 {allVisible ? 'Hide all' : 'Show all'}
               </button>
-              <div className="w-px h-3 bg-white/10" />
+              <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.08)' }} />
               <button
                 onClick={() => handleSelectAll(!allVisibleSelected)}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors"
+                className="flex items-center gap-1.5 transition-colors body-font"
+                style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
               >
                 <div
-                  className={clsx(
-                    'w-3.5 h-3.5 rounded border flex items-center justify-center transition-all',
-                    allVisibleSelected ? 'bg-[#C47C2E] border-[#D4A245]' : 'border-zinc-600'
-                  )}
+                  className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
+                  style={{
+                    background: allVisibleSelected ? '#C47C2E' : 'var(--film-char)',
+                    borderColor: allVisibleSelected ? '#D4A245' : 'rgba(255,255,255,0.15)',
+                  }}
                 >
                   {allVisibleSelected && <Check size={9} className="text-white" />}
                 </div>
@@ -1088,45 +1320,59 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 )}
               </Droppable>
             ) : (
-              <div className="flex flex-col items-center py-10 text-zinc-600 gap-2">
-                <EyeOff size={22} strokeWidth={1.5} />
-                <p className="text-[11px] text-zinc-500">No active badges</p>
-                <p className="text-[9px] text-zinc-700">Enable some from the list below</p>
+              <div className="flex flex-col items-center py-10 gap-2">
+                <EyeOff size={22} strokeWidth={1.5} style={{ color: 'var(--film-text-ghost)', opacity: 0.5 }} />
+                <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
+                  No active badges
+                </p>
+                <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
+                  Enable some from the list below
+                </p>
               </div>
             )}
 
             {inactiveBadges.length > 0 && (
               <>
-                {/* Available header */}
-                <div className="mt-5 mb-1 px-1 flex items-center justify-between">
-                  <span className="sidebar-label mb-0">Available</span>
-                </div>
-                {/* Fallback Badges toggle */}
-                <div className="flex items-center justify-between px-1 mb-2">
-                  <span className="text-[10px] text-zinc-500 font-medium">Fallback Badges</span>
-                  <Switch
-                    checked={fallbackEnabled}
-                    onChange={(v) => {
-                      setFallbackEnabled(v);
-                      setConfig((prev) => ({
-                        ...prev,
-                        fallbackEnabled: v,
-                        fallbackPool: v ? inactiveBadges.map((b) => b.id) : [],
-                      }));
-                    }}
-                    className={clsx(
-                      'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-                      fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700'
-                    )}
+                <div className="mt-5 mb-2 flex items-center justify-between">
+                  <span
+                    className="syne-font uppercase tracking-widest"
+                    style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
                   >
+                    Available
+                  </span>
+                  {/* Fallback toggle */}
+                  <div className="flex items-center gap-1.5">
                     <span
+                      className="body-font"
+                      style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                    >
+                      Fallback
+                    </span>
+                    <Switch
+                      checked={fallbackEnabled}
+                      onChange={(v) => {
+                        setFallbackEnabled(v);
+                        setConfig((prev) => ({
+                          ...prev,
+                          fallbackEnabled: v,
+                          fallbackPool: v ? inactiveBadges.map((b) => b.id) : [],
+                        }));
+                      }}
                       className={clsx(
-                        'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-                        fallbackEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                        'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none',
+                        fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700'
                       )}
-                    />
-                  </Switch>
+                    >
+                      <span
+                        className={clsx(
+                          'inline-block w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform',
+                          fallbackEnabled ? 'translate-x-[13px]' : 'translate-x-[2px]'
+                        )}
+                      />
+                    </Switch>
+                  </div>
                 </div>
+
                 {fallbackEnabled ? (
                   <Droppable droppableId="inactive">
                     {(provided) => (
@@ -1147,7 +1393,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 ) : (
                   <div className="space-y-0.5">
                     {inactiveBadges.map((badge) => (
-                      <React.Fragment key={badge.id}>{renderBadgeRow(badge, false)}</React.Fragment>
+                      <React.Fragment key={badge.id}>
+                        {renderBadgeRow(badge, false)}
+                      </React.Fragment>
                     ))}
                   </div>
                 )}

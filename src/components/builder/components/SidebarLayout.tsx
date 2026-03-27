@@ -19,7 +19,7 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
         className="shrink-0 px-3 pt-3 pb-2 z-10"
         style={{
           background: 'var(--film-dark)',
-          borderBottom: '1px solid rgba(196,124,46,0.08)',
+          borderBottom: '1px solid rgba(196,124,46,0.07)',
         }}
       >
         {header}
