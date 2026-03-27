@@ -5,7 +5,10 @@ import type { RatingType } from '../types';
 type TabType = 'source' | 'layers' | 'canvas' | 'badge';
 export type SheetMode = 'hidden' | 'half' | 'full';
 
-interface ViewOptions { showSafeArea: boolean; showGrid: boolean; }
+interface ViewOptions {
+  showSafeArea: boolean;
+  showGrid: boolean;
+}
 
 export type LiveRatings = Partial<Record<string, string>>;
 
@@ -38,7 +41,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('canvas');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
-  const [viewOptions, setViewOptions] = useState<ViewOptions>({ showSafeArea: false, showGrid: false });
+  const [viewOptions, setViewOptions] = useState<ViewOptions>({
+    showSafeArea: false,
+    showGrid: false,
+  });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
@@ -47,32 +53,41 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
     setMobileSheetMode((prev) => {
-      if (typeof window !== 'undefined' && window.innerWidth < 1024 && prev === 'hidden') return 'half';
+      if (typeof window !== 'undefined' && window.innerWidth < 1024 && prev === 'hidden')
+        return 'half';
       return prev;
     });
   }, []);
 
-  const handleSelection = useCallback((id: RatingType, multi: boolean) => {
-    let nextSize = 0;
-    setSelectedIds((prev) => {
-      const next = new Set(multi ? prev : []);
-      if (next.has(id)) { if (multi) next.delete(id); else next.clear(); }
-      else next.add(id);
-      nextSize = next.size;
-      return next;
-    });
-    // Use queueMicrotask so we read nextSize after the setter has run,
-    // avoiding stale-closure issues in React 18 concurrent mode.
-    queueMicrotask(() => {
-      if (nextSize > 0) setActiveTab('badge');
-      else setActiveTab('canvas');
-    });
-  }, [setActiveTab]);
+  const handleSelection = useCallback(
+    (id: RatingType, multi: boolean) => {
+      let nextSize = 0;
+      setSelectedIds((prev) => {
+        const next = new Set(multi ? prev : []);
+        if (next.has(id)) {
+          if (multi) next.delete(id);
+          else next.clear();
+        } else next.add(id);
+        nextSize = next.size;
+        return next;
+      });
+      // Use queueMicrotask so we read nextSize after the setter has run,
+      // avoiding stale-closure issues in React 18 concurrent mode.
+      queueMicrotask(() => {
+        if (nextSize > 0) setActiveTab('badge');
+        else setActiveTab('canvas');
+      });
+    },
+    [setActiveTab]
+  );
 
-  const setBatchSelection = useCallback((ids: RatingType[]) => {
-    setSelectedIds(new Set(ids));
-    if (ids.length > 0) setActiveTab('badge');
-  }, [setActiveTab]);
+  const setBatchSelection = useCallback(
+    (ids: RatingType[]) => {
+      setSelectedIds(new Set(ids));
+      if (ids.length > 0) setActiveTab('badge');
+    },
+    [setActiveTab]
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
@@ -84,15 +99,28 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   return (
-    <EditorContext.Provider value={{
-      activeTab, setActiveTab, mobileSheetMode, setMobileSheetMode,
-      selectedIds, handleSelection, setBatchSelection, clearSelection,
-      viewOptions, toggleViewOption,
-      liveRatings, setLiveRatings,
-      resolvedLogoSource, setResolvedLogoSource,
-      livePosterUrl, setLivePosterUrl,
-      fallbackEnabled, setFallbackEnabled,
-    }}>
+    <EditorContext.Provider
+      value={{
+        activeTab,
+        setActiveTab,
+        mobileSheetMode,
+        setMobileSheetMode,
+        selectedIds,
+        handleSelection,
+        setBatchSelection,
+        clearSelection,
+        viewOptions,
+        toggleViewOption,
+        liveRatings,
+        setLiveRatings,
+        resolvedLogoSource,
+        setResolvedLogoSource,
+        livePosterUrl,
+        setLivePosterUrl,
+        fallbackEnabled,
+        setFallbackEnabled,
+      }}
+    >
       {children}
     </EditorContext.Provider>
   );

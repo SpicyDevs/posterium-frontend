@@ -4,8 +4,8 @@ import { memo, useState, useCallback, useEffect } from 'react';
 import { Github, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Reel',         href: '#reel' },
-  { label: 'Features',     href: '#combined' },
+  { label: 'Reel', href: '#reel' },
+  { label: 'Features', href: '#combined' },
   { label: 'Integrations', href: '#integrations' },
 ] as const;
 
@@ -21,7 +21,7 @@ const LINK_BASE: React.CSSProperties = {
   fontFamily: 'Syne, sans-serif',
 };
 
-const LINK_HOVER_COLOR  = 'var(--film-cream)';
+const LINK_HOVER_COLOR = 'var(--film-cream)';
 const LINK_NORMAL_COLOR = 'rgba(224, 210, 180, 0.72)';
 
 const GITHUB_BASE: React.CSSProperties = {
@@ -34,7 +34,7 @@ const GITHUB_BASE: React.CSSProperties = {
 };
 
 const Nav = memo(() => {
-  const [visible, setVisible]   = useState(false);
+  const [visible, setVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -55,8 +55,14 @@ const Nav = memo(() => {
       <nav
         aria-label="Main navigation"
         style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-          height: 56, display: 'flex', alignItems: 'center',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
           padding: '0 clamp(20px,4vw,56px)',
           background: scrolled ? 'rgba(7,7,6,0.97)' : 'transparent',
           backdropFilter: scrolled ? 'blur(24px) saturate(1.3)' : 'none',
@@ -77,8 +83,10 @@ const Nav = memo(() => {
           <span
             className="poster-font"
             style={{
-              fontSize: 22, color: 'var(--film-cream)',
-              letterSpacing: '0.12em', lineHeight: 1,
+              fontSize: 22,
+              color: 'var(--film-cream)',
+              letterSpacing: '0.12em',
+              lineHeight: 1,
               textShadow: '0 0 32px rgba(196,124,46,0.18)',
             }}
           >
@@ -89,15 +97,25 @@ const Nav = memo(() => {
         {/* Centre links — desktop */}
         <div
           className="nav-links-desktop"
-          style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center', gap: 0 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flex: 1,
+            justifyContent: 'center',
+            gap: 0,
+          }}
         >
           {NAV_LINKS.map(({ label, href }) => (
             <a
               key={label}
               href={href}
               style={LINK_BASE}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = LINK_HOVER_COLOR; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = LINK_NORMAL_COLOR; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = LINK_HOVER_COLOR;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = LINK_NORMAL_COLOR;
+              }}
             >
               {label}
             </a>
@@ -113,8 +131,12 @@ const Nav = memo(() => {
             aria-label="GitHub"
             className="nav-links-desktop"
             style={GITHUB_BASE}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,185,155,0.6)'; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'rgba(200,185,155,0.6)';
+            }}
           >
             <Github size={15} />
           </a>
@@ -123,11 +145,19 @@ const Nav = memo(() => {
             href="/build"
             className="syne-font"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'var(--film-amber)', color: '#070706',
-              fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
-              textTransform: 'uppercase', textDecoration: 'none',
-              padding: '7px 16px', borderRadius: 3, flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              background: 'var(--film-amber)',
+              color: '#070706',
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              padding: '7px 16px',
+              borderRadius: 3,
+              flexShrink: 0,
               boxShadow: '0 0 18px rgba(196,124,46,0.22)',
               transition: 'box-shadow 0.2s, background 0.2s',
             }}
@@ -142,10 +172,15 @@ const Nav = memo(() => {
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             style={{
-              background: 'none', border: '1px solid rgba(196,124,46,0.2)',
-              color: 'var(--film-cream)', width: 34, height: 34,
-              borderRadius: 4, cursor: 'pointer',
-              alignItems: 'center', justifyContent: 'center',
+              background: 'none',
+              border: '1px solid rgba(196,124,46,0.2)',
+              color: 'var(--film-cream)',
+              width: 34,
+              height: 34,
+              borderRadius: 4,
+              cursor: 'pointer',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             {menuOpen ? <X size={14} /> : <Menu size={14} />}
@@ -160,11 +195,17 @@ const Nav = memo(() => {
           aria-modal
           aria-label="Navigation menu"
           style={{
-            position: 'fixed', top: 56, left: 0, right: 0,
-            background: 'rgba(7,7,6,0.98)', backdropFilter: 'blur(24px)',
+            position: 'fixed',
+            top: 56,
+            left: 0,
+            right: 0,
+            background: 'rgba(7,7,6,0.98)',
+            backdropFilter: 'blur(24px)',
             borderBottom: '1px solid rgba(196,124,46,0.1)',
-            padding: '6px 20px 14px', zIndex: 99,
-            display: 'flex', flexDirection: 'column',
+            padding: '6px 20px 14px',
+            zIndex: 99,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           {NAV_LINKS.map(({ label, href }) => (
@@ -174,13 +215,22 @@ const Nav = memo(() => {
               onClick={closeMenu}
               className="syne-font"
               style={{
-                color: 'rgba(240, 230, 204, 0.82)', fontSize: 13, fontWeight: 700,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                padding: '12px 8px', textDecoration: 'none',
-                borderBottom: '1px solid rgba(196,124,46,0.06)', transition: 'color 0.15s',
+                color: 'rgba(240, 230, 204, 0.82)',
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                padding: '12px 8px',
+                textDecoration: 'none',
+                borderBottom: '1px solid rgba(196,124,46,0.06)',
+                transition: 'color 0.15s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(240,230,204,0.82)'; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'rgba(240,230,204,0.82)';
+              }}
             >
               {label}
             </a>
@@ -190,10 +240,17 @@ const Nav = memo(() => {
             onClick={closeMenu}
             className="syne-font"
             style={{
-              color: 'rgba(196,124,46,0.7)', fontSize: 12, fontWeight: 700,
-              letterSpacing: '0.07em', textTransform: 'uppercase',
-              padding: '12px 8px', textDecoration: 'none',
-              display: 'flex', alignItems: 'center', gap: 7, marginTop: 2,
+              color: 'rgba(196,124,46,0.7)',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase',
+              padding: '12px 8px',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              marginTop: 2,
             }}
           >
             Open Builder
@@ -205,10 +262,17 @@ const Nav = memo(() => {
             onClick={closeMenu}
             className="syne-font"
             style={{
-              color: 'rgba(196,124,46,0.7)', fontSize: 12, fontWeight: 700,
-              letterSpacing: '0.07em', textTransform: 'uppercase',
-              padding: '12px 8px', textDecoration: 'none',
-              display: 'flex', alignItems: 'center', gap: 7, marginTop: 2,
+              color: 'rgba(196,124,46,0.7)',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase',
+              padding: '12px 8px',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              marginTop: 2,
             }}
           >
             <Github size={13} /> GitHub

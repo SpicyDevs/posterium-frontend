@@ -68,25 +68,25 @@ const DraggableBadge: React.FC<Props> = ({
   const itemConfig = config.items[badgeId];
   // Canvas display scale = user-set item.scale * size-scale
   // This is ONLY for canvas rendering; the URL sends item.scale alone.
-  const itemScale   = itemConfig?.scale ?? 1.0;
-  const sizeScale   = getScale(config.size);
+  const itemScale = itemConfig?.scale ?? 1.0;
+  const sizeScale = getScale(config.size);
   const displayScale = itemScale * sizeScale;
 
-  const width  = BASE_BADGE_W * displayScale;
+  const width = BASE_BADGE_W * displayScale;
   const height = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
 
   // Keep refs current without re-registering listeners
-  const onDragEndRef   = useRef(onDragEnd);
-  const onSelectRef    = useRef(onSelect);
-  const isSelectedRef  = useRef(isSelected);
+  const onDragEndRef = useRef(onDragEnd);
+  const onSelectRef = useRef(onSelect);
+  const isSelectedRef = useRef(isSelected);
   const canvasScaleRef = useRef(canvasScale);
 
-  onDragEndRef.current   = onDragEnd;
-  onSelectRef.current    = onSelect;
-  isSelectedRef.current  = isSelected;
+  onDragEndRef.current = onDragEnd;
+  onSelectRef.current = onSelect;
+  isSelectedRef.current = isSelected;
   canvasScaleRef.current = canvasScale;
 
   const handleStart = (clientX: number, clientY: number) => {
@@ -115,8 +115,8 @@ const DraggableBadge: React.FC<Props> = ({
 
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
-      const isCtrl  = 'ctrlKey'  in e ? e.ctrlKey  : false;
-      const isMeta  = 'metaKey'  in e ? e.metaKey  : false;
+      const isCtrl = 'ctrlKey' in e ? e.ctrlKey : false;
+      const isMeta = 'metaKey' in e ? e.metaKey : false;
       if (isSelectedRef.current && !(isShift || isCtrl || isMeta)) {
         onSelectRef.current(badgeId, false);
       }
@@ -130,18 +130,21 @@ const DraggableBadge: React.FC<Props> = ({
     if (!isDragging) return;
     const onMM = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
     const onMU = (e: MouseEvent) => handleEnd(e);
-    const onTM = (e: TouchEvent) => { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
+    const onTM = (e: TouchEvent) => {
+      e.preventDefault();
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
     const onTE = (e: TouchEvent) => handleEnd(e);
 
     window.addEventListener('mousemove', onMM);
-    window.addEventListener('mouseup',   onMU);
+    window.addEventListener('mouseup', onMU);
     window.addEventListener('touchmove', onTM, { passive: false });
-    window.addEventListener('touchend',  onTE);
+    window.addEventListener('touchend', onTE);
     return () => {
       window.removeEventListener('mousemove', onMM);
-      window.removeEventListener('mouseup',   onMU);
+      window.removeEventListener('mouseup', onMU);
       window.removeEventListener('touchmove', onTM);
-      window.removeEventListener('touchend',  onTE);
+      window.removeEventListener('touchend', onTE);
     };
   }, [isDragging]);
 
@@ -159,12 +162,12 @@ const DraggableBadge: React.FC<Props> = ({
   };
 
   // ── Visual style from config ──────────────────────────────────────────────
-  const blurVal   = itemConfig?.blur   ?? config.blur;
-  const alphaVal  = itemConfig?.alpha  ?? config.alpha;
+  const blurVal = itemConfig?.blur ?? config.blur;
+  const alphaVal = itemConfig?.alpha ?? config.alpha;
   const radiusVal = (itemConfig?.radius ?? config.radius) * displayScale; // scale radius proportionally
   const rawShadow = itemConfig?.shadow ?? config.shadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  const showIcon  = itemConfig?.icon ?? config.icon ?? true;
+  const showIcon = itemConfig?.icon ?? config.icon ?? true;
 
   // Background
   const rawBg = itemConfig?.bg ?? config.bg;
@@ -188,7 +191,7 @@ const DraggableBadge: React.FC<Props> = ({
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  const txtColor    = itemConfig?.txt || '#ffffff';
+  const txtColor = itemConfig?.txt || '#ffffff';
 
   // ── SHADOW: matched to backend SVG filter formula ─────────────────────────
   // Backend (filters.js):
@@ -201,44 +204,43 @@ const DraggableBadge: React.FC<Props> = ({
   //   alpha  = slope
   // Using filter:drop-shadow instead of box-shadow to avoid the "3D card" look
   // that box-shadow produces (it doesn't follow the element's actual shape).
-  const dropShadowFilter = shadowVal > 0
-    ? (() => {
-        const blurPx  = (shadowVal * 0.5).toFixed(2);
-        const dyPx    = (shadowVal * 0.25 + 1.0).toFixed(2);
-        const opacity = Math.min(0.65, shadowVal * 0.025 + 0.20).toFixed(3);
-        return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
-      })()
-    : '';
+  const dropShadowFilter =
+    shadowVal > 0
+      ? (() => {
+          const blurPx = (shadowVal * 0.5).toFixed(2);
+          const dyPx = (shadowVal * 0.25 + 1.0).toFixed(2);
+          const opacity = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
+          return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
+        })()
+      : '';
 
   // ── BORDER: use box-shadow inset to mimic SVG stroke (stays inside boundary) ──
   // SVG stroke is centered on the element edge (half inside/outside). CSS `outline`
   // is entirely OUTSIDE, causing size mismatch. `box-shadow inset` stays inside,
   // more closely matching SVG stroke visual weight.
-  const borderBoxShadow = borderWidth > 0
-    ? `inset 0 0 0 ${borderWidth}px ${borderColor}`
-    : '';
+  const borderBoxShadow = borderWidth > 0 ? `inset 0 0 0 ${borderWidth}px ${borderColor}` : '';
 
   const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
   const finalBackground = isObscuring ? `${slantPattern}, ${bgFill}` : bgFill;
 
   // Scale badge icon/font sizes proportionally
-  const iconSize  = 36 * displayScale;
-  const iconLeft  = 10 * displayScale;
-  const iconTop   = 12 * displayScale;
+  const iconSize = 36 * displayScale;
+  const iconLeft = 10 * displayScale;
+  const iconTop = 12 * displayScale;
   const textRight = 10 * displayScale;
-  const fontSize  = 28 * displayScale;
+  const fontSize = 28 * displayScale;
 
   const renderContent = () => {
     const dummyVals: Record<string, string> = {
-      imdb:       '8.7',
-      rt:         '73%',
+      imdb: '8.7',
+      rt: '73%',
       rt_popcorn: '88%',
       letterboxd: '4.2',
-      meta:       '74',
-      tmdb:       '85%',
-      runtime:    '2h 15m',
-      mal:        '8.5',
-      anilist:    '85%',
+      meta: '74',
+      tmdb: '85%',
+      runtime: '2h 15m',
+      mal: '8.5',
+      anilist: '85%',
     };
     const dummyVal = dummyVals[badgeId] || '0.0';
 
@@ -253,7 +255,14 @@ const DraggableBadge: React.FC<Props> = ({
               borderRadius: `${4 * displayScale}px`,
             }}
           />
-          <span style={{ fontSize, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 'bold', color: txtColor }}>
+          <span
+            style={{
+              fontSize,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 'bold',
+              color: txtColor,
+            }}
+          >
             PG-13
           </span>
         </div>
@@ -262,18 +271,26 @@ const DraggableBadge: React.FC<Props> = ({
 
     if (!showIcon) {
       return (
-        <span style={{
-          position: 'absolute', left: '50%', top: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize, fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontWeight: 'bold', color: txtColor, lineHeight: 1,
-        }}>
+        <span
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 'bold',
+            color: txtColor,
+            lineHeight: 1,
+          }}
+        >
           {dummyVal}
         </span>
       );
     }
 
-    const iconKey  = badgeId === 'rt' ? 'rt_fresh' : badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId;
+    const iconKey =
+      badgeId === 'rt' ? 'rt_fresh' : badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId;
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
 
     return (
@@ -289,12 +306,19 @@ const DraggableBadge: React.FC<Props> = ({
             />
           </div>
         )}
-        <span style={{
-          position: 'absolute', right: textRight, top: '50%',
-          transform: 'translateY(-50%)',
-          fontSize, fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontWeight: 'bold', color: txtColor, lineHeight: 1,
-        }}>
+        <span
+          style={{
+            position: 'absolute',
+            right: textRight,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 'bold',
+            color: txtColor,
+            lineHeight: 1,
+          }}
+        >
           {dummyVal}
         </span>
       </>
@@ -312,22 +336,22 @@ const DraggableBadge: React.FC<Props> = ({
       onMouseLeave={() => onHoverChange?.(false)}
       className="badge-item absolute select-none cursor-move z-50"
       style={{
-        width:          `${width}px`,
-        height:         `${height}px`,
-        left:           `${x}px`,
-        top:            `${y}px`,
-        background:     finalBackground,
-        borderRadius:   `${radiusVal}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        left: `${x}px`,
+        top: `${y}px`,
+        background: finalBackground,
+        borderRadius: `${radiusVal}px`,
         // FIX: box-shadow inset for border (matches SVG stroke better than outline)
-        boxShadow:      [borderBoxShadow].filter(Boolean).join(', ') || 'none',
+        boxShadow: [borderBoxShadow].filter(Boolean).join(', ') || 'none',
         // FIX: drop-shadow filter for shadow (matches SVG filter formula)
-        filter:         dropShadowFilter || 'none',
+        filter: dropShadowFilter || 'none',
         backdropFilter: `blur(${blurVal}px)`,
         WebkitBackdropFilter: `blur(${blurVal}px)`,
-        opacity:        isObscuring ? 0.35 : 1,
-        pointerEvents:  isObscuring ? 'none' : 'auto',
-        touchAction:    'none',
-        transform:      'translateZ(0)',
+        opacity: isObscuring ? 0.35 : 1,
+        pointerEvents: isObscuring ? 'none' : 'auto',
+        touchAction: 'none',
+        transform: 'translateZ(0)',
       }}
     >
       {renderContent()}
@@ -336,17 +360,17 @@ const DraggableBadge: React.FC<Props> = ({
         <div
           className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{
-            top:    `${-(selectionDotSize / 2)}px`,
-            right:  `${-(selectionDotSize / 2)}px`,
-            width:  `${selectionDotSize}px`,
+            top: `${-(selectionDotSize / 2)}px`,
+            right: `${-(selectionDotSize / 2)}px`,
+            width: `${selectionDotSize}px`,
             height: `${selectionDotSize}px`,
           }}
         >
           <div
             className="bg-white"
             style={{
-              width:        `${selectionDotInnerSize}px`,
-              height:       `${selectionDotInnerSize}px`,
+              width: `${selectionDotInnerSize}px`,
+              height: `${selectionDotInnerSize}px`,
               borderRadius: `${1.5 * displayScale}px`,
             }}
           />

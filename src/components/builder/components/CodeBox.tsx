@@ -1,6 +1,15 @@
 // src/components/builder/components/CodeBox.tsx
 import React, { useState, useEffect, useId, memo, useRef } from 'react';
-import { Copy, Check, ArrowRight, Loader2, Download, Link2, Braces, ChevronDown } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  ArrowRight,
+  Loader2,
+  Download,
+  Link2,
+  Braces,
+  ChevronDown,
+} from 'lucide-react';
 import { generateApiUrl, toTemplateUrl, isTemplateUrl } from '../utils';
 import type { PosterConfig, ExtensionType } from '../types';
 import clsx from 'clsx';
@@ -13,25 +22,26 @@ interface Props {
 }
 
 const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
-  { id: 'svg',  label: 'SVG'  },
-  { id: 'png',  label: 'PNG'  },
-  { id: 'jpg',  label: 'JPG'  },
+  { id: 'svg', label: 'SVG' },
+  { id: 'png', label: 'PNG' },
+  { id: 'jpg', label: 'JPG' },
   { id: 'webp', label: 'WEBP' },
 ];
 
 const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtensionChange }) => {
-  const inputId  = useId();
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  const [url, setUrl]                 = useState('');
-  const [copied, setCopied]           = useState(false);
+
+  const [url, setUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   const [templateCopied, setTemplateCopied] = useState(false);
-  const [isEditing, setIsEditing]     = useState(false);
-  const [isLoading, setIsLoading]     = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showFormatDropdown, setShowFormatDropdown] = useState(false);
 
-  const totalSlots = config.ratings.length + (config.fallbackEnabled ? config.fallbackPool.length : 0);
+  const totalSlots =
+    config.ratings.length + (config.fallbackEnabled ? config.fallbackPool.length : 0);
   // Warn when total active + fallback slots exceeds 12 (very long URLs can cause rendering issues or be rejected)
   const showLengthWarn = totalSlots > 12;
 
@@ -60,7 +70,9 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable */ }
+    } catch {
+      /* clipboard unavailable */
+    }
   };
 
   // ── Export as template — replaces the ID with {imdb_id} ───────────────────
@@ -70,7 +82,9 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
       await navigator.clipboard.writeText(templateUrl);
       setTemplateCopied(true);
       setTimeout(() => setTemplateCopied(false), 2500);
-    } catch { /* clipboard unavailable */ }
+    } catch {
+      /* clipboard unavailable */
+    }
   };
 
   // ── Load / import a URL (or a template URL) ───────────────────────────────
@@ -97,7 +111,9 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
       const u = new URL(url);
       u.searchParams.set('download', '');
       window.open(u.toString(), '_blank', 'noopener,noreferrer');
-    } catch { /* malformed */ }
+    } catch {
+      /* malformed */
+    }
   };
 
   const handleBlur = () => {
@@ -111,15 +127,19 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
 
   return (
     <div className="w-full space-y-1" role="search" aria-label="Poster URL">
-      <label htmlFor={inputId} className="sr-only">Poster API URL</label>
+      <label htmlFor={inputId} className="sr-only">
+        Poster API URL
+      </label>
 
       {/* ── URL bar ─────────────────────────────────────────────────────── */}
-      <div className={clsx(
-        'flex items-center h-8 border rounded-lg transition-all duration-150 focus-within:bg-[#131316] hover:border-white/15',
-        showingTemplate
-          ? 'bg-[#111113] border-[#C47C2E]/30'
-          : 'bg-[#111113] border-white/9 focus-within:border-[#C47C2E]/50'
-      )}>
+      <div
+        className={clsx(
+          'flex items-center h-8 border rounded-lg transition-all duration-150 focus-within:bg-[#131316] hover:border-white/15',
+          showingTemplate
+            ? 'bg-[#111113] border-[#C47C2E]/30'
+            : 'bg-[#111113] border-white/9 focus-within:border-[#C47C2E]/50'
+        )}
+      >
         <span className="pl-2.5 text-zinc-600 shrink-0" aria-hidden="true">
           <Link2 size={11} strokeWidth={2} />
         </span>
@@ -128,7 +148,10 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
           ref={inputRef}
           type="url"
           value={url}
-          onChange={(e) => { setIsEditing(true); setUrl(e.target.value); }}
+          onChange={(e) => {
+            setIsEditing(true);
+            setUrl(e.target.value);
+          }}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
           onBlur={handleBlur}
           onScroll={(e) => {
@@ -154,7 +177,11 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
               title="Load this URL"
               className="w-6 h-6 rounded flex items-center justify-center text-[#D4A245] hover:bg-[#C47C2E]/15 disabled:opacity-50 transition-colors"
             >
-              {isLoading ? <Loader2 size={11} className="animate-spin" /> : <ArrowRight size={11} />}
+              {isLoading ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <ArrowRight size={11} />
+              )}
             </button>
           ) : (
             <>
@@ -173,7 +200,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
                   {/* Dropdown Menu */}
                   {showFormatDropdown && (
                     <div className="absolute top-full right-0 mt-1.5 w-16 bg-[#131316] border border-white/10 rounded-md shadow-xl overflow-hidden z-20 flex flex-col p-1">
-                      {EXT_OPTIONS.map(ext => (
+                      {EXT_OPTIONS.map((ext) => (
                         <button
                           key={ext.id}
                           onClick={() => {
@@ -206,14 +233,19 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
 
               <button
                 onClick={handleExportTemplate}
-                aria-label={templateCopied ? 'Template copied!' : 'Copy as template (replaces ID with {imdb_id})'}
+                aria-label={
+                  templateCopied
+                    ? 'Template copied!'
+                    : 'Copy as template (replaces ID with {imdb_id})'
+                }
                 title={templateCopied ? 'Template copied!' : 'Copy as {imdb_id} template'}
                 className="w-6 h-6 rounded flex items-center justify-center transition-colors text-zinc-600 hover:text-zinc-300 hover:bg-white/6"
               >
-                {templateCopied
-                  ? <Check size={11} className="text-emerald-400" />
-                  : <Braces size={11} />
-                }
+                {templateCopied ? (
+                  <Check size={11} className="text-emerald-400" />
+                ) : (
+                  <Braces size={11} />
+                )}
               </button>
 
               <button

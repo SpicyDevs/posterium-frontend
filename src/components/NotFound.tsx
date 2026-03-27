@@ -19,7 +19,9 @@ const NotFound: React.FC = () => {
   useEffect(() => {
     if (isCancelled) return;
     if (remaining <= 0) {
-      const t = setTimeout(() => { window.location.href = '/'; }, 400);
+      const t = setTimeout(() => {
+        window.location.href = '/';
+      }, 400);
       return () => clearTimeout(t);
     }
     const timer = setInterval(() => {
@@ -207,14 +209,18 @@ const NotFound: React.FC = () => {
           <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
             <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: 'rotate(-90deg)' }}>
               <circle
-                cx="22" cy="22" r="19"
+                cx="22"
+                cy="22"
+                r="19"
                 fill="none"
                 stroke="rgba(196,124,46,0.15)"
                 strokeWidth="3"
               />
               <circle
                 ref={circleRef}
-                cx="22" cy="22" r="19"
+                cx="22"
+                cy="22"
+                r="19"
                 fill="none"
                 stroke="#C47C2E"
                 strokeWidth="3"
@@ -240,7 +246,15 @@ const NotFound: React.FC = () => {
             </div>
           </div>
           <div style={{ textAlign: 'left' }}>
-            <strong style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#D4A245', marginBottom: 2 }}>
+            <strong
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#D4A245',
+                marginBottom: 2,
+              }}
+            >
               Redirecting automatically
             </strong>
             <span style={{ fontSize: 11, color: '#52525b' }}>
@@ -252,17 +266,41 @@ const NotFound: React.FC = () => {
         {/* Actions */}
         <div
           className="nf-acts"
-          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+          }}
         >
           <a href="/" className="nf-btn-primary" onClick={(e) => handleNav(e, '/')}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
             Go Home
           </a>
           <a href="/build" className="nf-btn-secondary" onClick={(e) => handleNav(e, '/build')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M9 9h6M9 12h6M9 15h4" />
             </svg>

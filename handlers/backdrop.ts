@@ -45,10 +45,10 @@ export interface BackdropParams {
  * Returns defaults for any missing values.
  */
 export function parseBackdropParams(query: URLSearchParams): BackdropParams {
-  const source  = (query.get('source') ?? 'tmdb') as BackdropParams['source'];
-  const width   = query.has('width') ? parseInt(query.get('width')!, 10) : 1280;
+  const source = (query.get('source') ?? 'tmdb') as BackdropParams['source'];
+  const width = query.has('width') ? parseInt(query.get('width')!, 10) : 1280;
   const textless = query.get('textless') === '1';
-  const lang    = query.get('lang') ?? 'en';
+  const lang = query.get('lang') ?? 'en';
   const no_embed = query.get('no_embed') === '1';
   return { source, width, textless, lang, no_embed };
 }
@@ -65,14 +65,14 @@ export function parseBackdropParams(query: URLSearchParams): BackdropParams {
 export function handleBackdrop(
   _type: string,
   _id: string,
-  _params: BackdropParams,
+  _params: BackdropParams
 ): { status: 501; body: string } {
   return {
     status: 501,
     body: JSON.stringify({
-      error:   'Not Implemented',
+      error: 'Not Implemented',
       message: 'Backdrop/banner endpoints are not yet implemented.',
-      hint:    'Track progress at https://github.com/a5sh/freeposterapi',
+      hint: 'Track progress at https://github.com/a5sh/freeposterapi',
     }),
   };
 }

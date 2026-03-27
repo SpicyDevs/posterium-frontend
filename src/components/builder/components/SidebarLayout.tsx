@@ -24,7 +24,12 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
       >
         {header}
       </div>
-      <div className={clsx('flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar', bodyClassName)}>
+      <div
+        className={clsx(
+          'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar',
+          bodyClassName
+        )}
+      >
         {children}
       </div>
     </div>

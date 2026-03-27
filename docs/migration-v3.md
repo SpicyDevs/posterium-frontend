@@ -22,44 +22,44 @@
 
 ## 1. Short-Form Global Param Aliases
 
-Both the long-form **and** short-form keys are accepted.  The backend resolves
+Both the long-form **and** short-form keys are accepted. The backend resolves
 short forms before processing, so you can use either interchangeably.
 
-| Long form   | Short alias | Description                                |
-|-------------|-------------|---------------------------------------------|
-| `blur`      | `bl`        | Badge glass blur (px)                       |
-| `alpha`     | `al`        | Badge background opacity (0–1)              |
-| `rad`       | `ra`        | Badge corner radius (px)                    |
-| `sh`        | `sh`        | Global drop shadow _(already short)_        |
-| `g_scale`   | `sc`        | Global badge scale multiplier               |
-| `g_bc`      | `bc`        | Global badge border color                   |
-| `g_bg`      | `bg`        | Global badge background color               |
-| `g_txt`     | `tx`        | Global badge text color                     |
-| `g_icon`    | `ic`        | Global icon visibility (`1`/`0`)            |
-| `bg_blur`   | `pb`        | Poster/background blur (px)                 |
-| `textless`  | `tl`        | Textless poster (`1`/`0`)                   |
-| `source`    | `so`        | Poster source (`tmdb`/`fanart`/`imdb`)      |
-| `ptype`     | `pt`        | Poster selection mode                        |
-| `normalize` | `nm`        | Normalize scores to /10                     |
-| `out_of`    | `of`        | Append denominator after value              |
-| `icon_type` | `it`        | Icon variant index                          |
-| `label_pos` | `lp`        | Label position (`above`/`below`/`left`/`right`) |
-| `label_text`| `lt`        | Custom label string override                |
-| `label_size`| `ls`        | Label font size (6–32, default 11)          |
-| `label_color`| `lc`       | Label color override                        |
-| `preset`    | `p`         | Display preset (`b`=badge, `m`=minimal)     |
+| Long form     | Short alias | Description                                     |
+| ------------- | ----------- | ----------------------------------------------- |
+| `blur`        | `bl`        | Badge glass blur (px)                           |
+| `alpha`       | `al`        | Badge background opacity (0–1)                  |
+| `rad`         | `ra`        | Badge corner radius (px)                        |
+| `sh`          | `sh`        | Global drop shadow _(already short)_            |
+| `g_scale`     | `sc`        | Global badge scale multiplier                   |
+| `g_bc`        | `bc`        | Global badge border color                       |
+| `g_bg`        | `bg`        | Global badge background color                   |
+| `g_txt`       | `tx`        | Global badge text color                         |
+| `g_icon`      | `ic`        | Global icon visibility (`1`/`0`)                |
+| `bg_blur`     | `pb`        | Poster/background blur (px)                     |
+| `textless`    | `tl`        | Textless poster (`1`/`0`)                       |
+| `source`      | `so`        | Poster source (`tmdb`/`fanart`/`imdb`)          |
+| `ptype`       | `pt`        | Poster selection mode                           |
+| `normalize`   | `nm`        | Normalize scores to /10                         |
+| `out_of`      | `of`        | Append denominator after value                  |
+| `icon_type`   | `it`        | Icon variant index                              |
+| `label_pos`   | `lp`        | Label position (`above`/`below`/`left`/`right`) |
+| `label_text`  | `lt`        | Custom label string override                    |
+| `label_size`  | `ls`        | Label font size (6–32, default 11)              |
+| `label_color` | `lc`        | Label color override                            |
+| `preset`      | `p`         | Display preset (`b`=badge, `m`=minimal)         |
 
 ---
 
 ## 2. Per-Badge Short Provider Prefixes
 
-Instead of `imdb_x=10`, use `i_x=10`.  The suffix map below applies to **both**
+Instead of `imdb_x=10`, use `i_x=10`. The suffix map below applies to **both**
 long and short provider prefixes.
 
 ### Provider prefix map
 
 | Provider    | Long prefix   | Short prefix |
-|-------------|---------------|--------------|
+| ----------- | ------------- | ------------ |
 | IMDb        | `imdb_`       | `i_`         |
 | Rotten Tom. | `rt_`         | `r_`         |
 | Audience    | `rt_popcorn_` | `p_`         |
@@ -73,20 +73,20 @@ long and short provider prefixes.
 
 ### Per-badge suffix map
 
-| Long suffix | Short suffix | Description                  |
-|-------------|--------------|-------------------------------|
-| `_blur`     | `_bl`        | Glass blur                    |
-| `_alpha`    | `_al`        | Background opacity            |
-| `_rad`      | `_ra`        | Corner radius                 |
-| `_sh`       | `_sh`        | Drop shadow _(already short)_ |
-| `_icon`     | `_ic`        | Icon visibility               |
-| `_scale`    | `_sc`        | Badge scale                   |
-| `_bw`       | `_bw`        | Border width _(already short)_|
-| `_bc`       | `_bc`        | Border color _(already short)_|
-| `_bg`       | `_bg`        | Background color              |
-| `_txt`      | `_tx`        | Text color                    |
-| `_x`        | `_x`         | X position _(already short)_  |
-| `_y`        | `_y`         | Y position _(already short)_  |
+| Long suffix | Short suffix | Description                    |
+| ----------- | ------------ | ------------------------------ |
+| `_blur`     | `_bl`        | Glass blur                     |
+| `_alpha`    | `_al`        | Background opacity             |
+| `_rad`      | `_ra`        | Corner radius                  |
+| `_sh`       | `_sh`        | Drop shadow _(already short)_  |
+| `_icon`     | `_ic`        | Icon visibility                |
+| `_scale`    | `_sc`        | Badge scale                    |
+| `_bw`       | `_bw`        | Border width _(already short)_ |
+| `_bc`       | `_bc`        | Border color _(already short)_ |
+| `_bg`       | `_bg`        | Background color               |
+| `_txt`      | `_tx`        | Text color                     |
+| `_x`        | `_x`         | X position _(already short)_   |
+| `_y`        | `_y`         | Y position _(already short)_   |
 
 All four combinations are accepted:
 
@@ -103,7 +103,7 @@ i_bl=8          ← short prefix + short suffix  ← most compact
 
 ### `normalize` / `nm`
 
-Normalize provider scores to a `/10` scale.  Ignored for `age` and `runtime`
+Normalize provider scores to a `/10` scale. Ignored for `age` and `runtime`
 badges (those values are already categorical or time-based).
 
 ```
@@ -113,7 +113,7 @@ badges (those values are already categorical or time-based).
 
 ### `out_of` / `of`
 
-Append a denominator string after the badge value.  When `nm=1` is set and
+Append a denominator string after the badge value. When `nm=1` is set and
 `of` is not explicitly provided, the denominator defaults to `10`.
 
 ```
@@ -124,7 +124,7 @@ Append a denominator string after the badge value.  When `nm=1` is set and
 
 ### `icon_type` / `it`
 
-Select an alternate icon variant for a badge.  The backend falls back to
+Select an alternate icon variant for a badge. The backend falls back to
 variant `1` when the requested variant does not exist for a particular source.
 
 ```
@@ -137,7 +137,7 @@ variant `1` when the requested variant does not exist for a particular source.
 Position the badge label (source name / title) relative to the score value.
 
 | Value   | Description              |
-|---------|--------------------------|
+| ------- | ------------------------ |
 | `above` | Label above the value    |
 | `below` | Label below the value    |
 | `left`  | Label left of the value  |
@@ -159,7 +159,7 @@ Override the badge label with a custom string.
 
 ### `label_size` / `ls`
 
-Font size for the badge label.  Range: `6`–`32`; default: `11`.
+Font size for the badge label. Range: `6`–`32`; default: `11`.
 
 ```
 ?ls=14          global label font size 14
@@ -182,32 +182,32 @@ Color override for the badge label text.
 Badge values are cleaned to canonical precision before display:
 
 | Raw value | Displayed |
-|-----------|-----------|
+| --------- | --------- |
 | `85.0%`   | `85%`     |
 | `7.50`    | `7.5`     |
 | `3.80`    | `3.8`     |
 | `72.0`    | `72`      |
 
 This applies globally wherever badge values are rendered (canvas preview and
-generated SVG/PNG output).  Use the `cleanValue` helper for any custom display:
+generated SVG/PNG output). Use the `cleanValue` helper for any custom display:
 
 ```ts
 import { cleanValue } from '../utils/v3Builder';
 console.log(cleanValue('85.0%')); // → '85%'
-console.log(cleanValue('7.50'));  // → '7.5'
+console.log(cleanValue('7.50')); // → '7.5'
 ```
 
 ---
 
 ## 5. Display Presets
 
-Use `preset` / `p` to apply a named style preset.  Explicit params always
+Use `preset` / `p` to apply a named style preset. Explicit params always
 override preset defaults.
 
-| Value | Alias | Description                                     |
-|-------|-------|-------------------------------------------------|
-| `b`   | _(default)_ | **Badge** — full glassmorphism badge with icon, value, and label |
-| `m`   |       | **Minimal** — compact display (placeholder; full implementation pending) |
+| Value | Alias       | Description                                                              |
+| ----- | ----------- | ------------------------------------------------------------------------ |
+| `b`   | _(default)_ | **Badge** — full glassmorphism badge with icon, value, and label         |
+| `m`   |             | **Minimal** — compact display (placeholder; full implementation pending) |
 
 ```
 ?p=b    badge preset (default, same as omitting the param)
@@ -221,22 +221,23 @@ override preset defaults.
 Two new endpoints are defined but respond with **HTTP 501** until implemented.
 They are documented in [`handlers/backdrop.ts`](../handlers/backdrop.ts).
 
-| Route                       | Description                          |
-|-----------------------------|--------------------------------------|
-| `GET /:type/:id/backdrop`   | Fetch backdrop / fanart image        |
-| `GET /:type/:id/banner`     | Alias of `/backdrop`                 |
+| Route                     | Description                   |
+| ------------------------- | ----------------------------- |
+| `GET /:type/:id/backdrop` | Fetch backdrop / fanart image |
+| `GET /:type/:id/banner`   | Alias of `/backdrop`          |
 
 **Accepted query params:**
 
-| Param      | Description                               | Default  |
-|------------|-------------------------------------------|----------|
-| `source`   | Image source: `tmdb`, `fanart`, `imdb`    | `tmdb`   |
-| `width`    | Output width in pixels                    | `1280`   |
-| `textless` | Strip title text (`1`/`0`)                | `0`      |
-| `lang`     | ISO 639-1 language code                   | `en`     |
-| `no_embed` | Return raw image, not embedded frame      | `0`      |
+| Param      | Description                            | Default |
+| ---------- | -------------------------------------- | ------- |
+| `source`   | Image source: `tmdb`, `fanart`, `imdb` | `tmdb`  |
+| `width`    | Output width in pixels                 | `1280`  |
+| `textless` | Strip title text (`1`/`0`)             | `0`     |
+| `lang`     | ISO 639-1 language code                | `en`    |
+| `no_embed` | Return raw image, not embedded frame   | `0`     |
 
 **Example:**
+
 ```
 GET /movie/155/backdrop.webp?source=tmdb&width=1920&textless=1
 → 501 Not Implemented (until feature is shipped)
@@ -257,9 +258,15 @@ GET /movie/155/backdrop.webp?source=tmdb&width=1920&textless=1
 import { buildOptimalUrl, cleanValue } from './src/utils/v3Builder';
 
 const url = buildOptimalUrl({
-  mediaType: 'movie', tmdbId: '453395', imdbId: 'tt12042730',
+  mediaType: 'movie',
+  tmdbId: '453395',
+  imdbId: 'tt12042730',
   ratings: ['imdb', 'rt', 'age'],
-  source: 'tmdb', blur: 8, alpha: 0.4, radius: 12, shadow: 6,
+  source: 'tmdb',
+  blur: 8,
+  alpha: 0.4,
+  radius: 12,
+  shadow: 6,
   // … other fields
 });
 // → https://api.spicydevs.xyz/poster/tt12042730.png?r=i,r,a&v=3&bl=8&al=0.4&ra=12&sh=6…

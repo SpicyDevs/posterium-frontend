@@ -3,12 +3,12 @@
 
 @theme {
   /* Migrate from tailwind.config.js */
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
   --color-glass-100: rgba(255, 255, 255, 0.1);
   --color-glass-200: rgba(255, 255, 255, 0.2);
   --color-glass-300: rgba(255, 255, 255, 0.3);
---color-glass-900: rgba(0, 0, 0, 0.8);
+  --color-glass-900: rgba(0, 0, 0, 0.8);
 }
 /* ─── Global base fixes ─────────────────────────────────────────────────────── */
 @layer base {
@@ -49,7 +49,9 @@
     margin-top: -5px;
     border: 2px solid rgba(9, 9, 11, 0.7);
     box-shadow: 0 0 0 1.5px rgba(196, 124, 46, 0.35);
-    transition: background 0.15s, box-shadow 0.15s;
+    transition:
+      background 0.15s,
+      box-shadow 0.15s;
   }
 
   input[type='range']::-webkit-slider-thumb:hover {
@@ -147,13 +149,27 @@
   }
 
   @keyframes grain-anim {
-    0% { transform: translate(0, 0); }
-    14% { transform: translate(-3%, -4%); }
-    28% { transform: translate(4%, 2%); }
-    42% { transform: translate(-2%, 5%); }
-    57% { transform: translate(5%, -3%); }
-    71% { transform: translate(-4%, 3%); }
-    85% { transform: translate(2%, -5%); }
+    0% {
+      transform: translate(0, 0);
+    }
+    14% {
+      transform: translate(-3%, -4%);
+    }
+    28% {
+      transform: translate(4%, 2%);
+    }
+    42% {
+      transform: translate(-2%, 5%);
+    }
+    57% {
+      transform: translate(5%, -3%);
+    }
+    71% {
+      transform: translate(-4%, 3%);
+    }
+    85% {
+      transform: translate(2%, -5%);
+    }
   }
 }
 

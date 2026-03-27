@@ -132,7 +132,7 @@ const SOFTWARE_APP_SCHEMA = {
     ratingValue: '4.9',
     ratingCount: '128',
     bestRating: '5',
-    worstRating: '1'
+    worstRating: '1',
   },
   featureList: [
     'Live IMDb rating badges',
@@ -230,9 +230,9 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       'Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account ' +
       'required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more.',
     keywords:
-    'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
-    'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
-    'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings, rating poster database alternative',
+      'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
+      'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
+      'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings, rating poster database alternative',
     canonical: `${SITE_CONFIG.baseUrl}/`,
     og: {
       type: 'website',
@@ -304,8 +304,18 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Posterium Home', item: `${SITE_CONFIG.baseUrl}/` },
-          { '@type': 'ListItem', position: 2, name: 'Poster Builder', item: `${SITE_CONFIG.baseUrl}/build` },
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Posterium Home',
+            item: `${SITE_CONFIG.baseUrl}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Poster Builder',
+            item: `${SITE_CONFIG.baseUrl}/build`,
+          },
         ],
       },
     ],

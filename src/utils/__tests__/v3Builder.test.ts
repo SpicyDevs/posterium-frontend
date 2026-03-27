@@ -5,7 +5,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import { cleanValue, buildOptimalUrl, urlSavings } from '../v3Builder';
-import { parseUrlToConfig, generateApiUrl, PROVIDER_SHORT, SHORT_PROVIDER } from '../../components/builder/utils';
+import {
+  parseUrlToConfig,
+  generateApiUrl,
+  PROVIDER_SHORT,
+  SHORT_PROVIDER,
+} from '../../components/builder/utils';
 import { handleBackdrop, handleBanner, parseBackdropParams } from '../../../handlers/backdrop';
 import type { PosterConfig } from '../../components/builder/types';
 import { DEFAULT_CONFIG } from '../../components/builder/types';
@@ -48,25 +53,32 @@ describe('cleanValue', () => {
 const SAMPLE_CONFIG: PosterConfig = {
   ...DEFAULT_CONFIG,
   ratings: ['imdb', 'rt'],
-  blur: 8, alpha: 0.4, radius: 12, shadow: 6,
-  source: 'tmdb', textless: false, ptype: 'auto',
-  grayscale: false, posterBlur: 0, extension: 'png',
+  blur: 8,
+  alpha: 0.4,
+  radius: 12,
+  shadow: 6,
+  source: 'tmdb',
+  textless: false,
+  ptype: 'auto',
+  grayscale: false,
+  posterBlur: 0,
+  extension: 'png',
   items: {
     imdb: { x: 310, y: 20 },
-    rt:   { x: 310, y: 90 },
+    rt: { x: 310, y: 90 },
   },
 };
 
 describe('buildOptimalUrl — short-form params', () => {
   it('uses short provider IDs in r= param', () => {
     const url = buildOptimalUrl(SAMPLE_CONFIG);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('r')).toBe('i,r');
   });
 
   it('uses bl/al/ra/sh for global glass params', () => {
     const url = buildOptimalUrl(SAMPLE_CONFIG);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('bl')).toBe('8');
     expect(q.get('al')).toBe('0.4');
     expect(q.get('ra')).toBe('12');
@@ -75,7 +87,7 @@ describe('buildOptimalUrl — short-form params', () => {
 
   it('uses short provider prefix for per-badge x/y', () => {
     const url = buildOptimalUrl(SAMPLE_CONFIG);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('i_x')).toBe('310');
     expect(q.get('i_y')).toBe('20');
     expect(q.get('r_x')).toBe('310');
@@ -88,7 +100,7 @@ describe('buildOptimalUrl — short-form params', () => {
   it('uses so for source when not tmdb', () => {
     const cfg = { ...SAMPLE_CONFIG, source: 'fanart' as const };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('so')).toBe('fanart');
     expect(q.get('source')).toBeNull();
   });
@@ -96,7 +108,7 @@ describe('buildOptimalUrl — short-form params', () => {
   it('uses tl for textless flag', () => {
     const cfg = { ...SAMPLE_CONFIG, source: 'tmdb' as const, textless: true };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('tl')).toBe('1');
     expect(q.get('textless')).toBeNull();
   });
@@ -132,9 +144,15 @@ describe('buildOptimalUrl — new v3 params', () => {
   });
 
   it('emits lp/lt/ls/lc when set', () => {
-    const cfg = { ...SAMPLE_CONFIG, labelPos: 'below' as const, labelText: 'Score', labelSize: 14, labelColor: '#ff0000' };
+    const cfg = {
+      ...SAMPLE_CONFIG,
+      labelPos: 'below' as const,
+      labelText: 'Score',
+      labelSize: 14,
+      labelColor: '#ff0000',
+    };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('lp')).toBe('below');
     expect(q.get('lt')).toBe('Score');
     expect(q.get('ls')).toBe('14');
@@ -163,12 +181,22 @@ describe('buildOptimalUrl — per-badge new v3 params', () => {
     const cfg: PosterConfig = {
       ...SAMPLE_CONFIG,
       items: {
-        imdb: { x: 310, y: 20, normalize: true, outOf: 10, iconType: 2, labelPos: 'left', labelText: 'IMDb', labelSize: 13, labelColor: '#ffffff' },
-        rt:   { x: 310, y: 90 },
+        imdb: {
+          x: 310,
+          y: 20,
+          normalize: true,
+          outOf: 10,
+          iconType: 2,
+          labelPos: 'left',
+          labelText: 'IMDb',
+          labelSize: 13,
+          labelColor: '#ffffff',
+        },
+        rt: { x: 310, y: 90 },
       },
     };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('i_nm')).toBe('1');
     expect(q.get('i_of')).toBe('10');
     expect(q.get('i_it')).toBe('2');
@@ -189,11 +217,11 @@ describe('buildOptimalUrl — param hoisting', () => {
       ...SAMPLE_CONFIG,
       items: {
         imdb: { x: 310, y: 20, blur: 12 },
-        rt:   { x: 310, y: 90, blur: 12 },
+        rt: { x: 310, y: 90, blur: 12 },
       },
     };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     // Global bl should be overridden with the hoisted value
     expect(q.get('bl')).toBe('12');
     // Per-badge bl should NOT appear (it was hoisted)
@@ -205,12 +233,12 @@ describe('buildOptimalUrl — param hoisting', () => {
     const cfg: PosterConfig = {
       ...SAMPLE_CONFIG,
       items: {
-        imdb: { x: 310, y: 20, blur: 8  },
-        rt:   { x: 310, y: 90, blur: 16 },
+        imdb: { x: 310, y: 20, blur: 8 },
+        rt: { x: 310, y: 90, blur: 16 },
       },
     };
     const url = buildOptimalUrl(cfg);
-    const q   = new URL(url).searchParams;
+    const q = new URL(url).searchParams;
     expect(q.get('i_bl')).toBe('8');
     expect(q.get('r_bl')).toBe('16');
   });
@@ -223,7 +251,7 @@ describe('buildOptimalUrl — param hoisting', () => {
 describe('urlSavings', () => {
   it('calculates correct byte savings', () => {
     const short = '?r=i,r&bl=8&al=0.4';
-    const long  = '?r=imdb,rt&blur=8&alpha=0.4';
+    const long = '?r=imdb,rt&blur=8&alpha=0.4';
     const { saved, pct } = urlSavings(short, long);
     expect(saved).toBe(long.length - short.length);
     expect(pct).toBe(Math.round((saved / long.length) * 100));
@@ -420,7 +448,7 @@ describe('generateApiUrl → parseUrlToConfig round-trip for new params', () => 
       uiPreset: 'm',
       items: { imdb: { x: 310, y: 20 }, rt: { x: 310, y: 90 } },
     };
-    const url    = generateApiUrl(original, BASE_URL);
+    const url = generateApiUrl(original, BASE_URL);
     const parsed = parseUrlToConfig(url);
 
     expect(parsed.normalize).toBe(true);
@@ -443,7 +471,7 @@ describe('PROVIDER_SHORT / SHORT_PROVIDER', () => {
     // Derive the expected set from the actual map — no hardcoded list
     const mappedKeys = Object.keys(PROVIDER_SHORT);
     expect(mappedKeys.length).toBeGreaterThan(0);
-    mappedKeys.forEach(r => {
+    mappedKeys.forEach((r) => {
       expect(PROVIDER_SHORT[r as keyof typeof PROVIDER_SHORT]).toBeTruthy();
     });
   });
@@ -467,7 +495,7 @@ describe('handleBackdrop', () => {
 
   it('response body contains error and message', () => {
     const result = handleBackdrop('tv', '1396', {});
-    const body   = JSON.parse(result.body);
+    const body = JSON.parse(result.body);
     expect(body.error).toBe('Not Implemented');
     expect(typeof body.message).toBe('string');
   });
@@ -491,7 +519,7 @@ describe('parseBackdropParams', () => {
   });
 
   it('parses explicit values', () => {
-    const qs     = new URLSearchParams('source=fanart&width=1920&textless=1&lang=fr&no_embed=1');
+    const qs = new URLSearchParams('source=fanart&width=1920&textless=1&lang=fr&no_embed=1');
     const params = parseBackdropParams(qs);
     expect(params.source).toBe('fanart');
     expect(params.width).toBe(1920);

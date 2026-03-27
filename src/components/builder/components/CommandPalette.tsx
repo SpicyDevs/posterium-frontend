@@ -1,10 +1,31 @@
 // src/components/builder/components/CommandPalette.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
-  Search, ZoomIn, ZoomOut, Maximize2, Minimize2, Grid3x3, ShieldCheck,
-  RotateCcw, Eye, EyeOff, Layers, CheckSquare, MousePointer2Off, Download,
-  Image, ScanLine, Droplet, Contrast, Layout, PanelLeft, PanelRight,
-  ArrowUpToLine, ArrowDownToLine, Command, X,
+  Search,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+  Grid3x3,
+  ShieldCheck,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  Layers,
+  CheckSquare,
+  MousePointer2Off,
+  Download,
+  Image,
+  ScanLine,
+  Droplet,
+  Contrast,
+  Layout,
+  PanelLeft,
+  PanelRight,
+  ArrowUpToLine,
+  ArrowDownToLine,
+  Command,
+  X,
 } from 'lucide-react';
 
 export interface PaletteCommand {
@@ -54,13 +75,19 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     try {
       const r = JSON.parse(sessionStorage.getItem('posterium_recent_cmds') || '[]');
       setRecentIds(r);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const recordRecent = useCallback((id: string) => {
-    setRecentIds(prev => {
-      const next = [id, ...prev.filter(x => x !== id)].slice(0, 5);
-      try { sessionStorage.setItem('posterium_recent_cmds', JSON.stringify(next)); } catch { /* ignore */ }
+    setRecentIds((prev) => {
+      const next = [id, ...prev.filter((x) => x !== id)].slice(0, 5);
+      try {
+        sessionStorage.setItem('posterium_recent_cmds', JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);
@@ -71,14 +98,16 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     if (!q) {
       // Show recent first, then all
       const recentCmds = recentIds
-        .map(id => commands.find(c => c.id === id))
+        .map((id) => commands.find((c) => c.id === id))
         .filter(Boolean) as PaletteCommand[];
-      const rest = commands.filter(c => !recentIds.includes(c.id));
+      const rest = commands.filter((c) => !recentIds.includes(c.id));
       return { query: false as const, recent: recentCmds, all: rest };
     }
-    const results = commands.filter(c => {
-      const haystack = [c.label, c.description ?? '', c.category, ...(c.keywords ?? [])].join(' ').toLowerCase();
-      return q.split(' ').every(word => haystack.includes(word));
+    const results = commands.filter((c) => {
+      const haystack = [c.label, c.description ?? '', c.category, ...(c.keywords ?? [])]
+        .join(' ')
+        .toLowerCase();
+      return q.split(' ').every((word) => haystack.includes(word));
     });
     return { query: true as const, results };
   }, [query, commands, recentIds]);
@@ -92,13 +121,29 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
-      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, flatList.length - 1)); return; }
-      if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIdx((i) => Math.min(i + 1, flatList.length - 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIdx((i) => Math.max(i - 1, 0));
+        return;
+      }
       if (e.key === 'Enter') {
         e.preventDefault();
         const cmd = flatList[activeIdx];
-        if (cmd) { recordRecent(cmd.id); cmd.action(); onClose(); }
+        if (cmd) {
+          recordRecent(cmd.id);
+          cmd.action();
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -112,7 +157,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   }, [activeIdx]);
 
   // Reset active on query change
-  useEffect(() => { setActiveIdx(0); }, [query]);
+  useEffect(() => {
+    setActiveIdx(0);
+  }, [query]);
 
   // Group by category when no query
   const groups = React.useMemo(() => {
@@ -120,12 +167,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     const map: Map<string, PaletteCommand[]> = new Map();
     if (filtered.recent.length > 0) map.set('Recent', filtered.recent);
     for (const cat of CATEGORY_ORDER) {
-      const items = filtered.all.filter(c => c.category === cat);
+      const items = filtered.all.filter((c) => c.category === cat);
       if (items.length) map.set(cat, items);
     }
     // Catch any uncategorized
     const categorized = new Set(CATEGORY_ORDER);
-    const other = filtered.all.filter(c => !categorized.has(c.category));
+    const other = filtered.all.filter((c) => !categorized.has(c.category));
     if (other.length) map.set('Other', other);
     return map;
   }, [filtered]);
@@ -137,14 +184,20 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
         background: 'rgba(7,7,6,0.75)',
         backdropFilter: 'blur(12px)',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
         paddingTop: '12vh',
         animation: 'cp-backdrop 0.15s ease',
       }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <style>{`
         @keyframes cp-backdrop { from { opacity: 0; } to { opacity: 1; } }
@@ -153,52 +206,75 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
 
       <div
         style={{
-          width: '100%', maxWidth: 560, margin: '0 16px',
+          width: '100%',
+          maxWidth: 560,
+          margin: '0 16px',
           background: 'rgba(14,13,11,0.97)',
           border: '1px solid rgba(196,124,46,0.22)',
           borderRadius: 14,
-          boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.06)',
+          boxShadow:
+            '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.06)',
           overflow: 'hidden',
           animation: 'cp-panel 0.18s cubic-bezier(0.16,1,0.3,1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header / search */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 14px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(196,124,46,0.02)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 14px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(196,124,46,0.02)',
+          }}
+        >
           <Search size={15} style={{ color: 'rgba(196,124,46,0.55)', flexShrink: 0 }} />
           <input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commands…"
             autoComplete="off"
             spellCheck={false}
-            style={{
-              flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              fontSize: 13, color: 'var(--film-cream)',
-              fontFamily: 'Syne, sans-serif',
-              fontWeight: 500,
-              '::placeholder': { color: 'rgba(140,130,112,0.4)' },
-            } as React.CSSProperties}
+            style={
+              {
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontSize: 13,
+                color: 'var(--film-cream)',
+                fontFamily: 'Syne, sans-serif',
+                fontWeight: 500,
+                '::placeholder': { color: 'rgba(140,130,112,0.4)' },
+              } as React.CSSProperties
+            }
           />
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 5, color: 'rgba(140,130,112,0.6)',
-              cursor: 'pointer', padding: '3px 7px',
-              fontSize: 10, fontFamily: 'JetBrains Mono, monospace',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 5,
+              color: 'rgba(140,130,112,0.6)',
+              cursor: 'pointer',
+              padding: '3px 7px',
+              fontSize: 10,
+              fontFamily: 'JetBrains Mono, monospace',
               transition: 'border-color 0.15s, color 0.15s',
               flexShrink: 0,
             }}
-            onMouseEnter={e => { (e.currentTarget).style.color = 'var(--film-cream)'; (e.currentTarget).style.borderColor = 'rgba(196,124,46,0.3)'; }}
-            onMouseLeave={e => { (e.currentTarget).style.color = 'rgba(140,130,112,0.6)'; (e.currentTarget).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--film-cream)';
+              e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+            }}
           >
             ESC
           </button>
@@ -208,17 +284,22 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
         <div
           ref={listRef}
           style={{
-            maxHeight: 380, overflowY: 'auto',
+            maxHeight: 380,
+            overflowY: 'auto',
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(196,124,46,0.2) transparent',
           }}
         >
           {flatList.length === 0 && (
-            <div style={{
-              padding: '40px 20px', textAlign: 'center',
-              color: 'rgba(140,130,112,0.4)',
-              fontSize: 12, fontFamily: 'Syne, sans-serif',
-            }}>
+            <div
+              style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: 'rgba(140,130,112,0.4)',
+                fontSize: 12,
+                fontFamily: 'Syne, sans-serif',
+              }}
+            >
               No commands match "{query}"
             </div>
           )}
@@ -233,68 +314,109 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                   idx={i}
                   isActive={i === activeIdx}
                   onHover={() => setActiveIdx(i)}
-                  onExecute={() => { recordRecent(cmd.id); cmd.action(); onClose(); }}
+                  onExecute={() => {
+                    recordRecent(cmd.id);
+                    cmd.action();
+                    onClose();
+                  }}
                 />
               ))}
             </div>
           ) : (
             // Grouped list
             <div style={{ padding: '4px' }}>
-              {groups && Array.from(groups.entries()).map(([cat, items]) => (
-                <React.Fragment key={cat}>
-                  <div style={{
-                    padding: '8px 12px 4px',
-                    fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
-                    color: cat === 'Recent' ? 'rgba(196,124,46,0.55)' : 'rgba(140,130,112,0.4)',
-                    fontFamily: 'Syne, sans-serif',
-                    textTransform: 'uppercase',
-                  }}>
-                    {cat}
-                  </div>
-                  {items.map((cmd) => {
-                    const idx = globalIdx++;
-                    return (
-                      <CommandItem
-                        key={cmd.id}
-                        cmd={cmd}
-                        idx={idx}
-                        isActive={idx === activeIdx}
-                        onHover={() => setActiveIdx(idx)}
-                        onExecute={() => { recordRecent(cmd.id); cmd.action(); onClose(); }}
-                      />
-                    );
-                  })}
-                </React.Fragment>
-              ))}
+              {groups &&
+                Array.from(groups.entries()).map(([cat, items]) => (
+                  <React.Fragment key={cat}>
+                    <div
+                      style={{
+                        padding: '8px 12px 4px',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.14em',
+                        color: cat === 'Recent' ? 'rgba(196,124,46,0.55)' : 'rgba(140,130,112,0.4)',
+                        fontFamily: 'Syne, sans-serif',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {cat}
+                    </div>
+                    {items.map((cmd) => {
+                      const idx = globalIdx++;
+                      return (
+                        <CommandItem
+                          key={cmd.id}
+                          cmd={cmd}
+                          idx={idx}
+                          isActive={idx === activeIdx}
+                          onHover={() => setActiveIdx(idx)}
+                          onExecute={() => {
+                            recordRecent(cmd.id);
+                            cmd.action();
+                            onClose();
+                          }}
+                        />
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '8px 14px',
-          borderTop: '1px solid rgba(255,255,255,0.04)',
-          background: 'rgba(255,255,255,0.01)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            padding: '8px 14px',
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            background: 'rgba(255,255,255,0.01)',
+          }}
+        >
           {[
             ['↑↓', 'Navigate'],
             ['↵', 'Execute'],
             ['Esc', 'Close'],
           ].map(([key, label]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <kbd style={{
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 4, padding: '2px 6px',
-                fontSize: 9, fontFamily: 'JetBrains Mono, monospace',
-                color: 'rgba(196,124,46,0.6)',
-              }}>{key}</kbd>
-              <span style={{ fontSize: 9, color: 'rgba(140,130,112,0.4)', fontFamily: 'Syne, sans-serif' }}>{label}</span>
+              <kbd
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 4,
+                  padding: '2px 6px',
+                  fontSize: 9,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  color: 'rgba(196,124,46,0.6)',
+                }}
+              >
+                {key}
+              </kbd>
+              <span
+                style={{
+                  fontSize: 9,
+                  color: 'rgba(140,130,112,0.4)',
+                  fontFamily: 'Syne, sans-serif',
+                }}
+              >
+                {label}
+              </span>
             </div>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
             <Command size={9} style={{ color: 'rgba(140,130,112,0.3)' }} />
-            <span style={{ fontSize: 9, color: 'rgba(140,130,112,0.3)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em' }}>POSTERIUM</span>
+            <span
+              style={{
+                fontSize: 9,
+                color: 'rgba(140,130,112,0.3)',
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.1em',
+              }}
+            >
+              POSTERIUM
+            </span>
           </div>
         </div>
       </div>
@@ -317,63 +439,95 @@ const CommandItem = memo<{
     onClick={onExecute}
     onMouseEnter={onHover}
     style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      width: '100%', padding: '8px 10px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      width: '100%',
+      padding: '8px 10px',
       background: isActive ? 'rgba(196,124,46,0.12)' : 'transparent',
-      border: 'none', borderRadius: 7, cursor: 'pointer',
+      border: 'none',
+      borderRadius: 7,
+      cursor: 'pointer',
       textAlign: 'left',
       transition: 'background 0.08s',
     }}
   >
-    <span style={{
-      width: 28, height: 28,
-      background: isActive ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${isActive ? 'rgba(196,124,46,0.3)' : 'rgba(255,255,255,0.06)'}`,
-      borderRadius: 7,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.55)',
-      flexShrink: 0,
-      transition: 'background 0.08s, border-color 0.08s, color 0.08s',
-      lineHeight: 0,
-    }}>
+    <span
+      style={{
+        width: 28,
+        height: 28,
+        background: isActive ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${isActive ? 'rgba(196,124,46,0.3)' : 'rgba(255,255,255,0.06)'}`,
+        borderRadius: 7,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.55)',
+        flexShrink: 0,
+        transition: 'background 0.08s, border-color 0.08s, color 0.08s',
+        lineHeight: 0,
+      }}
+    >
       {cmd.icon}
     </span>
     <span style={{ flex: 1, minWidth: 0 }}>
-      <span style={{
-        display: 'block', fontSize: 12,
-        color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.7)',
-        fontFamily: 'Syne, sans-serif', fontWeight: 600,
-        transition: 'color 0.08s',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      }}>
+      <span
+        style={{
+          display: 'block',
+          fontSize: 12,
+          color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.7)',
+          fontFamily: 'Syne, sans-serif',
+          fontWeight: 600,
+          transition: 'color 0.08s',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
         {cmd.label}
       </span>
       {cmd.description && (
-        <span style={{
-          display: 'block', fontSize: 10, marginTop: 1,
-          color: 'rgba(140,130,112,0.45)',
-          fontFamily: 'DM Sans, sans-serif',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
+        <span
+          style={{
+            display: 'block',
+            fontSize: 10,
+            marginTop: 1,
+            color: 'rgba(140,130,112,0.45)',
+            fontFamily: 'DM Sans, sans-serif',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {cmd.description}
         </span>
       )}
     </span>
-    <span style={{
-      fontSize: 9, color: 'rgba(140,130,112,0.3)',
-      fontFamily: 'JetBrains Mono, monospace',
-      letterSpacing: '0.1em', flexShrink: 0,
-    }}>
+    <span
+      style={{
+        fontSize: 9,
+        color: 'rgba(140,130,112,0.3)',
+        fontFamily: 'JetBrains Mono, monospace',
+        letterSpacing: '0.1em',
+        flexShrink: 0,
+      }}
+    >
       {cmd.category.split(' ')[0]}
     </span>
     {cmd.shortcut && (
-      <kbd style={{
-        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-        borderRadius: 4, padding: '1px 5px',
-        fontSize: 9, fontFamily: 'JetBrains Mono, monospace',
-        color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.35)',
-        flexShrink: 0, transition: 'color 0.08s',
-      }}>
+      <kbd
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.09)',
+          borderRadius: 4,
+          padding: '1px 5px',
+          fontSize: 9,
+          fontFamily: 'JetBrains Mono, monospace',
+          color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.35)',
+          flexShrink: 0,
+          transition: 'color 0.08s',
+        }}
+      >
         {cmd.shortcut}
       </kbd>
     )}

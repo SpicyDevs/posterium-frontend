@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
-interface Options { threshold?: number; rootMargin?: string; }
+interface Options {
+  threshold?: number;
+  rootMargin?: string;
+}
 
 export function useIsVisible(opts: Options = {}) {
   const { threshold = 0.05, rootMargin = '0px' } = opts;
@@ -10,10 +13,10 @@ export function useIsVisible(opts: Options = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold, rootMargin }
-    );
+    const obs = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
+      threshold,
+      rootMargin,
+    });
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold, rootMargin]);
@@ -30,7 +33,9 @@ export function useIsVisibleRef(
     const el = elementRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const obs = new IntersectionObserver(
-      ([entry]) => { (visibleRef as React.MutableRefObject<boolean>).current = entry.isIntersecting; },
+      ([entry]) => {
+        (visibleRef as React.MutableRefObject<boolean>).current = entry.isIntersecting;
+      },
       { threshold, rootMargin }
     );
     obs.observe(el);

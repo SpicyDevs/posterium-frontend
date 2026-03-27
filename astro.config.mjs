@@ -25,38 +25,39 @@ export default defineConfig({
       serialize(item) {
         // Aggressively strip trailing slash from every URL in the sitemap
         item.url = item.url.replace(/\/$/, '');
-        
+
         item.lastmod = new Date().toISOString();
         item.changefreq = 'weekly';
-        
+
         // Updated conditions to match the new slash-free URLs
         if (item.url === 'https://posters.spicydevs.xyz') {
           item.priority = 1.0;
-        } else if (item.url === 'https://posters.spicydevs.xyz/build') { 
+        } else if (item.url === 'https://posters.spicydevs.xyz/build') {
           item.priority = 0.9;
         } else {
           item.priority = 0.8;
         }
-        
+
         return item;
-      }
+      },
     }),
     AstroPWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        name: "Posterium - Posters with Ratings!",
-        short_name: "Posterium",
-        description: "Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.",
-        start_url: "/build", // Removed trailing slash here as well
-        display: "standalone",
-        background_color: "#0a0a0a",
-        theme_color: "#0a0a0a",
+        name: 'Posterium - Posters with Ratings!',
+        short_name: 'Posterium',
+        description:
+          'Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.',
+        start_url: '/build', // Removed trailing slash here as well
+        display: 'standalone',
+        background_color: '#0a0a0a',
+        theme_color: '#0a0a0a',
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "/favicon.ico", sizes: "32x32", type: "image/x-icon" }
-        ]
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+        ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
@@ -103,25 +104,25 @@ export default defineConfig({
                 statuses: [0, 200],
               },
             },
-          }
+          },
         ],
       },
     }),
     compress({
       HTML: {
-        "html-minifier-terser": {
+        'html-minifier-terser': {
           removeAttributeQuotes: false,
           collapseWhitespace: false,
           removeComments: true,
           minifyJS: true,
           minifyCSS: true,
-        }
+        },
       },
       CSS: true,
       JS: true,
       SVG: false,
       Image: false,
-    })
+    }),
   ],
   vite: {
     esbuild: {

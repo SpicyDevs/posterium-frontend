@@ -22,9 +22,17 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
       header={
         <div className="flex bg-[#111113] rounded-lg p-0.5 border border-white/6">
           <button
-            onClick={() => { clearSelection(); setActiveTab('canvas'); }}
+            onClick={() => {
+              clearSelection();
+              setActiveTab('canvas');
+            }}
             aria-pressed={currentMode === 'global'}
-            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'global' ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm' : 'text-zinc-600 hover:text-zinc-400')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
+              currentMode === 'global'
+                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
+                : 'text-zinc-600 hover:text-zinc-400'
+            )}
           >
             <Globe size={11} strokeWidth={2} />
             Canvas
@@ -32,7 +40,12 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
           <button
             onClick={() => setActiveTab('badge')}
             aria-pressed={currentMode === 'selection'}
-            className={clsx('flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none', currentMode === 'selection' ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm' : 'text-zinc-600 hover:text-zinc-400')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none',
+              currentMode === 'selection'
+                ? 'bg-[#1c1c1f] text-zinc-100 shadow-sm'
+                : 'text-zinc-600 hover:text-zinc-400'
+            )}
           >
             <MousePointer2 size={11} strokeWidth={2} />
             {selCount > 0 ? `${selCount} selected` : 'Selection'}
@@ -40,7 +53,12 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         </div>
       }
     >
-      <PropertyPanel config={config} setConfig={setConfig} selectedIds={selectedIds} viewMode={currentMode} />
+      <PropertyPanel
+        config={config}
+        setConfig={setConfig}
+        selectedIds={selectedIds}
+        viewMode={currentMode}
+      />
     </SidebarLayout>
   );
 });
