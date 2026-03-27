@@ -152,10 +152,10 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           loop
           shouldFilter
           filter={(value, search, keywords) => {
-            const q = search.toLowerCase().trim();
-            if (!q) return 1;
+            const query = search.toLowerCase().trim();
+            if (!query) return 1;
             const haystack = [value, ...(keywords ?? [])].join(' ').toLowerCase();
-            return q.split(/\s+/).every(w => haystack.includes(w)) ? 1 : 0;
+            return query.split(/\s+/).every(word => haystack.includes(word)) ? 1 : 0;
           }}
         >
           {/* Search header */}

@@ -408,9 +408,7 @@ const StudioLayout: React.FC<Props> = ({
   const showAllBadges = useCallback(() => {
     setConfig(prev => ({
       ...prev,
-      ratings: ALL_BADGES.map(b => b.id).filter(id =>
-        prev.ratings.includes(id) || !prev.ratings.includes(id)
-      ),
+      ratings: ALL_BADGES.map(b => b.id),
     }));
   }, [setConfig]);
 
@@ -694,7 +692,7 @@ const StudioLayout: React.FC<Props> = ({
                 maxSize={35}
                 collapsible
                 collapsedSize={0}
-                onResize={size => setLeftVisible(size.asPercentage > 1)}
+                onResize={panelSize => setLeftVisible(panelSize.asPercentage > 1)}
                 style={{ background: 'var(--film-dark)', overflow: 'hidden' }}
               >
                 <LayerPanel
@@ -722,7 +720,7 @@ const StudioLayout: React.FC<Props> = ({
                 maxSize={40}
                 collapsible
                 collapsedSize={0}
-                onResize={size => setRightVisible(size.asPercentage > 1)}
+                onResize={panelSize => setRightVisible(panelSize.asPercentage > 1)}
                 style={{ background: 'var(--film-dark)', overflow: 'hidden' }}
               >
                 <Inspector config={config} setConfig={setConfig} />
