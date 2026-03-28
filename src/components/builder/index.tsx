@@ -1,5 +1,6 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
+import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import { DEFAULT_CONFIG, ALL_BADGES } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
