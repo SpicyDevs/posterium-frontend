@@ -87,9 +87,8 @@ export function buildOptimalUrl(
 ): string {
   const cleanBase = baseUrl.replace(/\/$/, '');
 
-  const pathSegment = config.imdbId
-    ? `/poster/${config.imdbId}`
-    : `/${config.mediaType}/${config.tmdbId}`;
+  const displayId = config.imdbId || '{imdb_id}';
+  const pathSegment = `/poster/${displayId}`;
 
   const url = new URL(`${cleanBase}${pathSegment}.${config.extension}`);
   const p = url.searchParams;

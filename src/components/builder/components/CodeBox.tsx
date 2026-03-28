@@ -94,7 +94,7 @@ const CodeBox: React.FC<Props> = memo(({ config, onLoadConfig, baseUrl, onExtens
 
     let resolvedUrl = url;
     if (isTemplateUrl(url)) {
-      const currentId = config.imdbId || config.tmdbId;
+      const currentId = config.imdbId || '{imdb_id}';
       resolvedUrl = url.replace(/\{[^}]+\}/g, currentId);
     }
 
