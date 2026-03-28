@@ -181,8 +181,13 @@ export const generateApiUrl = (
   baseUrl: string = DEFAULT_API_BASE
 ): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
-  const url = new URL(`${cleanBase}/${config.mediaType}/${config.tmdbId}.${config.extension}`);
-  const p = url.searchParams;
+  
+  // ALWAYS enforce /poster/ and prioritize imdbId. 
+  // Guarantees {imdb_id} literal is preserved without URL encoding.
+  const displayId = config.imdbId || '{imdb_id}';
+  const pathSegment = `/poster/${displayId}`;
+  
+  const p = new URLSearchParams();
 
   // Version flag — tells backend to use V3 parser
   p.set('v', '3');
@@ -294,7 +299,8 @@ export const generateApiUrl = (
     if (config.logoShadow  !== DEFAULTS.logoShadow)  p.set('logo_sh',      config.logoShadow.toString());
   }
 
-  return url.toString();
+  const queryString = p.toString();
+  return `${cleanBase}${pathSegment}.${config.extension}${queryString ? '?' + queryString : ''}`;
 };
 
 // ── URL parser (handles both V2 and V3) ──────────────────────────────────
@@ -307,11 +313,26 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
   try {
     const url = new URL(urlString);
     const match = url.pathname.match(
-      /\/(movie|tv|anime)\/(\w+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/
+      /\/(movie|tv|anime|poster)\/([^.]+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/
     );
 
-    const mediaType: MediaType = match ? (match[1] as MediaType) : DEFAULT_CONFIG.mediaType;
-    const tmdbId = match ? match[2] : DEFAULT_CONFIG.tmdbId;
+    const mediaType: MediaType = match && ['movie', 'tv', 'anime'].includes(match[1]) 
+      ? (match[1] as MediaType) 
+      : DEFAULT_CONFIG.mediaType;
+      
+    let tmdbId = DEFAULT_CONFIG.tmdbId;
+    let imdbId: string | undefined = undefined;
+
+    if (match && match[2]) {
+      const id = match[2].replace('%7B', '{').replace('%7D', '}');
+      if (id.startsWith('tt')) {
+        imdbId = id;
+        tmdbId = '';
+      } else if (id !== '{imdb_id}') {
+        tmdbId = id;
+      }
+    }
+
     const extension: ExtensionType =
       match && match[3] ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType) : 'svg';
 
@@ -387,6 +408,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       return {
         mediaType,
         tmdbId,
+        imdbId,
         extension,
         ratings:        parsedRatings,
         fallbackEnabled: fbPool.length > 0,
@@ -491,6 +513,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     return {
       mediaType,
       tmdbId,
+      imdbId,
       extension,
       ratings: p.has('r') ? (p.get('r')!.split(',') as RatingType[]) : [],
       fallbackEnabled: v2FbPool.length > 0,

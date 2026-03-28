@@ -161,6 +161,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     setActiveIdx(0);
   }, [query]);
 
+const handleExecute = useCallback((cmd: PaletteCommand) => {
+    recordRecent(cmd.id);
+    cmd.action();
+    onClose();
+  }, [recordRecent, onClose]);
+
   // Group by category when no query
   const groups = React.useMemo(() => {
     if (filtered.query) return null;
@@ -314,11 +320,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                   idx={i}
                   isActive={i === activeIdx}
                   onHover={setActiveIdx}
-                  onExecute={useCallback((command: PaletteCommand) => {
-                    recordRecent(command.id);
-                    command.action();
-                    onClose();
-                  }, [recordRecent, onClose])}
+                  onExecute={handleExecute}
                 />
               ))}
             </div>
@@ -350,11 +352,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                           idx={idx}
                           isActive={idx === activeIdx}
                           onHover={setActiveIdx}
-                          onExecute={useCallback((command: PaletteCommand) => {
-                            recordRecent(command.id);
-                            command.action();
-                            onClose();
-                          }, [recordRecent, onClose])}
+                          onExecute={handleExecute}
                         />
                       );
                     })}
