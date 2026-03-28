@@ -48,6 +48,7 @@ interface Props {
   onDragEnd: (id: RatingType, dx: number, dy: number) => void;
   isSelected: boolean;
   onSelect: (id: RatingType, multi: boolean) => void;
+  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
 }
@@ -62,6 +63,7 @@ const DraggableBadge: React.FC<Props> = ({
   onDragEnd,
   isSelected,
   onSelect,
+  onContextMenu,
   isObscuring,
   onHoverChange,
 }) => {
@@ -334,6 +336,11 @@ const DraggableBadge: React.FC<Props> = ({
       onTouchStart={onTouchStart}
       onMouseEnter={() => onHoverChange?.(true)}
       onMouseLeave={() => onHoverChange?.(false)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContextMenu?.(badgeId, e);
+      }}
       className="badge-item absolute select-none cursor-move z-50"
       style={{
         width: `${width}px`,

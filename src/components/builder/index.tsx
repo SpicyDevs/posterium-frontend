@@ -1,5 +1,5 @@
 // src/components/builder/index.tsx
-import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import { DEFAULT_CONFIG, ALL_BADGES } from './types';
@@ -15,14 +15,12 @@ import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
   RotateCcw,
-  AlertTriangle,
   Undo2,
   Redo2,
   PanelLeft,
   PanelRight,
   Maximize2,
   Minimize2,
-  Command,
   ZoomIn,
   ZoomOut,
   Grid3x3,
@@ -33,7 +31,6 @@ import {
   CheckSquare,
   MousePointer2Off,
   Download,
-  Image as ImageIcon,
   Contrast,
   ArrowUpToLine,
   ArrowDownToLine,
@@ -41,16 +38,11 @@ import {
   Keyboard,
   Type,
   ChevronDown,
-  Copy,
-  Check,
-  X,
-  Film,
   Search
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
-import { generateApiUrl } from './utils';
 
 const STORAGE_KEY = 'posterium_config_v2';
 
@@ -96,14 +88,14 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
     const activeStyle = active
       ? { color: 'var(--film-amber)', background: 'rgba(196,124,46,0.1)', border: '1px solid rgba(196,124,46,0.2)' }
       : disabled
-      ? { color: 'rgba(255,255,255,0.15)' }
+      ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
       : danger
       ? { color: 'var(--film-text-ghost)', border: '1px solid transparent' }
       : { color: 'var(--film-text-ghost)', border: '1px solid transparent' };
 
     const tooltip = !disabled && (
       <span
-        className="absolute -bottom-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-50 shadow-lg syne-font"
+        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-[200] shadow-lg syne-font"
         style={{
           background: 'var(--film-mid)',
           color: 'var(--film-cream)',
@@ -151,13 +143,14 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
 );
 ToolbarBtn.displayName = 'ToolbarBtn';
 
-// ── Fullscreen overlay ────────────────────────────────────────────────────────
-const FullscreenOverlay = memo<{
-  onExit: () => void;
+// ── Zoom/Fullscreen Overlay ───────────────────────────────────────────────────
+const ZoomOverlay = memo<{
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetView: () => void;
-}>(({ onExit, onZoomIn, onZoomOut, onResetView }) => (
+}>(({ isFullscreen, onToggleFullscreen, onZoomIn, onZoomOut, onResetView }) => (
   <div
     className="fixed z-40 flex items-center gap-1 rounded-xl select-none"
     style={{
@@ -195,24 +188,24 @@ const FullscreenOverlay = memo<{
     ))}
     <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
     <button
-      onClick={onExit}
-      title="Exit Fullscreen (F or Esc)"
+      onClick={onToggleFullscreen}
+      title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
       className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-      style={{ color: 'rgba(196,124,46,0.7)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+      style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
         (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.7)';
+        (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
         (e.currentTarget as HTMLElement).style.background = 'transparent';
       }}
     >
-      <Minimize2 size={15} />
+      {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
     </button>
   </div>
 ));
-FullscreenOverlay.displayName = 'FullscreenOverlay';
+ZoomOverlay.displayName = 'ZoomOverlay';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -225,7 +218,6 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  mediaTitle?: string;
 }> = ({
   config,
   setConfig,
@@ -236,7 +228,6 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
-  mediaTitle,
 }) => {
   const {
     activeTab,
@@ -248,7 +239,6 @@ const StudioLayout: React.FC<{
     setBatchSelection,
     viewOptions,
     toggleViewOption,
-    setActiveTab,
   } = useEditor();
 
 const [isResetOpen, setIsResetOpen] = useState(false);
@@ -285,14 +275,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     []
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped
+  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback((id: RatingType, multi: boolean) => {
     handleSelection(id, multi);
-    if (typeof window !== 'undefined' && window.innerWidth < 1024 && mobileSheetMode === 'hidden') {
-       setActiveTab('badge');
-       setMobileSheetMode('full');
-    }
-  }, [handleSelection, setActiveTab, setMobileSheetMode, mobileSheetMode]);
+  }, [handleSelection]);
 
   const moveLayer = useCallback(
     (id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
@@ -451,14 +437,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     [rightW]
   );
 
-  // ── Mobile sheet ──────────────────────────────────────────────────────────
-  const SNAPS = { hidden: '100%', half: '0%', full: '0%' };
-  const HEIGHTS = {
-    hidden: '100%', // Unused in new UI
-    half: '100%',   // Unused in new UI
-    full: 'calc(100dvh - 64px - env(safe-area-inset-bottom, 0px))', // Full screen minus dock
-  };
-  
   const handleExtensionChange = useCallback(
     (ext: ExtensionType) => { setConfig((prev) => ({ ...prev, extension: ext })); },
     [setConfig]
@@ -495,7 +473,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   ];
 
   const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
-  const ctxBadgeVisible = ctxMenu.badgeId ? config.ratings.includes(ctxMenu.badgeId) : false;
 
   return (
     <>
@@ -533,7 +510,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           state={ctxMenu}
           onClose={closeCtxMenu}
           isSelected={ctxBadgeSelected}
-          isVisible={ctxBadgeVisible}
           onBringToFront={(id) => moveLayer(id, 'front')}
           onBringForward={(id) => moveLayer(id, 'forward')}
           onSendBackward={(id) => moveLayer(id, 'back')}
@@ -608,40 +584,30 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   P
                 </span>
               </a>
-
-              {/* Vertical divider */}
-              <div
-                className="hidden sm:block w-px h-4 mx-3 shrink-0"
-                style={{ background: 'rgba(196,124,46,0.15)' }}
-                aria-hidden="true"
-              />
-
-              {/* Film title — contextual breadcrumb */}
-              {mediaTitle && (
-                <div className="hidden sm:flex items-center gap-1.5 min-w-0 pr-4">
-                  <Film size={10} style={{ color: 'var(--film-amber)', opacity: 0.6, flexShrink: 0 }} />
-                  <span
-                    className="syne-font truncate"
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'var(--film-text-dim)',
-                      maxWidth: 160,
-                      letterSpacing: '0.02em',
-                    }}
-                    title={mediaTitle}
-                  >
-                    {mediaTitle}
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Central Palette Search Bar - Centered directly over the canvas */}
-            <div className="flex-1 flex justify-center px-4 min-w-0">
+            {/* Central area: sidebar toggles flank the command palette search */}
+            <div className="flex-1 flex items-center justify-center px-2 min-w-0 gap-2">
+              {/* Left sidebar toggle */}
+              <button
+                onClick={() => setLeftVisible(!leftVisible)}
+                title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                style={{
+                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                  border: '1px solid transparent',
+                  background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent'; }}
+              >
+                <PanelLeft size={14} />
+              </button>
+
+              {/* Command palette search */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 h-8 w-full max-w-lg rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 h-8 w-full max-w-sm rounded-md transition-colors"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -658,6 +624,22 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   ⌘K
                 </kbd>
               </button>
+
+              {/* Right sidebar toggle */}
+              <button
+                onClick={() => setRightVisible(!rightVisible)}
+                title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                style={{
+                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                  border: '1px solid transparent',
+                  background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent'; }}
+              >
+                <PanelRight size={14} />
+              </button>
             </div>
 
             {/* Right Header Area - Aligned exactly with right sidebar */}
@@ -669,6 +651,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
                 active={shortcutsOpen}
+                hideOnMobile
               >
                 <Keyboard size={14} />
               </ToolbarBtn>
@@ -803,35 +786,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               }}
             />
 
-            {/* Sidebar Canvas Toggles (Only show on desktop) */}
-            <button
-              onClick={() => setLeftVisible(!leftVisible)}
-              title={`${leftVisible ? 'Hide' : 'Show'} Layers`}
-              className="absolute left-3 top-3 z-30 w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur transition-all hidden lg:flex"
-              style={{
-                background: 'rgba(14,13,11,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)'
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.15)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(14,13,11,0.8)'; }}
-            >
-              <PanelLeft size={14} />
-            </button>
-            <button
-              onClick={() => setRightVisible(!rightVisible)}
-              title={`${rightVisible ? 'Hide' : 'Show'} Inspector`}
-              className="absolute right-3 top-3 z-30 w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur transition-all hidden lg:flex"
-              style={{
-                background: 'rgba(14,13,11,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)'
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.15)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(14,13,11,0.8)'; }}
-            >
-              <PanelRight size={14} />
-            </button>
+            {/* Sidebar Canvas Toggles removed — now in navbar */}
 
             <PreviewCanvas
               config={config}
@@ -839,7 +794,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               selectedIds={selectedIds}
               onSelect={handleSelectionOverride}
               onContextMenu={openCtxMenu}
-              isFullscreen={isFullscreen}
             />
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
@@ -897,10 +851,22 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             >
               {/* Swipe-down dismiss handle */}
               <div 
-                 className="shrink-0 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer"
+                 className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
                  onClick={() => setMobileSheetMode('hidden')}
+                 onTouchStart={(e) => {
+                   const startY = e.touches[0].clientY;
+                   const onMove = (ev: TouchEvent) => {
+                     if (ev.touches[0].clientY - startY > 40) {
+                       setMobileSheetMode('hidden');
+                       window.removeEventListener('touchmove', onMove);
+                     }
+                   };
+                   window.addEventListener('touchmove', onMove, { passive: true });
+                   const cleanup = () => { window.removeEventListener('touchmove', onMove); };
+                   window.addEventListener('touchend', cleanup, { once: true });
+                 }}
               >
-                 <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.15)]" />
+                 <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
@@ -923,15 +889,14 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         {/* Mobile dock */}
         <MobileDock />
 
-        {/* Fullscreen overlay controls */}
-        {isFullscreen && (
-          <FullscreenOverlay
-            onExit={toggleFullscreen}
-            onZoomIn={() => dispatchZoom(0.25)}
-            onZoomOut={() => dispatchZoom(-0.25)}
-            onResetView={dispatchResetView}
-          />
-        )}
+        {/* Zoom + fullscreen overlay — always visible */}
+        <ZoomOverlay
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+          onZoomIn={() => dispatchZoom(0.25)}
+          onZoomOut={() => dispatchZoom(-0.25)}
+          onResetView={dispatchResetView}
+        />
       </div>
     </>
   );
@@ -959,8 +924,6 @@ const BuilderApp: React.FC = () => {
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
-  // Track media title from fetched data to show in header
-  const [mediaTitle, setMediaTitle] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
@@ -973,26 +936,6 @@ const BuilderApp: React.FC = () => {
     }
   }, [config.keys]);
 
-  // Fetch media title for header display
-  useEffect(() => {
-    if (!config.tmdbId && !config.imdbId) { setMediaTitle(undefined); return; }
-    const ctrl = new AbortController();
-    (async () => {
-      try {
-        const idPath = config.imdbId
-          ? `/poster/${config.imdbId}`
-          : `/${config.mediaType}/${config.tmdbId}`;
-        const res = await fetch(`${DEFAULT_API_BASE}${idPath}.json?source=${config.source}`, {
-          signal: ctrl.signal,
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.meta?.title) setMediaTitle(data.meta.title);
-      } catch { /* ignore */ }
-    })();
-    return () => ctrl.abort();
-  }, [config.tmdbId, config.imdbId, config.mediaType, config.source]);
-
   const handleLoadConfig = useCallback(
     (url: string) => {
       setConfig(parseUrlToConfig(url));
@@ -1003,7 +946,6 @@ const BuilderApp: React.FC = () => {
 
   const handleReset = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
-    setMediaTitle(undefined);
     localStorage.removeItem(STORAGE_KEY);
     document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
@@ -1021,7 +963,6 @@ const BuilderApp: React.FC = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        mediaTitle={mediaTitle}
       />
     </EditorProvider>
   );
