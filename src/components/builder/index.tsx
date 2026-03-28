@@ -155,6 +155,99 @@ const ResetDialog = memo<{
 ));
 ResetDialog.displayName = 'ResetDialog';
 
+// ── Import dialog ────────────────────────────────────────────────────────────
+const ImportDialog = memo<{
+  isOpen: boolean;
+  onClose: () => void;
+  onLoad: (url: string) => void;
+}>(({ isOpen, onClose, onLoad }) => {
+  const [val, setVal] = useState('');
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
+        </TransitionChild>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <TransitionChild
+            as={Fragment}
+            enter="ease-out duration-200"
+            enterFrom="opacity-0 scale-95"
+            enterTo="opacity-100 scale-100"
+            leave="ease-in duration-150"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-95"
+          >
+            <DialogPanel
+              className="w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
+              style={{ background: 'var(--film-mid)', borderColor: 'rgba(196,124,46,0.15)' }}
+            >
+              <DialogTitle
+                as="h3"
+                className="text-sm font-semibold flex items-center gap-3 syne-font"
+                style={{ color: 'var(--film-cream)' }}
+              >
+                <Download size={16} style={{ color: 'var(--film-amber)' }} className="rotate-180" />
+                Import Configuration
+              </DialogTitle>
+              <div className="mt-4">
+                <input
+                  type="url"
+                  value={val}
+                  onChange={(e) => setVal(e.target.value)}
+                  placeholder="Paste Posterium API URL here..."
+                  className="w-full h-10 px-3 rounded-lg border focus:outline-none mono-font"
+                  style={{
+                    background: 'var(--film-char)',
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    color: 'var(--film-cream)',
+                    fontSize: 11,
+                  }}
+                  autoFocus
+                  onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && val.trim()) {
+                      onLoad(val.trim());
+                      setVal('');
+                      onClose();
+                    }
+                  }}
+                />
+              </div>
+              <div className="mt-5 flex gap-2 justify-end">
+                <button
+                  onClick={onClose}
+                  className="px-4 h-9 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 syne-font uppercase tracking-wide"
+                  style={{ color: 'var(--film-text-dim)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { if (val.trim()) { onLoad(val.trim()); setVal(''); onClose(); } }}
+                  className="px-4 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] syne-font uppercase tracking-wide"
+                  style={{ background: 'var(--film-amber)', color: '#070706' }}
+                >
+                  Load Poster
+                </button>
+              </div>
+            </DialogPanel>
+          </TransitionChild>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+});
+ImportDialog.displayName = 'ImportDialog';
+
 // ── Toolbar button ──────────────────────────────────────────────────────────
 interface ToolbarBtnProps {
   onClick?: () => void;
@@ -346,149 +439,8 @@ const ExportPopover = memo<{
         </button>
       </div>
 
-      {/* Format selector */}
-      <div className="px-4 pt-3 pb-2">
-        <p
-          className="syne-font uppercase tracking-widest mb-2"
-          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
-        >
-          Format
-        </p>
-        <div className="grid grid-cols-4 gap-1.5">
-          {EXT_OPTIONS.map((ext) => (
-            <button
-              key={ext.id}
-              onClick={() => onExtensionChange(ext.id)}
-              className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all active:scale-95 syne-font"
-              style={{
-                background:
-                  config.extension === ext.id
-                    ? 'rgba(196,124,46,0.12)'
-                    : 'rgba(255,255,255,0.02)',
-                border:
-                  config.extension === ext.id
-                    ? '1px solid rgba(196,124,46,0.25)'
-                    : '1px solid rgba(255,255,255,0.05)',
-                color:
-                  config.extension === ext.id
-                    ? 'var(--film-pale)'
-                    : 'var(--film-text-dim)',
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 700 }}>{ext.label}</span>
-              <span
-                className="body-font text-center leading-tight"
-                style={{
-                  fontSize: 7,
-                  color:
-                    config.extension === ext.id
-                      ? 'rgba(196,124,46,0.6)'
-                      : 'var(--film-text-ghost)',
-                }}
-              >
-                {ext.hint}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* URL display */}
-      <div className="px-4 pt-1 pb-3">
-        <p
-          className="syne-font uppercase tracking-widest mb-1.5"
-          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
-        >
-          API URL
-        </p>
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg"
-          style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <span
-            className="mono-font flex-1 min-w-0 truncate"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            title={currentUrl}
-          >
-            {currentUrl.replace('https://api.spicydevs.xyz', '…')}
-          </span>
-          <button
-            onClick={handleCopy}
-            className="shrink-0 transition-colors"
-            style={{ color: copied ? '#34d399' : 'var(--film-text-ghost)' }}
-            title={copied ? 'Copied!' : 'Copy URL'}
-            onMouseEnter={(e) => {
-              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            }}
-            onMouseLeave={(e) => {
-              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
-            }}
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div
-        className="flex gap-2 px-4 pb-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
-      >
-        <button
-          onClick={handleCopy}
-          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'var(--film-text-dim)',
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.2)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-          }}
-        >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
-          {copied ? 'Copied' : 'Copy URL'}
-        </button>
-        <button
-          onClick={handleDownload}
-          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
-          style={{
-            background: downloading ? 'rgba(196,124,46,0.2)' : 'var(--film-amber)',
-            color: downloading ? 'var(--film-pale)' : '#070706',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            boxShadow: downloading ? 'none' : '0 0 20px rgba(196,124,46,0.25)',
-            border: 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (!downloading) (e.currentTarget as HTMLElement).style.background = '#d4a245';
-          }}
-          onMouseLeave={(e) => {
-            if (!downloading) (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
-          }}
-        >
-          <Download size={12} />
-          Download
-        </button>
-      </div>
-
-      {/* Advanced: load from URL */}
-      <div
-        className="px-4 pb-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
-      >
+      {/* Embedded unified CodeBox */}
+      <div className="px-4 py-4">
         <CodeBox
           config={config}
           onLoadConfig={onLoadConfig}
@@ -601,7 +553,8 @@ const StudioLayout: React.FC<{
     setActiveTab,
   } = useEditor();
 
-  const [isResetOpen, setIsResetOpen] = useState(false);
+const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -918,6 +871,7 @@ const StudioLayout: React.FC<{
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
         <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
+        <ImportDialog isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} onLoad={handleLoadConfig} />
         <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         <ContextMenu
           state={ctxMenu}
@@ -1003,7 +957,7 @@ const StudioLayout: React.FC<{
 
             {/* Film title — contextual breadcrumb */}
             {mediaTitle && (
-              <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+              <div className="hidden sm:flex items-center gap-1.5 min-w-0 pr-4">
                 <Film size={10} style={{ color: 'var(--film-amber)', opacity: 0.6, flexShrink: 0 }} />
                 <span
                   className="syne-font truncate"
@@ -1021,19 +975,31 @@ const StudioLayout: React.FC<{
               </div>
             )}
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Toolbar cluster */}
-            <div className="flex items-center gap-0.5 shrink-0">
-              {/* Utility group */}
-              <ToolbarBtn
-                onClick={() => setPaletteOpen((v) => !v)}
-                label="Command Palette (⌘K)"
-                active={paletteOpen}
+            {/* Central Palette Search Bar */}
+            <div className="flex-1 flex justify-center lg:px-4">
+              <button
+                onClick={() => setPaletteOpen(true)}
+                className="flex items-center gap-2 px-3 h-8 w-full max-w-sm rounded-md transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'var(--film-text-ghost)',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
               >
-                <Command size={14} />
-              </ToolbarBtn>
+                <Search size={13} className="shrink-0" />
+                <span className="text-[11px] syne-font text-left flex-1 min-w-0 truncate">
+                  Search commands...
+                </span>
+                <kbd className="hidden sm:block text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                  ⌘K
+                </kbd>
+              </button>
+            </div>
+
+            {/* Right Toolbar cluster */}
+            <div className="flex items-center gap-1 shrink-0">
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
@@ -1044,33 +1010,25 @@ const StudioLayout: React.FC<{
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
-              {/* Sidebar toggles */}
-              <ToolbarBtn
-                onClick={() => setLeftVisible((v) => !v)}
-                label={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                active={!leftVisible}
-                hideOnMobile
+              {/* Import */}
+              <button
+                onClick={() => setIsImportOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+                style={{ color: 'var(--film-text-dim)' }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                }}
               >
-                <PanelLeft size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn
-                onClick={() => setRightVisible((v) => !v)}
-                label={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-                active={!rightVisible}
-                hideOnMobile
-              >
-                <PanelRight size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn
-                onClick={toggleFullscreen}
-                label="Fullscreen (F)"
-                active={isFullscreen}
-                hideOnMobile
-              >
-                <Maximize2 size={14} />
-              </ToolbarBtn>
+                <Download size={13} className="rotate-180" />
+                <span className="text-[11px] font-medium uppercase tracking-wider">Import</span>
+              </button>
 
-              <div className="w-px h-4 mx-1" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
               {/* History */}
               <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
@@ -1080,18 +1038,16 @@ const StudioLayout: React.FC<{
                 <Redo2 size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-4 mx-1" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
-
-              {/* GitHub — desktop only */}
-              <ToolbarBtn
-                href="https://github.com/xdaayush/freeposterapi"
-                label="GitHub"
-                hideOnMobile
+              {/* Reset */}
+              <button
+                onClick={() => setIsResetOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-2.5 ml-1 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
               >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
-                </svg>
-              </ToolbarBtn>
+                <RotateCcw size={13} />
+                <span className="text-[11px] font-bold uppercase tracking-wider hidden md:inline">Reset</span>
+              </button>
+
+              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
               {/* Export CTA — amber, always visible */}
               <button
@@ -1181,6 +1137,37 @@ const StudioLayout: React.FC<{
                 backgroundSize: '20px 20px',
               }}
             />
+
+            {/* Sidebar Canvas Toggles (Only show on desktop) */}
+            <button
+              onClick={() => setLeftVisible(!leftVisible)}
+              title={`${leftVisible ? 'Hide' : 'Show'} Layers`}
+              className="absolute left-3 top-3 z-30 w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur transition-all hidden lg:flex"
+              style={{
+                background: 'rgba(14,13,11,0.8)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)'
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.15)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(14,13,11,0.8)'; }}
+            >
+              <PanelLeft size={14} />
+            </button>
+            <button
+              onClick={() => setRightVisible(!rightVisible)}
+              title={`${rightVisible ? 'Hide' : 'Show'} Inspector`}
+              className="absolute right-3 top-3 z-30 w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur transition-all hidden lg:flex"
+              style={{
+                background: 'rgba(14,13,11,0.8)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)'
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.15)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(14,13,11,0.8)'; }}
+            >
+              <PanelRight size={14} />
+            </button>
+
             <PreviewCanvas
               config={config}
               setConfig={setConfig}
