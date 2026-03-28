@@ -201,3 +201,35 @@
     background: rgba(255, 255, 255, 0.18);
   }
 }
+@layer utilities {
+  /* CYBERPUNK ANGLED CUTOUTS */
+  .cyber-path-left {
+    --cut: 24px;
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+  }
+  .cyber-path-right {
+    --cut: 24px;
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  }
+
+  /* WRAPPERS FOR PARALLEL BORDER LINES */
+  /* Left Sidebar (Cuts on Right Edge) */
+  .cyber-border-outer-left {
+    background: rgba(196, 124, 46, 0.4); /* Outer amber line */
+    padding-right: 1px; /* Line thickness */
+  }
+  .cyber-border-gap-left {
+    background: var(--film-black); /* Gap color */
+    padding-right: 3px; /* Gap thickness */
+  }
+
+  /* Right Sidebar (Cuts on Left Edge) */
+  .cyber-border-outer-right {
+    background: rgba(196, 124, 46, 0.4); /* Outer amber line */
+    padding-left: 1px; /* Line thickness */
+  }
+  .cyber-border-gap-right {
+    background: var(--film-black); /* Gap color */
+    padding-left: 3px; /* Gap thickness */
+  }
+}

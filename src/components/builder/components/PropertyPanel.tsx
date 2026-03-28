@@ -17,6 +17,7 @@ import {
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
+import SidebarLayout from './SidebarLayout';
 
 interface Props {
   config: PosterConfig;
@@ -405,7 +406,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   // ── Global view ────────────────────────────────────────────────────────────
   if (showGlobal)
     return (
-      <div className="pb-24">
+      <SidebarLayout side="right" bodyClassName="pb-24">
         <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
           <div className="flex items-start gap-4">
             <div>
@@ -628,37 +629,39 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             Canvas-only guides — not visible in exported images.
           </p>
         </Section>
-      </div>
+      </SidebarLayout>
     );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
   if (selectedIds.size === 0)
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.05)',
-          }}
-        >
-          <Layers size={18} strokeWidth={1.5} style={{ color: 'var(--film-text-ghost)', opacity: 0.4 }} />
-        </div>
-        <div>
-          <p
-            className="syne-font font-semibold"
-            style={{ fontSize: 12, color: 'var(--film-text-dim)' }}
+      <SidebarLayout side="right">
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)',
+            }}
           >
-            No badge selected
-          </p>
-          <p
-            className="body-font mt-1"
-            style={{ fontSize: 11, color: 'var(--film-text-ghost)' }}
-          >
-            Click a badge on the canvas to edit
-          </p>
+            <Layers size={18} strokeWidth={1.5} style={{ color: 'var(--film-text-ghost)', opacity: 0.4 }} />
+          </div>
+          <div>
+            <p
+              className="syne-font font-semibold"
+              style={{ fontSize: 12, color: 'var(--film-text-dim)' }}
+            >
+              No badge selected
+            </p>
+            <p
+              className="body-font mt-1"
+              style={{ fontSize: 11, color: 'var(--film-text-ghost)' }}
+            >
+              Click a badge on the canvas to edit
+            </p>
+          </div>
         </div>
-      </div>
+      </SidebarLayout>
     );
 
   // ── Per-badge / selection view ─────────────────────────────────────────────
@@ -687,7 +690,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   })();
 
   return (
-    <div className="pb-24">
+    <SidebarLayout side="right" bodyClassName="pb-24">
       {/* Selection header — kept as amber-tinted card, matches dashboard style */}
       <div
         className="mx-3 mt-4 mb-2 px-3 py-2.5 rounded-xl"
@@ -858,7 +861,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           <RotateCcw size={11} /> Reset to global defaults
         </button>
       </div>
-    </div>
+    </SidebarLayout>
   );
 };
 

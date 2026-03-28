@@ -922,6 +922,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   return (
     <SidebarLayout
+      side="left"
       bodyClassName="px-2 pt-2 pb-8"
       header={
         <div
