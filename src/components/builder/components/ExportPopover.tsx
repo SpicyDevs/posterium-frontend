@@ -1,7 +1,5 @@
-// src/components/builder/components/ExportPopover.tsx
 import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
-import { Download, X, Copy, Check } from 'lucide-react';
-import CodeBox from './CodeBox';
+import { Download, X, Copy, Check, ArrowRight } from 'lucide-react';
 import type { PosterConfig, ExtensionType } from '../types';
 import { generateApiUrl } from '../utils';
 
@@ -19,21 +17,28 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
   const popoverRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [editedUrl, setEditedUrl] = useState<string | null>(null);
 
-  const EXT_OPTIONS: { id: ExtensionType; label: string; hint: string }[] = [
-    { id: 'svg', label: 'SVG', hint: 'Vector · Plex / Jellyfin' },
-    { id: 'png', label: 'PNG', hint: 'Lossless · Universal' },
-    { id: 'jpg', label: 'JPG', hint: 'Compressed · Small' },
-    { id: 'webp', label: 'WEBP', hint: 'Modern · Discord' },
+  const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
+    { id: 'svg', label: 'SVG' },
+    { id: 'png', label: 'PNG' },
+    { id: 'jpg', label: 'JPG' },
+    { id: 'webp', label: 'WEBP' },
   ];
 
   const currentUrl = useMemo(() => {
     try { return generateApiUrl(config, baseUrl); } catch { return ''; }
   }, [config, baseUrl]);
 
+  useEffect(() => {
+    setEditedUrl(null);
+  }, [currentUrl]);
+
+  const displayUrl = editedUrl !== null ? editedUrl : currentUrl;
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(displayUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard unavailable */ }
@@ -42,11 +47,15 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
   const handleDownload = () => {
     setDownloading(true);
     try {
-      const u = new URL(currentUrl);
+      const u = new URL(displayUrl);
       u.searchParams.set('download', '');
       window.open(u.toString(), '_blank', 'noopener,noreferrer');
     } catch { /* malformed */ }
     setTimeout(() => setDownloading(false), 800);
+  };
+
+  const handleLoad = () => {
+     if (displayUrl.trim()) onLoadConfig(displayUrl.trim());
   };
 
   useEffect(() => {
@@ -133,7 +142,7 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
                 background:
                   config.extension === ext.id
                     ? 'rgba(196,124,46,0.12)'
-                    : 'rgba(255,255,255,0.02)',
+                    ? 'rgba(255,255,255,0.02)',
                 border:
                   config.extension === ext.id
                     ? '1px solid rgba(196,124,46,0.25)'
@@ -155,14 +164,13 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
                       : 'var(--film-text-ghost)',
                 }}
               >
-                {ext.hint}
               </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* URL display */}
+      {/* Editable URL Input */}
       <div className="px-4 pt-1 pb-3">
         <p
           className="syne-font uppercase tracking-widest mb-1.5"
@@ -171,33 +179,31 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
           API URL
         </p>
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-lg focus-within:ring-1 focus-within:ring-[#C47C2E] transition-all"
           style={{
             background: 'rgba(255,255,255,0.025)',
             border: '1px solid rgba(255,255,255,0.06)',
           }}
         >
-          <span
-            className="mono-font flex-1 min-w-0 truncate"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            title={currentUrl}
-          >
-            {currentUrl.replace('https://api.spicydevs.xyz', '…')}
-          </span>
-          <button
-            onClick={handleCopy}
-            className="shrink-0 transition-colors"
-            style={{ color: copied ? '#34d399' : 'var(--film-text-ghost)' }}
-            title={copied ? 'Copied!' : 'Copy URL'}
-            onMouseEnter={(e) => {
-              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            }}
-            onMouseLeave={(e) => {
-              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
-            }}
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-          </button>
+          <input
+            type="url"
+            value={displayUrl}
+            onChange={(e) => setEditedUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLoad(); }}
+            className="flex-1 min-w-0 bg-transparent border-none outline-none mono-font"
+            style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+            spellCheck={false}
+          />
+          {editedUrl !== null && editedUrl !== currentUrl && (
+            <button
+              onClick={handleLoad}
+              className="w-6 h-6 shrink-0 flex items-center justify-center rounded transition-colors hover:bg-white/10"
+              style={{ color: 'var(--film-amber)' }}
+              title="Load URL"
+            >
+              <ArrowRight size={13} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -226,7 +232,7 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
             (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
           }}
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
           {copied ? 'Copied' : 'Copy URL'}
         </button>
         <button
@@ -252,21 +258,8 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
           Download
         </button>
       </div>
-
-      {/* Advanced: load from URL */}
-      <div
-        className="px-4 pb-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
-      >
-        <CodeBox
-          config={config}
-          onLoadConfig={onLoadConfig}
-          baseUrl={baseUrl}
-          onExtensionChange={onExtensionChange}
-        />
-      </div>
     </div>
   );
 });
 
-export default ExportPopover
+export default ExportPopover;

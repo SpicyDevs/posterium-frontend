@@ -796,7 +796,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             </div>
           </header>
         )}
-        
+
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left sidebar */}
@@ -952,9 +952,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           }}
         >
           <div
-            onTouchStart={onHandleTouchStart}
-            onTouchMove={onHandleTouchMove}
-            onTouchEnd={onHandleTouchEnd}
             className="shrink-0 h-10 w-full flex items-center justify-center touch-none cursor-grab active:cursor-grabbing select-none"
             role="button"
             aria-label="Drag to resize"

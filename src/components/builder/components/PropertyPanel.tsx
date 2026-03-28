@@ -124,13 +124,43 @@ const SliderRow: React.FC<{
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const display = formatValue ? formatValue(value) : `${value}${unit}`;
+  
+  // High-performance decoupled local state
+  const [localValue, setLocalValue] = useState(value);
+  const lastUpdate = useRef(Date.now());
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => { setLocalValue(value); }, [value]);
+
+  const display = formatValue ? formatValue(localValue) : `${localValue}${unit}`;
 
   const commit = () => {
     const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
-    if (!isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
+    if (!isNaN(n)) {
+      const clamped = Math.max(min, Math.min(max, n));
+      setLocalValue(clamped);
+      onChange(clamped);
+    }
     setEditing(false);
   };
+
+  const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setLocalValue(val); // Instant UI update
+    
+    // Throttle heavy parent updates to max 30fps
+    const now = Date.now();
+    if (now - lastUpdate.current > 33) {
+      onChange(val);
+      lastUpdate.current = now;
+    } else {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        onChange(val);
+        lastUpdate.current = Date.now();
+      }, 33);
+    }
+  }, [onChange]);
 
   return (
     <div className="space-y-1.5">
@@ -168,7 +198,7 @@ const SliderRow: React.FC<{
         ) : (
           <button
             type="button"
-            onClick={() => { setDraft(String(value)); setEditing(true); }}
+            onClick={() => { setDraft(String(localValue)); setEditing(true); }}
             title="Click to edit"
             className="mono-font tabular-nums"
             style={{
@@ -203,14 +233,13 @@ const SliderRow: React.FC<{
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
+        value={localValue}
+        onChange={handleRangeChange}
         className="w-full"
       />
     </div>
   );
 };
-
 // ── ToggleRow ────────────────────────────────────────────────────────────────
 const ToggleRow: React.FC<{
   label: string;

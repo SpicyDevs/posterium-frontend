@@ -87,14 +87,12 @@ export function buildOptimalUrl(
 ): string {
   const cleanBase = baseUrl.replace(/\/$/, '');
 
+  // ALWAYS enforce /poster/ and prioritize imdbId. 
+  // Guarantees {imdb_id} literal is preserved without URL encoding.
   const displayId = config.imdbId || '{imdb_id}';
   const pathSegment = `/poster/${displayId}`;
 
-  const url = new URL(`${cleanBase}${pathSegment}.${config.extension}`);
-
-  const url = new URL(`${cleanBase}${pathSegment}.${config.extension}`);
-  const p = url.searchParams;
-
+  const p = new URLSearchParams();
   // ── Core ────────────────────────────────────────────────────────────────
   if (config.ratings.length > 0) {
     p.set('r', config.ratings.map((r) => PROVIDER_SHORT[r] ?? r).join(','));
@@ -210,7 +208,8 @@ export function buildOptimalUrl(
     if (config.logoShadow !== 6) p.set('logo_sh', ps(config.logoShadow));
   }
 
-  return url.toString();
+  const queryString = p.toString();
+  return `${cleanBase}${pathSegment}.${config.extension}${queryString ? '?' + queryString : ''}`;
 }
 
 /**

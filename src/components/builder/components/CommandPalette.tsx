@@ -313,12 +313,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                   cmd={cmd}
                   idx={i}
                   isActive={i === activeIdx}
-                  onHover={() => setActiveIdx(i)}
-                  onExecute={() => {
-                    recordRecent(cmd.id);
-                    cmd.action();
+                  onHover={setActiveIdx}
+                  onExecute={useCallback((command: PaletteCommand) => {
+                    recordRecent(command.id);
+                    command.action();
                     onClose();
-                  }}
+                  }, [recordRecent, onClose])}
                 />
               ))}
             </div>
@@ -349,12 +349,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                           cmd={cmd}
                           idx={idx}
                           isActive={idx === activeIdx}
-                          onHover={() => setActiveIdx(idx)}
-                          onExecute={() => {
-                            recordRecent(cmd.id);
-                            cmd.action();
+                          onHover={setActiveIdx}
+                          onExecute={useCallback((command: PaletteCommand) => {
+                            recordRecent(command.id);
+                            command.action();
                             onClose();
-                          }}
+                          }, [recordRecent, onClose])}
                         />
                       );
                     })}
@@ -423,21 +423,20 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     </div>
   );
 });
-
 // ── Single command row ────────────────────────────────────────────────────────
 const CommandItem = memo<{
   cmd: PaletteCommand;
   idx: number;
   isActive: boolean;
-  onHover: () => void;
-  onExecute: () => void;
+  onHover: (idx: number) => void;
+  onExecute: (cmd: PaletteCommand) => void;
 }>(({ cmd, idx, isActive, onHover, onExecute }) => (
   <button
     data-idx={idx}
     role="option"
     aria-selected={isActive}
-    onClick={onExecute}
-    onMouseEnter={onHover}
+    onClick={() => onExecute(cmd)}
+    onMouseEnter={() => onHover(idx)}
     style={{
       display: 'flex',
       alignItems: 'center',

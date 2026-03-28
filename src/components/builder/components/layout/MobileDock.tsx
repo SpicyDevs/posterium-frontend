@@ -14,21 +14,25 @@ const TABS: { id: TabId; Icon: React.ElementType; label: string }[] = [
 
 const MobileDock: React.FC = memo(() => {
   const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
-
-  const handleTab = (id: TabId) => {
+const handleTab = (id: TabId) => {
     if (id === activeTab && mobileSheetMode !== 'hidden') {
       setMobileSheetMode('hidden');
       return;
     }
     setActiveTab(id);
-    setMobileSheetMode('half');
+    // REMADE MOBILE UI: Force 'full' fixed drawer instead of draggable sheet
+    setMobileSheetMode('full'); 
   };
 
   return (
     <nav
       role="tablist"
       aria-label="Editor panels"
-      className="lg:hidden shrink-0 h-14 flex items-stretch border-t border-white/6 bg-[#0d0d0f] z-50 px-1 pb-[env(safe-area-inset-bottom,0px)]"
+      className="lg:hidden shrink-0 h-16 flex items-stretch border-t shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 px-2 pb-[env(safe-area-inset-bottom,0px)]"
+      style={{
+        background: 'var(--film-dark)',
+        borderColor: 'rgba(196,124,46,0.1)'
+      }}
     >
       {TABS.map(({ id, Icon, label }) => {
         const isActive = activeTab === id && mobileSheetMode !== 'hidden';

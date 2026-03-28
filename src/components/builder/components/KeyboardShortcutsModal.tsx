@@ -116,7 +116,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
         >
           <div
             className="fixed inset-0"
-            style={{ background: 'rgba(7,7,6,0.75)', backdropFilter: 'blur(12px)' }}
+            style={{ background: 'rgba(7,7,6,0.85)', backdropFilter: 'blur(4px)' }}
           />
         </TransitionChild>
 
