@@ -126,7 +126,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   shadow: 6,
   layout: 'custom',
   preset: 'custom',
-  blur: 8,
+  blur: 0,
   alpha: 0.4,
   radius: 12,
   extension: 'png',

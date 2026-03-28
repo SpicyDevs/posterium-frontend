@@ -218,7 +218,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   }, [cleanPosterUrl]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (e.currentTarget.src.includes(config.tmdbId)) setIsImageLoading(false);
+    const id = config.imdbId || config.tmdbId;
+    if (id && e.currentTarget.src.includes(id)) setIsImageLoading(false);
   };
   const handleImageError = () => {
     setIsImageLoading(false);
