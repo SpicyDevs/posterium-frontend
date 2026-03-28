@@ -36,11 +36,87 @@ const twitter = {
   description: routeMeta?.twitter?.description ?? routeMeta?.description ?? SEO_DEFAULTS.twitter.description,
 };
 
-const jsonLdSchemas = routeMeta?.jsonLd ?? [];
+const customSchemas = routeMeta?.jsonLd ?? [];
+
+// Enterprise JSON-LD @graph construction for EEAT
+const enterpriseSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`,
+      "name": SITE_CONFIG.name,
+      "url": SITE_CONFIG.url || 'https://posters.spicydevs.xyz',
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/icon-512.png`
+      },
+      "sameAs": [
+        `https://twitter.com/${SITE_CONFIG.twitterHandle?.replace('@', '') || 'spicydevs'}`,
+        "https://github.com/xdaayush"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#website`,
+      "url": SITE_CONFIG.url || 'https://posters.spicydevs.xyz',
+      "name": SITE_CONFIG.name,
+      "description": SEO_DEFAULTS.description,
+      "publisher": {
+        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${cleanCanonical}#webpage`,
+      "url": cleanCanonical,
+      "name": title,
+      "description": description,
+      "inLanguage": SITE_CONFIG.locale || "en-US",
+      "isPartOf": {
+        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#website`
+      },
+      "about": {
+        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
+      }
+    }
+  ]
+};
+
+// Inject SoftwareApplication schema dynamically for the tool route
+if (routeKey === '/build') {
+  enterpriseSchema["@graph"].push({
+    "@type": "WebApplication",
+    "@id": `${cleanCanonical}#application`,
+    "name": "Posterium Poster Builder",
+    "description": "Generate custom movie and TV posters with live rating badges.",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Any",
+    "url": cleanCanonical,
+    "developer": {
+      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    }
+  } as any);
+}
+
+// Merge any custom route-specific schemas
+const finalSchemas = [enterpriseSchema, ...customSchemas];
 ---
 
 <title>{title}</title>
 <meta name="description" content={description} />
+
+<link rel="preconnect" href="https://api.spicydevs.xyz" crossorigin />
+<link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+<link rel="dns-prefetch" href="https://image.tmdb.org" />
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <meta name="keywords" content={keywords} />
 <meta name="author" content={SITE_CONFIG.author} />
 <meta name="application-name" content={SITE_CONFIG.name} />
@@ -86,6 +162,9 @@ const jsonLdSchemas = routeMeta?.jsonLd ?? [];
 <meta name="twitter:image" content={twitter.image} />
 <meta name="twitter:image:alt" content={twitter.imageAlt} />
 
-{jsonLdSchemas.map((schema) => (
+<link rel="author" href="https://github.com/xdaayush" />
+{routeMeta?.author && <meta name="author" content={routeMeta.author} />}
+
+{finalSchemas.map((schema) => (
   <script type="application/ld+json" set:html={JSON.stringify(schema)} />
 ))}

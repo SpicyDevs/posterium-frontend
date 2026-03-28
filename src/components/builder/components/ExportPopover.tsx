@@ -268,3 +268,5 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
     </div>
   );
 });
+
+export default ExportPopover

@@ -30,12 +30,16 @@ export default defineConfig({
         item.changefreq = 'weekly';
 
         // Updated conditions to match the new slash-free URLs
+        // Updated conditions to match the new slash-free URLs
         if (item.url === 'https://posters.spicydevs.xyz') {
           item.priority = 1.0;
+          item.changefreq = 'weekly';
         } else if (item.url === 'https://posters.spicydevs.xyz/build') {
           item.priority = 0.9;
+          item.changefreq = 'weekly';
         } else {
-          item.priority = 0.8;
+          item.priority = 0.7;
+          item.changefreq = 'monthly';
         }
 
         return item;
