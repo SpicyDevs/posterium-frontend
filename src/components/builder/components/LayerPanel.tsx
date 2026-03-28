@@ -70,15 +70,15 @@ const SelectBox = memo(
         <ListboxButton
           className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
           style={{
-            background: 'var(--film-char)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            color: 'var(--film-cream)',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'var(--film-pale)',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
           }}
         >
           <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
@@ -120,8 +120,9 @@ const SelectBox = memo(
 );
 SelectBox.displayName = 'SelectBox';
 
-// ── InlineSlider ─────────────────────────────────────────────────────────────
-const InlineSlider: React.FC<{
+// ── SliderRow ────────────────────────────────────────────────────────────────
+// Synced from PropertyPanel for visual/functional parity
+const SliderRow: React.FC<{
   label: string;
   value: number;
   onChange: (v: number) => void;
@@ -131,30 +132,41 @@ const InlineSlider: React.FC<{
   unit?: string;
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  
   const [localValue, setLocalValue] = useState(value);
+  const [inputText, setInputText] = useState(() =>
+    formatValue ? formatValue(value) : `${value}`
+  );
   const lastUpdate = useRef(Date.now());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFocused = useRef(false);
 
-  useEffect(() => { setLocalValue(value); }, [value]);
+  useEffect(() => {
+    setLocalValue(value);
+    if (!isFocused.current) {
+      setInputText(formatValue ? formatValue(value) : `${value}`);
+    }
+  }, [value, formatValue]);
 
-  const display = formatValue ? formatValue(localValue) : `${localValue}${unit}`;
-
-  const commit = () => {
-    const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
+  const commitInput = useCallback((text: string) => {
+    const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
+    const n = parseFloat(raw);
     if (!isNaN(n)) {
       const clamped = Math.max(min, Math.min(max, n));
       setLocalValue(clamped);
+      setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
       onChange(clamped);
+    } else {
+      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
     }
-    setEditing(false);
-  };
+  }, [min, max, onChange, unit, formatValue, localValue]);
 
   const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setLocalValue(val);
+    if (!isFocused.current) {
+      setInputText(formatValue ? formatValue(val) : `${val}`);
+    }
     const now = Date.now();
     if (now - lastUpdate.current > 33) {
       onChange(val);
@@ -166,72 +178,64 @@ const InlineSlider: React.FC<{
         lastUpdate.current = Date.now();
       }, 33);
     }
-  }, [onChange]);
+  }, [onChange, formatValue]);
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      commitInput(inputText);
+      inputRef.current?.blur();
+    } else if (e.key === 'Escape') {
+      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
+      inputRef.current?.blur();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const newVal = Math.max(min, Math.min(max, localValue + step));
+      setLocalValue(newVal);
+      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
+      onChange(newVal);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const newVal = Math.max(min, Math.min(max, localValue - step));
+      setLocalValue(newVal);
+      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
+      onChange(newVal);
+    }
+  };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <span
-        className="body-font block"
-        style={{ fontSize: 10, color: 'var(--film-text-dim)', fontWeight: 500 }}
+        className="body-font"
+        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
       >
         {label}
       </span>
       <div className="flex items-center gap-2">
-        {editing ? (
-          <input
-            type="text"
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); commit(); }
-              if (e.key === 'Escape') setEditing(false);
-            }}
-            className="mono-font focus:outline-none shrink-0"
-            style={{
-              width: 48,
-              height: 20,
-              paddingInline: 5,
-              borderRadius: 3,
-              background: 'var(--film-char)',
-              border: '1px solid rgba(196,124,46,0.5)',
-              fontSize: 10,
-              color: 'var(--film-cream)',
-              textAlign: 'center',
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setEditing(true); setDraft(String(localValue)); }}
-            title="Click to edit"
-            className="mono-font tabular-nums shrink-0"
-            style={{
-              width: 48,
-              height: 20,
-              paddingInline: 5,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-              fontSize: 10,
-              color: 'var(--film-text-ghost)',
-              textAlign: 'center',
-              cursor: 'text',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderBottomColor = 'rgba(196,124,46,0.35)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderBottomColor = 'rgba(255,255,255,0.07)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
-            }}
-          >
-            {display}
-          </button>
-        )}
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onFocus={() => { isFocused.current = true; }}
+          onBlur={() => { isFocused.current = false; commitInput(inputText); }}
+          onKeyDown={handleInputKeyDown}
+          className="mono-font tabular-nums focus:outline-none shrink-0"
+          style={{
+            width: 48,
+            height: 22,
+            paddingInline: 5,
+            borderRadius: 4,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: 10,
+            color: 'var(--film-pale)',
+            textAlign: 'center',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+          onMouseLeave={(e) => { if (!isFocused.current) (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+        />
         <input
           type="range"
           min={min}
@@ -245,8 +249,56 @@ const InlineSlider: React.FC<{
     </div>
   );
 };
-// ── SubSection — flat collapsible, no card border ────────────────────────────
-const SubSection: React.FC<{
+
+// ── ToggleRow ────────────────────────────────────────────────────────────────
+const ToggleRow: React.FC<{
+  label: string;
+  sub?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  small?: boolean;
+  disabled?: boolean;
+}> = ({ label, sub, checked, onChange, small, disabled }) => (
+  <div className={clsx("flex items-center justify-between gap-3", disabled && "opacity-40 pointer-events-none")}>
+    <div className="min-w-0">
+      <p
+        className="body-font font-medium"
+        style={{
+          fontSize: small ? 10 : 11,
+          color: 'var(--film-text-label)',
+        }}
+      >
+        {label}
+      </p>
+      {sub && (
+        <p
+          className="body-font mt-0.5"
+          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+        >
+          {sub}
+        </p>
+      )}
+    </div>
+    <Switch
+      checked={checked}
+      onChange={onChange}
+      className={clsx(
+        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
+        checked ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+      )}
+    >
+      <span
+        className={clsx(
+          'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+          checked ? 'translate-x-[18px]' : 'translate-x-[3px]'
+        )}
+      />
+    </Switch>
+  </div>
+);
+
+// ── Section — flat collapsible matching PropertyPanel ─────────────────────────
+const Section: React.FC<{
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
@@ -254,40 +306,40 @@ const SubSection: React.FC<{
 }> = ({ title, icon, children, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div
-      className="mt-4"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
-    >
+    <div className="pt-5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-between w-full focus:outline-none mb-2"
+        className="w-full flex items-center justify-between px-1 mb-3 focus:outline-none group"
       >
-        <div className="flex items-center gap-2">
+        <span
+          className="flex items-center gap-1.5 syne-font uppercase tracking-widest"
+          style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+        >
           {icon && (
-            <span
-              className="flex items-center justify-center w-6 h-6 rounded-md"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                color: 'var(--film-text-ghost)',
-                lineHeight: 0,
-              }}
-            >
+            <span style={{ color: 'var(--film-text-dim)', opacity: 0.8, lineHeight: 0 }}>
               {icon}
             </span>
           )}
-          <span
-            className="syne-font font-semibold"
-            style={{ fontSize: 11, color: 'var(--film-text-label)' }}
-          >
-            {title}
-          </span>
-        </div>
-        <span style={{ color: 'var(--film-text-ghost)', lineHeight: 0 }}>
-          {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+          {title}
+        </span>
+        <span
+          style={{
+            color: 'var(--film-text-dim)',
+            opacity: open ? 0.6 : 0.3,
+            transition: 'opacity 0.15s',
+            lineHeight: 0,
+          }}
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         </span>
       </button>
-      {open && <div className="space-y-3">{children}</div>}
+      {open && <div className="px-1 pb-1 space-y-3.5">{children}</div>}
+      <div
+        className="mt-5 mx-1"
+        style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
+        aria-hidden="true"
+      />
     </div>
   );
 };
@@ -322,12 +374,12 @@ const LogoPanel: React.FC<{
   return (
     <div className="space-y-4 pt-2">
       <div className="space-y-1.5">
-        <p
-          className="syne-font uppercase tracking-widest"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        <span
+          className="body-font"
+          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
         >
           Source
-        </p>
+        </span>
         <div className="grid grid-cols-4 gap-1">
           {LOGO_SOURCES.map((opt) => (
             <button
@@ -362,7 +414,7 @@ const LogoPanel: React.FC<{
         </p>
       </div>
 
-      <InlineSlider
+      <SliderRow
         label="Size"
         value={config.logoW}
         min={100}
@@ -370,31 +422,22 @@ const LogoPanel: React.FC<{
         unit="px"
         onChange={handleSizeChange}
       />
-
-      <div className="space-y-3">
-        <p
-          className="syne-font uppercase tracking-widest"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
-        >
-          Appearance
-        </p>
-        <InlineSlider
-          label="Opacity"
-          value={config.logoOpacity}
-          min={0}
-          max={1}
-          step={0.05}
-          formatValue={(v) => `${Math.round(v * 100)}%`}
-          onChange={(v) => update('logoOpacity', v)}
-        />
-        <InlineSlider
-          label="Drop Shadow"
-          value={config.logoShadow}
-          min={0}
-          max={30}
-          onChange={(v) => update('logoShadow', v)}
-        />
-      </div>
+      <SliderRow
+        label="Opacity"
+        value={config.logoOpacity}
+        min={0}
+        max={1}
+        step={0.05}
+        formatValue={(v) => `${Math.round(v * 100)}%`}
+        onChange={(v) => update('logoOpacity', v)}
+      />
+      <SliderRow
+        label="Drop Shadow"
+        value={config.logoShadow}
+        min={0}
+        max={30}
+        onChange={(v) => update('logoShadow', v)}
+      />
 
       <p
         className="body-font leading-relaxed"
@@ -426,11 +469,12 @@ const ApiKeysPanel: React.FC<{
     paddingLeft: 10,
     paddingRight: 32,
     borderRadius: 8,
-    background: 'var(--film-char)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.1)',
     fontSize: 11,
     fontFamily: 'JetBrains Mono, monospace',
-    color: 'var(--film-cream)',
+    color: 'var(--film-pale)',
+    transition: 'border-color 0.15s',
   };
 
   return (
@@ -461,8 +505,14 @@ const ApiKeysPanel: React.FC<{
               placeholder={`Override default ${key === 'tmdb' ? 'TMDB' : 'Fanart.tv'} key`}
               style={inputStyle}
               className="focus:outline-none"
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+              onMouseLeave={(e) => {
+                if (document.activeElement !== e.currentTarget) {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                }
+              }}
               onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
             />
             <button
               type="button"
@@ -526,6 +576,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
     }, 400);
     return () => { clearTimeout(t); ctrl.abort(); };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setResults([]);
+    }
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
@@ -1007,14 +1063,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 <div
                   className="relative flex items-center h-9 rounded-lg transition-colors"
                   style={{
-                    background: 'var(--film-char)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                  onMouseLeave={(e) => {
+                    if (!e.currentTarget.contains(document.activeElement)) {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                    }
                   }}
                   onFocusCapture={(e) => {
                     (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
                   }}
                   onBlurCapture={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
                   }}
                 >
                   <div className="pl-3" style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }}>
@@ -1026,7 +1088,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </div>
                   <Combobox.Input
                     className="flex-1 bg-transparent border-none text-[11px] placeholder-[var(--film-text-ghost)] px-2 focus:outline-none focus:ring-0 h-full syne-font"
-                    style={{ color: 'var(--film-cream)' }}
+                    style={{ color: 'var(--film-pale)' }}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     displayValue={() => ''}
                     placeholder="Movie or TV show…"
@@ -1137,15 +1199,21 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                      setConfig(prev => ({ ...prev, tmdbId: val, imdbId: undefined }));
                   }
                 }}
-                className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none"
+                className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
                 style={{
-                  background: 'var(--film-char)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
                   fontSize: 11,
-                  color: 'var(--film-cream)',
+                  color: 'var(--film-pale)',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                onMouseLeave={(e) => {
+                  if (document.activeElement !== e.currentTarget) {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                  }
                 }}
                 onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-                onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
               />
             </div>
           </div>
@@ -1182,52 +1250,18 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             )}
           </div>
 
-          {/* Textless toggle — flat row */}
-          <div
-            className={clsx(
-              'flex items-center justify-between',
-              ['metahub', 'imdb'].includes(config.source) && 'opacity-40 pointer-events-none'
-            )}
-          >
-            <div>
-              <p
-                className="syne-font font-medium"
-                style={{ fontSize: 11, color: 'var(--film-text-label)' }}
-              >
-                Textless Poster
-              </p>
-              <p
-                className="body-font mt-0.5"
-                style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-              >
-                Remove title text from image
-              </p>
-            </div>
-            <Switch
-              checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
-              onChange={(v) => updateConfig('textless', v)}
-              disabled={['metahub', 'imdb'].includes(config.source)}
-              className={clsx(
-                'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-                config.textless && !['metahub', 'imdb'].includes(config.source)
-                  ? 'bg-[#C47C2E]'
-                  : 'bg-zinc-700'
-              )}
-            >
-              <span
-                className={clsx(
-                  'inline-block w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-sm',
-                  config.textless && !['metahub', 'imdb'].includes(config.source)
-                    ? 'translate-x-[18px]'
-                    : 'translate-x-[3px]'
-                )}
-              />
-            </Switch>
-          </div>
+          {/* Textless toggle */}
+          <ToggleRow
+            label="Textless Poster"
+            sub="Remove title text from image"
+            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+            onChange={(v) => updateConfig('textless', v)}
+            disabled={['metahub', 'imdb'].includes(config.source)}
+          />
 
-          {/* Logo overlay — SubSection (flat, no card border) */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}>
-            <div className="flex items-center justify-between mb-1">
+          {/* Logo overlay — Section container (flat collapsible, no card border) */}
+          <div className="pt-5">
+            <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
                 <ImagePlay
                   size={13}
@@ -1255,7 +1289,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onChange={(v) => updateConfig('logo', v)}
                 className={clsx(
                   'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-                  config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700'
+                  config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
                 )}
               >
                 <span
@@ -1266,13 +1300,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 />
               </Switch>
             </div>
-            {config.logo && <LogoPanel config={config} setConfig={setConfig} />}
+            {config.logo && (
+              <div className="px-1">
+                <LogoPanel config={config} setConfig={setConfig} />
+              </div>
+            )}
+            <div
+              className="mt-5 mx-1"
+              style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
+              aria-hidden="true"
+            />
           </div>
 
-          {/* API Keys — SubSection (flat, no card border) */}
-          <SubSection title="API Keys" icon={<KeyRound size={13} />}>
+          {/* API Keys — Section */}
+          <Section title="API Keys" icon={<KeyRound size={13} />}>
             <ApiKeysPanel config={config} setConfig={setConfig} />
-          </SubSection>
+          </Section>
         </div>
       )}
 
@@ -1374,7 +1417,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                       }}
                       className={clsx(
                         'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none',
-                        fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700'
+                        fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
                       )}
                     >
                       <span

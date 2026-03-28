@@ -561,7 +561,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
             {/* Left Header Area - Aligned exactly with left sidebar */}
             <div 
-              className="flex items-center px-3 shrink-0 sidebar-transition overflow-hidden max-lg:!w-auto" 
+              className="flex items-center px-3 shrink-0 gap-1 sidebar-transition overflow-hidden max-lg:!w-auto" 
               style={{ width: leftVisible ? leftW : 'auto' }}
             >
               {/* Wordmark */}
@@ -589,15 +589,26 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   P
                 </span>
               </a>
+               <ToolbarBtn
+                onClick={() => setShortcutsOpen((v) => !v)}
+                label="Keyboard Shortcuts (⌘/)"
+                active={shortcutsOpen}
+                hideOnMobile
+              >
+                <Keyboard size={14} />
+              </ToolbarBtn>
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="flex-1 flex items-center justify-center px-2 min-w-0 gap-2">
+            <div 
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-2 w-full px-4 z-10 pointer-events-none" 
+              style={{ maxWidth: 'calc(100vw - 620px)' }} // Safely limits wrapper width from overlapping sidebars mathematically
+            >
               {/* Left sidebar toggle */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
                 title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
                   color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
                   border: '1px solid transparent',
@@ -609,10 +620,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <PanelLeft size={14} />
               </button>
 
-              {/* Command palette search - Max width increased to match default canvas size */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 h-8 w-full max-w-[680px] rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 h-8 w-full max-w-[480px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -634,7 +644,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setRightVisible(!rightVisible)}
                 title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
                   color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
                   border: '1px solid transparent',
@@ -649,17 +659,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
             {/* Right Header Area - Aligned exactly with right sidebar */}
             <div 
-              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition max-lg:!w-auto"
+              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition max-lg:!w-auto ml-auto"
               style={{ width: rightVisible ? rightW : 'auto' }}
             >
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
 
