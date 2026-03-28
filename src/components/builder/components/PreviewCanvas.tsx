@@ -187,16 +187,21 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   // (see below), NOT sent to the backend. This avoids a network round-trip for
   // those visual effects and keeps the preview instant.
   // The backend still accepts bg_blur/gs for direct API usage.
+  
   const cleanPosterUrl = useMemo(() => {
-    const base = `${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}.svg`;
+    // Prefer imdbId (works with /poster/ route for any media type).
+    // Fall back to tmdbId with explicit type path.
+    const id   = config.imdbId || config.tmdbId;
+    const type = config.imdbId ? 'poster' : config.mediaType;
+    const base = `${DEFAULT_API_BASE}/${type}/${id}.svg`;
     const params = new URLSearchParams();
     params.set('source', config.source);
     if (config.textless) params.set('textless', '1');
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    // Cache-busting key: only the dimensions/source/textless/ptype affect the image from backend.
-    params.set('_t', `${config.tmdbId}-${config.source}-${config.textless}-${config.ptype}`);
+    // Cache-bust key — only factors that affect poster image selection
+    params.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.source, config.mediaType, config.textless, config.ptype]);
+  }, [config.tmdbId, config.imdbId, config.source, config.mediaType, config.textless, config.ptype]);
 
   // FIX: Build CSS filter from posterBlur and grayscale locally.
   // e.g. blur(4px) grayscale(1)
@@ -220,14 +225,20 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     setImageError(true);
   };
 
-  const logoPreviewUrl = useMemo((): string | null => {
+ const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
-    if (!config.tmdbId) return null;
-    const url = new URL(`${DEFAULT_API_BASE}/${config.mediaType}/${config.tmdbId}/logo`);
+    // Use imdbId when available — logo endpoint accepts tt… IDs with any type.
+    const id   = config.imdbId || config.tmdbId;
+    if (!id) return null;
+    // Logo route only supports movie / tv / anime (not 'poster' alias)
+    const type = config.mediaType === 'anime' ? 'anime'
+               : config.mediaType === 'tv'    ? 'tv'
+               : 'movie';
+    const url = new URL(`${DEFAULT_API_BASE}/${type}/${id}/logo`);
     if (config.logoSource) url.searchParams.set('source', config.logoSource);
     url.searchParams.set('_t', config.logoSource || 'auto');
     return url.toString();
-  }, [config.logo, config.tmdbId, config.mediaType, config.logoSource]);
+  }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
     setConfig((prev) => {

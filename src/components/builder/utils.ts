@@ -1,4 +1,4 @@
-// src/builder/utils.ts
+// src/components/builder/utils.ts
 //
 // KEY DECISIONS
 // ─────────────
@@ -21,16 +21,21 @@
 //    (DraggableBadge.tsx) — it must NOT be baked into URL params because the
 //    backend applies g_scale directly to SVG transforms with no size-scale factor.
 //
-// 6. v=2 removed from URL output. Backend defaults to V2 without it, and V3
-//    is what the builder sends.
+// ── V3 PARAM ALIGNMENT WITH BACKEND ──────────────────────────────────────────
+// Backend file: api/modules/poster/config/parseConfig.js
 //
-// V3 BADGE CODE MAP (2-char code → rating key):
-//   im=imdb  rt=rt  rp=rt_popcorn  lb=letterboxd  mt=meta
-//   td=tmdb  ml=mal  al=anilist     ag=age          ru=runtime
+// PROVIDER CODES (single char — must match PROVIDER_SHORT_MAP in parseConfig.js):
+//   i=imdb  r=rt  p=rt_popcorn  l=letterboxd  m=meta
+//   t=tmdb  M=mal  A=anilist     a=age          n=runtime
 //
-// V3 BADGE PROP SUFFIX MAP (suffix → param meaning):
-//   x=pos  y=pos  b=blur  a=alpha  r=radius  s=shadow  i=icon
-//   sc=scale  bw=border-width  bc=border-color  bg=background  tc=text-color
+// GLOBAL SHORT ALIASES (must match V3_GLOBAL in parseConfig.js):
+//   bl=blur  al=alpha  ra=rad(ius)  sh=shadow  sc=g_scale
+//   pb=bg_blur  gs=grayscale  tl=textless  pt=ptype  nt=no_text
+//   ic=g_icon  bw=g_bw(border-width)  bc=g_bc  bg=g_bg  tx=g_txt
+//   fb=fallback-pool  source=source (NO alias — backend reads 'source' directly)
+//
+// PER-BADGE SUFFIX FORMAT: {1-char-code}_{suffix}  e.g. i_x, r_bl, p_al
+//   Suffixes: x y bl al ra sh sc bw bc bg tx ic nt nm of it lp lt ls lc
 
 import type {
   PosterConfig,
@@ -39,6 +44,7 @@ import type {
   ApiKeys,
   ExtensionType,
   LogoSourceType,
+  BadgeConfig,
 } from './types';
 import {
   DEFAULT_CONFIG,
@@ -54,42 +60,53 @@ import {
 const envApiUrl = import.meta.env?.VITE_API_URL;
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
 
-// ── V3 schema maps ────────────────────────────────────────────────────────
+// ── V3 schema maps ─────────────────────────────────────────────────────────
+// CRITICAL: single-char codes must exactly match backend PROVIDER_SHORT_MAP
+// (api/modules/poster/config/parseConfig.js → PROVIDER_SHORT_MAP)
 
-/** Canonical rating key → V3 2-char badge code */
+/** Canonical rating key → V3 single-char badge code */
 const V3_KEY_TO_CODE: Record<RatingType, string> = {
-  imdb: 'im',
-  rt: 'rt',
-  rt_popcorn: 'rp',
-  letterboxd: 'lb',
-  meta: 'mt',
-  tmdb: 'td',
-  mal: 'ml',
-  anilist: 'al',
-  age: 'ag',
-  runtime: 'ru',
+  imdb:       'i',
+  rt:         'r',
+  rt_popcorn: 'p',
+  letterboxd: 'l',
+  meta:       'm',
+  tmdb:       't',
+  mal:        'M',
+  anilist:    'A',
+  age:        'a',
+  runtime:    'n',
 };
 
-/** V3 2-char badge code → canonical rating key (reverse map for parsing) */
+/** V3 single-char badge code → canonical rating key */
 const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
   Object.entries(V3_KEY_TO_CODE).map(([k, v]) => [v, k as RatingType])
 );
 
-/** V3 prop suffix → items[badge] key name (longest-first for parsing) */
-const V3_PROP_SUFFIXES: Array<[string, string]> = [
-  ['sc', 'scale'],
-  ['bw', 'borderW'],
-  ['bc', 'borderC'],
-  ['bg', 'bg'],
-  ['tc', 'txt'],
-  ['x', 'x'],
-  ['y', 'y'],
-  ['b', 'blur'],
-  ['a', 'alpha'],
-  ['r', 'radius'],
-  ['s', 'shadow'],
-  ['i', 'icon'],
-];
+// Exported — used by v3Builder.ts, tests, and any consumer needing these maps
+export const PROVIDER_SHORT: Record<string, string>   = V3_KEY_TO_CODE;
+export const SHORT_PROVIDER: Record<string, RatingType> = V3_CODE_TO_KEY;
+
+/**
+ * Strip floating-point noise from a raw rating string.
+ * 85.0% → 85%  |  7.50 → 7.5  |  72.0 → 72  |  PG-13 → PG-13
+ */
+export function cleanValue(raw: string): string {
+  const s = String(raw ?? '').trim();
+  if (!s) return s;
+  if (s.endsWith('%')) {
+    const n = parseFloat(s);
+    if (isNaN(n)) return s;
+    const c = +n.toFixed(1);
+    return `${c % 1 === 0 ? (c | 0) : c}%`;
+  }
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const n = parseFloat(s);
+    const c = +n.toFixed(2);
+    return String(c % 1 === 0 ? (c | 0) : c);
+  }
+  return s;
+}
 
 // ── Default values (omit param when equal to default) ────────────────────
 
@@ -112,7 +129,8 @@ const DEFAULTS = {
 
 // ── Canvas layout helpers ─────────────────────────────────────────────────
 
-export const getScale = (size: string): number => (size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0);
+export const getScale = (size: string): number =>
+  size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0;
 
 export const calculateAutoPosition = (
   _ratingId: RatingType,
@@ -128,16 +146,15 @@ export const calculateAutoPosition = (
   const groupW = isRow ? totalBadges * badgeW + (totalBadges - 1) * GAP : badgeW;
   const groupH = isRow ? badgeH : totalBadges * badgeH + (totalBadges - 1) * GAP;
 
-  let presetX = 0,
-    presetY = 0;
+  let presetX = 0, presetY = 0;
 
-  if (config.preset.includes('l')) presetX = PADDING;
+  if (config.preset.includes('l'))      presetX = PADDING;
   else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
-  else presetX = (CANVAS_WIDTH - groupW) / 2;
+  else                                  presetX = (CANVAS_WIDTH - groupW) / 2;
 
-  if (config.preset.includes('t')) presetY = PADDING;
+  if (config.preset.includes('t'))      presetY = PADDING;
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
-  else presetY = (CANVAS_HEIGHT - groupH) / 2;
+  else                                  presetY = (CANVAS_HEIGHT - groupH) / 2;
 
   const x = isRow ? presetX + index * (badgeW + GAP) : presetX;
   const y = isRow ? presetY : presetY + index * (badgeH + GAP);
@@ -149,13 +166,15 @@ export const calculateAutoPosition = (
 
 /**
  * Generate a V3 (shortest possible) API URL from the current builder config.
- * - Uses single/double-char param names
- * - Omits params equal to their defaults
- * - Never sends bg_blur or gs (applied client-side in PreviewCanvas)
- *   BUT does send them in the final URL for direct API usage (Plex/Jellyfin)
  *
- * @param config  Builder PosterConfig
- * @param baseUrl API base URL
+ * Key rules:
+ *  • r= uses single-char short codes (i,r,p,l,m,t,M,A,a,n)
+ *  • fb= uses same single-char codes for fallback pool
+ *  • Per-badge params use {1-char-code}_{suffix}: i_x, r_bl, p_al, etc.
+ *  • source has NO v3 alias — always sent as 'source=fanart', never 'so=fanart'
+ *  • Params equal to defaults are omitted to keep URLs short
+ *  • posterBlur and grayscale ARE sent for direct API use (Plex/Jellyfin);
+ *    PreviewCanvas applies them client-side via CSS for instant preview
  */
 export const generateApiUrl = (
   config: PosterConfig,
@@ -168,47 +187,59 @@ export const generateApiUrl = (
   // Version flag — tells backend to use V3 parser
   p.set('v', '3');
 
-  // Ratings
-  if (config.ratings.length > 0) p.set('r', config.ratings.join(','));
+  // ── Ratings: single-char codes e.g. r=i,r,p ──────────────────────────
+  if (config.ratings.length > 0) {
+    p.set('r', config.ratings.map(r => V3_KEY_TO_CODE[r] ?? r).join(','));
+  }
 
-  // Source / poster options
-  if (config.source && config.source !== 'tmdb') p.set('s', config.source);
+  // ── Fallback pool: single-char codes e.g. fb=t,l ─────────────────────
+  if (config.fallbackEnabled && config.fallbackPool.length > 0) {
+    p.set('fb', config.fallbackPool.map(r => V3_KEY_TO_CODE[r] ?? r).join(','));
+  }
+
+  // ── Source — CRITICAL: NO v3 alias. Backend reads only 'source' directly.
+  // 'so' on the backend = source_ORDER (poster priority list), NOT the source.
+  if (config.source && config.source !== 'tmdb') p.set('source', config.source);
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
 
-  // User API key overrides (keep verbose — security-sensitive, rarely in URLs)
-  if (config.keys?.tmdb) p.set('tmdb_key', config.keys.tmdb);
-  if (config.keys?.fanart) p.set('fanart_key', config.keys.fanart);
-  if (config.keys?.omdb) p.set('omdb_key', config.keys.omdb);
+  // User API key overrides (verbose names intentional — rarely in URLs)
+  if (config.keys?.tmdb)    p.set('tmdb_key',    config.keys.tmdb);
+  if (config.keys?.fanart)  p.set('fanart_key',  config.keys.fanart);
+  if (config.keys?.omdb)    p.set('omdb_key',    config.keys.omdb);
   if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
 
-  // Global badge style (omit when at default)
-  if (config.blur !== DEFAULTS.blur) p.set('b', config.blur.toString());
-  if (config.alpha !== DEFAULTS.alpha) p.set('a', config.alpha.toString());
-  if (config.radius !== DEFAULTS.radius) p.set('rr', config.radius.toString());
+  // ── Global badge style — V3 short aliases (bl al ra sh sc) ──────────
+  // Only emit when different from default to keep URLs short.
+  if (config.blur   !== DEFAULTS.blur)   p.set('bl', config.blur.toString());
+  if (config.alpha  !== DEFAULTS.alpha)  p.set('al', config.alpha.toString());
+  if (config.radius !== DEFAULTS.radius) p.set('ra', config.radius.toString());
   if (config.shadow !== DEFAULTS.shadow) p.set('sh', config.shadow.toString());
 
-  // FIX: g_scale = pure user-set multiplier, NOT baked with sizeScale.
-  // Backend applies this directly; DraggableBadge multiplies by getScale(size) separately.
   const globalScale = config.scale ?? 1.0;
   if (globalScale !== DEFAULTS.scale) p.set('sc', globalScale.toFixed(3));
 
-  if ((config.borderW ?? 0) > 0) p.set('bw', config.borderW!.toString()); // V3: bw = border width
-  if (config.borderC) p.set('bc', config.borderC);
-  if (config.bg) p.set('bg', config.bg);
-  if (config.txt) p.set('tc', config.txt);
-  if (config.icon === false) p.set('gi', '0'); // omit when true (default)
+  // bw = border-width (NOT grayscale — that's gs)
+  if ((config.borderW ?? 0) > 0) p.set('bw', config.borderW!.toString());
+  if (config.borderC)  p.set('bc', config.borderC);
+  if (config.bg)       p.set('bg', config.bg);
+  if (config.txt)      p.set('tx', config.txt);
+  if (config.icon === false) p.set('ic', '0');   // omit when true (default)
 
-  // Poster effects — sent to backend for direct API use (Plex/Jellyfin etc.)
-  // Preview canvas applies these client-side via CSS filter (see PreviewCanvas.tsx)
+  // Poster effects — sent to backend for direct API use (Plex/Jellyfin)
+  // PreviewCanvas applies these client-side via CSS (no round-trip for preview)
   if (config.posterBlur > DEFAULTS.posterBlur) p.set('pb', config.posterBlur.toString());
   if (config.grayscale) p.set('gs', '1');
 
-  // Layout / preset (same param names in V2 and V3 — already short)
+  // Layout / preset
   if (config.layout !== 'custom') p.set('l', config.layout);
   if (config.preset !== 'custom') p.set('pos', config.preset);
 
-  // Per-badge overrides (V3 format: {code}{prop}=value)
+  // ── No-text / show-text toggle (nt=1 hides rating text, shows icon only)
+  if (config.showText === false) p.set('nt', '1');
+
+  // ── Per-badge overrides — format: {1-char-code}_{v3-suffix} ──────────
+  // e.g. imdb x=340 → i_x=340, rt blur=5 → r_bl=5
   config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
@@ -218,47 +249,49 @@ export const generateApiUrl = (
     const finalX = item.x !== undefined ? item.x : autoPos.x;
     const finalY = item.y !== undefined ? item.y : autoPos.y;
 
-    p.set(`${code}x`, Math.round(finalX).toString());
-    p.set(`${code}y`, Math.round(finalY).toString());
+    // Position always emitted (no meaningful default to skip)
+    p.set(`${code}_x`, Math.round(finalX).toString());
+    p.set(`${code}_y`, Math.round(finalY).toString());
 
-    // Only emit per-badge overrides that differ from globals
-    if (item.bg !== undefined && item.bg !== (config.bg ?? '')) p.set(`${code}bg`, item.bg);
-    if (item.txt !== undefined && item.txt !== (config.txt ?? '')) p.set(`${code}tc`, item.txt);
+    // Only emit per-badge style when it diverges from global
+    if (item.bg  !== undefined && item.bg  !== (config.bg  ?? '')) p.set(`${code}_bg`, item.bg);
+    if (item.txt !== undefined && item.txt !== (config.txt ?? '')) p.set(`${code}_tx`, item.txt);
 
-    const eff = (k: keyof typeof DEFAULTS, itemVal: any, globalVal: any) => {
-      if (itemVal !== undefined && itemVal !== globalVal) return true;
-      return false;
-    };
+    const eff = (_k: string, itemVal: any, globalVal: any): boolean =>
+      itemVal !== undefined && itemVal !== globalVal;
 
-    if (eff('blur', item.blur, config.blur)) p.set(`${code}b`, item.blur!.toString());
-    if (eff('alpha', item.alpha, config.alpha)) p.set(`${code}a`, item.alpha!.toString());
-    if (eff('radius', item.radius, config.radius)) p.set(`${code}r`, item.radius!.toString());
-    if (eff('shadow', item.shadow, config.shadow)) p.set(`${code}s`, item.shadow!.toString());
+    if (eff('blur',   item.blur,   config.blur))   p.set(`${code}_bl`, item.blur!.toString());
+    if (eff('alpha',  item.alpha,  config.alpha))  p.set(`${code}_al`, item.alpha!.toString());
+    if (eff('radius', item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
+    if (eff('shadow', item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
 
     const itemIcon = item.icon ?? config.icon ?? true;
-    if (itemIcon !== (config.icon ?? true)) p.set(`${code}i`, itemIcon ? '1' : '0');
+    if (itemIcon !== (config.icon ?? true)) p.set(`${code}_ic`, itemIcon ? '1' : '0');
 
-    // FIX: send item.scale only (not item.scale * sizeScale)
+    // scale: send item.scale only (NOT multiplied by sizeScale — backend applies directly)
     if (item.scale !== undefined && item.scale !== (config.scale ?? 1.0))
-      p.set(`${code}sc`, item.scale.toFixed(3));
+      p.set(`${code}_sc`, item.scale.toFixed(3));
 
-    if ((item.borderW ?? 0) !== (config.borderW ?? 0)) {
-      if ((item.borderW ?? 0) > 0) p.set(`${code}bw`, item.borderW!.toString());
-    }
+    if ((item.borderW ?? 0) > 0 && (item.borderW ?? 0) !== (config.borderW ?? 0))
+      p.set(`${code}_bw`, item.borderW!.toString());
     if (item.borderC !== undefined && item.borderC !== (config.borderC ?? '#ffffff'))
-      p.set(`${code}bc`, item.borderC);
+      p.set(`${code}_bc`, item.borderC);
+
+    // Per-badge show-text override
+    if (item.showText === false && config.showText !== false)
+      p.set(`${code}_nt`, '1');
   });
 
-  // Logo overlay (V3 short names)
+  // ── Logo overlay ──────────────────────────────────────────────────────
   if (config.logo) {
-    p.set('lo', '1');
-    if (config.logoSource) p.set('ls', config.logoSource);
-    if (config.logoX !== null && config.logoX !== undefined) p.set('lx', config.logoX.toString());
-    if (config.logoY !== DEFAULTS.logoY) p.set('ly', config.logoY.toString());
-    if (config.logoW !== DEFAULTS.logoW) p.set('lw', config.logoW.toString());
-    if (config.logoH !== DEFAULTS.logoH) p.set('lh', config.logoH.toString());
-    if (config.logoOpacity !== DEFAULTS.logoOpacity) p.set('la', config.logoOpacity.toFixed(2));
-    if (config.logoShadow !== DEFAULTS.logoShadow) p.set('lsh', config.logoShadow.toString());
+    p.set('logo', '1');
+    if (config.logoSource) p.set('logo_source', config.logoSource);
+    if (config.logoX !== null && config.logoX !== undefined) p.set('logo_x', config.logoX.toString());
+    if (config.logoY       !== DEFAULTS.logoY)       p.set('logo_y',       config.logoY.toString());
+    if (config.logoW       !== DEFAULTS.logoW)       p.set('logo_w',       config.logoW.toString());
+    if (config.logoH       !== DEFAULTS.logoH)       p.set('logo_h',       config.logoH.toString());
+    if (config.logoOpacity !== DEFAULTS.logoOpacity) p.set('logo_opacity', config.logoOpacity.toFixed(2));
+    if (config.logoShadow  !== DEFAULTS.logoShadow)  p.set('logo_sh',      config.logoShadow.toString());
   }
 
   return url.toString();
@@ -286,167 +319,166 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const isV3 = p.get('v') === '3';
 
     const keys: ApiKeys = {};
-    if (p.has('tmdb_key')) keys.tmdb = p.get('tmdb_key')!;
-    if (p.has('fanart_key')) keys.fanart = p.get('fanart_key')!;
-    if (p.has('omdb_key')) keys.omdb = p.get('omdb_key')!;
+    if (p.has('tmdb_key'))    keys.tmdb    = p.get('tmdb_key')!;
+    if (p.has('fanart_key'))  keys.fanart  = p.get('fanart_key')!;
+    if (p.has('omdb_key'))    keys.omdb    = p.get('omdb_key')!;
     if (p.has('mdblist_key')) keys.mdblist = p.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
 
     if (isV3) {
       // ── Parse V3 per-badge params ──────────────────────────────────────
+      // Format: {1-char-code}_{suffix}  e.g. i_x=340, r_bl=5, p_al=0.6
       for (const [name, value] of p.entries()) {
-        if (name.length < 3) continue;
-        const code = name.slice(0, 2);
+        // Must be exactly: 1 char + underscore + 1+ char suffix (min length 3)
+        if (name.length < 3 || name[1] !== '_') continue;
+        const code     = name[0];
         const badgeKey = V3_CODE_TO_KEY[code];
         if (!badgeKey) continue;
-        const suffix = name.slice(2);
-        const propEntry = V3_PROP_SUFFIXES.find(([sfx]) => sfx === suffix);
-        if (!propEntry) continue;
+        const suffix = name.slice(2); // everything after the underscore
 
-        const [, propName] = propEntry;
         if (!items[badgeKey]) items[badgeKey] = {};
-        switch (propName) {
-          case 'x':
-            items[badgeKey].x = parseInt(value);
-            break;
-          case 'y':
-            items[badgeKey].y = parseInt(value);
-            break;
-          case 'blur':
-            items[badgeKey].blur = parseInt(value);
-            break;
-          case 'alpha':
-            items[badgeKey].alpha = parseFloat(value);
-            break;
-          case 'radius':
-            items[badgeKey].radius = parseInt(value);
-            break;
-          case 'shadow':
-            items[badgeKey].shadow = parseInt(value);
-            break;
-          case 'icon':
-            items[badgeKey].icon = value === '1';
-            break;
-          case 'scale':
-            items[badgeKey].scale = parseFloat(value);
-            break;
-          case 'borderW':
-            items[badgeKey].borderW = parseInt(value);
-            break;
-          case 'borderC':
-            items[badgeKey].borderC = value.startsWith('#') ? value : `#${value}`;
-            break;
-          case 'bg':
-            items[badgeKey].bg = value;
-            break;
-          case 'txt':
-            items[badgeKey].txt = value.startsWith('#') ? value : `#${value}`;
-            break;
+        switch (suffix) {
+          case 'x':   items[badgeKey].x         = parseInt(value);                                   break;
+          case 'y':   items[badgeKey].y         = parseInt(value);                                   break;
+          case 'bl':  items[badgeKey].blur       = parseInt(value);                                   break;
+          case 'al':  items[badgeKey].alpha      = parseFloat(value);                                 break;
+          case 'ra':  items[badgeKey].radius     = parseInt(value);                                   break;
+          case 'sh':  items[badgeKey].shadow     = parseInt(value);                                   break;
+          case 'ic':  items[badgeKey].icon       = value === '1';                                     break;
+          case 'sc':  items[badgeKey].scale      = parseFloat(value);                                 break;
+          case 'bw':  items[badgeKey].borderW    = parseInt(value);                                   break;
+          case 'bc':  items[badgeKey].borderC    = value.startsWith('#') ? value : `#${value}`;      break;
+          case 'bg':  items[badgeKey].bg         = value;                                             break;
+          case 'tx':  items[badgeKey].txt        = value.startsWith('#') ? value : `#${value}`;      break;
+          case 'nt':  items[badgeKey].showText   = value !== '1';                                     break;
+          case 'nm':  items[badgeKey].normalize  = value === '1';                                     break;
+          case 'of':  items[badgeKey].outOf      = parseInt(value);                                   break;
+          case 'it':  items[badgeKey].iconType   = parseInt(value);                                   break;
+          case 'lp':  items[badgeKey].labelPos   = value as BadgeConfig['labelPos'];                  break;
+          case 'lt':  items[badgeKey].labelText  = value;                                             break;
+          case 'ls':  items[badgeKey].labelSize  = parseInt(value);                                   break;
+          case 'lc':  items[badgeKey].labelColor = value;                                             break;
         }
       }
 
-      const logoSource = ['fanart', 'tmdb', 'metahub'].includes(p.get('ls') ?? '')
-        ? (p.get('ls') as LogoSourceType)
-        : null;
+      // ── Decode ratings from single-char codes ──────────────────────────
+      const ratingCodes = p.has('r')
+        ? p.get('r')!.split(',').map(c => c.trim()).filter(Boolean)
+        : [];
+      const parsedRatings = ratingCodes
+        .map(c => V3_CODE_TO_KEY[c])
+        .filter(Boolean) as RatingType[];
+
+      // ── Decode fallback pool from single-char codes ────────────────────
+      const fbCodes = p.has('fb')
+        ? p.get('fb')!.split(',').map(c => c.trim()).filter(Boolean)
+        : [];
+      const fbPool = fbCodes.map(c => V3_CODE_TO_KEY[c]).filter(Boolean) as RatingType[];
+
+      const logoSource = (['fanart', 'tmdb', 'metahub'] as const).includes(
+        p.get('logo_source') as any
+      ) ? (p.get('logo_source') as LogoSourceType) : null;
+
+      // Helper: read param with v3 short alias fallback to v2 long name
+      const getNum   = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseInt(p.get(v3k)!)    : (p.has(v2k) ? parseInt(p.get(v2k)!)    : def);
+      const getFloat = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseFloat(p.get(v3k)!) : (p.has(v2k) ? parseFloat(p.get(v2k)!) : def);
 
       return {
         mediaType,
         tmdbId,
         extension,
-        ratings: p.has('r') ? (p.get('r')!.split(',') as RatingType[]) : [],
-        source: (p.get('s') as PosterConfig['source']) || 'tmdb',
-        ptype: p.get('pt') || 'auto',
-        textless: p.get('tl') === '1',
-        theme: 'glass',
-        size: 'md',
-        shadow: p.has('sh') ? parseInt(p.get('sh')!) : DEFAULTS.shadow,
-        layout: (p.get('l') as PosterConfig['layout']) || 'custom',
-        preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
-        blur: p.has('b') ? parseInt(p.get('b')!) : DEFAULTS.blur,
-        alpha: p.has('a') ? parseFloat(p.get('a')!) : DEFAULTS.alpha,
-        radius: p.has('rr') ? parseInt(p.get('rr')!) : DEFAULTS.radius,
-        posterBlur: p.has('pb') ? parseInt(p.get('pb')!) : DEFAULTS.posterBlur,
-        grayscale: p.get('gs') === '1',
-        scale: p.has('sc') ? parseFloat(p.get('sc')!) : DEFAULTS.scale,
-        borderW: p.has('bw') ? parseInt(p.get('bw')!) : DEFAULTS.borderW, // V3: bw=border width
-        borderC: p.has('bc')
-          ? p.get('bc')!.startsWith('#')
-            ? p.get('bc')!
-            : `#${p.get('bc')}`
-          : undefined,
-        bg: p.get('bg') || undefined,
-        txt: p.has('tc')
-          ? p.get('tc')!.startsWith('#')
-            ? p.get('tc')!
-            : `#${p.get('tc')}`
-          : undefined,
-        icon: p.has('gi') ? p.get('gi') === '1' : true,
+        ratings:        parsedRatings,
+        fallbackEnabled: fbPool.length > 0,
+        fallbackPool:   fbPool,
+        // source: NO v3 alias — backend always reads 'source' directly
+        source:   (p.get('source') as PosterConfig['source']) || 'tmdb',
+        ptype:    p.get('pt')   || p.get('ptype') || 'auto',
+        textless: p.get('tl')   === '1' || p.get('textless') === '1',
+        theme:    'glass',
+        size:     'md',
+        // Global glass params — check v3 short alias first, then v2 long form
+        blur:       getNum   ('bl', 'blur',    DEFAULTS.blur),
+        alpha:      getFloat ('al', 'alpha',   DEFAULTS.alpha),
+        radius:     getNum   ('ra', 'rad',     DEFAULTS.radius),
+        shadow:     getNum   ('sh', 'sh',      DEFAULTS.shadow),
+        layout:    (p.get('l')   as PosterConfig['layout'])  || 'custom',
+        preset:    (p.get('pos') as PosterConfig['preset'])  || 'custom',
+        posterBlur: getNum   ('pb', 'bg_blur', DEFAULTS.posterBlur),
+        grayscale:  p.get('gs') === '1' || p.get('bw') === '1',
+        scale:      getFloat ('sc', 'g_scale', DEFAULTS.scale),
+        // bw = border-width in v3
+        borderW: p.has('bw') && p.get('bw') !== '1' ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
+        borderC: p.has('bc') ? (p.get('bc')!.startsWith('#') ? p.get('bc')! : `#${p.get('bc')}`) : undefined,
+        bg:      p.get('bg')  || undefined,
+        txt:     p.has('tx')  ? (p.get('tx')!.startsWith('#') ? p.get('tx')! : `#${p.get('tx')}`) : undefined,
+        icon:    p.has('ic')  ? p.get('ic') === '1' : true,
+        showText: p.get('nt') !== '1',
         keys,
         items,
-        logo: p.get('lo') === '1',
+        logo:         p.get('logo') === '1',
         logoSource,
-        logoX: p.has('lx') ? parseInt(p.get('lx')!) : null,
-        logoY: p.has('ly') ? parseInt(p.get('ly')!) : DEFAULTS.logoY,
-        logoW: p.has('lw') ? parseInt(p.get('lw')!) : DEFAULTS.logoW,
-        logoH: p.has('lh') ? parseInt(p.get('lh')!) : DEFAULTS.logoH,
-        logoOpacity: p.has('la') ? parseFloat(p.get('la')!) : DEFAULTS.logoOpacity,
-        logoShadow: p.has('lsh') ? parseInt(p.get('lsh')!) : DEFAULTS.logoShadow,
+        logoX:        p.has('logo_x')       ? parseInt(p.get('logo_x')!)          : null,
+        logoY:        p.has('logo_y')        ? parseInt(p.get('logo_y')!)          : DEFAULTS.logoY,
+        logoW:        p.has('logo_w')        ? parseInt(p.get('logo_w')!)          : DEFAULTS.logoW,
+        logoH:        p.has('logo_h')        ? parseInt(p.get('logo_h')!)          : DEFAULTS.logoH,
+        logoOpacity:  p.has('logo_opacity')  ? parseFloat(p.get('logo_opacity')!)  : DEFAULTS.logoOpacity,
+        logoShadow:   p.has('logo_sh')       ? parseInt(p.get('logo_sh')!)         : DEFAULTS.logoShadow,
       };
     }
 
-    // ── Parse V2 per-badge params (existing format) ────────────────────────
+    // ── Parse V2 per-badge params (legacy long-form) ───────────────────────
     const ratingKeys: RatingType[] = [
-      'imdb',
-      'rt',
-      'rt_popcorn',
-      'letterboxd',
-      'meta',
-      'tmdb',
-      'mal',
-      'anilist',
-      'age',
-      'runtime',
+      'imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta',
+      'tmdb', 'mal', 'anilist', 'age', 'runtime',
     ];
 
     ratingKeys.forEach((key) => {
-      const x = p.get(`${key}_x`);
-      const y = p.get(`${key}_y`);
-      const bg = p.get(`${key}_bg`);
-      const txt = p.get(`${key}_txt`);
-      const blur = p.get(`${key}_blur`);
+      const x     = p.get(`${key}_x`);
+      const y     = p.get(`${key}_y`);
+      const bg    = p.get(`${key}_bg`);
+      const txt   = p.get(`${key}_txt`);
+      const blur  = p.get(`${key}_blur`);
       const alpha = p.get(`${key}_alpha`);
-      const rad = p.get(`${key}_rad`);
-      const sh = p.get(`${key}_sh`);
-      const icon = p.get(`${key}_icon`);
+      const rad   = p.get(`${key}_rad`);
+      const sh    = p.get(`${key}_sh`);
+      const icon  = p.get(`${key}_icon`);
       const scale = p.get(`${key}_scale`);
-      const bw = p.get(`${key}_bw`);
-      const bc = p.get(`${key}_bc`);
+      const bw    = p.get(`${key}_bw`);
+      const bc    = p.get(`${key}_bc`);
+      const nt    = p.get(`${key}_nt`);
 
-      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw) {
+      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt) {
         items[key] = {
-          ...(x ? { x: parseInt(x) } : {}),
-          ...(y ? { y: parseInt(y) } : {}),
-          ...(bg ? { bg } : {}),
-          ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
-          ...(blur ? { blur: parseInt(blur) } : {}),
-          ...(alpha ? { alpha: parseFloat(alpha) } : {}),
-          ...(rad ? { radius: parseInt(rad) } : {}),
-          ...(sh ? { shadow: parseInt(sh) } : {}),
-          ...(icon ? { icon: icon === '1' } : {}),
-          ...(scale ? { scale: parseFloat(scale) } : {}),
-          ...(bw ? { borderW: parseInt(bw) } : {}),
-          ...(p.has(`${key}_bc`) ? { borderC: bc!.startsWith('#') ? bc! : `#${bc}` } : {}),
+          ...(x     ? { x: parseInt(x) }                                               : {}),
+          ...(y     ? { y: parseInt(y) }                                               : {}),
+          ...(bg    ? { bg }                                                            : {}),
+          ...(txt   ? { txt: txt.startsWith('#') ? txt : `#${txt}` }                  : {}),
+          ...(blur  ? { blur: parseInt(blur) }                                         : {}),
+          ...(alpha ? { alpha: parseFloat(alpha) }                                     : {}),
+          ...(rad   ? { radius: parseInt(rad) }                                        : {}),
+          ...(sh    ? { shadow: parseInt(sh) }                                         : {}),
+          ...(icon  ? { icon: icon === '1' }                                           : {}),
+          ...(scale ? { scale: parseFloat(scale) }                                     : {}),
+          ...(bw    ? { borderW: parseInt(bw) }                                        : {}),
+          ...(p.has(`${key}_bc`) ? { borderC: bc!.startsWith('#') ? bc! : `#${bc}` }  : {}),
+          ...(nt    ? { showText: nt !== '1' }                                         : {}),
         };
       }
     });
 
+    // V2 fallback pool (full names, comma-separated)
+    const v2FbRaw = p.get('fb');
+    const v2FbPool = v2FbRaw
+      ? v2FbRaw.split(',').map(s => s.trim()).filter(k => ratingKeys.includes(k as RatingType)) as RatingType[]
+      : [];
+
     const g_scale = p.get('g_scale');
-    const g_bw = p.get('g_bw');
-    const g_bc = p.get('g_bc');
-    const g_bg = p.get('g_bg');
-    const g_txt = p.get('g_txt');
-    const g_icon = p.get('g_icon');
+    const g_bw    = p.get('g_bw');
+    const g_bc    = p.get('g_bc');
+    const g_bg    = p.get('g_bg');
+    const g_txt   = p.get('g_txt');
+    const g_icon  = p.get('g_icon');
 
     // V2: gs=1 or bw=1 (legacy alias) for grayscale
     const grayscale = p.get('gs') === '1' || p.get('bw') === '1';
@@ -454,46 +486,45 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const rawLogoSource = p.get('logo_source');
     const logoSource: LogoSourceType = (['fanart', 'tmdb', 'metahub'] as const).includes(
       rawLogoSource as any
-    )
-      ? (rawLogoSource as LogoSourceType)
-      : null;
+    ) ? (rawLogoSource as LogoSourceType) : null;
 
     return {
       mediaType,
       tmdbId,
       extension,
       ratings: p.has('r') ? (p.get('r')!.split(',') as RatingType[]) : [],
-      source: (p.get('source') as PosterConfig['source']) || 'tmdb',
-      ptype: p.get('ptype') || 'auto',
+      fallbackEnabled: v2FbPool.length > 0,
+      fallbackPool:    v2FbPool,
+      source:   (p.get('source') as PosterConfig['source']) || 'tmdb',
+      ptype:    p.get('ptype') || 'auto',
       textless: p.get('textless') === '1',
-      theme: 'glass',
-      size: 'md',
-      shadow: p.has('sh') ? parseInt(p.get('sh')!) : DEFAULTS.shadow,
-      layout: (p.get('l') as PosterConfig['layout']) || 'custom',
-      preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
-      blur: p.has('blur') ? parseInt(p.get('blur')!) : DEFAULTS.blur,
-      alpha: p.has('alpha') ? parseFloat(p.get('alpha')!) : DEFAULTS.alpha,
-      radius: p.has('rad') ? parseInt(p.get('rad')!) : DEFAULTS.radius,
-      posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!) : DEFAULTS.posterBlur,
+      theme:    'glass',
+      size:     'md',
+      shadow:   p.has('sh') ? parseInt(p.get('sh')!) : DEFAULTS.shadow,
+      layout:  (p.get('l')   as PosterConfig['layout'])  || 'custom',
+      preset:  (p.get('pos') as PosterConfig['preset'])  || 'custom',
+      blur:       p.has('blur')    ? parseInt(p.get('blur')!)      : DEFAULTS.blur,
+      alpha:      p.has('alpha')   ? parseFloat(p.get('alpha')!)   : DEFAULTS.alpha,
+      radius:     p.has('rad')     ? parseInt(p.get('rad')!)       : DEFAULTS.radius,
+      posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!)   : DEFAULTS.posterBlur,
       grayscale,
-      scale: g_scale ? parseFloat(g_scale) : DEFAULTS.scale,
-      borderW: g_bw ? parseInt(g_bw) : DEFAULTS.borderW,
-      borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
-      bg: g_bg || undefined,
-      txt: g_txt ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
-      icon: g_icon ? g_icon === '1' : true,
+      scale:      g_scale  ? parseFloat(g_scale)  : DEFAULTS.scale,
+      borderW:    g_bw     ? parseInt(g_bw)        : DEFAULTS.borderW,
+      borderC:    g_bc     ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
+      bg:         g_bg     || undefined,
+      txt:        g_txt    ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
+      icon:       g_icon   ? g_icon === '1' : true,
+      showText:   p.get('nt') !== '1',
       keys,
       items,
-      logo: p.get('logo') === '1',
+      logo:        p.get('logo') === '1',
       logoSource,
-      logoX: p.has('logo_x') ? parseInt(p.get('logo_x')!) : null,
-      logoY: p.has('logo_y') ? parseInt(p.get('logo_y')!) : DEFAULTS.logoY,
-      logoW: p.has('logo_w') ? parseInt(p.get('logo_w')!) : DEFAULTS.logoW,
-      logoH: p.has('logo_h') ? parseInt(p.get('logo_h')!) : DEFAULTS.logoH,
-      logoOpacity: p.has('logo_opacity')
-        ? parseFloat(p.get('logo_opacity')!)
-        : DEFAULTS.logoOpacity,
-      logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+      logoX:       p.has('logo_x')       ? parseInt(p.get('logo_x')!)         : null,
+      logoY:       p.has('logo_y')        ? parseInt(p.get('logo_y')!)         : DEFAULTS.logoY,
+      logoW:       p.has('logo_w')        ? parseInt(p.get('logo_w')!)         : DEFAULTS.logoW,
+      logoH:       p.has('logo_h')        ? parseInt(p.get('logo_h')!)         : DEFAULTS.logoH,
+      logoOpacity: p.has('logo_opacity')  ? parseFloat(p.get('logo_opacity')!) : DEFAULTS.logoOpacity,
+      logoShadow:  p.has('logo_sh')       ? parseInt(p.get('logo_sh')!)        : DEFAULTS.logoShadow,
     };
   } catch (e) {
     console.error('Failed to parse URL', e);
@@ -501,14 +532,13 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
   }
 };
 
-// ── Template URL Helpers ─────────────────────────────────────────────────
+// ── Template URL Helpers ──────────────────────────────────────────────────
 
 /**
  * Checks if a URL string contains the template variable.
  */
-export const isTemplateUrl = (url: string): boolean => {
-  return url.includes('{imdb_id}') || url.includes('{tmdb_id}');
-};
+export const isTemplateUrl = (url: string): boolean =>
+  url.includes('{imdb_id}') || url.includes('{tmdb_id}');
 
 /**
  * Converts a standard API URL with hardcoded IDs into a template URL.
@@ -517,14 +547,10 @@ export const isTemplateUrl = (url: string): boolean => {
 export const toTemplateUrl = (url: string): string => {
   try {
     const urlObj = new URL(url);
-
-    // This regex looks for /movie/, /tv/, or /anime/ followed by any word characters
-    // up to the file extension, and replaces the ID portion with {imdb_id}
     urlObj.pathname = urlObj.pathname.replace(
       /(\/(?:movie|tv|anime)\/)[^.]+(\.[a-z]+)$/i,
       '$1{imdb_id}$2'
     );
-
     return urlObj.toString();
   } catch (e) {
     console.error('Failed to convert to template URL', e);
