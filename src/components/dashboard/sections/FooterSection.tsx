@@ -239,10 +239,10 @@ export const FooterSection = memo(() => (
         >
           {[
             ['PROD', 'SpicyDevs'],
-            ['DIR', 'xdaayush'],
+            ['DIR', 'Aayu5h and Dikhit'],
             ['REL', '2.0'],
             ['LIC', 'MIT'],
-            [`© ${new Date().getFullYear()}`, ''],
+            [`© 2026`, ''],
           ].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
               <span

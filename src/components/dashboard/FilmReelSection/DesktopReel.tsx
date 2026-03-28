@@ -115,27 +115,6 @@ const DesktopReel = memo(() => {
   const trackRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [imagesActive, setImagesActive] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setImagesActive(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setImagesActive(true);
-          obs.disconnect();
-        }
-      },
-      { rootMargin: '400px 0px', threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
   useEffect(() => {
     const recalc = () => {
       const container = containerRef.current;
@@ -305,36 +284,17 @@ const DesktopReel = memo(() => {
                       borderBottom: rowIdx < ROWS.length - 1 ? '2px solid rgba(0,0,0,0.8)' : 'none',
                     }}
                   >
-                    {imagesActive
-                      ? row
-                          .slice(0, count)
-                          .map((item, idx) => (
-                            <CollagePoster
-                              key={`r${rowIdx}-${item.id}-${item._slot}`}
-                              id={item.id}
-                              type={item.type}
-                              title={item.title}
-                              width={width}
-                              height={height}
-                              eager={rowIdx === 0 && idx < 6}
-                            />
-                          ))
-                      : Array.from({ length: count }, (_, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              width,
-                              height,
-                              flexShrink: 0,
-                              background:
-                                'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-                              backgroundSize: '200% 100%',
-                              animation: 'shimmer 1.8s linear infinite',
-                              animationDelay: `${(idx % 10) * 0.08}s`,
-                              borderRight: '1px solid rgba(0,0,0,0.7)',
-                            }}
-                          />
-                        ))}
+                    {row.slice(0, count).map((item, idx) => (
+                      <CollagePoster
+                        key={`r${rowIdx}-${item.id}-${item._slot}`}
+                        id={item.id}
+                        type={item.type}
+                        title={item.title}
+                        width={width}
+                        height={height}
+                        eager={rowIdx === 0 && idx < 6}
+                      />
+                    ))}
                   </div>
                 );
               })}

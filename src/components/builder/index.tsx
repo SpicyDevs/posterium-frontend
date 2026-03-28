@@ -280,7 +280,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     (delta: number) => window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })),
     []
   );
-const dispatchResetView = useCallback(
+  const dispatchResetView = useCallback(
     () => window.dispatchEvent(new CustomEvent('reset-canvas-view')),
     []
   );
@@ -580,7 +580,7 @@ const dispatchResetView = useCallback(
 
             {/* Left Header Area - Aligned exactly with left sidebar */}
             <div 
-              className="flex items-center px-3 shrink-0 sidebar-transition overflow-hidden" 
+              className="flex items-center px-3 shrink-0 sidebar-transition overflow-hidden max-lg:!w-auto" 
               style={{ width: leftVisible ? leftW : 'auto' }}
             >
               {/* Wordmark */}
@@ -662,7 +662,7 @@ const dispatchResetView = useCallback(
 
             {/* Right Header Area - Aligned exactly with right sidebar */}
             <div 
-              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition"
+              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition max-lg:!w-auto"
               style={{ width: rightVisible ? rightW : 'auto' }}
             >
               <ToolbarBtn
@@ -755,7 +755,7 @@ const dispatchResetView = useCallback(
           </header>
         )}
 
-       {/* ── BODY ── */}
+  {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
           {!isFullscreen && (
@@ -774,7 +774,7 @@ const dispatchResetView = useCallback(
                 config={config}
                 setConfig={setConfig}
                 selectedIds={selectedIds}
-                onSelect={handleSelection}
+                onSelect={handleSelectionOverride}
               />
               <div
                 onMouseDown={startResizeLeft}

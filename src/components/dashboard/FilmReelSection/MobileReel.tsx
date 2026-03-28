@@ -10,30 +10,10 @@ const BADGE_PARAMS = 'r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y
 
 const MobileReel = memo(() => {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [imagesActive, setImagesActive] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setImagesActive(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setImagesActive(true);
-          obs.disconnect();
-        }
-      },
-      { rootMargin: '400px 0px', threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   return (
     <div ref={sectionRef} style={{ background: 'var(--film-dark)', overflow: 'hidden' }}>
-      {/* Header */}
+          {/* Header */}
       <div style={{ padding: '36px 22px 14px' }}>
         <div
           className="poster-font"
@@ -112,26 +92,13 @@ const MobileReel = memo(() => {
                 position: 'relative',
               }}
             >
-              {imagesActive ? (
-                <img
-                  src={`${API}/${item.type}/${item.id}.svg?${BADGE_PARAMS}`}
-                  alt={`High quality ${item.type} poster for ${item.title} generated via Posterium API`}
-                  loading={idx < 3 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.8s linear infinite',
-                    animationDelay: `${(idx % 8) * 0.1}s`,
-                  }}
-                />
-              )}
+              <img
+                src={`${API}/${item.type}/${item.id}.svg?${BADGE_PARAMS}`}
+                alt={`High quality ${item.type} poster for ${item.title} generated via Posterium API`}
+                loading={idx < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
             </div>
             <div
               className="syne-font"
