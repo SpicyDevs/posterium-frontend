@@ -239,7 +239,7 @@ export const FooterSection = memo(() => (
         >
           {[
             ['PROD', 'SpicyDevs'],
-            ['DIR', 'Aayu5h and Dikhit'],
+            ['DIR', 'Aayu5h'],
             ['REL', '2.0'],
             ['LIC', 'MIT'],
             [`© 2026`, ''],

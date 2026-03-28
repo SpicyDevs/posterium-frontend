@@ -95,7 +95,7 @@ const MobileReel = memo(() => {
               <img
                 src={`${API}/${item.type}/${item.id}.svg?${BADGE_PARAMS}`}
                 alt={`High quality ${item.type} poster for ${item.title} generated via Posterium API`}
-                loading={idx < 3 ? 'eager' : 'lazy'}
+                loading="lazy"
                 decoding="async"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
