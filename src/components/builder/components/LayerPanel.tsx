@@ -1117,12 +1117,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 className="syne-font uppercase tracking-widest mb-1.5"
                 style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
               >
-                TMDB ID
+                IMDb ID
               </p>
               <input
                 type="text"
-                value={config.tmdbId}
-                onChange={(e) => updateConfig('tmdbId', e.target.value)}
+                value={config.imdbId || config.tmdbId}
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  if (val.startsWith('tt')) {
+                     setConfig(prev => ({ ...prev, imdbId: val }));
+                  } else {
+                     setConfig(prev => ({ ...prev, tmdbId: val, imdbId: undefined }));
+                  }
+                }}
                 className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none"
                 style={{
                   background: 'var(--film-char)',
