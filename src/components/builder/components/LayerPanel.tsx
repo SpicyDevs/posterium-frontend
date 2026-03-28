@@ -880,7 +880,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font'
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font'
               )}
               style={{
                 background: localMode === tab ? 'var(--film-mid)' : 'transparent',
@@ -965,25 +965,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                       </span>
                     )}
                   </div>
-                  {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && (
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      {fetchedData.imdb && (
-                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
-                          IMDb {fetchedData.imdb}
-                        </span>
-                      )}
-                      {fetchedData.rt && (
-                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
-                          RT {fetchedData.rt}
-                        </span>
-                      )}
-                      {fetchedData.tmdb && (
-                        <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
-                          TMDB {fetchedData.tmdb}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && null}
                 </div>
                 <div
                   className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"

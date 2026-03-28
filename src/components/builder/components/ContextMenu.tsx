@@ -38,7 +38,6 @@ interface Props {
   state: ContextMenuState;
   onClose: () => void;
   isSelected: boolean;
-  isVisible: boolean;
   onBringToFront: (id: RatingType) => void;
   onBringForward: (id: RatingType) => void;
   onSendBackward: (id: RatingType) => void;
@@ -59,7 +58,6 @@ const ContextMenu: React.FC<Props> = memo(
     state,
     onClose,
     isSelected,
-    isVisible,
     onBringToFront,
     onBringForward,
     onSendBackward,

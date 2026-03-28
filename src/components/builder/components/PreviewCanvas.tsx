@@ -17,7 +17,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../type
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
 import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
-import { ZoomIn, ZoomOut, SearchX, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 
 interface Props {
@@ -25,9 +25,10 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
+  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
 }
 
-const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onContextMenu }) => {
   const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -37,8 +38,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
-  const [isZooming, setIsZooming] = useState(false);
-  const zoomFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
@@ -119,9 +118,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
       e.preventDefault();
       const factor = Math.exp(-e.deltaY * ZOOM_SENSITIVITY);
       setZoom((z) => Math.max(0.2, Math.min(z * factor, 4)));
-      setIsZooming(true);
-      if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
-      zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
     } else {
       let dx = e.deltaX,
         dy = e.deltaY;
@@ -248,20 +244,13 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
-      const margin = 0.3;
       return {
         ...prev,
         logoX: Math.round(
-          Math.max(
-            -(prev.logoW * margin),
-            Math.min(currentX + dx, CANVAS_WIDTH - prev.logoW * (1 - margin))
-          )
+          Math.max(1 - prev.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1))
         ),
         logoY: Math.round(
-          Math.max(
-            -(prev.logoH * margin),
-            Math.min(currentY + dy, CANVAS_HEIGHT - prev.logoH * (1 - margin))
-          )
+          Math.max(1 - prev.logoH, Math.min(currentY + dy, CANVAS_HEIGHT - 1))
         ),
       };
     });
@@ -329,15 +318,14 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
-        const offsetX = selWidth * 0.4;
-        const offsetY = selHeight * 0.4;
+        // Constrain so at least 1px of the badge remains inside the poster
         newItems[targetId]!.x = Math.max(
-          -offsetX,
-          Math.min(startX + dx, CANVAS_WIDTH - selWidth + offsetX)
+          1 - selWidth,
+          Math.min(startX + dx, CANVAS_WIDTH - 1)
         );
         newItems[targetId]!.y = Math.max(
-          -offsetY,
-          Math.min(startY + dy, CANVAS_HEIGHT - selHeight + offsetY)
+          1 - selHeight,
+          Math.min(startY + dy, CANVAS_HEIGHT - 1)
         );
       };
 
@@ -360,63 +348,6 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
         if (e.target === e.currentTarget) clearSelection();
       }}
     >
-      {/* Zoom controls */}
-      <div
-        className="absolute right-4 lg:right-4 flex flex-col items-center gap-2 z-30 transition-all duration-500"
-        style={{
-          bottom: mobileSheetMode === 'half' ? '55%' : 'calc(4.5rem + env(safe-area-inset-bottom))',
-          opacity: mobileSheetMode === 'full' ? 0 : 1,
-          pointerEvents: mobileSheetMode === 'full' ? 'none' : 'auto',
-        }}
-      >
-        <div
-          className="bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-mono text-zinc-400 pointer-events-none transition-opacity duration-300"
-          style={{ opacity: isZooming ? 1 : 0 }}
-        >
-          {Math.round(zoom * 100)}%
-        </div>
-        <div className="flex flex-col items-center gap-1 bg-zinc-900/90 backdrop-blur border border-white/10 rounded-full p-1.5 shadow-xl">
-          {[
-            {
-              label: 'Zoom in',
-              icon: <ZoomIn size={18} />,
-              action: () => {
-                setZoom((z) => Math.min(z + 0.15, 4));
-                setIsZooming(true);
-                if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
-                zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
-              },
-            },
-            {
-              label: 'Zoom out',
-              icon: <ZoomOut size={18} />,
-              action: () => {
-                setZoom((z) => Math.max(z - 0.15, 0.2));
-                setIsZooming(true);
-                if (zoomFadeTimer.current) clearTimeout(zoomFadeTimer.current);
-                zoomFadeTimer.current = setTimeout(() => setIsZooming(false), 800);
-              },
-            },
-          ].map(({ label, icon, action }) => (
-            <button
-              key={label}
-              onClick={action}
-              className="p-2 text-zinc-400 hover:text-[#D4A245] rounded-full hover:bg-[#C47C2E]/10 active:scale-95 transition-all"
-            >
-              {icon}
-            </button>
-          ))}
-          <div className="w-4 h-px bg-white/10 my-1" />
-          <button
-            onClick={resetView}
-            className="p-2 text-zinc-400 hover:text-[#C47C2E] rounded-full hover:bg-[#C47C2E]/10 active:scale-95 transition-all"
-            title="Fit to Screen"
-          >
-            <SearchX size={18} />
-          </button>
-        </div>
-      </div>
-
       {/* Poster Canvas */}
       <div
         style={{
@@ -495,10 +426,9 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
               const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
               const bW = BASE_BADGE_W * selScale;
               const bH = BASE_BADGE_H * selScale;
-              const oX = bW * 0.4,
-                oY = bH * 0.4;
-              x = Math.max(-oX, Math.min(x + dragSession.dx, CANVAS_WIDTH - bW + oX));
-              y = Math.max(-oY, Math.min(y + dragSession.dy, CANVAS_HEIGHT - bH + oY));
+              // Preview clamp: at least 1px inside poster
+              x = Math.max(1 - bW, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
+              y = Math.max(1 - bH, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
             }
           }
 
@@ -514,6 +444,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
               onDragEnd={handleDragEnd}
               isSelected={selectedIds.has(id)}
               onSelect={onSelect}
+              onContextMenu={onContextMenu}
               isObscuring={isObscuring}
               onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
             />

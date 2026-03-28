@@ -74,10 +74,10 @@ const Section: React.FC<{
       >
         <span
           className="flex items-center gap-1.5 syne-font uppercase tracking-widest"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+          style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           {icon && (
-            <span style={{ color: 'var(--film-text-ghost)', opacity: 0.7, lineHeight: 0 }}>
+            <span style={{ color: 'var(--film-text-dim)', opacity: 0.8, lineHeight: 0 }}>
               {icon}
             </span>
           )}
@@ -85,7 +85,7 @@ const Section: React.FC<{
         </span>
         <span
           style={{
-            color: 'var(--film-text-ghost)',
+            color: 'var(--film-text-dim)',
             opacity: open ? 0.6 : 0.3,
             transition: 'opacity 0.15s',
             lineHeight: 0,
@@ -111,7 +111,7 @@ const Section: React.FC<{
   );
 };
 
-// ── SliderRow — flat inline, no box around value ──────────────────────────────
+// ── SliderRow — label above, then [number input] [slider] inline ─────────────
 const SliderRow: React.FC<{
   label: string;
   value: number;
@@ -122,33 +122,45 @@ const SliderRow: React.FC<{
   unit?: string;
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  
   // High-performance decoupled local state
   const [localValue, setLocalValue] = useState(value);
+  const [inputText, setInputText] = useState(() =>
+    formatValue ? formatValue(value) : `${value}`
+  );
   const lastUpdate = useRef(Date.now());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFocused = useRef(false);
 
-  useEffect(() => { setLocalValue(value); }, [value]);
+  useEffect(() => {
+    setLocalValue(value);
+    if (!isFocused.current) {
+      setInputText(formatValue ? formatValue(value) : `${value}`);
+    }
+  }, [value, formatValue]);
 
-  const display = formatValue ? formatValue(localValue) : `${localValue}${unit}`;
-
-  const commit = () => {
-    const n = parseFloat(draft.replace(/[^0-9.\-]/g, ''));
+  const commitInput = useCallback((text: string) => {
+    // Strip unit and non-numeric chars (except dot and minus)
+    const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
+    const n = parseFloat(raw);
     if (!isNaN(n)) {
       const clamped = Math.max(min, Math.min(max, n));
       setLocalValue(clamped);
+      setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
       onChange(clamped);
+    } else {
+      // Restore current value
+      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
     }
-    setEditing(false);
-  };
+  }, [min, max, onChange, unit, formatValue, localValue]);
 
   const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
-    setLocalValue(val); // Instant UI update
-    
-    // Throttle heavy parent updates to max 30fps
+    setLocalValue(val);
+    if (!isFocused.current) {
+      setInputText(formatValue ? formatValue(val) : `${val}`);
+    }
+    // Throttle parent updates to ~30fps
     const now = Date.now();
     if (now - lastUpdate.current > 33) {
       onChange(val);
@@ -160,83 +172,74 @@ const SliderRow: React.FC<{
         lastUpdate.current = Date.now();
       }, 33);
     }
-  }, [onChange]);
+  }, [onChange, formatValue]);
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      commitInput(inputText);
+      inputRef.current?.blur();
+    } else if (e.key === 'Escape') {
+      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
+      inputRef.current?.blur();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const newVal = Math.max(min, Math.min(max, localValue + step));
+      setLocalValue(newVal);
+      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
+      onChange(newVal);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const newVal = Math.max(min, Math.min(max, localValue - step));
+      setLocalValue(newVal);
+      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
+      onChange(newVal);
+    }
+  };
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span
-          className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-        >
-          {label}
-        </span>
-        {editing ? (
-          <input
-            type="text"
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); commit(); }
-              if (e.key === 'Escape') setEditing(false);
-            }}
-            className="mono-font focus:outline-none"
-            style={{
-              width: 48,
-              height: 18,
-              paddingInline: 5,
-              borderRadius: 3,
-              background: 'var(--film-char)',
-              border: '1px solid rgba(196,124,46,0.5)',
-              fontSize: 10,
-              color: 'var(--film-cream)',
-              textAlign: 'center',
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setDraft(String(localValue)); setEditing(true); }}
-            title="Click to edit"
-            className="mono-font tabular-nums"
-            style={{
-              width: 48,
-              height: 18,
-              paddingInline: 5,
-              borderRadius: 3,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
-              fontSize: 10,
-              color: 'var(--film-text-dim)',
-              textAlign: 'center',
-              cursor: 'text',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderBottomColor = 'rgba(196,124,46,0.4)';
-              e.currentTarget.style.color = 'var(--film-cream)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderBottomColor = 'rgba(255,255,255,0.08)';
-              e.currentTarget.style.color = 'var(--film-text-dim)';
-            }}
-          >
-            {display}
-          </button>
-        )}
+      <span
+        className="body-font"
+        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+      >
+        {label}
+      </span>
+      <div className="flex items-center gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onFocus={() => { isFocused.current = true; }}
+          onBlur={() => { isFocused.current = false; commitInput(inputText); }}
+          onKeyDown={handleInputKeyDown}
+          className="mono-font tabular-nums focus:outline-none shrink-0"
+          style={{
+            width: 48,
+            height: 22,
+            paddingInline: 5,
+            borderRadius: 4,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: 10,
+            color: 'var(--film-pale)',
+            textAlign: 'center',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+          onMouseLeave={(e) => { if (!isFocused.current) (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+        />
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={localValue}
+          onChange={handleRangeChange}
+          className="flex-1 min-w-0"
+        />
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={localValue}
-        onChange={handleRangeChange}
-        className="w-full"
-      />
     </div>
   );
 };
