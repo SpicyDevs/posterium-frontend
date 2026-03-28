@@ -16,7 +16,7 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
       style={{ background: 'var(--film-dark)' }}
     >
       <div
-        className="shrink-0 px-3 pt-3 pb-2 z-10"
+        className="shrink-0 px-3 pt-3 pb-2 z-10 hidden lg:block"
         style={{
           background: 'var(--film-dark)',
           borderBottom: '1px solid rgba(196,124,46,0.07)',
@@ -26,7 +26,7 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
       </div>
       <div
         className={clsx(
-          'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar',
+          'flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar pt-2 lg:pt-0',
           bodyClassName
         )}
       >

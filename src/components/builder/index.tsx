@@ -279,10 +279,19 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     (delta: number) => window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })),
     []
   );
-  const dispatchResetView = useCallback(
+const dispatchResetView = useCallback(
     () => window.dispatchEvent(new CustomEvent('reset-canvas-view')),
     []
   );
+
+  // Auto-open Edit panel on mobile when badge is tapped
+  const handleSelectionOverride = useCallback((id: RatingType, multi: boolean) => {
+    handleSelection(id, multi);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && mobileSheetMode === 'hidden') {
+       setActiveTab('badge');
+       setMobileSheetMode('full');
+    }
+  }, [handleSelection, setActiveTab, setMobileSheetMode, mobileSheetMode]);
 
   const moveLayer = useCallback(
     (id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
@@ -530,7 +539,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           onSendToBack={(id) => moveLayer(id, 'toback')}
           onHide={hideBadge}
           onShowAll={showAllBadges}
-          onSelect={(id) => handleSelection(id, false)}
+          onSelect={(id) => handleSelectionOverride(id, false)}
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
@@ -745,8 +754,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           </header>
         )}
 
-        {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative">
+       {/* ── BODY ── */}
+        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -780,7 +789,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             id="main-canvas"
             role="main"
             aria-label="Poster canvas"
-            className="flex-1 relative overflow-hidden"
+            className="flex-1 relative overflow-hidden min-h-0"
             style={{ background: '#111113' }}
             onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
           >
@@ -827,7 +836,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               config={config}
               setConfig={setConfig}
               selectedIds={selectedIds}
-              onSelect={handleSelection}
+              onSelect={handleSelectionOverride}
               onContextMenu={openCtxMenu}
               isFullscreen={isFullscreen}
             />
@@ -876,42 +885,42 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <Inspector config={config} setConfig={setConfig} />
             </aside>
           )}
+
+          {/* Mobile Panel (In-flow flex item) */}
+          {!isFullscreen && (
+            <div
+              className={clsx(
+                "lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20",
+                mobileSheetMode !== 'hidden' ? "h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" : "h-0 border-t-0"
+              )}
+            >
+              {/* Swipe-down dismiss handle */}
+              <div 
+                 className="shrink-0 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer"
+                 onClick={() => setMobileSheetMode('hidden')}
+              >
+                 <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.15)]" />
+              </div>
+
+              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
+                {(activeTab === 'source' || activeTab === 'layers') && (
+                  <LayerPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                  />
+                )}
+                {(activeTab === 'canvas' || activeTab === 'badge') && (
+                  <Inspector config={config} setConfig={setConfig} />
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mobile dock */}
         <MobileDock />
-
-        {/* Mobile sheet (Remade Fullscreen Mode) */}
-        <div
-          role="complementary"
-          aria-label="Mobile editor panel"
-          aria-hidden={mobileSheetMode === 'hidden'}
-          className="lg:hidden fixed inset-x-0 bottom-0 shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-out"
-          style={{
-            height: HEIGHTS.full,
-            transform: `translateY(${mobileSheetMode === 'hidden' ? '100%' : '0%'})`,
-            background: 'var(--film-dark)',
-            borderTop: '1px solid rgba(196,124,46,0.15)',
-            pointerEvents: mobileSheetMode === 'hidden' ? 'none' : 'auto',
-          }}
-        >
-          <div
-            className="flex-1 overflow-y-auto overscroll-contain min-h-0 pb-20"
-            style={{ WebkitOverflowScrolling: 'touch' as any }}
-          >
-            {(activeTab === 'source' || activeTab === 'layers') && (
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelection}
-              />
-            )}
-            {(activeTab === 'canvas' || activeTab === 'badge') && (
-              <Inspector config={config} setConfig={setConfig} />
-            )}
-          </div>
-        </div>
 
         {/* Fullscreen overlay controls */}
         {isFullscreen && (
