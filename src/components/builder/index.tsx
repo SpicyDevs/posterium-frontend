@@ -9,8 +9,8 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
-import ResetDialog from './components/ResetDialog';
-import ImportDialog from './components/ImportDialog';
+import ResetDialog from './components/ResetDialogue';
+import ImportDialog from './components/ImportDialogue';
 import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
