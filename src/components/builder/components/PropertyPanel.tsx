@@ -1,5 +1,5 @@
 // src/components/builder/components/PropertyPanel.tsx
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useRef, useCallback } from 'react';
 import { Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
 import {

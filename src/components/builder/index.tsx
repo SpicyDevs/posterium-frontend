@@ -442,64 +442,13 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   );
 
   // ── Mobile sheet ──────────────────────────────────────────────────────────
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number | null>(null);
-  const dragDelta = useRef(0);
-  const isSheetDragging = useRef(false);
-  const modeRef = useRef(mobileSheetMode);
-  useEffect(() => { modeRef.current = mobileSheetMode; });
-
   const SNAPS = { hidden: '100%', half: '0%', full: '0%' };
   const HEIGHTS = {
-    hidden: 'min(58dvh, 460px)',
-    half: 'min(58dvh, 460px)',
-    full: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom, 0px))',
+    hidden: '100%', // Unused in new UI
+    half: '100%',   // Unused in new UI
+    full: 'calc(100dvh - 64px - env(safe-area-inset-bottom, 0px))', // Full screen minus dock
   };
-
-  const snapTo = useCallback((mode: typeof mobileSheetMode, animate = true) => {
-    const el = sheetRef.current;
-    if (!el) return;
-    el.style.transition = animate
-      ? 'transform 0.38s cubic-bezier(0.16,1,0.3,1), height 0.38s cubic-bezier(0.16,1,0.3,1)'
-      : 'none';
-    el.style.transform = `translateY(${SNAPS[mode]})`;
-    el.style.height = HEIGHTS[mode];
-  }, []);
-
-  useEffect(() => {
-    if (!isSheetDragging.current) snapTo(mobileSheetMode);
-  }, [mobileSheetMode, snapTo]);
-
-  const onHandleTouchStart = (e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY;
-    dragDelta.current = 0;
-    isSheetDragging.current = true;
-    if (sheetRef.current) sheetRef.current.style.transition = 'none';
-  };
-  const onHandleTouchMove = (e: React.TouchEvent) => {
-    if (!isSheetDragging.current || dragStartY.current === null) return;
-    const delta = e.touches[0].clientY - dragStartY.current;
-    dragDelta.current = delta;
-    const el = sheetRef.current;
-    if (!el) return;
-    const resistance = modeRef.current === 'full' && delta < 0 ? 0.1 : 1;
-    el.style.transform = `translateY(${Math.max(delta * resistance, -30)}px)`;
-  };
-  const onHandleTouchEnd = () => {
-    if (!isSheetDragging.current) return;
-    isSheetDragging.current = false;
-    const delta = dragDelta.current;
-    dragDelta.current = 0;
-    dragStartY.current = null;
-    const cur = modeRef.current;
-    const THRESHOLD = 64;
-    let next = cur;
-    if (delta > THRESHOLD) next = cur === 'full' ? 'half' : 'hidden';
-    if (delta < -THRESHOLD) next = cur === 'hidden' ? 'half' : 'full';
-    snapTo(next);
-    if (next !== cur) setMobileSheetMode(next);
-  };
-
+  
   const handleExtensionChange = useCallback(
     (ext: ExtensionType) => { setConfig((prev) => ({ ...prev, extension: ext })); },
     [setConfig]
@@ -932,39 +881,23 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         {/* Mobile dock */}
         <MobileDock />
 
-        {/* Mobile sheet */}
+        {/* Mobile sheet (Remade Fullscreen Mode) */}
         <div
-          ref={sheetRef}
           role="complementary"
           aria-label="Mobile editor panel"
           aria-hidden={mobileSheetMode === 'hidden'}
-          className="lg:hidden fixed inset-x-0 rounded-t-2xl shadow-2xl z-40 flex flex-col"
+          className="lg:hidden fixed inset-x-0 bottom-0 shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-out"
           style={{
-            bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-            height: HEIGHTS[mobileSheetMode],
-            transform: `translateY(${SNAPS[mobileSheetMode]})`,
+            height: HEIGHTS.full,
+            transform: `translateY(${mobileSheetMode === 'hidden' ? '100%' : '0%'})`,
             background: 'var(--film-dark)',
-            border: '1px solid rgba(196,124,46,0.1)',
-            borderBottom: 'none',
+            borderTop: '1px solid rgba(196,124,46,0.15)',
             pointerEvents: mobileSheetMode === 'hidden' ? 'none' : 'auto',
-            willChange: 'transform, height',
           }}
         >
           <div
-            className="shrink-0 h-10 w-full flex items-center justify-center touch-none cursor-grab active:cursor-grabbing select-none"
-            role="button"
-            aria-label="Drag to resize"
-          >
-            <div
-              className="w-9 rounded-full"
-              style={{ height: 3, background: 'rgba(196,124,46,0.25)' }}
-            />
-          </div>
-          <div
-            className="flex-1 overflow-y-auto overscroll-contain min-h-0"
-            style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' as any }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
+            className="flex-1 overflow-y-auto overscroll-contain min-h-0 pb-20"
+            style={{ WebkitOverflowScrolling: 'touch' as any }}
           >
             {(activeTab === 'source' || activeTab === 'layers') && (
               <LayerPanel
