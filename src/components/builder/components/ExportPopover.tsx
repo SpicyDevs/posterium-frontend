@@ -16,6 +16,7 @@ interface Props {
 const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [aioCopied, setAioCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [editedUrl, setEditedUrl] = useState<string | null>(null);
 
@@ -41,6 +42,15 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
       await navigator.clipboard.writeText(displayUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  };
+
+const handleAioCopy = async () => {
+    try {
+      const templateUrl = displayUrl.replace(/\/poster\/[^.]+\./, '/poster/{imdb_id}.');
+      await navigator.clipboard.writeText(templateUrl);
+      setAioCopied(true);
+      setTimeout(() => setAioCopied(false), 2000);
     } catch { /* clipboard unavailable */ }
   };
 
@@ -216,12 +226,59 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
 
       {/* Actions */}
       <div
-        className="flex gap-2 px-4 pb-4"
+        className="flex flex-col gap-2 px-4 pb-4"
         style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
       >
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'var(--film-text-dim)',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.2)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+          >
+            {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+            {copied ? 'Copied' : 'Copy URL'}
+          </button>
+          <button
+            onClick={handleDownload}
+            className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+            style={{
+              background: downloading ? 'rgba(196,124,46,0.2)' : 'var(--film-amber)',
+              color: downloading ? 'var(--film-pale)' : '#070706',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              boxShadow: downloading ? 'none' : '0 0 20px rgba(196,124,46,0.25)',
+              border: 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!downloading) (e.currentTarget as HTMLElement).style.background = '#d4a245';
+            }}
+            onMouseLeave={(e) => {
+              if (!downloading) (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+            }}
+          >
+            <Download size={12} />
+            Download
+          </button>
+        </div>
         <button
-          onClick={handleCopy}
-          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+          onClick={handleAioCopy}
+          className="w-full h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
           style={{
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -239,30 +296,8 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
             (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
           }}
         >
-          {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-          {copied ? 'Copied' : 'Copy URL'}
-        </button>
-        <button
-          onClick={handleDownload}
-          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
-          style={{
-            background: downloading ? 'rgba(196,124,46,0.2)' : 'var(--film-amber)',
-            color: downloading ? 'var(--film-pale)' : '#070706',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            boxShadow: downloading ? 'none' : '0 0 20px rgba(196,124,46,0.25)',
-            border: 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (!downloading) (e.currentTarget as HTMLElement).style.background = '#d4a245';
-          }}
-          onMouseLeave={(e) => {
-            if (!downloading) (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
-          }}
-        >
-          <Download size={12} />
-          Download
+          {aioCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+          {aioCopied ? 'Copied' : 'Copy for AIOMetadata'}
         </button>
       </div>
     </div>
