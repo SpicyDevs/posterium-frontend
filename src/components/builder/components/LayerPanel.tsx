@@ -965,7 +965,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                       </span>
                     )}
                   </div>
-                  {(fetchedData.imdb || fetchedData.rt || fetchedData.tmdb) && null}
                 </div>
                 <div
                   className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
