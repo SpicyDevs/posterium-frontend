@@ -60,18 +60,25 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
 
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = 'touches' in e
+        ? e.touches[0]?.target as Node
+        : (e as MouseEvent).target as Node;
       if (
         popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node) &&
+        !popoverRef.current.contains(target) &&
         anchorRef.current &&
-        !anchorRef.current.contains(e.target as Node)
+        !anchorRef.current.contains(target)
       ) {
         onClose();
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler as EventListener);
+    document.addEventListener('touchstart', handler as EventListener, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler as EventListener);
+      document.removeEventListener('touchstart', handler as EventListener);
+    };
   }, [isOpen, onClose, anchorRef]);
 
   if (!isOpen) return null;
