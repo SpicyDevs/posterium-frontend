@@ -93,6 +93,27 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
+
+  // FIX: Push state to history to intercept mobile back button
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: 'keyboard-shortcuts' }, '');
+      
+      const handlePopState = (e: PopStateEvent) => {
+        e.preventDefault();
+        onClose();
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        if (window.history.state?.modal === 'keyboard-shortcuts') {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {

@@ -61,6 +61,27 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // FIX: Push state to history to intercept mobile back button
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: 'command-palette' }, '');
+      
+      const handlePopState = (e: PopStateEvent) => {
+        e.preventDefault();
+        onClose();
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // If the component unmounts or closes normally, we need to pop the state if it's still there
+        if (window.history.state?.modal === 'command-palette') {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   // Reset on open
   useEffect(() => {
     if (isOpen) {

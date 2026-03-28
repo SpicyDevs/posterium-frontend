@@ -17,8 +17,9 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../type
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
 import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
+import clsx from 'clsx';
 
 interface Props {
   config: PosterConfig;
@@ -26,9 +27,27 @@ interface Props {
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  isFullscreen?: boolean;
+  rightSidebarWidth?: number;
+  toggleFullscreen?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetView?: () => void;
 }
 
-const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onContextMenu }) => {
+const PreviewCanvas: React.FC<Props> = ({ 
+  config, 
+  setConfig, 
+  selectedIds, 
+  onSelect, 
+  onContextMenu,
+  isFullscreen = false,
+  rightSidebarWidth = 0,
+  toggleFullscreen,
+  onZoomIn,
+  onZoomOut,
+  onResetView
+}) => {
   const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -178,15 +197,7 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     return () => window.removeEventListener('reset-canvas-view', h);
   }, []);
 
-  // ── Poster image URL ──────────────────────────────────────────────────────
-  // FIX: posterBlur and grayscale are applied via CSS filter on the <img> tag
-  // (see below), NOT sent to the backend. This avoids a network round-trip for
-  // those visual effects and keeps the preview instant.
-  // The backend still accepts bg_blur/gs for direct API usage.
-  
   const cleanPosterUrl = useMemo(() => {
-    // Prefer imdbId (works with /poster/ route for any media type).
-    // Fall back to tmdbId with explicit type path.
     const id   = config.imdbId || config.tmdbId;
     const type = config.imdbId ? 'poster' : config.mediaType;
     const base = `${DEFAULT_API_BASE}/${type}/${id}.svg`;
@@ -194,13 +205,10 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
     params.set('source', config.source);
     if (config.textless) params.set('textless', '1');
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    // Cache-bust key — only factors that affect poster image selection
     params.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
     return `${base}?${params.toString()}`;
   }, [config.tmdbId, config.imdbId, config.source, config.mediaType, config.textless, config.ptype]);
 
-  // FIX: Build CSS filter from posterBlur and grayscale locally.
-  // e.g. blur(4px) grayscale(1)
   const posterCssFilter = useMemo(() => {
     const parts: string[] = [];
     if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
@@ -224,10 +232,8 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
 
  const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
-    // Use imdbId when available — logo endpoint accepts tt… IDs with any type.
     const id   = config.imdbId || config.tmdbId;
     if (!id) return null;
-    // Logo route only supports movie / tv / anime (not 'poster' alias)
     const type = config.mediaType === 'anime' ? 'anime'
                : config.mediaType === 'tv'    ? 'tv'
                : 'movie';
@@ -460,6 +466,75 @@ const PreviewCanvas: React.FC<Props> = ({ config, setConfig, selectedIds, onSele
           />
         )}
       </div>
+
+      {/* Vertical/Horizontal Zoom Overlay logic */}
+      {toggleFullscreen && (
+        <div
+          className={clsx(
+            "fixed z-40 flex rounded-xl select-none transition-all",
+            isFullscreen 
+              ? "bottom-5 right-5 flex-row items-center gap-1 p-1.5" 
+              : "flex-col items-center gap-1 p-1.5"
+          )}
+          style={{
+            background: 'rgba(14,13,11,0.92)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(196,124,46,0.18)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            ...(!isFullscreen ? {
+               right: rightSidebarWidth + 20,
+               top: '50%',
+               transform: 'translateY(-50%)'
+            } : {})
+          }}
+        >
+          {[
+            { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
+            { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
+            { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
+          ].map(({ icon, label, action }) => (
+            <button
+              key={label}
+              onClick={action}
+              title={label}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+              style={{ color: 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+                (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              {icon}
+            </button>
+          ))}
+          <div style={{ 
+            width: isFullscreen ? 1 : 20, 
+            height: isFullscreen ? 20 : 1, 
+            background: 'rgba(255,255,255,0.08)', 
+            margin: isFullscreen ? '0 2px' : '2px 0' 
+          }} />
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+            style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+            }}
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

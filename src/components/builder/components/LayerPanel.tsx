@@ -880,7 +880,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font'
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
+                localMode !== tab && 'hover:bg-white/5 hover:text-white'
               )}
               style={{
                 background: localMode === tab ? 'var(--film-mid)' : 'transparent',
@@ -904,90 +905,92 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         <div className="space-y-4 px-1">
           {/* Media info card */}
           {(fetchedData.title || config.tmdbId) && (
-            <div
-              className="p-2.5 rounded-xl"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="syne-font font-semibold leading-tight line-clamp-2"
-                    style={{ fontSize: 12, color: 'var(--film-cream)' }}
-                  >
-                    {fetchedData.title || (
-                      <span style={{ color: 'var(--film-text-ghost)', fontStyle: 'italic' }}>
-                        Untitled
-                      </span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    {fetchedData.year && (
+            <div className="mt-4">
+              <div
+                className="p-2.5 rounded-xl"
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="syne-font font-semibold leading-tight line-clamp-2"
+                      style={{ fontSize: 12, color: 'var(--film-cream)' }}
+                    >
+                      {fetchedData.title || (
+                        <span style={{ color: 'var(--film-text-ghost)', fontStyle: 'italic' }}>
+                          Untitled
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      {fetchedData.year && (
+                        <span
+                          className="mono-font"
+                          style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                        >
+                          {fetchedData.year}
+                        </span>
+                      )}
                       <span
-                        className="mono-font"
-                        style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                        className="syne-font inline-flex items-center gap-1 px-1.5 py-0.5 rounded"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          background:
+                            config.mediaType === 'tv'
+                              ? 'rgba(59,130,246,0.12)'
+                              : config.mediaType === 'anime'
+                              ? 'rgba(168,85,247,0.12)'
+                              : 'rgba(196,124,46,0.12)',
+                          color:
+                            config.mediaType === 'tv'
+                              ? '#60a5fa'
+                              : config.mediaType === 'anime'
+                              ? '#c084fc'
+                              : 'var(--film-amber)',
+                        }}
                       >
-                        {fetchedData.year}
+                        <MediaIcon size={9} />
+                        {config.mediaType}
                       </span>
-                    )}
-                    <span
-                      className="syne-font inline-flex items-center gap-1 px-1.5 py-0.5 rounded"
+                      {config.imdbId && (
+                        <span
+                          className="mono-font"
+                          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                        >
+                          {config.imdbId}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
+                    style={{
+                      background:
+                        config.mediaType === 'tv'
+                          ? 'rgba(59,130,246,0.08)'
+                          : config.mediaType === 'anime'
+                          ? 'rgba(168,85,247,0.08)'
+                          : 'rgba(196,124,46,0.08)',
+                    }}
+                  >
+                    <MediaIcon
+                      size={16}
                       style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        background:
-                          config.mediaType === 'tv'
-                            ? 'rgba(59,130,246,0.12)'
-                            : config.mediaType === 'anime'
-                            ? 'rgba(168,85,247,0.12)'
-                            : 'rgba(196,124,46,0.12)',
                         color:
                           config.mediaType === 'tv'
-                            ? '#60a5fa'
+                            ? 'rgba(96,165,250,0.6)'
                             : config.mediaType === 'anime'
-                            ? '#c084fc'
-                            : 'var(--film-amber)',
+                            ? 'rgba(192,132,252,0.6)'
+                            : 'rgba(196,124,46,0.6)',
                       }}
-                    >
-                      <MediaIcon size={9} />
-                      {config.mediaType}
-                    </span>
-                    {config.imdbId && (
-                      <span
-                        className="mono-font"
-                        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-                      >
-                        {config.imdbId}
-                      </span>
-                    )}
+                    />
                   </div>
-                </div>
-                <div
-                  className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
-                  style={{
-                    background:
-                      config.mediaType === 'tv'
-                        ? 'rgba(59,130,246,0.08)'
-                        : config.mediaType === 'anime'
-                        ? 'rgba(168,85,247,0.08)'
-                        : 'rgba(196,124,46,0.08)',
-                  }}
-                >
-                  <MediaIcon
-                    size={16}
-                    style={{
-                      color:
-                        config.mediaType === 'tv'
-                          ? 'rgba(96,165,250,0.6)'
-                          : config.mediaType === 'anime'
-                          ? 'rgba(192,132,252,0.6)'
-                          : 'rgba(196,124,46,0.6)',
-                    }}
-                  />
                 </div>
               </div>
             </div>

@@ -80,6 +80,9 @@ const DraggableBadge: React.FC<Props> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
 
+  // FIX: track actual drag distance to prevent click collision
+  const hasDraggedRef = useRef(false);
+
   // Keep refs current without re-registering listeners
   const onDragEndRef = useRef(onDragEnd);
   const onSelectRef = useRef(onSelect);
@@ -93,6 +96,7 @@ const DraggableBadge: React.FC<Props> = ({
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
+    hasDraggedRef.current = false;
     dragStartRef.current = { mouseX: clientX, mouseY: clientY };
   };
 
@@ -100,6 +104,12 @@ const DraggableBadge: React.FC<Props> = ({
     if (!dragStartRef.current) return;
     const deltaX = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const deltaY = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
+    
+    // threshold for dragging vs clicking
+    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+      hasDraggedRef.current = true;
+    }
+
     if (isFinite(deltaX) && isFinite(deltaY)) {
       onDragMove(badgeId, deltaX, deltaY);
     }
@@ -126,6 +136,9 @@ const DraggableBadge: React.FC<Props> = ({
 
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
+    
+    // reset drag flag safely after the native click event has had time to process
+    setTimeout(() => { hasDraggedRef.current = false; }, 50);
   };
 
   useEffect(() => {
@@ -153,14 +166,21 @@ const DraggableBadge: React.FC<Props> = ({
   const onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!isSelected) onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
     handleStart(e.clientX, e.clientY);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
-    if (!isSelected) onSelect(badgeId, false);
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
+  };
+
+  const onClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasDraggedRef.current) return; // Prevent selection/config if user was dragging
+    
+    if (!isSelected) {
+      onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
+    }
   };
 
   // ── Visual style from config ──────────────────────────────────────────────
@@ -334,6 +354,7 @@ const DraggableBadge: React.FC<Props> = ({
     <div
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
+      onClick={onClick}
       onMouseEnter={() => onHoverChange?.(true)}
       onMouseLeave={() => onHoverChange?.(false)}
       onContextMenu={(e) => {

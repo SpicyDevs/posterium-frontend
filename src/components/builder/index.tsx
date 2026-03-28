@@ -76,7 +76,8 @@ interface ToolbarBtnProps {
 }
 const ToolbarBtn = memo<ToolbarBtnProps>(
   ({ onClick, disabled, label, danger, href, active, children, hideOnMobile = false }) => {
-    const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
+    // FIX: Changed from w-8 h-8 rounded-lg to p-1.5 aspect-square rounded-md to fix pill shapes
+    const base = `relative group p-1.5 aspect-square flex items-center justify-center rounded-md transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
     const cls = `${base} ${
       disabled
         ? 'cursor-not-allowed pointer-events-none'
@@ -143,70 +144,6 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
 );
 ToolbarBtn.displayName = 'ToolbarBtn';
 
-// ── Zoom/Fullscreen Overlay ───────────────────────────────────────────────────
-const ZoomOverlay = memo<{
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetView: () => void;
-}>(({ isFullscreen, onToggleFullscreen, onZoomIn, onZoomOut, onResetView }) => (
-  <div
-    className="fixed z-40 flex items-center gap-1 rounded-xl select-none"
-    style={{
-      bottom: 20,
-      right: 20,
-      background: 'rgba(14,13,11,0.92)',
-      backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(196,124,46,0.18)',
-      padding: '6px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-    }}
-  >
-    {[
-      { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
-      { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-      { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
-    ].map(({ icon, label, action }) => (
-      <button
-        key={label}
-        onClick={action}
-        title={label}
-        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-        style={{ color: 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-          (e.currentTarget as HTMLElement).style.background = 'transparent';
-        }}
-      >
-        {icon}
-      </button>
-    ))}
-    <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
-    <button
-      onClick={onToggleFullscreen}
-      title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
-      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-      style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
-        (e.currentTarget as HTMLElement).style.background = 'transparent';
-      }}
-    >
-      {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-    </button>
-  </div>
-));
-ZoomOverlay.displayName = 'ZoomOverlay';
-
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
   config: PosterConfig;
@@ -241,7 +178,7 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
-const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
@@ -275,7 +212,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     []
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback((id: RatingType, multi: boolean) => {
     handleSelection(id, multi);
   }, [handleSelection]);
@@ -410,13 +346,27 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   // ── Panel widths ──────────────────────────────────────────────────────────
   const [leftW, setLeftW] = useState(272);
   const [rightW, setRightW] = useState(308);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
 
+  // FIX: Better Resize UX and auto-hiding logic
   const startResizeLeft = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
+      setIsResizingSidebar(true);
       const sx = e.clientX, sw = leftW;
-      const move = (m: MouseEvent) => setLeftW(Math.max(220, Math.min(sw + m.clientX - sx, 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
+      const move = (m: MouseEvent) => {
+        requestAnimationFrame(() => {
+          const newW = sw + m.clientX - sx;
+          if (newW < 120) {
+            setLeftVisible(false);
+            setLeftW(272); // Reset width for next open
+            up();
+          } else {
+            setLeftW(Math.max(220, Math.min(newW, 540)));
+          }
+        });
+      };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; setIsResizingSidebar(false); };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -427,9 +377,21 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const startResizeRight = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
+      setIsResizingSidebar(true);
       const sx = e.clientX, sw = rightW;
-      const move = (m: MouseEvent) => setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
+      const move = (m: MouseEvent) => {
+        requestAnimationFrame(() => {
+          const newW = sw - (m.clientX - sx);
+          if (newW < 120) {
+            setRightVisible(false);
+            setRightW(308); // Reset width for next open
+            up();
+          } else {
+            setRightW(Math.max(248, Math.min(newW, 540)));
+          }
+        });
+      };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; setIsResizingSidebar(false); };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -489,7 +451,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         .builder-ui input, .builder-ui textarea, .builder-ui [contenteditable] {
           user-select: text; -webkit-user-select: text;
         }
-        .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
+        /* FIX: Disable transition while dragging for a snappier UX */
+        .sidebar-transition { transition: width ${isResizingSidebar ? '0s' : '0.25s cubic-bezier(0.4,0,0.2,1)'}, opacity 0.2s ease; }
       `}</style>
 
       <div
@@ -539,7 +502,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="h-12 shrink-0 flex items-center justify-between px-3 z-30 relative w-full"
             style={{
               background: 'var(--film-dark)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -554,13 +517,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               aria-hidden="true"
             />
 
-            {/* Left Header Area - Aligned exactly with left sidebar */}
-            <div 
-              className="flex items-center px-3 shrink-0 sidebar-transition overflow-hidden max-lg:!w-auto" 
-              style={{ width: leftVisible ? leftW : 'auto' }}
-            >
+            {/* Left Header Area - Decoupled to stop layout shifts */}
+            <div className="flex-1 flex items-center justify-start shrink-0">
               {/* Wordmark */}
-              <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <a href="/" style={{ textDecoration: 'none' }}>
                 <span
                   className="poster-font select-none hidden sm:block"
                   style={{
@@ -586,13 +546,13 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               </a>
             </div>
 
-            {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="flex-1 flex items-center justify-center px-2 min-w-0 gap-2">
+            {/* Central area: Absolute positioned to ignore sidebar flex reflows */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-2 max-w-sm w-full px-4">
               {/* Left sidebar toggle */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
                 title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                className="shrink-0 w-8 h-8 rounded-md items-center justify-center transition-all hidden lg:flex"
                 style={{
                   color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
                   border: '1px solid transparent',
@@ -607,7 +567,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Command palette search */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 h-8 w-full max-w-sm rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 h-8 flex-1 min-w-0 rounded-md transition-colors"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -629,7 +589,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setRightVisible(!rightVisible)}
                 title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex"
+                className="shrink-0 w-8 h-8 rounded-md items-center justify-center transition-all hidden lg:flex"
                 style={{
                   color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
                   border: '1px solid transparent',
@@ -642,11 +602,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               </button>
             </div>
 
-            {/* Right Header Area - Aligned exactly with right sidebar */}
-            <div 
-              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition max-lg:!w-auto"
-              style={{ width: rightVisible ? rightW : 'auto' }}
-            >
+            {/* Right Header Area */}
+            <div className="flex-1 flex items-center justify-end shrink-0 gap-1">
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
@@ -786,14 +743,19 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               }}
             />
 
-            {/* Sidebar Canvas Toggles removed — now in navbar */}
-
             <PreviewCanvas
               config={config}
               setConfig={setConfig}
               selectedIds={selectedIds}
               onSelect={handleSelectionOverride}
               onContextMenu={openCtxMenu}
+              // FIX: pass zoom logic directly to the canvas to handle horizontal/vertical overlay
+              isFullscreen={isFullscreen}
+              rightSidebarWidth={rightVisible && !isFullscreen ? rightW : 0}
+              toggleFullscreen={toggleFullscreen}
+              onZoomIn={() => dispatchZoom(0.25)}
+              onZoomOut={() => dispatchZoom(-0.25)}
+              onResetView={dispatchResetView}
             />
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
@@ -888,15 +850,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
         {/* Mobile dock */}
         <MobileDock />
-
-        {/* Zoom + fullscreen overlay — always visible */}
-        <ZoomOverlay
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={toggleFullscreen}
-          onZoomIn={() => dispatchZoom(0.25)}
-          onZoomOut={() => dispatchZoom(-0.25)}
-          onResetView={dispatchResetView}
-        />
       </div>
     </>
   );
