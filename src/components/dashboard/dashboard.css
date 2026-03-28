@@ -377,3 +377,13 @@ select option {
     transition-duration: 0.01ms !important;
   }
 }
+@media (max-width: 700px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

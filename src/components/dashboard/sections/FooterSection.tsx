@@ -1,5 +1,4 @@
 // src/components/dashboard/sections/FooterSection.tsx
-// Change: internal Link → <a href>. No Router import. All other code identical.
 import { memo } from 'react';
 import { Film, Github, ExternalLink } from 'lucide-react';
 import { SprocketStrip } from '../primitives';
@@ -30,7 +29,6 @@ export const FooterSection = memo(() => (
       overflow: 'hidden',
     }}
   >
-    {/* Top sprocket strip */}
     <div
       style={{
         background: 'rgba(255,255,255,0.012)',
@@ -41,11 +39,7 @@ export const FooterSection = memo(() => (
     </div>
 
     <div style={{ position: 'relative', zIndex: 1 }}>
-      {/* Wordmark section */}
-      <div
-        style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}
-      >
-        {/* Ghost backdrop */}
+      <div style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}>
         <div
           aria-hidden="true"
           className="poster-font"
@@ -121,13 +115,11 @@ export const FooterSection = memo(() => (
               marginBottom: 0,
             }}
           >
-            Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No
-            account. No rate limits.
+            Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No account. No rate limits.
           </p>
         </div>
       </div>
 
-      {/* Amber rule */}
       <div
         aria-hidden="true"
         style={{
@@ -139,7 +131,6 @@ export const FooterSection = memo(() => (
         }}
       />
 
-      {/* Nav links — all <a> now, no Router */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px)',
@@ -151,45 +142,38 @@ export const FooterSection = memo(() => (
       >
         {FOOTER_LINKS.map((link, i) => {
           const isLast = i === FOOTER_LINKS.length - 1;
-          const baseStyle: React.CSSProperties = {
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            textDecoration: 'none',
-            color: 'rgba(110,104,96,0.55)',
-            fontFamily: 'Syne, sans-serif',
-            padding: '5px 0',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            transition: 'color 0.18s',
-          };
-
-          const el = (
-            <a
-              key={link.label}
-              href={link.href}
-              target={link.external ? '_blank' : undefined}
-              rel={link.external ? 'noreferrer' : undefined}
-              style={baseStyle}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = link.internal
-                  ? 'var(--film-cream)'
-                  : 'var(--film-amber)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)';
-              }}
-            >
-              {link.label}
-              {link.external && <ExternalLink size={8} style={{ opacity: 0.4 }} />}
-            </a>
-          );
-
           return (
             <span key={link.label} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              {el}
+              <a
+                href={link.href}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noreferrer' : undefined}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                  color: 'rgba(110,104,96,0.55)',
+                  fontFamily: 'Syne, sans-serif',
+                  padding: '5px 0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'color 0.18s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = link.internal
+                    ? 'var(--film-cream)'
+                    : 'var(--film-amber)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)';
+                }}
+              >
+                {link.label}
+                {link.external && <ExternalLink size={8} style={{ opacity: 0.4 }} />}
+              </a>
               {!isLast && (
                 <span
                   aria-hidden="true"
@@ -208,7 +192,6 @@ export const FooterSection = memo(() => (
         })}
       </div>
 
-      {/* Divider */}
       <div
         aria-hidden="true"
         style={{
@@ -218,7 +201,6 @@ export const FooterSection = memo(() => (
         }}
       />
 
-      {/* Production credits */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px) clamp(40px,5vw,60px)',
@@ -229,14 +211,7 @@ export const FooterSection = memo(() => (
           gap: 16,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            gap: 'clamp(16px,3vw,36px)',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', gap: 'clamp(16px,3vw,36px)', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             ['PROD', 'SpicyDevs'],
             ['DIR', 'Aayu5h'],
@@ -245,30 +220,14 @@ export const FooterSection = memo(() => (
             [`© 2026`, ''],
           ].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span
-                className="mono-font"
-                style={{
-                  fontSize: 7,
-                  color: 'rgba(196,124,46,0.38)',
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                }}
-              >
+              <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,124,46,0.38)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
                 {k}
               </span>
-              {v && (
-                <span
-                  className="syne-font"
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: 'rgba(110,104,96,0.45)',
-                    letterSpacing: '0.05em',
-                  }}
-                >
+              {v ? (
+                <span className="syne-font" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(110,104,96,0.45)', letterSpacing: '0.05em' }}>
                   {v}
                 </span>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
@@ -290,12 +249,8 @@ export const FooterSection = memo(() => (
             textTransform: 'uppercase',
             transition: 'color 0.18s',
           }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.45)';
-          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.45)'; }}
         >
           <Github size={12} />
           Open Source
@@ -303,7 +258,6 @@ export const FooterSection = memo(() => (
       </div>
     </div>
 
-    {/* Bottom sprocket */}
     <div
       style={{
         background: 'rgba(255,255,255,0.012)',
@@ -313,7 +267,6 @@ export const FooterSection = memo(() => (
       <SprocketStrip count={64} />
     </div>
 
-    {/* API URL strip */}
     <div
       style={{
         background: 'rgba(5,5,4,0.95)',
@@ -325,21 +278,10 @@ export const FooterSection = memo(() => (
         gap: 8,
       }}
     >
-      <code
-        className="mono-font"
-        style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}
-      >
-        api.spicydevs.xyz/&#123;type&#125;/&#123;id&#125;.svg?r=imdb,rt&amp;source=tmdb
+      <code className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}>
+        {'api.spicydevs.xyz/{type}/{id}.svg?r=imdb,rt&source=tmdb'}
       </code>
-      <span
-        className="mono-font"
-        style={{
-          fontSize: 7,
-          color: 'rgba(122,117,110,0.2)',
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-        }}
-      >
+      <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.2)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
         Free · CORS Enabled · No Auth · SVG/PNG/JPG/WebP
       </span>
     </div>
