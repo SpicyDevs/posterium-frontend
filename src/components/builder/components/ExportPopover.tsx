@@ -19,7 +19,7 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
   const [downloading, setDownloading] = useState(false);
   const [editedUrl, setEditedUrl] = useState<string | null>(null);
 
-  const EXT_OPTIONS: { id: ExtensionType; label: string; }[] = [
+  const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
     { id: 'svg', label: 'SVG' },
     { id: 'png', label: 'PNG' },
     { id: 'jpg', label: 'JPG' },
@@ -142,7 +142,7 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
                 background:
                   config.extension === ext.id
                     ? 'rgba(196,124,46,0.12)'
-                    ? 'rgba(255,255,255,0.02)',
+                    : 'rgba(255,255,255,0.02)', // Fixed line: changed '?' to ':'
                 border:
                   config.extension === ext.id
                     ? '1px solid rgba(196,124,46,0.25)'
