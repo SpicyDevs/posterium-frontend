@@ -1,6 +1,5 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, Fragment, useCallback, memo } from 'react';
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import { DEFAULT_CONFIG, ALL_BADGES } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
@@ -10,6 +9,9 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
+import ResetDialog from './components/ResetDialog';
+import ImportDialog from './components/ImportDialog';
+import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
   RotateCcw,
@@ -43,6 +45,7 @@ import {
   Check,
   X,
   Film,
+  Search
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
@@ -67,186 +70,6 @@ const loadKeysFromCookie = (): ApiKeys => {
     return JSON.parse(decodeURIComponent(match[1])) || {};
   } catch { return {}; }
 };
-
-// ── Reset dialog ──────────────────────────────────────────────────────────────
-const ResetDialog = memo<{
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}>(({ isOpen, onClose, onConfirm }) => (
-  <Transition appear show={isOpen} as={Fragment}>
-    <Dialog as="div" className="relative z-50" onClose={onClose}>
-      <TransitionChild
-        as={Fragment}
-        enter="ease-out duration-200"
-        enterFrom="opacity-0"
-        enterTo="opacity-100"
-        leave="ease-in duration-150"
-        leaveFrom="opacity-100"
-        leaveTo="opacity-0"
-      >
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-      </TransitionChild>
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0 scale-95"
-          enterTo="opacity-100 scale-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100 scale-100"
-          leaveTo="opacity-0 scale-95"
-        >
-          <DialogPanel
-            className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
-            style={{ background: 'var(--film-mid)', borderColor: 'rgba(196,124,46,0.15)' }}
-          >
-            <DialogTitle
-              as="h3"
-              className="text-sm font-semibold flex items-center gap-3 syne-font"
-              style={{ color: 'var(--film-cream)' }}
-            >
-              <span
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(248,113,113,0.12)' }}
-              >
-                <AlertTriangle size={14} className="text-red-400" />
-              </span>
-              Reset Configuration
-            </DialogTitle>
-            <p
-              className="mt-3 text-xs leading-5 body-font"
-              style={{ color: 'var(--film-text-dim)' }}
-            >
-              All settings will be restored to defaults. This action cannot be undone.
-            </p>
-            <div className="mt-5 flex gap-2">
-              <button
-                onClick={onClose}
-                className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none syne-font"
-                style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                  color: 'var(--film-text-dim)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.25)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-pale)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { onConfirm(); onClose(); }}
-                className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none syne-font"
-              >
-                Reset All
-              </button>
-            </div>
-          </DialogPanel>
-        </TransitionChild>
-      </div>
-    </Dialog>
-  </Transition>
-));
-ResetDialog.displayName = 'ResetDialog';
-
-// ── Import dialog ────────────────────────────────────────────────────────────
-const ImportDialog = memo<{
-  isOpen: boolean;
-  onClose: () => void;
-  onLoad: (url: string) => void;
-}>(({ isOpen, onClose, onLoad }) => {
-  const [val, setVal] = useState('');
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-        </TransitionChild>
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <TransitionChild
-            as={Fragment}
-            enter="ease-out duration-200"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-150"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <DialogPanel
-              className="w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
-              style={{ background: 'var(--film-mid)', borderColor: 'rgba(196,124,46,0.15)' }}
-            >
-              <DialogTitle
-                as="h3"
-                className="text-sm font-semibold flex items-center gap-3 syne-font"
-                style={{ color: 'var(--film-cream)' }}
-              >
-                <Download size={16} style={{ color: 'var(--film-amber)' }} className="rotate-180" />
-                Import Configuration
-              </DialogTitle>
-              <div className="mt-4">
-                <input
-                  type="url"
-                  value={val}
-                  onChange={(e) => setVal(e.target.value)}
-                  placeholder="Paste Posterium API URL here..."
-                  className="w-full h-10 px-3 rounded-lg border focus:outline-none mono-font"
-                  style={{
-                    background: 'var(--film-char)',
-                    borderColor: 'rgba(255,255,255,0.06)',
-                    color: 'var(--film-cream)',
-                    fontSize: 11,
-                  }}
-                  autoFocus
-                  onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && val.trim()) {
-                      onLoad(val.trim());
-                      setVal('');
-                      onClose();
-                    }
-                  }}
-                />
-              </div>
-              <div className="mt-5 flex gap-2 justify-end">
-                <button
-                  onClick={onClose}
-                  className="px-4 h-9 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 syne-font uppercase tracking-wide"
-                  style={{ color: 'var(--film-text-dim)' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => { if (val.trim()) { onLoad(val.trim()); setVal(''); onClose(); } }}
-                  className="px-4 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] syne-font uppercase tracking-wide"
-                  style={{ background: 'var(--film-amber)', color: '#070706' }}
-                >
-                  Load Poster
-                </button>
-              </div>
-            </DialogPanel>
-          </TransitionChild>
-        </div>
-      </Dialog>
-    </Transition>
-  );
-});
-ImportDialog.displayName = 'ImportDialog';
 
 // ── Toolbar button ──────────────────────────────────────────────────────────
 interface ToolbarBtnProps {
@@ -327,131 +150,6 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
   }
 );
 ToolbarBtn.displayName = 'ToolbarBtn';
-
-// ── Export Popover — clean export panel ──────────────────────────────────────
-const ExportPopover = memo<{
-  config: PosterConfig;
-  onLoadConfig: (url: string) => void;
-  baseUrl: string;
-  onExtensionChange: (ext: ExtensionType) => void;
-  isOpen: boolean;
-  onClose: () => void;
-  anchorRef: React.RefObject<HTMLButtonElement | null>;
-}>(({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef }) => {
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
-  const EXT_OPTIONS: { id: ExtensionType; label: string; hint: string }[] = [
-    { id: 'svg', label: 'SVG', hint: 'Vector · Plex / Jellyfin' },
-    { id: 'png', label: 'PNG', hint: 'Lossless · Universal' },
-    { id: 'jpg', label: 'JPG', hint: 'Compressed · Small' },
-    { id: 'webp', label: 'WEBP', hint: 'Modern · Discord' },
-  ];
-
-  // Generate current URL for display
-  const currentUrl = React.useMemo(() => {
-    try { return generateApiUrl(config, baseUrl); } catch { return ''; }
-  }, [config, baseUrl]);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(currentUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable */ }
-  };
-
-  const handleDownload = () => {
-    setDownloading(true);
-    try {
-      const u = new URL(currentUrl);
-      u.searchParams.set('download', '');
-      window.open(u.toString(), '_blank', 'noopener,noreferrer');
-    } catch { /* malformed */ }
-    setTimeout(() => setDownloading(false), 800);
-  };
-
-  // Close on outside click
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node) &&
-        anchorRef.current &&
-        !anchorRef.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [isOpen, onClose, anchorRef]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      ref={popoverRef}
-      className="fixed z-50"
-      style={{
-        top: 52,
-        right: 12,
-        width: 320,
-        background: 'rgba(18,17,14,0.98)',
-        border: '1px solid rgba(196,124,46,0.18)',
-        borderRadius: 14,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
-        overflow: 'hidden',
-        animation: 'export-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
-      }}
-    >
-      <style>{`
-        @keyframes export-panel-in {
-          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <div className="flex items-center gap-2">
-          <Download size={13} style={{ color: 'var(--film-amber)' }} />
-          <span
-            className="syne-font font-bold uppercase tracking-widest"
-            style={{ fontSize: 10, color: 'var(--film-cream)' }}
-          >
-            Export
-          </span>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-          style={{ color: 'var(--film-text-ghost)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
-        >
-          <X size={12} />
-        </button>
-      </div>
-
-      {/* Embedded unified CodeBox */}
-      <div className="px-4 py-4">
-        <CodeBox
-          config={config}
-          onLoadConfig={onLoadConfig}
-          baseUrl={baseUrl}
-          onExtensionChange={onExtensionChange}
-        />
-      </div>
-    </div>
-  );
-});
-ExportPopover.displayName = 'ExportPopover';
 
 // ── Fullscreen overlay ────────────────────────────────────────────────────────
 const FullscreenOverlay = memo<{
