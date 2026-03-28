@@ -602,10 +602,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           anchorRef={exportBtnRef}
         />
 
-        {/* ── HEADER ── */}
+      {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center gap-2 px-3 z-30 relative"
+            className="h-12 shrink-0 flex items-center z-30 relative"
             style={{
               background: 'var(--film-dark)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -620,64 +620,70 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               aria-hidden="true"
             />
 
-            {/* Wordmark */}
-            <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-              <span
-                className="poster-font select-none hidden sm:block"
-                style={{
-                  fontSize: 18,
-                  color: 'var(--film-cream)',
-                  letterSpacing: '0.12em',
-                  lineHeight: 1,
-                }}
-              >
-                POSTERIUM
-              </span>
-              <span
-                className="poster-font select-none sm:hidden"
-                style={{
-                  fontSize: 14,
-                  color: 'var(--film-amber)',
-                  letterSpacing: '0.12em',
-                  lineHeight: 1,
-                }}
-              >
-                P
-              </span>
-            </a>
-
-            {/* Vertical divider */}
-            <div
-              className="hidden sm:block w-px h-4 mx-1 shrink-0"
-              style={{ background: 'rgba(196,124,46,0.15)' }}
-              aria-hidden="true"
-            />
-
-            {/* Film title — contextual breadcrumb */}
-            {mediaTitle && (
-              <div className="hidden sm:flex items-center gap-1.5 min-w-0 pr-4">
-                <Film size={10} style={{ color: 'var(--film-amber)', opacity: 0.6, flexShrink: 0 }} />
+            {/* Left Header Area - Aligned exactly with left sidebar */}
+            <div 
+              className="flex items-center px-3 shrink-0 sidebar-transition overflow-hidden" 
+              style={{ width: leftVisible ? leftW : 'auto' }}
+            >
+              {/* Wordmark */}
+              <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <span
-                  className="syne-font truncate"
+                  className="poster-font select-none hidden sm:block"
                   style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: 'var(--film-text-dim)',
-                    maxWidth: 160,
-                    letterSpacing: '0.02em',
+                    fontSize: 18,
+                    color: 'var(--film-cream)',
+                    letterSpacing: '0.12em',
+                    lineHeight: 1,
                   }}
-                  title={mediaTitle}
                 >
-                  {mediaTitle}
+                  POSTERIUM
                 </span>
-              </div>
-            )}
+                <span
+                  className="poster-font select-none sm:hidden"
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--film-amber)',
+                    letterSpacing: '0.12em',
+                    lineHeight: 1,
+                  }}
+                >
+                  P
+                </span>
+              </a>
 
-            {/* Central Palette Search Bar */}
-            <div className="flex-1 flex justify-center lg:px-4">
+              {/* Vertical divider */}
+              <div
+                className="hidden sm:block w-px h-4 mx-3 shrink-0"
+                style={{ background: 'rgba(196,124,46,0.15)' }}
+                aria-hidden="true"
+              />
+
+              {/* Film title — contextual breadcrumb */}
+              {mediaTitle && (
+                <div className="hidden sm:flex items-center gap-1.5 min-w-0 pr-4">
+                  <Film size={10} style={{ color: 'var(--film-amber)', opacity: 0.6, flexShrink: 0 }} />
+                  <span
+                    className="syne-font truncate"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: 'var(--film-text-dim)',
+                      maxWidth: 160,
+                      letterSpacing: '0.02em',
+                    }}
+                    title={mediaTitle}
+                  >
+                    {mediaTitle}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Central Palette Search Bar - Centered directly over the canvas */}
+            <div className="flex-1 flex justify-center px-4 min-w-0">
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 h-8 w-full max-w-sm rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 h-8 w-full max-w-lg rounded-md transition-colors"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -696,14 +702,27 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               </button>
             </div>
 
-            {/* Right Toolbar cluster */}
-            <div className="flex items-center gap-1 shrink-0">
+            {/* Right Header Area - Aligned exactly with right sidebar */}
+            <div 
+              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition"
+              style={{ width: rightVisible ? rightW : 'auto' }}
+            >
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
                 active={shortcutsOpen}
               >
                 <Keyboard size={14} />
+              </ToolbarBtn>
+
+              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+
+              {/* History */}
+              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
+                <Undo2 size={14} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
+                <Redo2 size={14} />
               </ToolbarBtn>
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
@@ -726,28 +745,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <span className="text-[11px] font-medium uppercase tracking-wider">Import</span>
               </button>
 
-              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
-
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
-
-              {/* Reset */}
-              <button
-                onClick={() => setIsResetOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 ml-1 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden md:inline">Reset</span>
-              </button>
-
-              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
-
-              {/* Export CTA — amber, always visible */}
+              {/* Export CTA */}
               <button
                 ref={exportBtnRef}
                 onClick={() => setExportOpen((v) => !v)}
@@ -784,10 +782,21 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   }}
                 />
               </button>
+
+              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+
+              {/* Reset - permanently placed at top right */}
+              <button
+                onClick={() => setIsResetOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <RotateCcw size={13} />
+                <span className="text-[11px] font-bold uppercase tracking-wider hidden md:inline">Reset</span>
+              </button>
             </div>
           </header>
         )}
-
+        
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative">
           {/* Left sidebar */}

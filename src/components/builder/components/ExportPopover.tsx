@@ -1,8 +1,9 @@
 // src/components/builder/components/ExportPopover.tsx
-import React, { useEffect, useRef, memo } from 'react';
-import { Download, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import { Download, X, Copy, Check } from 'lucide-react';
 import CodeBox from './CodeBox';
 import type { PosterConfig, ExtensionType } from '../types';
+import { generateApiUrl } from '../utils';
 
 interface Props {
   config: PosterConfig;
@@ -16,8 +17,38 @@ interface Props {
 
 const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  // Close on outside click
+  const EXT_OPTIONS: { id: ExtensionType; label: string; hint: string }[] = [
+    { id: 'svg', label: 'SVG', hint: 'Vector · Plex / Jellyfin' },
+    { id: 'png', label: 'PNG', hint: 'Lossless · Universal' },
+    { id: 'jpg', label: 'JPG', hint: 'Compressed · Small' },
+    { id: 'webp', label: 'WEBP', hint: 'Modern · Discord' },
+  ];
+
+  const currentUrl = useMemo(() => {
+    try { return generateApiUrl(config, baseUrl); } catch { return ''; }
+  }, [config, baseUrl]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  };
+
+  const handleDownload = () => {
+    setDownloading(true);
+    try {
+      const u = new URL(currentUrl);
+      u.searchParams.set('download', '');
+      window.open(u.toString(), '_blank', 'noopener,noreferrer');
+    } catch { /* malformed */ }
+    setTimeout(() => setDownloading(false), 800);
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
@@ -84,8 +115,149 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
         </button>
       </div>
 
-      {/* Embedded unified CodeBox */}
-      <div className="px-4 py-4">
+      {/* Format selector */}
+      <div className="px-4 pt-3 pb-2">
+        <p
+          className="syne-font uppercase tracking-widest mb-2"
+          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
+          Format
+        </p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {EXT_OPTIONS.map((ext) => (
+            <button
+              key={ext.id}
+              onClick={() => onExtensionChange(ext.id)}
+              className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all active:scale-95 syne-font"
+              style={{
+                background:
+                  config.extension === ext.id
+                    ? 'rgba(196,124,46,0.12)'
+                    : 'rgba(255,255,255,0.02)',
+                border:
+                  config.extension === ext.id
+                    ? '1px solid rgba(196,124,46,0.25)'
+                    : '1px solid rgba(255,255,255,0.05)',
+                color:
+                  config.extension === ext.id
+                    ? 'var(--film-pale)'
+                    : 'var(--film-text-dim)',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700 }}>{ext.label}</span>
+              <span
+                className="body-font text-center leading-tight"
+                style={{
+                  fontSize: 7,
+                  color:
+                    config.extension === ext.id
+                      ? 'rgba(196,124,46,0.6)'
+                      : 'var(--film-text-ghost)',
+                }}
+              >
+                {ext.hint}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* URL display */}
+      <div className="px-4 pt-1 pb-3">
+        <p
+          className="syne-font uppercase tracking-widest mb-1.5"
+          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+        >
+          API URL
+        </p>
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg"
+          style={{
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <span
+            className="mono-font flex-1 min-w-0 truncate"
+            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+            title={currentUrl}
+          >
+            {currentUrl.replace('https://api.spicydevs.xyz', '…')}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 transition-colors"
+            style={{ color: copied ? '#34d399' : 'var(--film-text-ghost)' }}
+            title={copied ? 'Copied!' : 'Copy URL'}
+            onMouseEnter={(e) => {
+              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+            onMouseLeave={(e) => {
+              if (!copied) (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+            }}
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div
+        className="flex gap-2 px-4 pb-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+      >
+        <button
+          onClick={handleCopy}
+          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'var(--film-text-dim)',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.2)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+          }}
+        >
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? 'Copied' : 'Copy URL'}
+        </button>
+        <button
+          onClick={handleDownload}
+          className="flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+          style={{
+            background: downloading ? 'rgba(196,124,46,0.2)' : 'var(--film-amber)',
+            color: downloading ? 'var(--film-pale)' : '#070706',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            boxShadow: downloading ? 'none' : '0 0 20px rgba(196,124,46,0.25)',
+            border: 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (!downloading) (e.currentTarget as HTMLElement).style.background = '#d4a245';
+          }}
+          onMouseLeave={(e) => {
+            if (!downloading) (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+          }}
+        >
+          <Download size={12} />
+          Download
+        </button>
+      </div>
+
+      {/* Advanced: load from URL */}
+      <div
+        className="px-4 pb-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+      >
         <CodeBox
           config={config}
           onLoadConfig={onLoadConfig}
@@ -96,6 +268,3 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
     </div>
   );
 });
-ExportPopover.displayName = 'ExportPopover';
-
-export default ExportPopover;
