@@ -81,35 +81,22 @@ const Dashboard: React.FC = () => {
 
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          <ContentSection intrinsicH={2400}>
-            <FilmReelSection />
-          </ContentSection>
+          <FilmReelSection />
 
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
-          <ContentSection intrinsicH={320}>
-            <StatsBar />
-          </ContentSection>
+          <StatsBar />
 
-          <ContentSection intrinsicH={640}>
-            <CombinedSection />
-          </ContentSection>
+          <CombinedSection />
 
-          <ContentSection intrinsicH={700}>
-            <ComparisonSection />
-          </ContentSection>
+          <ComparisonSection />
 
-          <ContentSection intrinsicH={480}>
-            <CTASection />
-          </ContentSection>
+          <CTASection />
         </main>
 
-        <ContentSection intrinsicH={360}>
-          <FooterSection />
-        </ContentSection>
+        <FooterSection />
       </div>
     </>
   );
 };
-
 export default Dashboard;
