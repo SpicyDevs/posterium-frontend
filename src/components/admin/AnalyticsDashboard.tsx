@@ -21,7 +21,7 @@ export default function AnalyticsDashboard() {
     if (isAuthenticated) {
       setLoading(true);
       // Adjust this URL if your API route is mounted differently (e.g., /api/analytics)
-      fetch('/analytics')
+      fetch('https://api.spicydevs.xyz/analytics')
         .then((res) => res.json())
         .then((data) => {
           setAnalyticsData(data.data);

@@ -22,6 +22,7 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
+      filter: (page) => !page.includes('/admin'),
       serialize(item) {
         // Aggressively strip trailing slash from every URL in the sitemap
         item.url = item.url.replace(/\/$/, '');
