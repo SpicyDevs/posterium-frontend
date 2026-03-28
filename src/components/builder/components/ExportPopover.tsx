@@ -19,7 +19,7 @@ const ExportPopover = memo<Props>(({ config, onLoadConfig, baseUrl, onExtensionC
   const [downloading, setDownloading] = useState(false);
   const [editedUrl, setEditedUrl] = useState<string | null>(null);
 
-  const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
+  const EXT_OPTIONS: { id: ExtensionType; label: string; }[] = [
     { id: 'svg', label: 'SVG' },
     { id: 'png', label: 'PNG' },
     { id: 'jpg', label: 'JPG' },
