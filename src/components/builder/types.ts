@@ -115,7 +115,7 @@ export interface PosterConfig {
 
 export const DEFAULT_CONFIG: PosterConfig = {
   mediaType: 'movie',
-  tmdbId: '453395',
+  tmdbId: '',
   imdbId: 'tt12042730',
   ratings: ['imdb', 'rt', 'age'],
   source: 'tmdb',
