@@ -1,0 +1,11 @@
+---
+// src/pages/admin/analytics.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
+
+// You can add server-side basic auth here in the future if desired.
+---
+
+<BaseLayout title="Admin Analytics | FreePosterAPI">
+  <AnalyticsDashboard client:load />
+</BaseLayout>
