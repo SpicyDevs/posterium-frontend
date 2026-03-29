@@ -13,6 +13,9 @@ import {
   RotateCcw,
   Rows2,
   Columns2,
+  Type,
+  Hash,
+  Sliders,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -43,7 +46,7 @@ const writeSectionState = (id: string, open: boolean) => {
   } catch {}
 };
 
-// ── Section — flat, no borders, just a micro-label + space ──────────────────
+// ── Section ──────────────────────────────────────────────────────────────────
 const Section: React.FC<{
   title: string;
   icon?: React.ReactNode;
@@ -67,7 +70,6 @@ const Section: React.FC<{
 
   return (
     <div className="pt-5 first:pt-3">
-      {/* Section header — micro-label only, no box */}
       <button
         type="button"
         onClick={toggle}
@@ -95,14 +97,11 @@ const Section: React.FC<{
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         </span>
       </button>
-
       {open && (
         <div className="px-3 pb-1 space-y-3.5">
           {children}
         </div>
       )}
-
-      {/* Hairline separator after section */}
       <div
         className="mt-5 mx-3"
         style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
@@ -112,7 +111,7 @@ const Section: React.FC<{
   );
 };
 
-// ── SliderRow — label above, then [number input] [slider] inline ─────────────
+// ── SliderRow ─────────────────────────────────────────────────────────────────
 const SliderRow: React.FC<{
   label: string;
   value: number;
@@ -123,7 +122,6 @@ const SliderRow: React.FC<{
   unit?: string;
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
-  // High-performance decoupled local state
   const [localValue, setLocalValue] = useState(value);
   const [inputText, setInputText] = useState(() =>
     formatValue ? formatValue(value) : `${value}`
@@ -140,40 +138,43 @@ const SliderRow: React.FC<{
     }
   }, [value, formatValue]);
 
-  const commitInput = useCallback((text: string) => {
-    // Strip unit and non-numeric chars (except dot and minus)
-    const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
-    const n = parseFloat(raw);
-    if (!isNaN(n)) {
-      const clamped = Math.max(min, Math.min(max, n));
-      setLocalValue(clamped);
-      setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
-      onChange(clamped);
-    } else {
-      // Restore current value
-      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
-    }
-  }, [min, max, onChange, unit, formatValue, localValue]);
+  const commitInput = useCallback(
+    (text: string) => {
+      const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
+      const n = parseFloat(raw);
+      if (!isNaN(n)) {
+        const clamped = Math.max(min, Math.min(max, n));
+        setLocalValue(clamped);
+        setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
+        onChange(clamped);
+      } else {
+        setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
+      }
+    },
+    [min, max, onChange, unit, formatValue, localValue]
+  );
 
-  const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setLocalValue(val);
-    if (!isFocused.current) {
-      setInputText(formatValue ? formatValue(val) : `${val}`);
-    }
-    // Throttle parent updates to ~30fps
-    const now = Date.now();
-    if (now - lastUpdate.current > 33) {
-      onChange(val);
-      lastUpdate.current = now;
-    } else {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
+  const handleRangeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = parseFloat(e.target.value);
+      setLocalValue(val);
+      if (!isFocused.current) {
+        setInputText(formatValue ? formatValue(val) : `${val}`);
+      }
+      const now = Date.now();
+      if (now - lastUpdate.current > 33) {
         onChange(val);
-        lastUpdate.current = Date.now();
-      }, 33);
-    }
-  }, [onChange, formatValue]);
+        lastUpdate.current = now;
+      } else {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          onChange(val);
+          lastUpdate.current = Date.now();
+        }, 33);
+      }
+    },
+    [onChange, formatValue]
+  );
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -228,8 +229,13 @@ const SliderRow: React.FC<{
             textAlign: 'center',
             transition: 'border-color 0.15s',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-          onMouseLeave={(e) => { if (!isFocused.current) (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            if (!isFocused.current)
+              (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
+          }}
         />
         <input
           type="range"
@@ -244,7 +250,8 @@ const SliderRow: React.FC<{
     </div>
   );
 };
-// ── ToggleRow ────────────────────────────────────────────────────────────────
+
+// ── ToggleRow ─────────────────────────────────────────────────────────────────
 const ToggleRow: React.FC<{
   label: string;
   sub?: string;
@@ -256,18 +263,12 @@ const ToggleRow: React.FC<{
     <div className="min-w-0">
       <p
         className="body-font font-medium"
-        style={{
-          fontSize: small ? 10 : 11,
-          color: 'var(--film-text-label)',
-        }}
+        style={{ fontSize: small ? 10 : 11, color: 'var(--film-text-label)' }}
       >
         {label}
       </p>
       {sub && (
-        <p
-          className="body-font mt-0.5"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-        >
+        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
           {sub}
         </p>
       )}
@@ -290,7 +291,151 @@ const ToggleRow: React.FC<{
   </div>
 );
 
-// ── Alignment grid ────────────────────────────────────────────────────────────
+// ── SegmentedRow — compact button group ───────────────────────────────────────
+const SegmentedRow: React.FC<{
+  label: string;
+  options: { id: string; label: string }[];
+  value: string | null;
+  onChange: (v: string) => void;
+}> = ({ label, options, value, onChange }) => (
+  <div className="space-y-1.5">
+    <span
+      className="body-font"
+      style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+    >
+      {label}
+    </span>
+    <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          onClick={() => onChange(opt.id)}
+          className="h-7 rounded-md text-[10px] font-medium transition-all syne-font"
+          style={{
+            background:
+              value === opt.id ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.03)',
+            color: value === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
+            border:
+              value === opt.id
+                ? '1px solid rgba(196,124,46,0.3)'
+                : '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+// ── TextInputRow ──────────────────────────────────────────────────────────────
+const TextInputRow: React.FC<{
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (v: string) => void;
+  onClear?: () => void;
+}> = ({ label, value, placeholder, onChange, onClear }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span
+          className="body-font"
+          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+        >
+          {label}
+        </span>
+        {onClear && value && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="mono-font transition-colors"
+            style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        className="w-full focus:outline-none body-font"
+        style={{
+          height: 28,
+          paddingInline: 8,
+          borderRadius: 6,
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${focused ? 'rgba(196,124,46,0.4)' : 'rgba(255,255,255,0.1)'}`,
+          fontSize: 11,
+          color: 'var(--film-pale)',
+          transition: 'border-color 0.15s',
+        }}
+      />
+    </div>
+  );
+};
+
+// ── ColorRow — label + optional reset button above a ColorPicker ──────────────
+const ColorRow: React.FC<{
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onReset?: () => void;
+  showOpacity?: boolean;
+  opacity?: number;
+  onOpacityChange?: (v: number) => void;
+}> = ({ label, value, onChange, onReset, showOpacity, opacity, onOpacityChange }) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center justify-between">
+      <span
+        className="body-font"
+        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+      >
+        {label}
+      </span>
+      {onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="mono-font transition-colors"
+          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+          }}
+        >
+          Reset
+        </button>
+      )}
+    </div>
+    <ColorPicker
+      value={value}
+      onChange={onChange}
+      showOpacity={showOpacity}
+      opacity={opacity}
+      onOpacityChange={onOpacityChange}
+    />
+  </div>
+);
+
+// ── Alignment grid ─────────────────────────────────────────────────────────────
 const GRID_POSITIONS: { id: PresetType; label: string }[] = [
   { id: 'tl', label: 'Top left' },
   { id: 'tc', label: 'Top centre' },
@@ -317,7 +462,7 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
         className={clsx(
           'w-full aspect-square rounded transition-all active:scale-90',
           value === pos.id
-            ? 'bg-[#C47C2E] shadow-[0_0_8px_rgba(196,124,46,0.4)]'
+            ? 'shadow-[0_0_8px_rgba(196,124,46,0.4)]'
             : 'hover:bg-white/[0.07] border border-white/[0.06]'
         )}
         style={{
@@ -325,10 +470,8 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
         }}
       >
         <div
-          className={clsx('w-1.5 h-1.5 rounded-full mx-auto')}
-          style={{
-            background: value === pos.id ? 'white' : 'rgba(140,130,112,0.4)',
-          }}
+          className="w-1.5 h-1.5 rounded-full mx-auto"
+          style={{ background: value === pos.id ? 'white' : 'rgba(140,130,112,0.4)' }}
         />
       </button>
     ))}
@@ -341,6 +484,7 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
   return v;
 }
 
+// ── Main component ─────────────────────────────────────────────────────────────
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
 
@@ -390,23 +534,28 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       return { ...prev, items: newItems };
     });
 
+  // Returns the shared value across all selected badges, or null if mixed.
   const getCommonValue = <K extends keyof BadgeConfig>(
     prop: K,
     def: BadgeConfig[K]
   ): BadgeConfig[K] | null => {
     const vals = Array.from(selectedIds).map(
       (id) =>
-        config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def
+        config.items[id]?.[prop] ??
+        (config[prop as keyof PosterConfig] as BadgeConfig[K]) ??
+        def
     );
     return vals.length > 0 && vals.every((v) => v === vals[0]) ? vals[0] : null;
   };
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
 
-  // ── Global view ────────────────────────────────────────────────────────────
+  // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
     return (
       <SidebarLayout side="right" bodyClassName="pb-24">
+
+        {/* Layout ── position preset + flow direction */}
         <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
           <div className="flex items-start gap-4">
             <div>
@@ -441,9 +590,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                           ? 'rgba(196,124,46,0.1)'
                           : 'rgba(255,255,255,0.02)',
                       color:
-                        config.layout === opt.id
-                          ? 'var(--film-pale)'
-                          : 'var(--film-text-dim)',
+                        config.layout === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
                       border:
                         config.layout === opt.id
                           ? '1px solid rgba(196,124,46,0.22)'
@@ -469,6 +616,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </div>
         </Section>
 
+        {/* Poster ── image filters */}
         <Section title="Poster" icon={<Layers size={10} />} sectionId="global-poster">
           <SliderRow
             label="Background Blur"
@@ -486,21 +634,54 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           />
         </Section>
 
+        {/* Badge Appearance ── display style + visibility toggles */}
         <Section
-          title="Badge Defaults"
+          title="Badge Appearance"
           icon={<Palette size={10} />}
-          sectionId="global-badge-defaults"
+          sectionId="global-badge-appearance"
         >
+          <SegmentedRow
+            label="Display Style"
+            options={[
+              { id: 'b', label: 'Badge' },
+              { id: 'm', label: 'Minimal' },
+            ]}
+            value={config.uiPreset ?? 'b'}
+            onChange={(v) => updateConfig('uiPreset', v as 'b' | 'm')}
+          />
           <ToggleRow
             label="Show Icons"
             checked={config.icon ?? true}
             onChange={(v) => updateConfig('icon', v)}
           />
           <ToggleRow
+            label="Alt Icon Variant"
+            sub="Use secondary icon style where available"
+            checked={(config.iconType ?? 1) > 1}
+            onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
+          />
+          <ToggleRow
             label="Show Rating Text"
             sub="Hide to show icons only"
             checked={config.showText !== false}
             onChange={(v) => updateConfig('showText', v)}
+          />
+        </Section>
+
+        {/* Badge Shape ── geometry + shadow */}
+        <Section
+          title="Badge Shape"
+          icon={<Sliders size={10} />}
+          sectionId="global-badge-shape"
+        >
+          <SliderRow
+            label="Scale"
+            value={config.scale ?? 1.0}
+            min={0.5}
+            max={2.0}
+            step={0.05}
+            formatValue={(v) => `${v.toFixed(2)}×`}
+            onChange={(v) => updateConfig('scale', v)}
           />
           <SliderRow
             label="Glass Blur"
@@ -525,6 +706,25 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             max={30}
             onChange={(v) => updateConfig('shadow', v)}
           />
+        </Section>
+
+        {/* Badge Colors ── fill, text, border */}
+        <Section title="Badge Colors" sectionId="global-badge-colors">
+          <ColorRow
+            label="Background"
+            value={config.bg ?? '#000000'}
+            onChange={(v) => updateConfig('bg', v)}
+            onReset={config.bg ? () => clearGlobalColor('bg') : undefined}
+            showOpacity
+            opacity={config.alpha}
+            onOpacityChange={(v) => updateConfig('alpha', v)}
+          />
+          <ColorRow
+            label="Text & Icon Color"
+            value={config.txt ?? '#ffffff'}
+            onChange={(v) => updateConfig('txt', v)}
+            onReset={config.txt ? () => clearGlobalColor('txt') : undefined}
+          />
           <SliderRow
             label="Border Width"
             value={config.borderW ?? 0}
@@ -534,60 +734,83 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             onChange={(v) => updateConfig('borderW', v)}
           />
           {(config.borderW ?? 0) > 0 && (
-            <ColorPicker
+            <ColorRow
               label="Border Color"
               value={config.borderC ?? '#ffffff'}
               onChange={(v) => updateConfig('borderC', v)}
             />
           )}
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="body-font" style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}>
-                Badge Background
-              </span>
-              {config.bg && (
-                <button
-                  onClick={() => clearGlobalColor('bg')}
-                  className="mono-font transition-colors"
-                  style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-            <ColorPicker
-              value={config.bg ?? '#000000'}
-              onChange={(v) => updateConfig('bg', v)}
-              showOpacity
-              opacity={config.alpha}
-              onOpacityChange={(v) => updateConfig('alpha', v)}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="body-font" style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}>
-                Badge Text Color
-              </span>
-              {config.txt && (
-                <button
-                  onClick={() => clearGlobalColor('txt')}
-                  className="mono-font transition-colors"
-                  style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-            <ColorPicker value={config.txt ?? '#ffffff'} onChange={(v) => updateConfig('txt', v)} />
-          </div>
         </Section>
 
+        {/* Score ── normalization + denominator */}
+        <Section
+          title="Score"
+          icon={<Hash size={10} />}
+          defaultOpen={false}
+          sectionId="global-score"
+        >
+          <ToggleRow
+            label="Normalize to /10"
+            sub="Convert all scores to a 0–10 scale"
+            checked={config.normalize ?? false}
+            onChange={(v) => updateConfig('normalize', v)}
+          />
+          <SliderRow
+            label="Show Denominator"
+            value={config.outOf ?? 0}
+            min={0}
+            max={100}
+            step={1}
+            formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
+            onChange={(v) => updateConfig('outOf', v === 0 ? undefined : v)}
+          />
+        </Section>
+
+        {/* Labels ── position, text, size, color */}
+        <Section
+          title="Labels"
+          icon={<Type size={10} />}
+          defaultOpen={false}
+          sectionId="global-labels"
+        >
+          <SegmentedRow
+            label="Label Position"
+            options={[
+              { id: 'above', label: 'Above' },
+              { id: 'below', label: 'Below' },
+              { id: 'left', label: 'Left' },
+              { id: 'right', label: 'Right' },
+            ]}
+            value={config.labelPos ?? null}
+            onChange={(v) => updateConfig('labelPos', v as PosterConfig['labelPos'])}
+          />
+          <TextInputRow
+            label="Label Text"
+            value={config.labelText ?? ''}
+            placeholder="Default (provider name)"
+            onChange={(v) => updateConfig('labelText', v || undefined)}
+            onClear={() => updateConfig('labelText', undefined)}
+          />
+          <SliderRow
+            label="Label Size"
+            value={config.labelSize ?? 11}
+            min={6}
+            max={32}
+            step={1}
+            unit="px"
+            onChange={(v) => updateConfig('labelSize', v)}
+          />
+          <ColorRow
+            label="Label Color"
+            value={config.labelColor ?? '#ffffff'}
+            onChange={(v) => updateConfig('labelColor', v)}
+            onReset={
+              config.labelColor ? () => updateConfig('labelColor', undefined) : undefined
+            }
+          />
+        </Section>
+
+        {/* Canvas Overlays ── guides, not exported */}
         <Section
           title="Canvas Overlays"
           icon={<Smartphone size={10} />}
@@ -616,7 +839,9 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               >
                 <Eye
                   size={10}
-                  style={{ color: viewOptions[key] ? 'var(--film-amber)' : 'var(--film-text-ghost)' }}
+                  style={{
+                    color: viewOptions[key] ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                  }}
                 />
                 {label}
               </button>
@@ -644,7 +869,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               border: '1px solid rgba(255,255,255,0.05)',
             }}
           >
-            <Layers size={18} strokeWidth={1.5} style={{ color: 'var(--film-text-ghost)', opacity: 0.4 }} />
+            <Layers
+              size={18}
+              strokeWidth={1.5}
+              style={{ color: 'var(--film-text-ghost)', opacity: 0.4 }}
+            />
           </div>
           <div>
             <p
@@ -665,33 +894,48 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     );
 
   // ── Per-badge / selection view ─────────────────────────────────────────────
+
   const isAgeSelected = selectedIds.has('age');
   const multi = selectedIds.size > 1;
 
-  const commonBlur = getCommonValue('blur', config.blur) ?? config.blur;
-  const commonAlpha = getCommonValue('alpha', config.alpha) ?? config.alpha;
-  const commonRadius = getCommonValue('radius', config.radius) ?? config.radius;
-  const commonShadow = resolveShadow(
-    (getCommonValue('shadow', 6) as number | boolean | null) ?? 6,
-    6
+  // Resolve common values across the selection (null = mixed)
+  const commonBlur     = getCommonValue('blur',      config.blur)             ?? config.blur;
+  const commonAlpha    = getCommonValue('alpha',     config.alpha)            ?? config.alpha;
+  const commonRadius   = getCommonValue('radius',    config.radius)           ?? config.radius;
+  const commonShadow   = resolveShadow(
+    (getCommonValue('shadow', 6) as number | boolean | null) ?? 6, 6
   );
-  const commonScale = (getCommonValue('scale', 1.0) ?? 1.0) as number;
-  const commonBorderW = (getCommonValue('borderW', 0) ?? 0) as number;
-  const commonShowText = (getCommonValue('showText', true) as boolean | null) ?? true;
+  const commonScale    = (getCommonValue('scale',    config.scale   ?? 1.0)  ?? (config.scale   ?? 1.0))  as number;
+  const commonBorderW  = (getCommonValue('borderW',  config.borderW ?? 0)    ?? (config.borderW ?? 0))    as number;
+  const commonShowText = (getCommonValue('showText', config.showText ?? true) ?? (config.showText ?? true)) as boolean;
+  const commonNorm     = (getCommonValue('normalize', config.normalize ?? false) ?? (config.normalize ?? false)) as boolean;
+  const commonOutOf    = (getCommonValue('outOf',    config.outOf   ?? 0)    ?? (config.outOf   ?? 0))    as number;
+  const commonIconType = (getCommonValue('iconType', config.iconType ?? 1)   ?? (config.iconType ?? 1))   as number;
+  const commonLabelPos = getCommonValue('labelPos',  config.labelPos ?? 'below') as string | null;
+  const commonLabelTxt = getCommonValue('labelText', config.labelText ?? '')  as string | null;
+  const commonLabelSz  = (getCommonValue('labelSize', config.labelSize ?? 11) ?? (config.labelSize ?? 11)) as number;
 
   const commonBg = (() => {
     const v = getCommonValue('bg', config.bg ?? '#000000');
     return (v === null ? (config.bg ?? '#000000') : v) as string;
   })();
-
   const commonTxt = (() => {
     const v = getCommonValue('txt', config.txt ?? '#ffffff');
     return (v === null ? (config.txt ?? '#ffffff') : v) as string;
   })();
+  const commonLabelColor = (() => {
+    const v = getCommonValue('labelColor', config.labelColor ?? '#ffffff');
+    return (v === null ? (config.labelColor ?? '#ffffff') : v) as string;
+  })();
+  const commonBorderC = (() => {
+    const v = getCommonValue('borderC', config.borderC ?? '#ffffff');
+    return (v === null ? (config.borderC ?? '#ffffff') : v) as string;
+  })();
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
-      {/* Selection header — kept as amber-tinted card, matches dashboard style */}
+
+      {/* Selection header */}
       <div
         className="mx-3 mt-4 mb-2 px-3 py-2.5 rounded-xl"
         style={{
@@ -711,10 +955,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         >
           {multi
             ? 'Changes apply to all selected badges'
-            : 'Per-badge overrides inherit global defaults'}
+            : 'Per-badge overrides · inherits global defaults'}
         </p>
       </div>
 
+      {/* Transform ── scale */}
       <Section title="Transform" sectionId="badge-transform">
         <SliderRow
           label="Scale"
@@ -727,9 +972,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         />
       </Section>
 
-      <Section title="Glass & Shape" sectionId="badge-glass">
+      {/* Shape ── blur, radius, shadow, border */}
+      <Section title="Shape" sectionId="badge-shape">
         <SliderRow
-          label="Blur"
+          label="Glass Blur"
           value={commonBlur}
           min={0}
           max={20}
@@ -737,58 +983,20 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onChange={(v) => updateSelectedBadges({ blur: v })}
         />
         <SliderRow
-          label="Radius"
+          label="Corner Radius"
           value={commonRadius}
           min={0}
           max={30}
           unit="px"
           onChange={(v) => updateSelectedBadges({ radius: v })}
         />
-      </Section>
-
-      <Section title="Fill & Stroke" sectionId="badge-fill">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="body-font" style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}>
-              Background
-            </span>
-            <button
-              onClick={() => clearSelectedBadgeProp('bg')}
-              className="mono-font transition-colors"
-              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
-            >
-              Reset
-            </button>
-          </div>
-          <ColorPicker
-            value={commonBg}
-            onChange={(v) => updateSelectedBadges({ bg: v })}
-            showOpacity
-            opacity={commonAlpha}
-            onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="body-font" style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}>
-              Text / Icon Color
-            </span>
-            <button
-              onClick={() => clearSelectedBadgeProp('txt')}
-              className="mono-font transition-colors"
-              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
-            >
-              Reset
-            </button>
-          </div>
-          <ColorPicker value={commonTxt} onChange={(v) => updateSelectedBadges({ txt: v })} />
-        </div>
-
+        <SliderRow
+          label="Drop Shadow"
+          value={commonShadow}
+          min={0}
+          max={30}
+          onChange={(v) => updateSelectedBadges({ shadow: v })}
+        />
         <SliderRow
           label="Border Width"
           value={commonBorderW}
@@ -798,22 +1006,43 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onChange={(v) => updateSelectedBadges({ borderW: v })}
         />
         {commonBorderW > 0 && (
-          <ColorPicker
+          <ColorRow
             label="Border Color"
-            value={(() => {
-              const v = getCommonValue('borderC', '#ffffff');
-              return (v === null ? '#ffffff' : v) as string;
-            })()}
+            value={commonBorderC}
             onChange={(v) => updateSelectedBadges({ borderC: v })}
+            onReset={() => clearSelectedBadgeProp('borderC')}
           />
         )}
       </Section>
 
+      {/* Colors ── fill + text */}
+      <Section title="Colors" sectionId="badge-colors">
+        <ColorRow
+          label="Background"
+          value={commonBg}
+          onChange={(v) => updateSelectedBadges({ bg: v })}
+          onReset={() => clearSelectedBadgeProp('bg')}
+          showOpacity
+          opacity={commonAlpha}
+          onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
+        />
+        <ColorRow
+          label="Text & Icon Color"
+          value={commonTxt}
+          onChange={(v) => updateSelectedBadges({ txt: v })}
+          onReset={() => clearSelectedBadgeProp('txt')}
+        />
+      </Section>
+
+      {/* Visibility ── icons, text, icon variant */}
       <Section title="Visibility" icon={<Eye size={10} />} sectionId="badge-visibility">
         {!isAgeSelected && (
           <ToggleRow
             label="Show Icon"
-            checked={(getCommonValue('icon', true) as boolean) ?? true}
+            checked={
+              ((getCommonValue('icon', config.icon ?? true) as boolean | null) ??
+                (config.icon ?? true)) as boolean
+            }
             onChange={(v) => updateSelectedBadges({ icon: v })}
           />
         )}
@@ -823,15 +1052,81 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           checked={commonShowText !== false}
           onChange={(v) => updateSelectedBadges({ showText: v })}
         />
-        <SliderRow
-          label="Drop Shadow"
-          value={commonShadow}
-          min={0}
-          max={30}
-          onChange={(v) => updateSelectedBadges({ shadow: v })}
+        <ToggleRow
+          label="Alt Icon Variant"
+          sub="Use secondary icon style where available"
+          checked={commonIconType > 1}
+          onChange={(v) => updateSelectedBadges({ iconType: v ? 2 : 1 })}
         />
       </Section>
 
+      {/* Score ── normalize + denominator */}
+      <Section
+        title="Score"
+        icon={<Hash size={10} />}
+        defaultOpen={false}
+        sectionId="badge-score"
+      >
+        <ToggleRow
+          label="Normalize to /10"
+          sub="Convert score to a 0–10 scale"
+          checked={commonNorm}
+          onChange={(v) => updateSelectedBadges({ normalize: v })}
+        />
+        <SliderRow
+          label="Show Denominator"
+          value={commonOutOf ?? 0}
+          min={0}
+          max={100}
+          step={1}
+          formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
+          onChange={(v) => updateSelectedBadges({ outOf: v === 0 ? undefined : v })}
+        />
+      </Section>
+
+      {/* Labels ── position, custom text, size, color */}
+      <Section
+        title="Labels"
+        icon={<Type size={10} />}
+        defaultOpen={false}
+        sectionId="badge-labels"
+      >
+        <SegmentedRow
+          label="Label Position"
+          options={[
+            { id: 'above', label: 'Above' },
+            { id: 'below', label: 'Below' },
+            { id: 'left', label: 'Left' },
+            { id: 'right', label: 'Right' },
+          ]}
+          value={commonLabelPos ?? (config.labelPos ?? 'below')}
+          onChange={(v) => updateSelectedBadges({ labelPos: v as BadgeConfig['labelPos'] })}
+        />
+        <TextInputRow
+          label="Label Text"
+          value={commonLabelTxt ?? ''}
+          placeholder={multi ? '(mixed)' : 'Default (provider name)'}
+          onChange={(v) => updateSelectedBadges({ labelText: v || undefined })}
+          onClear={() => clearSelectedBadgeProp('labelText')}
+        />
+        <SliderRow
+          label="Label Size"
+          value={commonLabelSz}
+          min={6}
+          max={32}
+          step={1}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ labelSize: v })}
+        />
+        <ColorRow
+          label="Label Color"
+          value={commonLabelColor}
+          onChange={(v) => updateSelectedBadges({ labelColor: v })}
+          onReset={() => clearSelectedBadgeProp('labelColor')}
+        />
+      </Section>
+
+      {/* Reset */}
       <div className="px-3 pt-3">
         <button
           type="button"
