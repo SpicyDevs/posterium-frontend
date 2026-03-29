@@ -270,7 +270,7 @@ const DraggableBadge: React.FC<Props> = ({
       return (
         <div className="w-full h-full flex items-center justify-center relative">
           <div
-            className="absolute border-2 rounded opacity-50"
+            className="absolute rounded opacity-50"
             style={{
               inset: `${2.5 * displayScale}px`,
               borderColor: txtColor,
