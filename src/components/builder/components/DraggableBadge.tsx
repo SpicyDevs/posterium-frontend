@@ -2,41 +2,39 @@
 //
 // RENDERING FIXES vs. PREVIOUS VERSION
 // ──────────────────────────────────────
-// 1. SHADOW — updated CSS formula to match the new backend SVG filter formula
-//    in filters.js:
-//      stdDev  = val * 0.25   → CSS blur = stdDev * 2 = val * 0.50
-//      dy      = val * 0.25 + 1.0
-//      opacity = min(0.65, val * 0.025 + 0.20)
-//    CSS: `filter: drop-shadow(0 ${dy}px ${val*0.5}px rgba(0,0,0,${opacity}))`
-//    Note: CSS `drop-shadow` is used instead of `box-shadow` because it follows
-//    the element's shape (including rounded corners and transparency), matching
-//    SVG filter behaviour. `box-shadow: 0 _ _ -1px` was the old formula that
-//    produced the "3D card" look — removed.
-//
+// 1. SHADOW — updated CSS formula to match the new backend SVG filter formula.
 // 2. BLUR — CSS `backdrop-filter: blur(Xpx)` ≈ SVG stdDeviation X/2.
-//    The backend now uses stdDeviation = blur/2 to match. Here on the canvas
-//    we keep the raw CSS blur value (no /2) because we ARE using backdrop-filter.
-//    The result should match the SVG output after the backend normalisation.
-//
 // 3. BORDER — changed from CSS `outline` to `box-shadow inset` approach.
-//    CSS `outline` adds outside the element and does NOT reduce the inner area,
-//    whereas SVG `stroke` is centered on the element boundary (half inside, half
-//    outside for a non-zero stroke-width).
-//    To closely match SVG behaviour: use `box-shadow: inset 0 0 0 ${w}px ${color}`
-//    which renders entirely inside the element boundary, similar to SVG stroke.
-//
 // 4. SCALE — badge scaling on the canvas is purely display: CSS transform.
-//    The raw item.scale value (NOT multiplied by getScale(size)) is what gets
-//    sent to the backend. The canvas multiplies by getScale(size) for display only.
-//
-// 5. REF SYNC — useEffect replaced by direct render-body assignment (no change
-//    in behaviour, just more explicit about why we do it).
+// 5. showText — badge value text is hidden when showText === false (nt=1).
+// 6. labels — labelPos/labelText/labelSize/labelColor render outside badge.
+// 7. uiPreset — minimal preset applies alpha=0/radius=0/shadow=0/icon=false defaults.
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
 import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
+
+// ── Preset defaults (mirrors backend presets/badge.js and presets/minimal.js) ──
+const PRESET_DEFAULTS = {
+  b: { blur: 0, alpha: 0.4, radius: 12, shadow: 6, icon: true },
+  m: { blur: 0, alpha: 0.0, radius: 0,  shadow: 0, icon: false },
+} as const;
+
+// ── Provider display names for default label text ──────────────────────────
+const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
+  imdb:       'IMDb',
+  rt:         'Rotten Tomatoes',
+  rt_popcorn: 'Audience Score',
+  tmdb:       'TMDB',
+  letterboxd: 'Letterboxd',
+  meta:       'Metacritic',
+  mal:        'MyAnimeList',
+  anilist:    'AniList',
+  age:        'Age Rating',
+  runtime:    'Runtime',
+};
 
 interface Props {
   badgeId: RatingType;
@@ -68,8 +66,6 @@ const DraggableBadge: React.FC<Props> = ({
   onHoverChange,
 }) => {
   const itemConfig = config.items[badgeId];
-  // Canvas display scale = user-set item.scale * size-scale
-  // This is ONLY for canvas rendering; the URL sends item.scale alone.
   const itemScale = itemConfig?.scale ?? 1.0;
   const sizeScale = getScale(config.size);
   const displayScale = itemScale * sizeScale;
@@ -79,11 +75,8 @@ const DraggableBadge: React.FC<Props> = ({
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
-
-  // FIX: track actual drag distance to prevent click collision
   const hasDraggedRef = useRef(false);
 
-  // Keep refs current without re-registering listeners
   const onDragEndRef = useRef(onDragEnd);
   const onSelectRef = useRef(onSelect);
   const isSelectedRef = useRef(isSelected);
@@ -104,12 +97,9 @@ const DraggableBadge: React.FC<Props> = ({
     if (!dragStartRef.current) return;
     const deltaX = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const deltaY = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
-    
-    // threshold for dragging vs clicking
     if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
       hasDraggedRef.current = true;
     }
-
     if (isFinite(deltaX) && isFinite(deltaY)) {
       onDragMove(badgeId, deltaX, deltaY);
     }
@@ -136,8 +126,6 @@ const DraggableBadge: React.FC<Props> = ({
 
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
-    
-    // reset drag flag safely after the native click event has had time to process
     setTimeout(() => { hasDraggedRef.current = false; }, 50);
   };
 
@@ -176,20 +164,33 @@ const DraggableBadge: React.FC<Props> = ({
 
   const onClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (hasDraggedRef.current) return; // Prevent selection/config if user was dragging
-    
+    if (hasDraggedRef.current) return;
     if (!isSelected) {
       onSelect(badgeId, e.shiftKey || e.ctrlKey || e.metaKey);
     }
   };
 
+  // ── Resolve preset defaults ───────────────────────────────────────────────
+  // uiPreset 'm' (minimal) overrides base defaults before per-item overrides apply.
+  const uiPreset = config.uiPreset ?? 'b';
+  const pd = PRESET_DEFAULTS[uiPreset] ?? PRESET_DEFAULTS.b;
+
   // ── Visual style from config ──────────────────────────────────────────────
-  const blurVal = itemConfig?.blur ?? config.blur;
-  const alphaVal = itemConfig?.alpha ?? config.alpha;
-  const radiusVal = (itemConfig?.radius ?? config.radius) * displayScale; // scale radius proportionally
-  const rawShadow = itemConfig?.shadow ?? config.shadow;
-  const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  const showIcon = itemConfig?.icon ?? config.icon ?? true;
+  const blurVal    = itemConfig?.blur   ?? config.blur   ?? pd.blur;
+  const alphaVal   = itemConfig?.alpha  ?? config.alpha  ?? pd.alpha;
+  const radiusRaw  = itemConfig?.radius ?? config.radius ?? pd.radius;
+  const radiusVal  = radiusRaw * displayScale;
+  const rawShadow  = itemConfig?.shadow ?? config.shadow ?? pd.shadow;
+  const shadowVal  = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
+  const showIcon   = itemConfig?.icon   ?? config.icon   ?? pd.icon;
+  const showTextVal = itemConfig?.showText ?? config.showText ?? true;
+
+  // ── Label props ───────────────────────────────────────────────────────────
+  const labelPos   = itemConfig?.labelPos   ?? config.labelPos   ?? null;
+  const labelText  = itemConfig?.labelText  ?? config.labelText  ?? PROVIDER_DISPLAY_NAMES[badgeId] ?? badgeId.toUpperCase();
+  const labelSizeRaw = itemConfig?.labelSize  ?? config.labelSize  ?? 11;
+  const labelSizeVal = labelSizeRaw * displayScale;
+  const labelColorVal = itemConfig?.labelColor ?? config.labelColor ?? '#a1a1aa';
 
   // Background
   const rawBg = itemConfig?.bg ?? config.bg;
@@ -213,56 +214,70 @@ const DraggableBadge: React.FC<Props> = ({
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  const txtColor = itemConfig?.txt || '#ffffff';
+  const txtColor    = itemConfig?.txt || config.txt || '#ffffff';
 
-  // ── SHADOW: matched to backend SVG filter formula ─────────────────────────
-  // Backend (filters.js):
-  //   stdDev = val * 0.25
-  //   dy     = val * 0.25 + 1.0
-  //   slope  = min(0.65, val * 0.025 + 0.20)
-  // CSS equivalent (CSS blur ≈ 2 × SVG stdDev):
-  //   blur   = val * 0.5 px  (= stdDev * 2)
-  //   offset = dy = val * 0.25 + 1.0 px
-  //   alpha  = slope
-  // Using filter:drop-shadow instead of box-shadow to avoid the "3D card" look
-  // that box-shadow produces (it doesn't follow the element's actual shape).
+  // ── SHADOW ────────────────────────────────────────────────────────────────
   const dropShadowFilter =
     shadowVal > 0
       ? (() => {
-          const blurPx = (shadowVal * 0.5).toFixed(2);
-          const dyPx = (shadowVal * 0.25 + 1.0).toFixed(2);
-          const opacity = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
+          const blurPx   = (shadowVal * 0.5).toFixed(2);
+          const dyPx     = (shadowVal * 0.25 + 1.0).toFixed(2);
+          const opacity  = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
           return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
         })()
       : '';
 
-  // ── BORDER: use box-shadow inset to mimic SVG stroke (stays inside boundary) ──
-  // SVG stroke is centered on the element edge (half inside/outside). CSS `outline`
-  // is entirely OUTSIDE, causing size mismatch. `box-shadow inset` stays inside,
-  // more closely matching SVG stroke visual weight.
+  // ── BORDER ────────────────────────────────────────────────────────────────
   const borderBoxShadow = borderWidth > 0 ? `inset 0 0 0 ${borderWidth}px ${borderColor}` : '';
 
   const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
   const finalBackground = isObscuring ? `${slantPattern}, ${bgFill}` : bgFill;
 
-  // Scale badge icon/font sizes proportionally
-  const iconSize = 36 * displayScale;
-  const iconLeft = 10 * displayScale;
-  const iconTop = 12 * displayScale;
+  const iconSize  = 36 * displayScale;
+  const iconLeft  = 10 * displayScale;
+  const iconTop   = 12 * displayScale;
   const textRight = 10 * displayScale;
-  const fontSize = 28 * displayScale;
+  const fontSize  = 28 * displayScale;
+
+  // ── Label layout helpers ──────────────────────────────────────────────────
+  const LABEL_GAP = 5 * displayScale;
+
+  const labelStyle = (pos: string): React.CSSProperties => {
+    const base: React.CSSProperties = {
+      position: 'absolute',
+      pointerEvents: 'none',
+      whiteSpace: 'nowrap',
+      fontSize: labelSizeVal,
+      color: labelColorVal,
+      fontFamily: "'DM Sans', sans-serif",
+      fontWeight: 500,
+      lineHeight: 1,
+    };
+    switch (pos) {
+      case 'above':
+        return { ...base, bottom: `calc(100% + ${LABEL_GAP}px)`, left: 0, right: 0, textAlign: 'center' };
+      case 'below':
+        return { ...base, top: `calc(100% + ${LABEL_GAP}px)`, left: 0, right: 0, textAlign: 'center' };
+      case 'left':
+        return { ...base, right: `calc(100% + ${LABEL_GAP}px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' };
+      case 'right':
+        return { ...base, left: `calc(100% + ${LABEL_GAP}px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center' };
+      default:
+        return base;
+    }
+  };
 
   const renderContent = () => {
     const dummyVals: Record<string, string> = {
-      imdb: '8.7',
-      rt: '73%',
+      imdb:       '8.7',
+      rt:         '73%',
       rt_popcorn: '88%',
       letterboxd: '4.2',
-      meta: '74',
-      tmdb: '85%',
-      runtime: '2h 15m',
-      mal: '8.5',
-      anilist: '85%',
+      meta:       '74',
+      tmdb:       '85%',
+      runtime:    '2h 15m',
+      mal:        '8.5',
+      anilist:    '85%',
     };
     const dummyVal = dummyVals[badgeId] || '0.0';
 
@@ -277,22 +292,25 @@ const DraggableBadge: React.FC<Props> = ({
               borderRadius: `${4 * displayScale}px`,
             }}
           />
-          <span
-            style={{
-              fontSize,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 'bold',
-              color: txtColor,
-            }}
-          >
-            PG-13
-          </span>
+          {showTextVal && (
+            <span
+              style={{
+                fontSize,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 'bold',
+                color: txtColor,
+              }}
+            >
+              PG-13
+            </span>
+          )}
         </div>
       );
     }
 
     if (!showIcon) {
-      return (
+      // No icon — centre the value text (or nothing if showText is off)
+      return showTextVal ? (
         <span
           style={{
             position: 'absolute',
@@ -308,7 +326,7 @@ const DraggableBadge: React.FC<Props> = ({
         >
           {dummyVal}
         </span>
-      );
+      ) : null;
     }
 
     const iconKey =
@@ -328,27 +346,30 @@ const DraggableBadge: React.FC<Props> = ({
             />
           </div>
         )}
-        <span
-          style={{
-            position: 'absolute',
-            right: textRight,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: 'bold',
-            color: txtColor,
-            lineHeight: 1,
-          }}
-        >
-          {dummyVal}
-        </span>
+        {/* Value text — hidden when showText is false */}
+        {showTextVal && (
+          <span
+            style={{
+              position: 'absolute',
+              right: textRight,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 'bold',
+              color: txtColor,
+              lineHeight: 1,
+            }}
+          >
+            {dummyVal}
+          </span>
+        )}
       </>
     );
   };
 
-  const selectionDotSize = 14 * displayScale;
-  const selectionDotInnerSize = 6 * displayScale;
+  const selectionDotSize      = 14 * displayScale;
+  const selectionDotInnerSize = 6  * displayScale;
 
   return (
     <div
@@ -368,11 +389,11 @@ const DraggableBadge: React.FC<Props> = ({
         height: `${height}px`,
         left: `${x}px`,
         top: `${y}px`,
+        // overflow visible so labels can render outside badge bounds
+        overflow: 'visible',
         background: finalBackground,
         borderRadius: `${radiusVal}px`,
-        // FIX: box-shadow inset for border (matches SVG stroke better than outline)
         boxShadow: [borderBoxShadow].filter(Boolean).join(', ') || 'none',
-        // FIX: drop-shadow filter for shadow (matches SVG filter formula)
         filter: dropShadowFilter || 'none',
         backdropFilter: `blur(${blurVal}px)`,
         WebkitBackdropFilter: `blur(${blurVal}px)`,
@@ -382,8 +403,19 @@ const DraggableBadge: React.FC<Props> = ({
         transform: 'translateZ(0)',
       }}
     >
-      {renderContent()}
+      {/* Clip inner content to badge bounds (prevents icon/text from overflowing) */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: `${radiusVal}px`, overflow: 'hidden' }}>
+        {renderContent()}
+      </div>
 
+      {/* Label — rendered outside the clipping div so it shows outside badge bounds */}
+      {labelPos && (
+        <div style={labelStyle(labelPos)}>
+          {labelText}
+        </div>
+      )}
+
+      {/* Selection dot */}
       {isSelected && (
         <div
           className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"

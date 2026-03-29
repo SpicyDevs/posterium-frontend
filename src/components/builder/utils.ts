@@ -9,9 +9,9 @@
 //    URLs still load correctly in the builder.
 //
 // 3. Params equal to their defaults are OMITTED from V3 URLs to minimise length.
-//    Defaults: blur=8, alpha=0.4, radius=12, shadow=6, scale=1.0, borderW=0,
+//    Defaults: blur=0, alpha=0.4, radius=12, shadow=6, scale=1.0, borderW=0,
 //    icon=true, posterBlur=0, grayscale=false, logoY=630, logoW=380, logoH=100,
-//    logoOpacity=1.0, logoShadow=6.
+//    logoOpacity=1.0, logoShadow=6, iconType=1, labelSize=11.
 //
 // 4. grayscale → gs=1 (V3 keeps gs=); never bw= (V2 legacy alias) or bw=border.
 //    The backend V3 parser treats bw= as border width, not grayscale.
@@ -32,6 +32,8 @@
 //   bl=blur  al=alpha  ra=rad(ius)  sh=shadow  sc=g_scale
 //   pb=bg_blur  gs=grayscale  tl=textless  pt=ptype  nt=no_text
 //   ic=g_icon  bw=g_bw(border-width)  bc=g_bc  bg=g_bg  tx=g_txt
+//   nm=normalize  of=out_of  it=icon_type  p=preset
+//   lp=label_pos  lt=label_text  ls=label_size  lc=label_color
 //   fb=fallback-pool  source=source (NO alias — backend reads 'source' directly)
 //
 // PER-BADGE SUFFIX FORMAT: {1-char-code}_{suffix}  e.g. i_x, r_bl, p_al
@@ -111,7 +113,7 @@ export function cleanValue(raw: string): string {
 // ── Default values (omit param when equal to default) ────────────────────
 
 const DEFAULTS = {
-  blur: 8,
+  blur: 0,
   alpha: 0.4,
   radius: 12,
   shadow: 6,
@@ -125,6 +127,8 @@ const DEFAULTS = {
   logoH: 100,
   logoOpacity: 1.0,
   logoShadow: 6,
+  iconType: 1,
+  labelSize: 11,
 } as const;
 
 // ── Canvas layout helpers ─────────────────────────────────────────────────
@@ -183,7 +187,6 @@ export const generateApiUrl = (
   const cleanBase = baseUrl.replace(/\/$/, '');
   
   // ALWAYS enforce /poster/ and prioritize imdbId. 
-  // Guarantees {imdb_id} literal is preserved without URL encoding.
   const displayId = config.imdbId || '{imdb_id}';
   const pathSegment = `/poster/${displayId}`;
   
@@ -203,19 +206,17 @@ export const generateApiUrl = (
   }
 
   // ── Source — CRITICAL: NO v3 alias. Backend reads only 'source' directly.
-  // 'so' on the backend = source_ORDER (poster priority list), NOT the source.
   if (config.source && config.source !== 'tmdb') p.set('source', config.source);
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
 
-  // User API key overrides (verbose names intentional — rarely in URLs)
+  // User API key overrides
   if (config.keys?.tmdb)    p.set('tmdb_key',    config.keys.tmdb);
   if (config.keys?.fanart)  p.set('fanart_key',  config.keys.fanart);
   if (config.keys?.omdb)    p.set('omdb_key',    config.keys.omdb);
   if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
 
-  // ── Global badge style — V3 short aliases (bl al ra sh sc) ──────────
-  // Only emit when different from default to keep URLs short.
+  // ── Global badge style — V3 short aliases ──────────────────────────────
   if (config.blur   !== DEFAULTS.blur)   p.set('bl', config.blur.toString());
   if (config.alpha  !== DEFAULTS.alpha)  p.set('al', config.alpha.toString());
   if (config.radius !== DEFAULTS.radius) p.set('ra', config.radius.toString());
@@ -229,10 +230,9 @@ export const generateApiUrl = (
   if (config.borderC)  p.set('bc', config.borderC);
   if (config.bg)       p.set('bg', config.bg);
   if (config.txt)      p.set('tx', config.txt);
-  if (config.icon === false) p.set('ic', '0');   // omit when true (default)
+  if (config.icon === false) p.set('ic', '0');
 
-  // Poster effects — sent to backend for direct API use (Plex/Jellyfin)
-  // PreviewCanvas applies these client-side via CSS (no round-trip for preview)
+  // Poster effects
   if (config.posterBlur > DEFAULTS.posterBlur) p.set('pb', config.posterBlur.toString());
   if (config.grayscale) p.set('gs', '1');
 
@@ -240,11 +240,28 @@ export const generateApiUrl = (
   if (config.layout !== 'custom') p.set('l', config.layout);
   if (config.preset !== 'custom') p.set('pos', config.preset);
 
-  // ── No-text / show-text toggle (nt=1 hides rating text, shows icon only)
+  // ── Display preset (p=b default → omit; p=m minimal → emit) ──────────
+  if (config.uiPreset && config.uiPreset !== 'b') p.set('p', config.uiPreset);
+
+  // ── No-text / show-text toggle (nt=1 hides rating text) ──────────────
   if (config.showText === false) p.set('nt', '1');
 
+  // ── Score display ─────────────────────────────────────────────────────
+  if (config.normalize) p.set('nm', '1');
+  if (config.outOf !== undefined && config.outOf > 0) p.set('of', config.outOf.toString());
+
+  // ── Icon type alt variant (it=1 default → omit) ───────────────────────
+  if ((config.iconType ?? DEFAULTS.iconType) > DEFAULTS.iconType)
+    p.set('it', config.iconType!.toString());
+
+  // ── Labels ───────────────────────────────────────────────────────────
+  if (config.labelPos)  p.set('lp', config.labelPos);
+  if (config.labelText) p.set('lt', config.labelText);
+  if (config.labelSize !== undefined && config.labelSize !== DEFAULTS.labelSize)
+    p.set('ls', config.labelSize.toString());
+  if (config.labelColor) p.set('lc', config.labelColor);
+
   // ── Per-badge overrides — format: {1-char-code}_{v3-suffix} ──────────
-  // e.g. imdb x=340 → i_x=340, rt blur=5 → r_bl=5
   config.ratings.forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
@@ -254,26 +271,23 @@ export const generateApiUrl = (
     const finalX = item.x !== undefined ? item.x : autoPos.x;
     const finalY = item.y !== undefined ? item.y : autoPos.y;
 
-    // Position always emitted (no meaningful default to skip)
     p.set(`${code}_x`, Math.round(finalX).toString());
     p.set(`${code}_y`, Math.round(finalY).toString());
 
-    // Only emit per-badge style when it diverges from global
     if (item.bg  !== undefined && item.bg  !== (config.bg  ?? '')) p.set(`${code}_bg`, item.bg);
     if (item.txt !== undefined && item.txt !== (config.txt ?? '')) p.set(`${code}_tx`, item.txt);
 
-    const eff = (_k: string, itemVal: any, globalVal: any): boolean =>
+    const eff = (itemVal: any, globalVal: any): boolean =>
       itemVal !== undefined && itemVal !== globalVal;
 
-    if (eff('blur',   item.blur,   config.blur))   p.set(`${code}_bl`, item.blur!.toString());
-    if (eff('alpha',  item.alpha,  config.alpha))  p.set(`${code}_al`, item.alpha!.toString());
-    if (eff('radius', item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
-    if (eff('shadow', item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
+    if (eff(item.blur,   config.blur))   p.set(`${code}_bl`, item.blur!.toString());
+    if (eff(item.alpha,  config.alpha))  p.set(`${code}_al`, item.alpha!.toString());
+    if (eff(item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
+    if (eff(item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
 
     const itemIcon = item.icon ?? config.icon ?? true;
     if (itemIcon !== (config.icon ?? true)) p.set(`${code}_ic`, itemIcon ? '1' : '0');
 
-    // scale: send item.scale only (NOT multiplied by sizeScale — backend applies directly)
     if (item.scale !== undefined && item.scale !== (config.scale ?? 1.0))
       p.set(`${code}_sc`, item.scale.toFixed(3));
 
@@ -285,6 +299,26 @@ export const generateApiUrl = (
     // Per-badge show-text override
     if (item.showText === false && config.showText !== false)
       p.set(`${code}_nt`, '1');
+
+    // Per-badge score display
+    if (item.normalize !== undefined && item.normalize !== (config.normalize ?? false))
+      p.set(`${code}_nm`, item.normalize ? '1' : '0');
+    if (item.outOf !== undefined && item.outOf > 0 && item.outOf !== (config.outOf ?? 0))
+      p.set(`${code}_of`, item.outOf.toString());
+
+    // Per-badge icon type
+    if (item.iconType !== undefined && item.iconType !== (config.iconType ?? DEFAULTS.iconType))
+      p.set(`${code}_it`, item.iconType.toString());
+
+    // Per-badge labels
+    if (item.labelPos !== undefined && item.labelPos !== config.labelPos)
+      p.set(`${code}_lp`, item.labelPos);
+    if (item.labelText !== undefined && item.labelText !== config.labelText)
+      p.set(`${code}_lt`, item.labelText);
+    if (item.labelSize !== undefined && item.labelSize !== (config.labelSize ?? DEFAULTS.labelSize))
+      p.set(`${code}_ls`, item.labelSize.toString());
+    if (item.labelColor !== undefined && item.labelColor !== config.labelColor)
+      p.set(`${code}_lc`, item.labelColor);
   });
 
   // ── Logo overlay ──────────────────────────────────────────────────────
@@ -349,14 +383,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 
     if (isV3) {
       // ── Parse V3 per-badge params ──────────────────────────────────────
-      // Format: {1-char-code}_{suffix}  e.g. i_x=340, r_bl=5, p_al=0.6
       for (const [name, value] of p.entries()) {
-        // Must be exactly: 1 char + underscore + 1+ char suffix (min length 3)
         if (name.length < 3 || name[1] !== '_') continue;
         const code     = name[0];
         const badgeKey = V3_CODE_TO_KEY[code];
         if (!badgeKey) continue;
-        const suffix = name.slice(2); // everything after the underscore
+        const suffix = name.slice(2);
 
         if (!items[badgeKey]) items[badgeKey] = {};
         switch (suffix) {
@@ -401,9 +433,16 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         p.get('logo_source') as any
       ) ? (p.get('logo_source') as LogoSourceType) : null;
 
-      // Helper: read param with v3 short alias fallback to v2 long name
       const getNum   = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseInt(p.get(v3k)!)    : (p.has(v2k) ? parseInt(p.get(v2k)!)    : def);
       const getFloat = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseFloat(p.get(v3k)!) : (p.has(v2k) ? parseFloat(p.get(v2k)!) : def);
+
+      // ── Parse outOf (of= or out_of=) ──────────────────────────────────
+      const parseOutOf = (): number | undefined => {
+        const raw = p.get('of') ?? p.get('out_of');
+        if (!raw) return undefined;
+        const v = parseInt(raw);
+        return isNaN(v) ? undefined : v;
+      };
 
       return {
         mediaType,
@@ -413,13 +452,11 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         ratings:        parsedRatings,
         fallbackEnabled: fbPool.length > 0,
         fallbackPool:   fbPool,
-        // source: NO v3 alias — backend always reads 'source' directly
         source:   (p.get('source') as PosterConfig['source']) || 'tmdb',
         ptype:    p.get('pt')   || p.get('ptype') || 'auto',
         textless: p.get('tl')   === '1' || p.get('textless') === '1',
         theme:    'glass',
         size:     'md',
-        // Global glass params — check v3 short alias first, then v2 long form
         blur:       getNum   ('bl', 'blur',    DEFAULTS.blur),
         alpha:      getFloat ('al', 'alpha',   DEFAULTS.alpha),
         radius:     getNum   ('ra', 'rad',     DEFAULTS.radius),
@@ -429,13 +466,22 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         posterBlur: getNum   ('pb', 'bg_blur', DEFAULTS.posterBlur),
         grayscale:  p.get('gs') === '1' || p.get('bw') === '1',
         scale:      getFloat ('sc', 'g_scale', DEFAULTS.scale),
-        // bw = border-width in v3
         borderW: p.has('bw') && p.get('bw') !== '1' ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
         borderC: p.has('bc') ? (p.get('bc')!.startsWith('#') ? p.get('bc')! : `#${p.get('bc')}`) : undefined,
         bg:      p.get('bg')  || undefined,
         txt:     p.has('tx')  ? (p.get('tx')!.startsWith('#') ? p.get('tx')! : `#${p.get('tx')}`) : undefined,
         icon:    p.has('ic')  ? p.get('ic') === '1' : true,
         showText: p.get('nt') !== '1',
+        // ── NEW: display preset, score, icon type, labels ────────────────
+        uiPreset:   (p.get('p') === 'm' ? 'm' : 'b') as 'b' | 'm',
+        normalize:  p.get('nm') === '1' || p.get('normalize') === '1',
+        outOf:      parseOutOf(),
+        iconType:   getNum('it', 'icon_type', DEFAULTS.iconType),
+        labelPos:   (p.get('lp') || p.get('label_pos') || undefined) as PosterConfig['labelPos'],
+        labelText:  p.get('lt') || p.get('label_text') || undefined,
+        labelSize:  p.has('ls') ? parseInt(p.get('ls')!) : (p.has('label_size') ? parseInt(p.get('label_size')!) : undefined),
+        labelColor: p.get('lc') || p.get('label_color') || undefined,
+        // ────────────────────────────────────────────────────────────────
         keys,
         items,
         logo:         p.get('logo') === '1',
@@ -469,8 +515,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       const bw    = p.get(`${key}_bw`);
       const bc    = p.get(`${key}_bc`);
       const nt    = p.get(`${key}_nt`);
+      const nm    = p.get(`${key}_nm`);
+      const of_   = p.get(`${key}_of`) ?? p.get(`${key}_out_of`);
+      const it    = p.get(`${key}_it`) ?? p.get(`${key}_icon_type`);
+      const lp    = p.get(`${key}_lp`) ?? p.get(`${key}_label_pos`);
+      const lt    = p.get(`${key}_lt`) ?? p.get(`${key}_label_text`);
+      const ls    = p.get(`${key}_ls`) ?? p.get(`${key}_label_size`);
+      const lc    = p.get(`${key}_lc`) ?? p.get(`${key}_label_color`);
 
-      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt) {
+      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt || nm || lp) {
         items[key] = {
           ...(x     ? { x: parseInt(x) }                                               : {}),
           ...(y     ? { y: parseInt(y) }                                               : {}),
@@ -485,6 +538,13 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ...(bw    ? { borderW: parseInt(bw) }                                        : {}),
           ...(p.has(`${key}_bc`) ? { borderC: bc!.startsWith('#') ? bc! : `#${bc}` }  : {}),
           ...(nt    ? { showText: nt !== '1' }                                         : {}),
+          ...(nm    ? { normalize: nm === '1' }                                        : {}),
+          ...(of_   ? { outOf: parseInt(of_) }                                         : {}),
+          ...(it    ? { iconType: parseInt(it) }                                       : {}),
+          ...(lp    ? { labelPos: lp as BadgeConfig['labelPos'] }                      : {}),
+          ...(lt    ? { labelText: lt }                                                : {}),
+          ...(ls    ? { labelSize: parseInt(ls) }                                      : {}),
+          ...(lc    ? { labelColor: lc }                                               : {}),
         };
       }
     });
@@ -502,13 +562,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const g_txt   = p.get('g_txt');
     const g_icon  = p.get('g_icon');
 
-    // V2: gs=1 or bw=1 (legacy alias) for grayscale
     const grayscale = p.get('gs') === '1' || p.get('bw') === '1';
 
     const rawLogoSource = p.get('logo_source');
     const logoSource: LogoSourceType = (['fanart', 'tmdb', 'metahub'] as const).includes(
       rawLogoSource as any
     ) ? (rawLogoSource as LogoSourceType) : null;
+
+    const v2OutOf = p.has('out_of') ? (parseInt(p.get('out_of')!) || undefined) : undefined;
 
     return {
       mediaType,
@@ -538,6 +599,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       txt:        g_txt    ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
       icon:       g_icon   ? g_icon === '1' : true,
       showText:   p.get('nt') !== '1',
+      uiPreset:   (p.get('preset') === 'minimal' ? 'm' : 'b') as 'b' | 'm',
+      normalize:  p.get('normalize') === '1',
+      outOf:      v2OutOf,
+      iconType:   p.has('icon_type') ? parseInt(p.get('icon_type')!) : DEFAULTS.iconType,
+      labelPos:   (p.get('label_pos') || undefined) as PosterConfig['labelPos'],
+      labelText:  p.get('label_text') || undefined,
+      labelSize:  p.has('label_size') ? parseInt(p.get('label_size')!) : undefined,
+      labelColor: p.get('label_color') || undefined,
       keys,
       items,
       logo:        p.get('logo') === '1',
@@ -557,16 +626,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 
 // ── Template URL Helpers ──────────────────────────────────────────────────
 
-/**
- * Checks if a URL string contains the template variable.
- */
 export const isTemplateUrl = (url: string): boolean =>
   url.includes('{imdb_id}') || url.includes('{tmdb_id}');
 
-/**
- * Converts a standard API URL with hardcoded IDs into a template URL.
- * Example: /movie/tt1234567.jpg -> /movie/{imdb_id}.jpg
- */
 export const toTemplateUrl = (url: string): string => {
   try {
     const urlObj = new URL(url);
