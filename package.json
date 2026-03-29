@@ -11,7 +11,9 @@
     "format": "prettier --write .",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "wrangler deploy",
+    "cf:dev": "wrangler dev"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -35,6 +37,7 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.2.2",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.1",
+    "wrangler": "^4.78.0"
   }
 }
