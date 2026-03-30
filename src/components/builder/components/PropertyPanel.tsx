@@ -322,6 +322,20 @@ const SegmentedRow: React.FC<{
                 ? '1px solid rgba(196,124,46,0.3)'
                 : '1px solid rgba(255,255,255,0.05)',
           }}
+          onMouseEnter={(e) => {
+            if (value !== opt.id) {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(196,124,46,0.24)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-label)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (value !== opt.id) {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
+            }
+          }}
         >
           {opt.label}
         </button>
@@ -596,6 +610,20 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                         config.layout === opt.id
                           ? '1px solid rgba(196,124,46,0.22)'
                           : '1px solid rgba(255,255,255,0.05)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (config.layout !== opt.id) {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(196,124,46,0.24)';
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-label)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (config.layout !== opt.id) {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.05)';
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
+                      }
                     }}
                   >
                     <span

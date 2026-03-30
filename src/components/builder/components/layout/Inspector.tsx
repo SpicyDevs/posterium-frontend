@@ -42,6 +42,18 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
                 currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
               boxShadow: currentMode === 'global' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
             }}
+            onMouseEnter={(e) => {
+              if (currentMode !== 'global') {
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentMode !== 'global') {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-ghost)';
+              }
+            }}
           >
             <Globe size={11} strokeWidth={2} />
             Canvas
@@ -57,6 +69,18 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
               color:
                 currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
               boxShadow: currentMode === 'selection' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (currentMode !== 'selection') {
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentMode !== 'selection') {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-ghost)';
+              }
             }}
           >
             <MousePointer2 size={11} strokeWidth={2} />
