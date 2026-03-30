@@ -736,7 +736,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 }}
               >
                 <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Import</span>
+                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">Import</span>
               </button>
 
               {/* Export CTA */}
@@ -767,9 +767,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 }}
               >
                 <Download size={12} />
-                <span>Export</span>
+                <span className="max-[1300px]:hidden">Export</span>
                 <ChevronDown
-                  className="block"
+                  className="max-[1300px]:hidden"
                   size={10}
                   style={{
                     transform: exportOpen ? 'rotate(180deg)' : 'none',
