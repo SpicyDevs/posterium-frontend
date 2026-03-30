@@ -181,25 +181,30 @@ const Skel = ({ h = 80, w = '100%' }: { h?: number; w?: string }) => (
   }}/>
 );
 
-const PanelHeader = ({ title, tag, extra }: { title: string; tag?: string; extra?: React.ReactNode }) => (
-  <div style={{
-    padding: '9px 14px', borderBottom: `1px solid ${C.borderFaint}`,
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    background: 'rgba(196,124,46,0.02)',
-  }}>
-    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.amber, fontFamily: 'Syne, sans-serif' }}>
-      {title}
-    </span>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {extra}
-      {tag && (
-        <span style={{ fontSize: 7, color: C.ghost, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderFaint}`, borderRadius: 3, padding: '2px 6px' }}>
-          {tag}
-        </span>
-      )}
+const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }: {
+  title: string; tag?: string; children: React.ReactNode;
+  fullWidth?: boolean; extra?: React.ReactNode; noPad?: boolean;
+}) => {
+  // Hoisting styles prevents re-creation of object references on every render
+  const containerStyle: React.CSSProperties = {
+    background: C.mid,
+    border: `1px solid ${C.border}`,
+    borderRadius: 10,
+    overflow: 'hidden',
+    gridColumn: fullWidth ? '1 / -1' : undefined
+  };
+
+  const innerStyle: React.CSSProperties | undefined = noPad ? undefined : { padding: 14 };
+
+  return (
+    <div style={containerStyle}>
+      <PanelHeader title={title} tag={tag} extra={extra} />
+      <div style={innerStyle}>
+        {children}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }: {
   title: string; tag?: string; children: React.ReactNode;
