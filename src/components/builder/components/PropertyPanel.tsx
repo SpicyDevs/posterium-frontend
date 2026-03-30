@@ -31,6 +31,8 @@ interface Props {
 }
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
+const INACTIVE_OPTION_CLASSES =
+  'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-text-label)]';
 
 const readSectionStates = (): Record<string, boolean> => {
   try {
@@ -312,30 +314,12 @@ const SegmentedRow: React.FC<{
           key={opt.id}
           type="button"
           onClick={() => onChange(opt.id)}
-          className="h-7 rounded-md text-[10px] font-medium transition-all syne-font"
-          style={{
-            background:
-              value === opt.id ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.03)',
-            color: value === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
-            border:
-              value === opt.id
-                ? '1px solid rgba(196,124,46,0.3)'
-                : '1px solid rgba(255,255,255,0.05)',
-          }}
-          onMouseEnter={(e) => {
-            if (value !== opt.id) {
-              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(196,124,46,0.24)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-label)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (value !== opt.id) {
-              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.05)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
-            }
-          }}
+          className={clsx(
+            'h-7 rounded-md text-[10px] font-medium transition-all border syne-font',
+            value === opt.id
+              ? 'bg-[rgba(196,124,46,0.15)] text-[var(--film-pale)] border-[rgba(196,124,46,0.3)]'
+              : INACTIVE_OPTION_CLASSES
+          )}
         >
           {opt.label}
         </button>
@@ -598,33 +582,12 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     key={opt.id}
                     type="button"
                     onClick={() => updateConfig('layout', opt.id)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors syne-font"
-                    style={{
-                      background:
-                        config.layout === opt.id
-                          ? 'rgba(196,124,46,0.1)'
-                          : 'rgba(255,255,255,0.02)',
-                      color:
-                        config.layout === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
-                      border:
-                        config.layout === opt.id
-                          ? '1px solid rgba(196,124,46,0.22)'
-                          : '1px solid rgba(255,255,255,0.05)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (config.layout !== opt.id) {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(196,124,46,0.24)';
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-label)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (config.layout !== opt.id) {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.05)';
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
-                      }
-                    }}
+                    className={clsx(
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors border syne-font',
+                      config.layout === opt.id
+                        ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border-[rgba(196,124,46,0.22)]'
+                        : INACTIVE_OPTION_CLASSES
+                    )}
                   >
                     <span
                       style={{

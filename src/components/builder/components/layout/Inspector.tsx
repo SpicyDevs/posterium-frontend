@@ -34,25 +34,14 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             }}
             aria-pressed={currentMode === 'global'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
+              currentMode !== 'global' && 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]'
             )}
             style={{
               background: currentMode === 'global' ? 'var(--film-mid)' : 'transparent',
               color:
                 currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
               boxShadow: currentMode === 'global' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (currentMode !== 'global') {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (currentMode !== 'global') {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-ghost)';
-              }
             }}
           >
             <Globe size={11} strokeWidth={2} />
@@ -62,25 +51,14 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             onClick={() => setActiveTab('badge')}
             aria-pressed={currentMode === 'selection'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
+              currentMode !== 'selection' && 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]'
             )}
             style={{
               background: currentMode === 'selection' ? 'var(--film-mid)' : 'transparent',
               color:
                 currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-ghost)',
               boxShadow: currentMode === 'selection' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (currentMode !== 'selection') {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-dim)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (currentMode !== 'selection') {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-text-ghost)';
-              }
             }}
           >
             <MousePointer2 size={11} strokeWidth={2} />
