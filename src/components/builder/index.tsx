@@ -38,7 +38,8 @@ import {
   Keyboard,
   Type,
   ChevronDown,
-  Search
+  Search,
+  Heart
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
@@ -609,6 +610,16 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 >
                   P
                 </span>
+              </a>
+              <a
+                href="https://github.com/sponsors/SpicyDevs"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Sponsor Posterium on GitHub"
+                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
+              >
+                <Heart size={12} className="shrink-0 fill-current" />
+                <span className="hidden sm:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
               </a>
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
