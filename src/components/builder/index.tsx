@@ -667,7 +667,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Full search bar - sm and above */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] rounded-md transition-colors pointer-events-auto"
+                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
