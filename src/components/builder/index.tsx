@@ -619,7 +619,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
               >
                 <Heart size={12} className="shrink-0 fill-current" />
-                <span className="hidden sm:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
+                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
               </a>
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
