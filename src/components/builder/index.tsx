@@ -624,7 +624,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] px-3 rounded-md transition-all pointer-events-auto"
+                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
