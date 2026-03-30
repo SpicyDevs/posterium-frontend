@@ -116,7 +116,7 @@ const ColorPicker: React.FC<Props> = memo(
               maxLength={7}
               spellCheck={false}
               autoComplete="off"
-              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#111113] border border-white/8 text-[11px] font-mono text-zinc-300 uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
+              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[11px] font-mono text-zinc-300 uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
             />
           </div>
         </div>

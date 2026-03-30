@@ -384,6 +384,16 @@ const TextInputRow: React.FC<{
           color: 'var(--film-pale)',
           transition: 'border-color 0.15s',
         }}
+        onMouseEnter={(e) => {
+          if (!focused) {
+            (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.28)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!focused) {
+            (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
+          }
+        }}
       />
     </div>
   );
@@ -459,10 +469,10 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
         onClick={() => onChange(pos.id)}
         title={pos.label}
         className={clsx(
-          'w-full aspect-square rounded transition-all active:scale-90',
+          'w-full aspect-square rounded transition-all active:scale-90 border',
           value === pos.id
-            ? 'shadow-[0_0_8px_rgba(196,124,46,0.4)]'
-            : 'hover:bg-white/[0.07] border border-white/[0.06]'
+            ? 'shadow-[0_0_8px_rgba(196,124,46,0.4)] border-[rgba(196,124,46,0.3)]'
+            : 'border-white/[0.06] hover:bg-white/[0.08] hover:border-[rgba(196,124,46,0.24)]'
         )}
         style={{
           background: value === pos.id ? '#C47C2E' : 'rgba(255,255,255,0.03)',
