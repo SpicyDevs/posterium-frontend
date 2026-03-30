@@ -181,6 +181,26 @@ const Skel = ({ h = 80, w = '100%' }: { h?: number; w?: string }) => (
   }}/>
 );
 
+const PanelHeader = ({ title, tag, extra }: { title: string; tag?: string; extra?: React.ReactNode }) => (
+  <div style={{
+    padding: '9px 14px', borderBottom: `1px solid ${C.borderFaint}`,
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    background: 'rgba(196,124,46,0.02)',
+  }}>
+    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.amber, fontFamily: 'Syne, sans-serif' }}>
+      {title}
+    </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {extra}
+      {tag && (
+        <span style={{ fontSize: 7, color: C.ghost, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderFaint}`, borderRadius: 3, padding: '2px 6px' }}>
+          {tag}
+        </span>
+      )}
+    </div>
+  </div>
+);
+
 const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }: {
   title: string; tag?: string; children: React.ReactNode;
   fullWidth?: boolean; extra?: React.ReactNode; noPad?: boolean;
@@ -205,17 +225,6 @@ const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }
     </div>
   );
 };
-
-const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }: {
-  title: string; tag?: string; children: React.ReactNode;
-  fullWidth?: boolean; extra?: React.ReactNode; noPad?: boolean;
-}) => (
-  <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden', gridColumn: fullWidth ? '1 / -1' : undefined }}>
-    <PanelHeader title={title} tag={tag} extra={extra}/>
-    <div style={noPad ? undefined : { padding: 14 }>{children}
-    </div>
-  </div>
-);
 
 const StatCard = ({ label, value, sub, color = C.cream, trend, accent = C.amber }: {
   label: string; value: string | number; sub?: string; color?: string;
