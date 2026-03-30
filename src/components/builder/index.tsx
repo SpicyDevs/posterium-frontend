@@ -694,7 +694,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
             {/* Right Header Area */}
             <div 
-              className="flex items-center justify-end px-3 shrink-0 gap-1 max-lg:!w-auto"
+              className="ml-auto flex items-center justify-end px-3 shrink-0 gap-1 max-lg:!w-auto"
             >
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
