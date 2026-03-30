@@ -801,7 +801,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               />
               <div
                 onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50 flex items-center justify-center"
+                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
               >
                 <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
@@ -873,7 +873,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             >
               <div
                 onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50 flex items-center justify-center"
+                className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50"
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>

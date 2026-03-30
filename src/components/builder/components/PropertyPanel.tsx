@@ -777,7 +777,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           {/* Show/Hide Labels toggle */}
           <button
             type="button"
-            onClick={() => updateConfig('showText', !(config.showText !== false))}
+            onClick={() => updateConfig('showText', config.showText === false)}
             className="w-full h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font mb-1"
             style={{
               background: config.showText !== false ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
