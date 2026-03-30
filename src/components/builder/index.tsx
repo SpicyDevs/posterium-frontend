@@ -619,8 +619,23 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
               >
                 <Heart size={12} className="shrink-0 fill-current" />
-                <span className="hidden sm:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
+                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
               </a>
+              <button
+                onClick={() => setPaletteOpen(true)}
+                title="Search commands (⌘K)"
+                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+                style={{
+                  color: 'var(--film-text-ghost)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              >
+                <Search size={12} className="shrink-0" />
+                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+              </button>
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
@@ -652,7 +667,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Full search bar - sm and above */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] rounded-md transition-colors pointer-events-auto"
+                className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -668,23 +683,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                   ⌘K
                 </kbd>
-              </button>
-
-              {/* Wider search button - mobile */}
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="sm:hidden flex items-center gap-1.5 h-8 w-[40vw] min-w-24 max-w-32 px-2.5 rounded-lg transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-ghost)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
-              >
-                <Search size={13} className="shrink-0" />
-                <span className="text-xs syne-font whitespace-nowrap">Search…</span>
               </button>
 
               {/* Right sidebar toggle - desktop only */}
@@ -736,7 +734,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 }}
               >
                 <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Import</span>
+                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">Import</span>
               </button>
 
               {/* Export CTA */}
@@ -767,9 +765,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 }}
               >
                 <Download size={12} />
-                <span className="hidden sm:inline">Export</span>
+                <span className="max-[1300px]:hidden">Export</span>
                 <ChevronDown
-                  className="hidden sm:block"
+                  className="max-[1300px]:hidden"
                   size={10}
                   style={{
                     transform: exportOpen ? 'rotate(180deg)' : 'none',
@@ -786,7 +784,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
               >
                 <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden md:inline">Reset</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">Reset</span>
               </button>
             </div>
           </header>

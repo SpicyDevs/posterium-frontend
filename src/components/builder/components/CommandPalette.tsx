@@ -259,6 +259,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
         >
           <Search size={15} style={{ color: 'rgba(196,124,46,0.55)', flexShrink: 0 }} />
           <input
+            className="min-w-0 max-[900px]:max-w-[220px]"
             ref={inputRef}
             type="text"
             value={query}
@@ -272,14 +273,14 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                fontSize: 13,
-                color: 'var(--film-cream)',
-                fontFamily: 'Syne, sans-serif',
-                fontWeight: 500,
-                '::placeholder': { color: 'rgba(140,130,112,0.4)' },
-              } as React.CSSProperties
-            }
-          />
+                 fontSize: 13,
+                 color: 'var(--film-cream)',
+                 fontFamily: 'Syne, sans-serif',
+                 fontWeight: 500,
+                 '::placeholder': { color: 'rgba(140,130,112,0.4)' },
+               } as React.CSSProperties
+             }
+           />
           <button
             onClick={onClose}
             style={{
