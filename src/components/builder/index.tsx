@@ -440,10 +440,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       e.preventDefault();
       const sx = e.clientX, sw = leftW;
       const move = (m: MouseEvent) => setLeftW(Math.max(220, Math.min(sw + m.clientX - sx, 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; document.body.classList.remove('sidebar-resizing'); };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
+      document.body.classList.add('sidebar-resizing');
     },
     [leftW]
   );
@@ -453,10 +454,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       e.preventDefault();
       const sx = e.clientX, sw = rightW;
       const move = (m: MouseEvent) => setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; document.body.classList.remove('sidebar-resizing'); };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
+      document.body.classList.add('sidebar-resizing');
     },
     [rightW]
   );
@@ -514,6 +516,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           user-select: text; -webkit-user-select: text;
         }
         .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
+        .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
       `}</style>
 
       <div
