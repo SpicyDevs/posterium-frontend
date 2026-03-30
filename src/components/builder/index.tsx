@@ -667,7 +667,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Full search bar - sm and above */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="hidden sm:flex max-[750px]:hidden items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] max-[750px]:max-w-[250px] rounded-md transition-colors pointer-events-auto"
+                className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -683,23 +683,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                   ⌘K
                 </kbd>
-              </button>
-
-              {/* Wider search button - mobile */}
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden"
-                style={{
-                  color: 'var(--film-text-ghost)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
-              >
-                <Search size={13} className="shrink-0" />
-                <span className="text-xs syne-font whitespace-nowrap">Search…</span>
               </button>
 
               {/* Right sidebar toggle - desktop only */}
