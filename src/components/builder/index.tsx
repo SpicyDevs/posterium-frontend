@@ -621,7 +621,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="flex-1 flex items-center justify-center gap-2 min-w-0 pointer-events-none px-2">
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-2">
               {/* Left sidebar toggle - desktop only */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
