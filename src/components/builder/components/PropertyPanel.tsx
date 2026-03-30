@@ -338,7 +338,6 @@ const TextInputRow: React.FC<{
 }> = ({ label, value, placeholder, onChange, onClear }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div className="space-y-1.5">
@@ -374,21 +373,13 @@ const TextInputRow: React.FC<{
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="w-full focus:outline-none body-font"
+        className="w-full focus:outline-none body-font hover:border-[rgba(196,124,46,0.28)]"
         style={{
           height: 28,
           paddingInline: 8,
           borderRadius: 6,
           background: 'rgba(255,255,255,0.04)',
-          border: `1px solid ${
-            focused
-              ? 'rgba(196,124,46,0.4)'
-              : hovered
-                ? 'rgba(196,124,46,0.28)'
-                : 'rgba(255,255,255,0.1)'
-          }`,
+          border: `1px solid ${focused ? 'rgba(196,124,46,0.4)' : 'rgba(255,255,255,0.1)'}`,
           fontSize: 11,
           color: 'var(--film-pale)',
           transition: 'border-color 0.15s',
