@@ -334,13 +334,15 @@ select option {
     display: none !important;
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 1360px) {
   .nav-links-desktop {
     display: none !important;
   }
   .nav-mobile-toggle {
     display: flex !important;
   }
+}
+@media (max-width: 768px) {
   .desktop-reel-section {
     display: none !important;
   }
@@ -348,10 +350,12 @@ select option {
     display: block !important;
   }
 }
-@media (min-width: 769px) {
+@media (min-width: 1361px) {
   .nav-mobile-toggle {
     display: none !important;
   }
+}
+@media (min-width: 769px) {
   .desktop-reel-section {
     display: block !important;
   }
