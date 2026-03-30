@@ -632,7 +632,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
+            <div className="flex-1 min-w-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2 lg:absolute lg:inset-y-0 lg:left-0 lg:right-0">
               {/* Left sidebar toggle - desktop only */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
@@ -649,10 +649,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <PanelLeft size={14} />
               </button>
 
-              {/* Full search bar - sm and above */}
+              {/* Full search bar - desktop */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] rounded-md transition-colors pointer-events-auto"
+                className="hidden lg:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -670,11 +670,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 </kbd>
               </button>
 
-              {/* Wider search button - mobile */}
+              {/* Compact search button - mobile + tablet */}
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="sm:hidden flex items-center gap-1.5 h-8 w-[40vw] min-w-24 max-w-32 px-2.5 rounded-lg transition-all pointer-events-auto"
+                className="flex lg:hidden items-center gap-1.5 h-8 w-full max-w-36 px-2.5 rounded-lg transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
