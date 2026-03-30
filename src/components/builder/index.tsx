@@ -663,7 +663,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="sm:hidden flex items-center gap-1.5 h-8 w-28 px-2.5 rounded-lg transition-all pointer-events-auto"
+                aria-label="Search commands"
+                className="sm:hidden flex items-center gap-1.5 h-8 w-[clamp(7.5rem,34vw,10rem)] px-2.5 rounded-lg transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -673,7 +674,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
               >
                 <Search size={13} className="shrink-0" />
-                <span className="text-[10px] syne-font truncate">Search...</span>
+                <span className="text-xs syne-font truncate">Search…</span>
               </button>
 
               {/* Right sidebar toggle - desktop only */}
