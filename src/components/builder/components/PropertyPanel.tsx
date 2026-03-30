@@ -31,7 +31,7 @@ interface Props {
 }
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
-const INACTIVE_OPTION_CLASSES =
+const INACTIVE_OPTION_HOVER_CLASSES =
   'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-text-label)]';
 
 const readSectionStates = (): Record<string, boolean> => {
@@ -318,7 +318,7 @@ const SegmentedRow: React.FC<{
             'h-7 rounded-md text-[10px] font-medium transition-all border syne-font',
             value === opt.id
               ? 'bg-[rgba(196,124,46,0.15)] text-[var(--film-pale)] border-[rgba(196,124,46,0.3)]'
-              : INACTIVE_OPTION_CLASSES
+              : INACTIVE_OPTION_HOVER_CLASSES
           )}
         >
           {opt.label}
@@ -586,7 +586,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                       'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors border syne-font',
                       config.layout === opt.id
                         ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border-[rgba(196,124,46,0.22)]'
-                        : INACTIVE_OPTION_CLASSES
+                        : INACTIVE_OPTION_HOVER_CLASSES
                     )}
                   >
                     <span
