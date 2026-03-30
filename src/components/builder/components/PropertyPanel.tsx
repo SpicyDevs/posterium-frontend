@@ -777,27 +777,27 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           {/* Show/Hide Labels toggle */}
           <button
             type="button"
-            onClick={() => updateConfig('showText', config.showText === false)}
+            onClick={() => updateConfig('labelPos', config.labelPos ? undefined : 'below')}
             className="w-full h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font mb-1"
             style={{
-              background: config.showText !== false ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
-              color: config.showText !== false ? 'var(--film-pale)' : 'var(--film-text-dim)',
-              border: config.showText !== false ? '1px solid rgba(196,124,46,0.22)' : '1px solid rgba(255,255,255,0.05)',
+              background: config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
+              color: config.labelPos ? 'var(--film-pale)' : 'var(--film-text-dim)',
+              border: config.labelPos ? '1px solid rgba(196,124,46,0.22)' : '1px solid rgba(255,255,255,0.05)',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
-              (e.currentTarget as HTMLElement).style.background = config.showText !== false ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.background = config.labelPos ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.05)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = config.showText !== false ? 'rgba(196,124,46,0.22)' : 'rgba(255,255,255,0.05)';
-              (e.currentTarget as HTMLElement).style.background = config.showText !== false ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = config.labelPos ? 'rgba(196,124,46,0.22)' : 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.background = config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)';
             }}
           >
-            {config.showText !== false
+            {config.labelPos
               ? <Eye size={11} style={{ color: 'var(--film-amber)' }} />
               : <EyeOff size={11} style={{ color: 'var(--film-text-ghost)' }} />
             }
-            {config.showText !== false ? 'Labels Visible' : 'Labels Hidden'}
+            {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
           </button>
           <SegmentedRow
             label="Label Position"

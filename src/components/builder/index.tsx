@@ -815,7 +815,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             aria-label="Poster canvas"
             className="flex-1 relative overflow-hidden min-h-0"
             style={{ background: '#111113' }}
-            onClick={(e) => { if (e.target === e.currentTarget) clearSelection(); }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) clearSelection();
+              if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
+            }}
           >
             <div
               aria-hidden="true"
