@@ -205,7 +205,6 @@ const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }
   title: string; tag?: string; children: React.ReactNode;
   fullWidth?: boolean; extra?: React.ReactNode; noPad?: boolean;
 }) => {
-  // Hoisting styles prevents re-creation of object references on every render
   const containerStyle: React.CSSProperties = {
     background: C.mid,
     border: `1px solid ${C.border}`,
