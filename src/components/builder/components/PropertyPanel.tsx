@@ -31,6 +31,8 @@ interface Props {
 }
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
+const INACTIVE_OPTION_HOVER_CLASSES =
+  'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-text-label)]';
 
 const readSectionStates = (): Record<string, boolean> => {
   try {
@@ -312,16 +314,12 @@ const SegmentedRow: React.FC<{
           key={opt.id}
           type="button"
           onClick={() => onChange(opt.id)}
-          className="h-7 rounded-md text-[10px] font-medium transition-all syne-font"
-          style={{
-            background:
-              value === opt.id ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.03)',
-            color: value === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
-            border:
-              value === opt.id
-                ? '1px solid rgba(196,124,46,0.3)'
-                : '1px solid rgba(255,255,255,0.05)',
-          }}
+          className={clsx(
+            'h-7 rounded-md text-[10px] font-medium transition-all border syne-font',
+            value === opt.id
+              ? 'bg-[rgba(196,124,46,0.15)] text-[var(--film-pale)] border-[rgba(196,124,46,0.3)]'
+              : INACTIVE_OPTION_HOVER_CLASSES
+          )}
         >
           {opt.label}
         </button>
@@ -375,7 +373,7 @@ const TextInputRow: React.FC<{
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className="w-full focus:outline-none body-font"
+        className="w-full focus:outline-none body-font hover:border-[rgba(196,124,46,0.28)]"
         style={{
           height: 28,
           paddingInline: 8,
@@ -463,8 +461,8 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
         className={clsx(
           'w-full aspect-square rounded transition-all active:scale-90',
           value === pos.id
-            ? 'shadow-[0_0_8px_rgba(196,124,46,0.4)]'
-            : 'hover:bg-white/[0.07] border border-white/[0.06]'
+            ? 'shadow-[0_0_8px_rgba(196,124,46,0.4)] border border-[rgba(196,124,46,0.3)]'
+            : 'border border-white/[0.06] hover:bg-white/[0.08] hover:border-[rgba(196,124,46,0.24)]'
         )}
         style={{
           background: value === pos.id ? '#C47C2E' : 'rgba(255,255,255,0.03)',
@@ -584,19 +582,12 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     key={opt.id}
                     type="button"
                     onClick={() => updateConfig('layout', opt.id)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors syne-font"
-                    style={{
-                      background:
-                        config.layout === opt.id
-                          ? 'rgba(196,124,46,0.1)'
-                          : 'rgba(255,255,255,0.02)',
-                      color:
-                        config.layout === opt.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
-                      border:
-                        config.layout === opt.id
-                          ? '1px solid rgba(196,124,46,0.22)'
-                          : '1px solid rgba(255,255,255,0.05)',
-                    }}
+                    className={clsx(
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors border syne-font',
+                      config.layout === opt.id
+                        ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border-[rgba(196,124,46,0.22)]'
+                        : INACTIVE_OPTION_HOVER_CLASSES
+                    )}
                   >
                     <span
                       style={{

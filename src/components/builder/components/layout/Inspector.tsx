@@ -11,6 +11,7 @@ interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
+const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds, clearSelection } = useEditor();
@@ -34,7 +35,8 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             }}
             aria-pressed={currentMode === 'global'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
+              currentMode !== 'global' && INACTIVE_TAB_HOVER_CLASSES
             )}
             style={{
               background: currentMode === 'global' ? 'var(--film-mid)' : 'transparent',
@@ -50,7 +52,8 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             onClick={() => setActiveTab('badge')}
             aria-pressed={currentMode === 'selection'}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font'
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
+              currentMode !== 'selection' && INACTIVE_TAB_HOVER_CLASSES
             )}
             style={{
               background: currentMode === 'selection' ? 'var(--film-mid)' : 'transparent',
