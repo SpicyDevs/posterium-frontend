@@ -802,7 +802,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           isSel
             ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
             : isActive
-            ? 'hover:bg-white/[0.03] cursor-pointer'
+            ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
             : inactiveOpacity,
           isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
         )}
@@ -938,7 +938,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               onClick={() => setActiveTab(tab)}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
-                localMode !== tab && 'hover:bg-white/5 hover:text-white'
+                localMode !== tab && 'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
               )}
               style={{
                 background: localMode === tab ? 'var(--film-mid)' : 'transparent',

@@ -151,15 +151,19 @@ const ZoomOverlay = memo<{
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetView: () => void;
-}>(({ isFullscreen, rightSidebarWidth, onToggleFullscreen, onZoomIn, onZoomOut, onResetView }) => (
+  isMobile: boolean;
+}>(({ isFullscreen, rightSidebarWidth, onToggleFullscreen, onZoomIn, onZoomOut, onResetView, isMobile }) => (
   <div
-    className="fixed z-40 flex flex-col items-center gap-1 rounded-xl select-none"
+    className={`fixed z-40 flex items-center gap-1 rounded-xl select-none ${isMobile ? 'flex-row' : 'flex-col'}`}
     style={{
-      top: '50%',
-      transform: 'translateY(-50%)',
-      // Dynamically glide to edge based on fullscreen status and sidebar width
-      right: isFullscreen ? 20 : rightSidebarWidth + 20,
-      transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1), top 0.3s, transform 0.3s',
+      ...(isMobile
+        ? { bottom: 76, right: 12 }
+        : {
+            top: '50%',
+            transform: 'translateY(-50%)',
+            right: isFullscreen ? 20 : rightSidebarWidth + 20,
+            transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1)',
+          }),
       background: 'rgba(14,13,11,0.92)',
       backdropFilter: 'blur(16px)',
       border: '1px solid rgba(196,124,46,0.18)',
@@ -190,24 +194,29 @@ const ZoomOverlay = memo<{
         {icon}
       </button>
     ))}
-    {/* Horizontal divider for vertical stack */}
-    <div style={{ width: 20, height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
-    <button
-      onClick={onToggleFullscreen}
-      title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
-      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-      style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
-        (e.currentTarget as HTMLElement).style.background = 'transparent';
-      }}
-    >
-      {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-    </button>
+    {/* Divider — hidden on mobile */}
+    {!isMobile && (
+      <div style={{ width: 20, height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
+    )}
+    {/* Fullscreen toggle — desktop only */}
+    {!isMobile && (
+      <button
+        onClick={onToggleFullscreen}
+        title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
+        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+        style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+          (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
+          (e.currentTarget as HTMLElement).style.background = 'transparent';
+        }}
+      >
+        {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+      </button>
+    )}
   </div>
 ));
 ZoomOverlay.displayName = 'ZoomOverlay';
@@ -255,6 +264,16 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
+
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= 1024
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handle = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handle);
+    return () => mq.removeEventListener('change', handle);
+  }, []);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false, x: 0, y: 0, badgeId: null,
@@ -379,7 +398,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         if (mod && e.key === '[') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'back')); return; }
         if (e.key.toLowerCase() === 'h' && !mod) { e.preventDefault(); sel.forEach((id) => hideBadge(id as RatingType)); return; }
       }
-      if (e.key.toLowerCase() === 'f' && !mod) { e.preventDefault(); setIsFullscreen((v) => !v); return; }
+      if (e.key.toLowerCase() === 'f' && !mod && isDesktop) { e.preventDefault(); setIsFullscreen((v) => !v); return; }
       if (e.key.toLowerCase() === 'g' && !mod) { e.preventDefault(); toggleViewOption('showGrid'); return; }
       if (e.key === "'" && !mod) { e.preventDefault(); toggleViewOption('showSafeArea'); return; }
       if (mod && e.key === '1') { e.preventDefault(); dispatchResetView(); return; }
@@ -409,7 +428,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   }, [
     undo, redo, setConfig, clearSelection, setBatchSelection,
     moveLayer, hideBadge, toggleViewOption, dispatchZoom, dispatchResetView,
-    isFullscreen, paletteOpen, shortcutsOpen, exportOpen, selectedIds,
+    isFullscreen, paletteOpen, shortcutsOpen, exportOpen, selectedIds, isDesktop,
   ]);
 
   // ── Panel widths ──────────────────────────────────────────────────────────
@@ -782,9 +801,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               />
               <div
                 onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-[3px] cursor-col-resize group z-50"
+                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50 flex items-center justify-center"
               >
-                <div className="absolute inset-y-0 right-0 w-[1px] bg-transparent group-hover:bg-[rgba(196,124,46,0.3)] transition-colors" />
+                <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
             </aside>
           )}
@@ -854,9 +873,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             >
               <div
                 onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-[3px] cursor-col-resize group z-50"
+                className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50 flex items-center justify-center"
               >
-                <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-[rgba(196,124,46,0.3)] transition-colors" />
+                <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
               <Inspector config={config} setConfig={setConfig} />
             </aside>
@@ -913,11 +932,12 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
           isFullscreen={isFullscreen}
-          rightSidebarWidth={rightVisible && !isFullscreen ? rightW : 0}
+          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
           onToggleFullscreen={toggleFullscreen}
           onZoomIn={() => dispatchZoom(0.25)}
           onZoomOut={() => dispatchZoom(-0.25)}
           onResetView={dispatchResetView}
+          isMobile={!isDesktop}
         />
       </div>
     </>

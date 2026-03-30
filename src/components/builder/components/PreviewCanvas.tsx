@@ -197,6 +197,15 @@ const PreviewCanvas: React.FC<Props> = ({
     return () => window.removeEventListener('reset-canvas-view', h);
   }, []);
 
+  useEffect(() => {
+    const h = (e: Event) => {
+      const delta = (e as CustomEvent<number>).detail;
+      setZoom((z) => Math.max(0.2, Math.min(z + delta, 4)));
+    };
+    window.addEventListener('canvas-zoom', h);
+    return () => window.removeEventListener('canvas-zoom', h);
+  }, []);
+
   const cleanPosterUrl = useMemo(() => {
     const id   = config.imdbId || config.tmdbId;
     const type = config.imdbId ? 'poster' : config.mediaType;
