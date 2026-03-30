@@ -583,7 +583,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
             {/* Left Header Area */}
             <div 
-              className="flex items-center px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto"
+              className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto"
             >
               {/* Wordmark */}
               <a href="/" className="flex items-center" style={{ textDecoration: 'none', flexShrink: 0 }}>
@@ -621,7 +621,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-2">
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
               {/* Left sidebar toggle - desktop only */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
@@ -659,11 +659,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 </kbd>
               </button>
 
-              {/* Icon-only search button - mobile */}
+              {/* Wider search button - mobile */}
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-all pointer-events-auto"
+                className="sm:hidden flex items-center gap-1.5 h-8 w-28 px-2.5 rounded-lg transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -672,7 +672,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
               >
-                <Search size={14} />
+                <Search size={13} className="shrink-0" />
+                <span className="text-[10px] syne-font truncate">Search...</span>
               </button>
 
               {/* Right sidebar toggle - desktop only */}
@@ -694,7 +695,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
             {/* Right Header Area */}
             <div 
-              className="ml-auto flex items-center justify-end px-3 shrink-0 gap-1 max-lg:!w-auto"
+              className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto"
             >
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
@@ -731,7 +732,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 ref={exportBtnRef}
                 onClick={() => setExportOpen((v) => !v)}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
+                className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
                 style={{
                   background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
                   color: '#070706',
@@ -757,6 +758,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <Download size={12} />
                 <span className="hidden sm:inline">Export</span>
                 <ChevronDown
+                  className="hidden sm:block"
                   size={10}
                   style={{
                     transform: exportOpen ? 'rotate(180deg)' : 'none',
@@ -770,7 +772,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Reset - permanently placed at top right */}
               <button
                 onClick={() => setIsResetOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
+                className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
               >
                 <RotateCcw size={13} />
                 <span className="text-[11px] font-bold uppercase tracking-wider hidden md:inline">Reset</span>
