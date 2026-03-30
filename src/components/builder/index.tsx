@@ -624,7 +624,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="hidden max-[424px]:flex items-center gap-1.5 h-7 px-2 rounded-md transition-all pointer-events-auto"
+                className="hidden max-[639px]:flex items-center gap-1.5 h-7 px-2 rounded-md transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -667,7 +667,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               {/* Full search bar - sm and above */}
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] rounded-md transition-colors pointer-events-auto"
+                className="hidden sm:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] rounded-md transition-colors pointer-events-auto"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -689,7 +689,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="sm:hidden max-[424px]:hidden flex items-center gap-1.5 h-8 w-[40vw] min-w-24 max-w-32 px-2.5 rounded-lg transition-all pointer-events-auto"
+                className="hidden"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
