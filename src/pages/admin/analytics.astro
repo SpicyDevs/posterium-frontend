@@ -2,10 +2,14 @@
 // src/pages/admin/analytics.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
-
-// You can add server-side basic auth here in the future if desired.
 ---
 
-<BaseLayout title="Admin Analytics | FreePosterAPI">
-  <AnalyticsDashboard client:load />
+<BaseLayout
+  title="Analytics | Posterium Admin"
+  description="Rasterizer node performance, traffic analysis, and failure diagnostics."
+  canonical="https://posters.spicydevs.xyz/admin/analytics"
+  noindex={true}
+>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <AnalyticsDashboard client:only="react" />
 </BaseLayout>
