@@ -621,6 +621,21 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <Heart size={12} className="shrink-0 fill-current" />
                 <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
               </a>
+              <button
+                onClick={() => setPaletteOpen(true)}
+                title="Search commands (⌘K)"
+                className="hidden max-[424px]:flex items-center gap-1.5 h-7 px-2 rounded-md transition-all pointer-events-auto"
+                style={{
+                  color: 'var(--film-text-ghost)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              >
+                <Search size={12} className="shrink-0" />
+                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+              </button>
               <ToolbarBtn
                 onClick={() => setShortcutsOpen((v) => !v)}
                 label="Keyboard Shortcuts (⌘/)"
@@ -674,7 +689,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
-                className="sm:hidden flex items-center gap-1.5 h-8 w-[40vw] min-w-24 max-w-32 px-2.5 rounded-lg transition-all pointer-events-auto"
+                className="sm:hidden max-[424px]:hidden flex items-center gap-1.5 h-8 w-[40vw] min-w-24 max-w-32 px-2.5 rounded-lg transition-all pointer-events-auto"
                 style={{
                   color: 'var(--film-text-ghost)',
                   border: '1px solid rgba(255,255,255,0.08)',
