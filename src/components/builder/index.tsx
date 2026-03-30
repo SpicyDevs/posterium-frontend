@@ -581,10 +581,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               aria-hidden="true"
             />
 
-            {/* Left Header Area - Aligned exactly with left sidebar */}
+            {/* Left Header Area */}
             <div 
-              className="flex items-center px-3 shrink-0 gap-1 sidebar-transition overflow-hidden max-lg:!w-auto" 
-              style={{ width: leftVisible ? leftW : 'auto' }}
+              className="flex items-center px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto"
             >
               {/* Wordmark */}
               <a href="/" className="flex items-center" style={{ textDecoration: 'none', flexShrink: 0 }}>
@@ -693,10 +692,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               </button>
             </div>
 
-            {/* Right Header Area - Aligned exactly with right sidebar */}
+            {/* Right Header Area */}
             <div 
-              className="flex items-center justify-end px-3 shrink-0 gap-1 sidebar-transition max-lg:!w-auto"
-              style={{ width: rightVisible ? rightW : 'auto' }}
+              className="flex items-center justify-end px-3 shrink-0 gap-1 max-lg:!w-auto"
             >
 
               <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
