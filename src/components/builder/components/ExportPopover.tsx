@@ -134,7 +134,7 @@ const handleAioCopy = async () => {
           onClick={onClose}
           className="w-6 h-6 rounded flex items-center justify-center transition-colors"
           style={{ color: 'var(--film-text-dim)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
         >
           <X size={12} />

@@ -519,7 +519,7 @@ const ApiKeysPanel: React.FC<{
               onClick={() => setShow((v) => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
               style={{ color: 'var(--film-text-dim)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
             >
               <Eye size={12} />
@@ -815,7 +815,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             onClick={(e) => e.stopPropagation()}
             className="p-0.5 outline-none transition-colors shrink-0"
             style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
           >
             <GripVertical size={13} />
@@ -1335,7 +1335,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onClick={handleToggleAll}
                 className="flex items-center gap-1.5 transition-colors body-font"
                 style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
               >
                 {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
@@ -1346,7 +1346,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onClick={() => handleSelectAll(!allVisibleSelected)}
                 className="flex items-center gap-1.5 transition-colors body-font"
                 style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
               >
                 <div

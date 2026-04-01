@@ -355,7 +355,7 @@ const TextInputRow: React.FC<{
             className="mono-font transition-colors"
             style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
@@ -414,7 +414,7 @@ const ColorRow: React.FC<{
           className="mono-font transition-colors"
           style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
