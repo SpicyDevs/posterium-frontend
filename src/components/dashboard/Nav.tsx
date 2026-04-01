@@ -10,7 +10,7 @@ const NAV_LINKS = [
 ] as const;
 
 const LINK_BASE: React.CSSProperties = {
-  color: 'rgba(224, 210, 180, 0.72)',
+  color: 'rgba(224, 210, 180, 0.88)',
   fontSize: 11,
   fontWeight: 700,
   letterSpacing: '0.1em',
@@ -22,10 +22,10 @@ const LINK_BASE: React.CSSProperties = {
 };
 
 const LINK_HOVER_COLOR = 'var(--film-cream)';
-const LINK_NORMAL_COLOR = 'rgba(224, 210, 180, 0.72)';
+const LINK_NORMAL_COLOR = 'rgba(224, 210, 180, 0.88)';
 
 const GITHUB_BASE: React.CSSProperties = {
-  color: 'rgba(200, 185, 155, 0.6)',
+  color: 'rgba(200, 185, 155, 0.78)',
   display: 'flex',
   alignItems: 'center',
   padding: '6px 8px',
@@ -135,7 +135,7 @@ const Nav = memo(() => {
               (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'rgba(200,185,155,0.6)';
+              (e.currentTarget as HTMLElement).style.color = 'rgba(200,185,155,0.78)';
             }}
           >
             <Github size={15} />
@@ -240,7 +240,7 @@ const Nav = memo(() => {
             onClick={closeMenu}
             className="syne-font"
             style={{
-              color: 'rgba(196,124,46,0.7)',
+              color: 'rgba(196,124,46,0.85)',
               fontSize: 12,
               fontWeight: 700,
               letterSpacing: '0.07em',
@@ -262,7 +262,7 @@ const Nav = memo(() => {
             onClick={closeMenu}
             className="syne-font"
             style={{
-              color: 'rgba(196,124,46,0.7)',
+              color: 'rgba(196,124,46,0.85)',
               fontSize: 12,
               fontWeight: 700,
               letterSpacing: '0.07em',

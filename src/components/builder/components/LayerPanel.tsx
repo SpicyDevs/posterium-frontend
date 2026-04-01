@@ -82,7 +82,7 @@ const SelectBox = memo(
           }}
         >
           <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
-          <ChevronDown size={10} style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }} />
+          <ChevronDown size={10} style={{ color: 'var(--film-text-dim)', flexShrink: 0 }} />
         </ListboxButton>
         <ListboxOptions
           transition
@@ -259,7 +259,7 @@ const ToggleRow: React.FC<{
   small?: boolean;
   disabled?: boolean;
 }> = ({ label, sub, checked, onChange, small, disabled }) => (
-  <div className={clsx("flex items-center justify-between gap-3", disabled && "opacity-40 pointer-events-none")}>
+  <div className={clsx("flex items-center justify-between gap-3", disabled && "opacity-60 pointer-events-none")}>
     <div className="min-w-0">
       <p
         className="body-font font-medium"
@@ -273,7 +273,7 @@ const ToggleRow: React.FC<{
       {sub && (
         <p
           className="body-font mt-0.5"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
         >
           {sub}
         </p>
@@ -317,7 +317,7 @@ const Section: React.FC<{
           style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           {icon && (
-            <span style={{ color: 'var(--film-text-dim)', opacity: 0.8, lineHeight: 0 }}>
+            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>
               {icon}
             </span>
           )}
@@ -408,7 +408,7 @@ const LogoPanel: React.FC<{
         </div>
         <p
           className="body-font"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
         >
           Falls back automatically if source has no logo
         </p>
@@ -441,7 +441,7 @@ const LogoPanel: React.FC<{
 
       <p
         className="body-font leading-relaxed"
-        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+        style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
       >
         ⟠ Drag the logo on the canvas to reposition. Snap guides appear near the centre.
       </p>
@@ -481,7 +481,7 @@ const ApiKeysPanel: React.FC<{
     <div className="space-y-3">
       <p
         className="body-font leading-relaxed"
-        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+        style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
       >
         Override the default API keys used to fetch ratings and posters. Stored in a browser cookie.
       </p>
@@ -518,9 +518,9 @@ const ApiKeysPanel: React.FC<{
               type="button"
               onClick={() => setShow((v) => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
-              style={{ color: 'var(--film-text-ghost)' }}
+              style={{ color: 'var(--film-text-dim)' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
             >
               <Eye size={12} />
             </button>
@@ -778,7 +778,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     const iconColor = isActive
       ? (iconData?.color ?? 'var(--film-text-dim)')
       : 'rgba(74,74,82,0.6)';
-    const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-30';
+    const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-50';
 
     const handleCheckboxClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -814,9 +814,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             {...provided?.dragHandleProps}
             onClick={(e) => e.stopPropagation()}
             className="p-0.5 outline-none transition-colors shrink-0"
-            style={{ color: 'var(--film-text-ghost)', cursor: 'grab' }}
+            style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
           >
             <GripVertical size={13} />
           </div>
@@ -862,7 +862,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           ) : (
             <span
               className="mono-font"
-              style={{ fontSize: 8, fontWeight: 700, color: 'var(--film-text-ghost)' }}
+              style={{ fontSize: 8, fontWeight: 700, color: 'var(--film-text-dim)' }}
             >
               {badge.label.slice(0, 2)}
             </span>
@@ -888,7 +888,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {isActive && ratingVal && (
             <span
               className="mono-font"
-              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
             >
               {ratingVal}
             </span>
@@ -900,7 +900,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <button
             onClick={() => handleToggleVisibility(badge.id, !isActive)}
             className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-            style={{ color: isActive ? 'var(--film-text-ghost)' : 'rgba(74,74,82,0.5)' }}
+            style={{ color: isActive ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
             title={isActive ? 'Hide badge' : 'Show badge'}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
@@ -908,8 +908,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.color = isActive
-                ? 'var(--film-text-ghost)'
-                : 'rgba(74,74,82,0.5)';
+                ? 'var(--film-text-dim)'
+                : 'rgba(110,110,120,0.7)';
               (e.currentTarget as HTMLElement).style.background = 'transparent';
             }}
           >
@@ -942,7 +942,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               )}
               style={{
                 background: localMode === tab ? 'var(--film-mid)' : 'transparent',
-                color: localMode === tab ? 'var(--film-cream)' : 'var(--film-text-ghost)',
+                color: localMode === tab ? 'var(--film-cream)' : 'var(--film-text-dim)',
                 boxShadow: localMode === tab ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
               }}
             >
@@ -976,7 +976,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     style={{ fontSize: 12, color: 'var(--film-cream)' }}
                   >
                     {fetchedData.title || (
-                      <span style={{ color: 'var(--film-text-ghost)', fontStyle: 'italic' }}>
+                      <span style={{ color: 'var(--film-text-dim)', fontStyle: 'italic' }}>
                         Untitled
                       </span>
                     )}
@@ -1017,7 +1017,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     {config.imdbId && (
                       <span
                         className="mono-font"
-                        style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                        style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
                       >
                         {config.imdbId}
                       </span>
@@ -1055,7 +1055,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <div>
             <p
               className="syne-font uppercase tracking-widest mb-1.5"
-              style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
             >
               Search Media
             </p>
@@ -1080,7 +1080,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
                   }}
                 >
-                  <div className="pl-3" style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }}>
+                  <div className="pl-3" style={{ color: 'var(--film-text-dim)', flexShrink: 0 }}>
                     {isSearching ? (
                       <Loader2 size={12} className="animate-spin" style={{ color: 'var(--film-amber)' }} />
                     ) : (
@@ -1088,7 +1088,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     )}
                   </div>
                   <Combobox.Input
-                    className="flex-1 bg-transparent border-none text-[11px] placeholder-[var(--film-text-ghost)] px-2 focus:outline-none focus:ring-0 h-full syne-font"
+                    className="flex-1 bg-transparent border-none text-[11px] placeholder-[var(--film-text-dim)] px-2 focus:outline-none focus:ring-0 h-full syne-font"
                     style={{ color: 'var(--film-pale)' }}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     displayValue={() => ''}
@@ -1133,7 +1133,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span
                               className="mono-font"
-                              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
                             >
                               {(item.release_date || item.first_air_date)?.split('-')[0]}
                             </span>
@@ -1168,7 +1168,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <div>
               <p
                 className="syne-font uppercase tracking-widest mb-1.5"
-                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
               >
                 Media Type
               </p>
@@ -1185,7 +1185,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <div className="w-24">
               <p
                 className="syne-font uppercase tracking-widest mb-1.5"
-                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
               >
                 IMDb ID
               </p>
@@ -1224,7 +1224,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <div>
               <p
                 className="syne-font uppercase tracking-widest mb-1.5"
-                style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
               >
                 Poster Source
               </p>
@@ -1238,7 +1238,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <div>
                 <p
                   className="syne-font uppercase tracking-widest mb-1.5"
-                  style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                  style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
                 >
                   Poster Type
                 </p>
@@ -1266,7 +1266,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <div className="flex items-center gap-2">
                 <ImagePlay
                   size={13}
-                  style={{ color: config.logo ? 'var(--film-amber)' : 'var(--film-text-ghost)' }}
+                  style={{ color: config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
                 />
                 <div>
                   <p
@@ -1277,7 +1277,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </p>
                   <p
                     className="body-font"
-                    style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+                    style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
                   >
                     {config.logo
                       ? `${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`
@@ -1326,7 +1326,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <div className="flex items-center justify-between mb-3">
             <span
               className="syne-font uppercase tracking-widest"
-              style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
             >
               Badges
             </span>
@@ -1334,9 +1334,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <button
                 onClick={handleToggleAll}
                 className="flex items-center gap-1.5 transition-colors body-font"
-                style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
               >
                 {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
                 {allVisible ? 'Hide all' : 'Show all'}
@@ -1345,9 +1345,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <button
                 onClick={() => handleSelectAll(!allVisibleSelected)}
                 className="flex items-center gap-1.5 transition-colors body-font"
-                style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
               >
                 <div
                   className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
@@ -1379,11 +1379,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </Droppable>
             ) : (
               <div className="flex flex-col items-center py-10 gap-2">
-                <EyeOff size={22} strokeWidth={1.5} style={{ color: 'var(--film-text-ghost)', opacity: 0.5 }} />
+                <EyeOff size={22} strokeWidth={1.5} style={{ color: 'var(--film-text-dim)', opacity: 0.7 }} />
                 <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
                   No active badges
                 </p>
-                <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
+                <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                   Enable some from the list below
                 </p>
               </div>
@@ -1394,7 +1394,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 <div className="mt-5 mb-2 flex items-center justify-between">
                   <span
                     className="syne-font uppercase tracking-widest"
-                    style={{ fontSize: 9, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+                    style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
                   >
                     Available
                   </span>
@@ -1402,7 +1402,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   <div className="flex items-center gap-1.5">
                     <span
                       className="body-font"
-                      style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                      style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
                     >
                       Fallback
                     </span>

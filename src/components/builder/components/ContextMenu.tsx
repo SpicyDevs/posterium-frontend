@@ -336,7 +336,7 @@ const ContextMenu: React.FC<Props> = memo(
                   <span
                     style={{
                       fontSize: 9,
-                      color: 'rgba(140,130,112,0.45)',
+                      color: 'var(--film-text-dim)',
                       fontFamily: 'JetBrains Mono, monospace',
                       letterSpacing: '0.05em',
                       flexShrink: 0,

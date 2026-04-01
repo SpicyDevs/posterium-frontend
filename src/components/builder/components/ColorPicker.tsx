@@ -105,7 +105,7 @@ const ColorPicker: React.FC<Props> = memo(
             tabIndex={-1}
           />
           <div className="flex-1 relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-600 pointer-events-none">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-400 pointer-events-none">
               #
             </span>
             <input
@@ -123,8 +123,8 @@ const ColorPicker: React.FC<Props> = memo(
         {showOpacity && onOpacityChange && (
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-zinc-600">Opacity</span>
-              <span className="text-[10px] font-mono text-zinc-500">
+              <span className="text-[10px] text-zinc-400">Opacity</span>
+              <span className="text-[10px] font-mono text-zinc-400">
                 {Math.round(opacity * 100)}%
               </span>
             </div>
