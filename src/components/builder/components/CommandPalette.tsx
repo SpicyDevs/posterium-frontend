@@ -277,7 +277,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
                  color: 'var(--film-cream)',
                  fontFamily: 'Syne, sans-serif',
                  fontWeight: 500,
-                 '::placeholder': { color: 'rgba(140,130,112,0.4)' },
+                 '::placeholder': { color: 'rgba(140,130,112,0.62)' },
                } as React.CSSProperties
              }
            />
@@ -287,7 +287,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 5,
-              color: 'rgba(140,130,112,0.6)',
+              color: 'rgba(140,130,112,0.72)',
               cursor: 'pointer',
               padding: '3px 7px',
               fontSize: 10,
@@ -300,7 +300,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
               e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
+              e.currentTarget.style.color = 'rgba(140,130,112,0.72)';
               e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
             }}
           >
@@ -323,7 +323,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
               style={{
                 padding: '40px 20px',
                 textAlign: 'center',
-                color: 'rgba(140,130,112,0.4)',
+                color: 'rgba(140,130,112,0.62)',
                 fontSize: 12,
                 fontFamily: 'Syne, sans-serif',
               }}
@@ -358,7 +358,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
                         fontSize: 9,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
-                        color: cat === 'Recent' ? 'rgba(196,124,46,0.55)' : 'rgba(140,130,112,0.4)',
+                        color: cat === 'Recent' ? 'rgba(196,124,46,0.72)' : 'rgba(140,130,112,0.62)',
                         fontFamily: 'Syne, sans-serif',
                         textTransform: 'uppercase',
                       }}
@@ -417,7 +417,7 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
               <span
                 style={{
                   fontSize: 9,
-                  color: 'rgba(140,130,112,0.4)',
+                  color: 'rgba(140,130,112,0.62)',
                   fontFamily: 'Syne, sans-serif',
                 }}
               >
@@ -426,11 +426,11 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
             </div>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Command size={9} style={{ color: 'rgba(140,130,112,0.3)' }} />
+            <Command size={9} style={{ color: 'rgba(140,130,112,0.6)' }} />
             <span
               style={{
                 fontSize: 9,
-                color: 'rgba(140,130,112,0.3)',
+                color: 'rgba(140,130,112,0.6)',
                 fontFamily: 'JetBrains Mono, monospace',
                 letterSpacing: '0.1em',
               }}
@@ -481,7 +481,7 @@ const CommandItem = memo<{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.55)',
+        color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.68)',
         flexShrink: 0,
         transition: 'background 0.08s, border-color 0.08s, color 0.08s',
         lineHeight: 0,
@@ -511,7 +511,7 @@ const CommandItem = memo<{
             display: 'block',
             fontSize: 10,
             marginTop: 1,
-            color: 'rgba(140,130,112,0.45)',
+            color: 'rgba(140,130,112,0.62)',
             fontFamily: 'DM Sans, sans-serif',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -525,7 +525,7 @@ const CommandItem = memo<{
     <span
       style={{
         fontSize: 9,
-        color: 'rgba(140,130,112,0.3)',
+        color: 'rgba(140,130,112,0.58)',
         fontFamily: 'JetBrains Mono, monospace',
         letterSpacing: '0.1em',
         flexShrink: 0,
@@ -542,7 +542,7 @@ const CommandItem = memo<{
           padding: '1px 5px',
           fontSize: 9,
           fontFamily: 'JetBrains Mono, monospace',
-          color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.35)',
+          color: isActive ? 'rgba(196,124,46,0.8)' : 'rgba(140,130,112,0.58)',
           flexShrink: 0,
           transition: 'color 0.08s',
         }}

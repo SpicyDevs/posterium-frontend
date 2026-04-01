@@ -32,7 +32,7 @@ interface Props {
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
 const INACTIVE_OPTION_HOVER_CLASSES =
-  'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-text-label)]';
+  'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-label)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-cream)]';
 
 const readSectionStates = (): Record<string, boolean> => {
   try {
@@ -83,7 +83,7 @@ const Section: React.FC<{
           style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           {icon && (
-            <span style={{ color: 'var(--film-text-dim)', opacity: 0.8, lineHeight: 0 }}>
+            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>
               {icon}
             </span>
           )}
@@ -271,7 +271,7 @@ const ToggleRow: React.FC<{
         {label}
       </p>
       {sub && (
-        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
+        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
           {sub}
         </p>
       )}
@@ -353,12 +353,12 @@ const TextInputRow: React.FC<{
             type="button"
             onClick={onClear}
             className="mono-font transition-colors"
-            style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
             }}
           >
             Clear
@@ -412,12 +412,12 @@ const ColorRow: React.FC<{
           type="button"
           onClick={onReset}
           className="mono-font transition-colors"
-          style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
           }}
         >
           Reset
@@ -470,7 +470,7 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
       >
         <div
           className="w-1.5 h-1.5 rounded-full mx-auto"
-          style={{ background: value === pos.id ? 'white' : 'rgba(140,130,112,0.4)' }}
+          style={{ background: value === pos.id ? 'white' : 'rgba(180,168,148,0.68)' }}
         />
       </button>
     ))}
@@ -560,7 +560,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             <div>
               <p
                 className="body-font mb-2"
-                style={{ fontSize: 10, color: 'var(--film-text-ghost)', fontWeight: 500 }}
+                style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
               >
                 Position preset
               </p>
@@ -569,7 +569,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             <div className="flex-1">
               <p
                 className="body-font mb-2"
-                style={{ fontSize: 10, color: 'var(--film-text-ghost)', fontWeight: 500 }}
+                style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
               >
                 Flow direction
               </p>
@@ -594,7 +594,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                         color:
                           config.layout === opt.id
                             ? 'var(--film-amber)'
-                            : 'var(--film-text-ghost)',
+                            : 'var(--film-text-label)',
                         lineHeight: 0,
                       }}
                     >
@@ -786,7 +786,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           >
             {config.labelPos
               ? <Eye size={11} style={{ color: 'var(--film-amber)' }} />
-              : <EyeOff size={11} style={{ color: 'var(--film-text-ghost)' }} />
+              : <EyeOff size={11} style={{ color: 'var(--film-text-dim)' }} />
             }
             {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
           </button>
@@ -865,7 +865,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 <Eye
                   size={10}
                   style={{
-                    color: viewOptions[key] ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                    color: viewOptions[key] ? 'var(--film-amber)' : 'var(--film-text-dim)',
                   }}
                 />
                 {label}
@@ -874,7 +874,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </div>
           <p
             className="body-font leading-relaxed"
-            style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
           >
             Canvas-only guides — not visible in exported images.
           </p>
@@ -897,7 +897,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             <Layers
               size={18}
               strokeWidth={1.5}
-              style={{ color: 'var(--film-text-ghost)', opacity: 0.4 }}
+              style={{ color: 'var(--film-text-dim)', opacity: 0.7 }}
             />
           </div>
           <div>
@@ -909,7 +909,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </p>
             <p
               className="body-font mt-1"
-              style={{ fontSize: 11, color: 'var(--film-text-ghost)' }}
+              style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
             >
               Click a badge on the canvas to edit
             </p>

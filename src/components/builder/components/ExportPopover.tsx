@@ -133,9 +133,9 @@ const handleAioCopy = async () => {
         <button
           onClick={onClose}
           className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-          style={{ color: 'var(--film-text-ghost)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-ghost)'; }}
+          style={{ color: 'var(--film-text-dim)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
         >
           <X size={12} />
         </button>
@@ -145,7 +145,7 @@ const handleAioCopy = async () => {
       <div className="px-4 pt-3 pb-2">
         <p
           className="syne-font uppercase tracking-widest mb-2"
-          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+          style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           Format
         </p>
@@ -178,7 +178,7 @@ const handleAioCopy = async () => {
                   color:
                     config.extension === ext.id
                       ? 'rgba(196,124,46,0.6)'
-                      : 'var(--film-text-ghost)',
+                      : 'var(--film-text-dim)',
                 }}
               >
               </span>
@@ -191,7 +191,7 @@ const handleAioCopy = async () => {
       <div className="px-4 pt-1 pb-3">
         <p
           className="syne-font uppercase tracking-widest mb-1.5"
-          style={{ fontSize: 8, color: 'var(--film-text-ghost)', fontWeight: 700 }}
+          style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           API URL
         </p>
