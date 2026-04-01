@@ -26,7 +26,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
-  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  onContextMenu?: (id: RatingType | 'logo', e: React.MouseEvent) => void;
   isFullscreen?: boolean;
   rightSidebarWidth?: number;
   toggleFullscreen?: () => void;
@@ -271,6 +271,23 @@ const PreviewCanvas: React.FC<Props> = ({
     });
   };
 
+  const buildLayerStack = useCallback(() => {
+    const ids: (RatingType | 'logo')[] = [...config.ratings].reverse();
+    if (config.logo) {
+      const idx = Number.isFinite(config.logoLayerIndex) ? config.logoLayerIndex : ids.length;
+      const insertAt = Math.max(0, Math.min(ids.length, Math.round(idx)));
+      ids.splice(insertAt, 0, 'logo');
+    }
+    return ids;
+  }, [config.ratings, config.logo, config.logoLayerIndex]);
+
+  const layerStack = buildLayerStack();
+  const layerZ = useMemo(() => {
+    const map = new Map<RatingType | 'logo', number>();
+    layerStack.forEach((id, i) => map.set(id, 1000 - i));
+    return map;
+  }, [layerStack]);
+
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
     pendingDragRef.current = { id, dx, dy };
@@ -462,6 +479,7 @@ const PreviewCanvas: React.FC<Props> = ({
               onContextMenu={onContextMenu}
               isObscuring={isObscuring}
               onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+              zIndex={layerZ.get(id) ?? 50}
             />
           );
         })}
@@ -472,6 +490,8 @@ const PreviewCanvas: React.FC<Props> = ({
             logoUrl={logoPreviewUrl}
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
+            onContextMenu={(e) => onContextMenu?.('logo', e)}
+            zIndex={layerZ.get('logo') ?? 50}
           />
         )}
       </div>

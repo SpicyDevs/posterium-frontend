@@ -10,6 +10,8 @@ interface Props {
   canvasScale: number;
   onDragEnd: (dx: number, dy: number) => void;
   onLogoLoad?: (naturalW: number, naturalH: number) => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
+  zIndex?: number;
 }
 
 const DraggableLogo: React.FC<Props> = ({
@@ -18,6 +20,8 @@ const DraggableLogo: React.FC<Props> = ({
   canvasScale,
   onDragEnd,
   onLogoLoad,
+  onContextMenu,
+  zIndex = 40,
 }) => {
   const lw = config.logoW,
     lh = config.logoH;
@@ -120,6 +124,11 @@ const DraggableLogo: React.FC<Props> = ({
         />
       )}
       <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onContextMenu?.(e);
+        }}
         onMouseDown={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -131,12 +140,13 @@ const DraggableLogo: React.FC<Props> = ({
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="absolute select-none cursor-move z-40"
+        className="absolute select-none cursor-move"
         style={{
           left: renderX,
           top: renderY,
           width: lw,
           height: lh,
+          zIndex,
           opacity: config.logoOpacity,
           filter: dropShadow,
           touchAction: 'none',

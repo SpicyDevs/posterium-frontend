@@ -17,11 +17,13 @@ import {
 } from 'lucide-react';
 import type { RatingType } from '../types';
 
+export type LayerTargetId = RatingType | 'logo';
+
 export interface ContextMenuState {
   visible: boolean;
   x: number;
   y: number;
-  badgeId: RatingType | null;
+  badgeId: LayerTargetId | null;
 }
 
 interface ContextMenuAction {
@@ -38,19 +40,19 @@ interface Props {
   state: ContextMenuState;
   onClose: () => void;
   isSelected: boolean;
-  onBringToFront: (id: RatingType) => void;
-  onBringForward: (id: RatingType) => void;
-  onSendBackward: (id: RatingType) => void;
-  onSendToBack: (id: RatingType) => void;
-  onHide: (id: RatingType) => void;
+  onBringToFront: (id: LayerTargetId) => void;
+  onBringForward: (id: LayerTargetId) => void;
+  onSendBackward: (id: LayerTargetId) => void;
+  onSendToBack: (id: LayerTargetId) => void;
+  onHide: (id: LayerTargetId) => void;
   onShowAll: () => void;
-  onSelect: (id: RatingType) => void;
-  onDeselect: (id: RatingType) => void;
+  onSelect: (id: LayerTargetId) => void;
+  onDeselect: (id: LayerTargetId) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
-  onDuplicate?: (id: RatingType) => void;
-  onResetBadge: (id: RatingType) => void;
-  onDelete: (id: RatingType) => void;
+  onDuplicate?: (id: LayerTargetId) => void;
+  onResetBadge: (id: LayerTargetId) => void;
+  onDelete: (id: LayerTargetId) => void;
 }
 
 const ContextMenu: React.FC<Props> = memo(

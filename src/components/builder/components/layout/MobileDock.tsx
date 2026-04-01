@@ -6,8 +6,8 @@ type TabId = 'source' | 'layers' | 'canvas' | 'badge';
 
 const TABS: { id: TabId; Icon: React.ElementType; label: string }[] = [
   { id: 'source', Icon: Film, label: 'Media' },
-  { id: 'layers', Icon: Layers, label: 'Badges' },
-  { id: 'canvas', Icon: Monitor, label: 'Global' },
+  { id: 'layers', Icon: Layers, label: 'Layers' },
+  { id: 'canvas', Icon: Monitor, label: 'Design' },
   { id: 'badge', Icon: Sliders, label: 'Edit' },
 ];
 

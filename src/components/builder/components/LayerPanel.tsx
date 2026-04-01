@@ -18,6 +18,7 @@ import {
   Layers,
   Tv,
   Clapperboard,
+  Monitor,
   Eye,
   EyeOff,
   ChevronDown,
@@ -42,6 +43,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
+  onLayerContextMenu?: (id: RatingType | 'logo', e: React.MouseEvent) => void;
 }
 
 interface SearchResult {
@@ -532,7 +534,7 @@ const ApiKeysPanel: React.FC<{
 };
 
 // ── Main LayerPanel component ─────────────────────────────────────────────────
-const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, onLayerContextMenu }) => {
   const {
     setBatchSelection,
     activeTab,
@@ -542,11 +544,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setFallbackEnabled,
   } = useEditor();
 
-  const [localMode, setLocalMode] = useState<'source' | 'layers'>('source');
+  const [localMode, setLocalMode] = useState<'source' | 'design' | 'layers'>('source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
     if (activeTab === 'source' || activeTab === 'layers') setLocalMode(activeTab);
+    if (activeTab === 'canvas') setLocalMode('design');
   }, [activeTab]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -712,15 +715,33 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     return ia - ib;
   });
 
+  const activeLayerItems = [...activeBadges];
+  if (config.logo) {
+    const logoLayer = { id: 'logo' as const, label: 'Logo Overlay' };
+    const index = Number.isFinite(config.logoLayerIndex) ? config.logoLayerIndex : activeLayerItems.length;
+    const insertAt = Math.max(0, Math.min(activeLayerItems.length, Math.round(index)));
+    activeLayerItems.splice(insertAt, 0, logoLayer);
+  }
+
   const handleDragEnd = useCallback(
     (result: DropResult) => {
       if (!result.destination) return;
       if (result.source.droppableId === 'active' && result.destination.droppableId === 'active') {
         if (result.source.index === result.destination.index) return;
-        const rev = [...config.ratings].reverse();
-        const [removed] = rev.splice(result.source.index, 1);
-        rev.splice(result.destination.index, 0, removed);
-        setConfig((prev) => ({ ...prev, ratings: rev.reverse() }));
+        const stack: (RatingType | 'logo')[] = [...config.ratings].reverse();
+        if (config.logo) {
+          const idx = Number.isFinite(config.logoLayerIndex) ? config.logoLayerIndex : stack.length;
+          stack.splice(Math.max(0, Math.min(stack.length, Math.round(idx))), 0, 'logo');
+        }
+        const [removed] = stack.splice(result.source.index, 1);
+        stack.splice(result.destination.index, 0, removed);
+        const logoIdx = stack.indexOf('logo');
+        const nextRatings = stack.filter((s): s is RatingType => s !== 'logo').reverse();
+        setConfig((prev) => ({
+          ...prev,
+          ratings: nextRatings,
+          logoLayerIndex: logoIdx === -1 ? prev.logoLayerIndex : logoIdx,
+        }));
       } else if (
         result.source.droppableId === 'inactive' &&
         result.destination.droppableId === 'inactive' &&
@@ -734,7 +755,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setConfig((prev) => ({ ...prev, fallbackPool: nextOrder }));
       }
     },
-    [config.ratings, inactiveBadges, fallbackEnabled, setConfig]
+    [config.ratings, config.logo, config.logoLayerIndex, inactiveBadges, fallbackEnabled, setConfig]
   );
 
   const getIconKey = (id: string): BadgeIconKey =>
@@ -932,10 +953,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             border: '1px solid rgba(255,255,255,0.05)',
           }}
         >
-          {(['source', 'layers'] as const).map((tab) => (
+          {(['source', 'design', 'layers'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab(tab === 'design' ? 'canvas' : tab)}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
                 localMode !== tab && 'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
@@ -945,12 +966,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 color: localMode === tab ? 'var(--film-cream)' : 'var(--film-text-dim)',
                 boxShadow: localMode === tab ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
               }}
-            >
-              {tab === 'source' ? (
-                <Film size={11} strokeWidth={2} />
-              ) : (
-                <Layers size={11} strokeWidth={2} />
-              )}
+              >
+              {tab === 'source' ? <Film size={11} strokeWidth={2} /> : tab === 'design' ? <Monitor size={11} strokeWidth={2} /> : <Layers size={11} strokeWidth={2} />}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
@@ -1260,62 +1277,61 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             disabled={['metahub', 'imdb'].includes(config.source)}
           />
 
-          {/* Logo overlay — Section container (flat collapsible, no card border) */}
-          <div className="pt-5">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <ImagePlay
-                  size={13}
-                  style={{ color: config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
-                />
-                <div>
-                  <p
-                    className="syne-font font-semibold"
-                    style={{ fontSize: 11, color: 'var(--film-text-label)' }}
-                  >
-                    Logo Overlay
-                  </p>
-                  <p
-                    className="body-font"
-                    style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-                  >
-                    {config.logo
-                      ? `${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`
-                      : 'Transparent title art overlay'}
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={config.logo}
-                onChange={(v) => updateConfig('logo', v)}
-                className={clsx(
-                  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-                  config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
-                )}
-              >
-                <span
-                  className={clsx(
-                    'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-                    config.logo ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                  )}
-                />
-              </Switch>
-            </div>
-            {config.logo && (
-              <div className="px-1">
-                <LogoPanel config={config} setConfig={setConfig} />
-              </div>
-            )}
-            <div
-              className="mt-5 mx-1"
-              style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
-              aria-hidden="true"
-            />
-          </div>
-
           {/* API Keys — Section */}
           <Section title="API Keys" icon={<KeyRound size={13} />}>
             <ApiKeysPanel config={config} setConfig={setConfig} />
+          </Section>
+        </div>
+      )}
+
+      {/* ── Design Tab ──────────────────────────────────────────────────────── */}
+      {localMode === 'design' && (
+        <div className="space-y-4 px-1">
+          <Section title="Display" icon={<Monitor size={13} />} defaultOpen>
+            <div className="space-y-1.5">
+              <span
+                className="body-font"
+                style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+              >
+                Display Style
+              </span>
+              <SelectBox
+                value={config.uiPreset ?? 'b'}
+                onChange={(v) => updateConfig('uiPreset', v as PosterConfig['uiPreset'])}
+                options={[
+                  { id: 'n', label: 'No Badges' },
+                  { id: 'b', label: 'Badges' },
+                  { id: 'm', label: 'Minimal' },
+                ]}
+              />
+            </div>
+          </Section>
+
+          <Section title="Poster" icon={<ImagePlay size={13} />} defaultOpen>
+            <SliderRow
+              label="Background Blur"
+              value={config.posterBlur}
+              min={0}
+              max={20}
+              unit="px"
+              onChange={(v) => updateConfig('posterBlur', v)}
+            />
+            <ToggleRow
+              label="Grayscale"
+              sub="Desaturate the poster image"
+              checked={config.grayscale}
+              onChange={(v) => updateConfig('grayscale', v)}
+            />
+          </Section>
+
+          <Section title="Logo Overlay" icon={<ImagePlay size={13} />} defaultOpen>
+            {config.logo ? (
+              <LogoPanel config={config} setConfig={setConfig} />
+            ) : (
+              <p className="body-font" style={{ fontSize: 10, color: 'var(--film-text-dim)' }}>
+                Enable Logo Overlay in the Layers tab to customize it.
+              </p>
+            )}
           </Section>
         </div>
       )}
@@ -1328,9 +1344,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               className="syne-font uppercase tracking-widest"
               style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
             >
-              Badges
+              Layers
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <button
+                onClick={() => updateConfig('logo', !config.logo)}
+                className="flex items-center gap-1.5 transition-colors body-font"
+                style={{ fontSize: 10, color: config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)'; }}
+              >
+                {config.logo ? <Eye size={11} /> : <EyeOff size={11} />}
+                Logo
+              </button>
               <button
                 onClick={handleToggleAll}
                 className="flex items-center gap-1.5 transition-colors body-font"
@@ -1364,13 +1390,64 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           </div>
 
           <DragDropContext onDragEnd={handleDragEnd}>
-            {activeBadges.length > 0 ? (
+            {activeLayerItems.length > 0 ? (
               <Droppable droppableId="active">
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
-                    {activeBadges.map((badge, idx) => (
-                      <Draggable key={badge.id} draggableId={badge.id} index={idx}>
-                        {(prov, snap) => renderBadgeRow(badge, true, prov, snap.isDragging)}
+                    {activeLayerItems.map((layer, idx) => (
+                      <Draggable key={layer.id} draggableId={layer.id === 'logo' ? 'logo-layer' : layer.id} index={idx}>
+                        {(prov, snap) =>
+                          layer.id === 'logo' ? (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              onContextMenu={(e) => onLayerContextMenu?.('logo', e)}
+                              className={clsx(
+                                'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
+                                'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer',
+                                snap.isDragging && 'shadow-2xl rotate-[0.5deg]'
+                              )}
+                              style={snap.isDragging ? { background: 'var(--film-mid)', ...(prov.draggableProps.style ?? {}) } : (prov.draggableProps.style ?? {})}
+                            >
+                              <div
+                                {...prov.dragHandleProps}
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-0.5 outline-none transition-colors shrink-0"
+                                style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
+                              >
+                                <GripVertical size={13} />
+                              </div>
+                              <div className="w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0" style={{ background: '#C47C2E', borderColor: '#D4A245' }}>
+                                <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />
+                              </div>
+                              <div className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <ImagePlay size={13} style={{ color: 'var(--film-amber)' }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="block syne-font truncate" style={{ fontSize: 11, fontWeight: 600, color: 'var(--film-text-label)' }}>
+                                  Logo Overlay
+                                </span>
+                                <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                                  {`${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`}
+                                </span>
+                              </div>
+                              <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                                <button
+                                  onClick={() => updateConfig('logo', false)}
+                                  className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                                  style={{ color: 'var(--film-text-dim)' }}
+                                  title="Hide logo"
+                                >
+                                  <Eye size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div onContextMenu={(e) => onLayerContextMenu?.(layer.id, e)}>
+                              {renderBadgeRow(layer, true, prov, snap.isDragging)}
+                            </div>
+                          )
+                        }
                       </Draggable>
                     ))}
                     {provided.placeholder}

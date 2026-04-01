@@ -608,39 +608,12 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </div>
         </Section>
 
-        {/* Poster ── image filters */}
-        <Section title="Poster" icon={<Layers size={10} />} sectionId="global-poster">
-          <SliderRow
-            label="Background Blur"
-            value={config.posterBlur}
-            min={0}
-            max={20}
-            unit="px"
-            onChange={(v) => updateConfig('posterBlur', v)}
-          />
-          <ToggleRow
-            label="Grayscale"
-            sub="Desaturate the poster image"
-            checked={config.grayscale}
-            onChange={(v) => updateConfig('grayscale', v)}
-          />
-        </Section>
-
-        {/* Badge Appearance ── display style + visibility toggles */}
+        {/* Badge Appearance ── visibility toggles */}
         <Section
           title="Badge Appearance"
           icon={<Palette size={10} />}
           sectionId="global-badge-appearance"
         >
-          <SegmentedRow
-            label="Display Style"
-            options={[
-              { id: 'b', label: 'Badge' },
-              { id: 'm', label: 'Minimal' },
-            ]}
-            value={config.uiPreset ?? 'b'}
-            onChange={(v) => updateConfig('uiPreset', v as 'b' | 'm')}
-          />
           <ToggleRow
             label="Show Icons"
             checked={config.icon ?? true}
