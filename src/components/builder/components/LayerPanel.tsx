@@ -763,6 +763,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
 
   const MediaIcon =
     config.mediaType === 'tv' ? Tv : config.mediaType === 'anime' ? Clapperboard : Film;
+  const getModeIcon = (tab: 'source' | 'design' | 'layers') => {
+    if (tab === 'source') return <Film size={11} strokeWidth={2} />;
+    if (tab === 'design') return <Monitor size={11} strokeWidth={2} />;
+    return <Layers size={11} strokeWidth={2} />;
+  };
 
   const sourceOptions = [
     { id: 'tmdb', label: 'TMDB' },
@@ -967,7 +972,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
                 boxShadow: localMode === tab ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
               }}
               >
-              {tab === 'source' ? <Film size={11} strokeWidth={2} /> : tab === 'design' ? <Monitor size={11} strokeWidth={2} /> : <Layers size={11} strokeWidth={2} />}
+              {getModeIcon(tab)}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
@@ -1349,10 +1354,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <button
                 onClick={() => updateConfig('logo', !config.logo)}
+                aria-label={config.logo ? 'Hide logo overlay' : 'Show logo overlay'}
                 className="flex items-center gap-1.5 transition-colors body-font"
                 style={{ fontSize: 10, color: config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)'; }}
               >
                 {config.logo ? <Eye size={11} /> : <EyeOff size={11} />}
                 Logo
@@ -1434,6 +1438,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect,
                               <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                                 <button
                                   onClick={() => updateConfig('logo', false)}
+                                  aria-label="Hide logo"
                                   className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
                                   style={{ color: 'var(--film-text-dim)' }}
                                   title="Hide logo"

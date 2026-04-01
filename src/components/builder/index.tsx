@@ -353,9 +353,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const showAllBadges = useCallback(() => {
     setConfig((prev) => ({
       ...prev,
-      ratings: ALL_BADGES.map((b) => b.id).filter(
-        (id) => prev.ratings.includes(id) || !prev.ratings.includes(id)
-      ),
+      ratings: ALL_BADGES.map((b) => b.id),
     }));
   }, [setConfig]);
 
@@ -363,9 +361,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     setConfig((prev) => ({
       ...prev,
       logo: true,
-      ratings: ALL_BADGES.map((b) => b.id).filter(
-        (id) => prev.ratings.includes(id) || !prev.ratings.includes(id)
-      ),
+      ratings: ALL_BADGES.map((b) => b.id),
     }));
   }, [setConfig]);
 
@@ -592,7 +588,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           onHide={hideBadge}
           onShowAll={showAllLayers}
           onSelect={(id) => { if (id !== 'logo') handleSelectionOverride(id, false); }}
-          onDeselect={(id) => { if (id !== 'logo') clearSelection(); }}
+          onDeselect={(id) => { if (id !== 'logo') handleSelectionOverride(id, true); }}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
           onResetBadge={resetBadge}
