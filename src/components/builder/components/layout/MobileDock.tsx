@@ -48,10 +48,10 @@ const MobileDock: React.FC = memo(() => {
                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--film-amber)] shadow-[0_0_8px_var(--film-amber)]" />
               </div>
             ) : (
-              <Icon size={18} strokeWidth={1.8} style={{ color: 'var(--film-text-ghost)' }} />
+              <Icon size={18} strokeWidth={1.8} style={{ color: 'var(--film-text-dim)' }} />
             )}
             <span
-              className={`text-[9px] font-semibold tracking-wide syne-font ${isActive ? 'text-[var(--film-amber)]' : 'text-[var(--film-text-ghost)]'}`}
+              className={`text-[9px] font-semibold tracking-wide syne-font ${isActive ? 'text-[var(--film-amber)]' : 'text-[var(--film-text-dim)]'}`}
             >
               {label}
             </span>

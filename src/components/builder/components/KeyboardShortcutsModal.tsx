@@ -187,7 +187,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                     <p
                       className="text-[9px]"
                       style={{
-                        color: 'rgba(140,130,112,0.5)',
+                        color: 'rgba(140,130,112,0.68)',
                         fontFamily: 'JetBrains Mono, monospace',
                         letterSpacing: '0.1em',
                       }}
@@ -202,7 +202,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   style={{
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(140,130,112,0.6)',
+                    color: 'rgba(140,130,112,0.72)',
                     cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => {
@@ -210,7 +210,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                     e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
+                    e.currentTarget.style.color = 'rgba(140,130,112,0.72)';
                     e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
                   }}
                 >
@@ -250,7 +250,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                           <span
                             className="text-[11px]"
                             style={{
-                              color: 'rgba(240,230,204,0.7)',
+                               color: 'rgba(240,230,204,0.82)',
                               fontFamily: 'DM Sans, sans-serif',
                             }}
                           >
@@ -260,7 +260,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                             {keys.map((k, i) => (
                               <React.Fragment key={k}>
                                 {i > 0 && (
-                                  <span style={{ fontSize: 9, color: 'rgba(122,117,110,0.3)' }}>
+                                   <span style={{ fontSize: 9, color: 'rgba(122,117,110,0.55)' }}>
                                     +
                                   </span>
                                 )}
@@ -287,7 +287,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   style={{
                     fontSize: 9,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.3)',
+                     color: 'rgba(140,130,112,0.62)',
                     letterSpacing: '0.1em',
                   }}
                 >
@@ -297,7 +297,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   style={{
                     fontSize: 9,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.2)',
+                     color: 'rgba(140,130,112,0.5)',
                     letterSpacing: '0.08em',
                   }}
                 >

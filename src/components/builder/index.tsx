@@ -91,8 +91,8 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
       : disabled
       ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
       : danger
-      ? { color: 'var(--film-text-ghost)', border: '1px solid transparent' }
-      : { color: 'var(--film-text-ghost)', border: '1px solid transparent' };
+      ? { color: 'var(--film-text-dim)', border: '1px solid transparent' }
+      : { color: 'var(--film-text-dim)', border: '1px solid transparent' };
 
     const tooltip = !disabled && (
       <span
@@ -121,7 +121,7 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
           },
           onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
             const el = e.currentTarget as HTMLElement;
-            el.style.color = 'var(--film-text-ghost)';
+            el.style.color = 'var(--film-text-dim)';
             el.style.background = 'transparent';
           },
         }
@@ -626,7 +626,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 title="Search commands (⌘K)"
                 className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
                 style={{
-                  color: 'var(--film-text-ghost)',
+                  color: 'var(--film-text-dim)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   background: 'rgba(255,255,255,0.03)',
                 }}
@@ -654,7 +654,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
                 className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
-                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
                   border: '1px solid transparent',
                   background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
                 }}
@@ -671,7 +671,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'var(--film-text-ghost)',
+                  color: 'var(--film-text-dim)',
                 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
@@ -691,7 +691,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
                 className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
-                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-ghost)',
+                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
                   border: '1px solid transparent',
                   background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
                 }}
