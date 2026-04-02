@@ -17,14 +17,18 @@ const AUTH_STORAGE_KEY = 'posterium_analytics_auth_v1';
 const CORRECT_PASSWORD = 'admin123';
 
 // ── Period definitions ────────────────────────────────────────────────────────
+// Keys must exactly match PERIOD_CONFIG in api/routes/analytics.js
 
 const PERIODS: Record<string, { label: string; short: string }> = {
+  '15m': { label: 'Last 15 Min',   short: '15M' },
   '1h':  { label: 'Last 1 Hour',   short: '1H'  },
+  '3h':  { label: 'Last 3 Hours',  short: '3H'  },
   '6h':  { label: 'Last 6 Hours',  short: '6H'  },
   '12h': { label: 'Last 12 Hours', short: '12H' },
   '24h': { label: 'Last 24 Hours', short: '24H' },
-  '3d':  { label: 'Last 3 Days',   short: '3D'  },
+  '2d':  { label: 'Last 2 Days',   short: '2D'  },
   '7d':  { label: 'Last 7 Days',   short: '7D'  },
+  '14d': { label: 'Last 14 Days',  short: '14D' },
   '30d': { label: 'Last 30 Days',  short: '30D' },
 };
 
@@ -212,15 +216,11 @@ const Panel = ({ title, tag, children, fullWidth = false, extra, noPad = false }
     overflow: 'hidden',
     gridColumn: fullWidth ? '1 / -1' : undefined
   };
-
   const innerStyle: React.CSSProperties | undefined = noPad ? undefined : { padding: 14 };
-
   return (
     <div style={containerStyle}>
       <PanelHeader title={title} tag={tag} extra={extra} />
-      <div style={innerStyle}>
-        {children}
-      </div>
+      <div style={innerStyle}>{children}</div>
     </div>
   );
 };
@@ -271,8 +271,8 @@ const Gauge = ({ value, size = 48 }: { value: number; size?: number }) => {
 // ── Auth screen ───────────────────────────────────────────────────────────────
 
 const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
-  const [pw, setPw]     = useState('');
-  const [err, setErr]   = useState('');
+  const [pw, setPw]       = useState('');
+  const [err, setErr]     = useState('');
   const [shake, setShake] = useState(false);
 
   const submit = () => {
@@ -315,7 +315,6 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
 // ── Custom heatmap ────────────────────────────────────────────────────────────
 
 const HourHeatmap = ({ data }: { data: any[] }) => {
-  // Group by hour bucket → node → failure rate
   const hours = useMemo(() => {
     const map: Record<string, Record<string, { failures: number; attempts: number }>> = {};
     data.forEach(r => {
@@ -344,7 +343,6 @@ const HourHeatmap = ({ data }: { data: any[] }) => {
   return (
     <div style={{ overflowX: 'auto' }}>
       <svg width={totalW} height={totalH} style={{ display: 'block' }}>
-        {/* Hour labels */}
         {hourKeys.map((h, i) => (
           <text key={h} x={LABEL_W + i * CELL_W + CELL_W/2} y={LABEL_H - 4}
             textAnchor="middle" fill={C.ghost} fontSize={7} fontFamily="JetBrains Mono, monospace"
@@ -352,7 +350,6 @@ const HourHeatmap = ({ data }: { data: any[] }) => {
             {h.slice(-5)}
           </text>
         ))}
-        {/* Node rows */}
         {nodes.map((node, ni) => (
           <g key={node}>
             <text x={LABEL_W - 4} y={LABEL_H + ni * CELL_H + CELL_H/2 + 3}
@@ -428,7 +425,7 @@ export default function AnalyticsDashboard() {
   const [refreshMs, setRefreshMs] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
-  const refreshTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshTimer   = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const logout = () => {
@@ -442,6 +439,7 @@ export default function AnalyticsDashboard() {
       const res = await fetch(`${API_BASE}/analytics?period=${p ?? period}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
+      // Backend wraps all query results in json.data
       setData(json.data ?? null);
       setLastFetch(new Date());
     } catch (e: any) {
@@ -451,32 +449,32 @@ export default function AnalyticsDashboard() {
     }
   }, [period]);
 
-  // Period change
   const handlePeriodChange = (p: string) => {
     setPeriod(p);
     fetchData(p);
   };
 
-  // Auto-refresh
   useEffect(() => {
     if (!authed) return;
     fetchData();
   }, [authed]);
 
   useEffect(() => {
-    if (refreshTimer.current)  clearInterval(refreshTimer.current);
+    if (refreshTimer.current)   clearInterval(refreshTimer.current);
     if (countdownTimer.current) clearInterval(countdownTimer.current);
     if (!authed || refreshMs === 0) { setCountdown(0); return; }
     setCountdown(refreshMs / 1000);
-    refreshTimer.current = setInterval(() => { fetchData(); setCountdown(refreshMs / 1000); }, refreshMs);
+    refreshTimer.current   = setInterval(() => { fetchData(); setCountdown(refreshMs / 1000); }, refreshMs);
     countdownTimer.current = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000);
     return () => {
-      if (refreshTimer.current)  clearInterval(refreshTimer.current);
+      if (refreshTimer.current)   clearInterval(refreshTimer.current);
       if (countdownTimer.current) clearInterval(countdownTimer.current);
     };
   }, [refreshMs, authed, fetchData]);
 
-  // ── Data normalization ────────────────────────────────────────────────────
+  // ── Data normalization ──────────────────────────────────────────────────────
+  // Backend response: json.data.{query_name}.data = array of rows
+  // e.g. data.node_performance.data[0].node
 
   const nodeRows = useMemo(() => (data?.node_performance?.data ?? []).map((r: any) => ({
     node:             String(r.node ?? ''),
@@ -536,10 +534,11 @@ export default function AnalyticsDashboard() {
     wins:             num(r.wins),
   })), [data]);
 
+  // latency_percentiles — p50_ms is avgIf (best available proxy without quantileIf)
   const latencyRows = useMemo(() => (data?.latency_percentiles?.data ?? []).map((r: any) => ({
     node:          String(r.node ?? ''),
     p0_ms:         nullableNum(r.p0_ms),
-    p50_ms:        nullableNum(r.p50_ms),
+    p50_ms:        nullableNum(r.p50_ms),   // avg proxy
     p100_ms:       nullableNum(r.p100_ms),
     under_500ms:   num(r.under_500ms),
     under_1s:      num(r.under_1s),
@@ -562,18 +561,17 @@ export default function AnalyticsDashboard() {
     };
   }, [data]);
 
+  // error_heatmap — node × time bucket for failure intensity visualization
   const heatmapData = useMemo(() => data?.error_heatmap?.data ?? [], [data]);
 
-  // Win pie data
   const winPieData = useMemo(() => winRows.filter(r => r.wins > 0).map(r => ({
-    name: nodeShortName(r.node).split(' ')[0],
+    name:  nodeShortName(r.node).split(' ')[0],
     value: r.wins,
     color: nodeColor(r.node),
   })), [winRows]);
 
-  // Format pie
   const formatPieData = useMemo(() => formatRows.map((r, i) => ({
-    name: r.format.toUpperCase() || 'UNK',
+    name:  r.format.toUpperCase() || 'UNK',
     value: r.attempts,
     color: PIE_COLORS[i % PIE_COLORS.length],
   })), [formatRows]);
@@ -632,7 +630,6 @@ export default function AnalyticsDashboard() {
             ))}
           </div>
 
-          {/* Countdown */}
           {refreshMs > 0 && countdown > 0 && (
             <span style={{ fontSize: 9, color: C.ghost, fontFamily: 'JetBrains Mono, monospace', minWidth: 28, textAlign: 'right' }}>↺{countdown}s</span>
           )}
@@ -673,7 +670,6 @@ export default function AnalyticsDashboard() {
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Top stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 10 }}>
               {loading ? Array(8).fill(0).map((_, i) => <Skel key={i} h={90}/>) : (<>
                 <StatCard label="Total Attempts" value={fmtNum(globalRow.total_attempts)} sub={PERIODS[period].label} color={C.amber} accent={C.amber}/>
@@ -720,44 +716,43 @@ export default function AnalyticsDashboard() {
 
             {/* Node health grid + win distribution */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 14 }}>
-
-              {/* Node health mini-cards */}
               <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <PanelHeader title="Node Health Matrix" tag={PERIODS[period].label}/>
                 <div style={{ padding: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
                   {loading ? Array(8).fill(0).map((_, i) => <Skel key={i} h={80}/>) :
-                    nodeRows.map(row => {
-                      const health = row.success_rate_pct >= 90 ? 'healthy' : row.success_rate_pct >= 10 ? 'degraded' : 'down';
-                      const hc     = health === 'healthy' ? C.green : health === 'degraded' ? C.yellow : C.red;
-                      const nc     = nodeColor(row.node);
-                      return (
-                        <div key={row.node} style={{ padding: '10px 12px', background: C.char, border: `1px solid ${health === 'down' ? 'rgba(248,113,113,0.2)' : C.borderFaint}`, borderRadius: 8, borderLeft: `3px solid ${nc}` }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                            <div>
-                              <div style={{ fontSize: 10, color: C.label, fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{nodeShortName(row.node).split(' ·')[0]}</div>
-                              <div style={{ fontSize: 8, color: hc, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', marginTop: 1 }}>{health}</div>
-                            </div>
-                            <Gauge value={row.success_rate_pct} size={38}/>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                            {[
-                              { label: 'Avg', val: fmtMs(row.avg_ms), color: msColor(row.avg_ms) },
-                              { label: 'Wins', val: fmtNum(row.race_wins), color: row.race_wins > 0 ? C.gold : C.ghost },
-                              { label: 'Fails', val: fmtNum(row.failures), color: row.failures > 50 ? C.red : C.ghost },
-                            ].map(m => (
-                              <div key={m.label}>
-                                <div style={{ fontSize: 7, color: C.ghost, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>{m.label}</div>
-                                <div style={{ fontSize: 12, color: m.color, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>{m.val}</div>
+                    nodeRows.length === 0
+                      ? <div style={{ color: C.ghost, fontSize: 11, padding: 20 }}>No node data for this period.</div>
+                      : nodeRows.map(row => {
+                          const health = row.success_rate_pct >= 90 ? 'healthy' : row.success_rate_pct >= 10 ? 'degraded' : 'down';
+                          const hc     = health === 'healthy' ? C.green : health === 'degraded' ? C.yellow : C.red;
+                          const nc     = nodeColor(row.node);
+                          return (
+                            <div key={row.node} style={{ padding: '10px 12px', background: C.char, border: `1px solid ${health === 'down' ? 'rgba(248,113,113,0.2)' : C.borderFaint}`, borderRadius: 8, borderLeft: `3px solid ${nc}` }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                                <div>
+                                  <div style={{ fontSize: 10, color: C.label, fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{nodeShortName(row.node).split(' ·')[0]}</div>
+                                  <div style={{ fontSize: 8, color: hc, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', marginTop: 1 }}>{health}</div>
+                                </div>
+                                <Gauge value={row.success_rate_pct} size={38}/>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                                {[
+                                  { label: 'Avg', val: fmtMs(row.avg_ms), color: msColor(row.avg_ms) },
+                                  { label: 'Wins', val: fmtNum(row.race_wins), color: row.race_wins > 0 ? C.gold : C.ghost },
+                                  { label: 'Fails', val: fmtNum(row.failures), color: row.failures > 50 ? C.red : C.ghost },
+                                ].map(m => (
+                                  <div key={m.label}>
+                                    <div style={{ fontSize: 7, color: C.ghost, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>{m.label}</div>
+                                    <div style={{ fontSize: 12, color: m.color, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>{m.val}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                 </div>
               </div>
 
-              {/* Race win distribution pie */}
               <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <PanelHeader title="Race Win Distribution"/>
                 <div style={{ padding: 14 }}>
@@ -783,25 +778,24 @@ export default function AnalyticsDashboard() {
                         ))}
                       </div>
                     </>
-                  ) : <div style={{ color: C.ghost, fontSize: 11, textAlign: 'center', padding: 40 }}>No win data</div>}
+                  ) : <div style={{ color: C.ghost, fontSize: 11, textAlign: 'center', padding: 40 }}>No win data for this period</div>}
                 </div>
               </div>
             </div>
 
-            {/* Lane performance */}
             {laneRows.length > 0 && (
               <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                <PanelHeader title="Lane Performance (A/B/C)" tag="A=WA+Ohio  B=DE+Ohio  C=wsrv+WA"/>
+                <PanelHeader title="Lane Performance (A/B/C)" tag="A=WA+Ohio  B=DE+Ohio  C=WA+DE"/>
                 <div style={{ padding: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
                   {laneRows.map(lane => (
                     <div key={lane.lane} style={{ padding: 14, background: C.char, border: `1px solid ${C.borderFaint}`, borderRadius: 8 }}>
                       <div style={{ fontSize: 24, fontFamily: 'Bebas Neue, cursive', color: C.amber, letterSpacing: '0.1em', marginBottom: 8 }}>Lane {lane.lane}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         {[
-                          { l: 'Attempts', v: fmtNum(lane.attempts), c: C.cream },
+                          { l: 'Attempts',     v: fmtNum(lane.attempts),         c: C.cream },
                           { l: 'Success Rate', v: fmtPct(lane.success_rate_pct), c: rateColor(lane.success_rate_pct) },
-                          { l: 'Avg Latency', v: fmtMs(lane.avg_ms), c: msColor(lane.avg_ms) },
-                          { l: 'Wins', v: fmtNum(lane.wins), c: C.gold },
+                          { l: 'Avg Latency',  v: fmtMs(lane.avg_ms),            c: msColor(lane.avg_ms) },
+                          { l: 'Wins',         v: fmtNum(lane.wins),             c: C.gold },
                         ].map(m => (
                           <div key={m.l}>
                             <div style={{ fontSize: 7, color: C.ghost, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>{m.l}</div>
@@ -820,8 +814,6 @@ export default function AnalyticsDashboard() {
         {/* ─────────────────────────────── NODES ─────────────────────────── */}
         {tab === 'nodes' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {/* Full node table */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title="Node Performance Table" tag={PERIODS[period].label}/>
               <div style={{ overflowX: 'auto', padding: 14 }}>
@@ -829,7 +821,7 @@ export default function AnalyticsDashboard() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                     <thead>
                       <tr>
-                        {['Node', 'Status', 'Attempts', 'Success Rate', 'Avg', 'Min', 'Max', 'Race Wins', 'Latency Dist'].map(h => (
+                        {['Node', 'Status', 'Attempts', 'Success Rate', 'Avg (p50≈)', 'Min', 'Max', 'Race Wins', 'Latency Dist'].map(h => (
                           <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' || h === 'Status' ? 'left' : 'right', color: C.ghost, fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', borderBottom: `1px solid ${C.borderFaint}`, whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
@@ -868,7 +860,6 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
-            {/* Node latency bar + win rate bar */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <PanelHeader title="Avg Latency by Node"/>
@@ -915,7 +906,6 @@ export default function AnalyticsDashboard() {
         {/* ─────────────────────────────── TRAFFIC ───────────────────────── */}
         {tab === 'traffic' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
               {loading ? Array(4).fill(0).map((_,i) => <Skel key={i} h={88}/>) : (<>
                 <StatCard label="Total (period)" value={fmtNum(globalRow.total_attempts)} sub={PERIODS[period].label} color={C.amber}/>
@@ -925,7 +915,6 @@ export default function AnalyticsDashboard() {
               </>)}
             </div>
 
-            {/* Traffic + wins area chart */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title="Attempts · Successes · Failures · Wins" tag={PERIODS[period].label}/>
               <div style={{ padding: 14 }}>
@@ -942,17 +931,16 @@ export default function AnalyticsDashboard() {
                       <YAxis tick={{ fill: C.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42}/>
                       <Tooltip content={<ChartTooltip/>}/>
                       <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }}/>
-                      <Area type="monotone" dataKey="attempts" name="Attempts" stroke={C.amber} fill="url(#gA)" strokeWidth={2} dot={false}/>
-                      <Area type="monotone" dataKey="successes" name="Successes" stroke={C.green} fill="url(#gS)" strokeWidth={1.5} dot={false}/>
-                      <Area type="monotone" dataKey="wins" name="Race Wins" stroke={C.gold} fill="url(#gW)" strokeWidth={1.5} dot={false}/>
-                      <Line type="monotone" dataKey="failures" name="Failures" stroke={C.red} strokeWidth={1.5} dot={false}/>
+                      <Area type="monotone" dataKey="attempts"  name="Attempts"   stroke={C.amber} fill="url(#gA)" strokeWidth={2}   dot={false}/>
+                      <Area type="monotone" dataKey="successes" name="Successes"  stroke={C.green} fill="url(#gS)" strokeWidth={1.5} dot={false}/>
+                      <Area type="monotone" dataKey="wins"      name="Race Wins"  stroke={C.gold}  fill="url(#gW)" strokeWidth={1.5} dot={false}/>
+                      <Line type="monotone" dataKey="failures"  name="Failures"   stroke={C.red}                   strokeWidth={1.5} dot={false}/>
                     </ComposedChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </div>
 
-            {/* Avg latency line chart */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title="Avg Latency Over Time"/>
               <div style={{ padding: 14 }}>
@@ -977,15 +965,19 @@ export default function AnalyticsDashboard() {
         {tab === 'errors' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Error heatmap */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title="Failure Heatmap — Node × Time" tag="colour = failure intensity"/>
               <div style={{ padding: 14 }}>
-                {loading ? <Skel h={160}/> : <HourHeatmap data={heatmapData.length ? heatmapData : trafficData.map(d => ({ ...d, node: 'global' }))}/>}
+                {loading ? <Skel h={160}/> : (
+                  <HourHeatmap data={
+                    heatmapData.length > 0
+                      ? heatmapData
+                      : trafficData.map(d => ({ ...d, node: 'global' }))
+                  }/>
+                )}
               </div>
             </div>
 
-            {/* Failures by node bar */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <PanelHeader title="Failures by Node"/>
@@ -1023,11 +1015,12 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
-            {/* Recent failure log */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title={`Recent Failures (${failRows.length})`} tag={PERIODS[period].label}/>
               <div style={{ overflowX: 'auto', maxHeight: 400, overflowY: 'auto' }}>
-                {loading ? <div style={{ padding: 14 }}><Skel h={200}/></div> : (
+                {loading ? <div style={{ padding: 14 }}><Skel h={200}/></div> : failRows.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: 'center', color: C.green, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>✓ No failures in this period</div>
+                ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
                     <thead style={{ position: 'sticky', top: 0, background: C.mid, zIndex: 1 }}>
                       <tr>
@@ -1048,7 +1041,7 @@ export default function AnalyticsDashboard() {
                           </td>
                           <td style={{ padding: '6px 12px' }}>
                             <span style={{ fontSize: 9, color: r.status_code === 0 ? C.orange : C.red, fontFamily: 'JetBrains Mono, monospace', background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.borderFaint}`, borderRadius: 3, padding: '1px 5px' }}>
-                              {r.status_code === 0 ? 'TIMEOUT' : `HTTP ${r.status_code}`}
+                              {r.status_code === 0 ? 'TIMEOUT' : `HTTP ${Math.round(r.status_code)}`}
                             </span>
                           </td>
                           <td style={{ padding: '6px 12px', color: C.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 9, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.error}</td>
@@ -1105,21 +1098,27 @@ export default function AnalyticsDashboard() {
                 <PanelHeader title="Input Type Distribution"/>
                 <div style={{ padding: 14 }}>
                   {loading ? <Skel h={180}/> : (() => {
-                    const typeRows = (data?.type_breakdown?.data ?? []).map((r: any, i: number) => ({ ...r, color: PIE_COLORS[(i+3) % PIE_COLORS.length] }));
-                    const maxAttempts = Math.max(...typeRows.map((r: any) => num(r.attempts)), 1);
+                    const typeRows = (data?.type_breakdown?.data ?? []).map((r: any, i: number) => ({
+                      input_type: String(r.input_type ?? ''),
+                      attempts:   num(r.attempts),
+                      avg_ms:     nullableNum(r.avg_ms),
+                      color:      PIE_COLORS[(i+3) % PIE_COLORS.length],
+                    }));
+                    const maxAttempts = Math.max(...typeRows.map(r => r.attempts), 1);
+                    if (typeRows.length === 0) return <div style={{ color: C.ghost, fontSize: 11, padding: 20, textAlign: 'center' }}>No data</div>;
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 8 }}>
-                        {typeRows.map((r: any) => (
+                        {typeRows.map(r => (
                           <div key={r.input_type}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <span style={{ fontSize: 11, color: C.amber, fontFamily: 'Bebas Neue, cursive', letterSpacing: '0.08em' }}>{String(r.input_type || 'UNKNOWN').toUpperCase()}</span>
+                              <span style={{ fontSize: 11, color: C.amber, fontFamily: 'Bebas Neue, cursive', letterSpacing: '0.08em' }}>{r.input_type.toUpperCase() || 'UNKNOWN'}</span>
                               <div style={{ display: 'flex', gap: 10 }}>
-                                <span style={{ fontSize: 9, color: C.dim, fontFamily: 'JetBrains Mono, monospace' }}>{fmtNum(num(r.attempts))}</span>
-                                <span style={{ fontSize: 9, color: msColor(nullableNum(r.avg_ms)), fontFamily: 'JetBrains Mono, monospace' }}>{fmtMs(nullableNum(r.avg_ms))}</span>
+                                <span style={{ fontSize: 9, color: C.dim, fontFamily: 'JetBrains Mono, monospace' }}>{fmtNum(r.attempts)}</span>
+                                <span style={{ fontSize: 9, color: msColor(r.avg_ms), fontFamily: 'JetBrains Mono, monospace' }}>{fmtMs(r.avg_ms)}</span>
                               </div>
                             </div>
                             <div style={{ height: 5, borderRadius: 2.5, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                              <div style={{ height: '100%', borderRadius: 2.5, background: r.color, width: `${(num(r.attempts) / maxAttempts) * 100}%`, transition: 'width 0.6s ease' }}/>
+                              <div style={{ height: '100%', borderRadius: 2.5, background: r.color, width: `${(r.attempts / maxAttempts) * 100}%`, transition: 'width 0.6s ease' }}/>
                             </div>
                           </div>
                         ))}
@@ -1135,7 +1134,7 @@ export default function AnalyticsDashboard() {
                 <div style={{ padding: 14 }}>
                   {loading ? <Skel h={180}/> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                      {coloRows.slice(0, 12).map((r, i) => {
+                      {coloRows.slice(0, 12).map((r) => {
                         const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
                         const max  = Math.max(...coloRows.map(c => c.attempts), 1);
                         return (
@@ -1154,13 +1153,13 @@ export default function AnalyticsDashboard() {
                           </div>
                         );
                       })}
+                      {coloRows.length === 0 && <div style={{ color: C.ghost, fontSize: 11, padding: 10 }}>No colo data</div>}
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Full colo bar chart */}
             <div style={{ background: C.mid, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <PanelHeader title="Datacenter Volume · Colour = Success Rate"/>
               <div style={{ padding: 14 }}>
@@ -1188,7 +1187,7 @@ export default function AnalyticsDashboard() {
         {/* Footer */}
         <div style={{ marginTop: 28, paddingTop: 14, borderTop: `1px solid ${C.borderFaint}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontSize: 8, color: C.ghost, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
-            POSTERIUM · raster_metrics · Cloudflare Analytics Engine · blob7=lane
+            POSTERIUM · raster_metrics · Cloudflare Analytics Engine · p50≈avg (quantileIf unsupported)
           </span>
           <span style={{ fontSize: 8, color: C.ghost, fontFamily: 'JetBrains Mono, monospace' }}>
             {lastFetch ? `Last refresh: ${lastFetch.toLocaleTimeString()}` : ''} · Period: {PERIODS[period].label}
