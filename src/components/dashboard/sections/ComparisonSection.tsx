@@ -1,7 +1,8 @@
 // src/components/dashboard/sections/ComparisonSection.tsx
 import { memo } from 'react';
 import { useInView } from '@/lib/dashboard/hooks/index';
-import { AmberTag, SprocketStrip } from '../primitives';
+import { SprocketStrip } from '../primitives';
+import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 
 interface Row {
   feature: string;
@@ -240,52 +241,19 @@ export const ComparisonSection = memo(() => {
       aria-label="Feature Comparison"
       style={{ background: 'var(--film-black)', borderTop: '1px solid rgba(196,124,46,0.07)' }}
     >
-      <div
-        style={{
-          padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0',
-          opacity: vis ? 1 : 0,
-          transition: 'opacity 0.6s ease',
-        }}
-      >
-        <AmberTag style={{ marginBottom: 12 }}>Why Posterium</AmberTag>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 14,
-            marginTop: 10,
-            marginBottom: 32,
-          }}
-        >
-          <h2
-            className="poster-font"
-            style={{
-              fontSize: 'clamp(36px,5.5vw,72px)',
-              color: 'var(--film-cream)',
-              lineHeight: 0.9,
-              letterSpacing: '0.02em',
-            }}
-          >
-            THE SPEC
-            <br />
-            <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
-          </h2>
-          <p
-            className="syne-font"
-            style={{
-              fontSize: 11,
-              color: 'var(--film-silver)',
-              maxWidth: 380,
-              lineHeight: 1.7,
-              textAlign: 'right',
-              paddingBottom: 6,
-            }}
-          >
-            Every feature, side by side. No marketing copy — just what each tool actually does.
-          </p>
-        </div>
+      <div style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+        <SectionHeader
+          tag="Why Posterium"
+          title={
+            <>
+              THE SPEC
+              <br />
+              <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
+            </>
+          }
+          description="Every feature, side by side. No marketing copy — just what each tool actually does."
+          padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0"
+        />
       </div>
       <div
         style={{

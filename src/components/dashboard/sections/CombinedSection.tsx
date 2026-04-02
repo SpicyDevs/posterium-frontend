@@ -1,9 +1,10 @@
 // src/components/dashboard/sections/CombinedSection.tsx
 // Import paths corrected: ../../constants → @/lib/dashboard/constants, ../../hooks → @/lib/dashboard/hooks
-import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { FEATURES, USE_CASES, API } from '@/lib/dashboard/constants';
 import { useInView } from '@/lib/dashboard/hooks/index';
-import { AmberTag } from '../primitives';
+import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
+import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 
 const FEATURE_DEMOS: Record<string, { id: string; type: 'movie' | 'tv'; r: string; pos: string }> =
   {
@@ -61,57 +62,24 @@ const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
 );
 
 const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
-  const [loaded, setLoaded] = useState(false);
   const src = FEATURE_SRCS[title];
-  const imgRef = useRef<HTMLImageElement>(null);
-  const handleLoad = useCallback(() => setLoaded(true), []);
-  useEffect(() => {
-    const img = imgRef.current;
-    if (img?.complete && img.naturalWidth > 0) handleLoad();
-  }, [handleLoad]);
   if (!src) return null;
   return (
-    <div
-      style={{
+    <ProgressiveImage
+      src={src}
+      alt={alt}
+      containerStyle={{
         width: 'clamp(96px,18%,148px)',
         aspectRatio: '2/3',
         borderRadius: 4,
-        overflow: 'hidden',
         border: '1px solid rgba(196,124,46,0.16)',
         boxShadow: '0 12px 36px rgba(0,0,0,0.7)',
         flexShrink: 0,
         background: '#111009',
-        position: 'relative',
       }}
-    >
-      {!loaded && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.6s linear infinite',
-          }}
-        />
-      )}
-      <img
-        ref={imgRef}
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        onLoad={handleLoad}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          display: 'block',
-          opacity: loaded ? 1 : 0,
-          transition: 'opacity 0.4s ease',
-        }}
-      />
-    </div>
+      loading="lazy"
+      decoding="async"
+    />
   );
 });
 ThumbImg.displayName = 'ThumbImg';
@@ -472,73 +440,49 @@ export const CombinedSection = memo(() => {
       }}
     >
       <span id="integrations" aria-hidden="true" style={{ position: 'absolute', top: 0 }} />
-      <div
-        style={{
-          padding: 'clamp(48px,6vw,72px) clamp(20px,5vw,64px) 0',
-          opacity: vis ? 1 : 0,
-          transition: 'opacity 0.55s ease',
-        }}
-      >
-        <AmberTag style={{ marginBottom: 12 }}>Capabilities</AmberTag>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 14,
-            marginTop: 10,
-            marginBottom: 32,
-          }}
-        >
-          <h2
-            className="poster-font"
-            style={{
-              fontSize: 'clamp(36px,5.5vw,72px)',
-              color: 'var(--film-cream)',
-              lineHeight: 0.9,
-              letterSpacing: '0.02em',
-            }}
-          >
-            {tab === 'features' ? 'Features' : 'Integrations'}
-          </h2>
-          <div
-            style={{
-              display: 'flex',
-              gap: 2,
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.055)',
-              borderRadius: 5,
-              padding: 3,
-            }}
-          >
-            {(['features', 'integrations'] as const).map((t) => {
-              const active = tab === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className="syne-font"
-                  style={{
-                    background: active ? 'rgba(196,124,46,0.14)' : 'transparent',
-                    border: active ? '1px solid rgba(196,124,46,0.3)' : '1px solid transparent',
-                    borderRadius: 3,
-                    color: active ? 'var(--film-amber)' : 'rgba(110,104,96,0.55)',
-                    cursor: 'pointer',
-                    padding: '7px 18px',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {t === 'features' ? 'Features' : 'Integrations'}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.55s ease' }}>
+        <SectionHeader
+          tag="Capabilities"
+          title={tab === 'features' ? 'Features' : 'Integrations'}
+          rightContent={
+            <div
+              style={{
+                display: 'flex',
+                gap: 2,
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.055)',
+                borderRadius: 5,
+                padding: 3,
+              }}
+            >
+              {(['features', 'integrations'] as const).map((t) => {
+                const active = tab === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className="syne-font"
+                    style={{
+                      background: active ? 'rgba(196,124,46,0.14)' : 'transparent',
+                      border: active ? '1px solid rgba(196,124,46,0.3)' : '1px solid transparent',
+                      borderRadius: 3,
+                      color: active ? 'var(--film-amber)' : 'rgba(110,104,96,0.55)',
+                      cursor: 'pointer',
+                      padding: '7px 18px',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {t === 'features' ? 'Features' : 'Integrations'}
+                  </button>
+                );
+              })}
+            </div>
+          }
+        />
       </div>
       {tab === 'features' ? <FeaturesPane vis={vis} /> : <IntegrationsPane vis={vis} />}
       <div

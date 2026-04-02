@@ -108,11 +108,19 @@ const CyclingPoster = memo(() => {
 
   const loadedRef = useRef<Record<number, boolean>>({ 0: false });
   const pendingAdvanceRef = useRef<number | null>(null);
+  const activeIdxRef = useRef(0);
+  const transitioningRef = useRef(false);
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(true);
   const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -127,13 +135,29 @@ const CyclingPoster = memo(() => {
     return () => obs.disconnect();
   }, []);
 
-  const doTransition = useCallback((next: number) => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setActiveIdx(next);
-      setTimeout(() => setTransitioning(false), 360);
-    }, 50);
+  const clearTransitionTimers = useCallback(() => {
+    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    swapTimerRef.current = null;
+    settleTimerRef.current = null;
   }, []);
+
+  const doTransition = useCallback(
+    (next: number) => {
+      if (next === activeIdxRef.current || transitioningRef.current) return;
+      clearTransitionTimers();
+      transitioningRef.current = true;
+      setTransitioning(true);
+      swapTimerRef.current = setTimeout(() => {
+        setActiveIdx(next);
+        settleTimerRef.current = setTimeout(() => {
+          transitioningRef.current = false;
+          setTransitioning(false);
+        }, 360);
+      }, 50);
+    },
+    [clearTransitionTimers]
+  );
 
   const goTo = useCallback(
     (next: number) => {
@@ -150,11 +174,8 @@ const CyclingPoster = memo(() => {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      if (!isVisibleRef.current) return;
-      setActiveIdx((i) => {
-        goTo((i + 1) % TOTAL);
-        return i;
-      });
+      if (!isVisibleRef.current || transitioningRef.current) return;
+      goTo((activeIdxRef.current + 1) % TOTAL);
     }, 4500);
   }, [goTo]);
 
@@ -162,24 +183,17 @@ const CyclingPoster = memo(() => {
     restartInterval();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      clearTransitionTimers();
     };
-  }, [restartInterval]);
+  }, [clearTransitionTimers, restartInterval]);
 
   const handlePrev = useCallback(() => {
-    setActiveIdx((i) => {
-      const n = (i - 1 + TOTAL) % TOTAL;
-      goTo(n);
-      return i;
-    });
+    goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL);
     restartInterval();
   }, [goTo, restartInterval]);
 
   const handleNext = useCallback(() => {
-    setActiveIdx((i) => {
-      const n = (i + 1) % TOTAL;
-      goTo(n);
-      return i;
-    });
+    goTo((activeIdxRef.current + 1) % TOTAL);
     restartInterval();
   }, [goTo, restartInterval]);
 
