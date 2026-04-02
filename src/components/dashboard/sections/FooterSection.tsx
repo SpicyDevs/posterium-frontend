@@ -20,6 +20,12 @@ const FOOTER_LINKS: Array<{
   { label: 'API Docs', href: '#combined' },
 ];
 
+const SprocketEdge = memo<{ border: 'borderTop' | 'borderBottom' }>(({ border }) => (
+  <div style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}>
+    <SprocketStrip count={64} />
+  </div>
+));
+
 export const FooterSection = memo(() => (
   <footer
     style={{
@@ -29,14 +35,7 @@ export const FooterSection = memo(() => (
       overflow: 'hidden',
     }}
   >
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.012)',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
-      }}
-    >
-      <SprocketStrip count={64} />
-    </div>
+    <SprocketEdge border="borderBottom" />
 
     <div style={{ position: 'relative', zIndex: 1 }}>
       <div style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}>
@@ -143,7 +142,7 @@ export const FooterSection = memo(() => (
         {FOOTER_LINKS.map((link, i) => {
           const isLast = i === FOOTER_LINKS.length - 1;
           return (
-            <span key={link.label} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <span key={link.label}>
               <a
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
@@ -249,14 +248,7 @@ export const FooterSection = memo(() => (
       </div>
     </div>
 
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.012)',
-        borderTop: '1px solid rgba(255,255,255,0.04)',
-      }}
-    >
-      <SprocketStrip count={64} />
-    </div>
+    <SprocketEdge border="borderTop" />
 
     <div
       style={{
