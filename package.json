@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "npm run clean",
+    "prebuild-push": "npm run clean",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
