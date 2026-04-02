@@ -3,28 +3,20 @@ import { memo } from 'react';
 import { Film, Github, ExternalLink } from 'lucide-react';
 import { SprocketStrip } from '../primitives';
 
-const FOOTER_LINKS: Array<{
-  label: string;
-  href: string;
-  internal?: boolean;
-  external?: boolean;
-}> = [
-  { label: 'Poster Builder', href: '/build', internal: true },
-  { label: 'GitHub', href: 'https://github.com/xdaayush/freeposterapi', external: true },
-  { label: 'SpicyDevs', href: 'https://spicydevs.xyz', external: true },
-  {
-    label: 'MIT License',
-    href: 'https://github.com/xdaayush/freeposterapi/blob/main/LICENSE',
-    external: true,
-  },
-  { label: 'API Docs', href: '#combined' },
-];
+const FOOTER_LINKS = [
+  ['Poster Builder', '/build'],
+  ['GitHub', 'https://github.com/xdaayush/freeposterapi', true],
+  ['SpicyDevs', 'https://spicydevs.xyz', true],
+  ['MIT License', 'https://github.com/xdaayush/freeposterapi/blob/main/LICENSE', true],
+  ['API Docs', '#combined'],
+] as const;
 
 const SprocketEdge = memo<{ border: 'borderTop' | 'borderBottom' }>(({ border }) => (
   <div style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}>
     <SprocketStrip count={64} />
   </div>
 ));
+SprocketEdge.displayName = 'SprocketEdge';
 
 export const FooterSection = memo(() => (
   <footer
@@ -139,15 +131,15 @@ export const FooterSection = memo(() => (
           flexWrap: 'wrap',
         }}
       >
-        {FOOTER_LINKS.map((link, i) => {
+        {FOOTER_LINKS.map(([label, href, external], i) => {
           const isLast = i === FOOTER_LINKS.length - 1;
           return (
-            <span key={link.label}>
+            <span key={label}>
               <a
-                href={link.href}
-                target={link.external ? '_blank' : undefined}
-                rel={link.external ? 'noreferrer' : undefined}
-                className={link.external ? 'hover-amber' : 'hover-cream'}
+                href={href}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noreferrer' : undefined}
+                className={external ? 'hover-amber' : 'hover-cream'}
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
@@ -163,8 +155,8 @@ export const FooterSection = memo(() => (
                   transition: 'color 0.18s',
                 }}
               >
-                {link.label}
-                {link.external && <ExternalLink size={8} style={{ opacity: 0.4 }} />}
+                {label}
+                {external && <ExternalLink size={8} style={{ opacity: 0.4 }} />}
               </a>
               {!isLast && (
                 <span

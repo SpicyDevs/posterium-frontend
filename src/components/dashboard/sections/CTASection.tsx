@@ -6,13 +6,13 @@ import { useInView } from '@/lib/dashboard/hooks/index';
 
 const STRIPE_INDICES = Array.from({ length: 28 }, (_, i) => i);
 
-const SLATE_FIELDS: [string, string][] = [
+const SLATE_FIELDS = [
   ['PROD', 'POSTERIUM'],
   ['DIR', 'SPICYDEVS'],
   ['SCENE', 'CTA'],
   ['TAKE', '1'],
   ['ROLL', '01'],
-];
+] as const;
 
 export const CTASection = memo(() => {
   const { ref, vis } = useInView(0.15);
