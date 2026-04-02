@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "npm run clean",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
@@ -12,7 +13,9 @@
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "release:staging": "npm run typecheck && npm run test && npm run build && npm run deploy:staging",
     "cf:dev": "wrangler dev"
   },
   "dependencies": {

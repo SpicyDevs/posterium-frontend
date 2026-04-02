@@ -1,6 +1,6 @@
 User-agent: *
+Disallow: /admin/
 Allow: /
+
 Sitemap: https://posters.spicydevs.xyz/sitemap-index.xml
 Sitemap: https://posters.spicydevs.xyz/sitemap-0.xml
-User-agent: *
-Disallow: /admin/
