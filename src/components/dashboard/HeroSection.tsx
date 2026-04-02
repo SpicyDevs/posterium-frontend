@@ -344,37 +344,17 @@ const CyclingPoster = memo(() => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button
-          onClick={handlePrev}
-          aria-label="Previous poster"
-          style={{
-            background: 'none',
-            border: '1px solid rgba(196,124,46,0.22)',
-            borderRadius: 3,
-            cursor: 'pointer',
-            color: 'rgba(196,124,46,0.5)',
-            width: 26,
-            height: 26,
-            display: 'flex',
-            alignItems: 'center',
-            justifyItems: 'center',
-            transition: 'border-color 0.18s, color 0.18s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.6)';
-            el.style.color = 'var(--film-amber)';
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.22)';
-            el.style.color = 'rgba(196,124,46,0.5)';
-          }}
-        >
-          <ChevronLeft size={12} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={handlePrev}
+            aria-label="Previous poster"
+            className="carousel-icon-btn"
+            style={{
+              justifyContent: 'center',
+            }}
+          >
+            <ChevronLeft size={12} />
+          </button>
 
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {HERO_POSTERS.map((_, i) => (
@@ -400,29 +380,9 @@ const CyclingPoster = memo(() => {
         <button
           onClick={handleNext}
           aria-label="Next poster"
+          className="carousel-icon-btn"
           style={{
-            background: 'none',
-            border: '1px solid rgba(196,124,46,0.22)',
-            borderRadius: 3,
-            cursor: 'pointer',
-            color: 'rgba(196,124,46,0.5)',
-            width: 26,
-            height: 26,
-            display: 'flex',
-            alignItems: 'center',
-            justifyItems: 'center',
-            transition: 'border-color 0.18s, color 0.18s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.6)';
-            el.style.color = 'var(--film-amber)';
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.22)';
-            el.style.color = 'rgba(196,124,46,0.5)';
+            justifyContent: 'center',
           }}
         >
           <ChevronRight size={12} />
@@ -555,7 +515,7 @@ const HeroSection = memo(() => (
           </a>
           <a
             href="#reel"
-            className="syne-font"
+            className="syne-font border-hover-amber"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -570,17 +530,6 @@ const HeroSection = memo(() => (
               borderRadius: 4,
               border: '1px solid rgba(255,255,255,0.08)',
               background: 'rgba(255,255,255,0.02)',
-              transition: 'border-color 0.2s, color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = 'rgba(196,124,46,0.28)';
-              el.style.color = 'var(--film-cream)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = 'rgba(255,255,255,0.08)';
-              el.style.color = 'var(--film-silver)';
             }}
           >
             Browse Showcase

@@ -17,12 +17,8 @@ const LINK_BASE: React.CSSProperties = {
   textTransform: 'uppercase',
   padding: '4px 14px',
   textDecoration: 'none',
-  transition: 'color 0.18s',
   fontFamily: 'Syne, sans-serif',
 };
-
-const LINK_HOVER_COLOR = 'var(--film-cream)';
-const LINK_NORMAL_COLOR = 'rgba(224, 210, 180, 0.88)';
 
 const GITHUB_BASE: React.CSSProperties = {
   color: 'rgba(200, 185, 155, 0.78)',
@@ -30,7 +26,6 @@ const GITHUB_BASE: React.CSSProperties = {
   alignItems: 'center',
   padding: '6px 8px',
   borderRadius: 4,
-  transition: 'color 0.18s',
 };
 
 const Nav = memo(() => {
@@ -109,13 +104,8 @@ const Nav = memo(() => {
             <a
               key={label}
               href={href}
+              className="hover-cream"
               style={LINK_BASE}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = LINK_HOVER_COLOR;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = LINK_NORMAL_COLOR;
-              }}
             >
               {label}
             </a>
@@ -129,14 +119,8 @@ const Nav = memo(() => {
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub"
-            className="nav-links-desktop"
+            className="nav-links-desktop hover-cream"
             style={GITHUB_BASE}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'rgba(200,185,155,0.78)';
-            }}
           >
             <Github size={15} />
           </a>
@@ -213,7 +197,7 @@ const Nav = memo(() => {
               key={label}
               href={href}
               onClick={closeMenu}
-              className="syne-font"
+              className="syne-font hover-cream"
               style={{
                 color: 'rgba(240, 230, 204, 0.82)',
                 fontSize: 13,
@@ -223,13 +207,6 @@ const Nav = memo(() => {
                 padding: '12px 8px',
                 textDecoration: 'none',
                 borderBottom: '1px solid rgba(196,124,46,0.06)',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(240,230,204,0.82)';
               }}
             >
               {label}
