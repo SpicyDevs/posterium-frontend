@@ -148,7 +148,7 @@ export const FooterSection = memo(() => (
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noreferrer' : undefined}
-                className={link.external ? 'footer-link-external' : 'footer-link-internal'}
+                className={link.internal ? 'footer-link-internal' : 'footer-link-external'}
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
