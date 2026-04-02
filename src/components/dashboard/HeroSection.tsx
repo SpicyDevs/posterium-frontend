@@ -104,12 +104,15 @@ const CyclingPoster = memo(() => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
+  const [failed, setFailed] = useState<Record<number, boolean>>({});
 
   const loadedRef = useRef<Record<number, boolean>>({});
+  const failedRef = useRef<Record<number, boolean>>({});
   const activeIdxRef = useRef(0);
   const transitioningRef = useRef(false);
   const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -136,25 +139,38 @@ const CyclingPoster = memo(() => {
   const clearTransitionTimers = useCallback(() => {
     if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
     if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
     swapTimerRef.current = null;
     settleTimerRef.current = null;
+    guardTimerRef.current = null;
   }, []);
+
+  const finishTransition = useCallback(() => {
+    clearTransitionTimers();
+    transitioningRef.current = false;
+    setTransitioning(false);
+  }, [clearTransitionTimers]);
+
+  const isPosterReady = useCallback(
+    (index: number) => Boolean(loadedRef.current[index] || failedRef.current[index]),
+    []
+  );
 
   const doTransition = useCallback(
     (next: number) => {
-      if (next === activeIdxRef.current || transitioningRef.current || !loadedRef.current[next]) return;
+      if (next === activeIdxRef.current || transitioningRef.current || !isPosterReady(next)) return;
       clearTransitionTimers();
       transitioningRef.current = true;
       setTransitioning(true);
       swapTimerRef.current = setTimeout(() => {
         setActiveIdx(next);
         settleTimerRef.current = setTimeout(() => {
-          transitioningRef.current = false;
-          setTransitioning(false);
+          finishTransition();
         }, 360);
       }, 50);
+      guardTimerRef.current = setTimeout(finishTransition, 1400);
     },
-    [clearTransitionTimers]
+    [clearTransitionTimers, finishTransition, isPosterReady]
   );
 
   const goTo = useCallback(
@@ -177,9 +193,9 @@ const CyclingPoster = memo(() => {
     restartInterval();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      clearTransitionTimers();
+      finishTransition();
     };
-  }, [clearTransitionTimers, loaded, restartInterval]);
+  }, [finishTransition, loaded, restartInterval]);
 
   const handlePrev = useCallback(() => {
     goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL);
@@ -207,6 +223,12 @@ const CyclingPoster = memo(() => {
     },
     []
   );
+
+  const onError = useCallback((i: number) => {
+    if (failedRef.current[i]) return;
+    failedRef.current = { ...failedRef.current, [i]: true };
+    setFailed((p) => ({ ...p, [i]: true }));
+  }, []);
 
   useEffect(() => {
     imgRefs.current.forEach((img, i) => {
@@ -249,6 +271,7 @@ const CyclingPoster = memo(() => {
               fetchPriority={i === 0 ? 'high' : 'auto'}
               decoding={i === 0 ? 'sync' : 'async'}
               onLoad={() => onLoad(i)}
+              onError={() => onError(i)}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -265,7 +288,7 @@ const CyclingPoster = memo(() => {
           );
         })}
 
-        {!loaded[activeIdx] && (
+        {!loaded[activeIdx] && !failed[activeIdx] && (
           <div
             style={{
               position: 'absolute',
@@ -276,6 +299,22 @@ const CyclingPoster = memo(() => {
               animation: 'shimmer 1.6s linear infinite',
             }}
           />
+        )}
+        {failed[activeIdx] && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+              display: 'grid',
+              placeItems: 'center',
+              background: '#14120f',
+              color: 'rgba(196,124,46,0.65)',
+              fontSize: 24,
+            }}
+          >
+            🎞
+          </div>
         )}
 
         <div
