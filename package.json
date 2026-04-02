@@ -13,7 +13,6 @@
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy:staging": "wrangler deploy --env staging",
     "deploy": "wrangler deploy --env production",
     "release:staging": "npm run typecheck && npm run test && npm run build && npm run deploy:staging",
     "cf:dev": "wrangler dev"

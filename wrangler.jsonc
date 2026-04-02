@@ -2,10 +2,6 @@
   "name": "posterium-frontend",
   // Update compatibility date to the current date to get the latest V8 features
   "compatibility_date": "2026-04-02",
-
-  "build": {
-    "command": "npm run build" 
-  },
   
   // Enable enhanced observability/logging in the Cloudflare Dashboard
   "observability": {
@@ -20,19 +16,6 @@
   },
 
   "env": {
-    // Defines explicit behavior when no env is provided, fixing your deploy warning
-    "development": {
-      "workers_dev": true
-    },
-    "staging": {
-      "workers_dev": false,
-      "routes": [
-        {
-          "pattern": "preview.posters.spicydevs.xyz",
-          "custom_domain": true
-        }
-      ]
-    },
     "production": {
       "workers_dev": false,
       "routes": [
