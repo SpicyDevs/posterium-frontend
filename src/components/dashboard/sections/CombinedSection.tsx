@@ -101,10 +101,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
         {FEATURES.map((feat, i) => {
           const isActive = active === i;
           return (
-            <button
-              key={feat.title}
-              onClick={() => select(i)}
-              style={{
+                <button
+                  key={feat.title}
+                  onClick={() => select(i)}
+                  className={isActive ? undefined : 'hover-bg-subtle'}
+                  style={{
                 width: '100%',
                 border: 'none',
                 borderBottom: '1px solid rgba(255,255,255,0.028)',
@@ -119,18 +120,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                 transitionProperty: 'background,border-color,opacity,transform',
                 transitionDuration: `0.18s,0.18s,0.5s,0.5s`,
                 transitionDelay: `0s,0s,${i * 0.04}s,${i * 0.04}s`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive)
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.018)';
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
-              }}
-            >
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                >
               <span
                 style={{
                   fontSize: 14,

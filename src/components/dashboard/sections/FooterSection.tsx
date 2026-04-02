@@ -148,6 +148,7 @@ export const FooterSection = memo(() => (
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noreferrer' : undefined}
+                className={link.external ? 'footer-link-external' : 'footer-link-internal'}
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
@@ -160,15 +161,6 @@ export const FooterSection = memo(() => (
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
-                  transition: 'color 0.18s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = link.internal
-                    ? 'var(--film-cream)'
-                    : 'var(--film-amber)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'rgba(110,104,96,0.55)';
                 }}
               >
                 {link.label}
@@ -236,6 +228,7 @@ export const FooterSection = memo(() => (
           href="https://github.com/xdaayush/freeposterapi"
           target="_blank"
           rel="noreferrer"
+          className="footer-link-external"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -247,10 +240,7 @@ export const FooterSection = memo(() => (
             fontSize: 9,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            transition: 'color 0.18s',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(196,124,46,0.45)'; }}
         >
           <Github size={12} />
           Open Source

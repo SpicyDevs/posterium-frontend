@@ -281,6 +281,24 @@ nav a.syne-font {
   color: var(--film-amber);
 }
 
+.hover-bg-subtle:hover {
+  background: rgba(255, 255, 255, 0.018) !important;
+}
+
+.footer-link-internal {
+  transition: color 0.18s ease;
+}
+.footer-link-internal:hover {
+  color: var(--film-cream) !important;
+}
+
+.footer-link-external {
+  transition: color 0.18s ease;
+}
+.footer-link-external:hover {
+  color: var(--film-amber) !important;
+}
+
 /* ── Range input (dashboard override) ── */
 input[type='range'] {
   -webkit-appearance: none;
