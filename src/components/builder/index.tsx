@@ -39,7 +39,7 @@ import {
   Type,
   ChevronDown,
   Search,
-  Heart
+  Coffee
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
@@ -612,14 +612,14 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 </span>
               </a>
               <a
-                href="https://github.com/sponsors/SpicyDevs"
+                href="https://buymeacoffee.com/dikhit"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Sponsor Posterium on GitHub"
+                aria-label="Support us by Buying us a Coffee"
                 className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
               >
-                <Heart size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Sponsor</span>
+                <Coffee size={12} className="shrink-0 fill-current" />
+                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Buy me a Coffee</span>
               </a>
               <button
                 onClick={() => setPaletteOpen(true)}
