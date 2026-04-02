@@ -13,7 +13,7 @@ interface Row {
   theirStatus: 'loss' | 'partial';
 }
 
-const ROWS: Row[] = [
+const ROWS: Row[] = ([
   ['Price', 'Cost to generate posters', 'Free forever', 'Paid tiers or credits', 'win', 'loss'],
   ['Account required', 'Do you need to register?', 'No account, ever', 'Registration required', 'win', 'loss'],
   ['Rate limits', 'API call caps', 'Unlimited', 'Daily / monthly cap', 'win', 'loss'],
@@ -26,7 +26,14 @@ const ROWS: Row[] = [
   ['Self-hosting', 'Run on your own infra', 'Yes — Docker / Node.js', 'Not supported', 'win', 'loss'],
   ['Visual editor', 'No-code badge positioning', 'Drag-and-drop with live preview', 'None or basic form', 'win', 'partial'],
   ['Anime support', 'MAL / AniList IDs', 'MAL and AniList badge sources', 'Movies/TV only', 'win', 'loss'],
-] as const).map(([feature, sub, ours, theirs, ourStatus, theirStatus]) => ({ feature, sub, ours, theirs, ourStatus, theirStatus }));
+] as const).map(([feature, sub, ours, theirs, ourStatus, theirStatus]) => ({
+  feature,
+  sub,
+  ours,
+  theirs,
+  ourStatus,
+  theirStatus,
+}));
 
 const WIN_ICON = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">

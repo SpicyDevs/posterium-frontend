@@ -6,59 +6,20 @@ import { useInView } from '@/lib/dashboard/hooks/index';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
 import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 
-const FEATURE_DEMOS: Record<string, { id: string; type: 'movie' | 'tv'; r: string; pos: string }> =
-  {
-    'Drag-Drop Editor': {
-      id: '155',
-      type: 'movie',
-      r: 'imdb,rt,meta,tmdb',
-      pos: 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244',
-    },
-    'Instant API URL': {
-      id: '27205',
-      type: 'movie',
-      r: 'imdb,rt',
-      pos: 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88',
-    },
-    'Multiple Sources': {
-      id: '872585',
-      type: 'movie',
-      r: 'rt,meta',
-      pos: 'rt_x=14&rt_y=14&meta_x=310&meta_y=14',
-    },
-    'Live Ratings': { id: '1396', type: 'tv', r: 'imdb', pos: 'imdb_x=14&imdb_y=14' },
-    'Movies, TV & Anime': {
-      id: '238',
-      type: 'movie',
-      r: 'imdb,meta',
-      pos: 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88',
-    },
-    'Any Export Format': { id: '475557', type: 'movie', r: 'rt', pos: 'rt_x=14&rt_y=14' },
-    'Textless Posters': { id: '157336', type: 'movie', r: 'imdb', pos: 'imdb_x=310&imdb_y=14' },
-    'Plex & Jellyfin Ready': {
-      id: '680',
-      type: 'movie',
-      r: 'imdb,rt',
-      pos: 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88',
-    },
-  };
-
-const ICON_MAP: Record<string, string> = {
-  'Drag-Drop Editor': '⌖',
-  'Instant API URL': '⚡',
-  'Multiple Sources': '⊞',
-  'Live Ratings': '◉',
-  'Movies, TV & Anime': '▣',
-  'Any Export Format': '◫',
-  'Textless Posters': '◻',
-  'Plex & Jellyfin Ready': '▤',
-};
+const FEATURE_TUPLES = [
+  ['Drag-Drop Editor', '⌖', '155', 'movie', 'imdb,rt,meta,tmdb', 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244'],
+  ['Instant API URL', '⚡', '27205', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
+  ['Multiple Sources', '⊞', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
+  ['Live Ratings', '◉', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
+  ['Movies, TV & Anime', '▣', '238', 'movie', 'imdb,meta', 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88'],
+  ['Any Export Format', '◫', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
+  ['Textless Posters', '◻', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
+  ['Plex & Jellyfin Ready', '▤', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
+] as const;
+const ICON_MAP: Record<string, string> = Object.fromEntries(FEATURE_TUPLES.map(([title, icon]) => [title, icon]));
 
 const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
-  Object.entries(FEATURE_DEMOS).map(([title, d]) => [
-    title,
-    `${API}/${d.type}/${d.id}.svg?r=${d.r}&source=tmdb&blur=7&alpha=0.43&rad=10&${d.pos}`,
-  ])
+  FEATURE_TUPLES.map(([title, , id, type, r, pos]) => [title, `${API}/${type}/${id}.svg?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`])
 );
 
 const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
