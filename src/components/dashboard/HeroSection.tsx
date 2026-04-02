@@ -103,16 +103,25 @@ const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
 const CyclingPoster = memo(() => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [loaded, setLoaded] = useState<Record<number, boolean>>({ 0: false });
-  const [heroZeroLoaded, setHeroZeroLoaded] = useState(false);
+  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
+  const [failed, setFailed] = useState<Record<number, boolean>>({});
 
-  const loadedRef = useRef<Record<number, boolean>>({ 0: false });
-  const pendingAdvanceRef = useRef<number | null>(null);
+  const loadedRef = useRef<Record<number, boolean>>({});
+  const failedRef = useRef<Record<number, boolean>>({});
+  const activeIdxRef = useRef(0);
+  const transitioningRef = useRef(false);
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(true);
   const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -127,21 +136,45 @@ const CyclingPoster = memo(() => {
     return () => obs.disconnect();
   }, []);
 
-  const doTransition = useCallback((next: number) => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setActiveIdx(next);
-      setTimeout(() => setTransitioning(false), 360);
-    }, 50);
+  const clearTransitionTimers = useCallback(() => {
+    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
+    swapTimerRef.current = null;
+    settleTimerRef.current = null;
+    guardTimerRef.current = null;
   }, []);
+
+  const finishTransition = useCallback(() => {
+    clearTransitionTimers();
+    transitioningRef.current = false;
+    setTransitioning(false);
+  }, [clearTransitionTimers]);
+
+  const isPosterReady = useCallback(
+    (index: number) => Boolean(loadedRef.current[index] || failedRef.current[index]),
+    []
+  );
+
+  const doTransition = useCallback(
+    (next: number) => {
+      if (next === activeIdxRef.current || transitioningRef.current || !isPosterReady(next)) return;
+      clearTransitionTimers();
+      transitioningRef.current = true;
+      setTransitioning(true);
+      swapTimerRef.current = setTimeout(() => {
+        setActiveIdx(next);
+        settleTimerRef.current = setTimeout(() => {
+          finishTransition();
+        }, 360);
+      }, 50);
+      guardTimerRef.current = setTimeout(finishTransition, 1400);
+    },
+    [clearTransitionTimers, finishTransition, isPosterReady]
+  );
 
   const goTo = useCallback(
     (next: number) => {
-      if (!loadedRef.current[next]) {
-        pendingAdvanceRef.current = next;
-        return;
-      }
-      pendingAdvanceRef.current = null;
       doTransition(next);
     },
     [doTransition]
@@ -150,36 +183,27 @@ const CyclingPoster = memo(() => {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      if (!isVisibleRef.current) return;
-      setActiveIdx((i) => {
-        goTo((i + 1) % TOTAL);
-        return i;
-      });
+      if (!isVisibleRef.current || transitioningRef.current) return;
+      goTo((activeIdxRef.current + 1) % TOTAL);
     }, 4500);
   }, [goTo]);
 
   useEffect(() => {
+    if (!loaded[0]) return;
     restartInterval();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      finishTransition();
     };
-  }, [restartInterval]);
+  }, [finishTransition, loaded, restartInterval]);
 
   const handlePrev = useCallback(() => {
-    setActiveIdx((i) => {
-      const n = (i - 1 + TOTAL) % TOTAL;
-      goTo(n);
-      return i;
-    });
+    goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL);
     restartInterval();
   }, [goTo, restartInterval]);
 
   const handleNext = useCallback(() => {
-    setActiveIdx((i) => {
-      const n = (i + 1) % TOTAL;
-      goTo(n);
-      return i;
-    });
+    goTo((activeIdxRef.current + 1) % TOTAL);
     restartInterval();
   }, [goTo, restartInterval]);
 
@@ -193,16 +217,18 @@ const CyclingPoster = memo(() => {
 
   const onLoad = useCallback(
     (i: number) => {
+      if (loadedRef.current[i]) return;
       loadedRef.current = { ...loadedRef.current, [i]: true };
       setLoaded((p) => ({ ...p, [i]: true }));
-      if (i === 0) setHeroZeroLoaded(true);
-      if (pendingAdvanceRef.current === i) {
-        pendingAdvanceRef.current = null;
-        doTransition(i);
-      }
     },
-    [doTransition]
+    []
   );
+
+  const onError = useCallback((i: number) => {
+    if (failedRef.current[i]) return;
+    failedRef.current = { ...failedRef.current, [i]: true };
+    setFailed((p) => ({ ...p, [i]: true }));
+  }, []);
 
   useEffect(() => {
     imgRefs.current.forEach((img, i) => {
@@ -233,21 +259,19 @@ const CyclingPoster = memo(() => {
         ))}
 
         {HERO_POSTERS.map((p, i) => {
-          const shouldLoad = i <= 1 || heroZeroLoaded;
-          const src = shouldLoad ? POSTER_SRCS[i] : undefined;
-
           return (
             <img
               key={p.id}
               ref={(el) => {
                 imgRefs.current[i] = el;
               }}
-              src={src}
+              src={POSTER_SRCS[i]}
               alt={`Custom ${p.type === 'movie' ? 'movie' : 'TV show'} poster for ${p.title} featuring live IMDb and Rotten Tomatoes rating badges`}
-              loading={i === 0 ? undefined : 'lazy'}
+              loading={i === 0 ? 'eager' : 'lazy'}
               fetchPriority={i === 0 ? 'high' : 'auto'}
               decoding={i === 0 ? 'sync' : 'async'}
               onLoad={() => onLoad(i)}
+              onError={() => onError(i)}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -255,7 +279,7 @@ const CyclingPoster = memo(() => {
                 height: '100%',
                 objectFit: 'cover',
                 display: 'block',
-                opacity: i === activeIdx ? 1 : 0,
+                opacity: i === activeIdx && loaded[i] ? 1 : 0,
                 willChange: transitioning ? 'opacity' : 'auto',
                 transition: 'opacity 0.35s ease',
                 pointerEvents: 'none',
@@ -264,7 +288,7 @@ const CyclingPoster = memo(() => {
           );
         })}
 
-        {!loaded[0] && (
+        {!loaded[activeIdx] && !failed[activeIdx] && (
           <div
             style={{
               position: 'absolute',
@@ -275,6 +299,22 @@ const CyclingPoster = memo(() => {
               animation: 'shimmer 1.6s linear infinite',
             }}
           />
+        )}
+        {failed[activeIdx] && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+              display: 'grid',
+              placeItems: 'center',
+              background: '#14120f',
+              color: 'rgba(196,124,46,0.65)',
+              fontSize: 24,
+            }}
+          >
+            🎞
+          </div>
         )}
 
         <div
@@ -304,37 +344,17 @@ const CyclingPoster = memo(() => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button
-          onClick={handlePrev}
-          aria-label="Previous poster"
-          style={{
-            background: 'none',
-            border: '1px solid rgba(196,124,46,0.22)',
-            borderRadius: 3,
-            cursor: 'pointer',
-            color: 'rgba(196,124,46,0.5)',
-            width: 26,
-            height: 26,
-            display: 'flex',
-            alignItems: 'center',
-            justifyItems: 'center',
-            transition: 'border-color 0.18s, color 0.18s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.6)';
-            el.style.color = 'var(--film-amber)';
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.22)';
-            el.style.color = 'rgba(196,124,46,0.5)';
-          }}
-        >
-          <ChevronLeft size={12} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={handlePrev}
+            aria-label="Previous poster"
+            className="carousel-icon-btn"
+            style={{
+              justifyContent: 'center',
+            }}
+          >
+            <ChevronLeft size={12} />
+          </button>
 
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {HERO_POSTERS.map((_, i) => (
@@ -360,29 +380,9 @@ const CyclingPoster = memo(() => {
         <button
           onClick={handleNext}
           aria-label="Next poster"
+          className="carousel-icon-btn"
           style={{
-            background: 'none',
-            border: '1px solid rgba(196,124,46,0.22)',
-            borderRadius: 3,
-            cursor: 'pointer',
-            color: 'rgba(196,124,46,0.5)',
-            width: 26,
-            height: 26,
-            display: 'flex',
-            alignItems: 'center',
-            justifyItems: 'center',
-            transition: 'border-color 0.18s, color 0.18s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.6)';
-            el.style.color = 'var(--film-amber)';
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = 'rgba(196,124,46,0.22)';
-            el.style.color = 'rgba(196,124,46,0.5)';
+            justifyContent: 'center',
           }}
         >
           <ChevronRight size={12} />
@@ -515,7 +515,7 @@ const HeroSection = memo(() => (
           </a>
           <a
             href="#reel"
-            className="syne-font"
+            className="syne-font border-hover-amber"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -530,17 +530,6 @@ const HeroSection = memo(() => (
               borderRadius: 4,
               border: '1px solid rgba(255,255,255,0.08)',
               background: 'rgba(255,255,255,0.02)',
-              transition: 'border-color 0.2s, color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = 'rgba(196,124,46,0.28)';
-              el.style.color = 'var(--film-cream)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = 'rgba(255,255,255,0.08)';
-              el.style.color = 'var(--film-silver)';
             }}
           >
             Browse Showcase

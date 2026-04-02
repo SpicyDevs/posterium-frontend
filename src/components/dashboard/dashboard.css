@@ -242,6 +242,56 @@ nav a.syne-font {
   transform: translateY(0);
 }
 
+/* ── Reusable interactive dashboard controls ── */
+.hover-cream {
+  transition: color 0.18s ease;
+}
+.hover-cream:hover {
+  color: var(--film-cream) !important;
+}
+
+.hover-amber {
+  transition: color 0.18s ease;
+}
+.hover-amber:hover {
+  color: var(--film-amber) !important;
+}
+
+.border-hover-amber {
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.border-hover-amber:hover {
+  border-color: rgba(196, 124, 46, 0.32) !important;
+  color: var(--film-cream) !important;
+}
+
+.carousel-icon-btn {
+  background: none;
+  border: 1px solid rgba(196, 124, 46, 0.22);
+  border-radius: 3px;
+  cursor: pointer;
+  color: rgba(196, 124, 46, 0.5);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+.carousel-icon-btn:hover {
+  border-color: rgba(196, 124, 46, 0.6);
+  color: var(--film-amber);
+}
+
+.hover-bg-subtle:hover {
+  background: rgba(255, 255, 255, 0.018) !important;
+}
+
 /* ── Range input (dashboard override) ── */
 input[type='range'] {
   -webkit-appearance: none;

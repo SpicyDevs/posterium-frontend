@@ -1,8 +1,9 @@
 // src/components/dashboard/FilmReelSection/MobileReel.tsx
 // Import paths corrected: ../../constants → @/lib/dashboard/constants
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useRef } from 'react';
 import { REEL_ITEMS, API } from '@/lib/dashboard/constants';
 import { SprocketStrip } from '../primitives';
+import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
 
 const POSTER_W = 148;
 const POSTER_H = 222;
@@ -92,12 +93,11 @@ const MobileReel = memo(() => {
                 position: 'relative',
               }}
             >
-              <img
+              <ProgressiveImage
                 src={`${API}/${item.type}/${item.id}.svg?${BADGE_PARAMS}`}
                 alt={`High quality ${item.type} poster for ${item.title} generated via Posterium API`}
                 loading="lazy"
                 decoding="async"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
             <div

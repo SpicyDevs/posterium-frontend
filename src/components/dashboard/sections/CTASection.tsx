@@ -6,13 +6,13 @@ import { useInView } from '@/lib/dashboard/hooks/index';
 
 const STRIPE_INDICES = Array.from({ length: 28 }, (_, i) => i);
 
-const SLATE_FIELDS: [string, string][] = [
+const SLATE_FIELDS = [
   ['PROD', 'POSTERIUM'],
   ['DIR', 'SPICYDEVS'],
   ['SCENE', 'CTA'],
   ['TAKE', '1'],
   ['ROLL', '01'],
-];
+] as const;
 
 export const CTASection = memo(() => {
   const { ref, vis } = useInView(0.15);
@@ -175,7 +175,7 @@ export const CTASection = memo(() => {
             href="https://github.com/spicydevs/posterium"
             target="_blank"
             rel="noreferrer"
-            className="syne-font"
+            className="syne-font border-hover-amber"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -190,13 +190,6 @@ export const CTASection = memo(() => {
               borderRadius: 5,
               border: '1px solid rgba(255,255,255,0.1)',
               background: 'rgba(255,255,255,0.025)',
-              transition: 'border-color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.38)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
             }}
           >
             <Github size={13} /> Star on GitHub{' '}

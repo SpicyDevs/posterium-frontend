@@ -1,8 +1,9 @@
-import { memo, useRef, useEffect, useState, useCallback } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 import { useScrollReel } from '@/lib/dashboard/hooks/index';
 import { SprocketStrip } from '../primitives';
 import { API } from '@/lib/dashboard/constants';
+import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
 
 const ROW_CONFIGS = [
   { height: 234, count: 24 },
@@ -42,70 +43,28 @@ const CollagePoster = memo<{
   height: number;
   eager?: boolean;
 }>(({ id, type, title, width, height, eager = false }) => {
-  const [loaded, setLoaded] = useState(false);
-  const [err, setErr] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const onLoad = useCallback(() => setLoaded(true), []);
-  const onError = useCallback(() => setErr(true), []);
-
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-    if (img.complete) {
-      if (img.naturalWidth > 0) onLoad();
-      else onError();
-    }
-  }, [onLoad, onError]);
-
   const src = `${API}/${type}/${id}.webp?${BADGE_PARAMS}`;
 
   return (
-    <div
-      style={{
+    <ProgressiveImage
+      src={src}
+      alt={`Textless ${type === 'movie' ? 'movie' : 'TV'} poster art for ${title} with custom rating overlays`}
+      containerStyle={{
         width,
         height,
         flexShrink: 0,
-        position: 'relative',
-        overflow: 'hidden',
         background: '#0d0c0a',
         borderRight: '1px solid rgba(0,0,0,0.7)',
       }}
-    >
-      {!loaded && !err && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.8s linear infinite',
-          }}
-        />
-      )}
-      {err && (
+      loading={eager ? 'eager' : 'lazy'}
+      fetchPriority={eager ? 'high' : 'auto'}
+      decoding="async"
+      fallback={
         <div style={ERR_STYLE}>
           <span style={{ fontSize: 20 }}>🎞</span>
         </div>
-      )}
-      <img
-        ref={imgRef}
-        src={src}
-        alt={`Textless ${type === 'movie' ? 'movie' : 'TV'} poster art for ${title} with custom rating overlays`}
-        loading={eager ? undefined : 'lazy'}
-        fetchPriority={eager ? 'high' : 'auto'}
-        decoding="async"
-        onLoad={onLoad}
-        onError={onError}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          display: 'block',
-          opacity: loaded ? 1 : 0,
-          transition: 'opacity 0.35s ease',
-        }}
-      />
-    </div>
+      }
+    />
   );
 });
 CollagePoster.displayName = 'CollagePoster';

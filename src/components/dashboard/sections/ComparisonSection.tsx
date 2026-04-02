@@ -1,7 +1,8 @@
 // src/components/dashboard/sections/ComparisonSection.tsx
 import { memo } from 'react';
 import { useInView } from '@/lib/dashboard/hooks/index';
-import { AmberTag, SprocketStrip } from '../primitives';
+import { SprocketStrip } from '../primitives';
+import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 
 interface Row {
   feature: string;
@@ -12,104 +13,36 @@ interface Row {
   theirStatus: 'loss' | 'partial';
 }
 
-const ROWS: Row[] = [
-  {
-    feature: 'Price',
-    sub: 'Cost to generate posters',
-    ours: 'Free forever',
-    theirs: 'Paid tiers or credits',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Account required',
-    sub: 'Do you need to register?',
-    ours: 'No account, ever',
-    theirs: 'Registration required',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Rate limits',
-    sub: 'API call caps',
-    ours: 'Unlimited',
-    theirs: 'Daily / monthly cap',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Source code',
-    sub: 'Can you inspect or fork it?',
-    ours: 'MIT — fully open source',
-    theirs: 'Proprietary / closed',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Export formats',
-    sub: 'Supported output types',
-    ours: 'SVG · PNG · JPG · WebP',
-    theirs: 'PNG only',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Rating sources',
-    sub: 'Supported scoring platforms',
-    ours: 'IMDb · RT · Meta · TMDB · Letterboxd · MAL · AniList · more',
-    theirs: '1–3 sources',
-    ourStatus: 'win',
-    theirStatus: 'partial',
-  },
-  {
-    feature: 'Delivery model',
-    sub: 'How the poster reaches you',
-    ours: 'Single URL — works in any img tag',
-    theirs: 'File download or API key call',
-    ourStatus: 'win',
-    theirStatus: 'partial',
-  },
-  {
-    feature: 'Score freshness',
-    sub: 'Are ratings live or cached?',
-    ours: 'Real-time — fetched on request',
-    theirs: 'Cached — hours to days old',
-    ourStatus: 'win',
-    theirStatus: 'partial',
-  },
-  {
-    feature: 'Textless posters',
-    sub: 'Strip title text from artwork',
-    ours: 'Supported via ?textless=1',
-    theirs: 'Not available',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Self-hosting',
-    sub: 'Run on your own infra',
-    ours: 'Yes — Docker / Node.js',
-    theirs: 'Not supported',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-  {
-    feature: 'Visual editor',
-    sub: 'No-code badge positioning',
-    ours: 'Drag-and-drop with live preview',
-    theirs: 'None or basic form',
-    ourStatus: 'win',
-    theirStatus: 'partial',
-  },
-  {
-    feature: 'Anime support',
-    sub: 'MAL / AniList IDs',
-    ours: 'MAL and AniList badge sources',
-    theirs: 'Movies/TV only',
-    ourStatus: 'win',
-    theirStatus: 'loss',
-  },
-];
+const toRow = ([
+  feature,
+  sub,
+  ours,
+  theirs,
+  ourStatus,
+  theirStatus,
+]: readonly [string, string, string, string, Row['ourStatus'], Row['theirStatus']]): Row => ({
+  feature,
+  sub,
+  ours,
+  theirs,
+  ourStatus,
+  theirStatus,
+});
+
+const ROWS: Row[] = ([
+  ['Price', 'Cost to generate posters', 'Free forever', 'Paid tiers or credits', 'win', 'loss'],
+  ['Account required', 'Do you need to register?', 'No account, ever', 'Registration required', 'win', 'loss'],
+  ['Rate limits', 'API call caps', 'Unlimited', 'Daily / monthly cap', 'win', 'loss'],
+  ['Source code', 'Can you inspect or fork it?', 'MIT — fully open source', 'Proprietary / closed', 'win', 'loss'],
+  ['Export formats', 'Supported output types', 'SVG · PNG · JPG · WebP', 'PNG only', 'win', 'loss'],
+  ['Rating sources', 'Supported scoring platforms', 'IMDb · RT · Meta · TMDB · Letterboxd · MAL · AniList · more', '1–3 sources', 'win', 'partial'],
+  ['Delivery model', 'How the poster reaches you', 'Single URL — works in any img tag', 'File download or API key call', 'win', 'partial'],
+  ['Score freshness', 'Are ratings live or cached?', 'Real-time — fetched on request', 'Cached — hours to days old', 'win', 'partial'],
+  ['Textless posters', 'Strip title text from artwork', 'Supported via ?textless=1', 'Not available', 'win', 'loss'],
+  ['Self-hosting', 'Run on your own infra', 'Yes — Docker / Node.js', 'Not supported', 'win', 'loss'],
+  ['Visual editor', 'No-code badge positioning', 'Drag-and-drop with live preview', 'None or basic form', 'win', 'partial'],
+  ['Anime support', 'MAL / AniList IDs', 'MAL and AniList badge sources', 'Movies/TV only', 'win', 'loss'],
+] as const).map(toRow);
 
 const WIN_ICON = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -240,52 +173,19 @@ export const ComparisonSection = memo(() => {
       aria-label="Feature Comparison"
       style={{ background: 'var(--film-black)', borderTop: '1px solid rgba(196,124,46,0.07)' }}
     >
-      <div
-        style={{
-          padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0',
-          opacity: vis ? 1 : 0,
-          transition: 'opacity 0.6s ease',
-        }}
-      >
-        <AmberTag style={{ marginBottom: 12 }}>Why Posterium</AmberTag>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 14,
-            marginTop: 10,
-            marginBottom: 32,
-          }}
-        >
-          <h2
-            className="poster-font"
-            style={{
-              fontSize: 'clamp(36px,5.5vw,72px)',
-              color: 'var(--film-cream)',
-              lineHeight: 0.9,
-              letterSpacing: '0.02em',
-            }}
-          >
-            THE SPEC
-            <br />
-            <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
-          </h2>
-          <p
-            className="syne-font"
-            style={{
-              fontSize: 11,
-              color: 'var(--film-silver)',
-              maxWidth: 380,
-              lineHeight: 1.7,
-              textAlign: 'right',
-              paddingBottom: 6,
-            }}
-          >
-            Every feature, side by side. No marketing copy — just what each tool actually does.
-          </p>
-        </div>
+      <div style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+        <SectionHeader
+          tag="Why Posterium"
+          title={
+            <>
+              THE SPEC
+              <br />
+              <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
+            </>
+          }
+          description="Every feature, side by side. No marketing copy — just what each tool actually does."
+          padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0"
+        />
       </div>
       <div
         style={{
