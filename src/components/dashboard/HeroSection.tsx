@@ -103,11 +103,9 @@ const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
 const CyclingPoster = memo(() => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [loaded, setLoaded] = useState<Record<number, boolean>>({ 0: false });
-  const [heroZeroLoaded, setHeroZeroLoaded] = useState(false);
+  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
 
-  const loadedRef = useRef<Record<number, boolean>>({ 0: false });
-  const pendingAdvanceRef = useRef<number | null>(null);
+  const loadedRef = useRef<Record<number, boolean>>({});
   const activeIdxRef = useRef(0);
   const transitioningRef = useRef(false);
   const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,7 +142,7 @@ const CyclingPoster = memo(() => {
 
   const doTransition = useCallback(
     (next: number) => {
-      if (next === activeIdxRef.current || transitioningRef.current) return;
+      if (next === activeIdxRef.current || transitioningRef.current || !loadedRef.current[next]) return;
       clearTransitionTimers();
       transitioningRef.current = true;
       setTransitioning(true);
@@ -161,11 +159,6 @@ const CyclingPoster = memo(() => {
 
   const goTo = useCallback(
     (next: number) => {
-      if (!loadedRef.current[next]) {
-        pendingAdvanceRef.current = next;
-        return;
-      }
-      pendingAdvanceRef.current = null;
       doTransition(next);
     },
     [doTransition]
@@ -180,12 +173,13 @@ const CyclingPoster = memo(() => {
   }, [goTo]);
 
   useEffect(() => {
+    if (!loaded[0]) return;
     restartInterval();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       clearTransitionTimers();
     };
-  }, [clearTransitionTimers, restartInterval]);
+  }, [clearTransitionTimers, loaded, restartInterval]);
 
   const handlePrev = useCallback(() => {
     goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL);
@@ -207,15 +201,11 @@ const CyclingPoster = memo(() => {
 
   const onLoad = useCallback(
     (i: number) => {
+      if (loadedRef.current[i]) return;
       loadedRef.current = { ...loadedRef.current, [i]: true };
       setLoaded((p) => ({ ...p, [i]: true }));
-      if (i === 0) setHeroZeroLoaded(true);
-      if (pendingAdvanceRef.current === i) {
-        pendingAdvanceRef.current = null;
-        doTransition(i);
-      }
     },
-    [doTransition]
+    []
   );
 
   useEffect(() => {
@@ -247,18 +237,15 @@ const CyclingPoster = memo(() => {
         ))}
 
         {HERO_POSTERS.map((p, i) => {
-          const shouldLoad = i <= 1 || heroZeroLoaded;
-          const src = shouldLoad ? POSTER_SRCS[i] : undefined;
-
           return (
             <img
               key={p.id}
               ref={(el) => {
                 imgRefs.current[i] = el;
               }}
-              src={src}
+              src={POSTER_SRCS[i]}
               alt={`Custom ${p.type === 'movie' ? 'movie' : 'TV show'} poster for ${p.title} featuring live IMDb and Rotten Tomatoes rating badges`}
-              loading={i === 0 ? undefined : 'lazy'}
+              loading={i === 0 ? 'eager' : 'lazy'}
               fetchPriority={i === 0 ? 'high' : 'auto'}
               decoding={i === 0 ? 'sync' : 'async'}
               onLoad={() => onLoad(i)}
@@ -269,7 +256,7 @@ const CyclingPoster = memo(() => {
                 height: '100%',
                 objectFit: 'cover',
                 display: 'block',
-                opacity: i === activeIdx ? 1 : 0,
+                opacity: i === activeIdx && loaded[i] ? 1 : 0,
                 willChange: transitioning ? 'opacity' : 'auto',
                 transition: 'opacity 0.35s ease',
                 pointerEvents: 'none',
@@ -278,7 +265,7 @@ const CyclingPoster = memo(() => {
           );
         })}
 
-        {!loaded[0] && (
+        {!loaded[activeIdx] && (
           <div
             style={{
               position: 'absolute',
