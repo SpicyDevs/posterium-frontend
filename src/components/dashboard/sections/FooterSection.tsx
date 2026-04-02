@@ -148,7 +148,7 @@ export const FooterSection = memo(() => (
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noreferrer' : undefined}
-                className={link.external ? undefined : 'hover-cream'}
+                className={link.external ? 'hover-amber' : 'hover-cream'}
                 style={{
                   fontSize: 10,
                   fontWeight: 700,

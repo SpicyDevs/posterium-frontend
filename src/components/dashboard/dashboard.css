@@ -250,6 +250,13 @@ nav a.syne-font {
   color: var(--film-cream) !important;
 }
 
+.hover-amber {
+  transition: color 0.18s ease;
+}
+.hover-amber:hover {
+  color: var(--film-amber) !important;
+}
+
 .border-hover-amber {
   transition:
     border-color 0.2s ease,
