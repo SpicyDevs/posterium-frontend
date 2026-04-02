@@ -143,7 +143,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   // Media identity
   mediaType: 'movie',
   tmdbId:    '',
-  imdbId:    'tt12042730',
+  imdbId:    'tt9419884',
 
   // Ratings
   ratings: ['imdb', 'rt', 'age'],
