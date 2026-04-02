@@ -148,7 +148,7 @@ export const FooterSection = memo(() => (
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noreferrer' : undefined}
-                className={link.internal ? 'footer-link-internal' : 'footer-link-external'}
+                className={link.external ? undefined : 'hover-cream'}
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
@@ -161,6 +161,7 @@ export const FooterSection = memo(() => (
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
+                  transition: 'color 0.18s',
                 }}
               >
                 {link.label}
@@ -228,7 +229,6 @@ export const FooterSection = memo(() => (
           href="https://github.com/xdaayush/freeposterapi"
           target="_blank"
           rel="noreferrer"
-          className="footer-link-external"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -240,6 +240,7 @@ export const FooterSection = memo(() => (
             fontSize: 9,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
+            transition: 'color 0.18s',
           }}
         >
           <Github size={12} />
