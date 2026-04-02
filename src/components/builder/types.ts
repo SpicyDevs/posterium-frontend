@@ -105,7 +105,7 @@ export interface PosterConfig {
   iconType?: number;  // 1 = default, 2 = alternate (default 1)
 
   // Display preset
-  uiPreset?: 'b' | 'm';  // 'b' = badge (default), 'm' = minimal
+  uiPreset?: 'b' | 'm' | 'n';  // 'b' = badges, 'm' = minimal, 'n' = no-badges
 
   // Score display
   normalize?: boolean;  // normalize all scores to 0–10 (default false)
@@ -129,6 +129,7 @@ export interface PosterConfig {
   logoH:        number;
   logoOpacity:  number;
   logoShadow:   number;
+  logoLayerIndex: number;
 
   // Fallback chain
   fallbackEnabled: boolean;
@@ -203,6 +204,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   logoH:       100,
   logoOpacity: 1.0,
   logoShadow:  6,
+  logoLayerIndex: 3,
 
   // Fallback
   fallbackEnabled: false,

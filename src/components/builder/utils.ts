@@ -240,7 +240,7 @@ export const generateApiUrl = (
   if (config.layout !== 'custom') p.set('l', config.layout);
   if (config.preset !== 'custom') p.set('pos', config.preset);
 
-  // ── Display preset (p=b default → omit; p=m minimal → emit) ──────────
+  // ── Display preset (p=b default → omit; p=m/n → emit) ──────────
   if (config.uiPreset && config.uiPreset !== 'b') p.set('p', config.uiPreset);
 
   // ── No-text / show-text toggle (nt=1 hides rating text) ──────────────
@@ -473,7 +473,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         icon:    p.has('ic')  ? p.get('ic') === '1' : true,
         showText: p.get('nt') !== '1',
         // ── NEW: display preset, score, icon type, labels ────────────────
-        uiPreset:   (p.get('p') === 'm' ? 'm' : 'b') as 'b' | 'm',
+        uiPreset:   ((() => {
+          const preset = p.get('p');
+          if (preset === 'm') return 'm';
+          if (preset === 'n') return 'n';
+          return 'b';
+        })()) as PosterConfig['uiPreset'],
         normalize:  p.get('nm') === '1' || p.get('normalize') === '1',
         outOf:      parseOutOf(),
         iconType:   getNum('it', 'icon_type', DEFAULTS.iconType),
@@ -599,7 +604,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       txt:        g_txt    ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
       icon:       g_icon   ? g_icon === '1' : true,
       showText:   p.get('nt') !== '1',
-      uiPreset:   (p.get('preset') === 'minimal' ? 'm' : 'b') as 'b' | 'm',
+      uiPreset:   ((() => {
+        const legacyPreset = p.get('preset');
+        if (legacyPreset === 'minimal') return 'm';
+        if (legacyPreset === 'no-badges') return 'n';
+        return 'b';
+      })()) as PosterConfig['uiPreset'],
       normalize:  p.get('normalize') === '1',
       outOf:      v2OutOf,
       iconType:   p.has('icon_type') ? parseInt(p.get('icon_type')!) : DEFAULTS.iconType,

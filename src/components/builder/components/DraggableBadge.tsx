@@ -20,6 +20,7 @@ import { BADGE_ICONS } from '../constants';
 const PRESET_DEFAULTS = {
   b: { blur: 0, alpha: 0.4, radius: 12, shadow: 6, icon: true },
   m: { blur: 0, alpha: 0.0, radius: 0,  shadow: 0, icon: false },
+  n: { blur: 0, alpha: 0.0, radius: 0,  shadow: 0, icon: false },
 } as const;
 
 // ── Provider display names for default label text ──────────────────────────
@@ -49,6 +50,7 @@ interface Props {
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
+  zIndex?: number;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -64,6 +66,7 @@ const DraggableBadge: React.FC<Props> = ({
   onContextMenu,
   isObscuring,
   onHoverChange,
+  zIndex = 50,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? 1.0;
@@ -383,12 +386,13 @@ const DraggableBadge: React.FC<Props> = ({
         e.stopPropagation();
         onContextMenu?.(badgeId, e);
       }}
-      className="badge-item absolute select-none cursor-move z-50"
+      className="badge-item absolute select-none cursor-move"
       style={{
         width: `${width}px`,
         height: `${height}px`,
         left: `${x}px`,
         top: `${y}px`,
+        zIndex,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
         background: finalBackground,

@@ -29,10 +29,10 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
           }}
         >
           <button
-            onClick={() => {
-              clearSelection();
-              setActiveTab('canvas');
-            }}
+              onClick={() => {
+                clearSelection();
+                setActiveTab('canvas');
+              }}
             aria-pressed={currentMode === 'global'}
             className={clsx(
               'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
@@ -46,7 +46,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             }}
           >
             <Globe size={11} strokeWidth={2} />
-            Canvas
+            Design
           </button>
           <button
             onClick={() => setActiveTab('badge')}

@@ -42,7 +42,7 @@ import {
   Heart
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
-import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
+import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
 
 const STORAGE_KEY = 'posterium_config_v2';
@@ -279,7 +279,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false, x: 0, y: 0, badgeId: null,
   });
-  const openCtxMenu = useCallback((badgeId: RatingType, e: React.MouseEvent) => {
+  const openCtxMenu = useCallback((badgeId: LayerTargetId, e: React.MouseEvent) => {
     e.preventDefault();
     setCtxMenu({ visible: true, x: e.clientX, y: e.clientY, badgeId });
   }, []);
@@ -305,25 +305,45 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     handleSelection(id, multi);
   }, [handleSelection]);
 
+  const stackFromConfig = useCallback((cfg: PosterConfig): LayerTargetId[] => {
+    const stack: LayerTargetId[] = [...cfg.ratings].reverse();
+    if (cfg.logo) {
+      const logoIdx = Number.isFinite(cfg.logoLayerIndex) ? cfg.logoLayerIndex : stack.length;
+      stack.splice(Math.max(0, Math.min(stack.length, Math.round(logoIdx))), 0, 'logo');
+    }
+    return stack;
+  }, []);
+
   const moveLayer = useCallback(
-    (id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
+    (id: LayerTargetId, direction: 'front' | 'forward' | 'back' | 'toback') => {
       setConfig((prev) => {
-        const arr = [...prev.ratings];
-        const idx = arr.indexOf(id);
+        const stack: LayerTargetId[] = stackFromConfig(prev);
+        const idx = stack.indexOf(id);
         if (idx === -1) return prev;
-        arr.splice(idx, 1);
-        if (direction === 'front') arr.push(id);
-        else if (direction === 'forward') arr.splice(Math.min(idx + 1, arr.length), 0, id);
-        else if (direction === 'back') arr.splice(Math.max(idx - 1, 0), 0, id);
-        else arr.unshift(id);
-        return { ...prev, ratings: arr };
+        stack.splice(idx, 1);
+        if (direction === 'front') stack.push(id);
+        else if (direction === 'forward') stack.splice(Math.min(idx + 1, stack.length), 0, id);
+        else if (direction === 'back') stack.splice(Math.max(idx - 1, 0), 0, id);
+        else stack.unshift(id);
+
+        const logoLayerIndex = stack.indexOf('logo');
+        const ratings = stack.filter((x): x is RatingType => x !== 'logo').reverse();
+        return {
+          ...prev,
+          ratings,
+          logoLayerIndex: logoLayerIndex === -1 ? prev.logoLayerIndex : logoLayerIndex,
+        };
       });
     },
-    [setConfig]
+    [setConfig, stackFromConfig]
   );
 
   const hideBadge = useCallback(
-    (id: RatingType) => {
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({ ...prev, logo: false }));
+        return;
+      }
       setConfig((prev) => ({ ...prev, ratings: prev.ratings.filter((r) => r !== id) }));
       clearSelection();
     },
@@ -333,14 +353,33 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const showAllBadges = useCallback(() => {
     setConfig((prev) => ({
       ...prev,
-      ratings: ALL_BADGES.map((b) => b.id).filter(
-        (id) => prev.ratings.includes(id) || !prev.ratings.includes(id)
-      ),
+      ratings: ALL_BADGES.map((b) => b.id),
+    }));
+  }, [setConfig]);
+
+  const showAllLayers = useCallback(() => {
+    setConfig((prev) => ({
+      ...prev,
+      logo: true,
+      ratings: ALL_BADGES.map((b) => b.id),
     }));
   }, [setConfig]);
 
   const resetBadge = useCallback(
-    (id: RatingType) => {
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({
+          ...prev,
+          logoSource: null,
+          logoX: null,
+          logoY: 630,
+          logoW: 380,
+          logoH: 100,
+          logoOpacity: 1.0,
+          logoShadow: 6,
+        }));
+        return;
+      }
       setConfig((prev) => {
         const ni = { ...prev.items };
         delete ni[id];
@@ -351,7 +390,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   );
 
   const deleteBadge = useCallback(
-    (id: RatingType) => {
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({ ...prev, logo: false }));
+        return;
+      }
       setConfig((prev) => ({ ...prev, ratings: prev.ratings.filter((r) => r !== id) }));
       clearSelection();
     },
@@ -482,7 +525,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     { id: 'shortcuts-help', label: 'Show Keyboard Shortcuts', category: 'View & Canvas', icon: <Keyboard size={13} />, shortcut: '⌘/', keywords: ['help', 'keys', 'hotkeys'], action: () => setShortcutsOpen(true) },
     { id: 'select-all', label: 'Select All Badges', category: 'Layers & Selection', icon: <CheckSquare size={13} />, shortcut: '⌘A', action: () => setBatchSelection(config.ratings) },
     { id: 'deselect-all', label: 'Deselect All', category: 'Layers & Selection', icon: <MousePointer2Off size={13} />, shortcut: '⌘D', action: clearSelection },
-    { id: 'show-all', label: 'Show All Badges', category: 'Layers & Selection', icon: <Eye size={13} />, keywords: ['reveal', 'unhide'], action: showAllBadges },
+    { id: 'show-all', label: 'Show All Layers', category: 'Layers & Selection', icon: <Eye size={13} />, keywords: ['reveal', 'unhide', 'logo'], action: showAllLayers },
     { id: 'hide-sel', label: 'Hide Selected Badges', category: 'Layers & Selection', icon: <EyeOff size={13} />, shortcut: 'H', keywords: ['hide', 'selected'], action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)) },
     { id: 'layer-front', label: 'Bring to Front', category: 'Layers & Selection', icon: <ArrowUpToLine size={13} />, shortcut: '⌘⇧]', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'front')) },
     { id: 'layer-back', label: 'Send to Back', category: 'Layers & Selection', icon: <ArrowDownToLine size={13} />, shortcut: '⌘⇧[', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'toback')) },
@@ -499,7 +542,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     { id: 'redo', label: 'Redo', category: 'File', icon: <Redo2 size={13} />, shortcut: '⌘Y', action: redo },
   ];
 
-  const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
+  const ctxBadgeSelected = ctxMenu.badgeId ? (ctxMenu.badgeId === 'logo' ? config.logo : selectedIds.has(ctxMenu.badgeId)) : false;
 
   return (
     <>
@@ -543,9 +586,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           onSendBackward={(id) => moveLayer(id, 'back')}
           onSendToBack={(id) => moveLayer(id, 'toback')}
           onHide={hideBadge}
-          onShowAll={showAllBadges}
-          onSelect={(id) => handleSelectionOverride(id, false)}
-          onDeselect={() => clearSelection()}
+          onShowAll={showAllLayers}
+          onSelect={(id) => { if (id !== 'logo') handleSelectionOverride(id, false); }}
+          onDeselect={(id) => { if (id !== 'logo') handleSelectionOverride(id, true); }}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
           onResetBadge={resetBadge}
@@ -810,6 +853,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 setConfig={setConfig}
                 selectedIds={selectedIds}
                 onSelect={handleSelectionOverride}
+                onLayerContextMenu={openCtxMenu}
               />
               <div
                 onMouseDown={startResizeLeft}
@@ -925,15 +969,16 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers') && (
+                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'canvas') && (
                   <LayerPanel
                     config={config}
                     setConfig={setConfig}
                     selectedIds={selectedIds}
                     onSelect={handleSelectionOverride}
+                    onLayerContextMenu={openCtxMenu}
                   />
                 )}
-                {(activeTab === 'canvas' || activeTab === 'badge') && (
+                {activeTab === 'badge' && (
                   <Inspector config={config} setConfig={setConfig} />
                 )}
               </div>
