@@ -5,6 +5,8 @@ export interface DocsSidebarLink {
   id: string;
   label: string;
   href: string;
+  onClick?: () => void;
+  active?: boolean;
 }
 
 interface DocsSearchConfig {
@@ -56,17 +58,25 @@ const DocsLayout = memo<DocsLayoutProps>(
                 <a
                   key={link.id}
                   href={link.href}
+                  onClick={(event) => {
+                    if (link.onClick) {
+                      event.preventDefault();
+                      link.onClick();
+                    }
+                  }}
                   className="hover-cream syne-font"
                   style={{
                     textDecoration: 'none',
-                    color: 'var(--film-text-label)',
+                    color: link.active ? 'var(--film-cream)' : 'var(--film-text-label)',
                     fontSize: 12,
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                     padding: '6px 8px',
                     borderRadius: 6,
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    background: 'rgba(255,255,255,0.02)',
+                    border: link.active
+                      ? '1px solid rgba(212,162,69,0.5)'
+                      : '1px solid rgba(255,255,255,0.06)',
+                    background: link.active ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.02)',
                   }}
                 >
                   {link.label}

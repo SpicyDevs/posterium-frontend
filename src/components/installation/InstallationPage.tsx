@@ -18,6 +18,7 @@ const labelForDevice = (device: InstallationDevice): string => {
 
 const InstallationPage = memo(() => {
   const [search, setSearch] = useState('');
+  const [selectedAppId, setSelectedAppId] = useState(installationApps[0]?.id ?? '');
   const [activeDeviceByApp, setActiveDeviceByApp] = useState<Record<string, InstallationDevice>>(
     () => Object.fromEntries(installationApps.map((app) => [app.id, 'desktop']))
   );
@@ -34,9 +35,18 @@ const InstallationPage = memo(() => {
         id: app.id,
         label: app.name,
         href: `#${app.id}`,
+        active: app.id === (filteredApps.some((candidate) => candidate.id === selectedAppId)
+          ? selectedAppId
+          : filteredApps[0]?.id),
+        onClick: () => setSelectedAppId(app.id),
       })),
-    [filteredApps]
+    [filteredApps, selectedAppId]
   );
+
+  const activeApp = useMemo(() => {
+    if (!filteredApps.length) return null;
+    return filteredApps.find((app) => app.id === selectedAppId) ?? filteredApps[0];
+  }, [filteredApps, selectedAppId]);
 
   const setActiveDevice = (appId: string, device: InstallationDevice) => {
     setActiveDeviceByApp((prev) => ({
@@ -123,7 +133,7 @@ const InstallationPage = memo(() => {
               borderRadius: 10,
               padding: 12,
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(42vw, 170px), 1fr))',
               gap: 10,
             }}
           >
@@ -131,6 +141,7 @@ const InstallationPage = memo(() => {
               <div
                 key={`${app.id}-mobile-slot-${idx}`}
                 style={{
+                  width: '100%',
                   borderRadius: 8,
                   border: '1px solid rgba(212,162,69,0.2)',
                   overflow: 'hidden',
@@ -142,6 +153,7 @@ const InstallationPage = memo(() => {
                   alt={`${app.name} mobile showcase ${idx + 1}`}
                   style={{
                     width: '100%',
+                    height: '100%',
                     display: 'block',
                     aspectRatio: '9 / 16',
                     objectFit: 'cover',
@@ -163,20 +175,28 @@ const InstallationPage = memo(() => {
               justifyContent: 'center',
             }}
           >
-            <img
-              src={imageSrc}
-              alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
+            <div
               style={{
                 width: '100%',
-                display: 'block',
                 borderRadius: 8,
                 border: '1px solid rgba(212,162,69,0.2)',
                 aspectRatio: '16 / 9',
-                objectFit: 'cover',
+                overflow: 'hidden',
                 background: '#080807',
               }}
-              loading="lazy"
-            />
+            >
+              <img
+                src={imageSrc}
+                alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  objectFit: 'cover',
+                }}
+                loading="lazy"
+              />
+            </div>
           </div>
         )}
       </section>
@@ -224,10 +244,10 @@ const InstallationPage = memo(() => {
         <AmberTag>{filteredApps.length} apps</AmberTag>
       </div>
 
-      {filteredApps.map((app) => (
+      {activeApp ? (
         <article
-          key={app.id}
-          id={app.id}
+          key={activeApp.id}
+          id={activeApp.id}
           style={{
             scrollMarginTop: 88,
             border: '1px solid rgba(196,124,46,0.14)',
@@ -237,6 +257,9 @@ const InstallationPage = memo(() => {
             display: 'flex',
             flexDirection: 'column',
             gap: 14,
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
           }}
         >
           <h2
@@ -249,10 +272,10 @@ const InstallationPage = memo(() => {
               color: 'var(--film-pale)',
             }}
           >
-            {app.name}
+            {activeApp.name}
           </h2>
 
-          {renderShowcase(app)}
+          {renderShowcase(activeApp)}
 
           <section
             style={{
@@ -275,11 +298,11 @@ const InstallationPage = memo(() => {
               Guide
             </h3>
             <div className="docs-prose">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{app.guideMarkdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeApp.guideMarkdown}</ReactMarkdown>
             </div>
           </section>
         </article>
-      ))}
+      ) : null}
 
       {!filteredApps.length ? (
         <div
