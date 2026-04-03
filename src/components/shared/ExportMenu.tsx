@@ -121,7 +121,7 @@ const ExportMenu = memo<ExportMenuProps>(
         }
         const rect = anchorRef.current.getBoundingClientRect();
         const width = 320;
-        const panelHeight = 420;
+        const panelHeight = popoverRef.current?.offsetHeight ?? 420;
         const margin = 12;
         const left = Math.min(
           Math.max(margin, rect.right - width),
@@ -130,8 +130,11 @@ const ExportMenu = memo<ExportMenuProps>(
         const spaceAbove = rect.top - margin;
         const spaceBelow = window.innerHeight - rect.bottom - margin;
         const showAbove = spaceAbove > spaceBelow && spaceAbove >= panelHeight;
+        const top = showAbove
+          ? Math.max(margin, rect.top - panelHeight - 8)
+          : Math.min(window.innerHeight - panelHeight - margin, rect.bottom + 8);
         setPopupCoords({
-          top: showAbove ? rect.top - 8 : rect.bottom + 8,
+          top,
           left,
           direction: showAbove ? 'up' : 'down',
         });
@@ -176,7 +179,6 @@ const ExportMenu = memo<ExportMenuProps>(
           boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
           overflow: 'hidden',
           animation: 'export-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
-          transform: popupCoords?.direction === 'up' ? 'translateY(-100%)' : undefined,
           ...containerStyle,
         }}
       >
