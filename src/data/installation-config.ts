@@ -9,7 +9,7 @@ export type InstallationDevice = 'desktop' | 'tv' | 'mobile';
 export interface InstallationShowcaseImages {
   desktop: string;
   tv: string;
-  mobile: string;
+  mobile: string[];
 }
 
 export interface InstallationAppConfig {
@@ -22,7 +22,7 @@ export interface InstallationAppConfig {
 const placeholderImages: InstallationShowcaseImages = {
   desktop: '/placeholders/install-desktop.svg',
   tv: '/placeholders/install-tv.svg',
-  mobile: '/placeholders/install-mobile.svg',
+  mobile: ['/placeholders/install-mobile.svg', '/placeholders/install-mobile-alt.svg'],
 };
 
 export const installationApps: InstallationAppConfig[] = [
