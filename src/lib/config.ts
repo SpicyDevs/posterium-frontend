@@ -360,4 +360,23 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       description: 'Browse ready-made poster examples and open them in the builder.',
     },
   },
+  '/installation': {
+    title: 'Installation - Posterium',
+    description:
+      'Installation guides for Posterium across Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps.',
+    keywords:
+      'posterium installation, plex posterium, emby posterium, jellyfin posterium, stremio posterium, kodi posterium, poster guide',
+    canonical: `${SITE_CONFIG.baseUrl}/installation`,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/installation`,
+      title: 'Installation - Posterium',
+      description:
+        'Step-by-step setup guides for Posterium integrations in your favorite media apps.',
+    },
+    twitter: {
+      title: 'Installation - Posterium',
+      description: 'Step-by-step setup guides for Posterium integrations.',
+    },
+  },
 };

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0907"/>
+      <stop offset="1" stop-color="#1a1209"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1600" fill="url(#bg)"/>
+  <rect x="190" y="60" width="520" height="1480" rx="64" fill="#070706" stroke="#c47c2e" stroke-opacity="0.44" stroke-width="8"/>
+  <rect x="240" y="180" width="420" height="1220" rx="24" fill="#13110d" stroke="#d4a245" stroke-opacity="0.25"/>
+  <rect x="390" y="108" width="120" height="12" rx="6" fill="#8f6a35" fill-opacity="0.6"/>
+  <text x="280" y="280" fill="#e8d8a8" font-family="Syne, sans-serif" font-size="26" letter-spacing="3">POSTERIUM • MOBILE</text>
+  <text x="280" y="330" fill="#f0e6cc" font-family="DM Sans, sans-serif" font-size="18">Placeholder showcase for handheld install flow.</text>
+</svg>

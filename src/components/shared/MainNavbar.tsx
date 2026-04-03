@@ -1,4 +1,5 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Coffee, Github, Menu, Search, X } from 'lucide-react';
 
 export interface NavbarLink {
@@ -20,15 +21,15 @@ interface MainNavbarProps {
   search?: NavbarSearchConfig;
   revealOnScroll?: boolean;
   fixed?: boolean;
-  rightActions?: React.ReactNode;
+  rightActions?: ReactNode;
   compactLogo?: boolean;
   keepSearchOnMobile?: boolean;
-  mobileMenuLeft?: boolean;
   showMobileBuildCta?: boolean;
 }
 
 const APP_LINKS: NavbarLink[] = [
   { label: 'Build', href: '/build' },
+  { label: 'Installation', href: '/installation' },
   { label: 'FAQ', href: '/faq' },
   { label: 'Examples', href: '/examples' },
 ];
@@ -42,7 +43,6 @@ const MainNavbar = memo<MainNavbarProps>(
     rightActions,
     compactLogo = false,
     keepSearchOnMobile = false,
-    mobileMenuLeft = false,
     showMobileBuildCta = false,
   }) => {
     const [visible, setVisible] = useState(!revealOnScroll);

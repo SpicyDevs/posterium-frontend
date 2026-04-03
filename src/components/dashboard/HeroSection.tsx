@@ -511,7 +511,7 @@ const HeroSection = memo(() => (
             Open Builder <ArrowRight size={12} />
           </a>
           <a
-            href="#reel"
+            href="/installation"
             className="syne-font border-hover-amber"
             style={{
               display: 'inline-flex',
@@ -529,7 +529,7 @@ const HeroSection = memo(() => (
               background: 'rgba(255,255,255,0.02)',
             }}
           >
-            Browse Showcase
+            Installation Guide
           </a>
         </div>
 

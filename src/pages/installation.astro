@@ -1,0 +1,16 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
+import InstallationPage from '@/components/installation/InstallationPage';
+import '@/styles/global.css';
+---
+
+<BaseLayout
+  title="Installation - Posterium"
+  description="Installation guides for using Posterium with Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps."
+  canonical="https://posters.spicydevs.xyz/installation"
+  bodyClass="bg-[#070706]"
+>
+  <PageSEO slot="head" routeKey="/installation" />
+  <InstallationPage client:load />
+</BaseLayout>

@@ -3,6 +3,7 @@ import react from '@astrojs/react';
 import compress from 'astro-compress';
 import sitemap from '@astrojs/sitemap';
 import AstroPWA from '@vite-pwa/astro';
+import remarkGfm from 'remark-gfm';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -18,6 +19,9 @@ export default defineConfig({
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
+  },
+  markdown: {
+    remarkPlugins: [remarkGfm],
   },
   integrations: [
     react(),
