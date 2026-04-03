@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Coffee, Github, Menu, Search, X } from 'lucide-react';
 
 export interface NavbarLink {
@@ -48,6 +48,7 @@ const MainNavbar = memo<MainNavbarProps>(
     const [visible, setVisible] = useState(!revealOnScroll);
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       if (!revealOnScroll) {
@@ -68,6 +69,38 @@ const MainNavbar = memo<MainNavbarProps>(
 
     const links = useMemo(() => [...sectionLinks, ...APP_LINKS], [sectionLinks]);
     const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+    useEffect(() => {
+      if (!search) return;
+
+      const isEditableTarget = (target: EventTarget | null): boolean => {
+        if (!(target instanceof HTMLElement)) return false;
+        const tag = target.tagName;
+        return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      };
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (isEditableTarget(event.target)) return;
+
+        const isSlash =
+          event.key === '/' &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey &&
+          !event.shiftKey;
+        const isFind = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f';
+
+        if (!isSlash && !isFind) return;
+
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        search.onActivate?.();
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [search]);
 
     const navStyle: React.CSSProperties = {
       position: fixed ? 'fixed' : 'relative',
@@ -160,6 +193,7 @@ const MainNavbar = memo<MainNavbarProps>(
             >
               <Search size={13} className="shrink-0" />
               <input
+                ref={searchInputRef}
                 value={search?.value ?? ''}
                 onChange={(e) => search?.onChange?.(e.target.value)}
                 onFocus={() => search?.onActivate?.()}
