@@ -30,9 +30,10 @@ const ExportMenu = memo<ExportMenuProps>(
     openInBuilderHref,
   }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
-    const [popupCoords, setPopupCoords] = useState<{ top: number; left: number } | null>(null);
+    const [popupCoords, setPopupCoords] = useState<{ top: number; left: number; direction: 'up' | 'down' } | null>(null);
     const [copied, setCopied] = useState(false);
     const [aioCopied, setAioCopied] = useState(false);
+    const [builderCopied, setBuilderCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [editedUrl, setEditedUrl] = useState<string | null>(null);
 
@@ -81,6 +82,20 @@ const ExportMenu = memo<ExportMenuProps>(
       }
     };
 
+    const handleBuilderCopy = async () => {
+      if (!openInBuilderHref) return;
+      try {
+        const abs = openInBuilderHref.startsWith('http')
+          ? openInBuilderHref
+          : `${window.location.origin}${openInBuilderHref}`;
+        await navigator.clipboard.writeText(abs);
+        setBuilderCopied(true);
+        setTimeout(() => setBuilderCopied(false), 2000);
+      } catch {
+        // ignore clipboard errors
+      }
+    };
+
     const handleDownload = () => {
       setDownloading(true);
       try {
@@ -107,14 +122,19 @@ const ExportMenu = memo<ExportMenuProps>(
         }
         const rect = anchorRef.current.getBoundingClientRect();
         const width = 320;
+        const panelHeight = 420;
         const margin = 12;
         const left = Math.min(
           Math.max(margin, rect.right - width),
           Math.max(margin, window.innerWidth - width - margin)
         );
+        const spaceAbove = rect.top - margin;
+        const spaceBelow = window.innerHeight - rect.bottom - margin;
+        const showAbove = spaceAbove > spaceBelow && spaceAbove >= panelHeight;
         setPopupCoords({
-          top: rect.bottom + 8,
+          top: showAbove ? rect.top - 8 : rect.bottom + 8,
           left,
+          direction: showAbove ? 'up' : 'down',
         });
       };
 
@@ -157,6 +177,7 @@ const ExportMenu = memo<ExportMenuProps>(
           boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
           overflow: 'hidden',
           animation: 'export-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
+          transform: popupCoords?.direction === 'up' ? 'translateY(-100%)' : undefined,
           ...containerStyle,
         }}
       >
@@ -298,22 +319,39 @@ const ExportMenu = memo<ExportMenuProps>(
           </button>
 
           {openInBuilderHref ? (
-            <a
-              href={openInBuilderHref}
-              className="w-full h-9 rounded-lg flex items-center justify-center gap-2 syne-font"
-              style={{
-                textDecoration: 'none',
-                background: 'rgba(196,124,46,0.12)',
-                border: '1px solid rgba(196,124,46,0.25)',
-                color: 'var(--film-pale)',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              <ExternalLink size={12} /> Open in Builder
-            </a>
+            <>
+              <a
+                href={openInBuilderHref}
+                className="w-full h-9 rounded-lg flex items-center justify-center gap-2 syne-font"
+                style={{
+                  textDecoration: 'none',
+                  background: 'rgba(196,124,46,0.12)',
+                  border: '1px solid rgba(196,124,46,0.25)',
+                  color: 'var(--film-pale)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <ExternalLink size={12} /> Open in Builder
+              </a>
+              <button
+                onClick={handleBuilderCopy}
+                className="w-full h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'var(--film-text-dim)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {builderCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                {builderCopied ? 'Copied' : 'Copy Builder Link'}
+              </button>
+            </>
           ) : null}
         </div>
       </div>

@@ -570,7 +570,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           <header
             className="h-12 shrink-0 flex items-center z-30 relative"
             style={{
-              background: 'var(--film-dark)',
+              background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
             }}
           >
