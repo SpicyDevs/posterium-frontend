@@ -320,4 +320,45 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       },
     ],
   },
+
+  '/faq': {
+    title: 'FAQ - Posterium',
+    description:
+      'Frequently asked questions about Posterium, including API usage, builder workflows, export formats, and integrations.',
+    keywords:
+      'posterium faq, poster api faq, movie poster api help, builder help, export formats, aiometadata, plex jellyfin poster',
+    canonical: `${SITE_CONFIG.baseUrl}/faq`,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/faq`,
+      title: 'FAQ - Posterium',
+      description:
+        'Frequently asked questions about Posterium, including API usage, builder workflows, export formats, and integrations.',
+    },
+    twitter: {
+      title: 'FAQ - Posterium',
+      description: 'Answers for Posterium API, builder, and integrations.',
+    },
+  },
+
+  '/examples': {
+    title: 'Examples - Posterium',
+    description:
+      'Showcase of Posterium poster examples with export actions and one-click open-in-builder flows.',
+    keywords:
+      'posterium examples, poster showcase, movie poster examples, export poster api urls, open in builder',
+    canonical: `${SITE_CONFIG.baseUrl}/examples`,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/examples`,
+      title: 'Examples - Posterium',
+      description:
+        'Showcase of Posterium poster examples with export actions and one-click open-in-builder flows.',
+    },
+    twitter: {
+      title: 'Examples - Posterium',
+      description: 'Browse ready-made poster examples and open them in the builder.',
+    },
+  },
+
 };

@@ -1,5 +1,3 @@
-// src/components/dashboard/Nav.tsx
-// Changes: Link → <a href> throughout. No Router import.
 import { memo, useState, useCallback, useEffect } from 'react';
 import { Github, Menu, X } from 'lucide-react';
 
@@ -7,6 +5,8 @@ const NAV_LINKS = [
   { label: 'Reel', href: '#reel' },
   { label: 'Features', href: '#combined' },
   { label: 'Integrations', href: '#integrations' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Examples', href: '/examples' },
 ] as const;
 
 const LINK_BASE: React.CSSProperties = {
@@ -73,7 +73,6 @@ const Nav = memo(() => {
             'background 0.35s ease, border-color 0.35s ease',
         }}
       >
-        {/* Wordmark */}
         <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <span
             className="poster-font"
@@ -89,7 +88,6 @@ const Nav = memo(() => {
           </span>
         </a>
 
-        {/* Centre links — desktop */}
         <div
           className="nav-links-desktop"
           style={{
@@ -101,18 +99,12 @@ const Nav = memo(() => {
           }}
         >
           {NAV_LINKS.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              className="hover-cream"
-              style={LINK_BASE}
-            >
+            <a key={label} href={href} className="hover-cream" style={LINK_BASE}>
               {label}
             </a>
           ))}
         </div>
 
-        {/* Right cluster */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <a
             href="https://github.com/xdaayush/freeposterapi"
@@ -149,7 +141,6 @@ const Nav = memo(() => {
             Build
           </a>
 
-          {/* Mobile hamburger */}
           <button
             className="nav-mobile-toggle"
             onClick={() => setMenuOpen((v) => !v)}
@@ -172,7 +163,6 @@ const Nav = memo(() => {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
       {menuOpen && visible && (
         <div
           role="dialog"

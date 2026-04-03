@@ -46,6 +46,7 @@ import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
 
 const STORAGE_KEY = 'posterium_config_v2';
+const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
 
 // ── Cookie helpers ────────────────────────────────────────────────────────────
 const COOKIE_KEY = 'posterium_apikeys_v1';
@@ -569,7 +570,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           <header
             className="h-12 shrink-0 flex items-center z-30 relative"
             style={{
-              background: 'var(--film-dark)',
+              background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
             }}
           >
@@ -1007,6 +1008,33 @@ const BuilderApp: React.FC = () => {
     document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   }, [setConfig]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get('url');
+    if (urlParam) {
+      handleLoadConfig(urlParam);
+      return;
+    }
+
+    const configParam = params.get('config');
+    if (!configParam) return;
+    if (configParam.length > MAX_QUERY_CONFIG_LENGTH) return;
+
+    try {
+      const decoded = atob(decodeURIComponent(configParam));
+      const parsed = JSON.parse(decoded) as Partial<PosterConfig>;
+      if (!parsed || !Array.isArray(parsed.ratings)) return;
+
+      setConfig({
+        ...DEFAULT_CONFIG,
+        ...parsed,
+        items: parsed.items ?? {},
+      } as PosterConfig);
+    } catch {
+      // ignore malformed config input
+    }
+  }, [handleLoadConfig, setConfig]);
 
   return (
     <EditorProvider>

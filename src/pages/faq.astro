@@ -1,0 +1,16 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
+import FaqPage from '@/components/faq/FaqPage.tsx';
+import '@/styles/global.css';
+---
+
+<BaseLayout
+  title="FAQ - Posterium"
+  description="Frequently asked questions about Posterium's builder, API, exports, and integrations."
+  canonical="https://posters.spicydevs.xyz/faq"
+  bodyClass="bg-[#070706]"
+>
+  <PageSEO slot="head" routeKey="/faq" />
+  <FaqPage client:load />
+</BaseLayout>
