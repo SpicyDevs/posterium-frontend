@@ -238,7 +238,8 @@ const ExamplesPage = memo(() => {
                       fontSize: 10,
                       lineHeight: 1.4,
                       padding: 8,
-                      cursor: 'default',
+                      cursor: 'not-allowed',
+                      opacity: 0.9,
                     }}
                     spellCheck={false}
                     aria-label={`${preset.title} query preset`}

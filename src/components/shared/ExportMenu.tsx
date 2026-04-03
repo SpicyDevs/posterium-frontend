@@ -71,10 +71,9 @@ const ExportMenu = memo<ExportMenuProps>(
 
     const handleAioCopy = async () => {
       try {
-        const templateUrl = displayUrl.includes('/poster/')
-          ? displayUrl.replace(/\/poster\/[^.]+\./, '/poster/{imdb_id}.')
-          : displayUrl;
-        await navigator.clipboard.writeText(templateUrl);
+        const templateUrl = displayUrl.replace(/\/poster\/[^.]+\./, '/poster/{imdb_id}.');
+        const safeTemplateUrl = templateUrl.includes('{imdb_id}') ? templateUrl : displayUrl;
+        await navigator.clipboard.writeText(safeTemplateUrl);
         setAioCopied(true);
         setTimeout(() => setAioCopied(false), 2000);
       } catch {
