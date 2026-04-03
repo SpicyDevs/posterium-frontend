@@ -53,6 +53,9 @@ const FaqPage = memo(() => {
           onChange: setSearch,
           placeholder: 'Search FAQs…',
         }}
+        keepSearchOnMobile
+        mobileMenuLeft
+        showMobileBuildCta
       />
 
       <main

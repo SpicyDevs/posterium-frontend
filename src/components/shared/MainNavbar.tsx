@@ -22,6 +22,9 @@ interface MainNavbarProps {
   fixed?: boolean;
   rightActions?: React.ReactNode;
   compactLogo?: boolean;
+  keepSearchOnMobile?: boolean;
+  mobileMenuLeft?: boolean;
+  showMobileBuildCta?: boolean;
 }
 
 const APP_LINKS: NavbarLink[] = [
@@ -38,6 +41,9 @@ const MainNavbar = memo<MainNavbarProps>(
     fixed = true,
     rightActions,
     compactLogo = false,
+    keepSearchOnMobile = false,
+    mobileMenuLeft = false,
+    showMobileBuildCta = false,
   }) => {
     const [visible, setVisible] = useState(!revealOnScroll);
     const [scrolled, setScrolled] = useState(false);
@@ -240,6 +246,31 @@ const MainNavbar = memo<MainNavbarProps>(
             >
               {menuOpen ? <X size={14} /> : <Menu size={14} />}
             </button>
+
+            {showMobileBuildCta ? (
+              <a
+                href="/build"
+                className="main-nav-mobile-build syne-font"
+                style={{
+                  display: 'none',
+                  alignItems: 'center',
+                  gap: 5,
+                  background: 'var(--film-amber)',
+                  color: '#070706',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                  padding: '7px 12px',
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  boxShadow: '0 0 18px rgba(196,124,46,0.22)',
+                }}
+              >
+                Build
+              </a>
+            ) : null}
           </div>
         </nav>
 
@@ -311,8 +342,16 @@ const MainNavbar = memo<MainNavbarProps>(
             .main-nav-bmc-text { display: none; }
           }
           @media (max-width: 1024px) {
-            .main-nav-links, .main-nav-search, .nav-desktop-item { display: none !important; }
+            .main-nav-links, .nav-desktop-item { display: none !important; }
+            .main-nav-search { display: ${keepSearchOnMobile ? 'flex' : 'none'} !important; }
             .main-nav-mobile-toggle { display: inline-flex !important; }
+            .main-nav-mobile-build { display: inline-flex !important; }
+            .main-nav-search { order: 3; flex: 1 1 100%; width: 100%; justify-content: flex-start !important; margin-top: 8px; }
+            .main-nav-search > div { width: 100% !important; }
+            .main-nav-right { flex-wrap: wrap; justify-content: ${mobileMenuLeft ? 'flex-start' : 'flex-end'}; gap: 8px !important; width: ${keepSearchOnMobile ? '100%' : 'auto'}; }
+            .main-nav-mobile-toggle { order: ${mobileMenuLeft ? '-1' : '0'}; margin-right: ${mobileMenuLeft ? 'auto' : '0'}; }
+            .main-nav-mobile-build { order: ${mobileMenuLeft ? '0' : '0'}; }
+            nav[aria-label="Main navigation"] { height: ${keepSearchOnMobile ? 'auto' : '56px'} !important; min-height: 56px; align-items: ${keepSearchOnMobile ? 'flex-start' : 'center'} !important; padding-top: ${keepSearchOnMobile ? '10px' : '0'} !important; padding-bottom: ${keepSearchOnMobile ? '10px' : '0'} !important; }
           }
         `}</style>
       </>

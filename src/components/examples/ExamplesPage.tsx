@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
@@ -106,6 +106,9 @@ const ExamplesPage = memo(() => {
           onChange: setSearch,
           placeholder: 'Search examples…',
         }}
+        keepSearchOnMobile
+        mobileMenuLeft
+        showMobileBuildCta
       />
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '84px 20px 40px' }}>
@@ -222,14 +225,12 @@ const ExamplesPage = memo(() => {
 
                   <textarea
                     value={query}
-                    onChange={(e) => {
-                      setQueries((prev) => ({ ...prev, [preset.id]: e.target.value }));
-                    }}
+                    readOnly
                     className="mono-font"
                     style={{
                       width: '100%',
                       minHeight: 74,
-                      resize: 'vertical',
+                      resize: 'none',
                       borderRadius: 8,
                       border: '1px solid rgba(255,255,255,0.08)',
                       background: 'rgba(0,0,0,0.2)',
@@ -237,10 +238,35 @@ const ExamplesPage = memo(() => {
                       fontSize: 10,
                       lineHeight: 1.4,
                       padding: 8,
+                      cursor: 'default',
                     }}
                     spellCheck={false}
                     aria-label={`${preset.title} query preset`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(query)}
+                    className="syne-font"
+                    style={{
+                      alignSelf: 'flex-start',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'var(--film-text-dim)',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '6px 10px',
+                      cursor: 'pointer',
+                    }}
+                    aria-label={`Copy ${preset.title} query`}
+                  >
+                    <Copy size={11} /> Copy Query
+                  </button>
                 </div>
 
                 <ExportMenu
