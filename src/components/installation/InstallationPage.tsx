@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DocsLayout, { type DocsSidebarLink } from '@/components/shared/DocsLayout';
 import { AmberTag } from '@/components/shared/primitives';
+import ShowcaseMediaFrame from '@/components/installation/ShowcaseMediaFrame';
 import {
   installationApps,
   type InstallationAppConfig,
@@ -10,7 +11,7 @@ import {
 } from '@/data/installation-config';
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
-const MOBILE_SLOT_MIN_WIDTH = 'min(42vw, 170px)';
+const MOBILE_SLOT_MIN_WIDTH = 'min(42vw, 190px)';
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
@@ -146,24 +147,13 @@ const InstallationPage = memo(() => {
                 key={`${app.id}-mobile-slot-${idx}`}
                 style={{
                   width: '100%',
-                  borderRadius: 8,
-                  border: '1px solid rgba(212,162,69,0.2)',
-                  overflow: 'hidden',
-                  background: '#080807',
                 }}
               >
-                <img
+                <ShowcaseMediaFrame
                   src={slotSrc}
                   alt={`${app.name} mobile showcase ${idx + 1}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'block',
-                    aspectRatio: '9 / 16',
-                    objectFit: 'cover',
-                    objectPosition: 'top center',
-                  }}
-                  loading="lazy"
+                  ratio="9 / 16"
+                  mobileFrame
                 />
               </div>
             ))}
@@ -179,28 +169,11 @@ const InstallationPage = memo(() => {
               justifyContent: 'center',
             }}
           >
-            <div
-              style={{
-                width: '100%',
-                borderRadius: 8,
-                border: '1px solid rgba(212,162,69,0.2)',
-                aspectRatio: '16 / 9',
-                overflow: 'hidden',
-                background: '#080807',
-              }}
-            >
-              <img
-                src={imageSrc}
-                alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'block',
-                  objectFit: 'cover',
-                }}
-                loading="lazy"
-              />
-            </div>
+            <ShowcaseMediaFrame
+              src={imageSrc}
+              alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
+              ratio="16 / 9"
+            />
           </div>
         )}
       </section>
