@@ -21,9 +21,6 @@ const InstallationPage = memo(() => {
   const [activeDeviceByApp, setActiveDeviceByApp] = useState<Record<string, InstallationDevice>>(
     () => Object.fromEntries(installationApps.map((app) => [app.id, 'desktop']))
   );
-  const [activeMobileVariantByApp, setActiveMobileVariantByApp] = useState<Record<string, number>>(
-    () => Object.fromEntries(installationApps.map((app) => [app.id, 0]))
-  );
 
   const filteredApps = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -48,21 +45,14 @@ const InstallationPage = memo(() => {
     }));
   };
 
-  const setActiveMobileVariant = (appId: string, variantIdx: number) => {
-    setActiveMobileVariantByApp((prev) => ({
-      ...prev,
-      [appId]: variantIdx,
-    }));
-  };
-
   const renderShowcase = (app: InstallationAppConfig) => {
     const activeDevice = activeDeviceByApp[app.id] ?? 'desktop';
-    const activeMobileVariant = activeMobileVariantByApp[app.id] ?? 0;
     const mobileImages = app.showcaseImages.mobile;
-    const imageSrc =
-      activeDevice === 'mobile'
-        ? mobileImages[Math.min(activeMobileVariant, mobileImages.length - 1)]
-        : app.showcaseImages[activeDevice];
+    const mobileSlots = [
+      mobileImages[0] ?? '/placeholders/install-mobile.svg',
+      mobileImages[1] ?? mobileImages[0] ?? '/placeholders/install-mobile-alt.svg',
+    ];
+    const imageSrc = activeDevice === 'mobile' ? mobileSlots[0] : app.showcaseImages[activeDevice];
 
     return (
       <section
@@ -125,62 +115,70 @@ const InstallationPage = memo(() => {
           </div>
         </div>
 
-        <div
-          style={{
-            border: '1px solid rgba(196,124,46,0.2)',
-            background: 'rgba(7,7,6,0.8)',
-            borderRadius: 10,
-            padding: 12,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <img
-            src={imageSrc}
-            alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
+        {activeDevice === 'mobile' ? (
+          <div
             style={{
-              width: activeDevice === 'mobile' ? 'min(100%, 340px)' : '100%',
-              display: 'block',
-              borderRadius: 8,
-              border: '1px solid rgba(212,162,69,0.2)',
-              aspectRatio: activeDevice === 'mobile' ? '9 / 16' : '16 / 9',
-              objectFit: activeDevice === 'mobile' ? 'contain' : 'cover',
-              background: '#080807',
+              border: '1px solid rgba(196,124,46,0.2)',
+              background: 'rgba(7,7,6,0.8)',
+              borderRadius: 10,
+              padding: 12,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 10,
             }}
-            loading="lazy"
-          />
-        </div>
-
-        {activeDevice === 'mobile' && mobileImages.length > 1 ? (
-          <div style={{ display: 'inline-flex', gap: 8, marginTop: 10 }}>
-            {mobileImages.map((_, idx) => {
-              const active = idx === activeMobileVariant;
-              return (
-                <button
-                  key={`${app.id}-mobile-variant-${idx}`}
-                  type="button"
-                  onClick={() => setActiveMobileVariant(app.id, idx)}
-                  className="syne-font"
+          >
+            {mobileSlots.map((slotSrc, idx) => (
+              <div
+                key={`${app.id}-mobile-slot-${idx}`}
+                style={{
+                  borderRadius: 8,
+                  border: '1px solid rgba(212,162,69,0.2)',
+                  overflow: 'hidden',
+                  background: '#080807',
+                }}
+              >
+                <img
+                  src={slotSrc}
+                  alt={`${app.name} mobile showcase ${idx + 1}`}
                   style={{
-                    borderRadius: 6,
-                    border: active
-                      ? '1px solid rgba(212,162,69,0.5)'
-                      : '1px solid rgba(255,255,255,0.08)',
-                    background: active ? 'rgba(196,124,46,0.24)' : 'rgba(255,255,255,0.03)',
-                    color: active ? 'var(--film-cream)' : 'var(--film-text-label)',
-                    fontSize: 11,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
+                    width: '100%',
+                    display: 'block',
+                    aspectRatio: '9 / 16',
+                    objectFit: 'cover',
+                    objectPosition: 'top center',
                   }}
-                >
-                  Mobile {idx + 1}
-                </button>
-              );
-            })}
+                  loading="lazy"
+                />
+              </div>
+            ))}
           </div>
-        ) : null}
+        ) : (
+          <div
+            style={{
+              border: '1px solid rgba(196,124,46,0.2)',
+              background: 'rgba(7,7,6,0.8)',
+              borderRadius: 10,
+              padding: 12,
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <img
+              src={imageSrc}
+              alt={`${app.name} ${labelForDevice(activeDevice)} showcase`}
+              style={{
+                width: '100%',
+                display: 'block',
+                borderRadius: 8,
+                border: '1px solid rgba(212,162,69,0.2)',
+                aspectRatio: '16 / 9',
+                objectFit: 'cover',
+                background: '#080807',
+              }}
+              loading="lazy"
+            />
+          </div>
+        )}
       </section>
     );
   };
