@@ -96,28 +96,6 @@ const MainNavbar = memo<MainNavbarProps>(
     return (
       <>
         <nav aria-label="Main navigation" style={navStyle}>
-          <button
-            className="main-nav-mobile-toggle-left"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            style={{
-              background: 'none',
-              border: '1px solid rgba(196,124,46,0.2)',
-              color: 'var(--film-cream)',
-              width: 34,
-              height: 34,
-              borderRadius: 4,
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
-              display: 'none',
-              flexShrink: 0,
-            }}
-          >
-            {menuOpen ? <X size={14} /> : <Menu size={14} />}
-          </button>
-
           <a href="/" className="main-nav-logo" style={{ textDecoration: 'none', flexShrink: 0 }}>
             <span
               className="poster-font"
@@ -368,13 +346,19 @@ const MainNavbar = memo<MainNavbarProps>(
           @media (max-width: 1024px) {
             .main-nav-links, .nav-desktop-item { display: none !important; }
             .main-nav-search { display: ${keepSearchOnMobile ? 'flex' : 'none'} !important; }
-            .main-nav-mobile-toggle { display: ${mobileMenuLeft ? 'none' : 'inline-flex'} !important; }
-            .main-nav-mobile-toggle-left { display: ${mobileMenuLeft ? 'inline-flex' : 'none'} !important; }
+            .main-nav-mobile-toggle { display: inline-flex !important; }
             .main-nav-mobile-build { display: inline-flex !important; }
-            .main-nav-search { order: 3; flex: 1 1 100%; width: 100%; justify-content: flex-start !important; margin-top: 8px; }
-            .main-nav-search > div { width: 100% !important; }
+            .main-nav-search { order: 0; flex: 1 1 auto; min-width: 0; justify-content: flex-start !important; margin: 0 8px 0 10px; }
+            .main-nav-search > div { width: 100% !important; max-width: none !important; }
             .main-nav-right { margin-left: auto; justify-content: flex-end; gap: 8px !important; width: auto; }
-            nav[aria-label="Main navigation"] { flex-wrap: ${keepSearchOnMobile ? 'wrap' : 'nowrap'}; height: ${keepSearchOnMobile ? 'auto' : '56px'} !important; min-height: 56px; align-items: center !important; padding-top: ${keepSearchOnMobile ? '10px' : '0'} !important; padding-bottom: ${keepSearchOnMobile ? '10px' : '0'} !important; }
+            .main-nav-mobile-build { order: 0; }
+            .main-nav-mobile-toggle { order: 1; }
+            nav[aria-label="Main navigation"] { flex-wrap: nowrap; height: 56px !important; min-height: 56px; align-items: center !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+          }
+          @media (max-width: 680px) {
+            .main-nav-logo .poster-font { font-size: 18px !important; }
+            .main-nav-search { margin: 0 6px !important; }
+            .main-nav-mobile-build { padding: 7px 10px !important; }
           }
         `}</style>
       </>

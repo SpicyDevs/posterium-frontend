@@ -27,19 +27,14 @@ const toSearchParams = (query: string): URLSearchParams => {
 
 const setExtInQuery = (query: string, ext: ExtensionType): string => {
   const params = toSearchParams(query);
-  const clean = params.toString();
-  return clean ? `${clean}&ext=${ext}` : `ext=${ext}`;
+  params.set('ext', ext);
+  return params.toString();
 };
 
 const buildPreviewUrl = (mediaType: 'movie' | 'tv', tmdbId: string, query: string): string => {
   const params = toSearchParams(query);
-  const extParam = params.get('ext');
-  const extension: ExtensionType = extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
-    ? extParam
-    : 'png';
-
   params.delete('ext');
-  return `${API}/${mediaType}/${tmdbId}.${extension}?${params.toString()}`;
+  return `${API}/${mediaType}/${tmdbId}.webp?${params.toString()}`;
 };
 
 const buildBuilderUrl = (query: string): string => {
@@ -61,13 +56,14 @@ const baseConfig: PosterConfig = {
   tmdbId: '',
   imdbId: DEFAULT_IMDB,
   ratings: ['imdb', 'rt', 'meta'],
-  extension: 'png',
+  extension: 'webp',
   source: 'tmdb',
 };
 
 const ExamplesPage = memo(() => {
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [copiedQueryId, setCopiedQueryId] = useState<string | null>(null);
   const [queries, setQueries] = useState<Record<string, string>>(() =>
     Object.fromEntries(presets.map((preset) => [preset.id, preset.query]))
   );
@@ -97,6 +93,13 @@ const ExamplesPage = memo(() => {
       query.toLowerCase().includes(q)
     );
   }, [search, reelFallback, queries]);
+
+  const getQueryExtension = (query: string): ExtensionType => {
+    const extParam = toSearchParams(query).get('ext');
+    return extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
+      ? extParam
+      : 'webp';
+  };
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}>
@@ -246,7 +249,13 @@ const ExamplesPage = memo(() => {
                   />
                   <button
                     type="button"
-                    onClick={() => navigator.clipboard.writeText(query)}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(query);
+                      setCopiedQueryId(preset.id);
+                      window.setTimeout(() => {
+                        setCopiedQueryId((current) => (current === preset.id ? null : current));
+                      }, 1600);
+                    }}
                     className="syne-font"
                     style={{
                       alignSelf: 'flex-start',
@@ -266,12 +275,12 @@ const ExamplesPage = memo(() => {
                     }}
                     aria-label={`Copy ${preset.title} query`}
                   >
-                    <Copy size={11} /> Copy Query
+                    <Copy size={11} /> {copiedQueryId === preset.id ? 'Query Copied' : 'Copy Query'}
                   </button>
                 </div>
 
                 <ExportMenu
-                  config={baseConfig}
+                  config={{ ...baseConfig, extension: getQueryExtension(query) }}
                   baseUrl={API}
                   onExtensionChange={(ext) => {
                     setQueries((prev) => ({ ...prev, [preset.id]: setExtInQuery(prev[preset.id] ?? preset.query, ext) }));
