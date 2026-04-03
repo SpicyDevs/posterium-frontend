@@ -50,7 +50,7 @@ const InstallationPage = memo(() => {
     const mobileImages = app.showcaseImages.mobile;
     const mobileSlots = [
       mobileImages[0] ?? '/placeholders/install-mobile.svg',
-      mobileImages[1] ?? mobileImages[0] ?? '/placeholders/install-mobile-alt.svg',
+      mobileImages[1] ?? '/placeholders/install-mobile-alt.svg',
     ];
     const imageSrc = activeDevice === 'mobile' ? mobileSlots[0] : app.showcaseImages[activeDevice];
 
