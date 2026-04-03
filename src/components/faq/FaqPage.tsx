@@ -52,7 +52,7 @@ const FaqPage = memo(() => {
   return (
     <DocsLayout
       sidebarLinks={sidebarLinks}
-      search={{
+      searchConfig={{
         value: search,
         onChange: setSearch,
         placeholder: 'Search FAQs…',

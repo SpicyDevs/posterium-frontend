@@ -6,12 +6,13 @@ import { AmberTag } from '@/components/shared/primitives';
 import ShowcaseMediaFrame from '@/components/installation/ShowcaseMediaFrame';
 import {
   installationApps,
+  installationPlaceholderImages,
   type InstallationAppConfig,
   type InstallationDevice,
 } from '@/data/installation-config';
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
-const MOBILE_SLOT_MIN_WIDTH = 'min(42vw, 190px)';
+const MOBILE_SHOWCASE_WIDTH = 'min(42vw, 190px)';
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
@@ -64,8 +65,8 @@ const InstallationPage = memo(() => {
     const activeDevice = activeDeviceByApp[app.id] ?? 'desktop';
     const mobileImages = app.showcaseImages.mobile;
     const mobileSlots = [
-      mobileImages[0] ?? '/placeholders/install-mobile.svg',
-      mobileImages[1] ?? '/placeholders/install-mobile-alt.svg',
+      mobileImages[0] ?? installationPlaceholderImages.mobile[0],
+      mobileImages[1] ?? installationPlaceholderImages.mobile[1],
     ];
     const imageSrc = activeDevice === 'mobile' ? mobileSlots[0] : app.showcaseImages[activeDevice];
 
@@ -138,7 +139,7 @@ const InstallationPage = memo(() => {
               borderRadius: 10,
               padding: 12,
               display: 'grid',
-              gridTemplateColumns: `repeat(auto-fit, minmax(${MOBILE_SLOT_MIN_WIDTH}, 1fr))`,
+              gridTemplateColumns: `repeat(auto-fit, minmax(${MOBILE_SHOWCASE_WIDTH}, 1fr))`,
               gap: 10,
             }}
           >
@@ -184,7 +185,7 @@ const InstallationPage = memo(() => {
     <DocsLayout
       sidebarTitle="Apps"
       sidebarLinks={sidebarLinks}
-      search={{
+      searchConfig={{
         value: search,
         onChange: setSearch,
         placeholder: 'Search app guides…',

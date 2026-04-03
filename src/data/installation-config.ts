@@ -19,7 +19,7 @@ export interface InstallationAppConfig {
   guideMarkdown: string;
 }
 
-const placeholderImages: InstallationShowcaseImages = {
+export const installationPlaceholderImages: InstallationShowcaseImages = {
   desktop: '/placeholders/install-desktop.svg',
   tv: '/placeholders/install-tv.svg',
   mobile: ['/placeholders/install-mobile.svg', '/placeholders/install-mobile-alt.svg'],
@@ -29,31 +29,31 @@ export const installationApps: InstallationAppConfig[] = [
   {
     id: 'plex',
     name: 'Plex',
-    showcaseImages: placeholderImages,
+    showcaseImages: installationPlaceholderImages,
     guideMarkdown: plexGuide,
   },
   {
     id: 'emby',
     name: 'Emby',
-    showcaseImages: placeholderImages,
+    showcaseImages: installationPlaceholderImages,
     guideMarkdown: embyGuide,
   },
   {
     id: 'jellyfin',
     name: 'Jellyfin',
-    showcaseImages: placeholderImages,
+    showcaseImages: installationPlaceholderImages,
     guideMarkdown: jellyfinGuide,
   },
   {
     id: 'stremio',
     name: 'Stremio',
-    showcaseImages: placeholderImages,
+    showcaseImages: installationPlaceholderImages,
     guideMarkdown: stremioGuide,
   },
   {
     id: 'kodi',
     name: 'Kodi',
-    showcaseImages: placeholderImages,
+    showcaseImages: installationPlaceholderImages,
     guideMarkdown: kodiGuide,
   },
 ];

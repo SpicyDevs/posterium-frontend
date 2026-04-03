@@ -7,6 +7,8 @@ interface ShowcaseMediaFrameProps {
   mobileFrame?: boolean;
 }
 
+const MOBILE_IMAGE_OBJECT_POSITION = 'top center';
+
 const baseFrameStyle: CSSProperties = {
   width: '100%',
   background: '#080807',
@@ -14,6 +16,8 @@ const baseFrameStyle: CSSProperties = {
 };
 
 const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mobileFrame = false }) => {
+  const finalRatio = mobileFrame ? '9 / 16' : ratio;
+
   if (!mobileFrame) {
     return (
       <div
@@ -21,7 +25,7 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
           ...baseFrameStyle,
           borderRadius: 8,
           border: '1px solid rgba(212,162,69,0.2)',
-          aspectRatio: ratio,
+          aspectRatio: finalRatio,
         }}
       >
         <img
@@ -41,7 +45,7 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
         borderRadius: 24,
         border: '2px solid rgba(212,162,69,0.5)',
         padding: '8% 4% 6%',
-        aspectRatio: '9 / 16',
+        aspectRatio: finalRatio,
         boxShadow: 'inset 0 0 0 1px rgba(212,162,69,0.14)',
       }}
     >
@@ -58,7 +62,7 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
       <div
         style={{
           width: '100%',
-          aspectRatio: '9 / 16',
+          aspectRatio: finalRatio,
           borderRadius: 16,
           border: '1px solid rgba(212,162,69,0.24)',
           overflow: 'hidden',
@@ -68,7 +72,13 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
         <img
           src={src}
           alt={alt}
-          style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top center' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            objectFit: 'cover',
+            objectPosition: MOBILE_IMAGE_OBJECT_POSITION,
+          }}
           loading="lazy"
         />
       </div>

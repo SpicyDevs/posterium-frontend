@@ -19,12 +19,12 @@ interface DocsSearchConfig {
 interface DocsLayoutProps {
   sidebarTitle?: string;
   sidebarLinks: DocsSidebarLink[];
-  search?: DocsSearchConfig;
+  searchConfig?: DocsSearchConfig;
   children: ReactNode;
 }
 
 const DocsLayout = memo<DocsLayoutProps>(
-  ({ sidebarTitle = 'Table of Contents', sidebarLinks, search, children }) => {
+  ({ sidebarTitle = 'Table of Contents', sidebarLinks, searchConfig, children }) => {
     return (
       <div
         style={{
@@ -34,7 +34,7 @@ const DocsLayout = memo<DocsLayoutProps>(
         }}
       >
         <MainNavbar
-          search={search}
+          search={searchConfig}
           keepSearchOnMobile
           showMobileBuildCta
         />
