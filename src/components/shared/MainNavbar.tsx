@@ -91,10 +91,12 @@ const MainNavbar = memo<MainNavbarProps>(
         const isFind = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f';
 
         if (!isSlash && !isFind) return;
+        const input = searchInputRef.current;
+        if (!input || input.readOnly || input.disabled || input.offsetParent === null) return;
 
         event.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
+        input.focus();
+        input.select();
         search.onActivate?.();
       };
 
