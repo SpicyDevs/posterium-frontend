@@ -10,6 +10,7 @@ import {
 } from '@/data/installation-config';
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
+const MOBILE_SLOT_MIN_WIDTH = 'min(42vw, 170px)';
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
@@ -29,24 +30,27 @@ const InstallationPage = memo(() => {
     return installationApps.filter((app) => app.name.toLowerCase().includes(q));
   }, [search]);
 
+  const selectedVisibleAppId = useMemo(() => {
+    if (!filteredApps.length) return '';
+    return filteredApps.some((app) => app.id === selectedAppId) ? selectedAppId : filteredApps[0].id;
+  }, [filteredApps, selectedAppId]);
+
   const sidebarLinks = useMemo<DocsSidebarLink[]>(
     () =>
       filteredApps.map((app) => ({
         id: app.id,
         label: app.name,
         href: `#${app.id}`,
-        active: app.id === (filteredApps.some((candidate) => candidate.id === selectedAppId)
-          ? selectedAppId
-          : filteredApps[0]?.id),
+        active: app.id === selectedVisibleAppId,
         onClick: () => setSelectedAppId(app.id),
       })),
-    [filteredApps, selectedAppId]
+    [filteredApps, selectedVisibleAppId]
   );
 
   const activeApp = useMemo(() => {
     if (!filteredApps.length) return null;
-    return filteredApps.find((app) => app.id === selectedAppId) ?? filteredApps[0];
-  }, [filteredApps, selectedAppId]);
+    return filteredApps.find((app) => app.id === selectedVisibleAppId) ?? filteredApps[0];
+  }, [filteredApps, selectedVisibleAppId]);
 
   const setActiveDevice = (appId: string, device: InstallationDevice) => {
     setActiveDeviceByApp((prev) => ({
@@ -133,7 +137,7 @@ const InstallationPage = memo(() => {
               borderRadius: 10,
               padding: 12,
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(42vw, 170px), 1fr))',
+              gridTemplateColumns: `repeat(auto-fit, minmax(${MOBILE_SLOT_MIN_WIDTH}, 1fr))`,
               gap: 10,
             }}
           >
