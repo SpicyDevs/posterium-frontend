@@ -30,6 +30,7 @@ const ExportMenu = memo<ExportMenuProps>(
     openInBuilderHref,
   }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
+    const [popupCoords, setPopupCoords] = useState<{ top: number; left: number } | null>(null);
     const [copied, setCopied] = useState(false);
     const [aioCopied, setAioCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
@@ -99,6 +100,26 @@ const ExportMenu = memo<ExportMenuProps>(
     useEffect(() => {
       if (!isOpen) return;
 
+      const updatePosition = () => {
+        if (!anchorRef?.current) {
+          setPopupCoords(null);
+          return;
+        }
+        const rect = anchorRef.current.getBoundingClientRect();
+        const width = 320;
+        const margin = 12;
+        const left = Math.min(
+          Math.max(margin, rect.right - width),
+          Math.max(margin, window.innerWidth - width - margin)
+        );
+        setPopupCoords({
+          top: rect.bottom + 8,
+          left,
+        });
+      };
+
+      updatePosition();
+
       const handler = (e: MouseEvent | TouchEvent) => {
         const target = 'touches' in e ? (e.touches[0]?.target as Node) : ((e as MouseEvent).target as Node);
         if (!popoverRef.current?.contains(target) && !anchorRef?.current?.contains(target)) {
@@ -108,9 +129,13 @@ const ExportMenu = memo<ExportMenuProps>(
 
       document.addEventListener('mousedown', handler as EventListener);
       document.addEventListener('touchstart', handler as EventListener, { passive: true });
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
       return () => {
         document.removeEventListener('mousedown', handler as EventListener);
         document.removeEventListener('touchstart', handler as EventListener);
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
       };
     }, [isOpen, onClose, anchorRef]);
 
@@ -122,8 +147,9 @@ const ExportMenu = memo<ExportMenuProps>(
         className="z-50"
         style={{
           position: 'fixed',
-          top: 52,
-          right: 12,
+          top: popupCoords?.top ?? 52,
+          right: popupCoords ? 'auto' : 12,
+          left: popupCoords?.left,
           width: 320,
           background: 'rgba(18,17,14,0.98)',
           border: '1px solid rgba(196,124,46,0.18)',

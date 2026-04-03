@@ -44,7 +44,6 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
-import MainNavbar from '@/components/shared/MainNavbar';
 
 const STORAGE_KEY = 'posterium_config_v2';
 
@@ -531,20 +530,6 @@ const [isResetOpen, setIsResetOpen] = useState(false);
         }}
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
-
-        {!isFullscreen && (
-          <MainNavbar
-            fixed={false}
-            compactLogo
-            search={{
-              value: '',
-              placeholder: 'Search commands…',
-              readOnly: true,
-              // Builder search opens command palette; typing happens inside that modal.
-              onActivate: () => setPaletteOpen(true),
-            }}
-          />
-        )}
 
         <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
         <ImportDialog isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} onLoad={handleLoadConfig} />

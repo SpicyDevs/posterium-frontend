@@ -1,81 +1,104 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
+import examplesData from '@/data/examples.json';
 import { API, REEL_ITEMS } from '@/lib/dashboard/constants';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { DEFAULT_CONFIG } from '@/components/builder/types';
-import { generateApiUrl } from '@/components/builder/utils';
 
-interface ShowcasePoster {
+interface ExamplePreset {
   id: string;
-  type: 'movie' | 'tv';
   title: string;
-  year: string;
-  genre: string;
-  tagline: string;
-  url: string;
-  config: PosterConfig;
+  description: string;
+  query: string;
 }
 
-const baseConfigFor = (item: (typeof REEL_ITEMS)[number]): PosterConfig => {
-  const imdbSeed = item.type === 'tv' ? 'tt0903747' : 'tt0468569';
-  return {
-    ...DEFAULT_CONFIG,
-    mediaType: item.type,
-    tmdbId: item.id,
-    imdbId: imdbSeed,
-    ratings: ['imdb', 'rt', 'meta'],
-    extension: 'png',
-    source: 'tmdb',
-    preset: 'tr',
-    layout: 'row',
-    items: {},
-  };
+const presets = examplesData as ExamplePreset[];
+
+const DEFAULT_IMDB = 'tt0468569';
+
+const toSearchParams = (query: string): URLSearchParams => {
+  const q = query.startsWith('?') ? query.slice(1) : query;
+  return new URLSearchParams(q);
 };
 
-const showcaseItems: ShowcasePoster[] = REEL_ITEMS.slice(0, 14).map((item) => {
-  const config = baseConfigFor(item);
-  const baseQuery = 'r=imdb,rt,meta&source=tmdb&blur=7&alpha=0.43&rad=10&imdb_x=10&imdb_y=12&rt_x=10&rt_y=84&meta_x=10&meta_y=156';
-  return {
-    id: item.id,
-    type: item.type,
-    title: item.title,
-    year: item.year,
-    genre: item.genre,
-    tagline: item.tagline,
-    url: `${API}/${item.type}/${item.id}.png?${baseQuery}`,
-    config,
-  };
-});
+const setExtInQuery = (query: string, ext: ExtensionType): string => {
+  const params = toSearchParams(query);
+  const clean = params.toString();
+  return clean ? `${clean}&ext=${ext}` : `ext=${ext}`;
+};
+
+const buildPreviewUrl = (mediaType: 'movie' | 'tv', tmdbId: string, query: string): string => {
+  const params = toSearchParams(query);
+  const extParam = params.get('ext');
+  const extension: ExtensionType = extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
+    ? extParam
+    : 'png';
+
+  params.delete('ext');
+  return `${API}/${mediaType}/${tmdbId}.${extension}?${params.toString()}`;
+};
+
+const buildBuilderUrl = (query: string): string => {
+  const params = toSearchParams(query);
+  const extParam = params.get('ext');
+  const extension: ExtensionType = extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
+    ? extParam
+    : 'png';
+
+  params.delete('ext');
+  const finalQuery = params.toString();
+  const posterUrl = `${API}/poster/${DEFAULT_IMDB}.${extension}${finalQuery ? `?${finalQuery}` : ''}`;
+  return `/build?url=${encodeURIComponent(posterUrl)}`;
+};
+
+const baseConfig: PosterConfig = {
+  ...DEFAULT_CONFIG,
+  mediaType: 'movie',
+  tmdbId: '',
+  imdbId: DEFAULT_IMDB,
+  ratings: ['imdb', 'rt', 'meta'],
+  extension: 'png',
+  source: 'tmdb',
+};
 
 const ExamplesPage = memo(() => {
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [extensions, setExtensions] = useState<Partial<Record<string, ExtensionType>>>({});
+  const [queries, setQueries] = useState<Record<string, string>>(() =>
+    Object.fromEntries(presets.map((preset) => [preset.id, preset.query]))
+  );
+
+  const exportBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const reelFallback = REEL_ITEMS.filter((item) => item.type === 'movie');
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return showcaseItems;
-    return showcaseItems.filter((item) => {
-      return (
-        item.title.toLowerCase().includes(q) ||
-        item.genre.toLowerCase().includes(q) ||
-        item.tagline.toLowerCase().includes(q) ||
-        item.year.toLowerCase().includes(q)
-      );
+    const items = presets.map((preset, index) => {
+      const movie = reelFallback[index % reelFallback.length];
+      const query = queries[preset.id] ?? preset.query;
+      return {
+        preset,
+        movie,
+        query,
+        previewUrl: buildPreviewUrl(movie.type, movie.id, query),
+        builderUrl: buildBuilderUrl(query),
+      };
     });
-  }, [search]);
+
+    if (!q) return items;
+    return items.filter(({ preset, query }) =>
+      preset.title.toLowerCase().includes(q) ||
+      preset.description.toLowerCase().includes(q) ||
+      query.toLowerCase().includes(q)
+    );
+  }, [search, reelFallback, queries]);
 
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        background: 'var(--film-black)',
-        color: 'var(--film-cream)',
-      }}
-    >
+    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}>
       <MainNavbar
         search={{
           value: search,
@@ -90,26 +113,17 @@ const ExamplesPage = memo(() => {
             EXAMPLES
           </h1>
           <p className="body-font" style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}>
-            Showcase gallery with export actions and one-click handoff to the builder.
+            Badge position/style presets from JSON query strings. Edit query and open in builder.
           </p>
         </header>
 
-        <section
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))',
-            gap: 14,
-          }}
-        >
-          {filtered.map((item) => {
-            const isOpen = activeMenuId === item.id;
-            const currentExtension = extensions[item.id] ?? item.config.extension;
-            const exportConfig: PosterConfig = { ...item.config, extension: currentExtension };
-            const exportUrl = generateApiUrl(exportConfig, API);
-            const openBuilderHref = `/build?url=${encodeURIComponent(exportUrl)}`;
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 14 }}>
+          {filtered.map(({ preset, movie, query, previewUrl, builderUrl }) => {
+            const isOpen = activeMenuId === preset.id;
+
             return (
               <article
-                key={item.id}
+                key={preset.id}
                 style={{
                   position: 'relative',
                   border: '1px solid rgba(196,124,46,0.15)',
@@ -120,8 +134,8 @@ const ExamplesPage = memo(() => {
               >
                 <div style={{ aspectRatio: '2 / 3', position: 'relative' }}>
                   <ProgressiveImage
-                    src={item.url}
-                    alt={`${item.title} poster example`}
+                    src={previewUrl}
+                    alt={`${preset.title} preview`}
                     containerStyle={{ width: '100%', height: '100%' }}
                     imageStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     fallback={
@@ -142,13 +156,16 @@ const ExamplesPage = memo(() => {
                       gap: 8,
                       padding: 10,
                       background: 'linear-gradient(180deg, rgba(7,7,6,0) 34%, rgba(7,7,6,0.9) 100%)',
-                      opacity: isOpen ? 1 : 0,
+                      opacity: 0,
                       transition: 'opacity 0.2s ease',
                     }}
                   >
                     <button
+                      ref={(el) => {
+                        exportBtnRefs.current[preset.id] = el;
+                      }}
                       type="button"
-                      onClick={() => setActiveMenuId((prev) => (prev === item.id ? null : item.id))}
+                      onClick={() => setActiveMenuId((prev) => (prev === preset.id ? null : preset.id))}
                       className="syne-font"
                       style={{
                         border: '1px solid rgba(196,124,46,0.2)',
@@ -165,8 +182,9 @@ const ExamplesPage = memo(() => {
                     >
                       Export
                     </button>
+
                     <a
-                      href={openBuilderHref}
+                      href={builderUrl}
                       className="syne-font"
                       style={{
                         textDecoration: 'none',
@@ -190,32 +208,51 @@ const ExamplesPage = memo(() => {
                   </div>
                 </div>
 
-                <div style={{ padding: '10px 12px 12px' }}>
+                <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.03em' }}>
-                    {item.title}
+                    {preset.title}
                   </div>
-                  <div className="body-font" style={{ fontSize: 11, color: 'var(--film-text-dim)', marginTop: 4 }}>
-                    {item.year} • {item.genre}
+                  <div className="body-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
+                    {preset.description}
                   </div>
+                  <div className="body-font" style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}>
+                    Preview poster: {movie.title}
+                  </div>
+
+                  <textarea
+                    value={query}
+                    onChange={(e) => {
+                      setQueries((prev) => ({ ...prev, [preset.id]: e.target.value.trimStart() }));
+                    }}
+                    className="mono-font"
+                    style={{
+                      width: '100%',
+                      minHeight: 74,
+                      resize: 'vertical',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(0,0,0,0.2)',
+                      color: 'var(--film-text-dim)',
+                      fontSize: 10,
+                      lineHeight: 1.4,
+                      padding: 8,
+                    }}
+                    spellCheck={false}
+                    aria-label={`${preset.title} query preset`}
+                  />
                 </div>
 
                 <ExportMenu
-                  config={exportConfig}
+                  config={baseConfig}
                   baseUrl={API}
                   onExtensionChange={(ext) => {
-                    setExtensions((prev) => ({ ...prev, [item.id]: ext }));
+                    setQueries((prev) => ({ ...prev, [preset.id]: setExtInQuery(prev[preset.id] ?? preset.query, ext) }));
                   }}
                   isOpen={isOpen}
                   onClose={() => setActiveMenuId(null)}
-                  containerStyle={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    width: 300,
-                    zIndex: 20,
-                  }}
-                  urlOverride={exportUrl}
-                  openInBuilderHref={openBuilderHref}
+                  anchorRef={{ current: exportBtnRefs.current[preset.id] }}
+                  urlOverride={previewUrl}
+                  openInBuilderHref={builderUrl}
                 />
               </article>
             );
