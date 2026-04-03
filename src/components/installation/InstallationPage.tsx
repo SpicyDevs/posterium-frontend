@@ -13,10 +13,15 @@ import {
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
 const MOBILE_SHOWCASE_WIDTH = 'min(42vw, 190px)';
+const MOBILE_SHOWCASE_RATIO = '9 / 16' as const;
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
   return device[0].toUpperCase() + device.slice(1);
+};
+
+const getMobileShowcaseSlots = (mobileImages: string[]): string[] => {
+  return installationPlaceholderImages.mobile.map((placeholder, idx) => mobileImages[idx] ?? placeholder);
 };
 
 const InstallationPage = memo(() => {
@@ -64,10 +69,7 @@ const InstallationPage = memo(() => {
   const renderShowcase = (app: InstallationAppConfig) => {
     const activeDevice = activeDeviceByApp[app.id] ?? 'desktop';
     const mobileImages = app.showcaseImages.mobile;
-    const mobileSlots = [
-      mobileImages[0] ?? installationPlaceholderImages.mobile[0],
-      mobileImages[1] ?? installationPlaceholderImages.mobile[1],
-    ];
+    const mobileSlots = getMobileShowcaseSlots(mobileImages);
     const imageSrc = activeDevice === 'mobile' ? mobileSlots[0] : app.showcaseImages[activeDevice];
 
     return (
@@ -153,7 +155,7 @@ const InstallationPage = memo(() => {
                 <ShowcaseMediaFrame
                   src={slotSrc}
                   alt={`${app.name} mobile showcase ${idx + 1}`}
-                  ratio="9 / 16"
+                  ratio={MOBILE_SHOWCASE_RATIO}
                   mobileFrame
                 />
               </div>
@@ -185,7 +187,7 @@ const InstallationPage = memo(() => {
     <DocsLayout
       sidebarTitle="Apps"
       sidebarLinks={sidebarLinks}
-      searchConfig={{
+      search={{
         value: search,
         onChange: setSearch,
         placeholder: 'Search app guides…',

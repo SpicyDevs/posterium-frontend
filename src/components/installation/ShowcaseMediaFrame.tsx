@@ -3,10 +3,12 @@ import { memo, type CSSProperties } from 'react';
 interface ShowcaseMediaFrameProps {
   src: string;
   alt: string;
-  ratio: '9 / 16' | '16 / 9';
+  ratio?: '9 / 16' | '16 / 9';
   mobileFrame?: boolean;
 }
 
+const DEFAULT_DESKTOP_RATIO = '16 / 9';
+const MOBILE_FRAME_RATIO = '9 / 16';
 const MOBILE_IMAGE_OBJECT_POSITION = 'top center';
 
 const baseFrameStyle: CSSProperties = {
@@ -16,7 +18,7 @@ const baseFrameStyle: CSSProperties = {
 };
 
 const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mobileFrame = false }) => {
-  const finalRatio = mobileFrame ? '9 / 16' : ratio;
+  const finalRatio = mobileFrame ? MOBILE_FRAME_RATIO : (ratio ?? DEFAULT_DESKTOP_RATIO);
 
   if (!mobileFrame) {
     return (
