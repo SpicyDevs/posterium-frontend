@@ -30,7 +30,11 @@ const ExportMenu = memo<ExportMenuProps>(
     openInBuilderHref,
   }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
-    const [popupCoords, setPopupCoords] = useState<{ top: number; left: number; direction: 'up' | 'down' } | null>(null);
+    const [popupCoords, setPopupCoords] = useState<{
+      top: number;
+      left: number;
+      direction: 'up' | 'down';
+    } | null>(null);
     const [copied, setCopied] = useState(false);
     const [aioCopied, setAioCopied] = useState(false);
     const [builderCopied, setBuilderCopied] = useState(false);
@@ -143,7 +147,8 @@ const ExportMenu = memo<ExportMenuProps>(
       updatePosition();
 
       const handler = (e: MouseEvent | TouchEvent) => {
-        const target = 'touches' in e ? (e.touches[0]?.target as Node) : ((e as MouseEvent).target as Node);
+        const target =
+          'touches' in e ? (e.touches[0]?.target as Node) : ((e as MouseEvent).target as Node);
         if (!popoverRef.current?.contains(target) && !anchorRef?.current?.contains(target)) {
           onClose();
         }
@@ -189,10 +194,16 @@ const ExportMenu = memo<ExportMenuProps>(
           }
         `}</style>
 
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        >
           <div className="flex items-center gap-2">
             <Download size={13} style={{ color: 'var(--film-amber)' }} />
-            <span className="syne-font font-bold uppercase tracking-widest" style={{ fontSize: 10, color: 'var(--film-cream)' }}>
+            <span
+              className="syne-font font-bold uppercase tracking-widest"
+              style={{ fontSize: 10, color: 'var(--film-cream)' }}
+            >
               Export
             </span>
           </div>
@@ -212,7 +223,10 @@ const ExportMenu = memo<ExportMenuProps>(
         </div>
 
         <div className="px-4 pt-3 pb-2">
-          <p className="syne-font uppercase tracking-widest mb-2" style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}>
+          <p
+            className="syne-font uppercase tracking-widest mb-2"
+            style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
+          >
             Format
           </p>
           <div className="grid grid-cols-4 gap-1.5">
@@ -222,8 +236,14 @@ const ExportMenu = memo<ExportMenuProps>(
                 onClick={() => onExtensionChange(ext.id)}
                 className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all active:scale-95 syne-font"
                 style={{
-                  background: config.extension === ext.id ? 'rgba(196,124,46,0.12)' : 'rgba(255,255,255,0.02)',
-                  border: config.extension === ext.id ? '1px solid rgba(196,124,46,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                  background:
+                    config.extension === ext.id
+                      ? 'rgba(196,124,46,0.12)'
+                      : 'rgba(255,255,255,0.02)',
+                  border:
+                    config.extension === ext.id
+                      ? '1px solid rgba(196,124,46,0.25)'
+                      : '1px solid rgba(255,255,255,0.05)',
                   color: config.extension === ext.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
                 }}
               >
@@ -234,7 +254,10 @@ const ExportMenu = memo<ExportMenuProps>(
         </div>
 
         <div className="px-4 pt-1 pb-3">
-          <p className="syne-font uppercase tracking-widest mb-1.5" style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}>
+          <p
+            className="syne-font uppercase tracking-widest mb-1.5"
+            style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
+          >
             API URL
           </p>
           <div
@@ -268,7 +291,10 @@ const ExportMenu = memo<ExportMenuProps>(
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 px-4 pb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}>
+        <div
+          className="flex flex-col gap-2 px-4 pb-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+        >
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
@@ -349,7 +375,11 @@ const ExportMenu = memo<ExportMenuProps>(
                   letterSpacing: '0.04em',
                 }}
               >
-                {builderCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                {builderCopied ? (
+                  <Check size={12} className="text-emerald-400" />
+                ) : (
+                  <Copy size={12} />
+                )}
                 {builderCopied ? 'Copied' : 'Copy Builder Link'}
               </button>
             </>

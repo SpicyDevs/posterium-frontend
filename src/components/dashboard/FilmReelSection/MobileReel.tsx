@@ -14,7 +14,7 @@ const MobileReel = memo(() => {
 
   return (
     <div ref={sectionRef} style={{ background: 'var(--film-dark)', overflow: 'hidden' }}>
-          {/* Header */}
+      {/* Header */}
       <div style={{ padding: '36px 22px 14px' }}>
         <div
           className="poster-font"

@@ -12,7 +12,9 @@ const FOOTER_LINKS = [
 ] as const;
 
 const SprocketEdge = memo<{ border: 'borderTop' | 'borderBottom' }>(({ border }) => (
-  <div style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}>
+  <div
+    style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}
+  >
     <SprocketStrip count={64} />
   </div>
 ));
@@ -30,7 +32,9 @@ export const FooterSection = memo(() => (
     <SprocketEdge border="borderBottom" />
 
     <div style={{ position: 'relative', zIndex: 1 }}>
-      <div style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}>
+      <div
+        style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}
+      >
         <div
           aria-hidden="true"
           className="poster-font"
@@ -106,7 +110,8 @@ export const FooterSection = memo(() => (
               marginBottom: 0,
             }}
           >
-            Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No account. No rate limits.
+            Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No
+            account. No rate limits.
           </p>
         </div>
       </div>
@@ -195,7 +200,14 @@ export const FooterSection = memo(() => (
           gap: 16,
         }}
       >
-        <div style={{ display: 'flex', gap: 'clamp(16px,3vw,36px)', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 'clamp(16px,3vw,36px)',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
           {[
             ['PROD', 'SpicyDevs'],
             ['DIR', 'Aayu5h'],
@@ -204,11 +216,27 @@ export const FooterSection = memo(() => (
             [`© 2026`, ''],
           ].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,124,46,0.38)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+              <span
+                className="mono-font"
+                style={{
+                  fontSize: 7,
+                  color: 'rgba(196,124,46,0.38)',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {k}
               </span>
               {v ? (
-                <span className="syne-font" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(110,104,96,0.45)', letterSpacing: '0.05em' }}>
+                <span
+                  className="syne-font"
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: 'rgba(110,104,96,0.45)',
+                    letterSpacing: '0.05em',
+                  }}
+                >
                   {v}
                 </span>
               ) : null}
@@ -253,10 +281,21 @@ export const FooterSection = memo(() => (
         gap: 8,
       }}
     >
-      <code className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}>
+      <code
+        className="mono-font"
+        style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}
+      >
         {'api.spicydevs.xyz/{type}/{id}.svg?r=imdb,rt&source=tmdb'}
       </code>
-      <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.2)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+      <span
+        className="mono-font"
+        style={{
+          fontSize: 7,
+          color: 'rgba(122,117,110,0.2)',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+        }}
+      >
         Free · CORS Enabled · No Auth · SVG/PNG/JPG/WebP
       </span>
     </div>

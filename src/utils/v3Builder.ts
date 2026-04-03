@@ -87,7 +87,7 @@ export function buildOptimalUrl(
 ): string {
   const cleanBase = baseUrl.replace(/\/$/, '');
 
-  // ALWAYS enforce /poster/ and prioritize imdbId. 
+  // ALWAYS enforce /poster/ and prioritize imdbId.
   // Guarantees {imdb_id} literal is preserved without URL encoding.
   const displayId = config.imdbId || '{imdb_id}';
   const pathSegment = `/poster/${displayId}`;

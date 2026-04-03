@@ -10,23 +10,34 @@ interface Props {
   side?: 'left' | 'right' | 'none'; // Added for Cyberpunk styling
 }
 
-const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, className, side = 'none' }) => {
+const SidebarLayout: React.FC<Props> = ({
+  header,
+  children,
+  bodyClassName,
+  className,
+  side = 'none',
+}) => {
   const isLeft = side === 'left';
   const isRight = side === 'right';
 
   // The base content of the sidebar
   const content = (
-    <div className={clsx("flex flex-col h-full w-full bg-[var(--film-dark)] relative", 
-      isLeft && 'cyber-path-left', 
-      isRight && 'cyber-path-right'
-    )}>
+    <div
+      className={clsx(
+        'flex flex-col h-full w-full bg-[var(--film-dark)] relative',
+        isLeft && 'cyber-path-left',
+        isRight && 'cyber-path-right'
+      )}
+    >
       {/* Subtle inner edge glow on the cut side */}
       {side !== 'none' && (
-        <div className={clsx(
-          "absolute top-0 bottom-0 pointer-events-none opacity-[0.04] z-0",
-          isLeft ? 'bg-gradient-to-l right-0 w-16' : 'bg-gradient-to-r left-0 w-16',
-          "from-[var(--film-amber)] to-transparent"
-        )} />
+        <div
+          className={clsx(
+            'absolute top-0 bottom-0 pointer-events-none opacity-[0.04] z-0',
+            isLeft ? 'bg-gradient-to-l right-0 w-16' : 'bg-gradient-to-r left-0 w-16',
+            'from-[var(--film-amber)] to-transparent'
+          )}
+        />
       )}
 
       {header && (
@@ -61,14 +72,18 @@ const SidebarLayout: React.FC<Props> = ({ header, children, bodyClassName, class
     <div
       className={clsx(
         'flex flex-col h-full',
-        isLeft ? 'cyber-path-left cyber-border-outer-left' : 'cyber-path-right cyber-border-outer-right',
+        isLeft
+          ? 'cyber-path-left cyber-border-outer-left'
+          : 'cyber-path-right cyber-border-outer-right',
         className
       )}
     >
       <div
         className={clsx(
           'flex flex-col h-full w-full',
-          isLeft ? 'cyber-path-left cyber-border-gap-left' : 'cyber-path-right cyber-border-gap-right'
+          isLeft
+            ? 'cyber-path-left cyber-border-gap-left'
+            : 'cyber-path-right cyber-border-gap-right'
         )}
       >
         {content}

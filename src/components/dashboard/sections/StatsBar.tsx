@@ -64,11 +64,22 @@ const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>
             transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
           }}
         >
-          <span className="mono-font" style={{ fontSize: 8, color: 'rgba(122,117,110,0.3)', letterSpacing: '0.14em' }}>
+          <span
+            className="mono-font"
+            style={{ fontSize: 8, color: 'rgba(122,117,110,0.3)', letterSpacing: '0.14em' }}
+          >
             {String(index + 1).padStart(2, '0')}/{String(STATS.length).padStart(2, '0')}
           </span>
           {stat.unit && (
-            <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <span
+              className="mono-font"
+              style={{
+                fontSize: 7,
+                color: 'rgba(122,117,110,0.25)',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+            >
               {stat.unit}
             </span>
           )}
@@ -97,10 +108,22 @@ const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>
             transition: `opacity 0.55s ease ${0.25 + index * 0.1}s, transform 0.55s ease ${0.25 + index * 0.1}s`,
           }}
         >
-          <div className="syne-font" style={{ fontSize: 'clamp(11px,1.4vw,14px)', fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.02em', marginBottom: 4 }}>
+          <div
+            className="syne-font"
+            style={{
+              fontSize: 'clamp(11px,1.4vw,14px)',
+              fontWeight: 700,
+              color: 'var(--film-cream)',
+              letterSpacing: '0.02em',
+              marginBottom: 4,
+            }}
+          >
             {stat.label}
           </div>
-          <div className="body-font" style={{ fontSize: 10, color: 'rgba(110,104,96,0.6)', lineHeight: 1.4 }}>
+          <div
+            className="body-font"
+            style={{ fontSize: 10, color: 'rgba(110,104,96,0.6)', lineHeight: 1.4 }}
+          >
             {stat.sub}
           </div>
         </div>
@@ -136,14 +159,28 @@ export const StatsBar = memo(() => {
           transition: 'opacity 0.5s ease',
         }}
       >
-        <span className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.38)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+        <span
+          className="mono-font"
+          style={{
+            fontSize: 8,
+            color: 'rgba(196,124,46,0.38)',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+          }}
+        >
           SPICYDEVS / POSTERIUM — FIELD NUMBERS
         </span>
-        <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.28)', letterSpacing: '0.12em' }}>
+        <span
+          className="mono-font"
+          style={{ fontSize: 7, color: 'rgba(122,117,110,0.28)', letterSpacing: '0.12em' }}
+        >
           REV.2 · OPEN SOURCE · MIT
         </span>
       </div>
-      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div
+        className="stats-grid"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}
+      >
         {STATS.map((s, i) => (
           <StatPanel key={s.label} stat={s} index={i} vis={vis} />
         ))}

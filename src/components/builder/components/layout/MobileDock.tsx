@@ -29,7 +29,7 @@ const MobileDock: React.FC = memo(() => {
       className="lg:hidden shrink-0 h-16 flex items-stretch border-t shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 px-2 pb-[env(safe-area-inset-bottom,0px)] relative"
       style={{
         background: '#0a0908',
-        borderColor: 'rgba(196,124,46,0.15)'
+        borderColor: 'rgba(196,124,46,0.15)',
       }}
     >
       {TABS.map(({ id, Icon, label }) => {
@@ -44,8 +44,8 @@ const MobileDock: React.FC = memo(() => {
           >
             {isActive ? (
               <div className="relative">
-                 <Icon size={18} strokeWidth={2.5} style={{ color: 'var(--film-amber)' }} />
-                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--film-amber)] shadow-[0_0_8px_var(--film-amber)]" />
+                <Icon size={18} strokeWidth={2.5} style={{ color: 'var(--film-amber)' }} />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--film-amber)] shadow-[0_0_8px_var(--film-amber)]" />
               </div>
             ) : (
               <Icon size={18} strokeWidth={1.8} style={{ color: 'var(--film-text-dim)' }} />

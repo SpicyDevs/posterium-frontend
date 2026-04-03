@@ -68,16 +68,16 @@ export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
 
 /** Canonical rating key → V3 single-char badge code */
 const V3_KEY_TO_CODE: Record<RatingType, string> = {
-  imdb:       'i',
-  rt:         'r',
+  imdb: 'i',
+  rt: 'r',
   rt_popcorn: 'p',
   letterboxd: 'l',
-  meta:       'm',
-  tmdb:       't',
-  mal:        'M',
-  anilist:    'A',
-  age:        'a',
-  runtime:    'n',
+  meta: 'm',
+  tmdb: 't',
+  mal: 'M',
+  anilist: 'A',
+  age: 'a',
+  runtime: 'n',
 };
 
 /** V3 single-char badge code → canonical rating key */
@@ -86,7 +86,7 @@ const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
 );
 
 // Exported — used by v3Builder.ts, tests, and any consumer needing these maps
-export const PROVIDER_SHORT: Record<string, string>   = V3_KEY_TO_CODE;
+export const PROVIDER_SHORT: Record<string, string> = V3_KEY_TO_CODE;
 export const SHORT_PROVIDER: Record<string, RatingType> = V3_CODE_TO_KEY;
 
 /**
@@ -100,12 +100,12 @@ export function cleanValue(raw: string): string {
     const n = parseFloat(s);
     if (isNaN(n)) return s;
     const c = +n.toFixed(1);
-    return `${c % 1 === 0 ? (c | 0) : c}%`;
+    return `${c % 1 === 0 ? c | 0 : c}%`;
   }
   if (/^\d+(\.\d+)?$/.test(s)) {
     const n = parseFloat(s);
     const c = +n.toFixed(2);
-    return String(c % 1 === 0 ? (c | 0) : c);
+    return String(c % 1 === 0 ? c | 0 : c);
   }
   return s;
 }
@@ -133,8 +133,7 @@ const DEFAULTS = {
 
 // ── Canvas layout helpers ─────────────────────────────────────────────────
 
-export const getScale = (size: string): number =>
-  size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0;
+export const getScale = (size: string): number => (size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0);
 
 export const calculateAutoPosition = (
   _ratingId: RatingType,
@@ -150,15 +149,16 @@ export const calculateAutoPosition = (
   const groupW = isRow ? totalBadges * badgeW + (totalBadges - 1) * GAP : badgeW;
   const groupH = isRow ? badgeH : totalBadges * badgeH + (totalBadges - 1) * GAP;
 
-  let presetX = 0, presetY = 0;
+  let presetX = 0,
+    presetY = 0;
 
-  if (config.preset.includes('l'))      presetX = PADDING;
+  if (config.preset.includes('l')) presetX = PADDING;
   else if (config.preset.includes('r')) presetX = CANVAS_WIDTH - groupW - PADDING;
-  else                                  presetX = (CANVAS_WIDTH - groupW) / 2;
+  else presetX = (CANVAS_WIDTH - groupW) / 2;
 
-  if (config.preset.includes('t'))      presetY = PADDING;
+  if (config.preset.includes('t')) presetY = PADDING;
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
-  else                                  presetY = (CANVAS_HEIGHT - groupH) / 2;
+  else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
   const x = isRow ? presetX + index * (badgeW + GAP) : presetX;
   const y = isRow ? presetY : presetY + index * (badgeH + GAP);
@@ -185,11 +185,11 @@ export const generateApiUrl = (
   baseUrl: string = DEFAULT_API_BASE
 ): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
-  
-  // ALWAYS enforce /poster/ and prioritize imdbId. 
+
+  // ALWAYS enforce /poster/ and prioritize imdbId.
   const displayId = config.imdbId || '{imdb_id}';
   const pathSegment = `/poster/${displayId}`;
-  
+
   const p = new URLSearchParams();
 
   // Version flag — tells backend to use V3 parser
@@ -197,12 +197,12 @@ export const generateApiUrl = (
 
   // ── Ratings: single-char codes e.g. r=i,r,p ──────────────────────────
   if (config.ratings.length > 0) {
-    p.set('r', config.ratings.map(r => V3_KEY_TO_CODE[r] ?? r).join(','));
+    p.set('r', config.ratings.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Fallback pool: single-char codes e.g. fb=t,l ─────────────────────
   if (config.fallbackEnabled && config.fallbackPool.length > 0) {
-    p.set('fb', config.fallbackPool.map(r => V3_KEY_TO_CODE[r] ?? r).join(','));
+    p.set('fb', config.fallbackPool.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Source — CRITICAL: NO v3 alias. Backend reads only 'source' directly.
@@ -211,14 +211,14 @@ export const generateApiUrl = (
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
 
   // User API key overrides
-  if (config.keys?.tmdb)    p.set('tmdb_key',    config.keys.tmdb);
-  if (config.keys?.fanart)  p.set('fanart_key',  config.keys.fanart);
-  if (config.keys?.omdb)    p.set('omdb_key',    config.keys.omdb);
+  if (config.keys?.tmdb) p.set('tmdb_key', config.keys.tmdb);
+  if (config.keys?.fanart) p.set('fanart_key', config.keys.fanart);
+  if (config.keys?.omdb) p.set('omdb_key', config.keys.omdb);
   if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
 
   // ── Global badge style — V3 short aliases ──────────────────────────────
-  if (config.blur   !== DEFAULTS.blur)   p.set('bl', config.blur.toString());
-  if (config.alpha  !== DEFAULTS.alpha)  p.set('al', config.alpha.toString());
+  if (config.blur !== DEFAULTS.blur) p.set('bl', config.blur.toString());
+  if (config.alpha !== DEFAULTS.alpha) p.set('al', config.alpha.toString());
   if (config.radius !== DEFAULTS.radius) p.set('ra', config.radius.toString());
   if (config.shadow !== DEFAULTS.shadow) p.set('sh', config.shadow.toString());
 
@@ -227,9 +227,9 @@ export const generateApiUrl = (
 
   // bw = border-width (NOT grayscale — that's gs)
   if ((config.borderW ?? 0) > 0) p.set('bw', config.borderW!.toString());
-  if (config.borderC)  p.set('bc', config.borderC);
-  if (config.bg)       p.set('bg', config.bg);
-  if (config.txt)      p.set('tx', config.txt);
+  if (config.borderC) p.set('bc', config.borderC);
+  if (config.bg) p.set('bg', config.bg);
+  if (config.txt) p.set('tx', config.txt);
   if (config.icon === false) p.set('ic', '0');
 
   // Poster effects
@@ -255,7 +255,7 @@ export const generateApiUrl = (
     p.set('it', config.iconType!.toString());
 
   // ── Labels ───────────────────────────────────────────────────────────
-  if (config.labelPos)  p.set('lp', config.labelPos);
+  if (config.labelPos) p.set('lp', config.labelPos);
   if (config.labelText) p.set('lt', config.labelText);
   if (config.labelSize !== undefined && config.labelSize !== DEFAULTS.labelSize)
     p.set('ls', config.labelSize.toString());
@@ -274,14 +274,14 @@ export const generateApiUrl = (
     p.set(`${code}_x`, Math.round(finalX).toString());
     p.set(`${code}_y`, Math.round(finalY).toString());
 
-    if (item.bg  !== undefined && item.bg  !== (config.bg  ?? '')) p.set(`${code}_bg`, item.bg);
+    if (item.bg !== undefined && item.bg !== (config.bg ?? '')) p.set(`${code}_bg`, item.bg);
     if (item.txt !== undefined && item.txt !== (config.txt ?? '')) p.set(`${code}_tx`, item.txt);
 
     const eff = (itemVal: any, globalVal: any): boolean =>
       itemVal !== undefined && itemVal !== globalVal;
 
-    if (eff(item.blur,   config.blur))   p.set(`${code}_bl`, item.blur!.toString());
-    if (eff(item.alpha,  config.alpha))  p.set(`${code}_al`, item.alpha!.toString());
+    if (eff(item.blur, config.blur)) p.set(`${code}_bl`, item.blur!.toString());
+    if (eff(item.alpha, config.alpha)) p.set(`${code}_al`, item.alpha!.toString());
     if (eff(item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
     if (eff(item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
 
@@ -297,8 +297,7 @@ export const generateApiUrl = (
       p.set(`${code}_bc`, item.borderC);
 
     // Per-badge show-text override
-    if (item.showText === false && config.showText !== false)
-      p.set(`${code}_nt`, '1');
+    if (item.showText === false && config.showText !== false) p.set(`${code}_nt`, '1');
 
     // Per-badge score display
     if (item.normalize !== undefined && item.normalize !== (config.normalize ?? false))
@@ -325,12 +324,14 @@ export const generateApiUrl = (
   if (config.logo) {
     p.set('logo', '1');
     if (config.logoSource) p.set('logo_source', config.logoSource);
-    if (config.logoX !== null && config.logoX !== undefined) p.set('logo_x', config.logoX.toString());
-    if (config.logoY       !== DEFAULTS.logoY)       p.set('logo_y',       config.logoY.toString());
-    if (config.logoW       !== DEFAULTS.logoW)       p.set('logo_w',       config.logoW.toString());
-    if (config.logoH       !== DEFAULTS.logoH)       p.set('logo_h',       config.logoH.toString());
-    if (config.logoOpacity !== DEFAULTS.logoOpacity) p.set('logo_opacity', config.logoOpacity.toFixed(2));
-    if (config.logoShadow  !== DEFAULTS.logoShadow)  p.set('logo_sh',      config.logoShadow.toString());
+    if (config.logoX !== null && config.logoX !== undefined)
+      p.set('logo_x', config.logoX.toString());
+    if (config.logoY !== DEFAULTS.logoY) p.set('logo_y', config.logoY.toString());
+    if (config.logoW !== DEFAULTS.logoW) p.set('logo_w', config.logoW.toString());
+    if (config.logoH !== DEFAULTS.logoH) p.set('logo_h', config.logoH.toString());
+    if (config.logoOpacity !== DEFAULTS.logoOpacity)
+      p.set('logo_opacity', config.logoOpacity.toFixed(2));
+    if (config.logoShadow !== DEFAULTS.logoShadow) p.set('logo_sh', config.logoShadow.toString());
   }
 
   const queryString = p.toString();
@@ -350,10 +351,11 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       /\/(movie|tv|anime|poster)\/([^.]+)(?:\.(png|jpg|jpeg|svg|webp|json))?$/
     );
 
-    const mediaType: MediaType = match && ['movie', 'tv', 'anime'].includes(match[1]) 
-      ? (match[1] as MediaType) 
-      : DEFAULT_CONFIG.mediaType;
-      
+    const mediaType: MediaType =
+      match && ['movie', 'tv', 'anime'].includes(match[1])
+        ? (match[1] as MediaType)
+        : DEFAULT_CONFIG.mediaType;
+
     let tmdbId = DEFAULT_CONFIG.tmdbId;
     let imdbId: string | undefined = undefined;
 
@@ -374,9 +376,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     const isV3 = p.get('v') === '3';
 
     const keys: ApiKeys = {};
-    if (p.has('tmdb_key'))    keys.tmdb    = p.get('tmdb_key')!;
-    if (p.has('fanart_key'))  keys.fanart  = p.get('fanart_key')!;
-    if (p.has('omdb_key'))    keys.omdb    = p.get('omdb_key')!;
+    if (p.has('tmdb_key')) keys.tmdb = p.get('tmdb_key')!;
+    if (p.has('fanart_key')) keys.fanart = p.get('fanart_key')!;
+    if (p.has('omdb_key')) keys.omdb = p.get('omdb_key')!;
     if (p.has('mdblist_key')) keys.mdblist = p.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
@@ -385,56 +387,108 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       // ── Parse V3 per-badge params ──────────────────────────────────────
       for (const [name, value] of p.entries()) {
         if (name.length < 3 || name[1] !== '_') continue;
-        const code     = name[0];
+        const code = name[0];
         const badgeKey = V3_CODE_TO_KEY[code];
         if (!badgeKey) continue;
         const suffix = name.slice(2);
 
         if (!items[badgeKey]) items[badgeKey] = {};
         switch (suffix) {
-          case 'x':   items[badgeKey].x         = parseInt(value);                                   break;
-          case 'y':   items[badgeKey].y         = parseInt(value);                                   break;
-          case 'bl':  items[badgeKey].blur       = parseInt(value);                                   break;
-          case 'al':  items[badgeKey].alpha      = parseFloat(value);                                 break;
-          case 'ra':  items[badgeKey].radius     = parseInt(value);                                   break;
-          case 'sh':  items[badgeKey].shadow     = parseInt(value);                                   break;
-          case 'ic':  items[badgeKey].icon       = value === '1';                                     break;
-          case 'sc':  items[badgeKey].scale      = parseFloat(value);                                 break;
-          case 'bw':  items[badgeKey].borderW    = parseInt(value);                                   break;
-          case 'bc':  items[badgeKey].borderC    = value.startsWith('#') ? value : `#${value}`;      break;
-          case 'bg':  items[badgeKey].bg         = value;                                             break;
-          case 'tx':  items[badgeKey].txt        = value.startsWith('#') ? value : `#${value}`;      break;
-          case 'nt':  items[badgeKey].showText   = value !== '1';                                     break;
-          case 'nm':  items[badgeKey].normalize  = value === '1';                                     break;
-          case 'of':  items[badgeKey].outOf      = parseInt(value);                                   break;
-          case 'it':  items[badgeKey].iconType   = parseInt(value);                                   break;
-          case 'lp':  items[badgeKey].labelPos   = value as BadgeConfig['labelPos'];                  break;
-          case 'lt':  items[badgeKey].labelText  = value;                                             break;
-          case 'ls':  items[badgeKey].labelSize  = parseInt(value);                                   break;
-          case 'lc':  items[badgeKey].labelColor = value;                                             break;
+          case 'x':
+            items[badgeKey].x = parseInt(value);
+            break;
+          case 'y':
+            items[badgeKey].y = parseInt(value);
+            break;
+          case 'bl':
+            items[badgeKey].blur = parseInt(value);
+            break;
+          case 'al':
+            items[badgeKey].alpha = parseFloat(value);
+            break;
+          case 'ra':
+            items[badgeKey].radius = parseInt(value);
+            break;
+          case 'sh':
+            items[badgeKey].shadow = parseInt(value);
+            break;
+          case 'ic':
+            items[badgeKey].icon = value === '1';
+            break;
+          case 'sc':
+            items[badgeKey].scale = parseFloat(value);
+            break;
+          case 'bw':
+            items[badgeKey].borderW = parseInt(value);
+            break;
+          case 'bc':
+            items[badgeKey].borderC = value.startsWith('#') ? value : `#${value}`;
+            break;
+          case 'bg':
+            items[badgeKey].bg = value;
+            break;
+          case 'tx':
+            items[badgeKey].txt = value.startsWith('#') ? value : `#${value}`;
+            break;
+          case 'nt':
+            items[badgeKey].showText = value !== '1';
+            break;
+          case 'nm':
+            items[badgeKey].normalize = value === '1';
+            break;
+          case 'of':
+            items[badgeKey].outOf = parseInt(value);
+            break;
+          case 'it':
+            items[badgeKey].iconType = parseInt(value);
+            break;
+          case 'lp':
+            items[badgeKey].labelPos = value as BadgeConfig['labelPos'];
+            break;
+          case 'lt':
+            items[badgeKey].labelText = value;
+            break;
+          case 'ls':
+            items[badgeKey].labelSize = parseInt(value);
+            break;
+          case 'lc':
+            items[badgeKey].labelColor = value;
+            break;
         }
       }
 
       // ── Decode ratings from single-char codes ──────────────────────────
       const ratingCodes = p.has('r')
-        ? p.get('r')!.split(',').map(c => c.trim()).filter(Boolean)
+        ? p
+            .get('r')!
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean)
         : [];
       const parsedRatings = ratingCodes
-        .map(c => V3_CODE_TO_KEY[c])
+        .map((c) => V3_CODE_TO_KEY[c])
         .filter(Boolean) as RatingType[];
 
       // ── Decode fallback pool from single-char codes ────────────────────
       const fbCodes = p.has('fb')
-        ? p.get('fb')!.split(',').map(c => c.trim()).filter(Boolean)
+        ? p
+            .get('fb')!
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean)
         : [];
-      const fbPool = fbCodes.map(c => V3_CODE_TO_KEY[c]).filter(Boolean) as RatingType[];
+      const fbPool = fbCodes.map((c) => V3_CODE_TO_KEY[c]).filter(Boolean) as RatingType[];
 
       const logoSource = (['fanart', 'tmdb', 'metahub'] as const).includes(
         p.get('logo_source') as any
-      ) ? (p.get('logo_source') as LogoSourceType) : null;
+      )
+        ? (p.get('logo_source') as LogoSourceType)
+        : null;
 
-      const getNum   = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseInt(p.get(v3k)!)    : (p.has(v2k) ? parseInt(p.get(v2k)!)    : def);
-      const getFloat = (v3k: string, v2k: string, def: number)  => p.has(v3k) ? parseFloat(p.get(v3k)!) : (p.has(v2k) ? parseFloat(p.get(v2k)!) : def);
+      const getNum = (v3k: string, v2k: string, def: number) =>
+        p.has(v3k) ? parseInt(p.get(v3k)!) : p.has(v2k) ? parseInt(p.get(v2k)!) : def;
+      const getFloat = (v3k: string, v2k: string, def: number) =>
+        p.has(v3k) ? parseFloat(p.get(v3k)!) : p.has(v2k) ? parseFloat(p.get(v2k)!) : def;
 
       // ── Parse outOf (of= or out_of=) ──────────────────────────────────
       const parseOutOf = (): number | undefined => {
@@ -449,102 +503,139 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         tmdbId,
         imdbId,
         extension,
-        ratings:        parsedRatings,
+        ratings: parsedRatings,
         fallbackEnabled: fbPool.length > 0,
-        fallbackPool:   fbPool,
-        source:   (p.get('source') as PosterConfig['source']) || 'tmdb',
-        ptype:    p.get('pt')   || p.get('ptype') || 'auto',
-        textless: p.get('tl')   === '1' || p.get('textless') === '1',
-        theme:    'glass',
-        size:     'md',
-        blur:       getNum   ('bl', 'blur',    DEFAULTS.blur),
-        alpha:      getFloat ('al', 'alpha',   DEFAULTS.alpha),
-        radius:     getNum   ('ra', 'rad',     DEFAULTS.radius),
-        shadow:     getNum   ('sh', 'sh',      DEFAULTS.shadow),
-        layout:    (p.get('l')   as PosterConfig['layout'])  || 'custom',
-        preset:    (p.get('pos') as PosterConfig['preset'])  || 'custom',
-        posterBlur: getNum   ('pb', 'bg_blur', DEFAULTS.posterBlur),
-        grayscale:  p.get('gs') === '1' || p.get('bw') === '1',
-        scale:      getFloat ('sc', 'g_scale', DEFAULTS.scale),
+        fallbackPool: fbPool,
+        source: (p.get('source') as PosterConfig['source']) || 'tmdb',
+        ptype: p.get('pt') || p.get('ptype') || 'auto',
+        textless: p.get('tl') === '1' || p.get('textless') === '1',
+        theme: 'glass',
+        size: 'md',
+        blur: getNum('bl', 'blur', DEFAULTS.blur),
+        alpha: getFloat('al', 'alpha', DEFAULTS.alpha),
+        radius: getNum('ra', 'rad', DEFAULTS.radius),
+        shadow: getNum('sh', 'sh', DEFAULTS.shadow),
+        layout: (p.get('l') as PosterConfig['layout']) || 'custom',
+        preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
+        posterBlur: getNum('pb', 'bg_blur', DEFAULTS.posterBlur),
+        grayscale: p.get('gs') === '1' || p.get('bw') === '1',
+        scale: getFloat('sc', 'g_scale', DEFAULTS.scale),
         borderW: p.has('bw') && p.get('bw') !== '1' ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
-        borderC: p.has('bc') ? (p.get('bc')!.startsWith('#') ? p.get('bc')! : `#${p.get('bc')}`) : undefined,
-        bg:      p.get('bg')  || undefined,
-        txt:     p.has('tx')  ? (p.get('tx')!.startsWith('#') ? p.get('tx')! : `#${p.get('tx')}`) : undefined,
-        icon:    p.has('ic')  ? p.get('ic') === '1' : true,
+        borderC: p.has('bc')
+          ? p.get('bc')!.startsWith('#')
+            ? p.get('bc')!
+            : `#${p.get('bc')}`
+          : undefined,
+        bg: p.get('bg') || undefined,
+        txt: p.has('tx')
+          ? p.get('tx')!.startsWith('#')
+            ? p.get('tx')!
+            : `#${p.get('tx')}`
+          : undefined,
+        icon: p.has('ic') ? p.get('ic') === '1' : true,
         showText: p.get('nt') !== '1',
         // ── NEW: display preset, score, icon type, labels ────────────────
-        uiPreset:   (p.get('p') === 'm' ? 'm' : 'b') as 'b' | 'm',
-        normalize:  p.get('nm') === '1' || p.get('normalize') === '1',
-        outOf:      parseOutOf(),
-        iconType:   getNum('it', 'icon_type', DEFAULTS.iconType),
-        labelPos:   (p.get('lp') || p.get('label_pos') || undefined) as PosterConfig['labelPos'],
-        labelText:  p.get('lt') || p.get('label_text') || undefined,
-        labelSize:  p.has('ls') ? parseInt(p.get('ls')!) : (p.has('label_size') ? parseInt(p.get('label_size')!) : undefined),
+        uiPreset: (p.get('p') === 'm' ? 'm' : 'b') as 'b' | 'm',
+        normalize: p.get('nm') === '1' || p.get('normalize') === '1',
+        outOf: parseOutOf(),
+        iconType: getNum('it', 'icon_type', DEFAULTS.iconType),
+        labelPos: (p.get('lp') || p.get('label_pos') || undefined) as PosterConfig['labelPos'],
+        labelText: p.get('lt') || p.get('label_text') || undefined,
+        labelSize: p.has('ls')
+          ? parseInt(p.get('ls')!)
+          : p.has('label_size')
+            ? parseInt(p.get('label_size')!)
+            : undefined,
         labelColor: p.get('lc') || p.get('label_color') || undefined,
         // ────────────────────────────────────────────────────────────────
         keys,
         items,
-        logo:         p.get('logo') === '1',
+        logo: p.get('logo') === '1',
         logoSource,
-        logoX:        p.has('logo_x')       ? parseInt(p.get('logo_x')!)          : null,
-        logoY:        p.has('logo_y')        ? parseInt(p.get('logo_y')!)          : DEFAULTS.logoY,
-        logoW:        p.has('logo_w')        ? parseInt(p.get('logo_w')!)          : DEFAULTS.logoW,
-        logoH:        p.has('logo_h')        ? parseInt(p.get('logo_h')!)          : DEFAULTS.logoH,
-        logoOpacity:  p.has('logo_opacity')  ? parseFloat(p.get('logo_opacity')!)  : DEFAULTS.logoOpacity,
-        logoShadow:   p.has('logo_sh')       ? parseInt(p.get('logo_sh')!)         : DEFAULTS.logoShadow,
+        logoX: p.has('logo_x') ? parseInt(p.get('logo_x')!) : null,
+        logoY: p.has('logo_y') ? parseInt(p.get('logo_y')!) : DEFAULTS.logoY,
+        logoW: p.has('logo_w') ? parseInt(p.get('logo_w')!) : DEFAULTS.logoW,
+        logoH: p.has('logo_h') ? parseInt(p.get('logo_h')!) : DEFAULTS.logoH,
+        logoOpacity: p.has('logo_opacity')
+          ? parseFloat(p.get('logo_opacity')!)
+          : DEFAULTS.logoOpacity,
+        logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
       };
     }
 
     // ── Parse V2 per-badge params (legacy long-form) ───────────────────────
     const ratingKeys: RatingType[] = [
-      'imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta',
-      'tmdb', 'mal', 'anilist', 'age', 'runtime',
+      'imdb',
+      'rt',
+      'rt_popcorn',
+      'letterboxd',
+      'meta',
+      'tmdb',
+      'mal',
+      'anilist',
+      'age',
+      'runtime',
     ];
 
     ratingKeys.forEach((key) => {
-      const x     = p.get(`${key}_x`);
-      const y     = p.get(`${key}_y`);
-      const bg    = p.get(`${key}_bg`);
-      const txt   = p.get(`${key}_txt`);
-      const blur  = p.get(`${key}_blur`);
+      const x = p.get(`${key}_x`);
+      const y = p.get(`${key}_y`);
+      const bg = p.get(`${key}_bg`);
+      const txt = p.get(`${key}_txt`);
+      const blur = p.get(`${key}_blur`);
       const alpha = p.get(`${key}_alpha`);
-      const rad   = p.get(`${key}_rad`);
-      const sh    = p.get(`${key}_sh`);
-      const icon  = p.get(`${key}_icon`);
+      const rad = p.get(`${key}_rad`);
+      const sh = p.get(`${key}_sh`);
+      const icon = p.get(`${key}_icon`);
       const scale = p.get(`${key}_scale`);
-      const bw    = p.get(`${key}_bw`);
-      const bc    = p.get(`${key}_bc`);
-      const nt    = p.get(`${key}_nt`);
-      const nm    = p.get(`${key}_nm`);
-      const of_   = p.get(`${key}_of`) ?? p.get(`${key}_out_of`);
-      const it    = p.get(`${key}_it`) ?? p.get(`${key}_icon_type`);
-      const lp    = p.get(`${key}_lp`) ?? p.get(`${key}_label_pos`);
-      const lt    = p.get(`${key}_lt`) ?? p.get(`${key}_label_text`);
-      const ls    = p.get(`${key}_ls`) ?? p.get(`${key}_label_size`);
-      const lc    = p.get(`${key}_lc`) ?? p.get(`${key}_label_color`);
+      const bw = p.get(`${key}_bw`);
+      const bc = p.get(`${key}_bc`);
+      const nt = p.get(`${key}_nt`);
+      const nm = p.get(`${key}_nm`);
+      const of_ = p.get(`${key}_of`) ?? p.get(`${key}_out_of`);
+      const it = p.get(`${key}_it`) ?? p.get(`${key}_icon_type`);
+      const lp = p.get(`${key}_lp`) ?? p.get(`${key}_label_pos`);
+      const lt = p.get(`${key}_lt`) ?? p.get(`${key}_label_text`);
+      const ls = p.get(`${key}_ls`) ?? p.get(`${key}_label_size`);
+      const lc = p.get(`${key}_lc`) ?? p.get(`${key}_label_color`);
 
-      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt || nm || lp) {
+      if (
+        x ||
+        y ||
+        bg ||
+        txt ||
+        blur ||
+        alpha ||
+        rad ||
+        sh ||
+        icon ||
+        scale ||
+        bw ||
+        nt ||
+        nm ||
+        lp
+      ) {
         items[key] = {
-          ...(x     ? { x: parseInt(x) }                                               : {}),
-          ...(y     ? { y: parseInt(y) }                                               : {}),
-          ...(bg    ? { bg }                                                            : {}),
-          ...(txt   ? { txt: txt.startsWith('#') ? txt : `#${txt}` }                  : {}),
-          ...(blur  ? { blur: parseInt(blur) }                                         : {}),
-          ...(alpha ? { alpha: parseFloat(alpha) }                                     : {}),
-          ...(rad   ? { radius: parseInt(rad) }                                        : {}),
-          ...(sh    ? { shadow: parseInt(sh) }                                         : {}),
-          ...(icon  ? { icon: icon === '1' }                                           : {}),
-          ...(scale ? { scale: parseFloat(scale) }                                     : {}),
-          ...(bw    ? { borderW: parseInt(bw) }                                        : {}),
-          ...(p.has(`${key}_bc`) ? { borderC: bc!.startsWith('#') ? bc! : `#${bc}` }  : {}),
-          ...(nt    ? { showText: nt !== '1' }                                         : {}),
-          ...(nm    ? { normalize: nm === '1' }                                        : {}),
-          ...(of_   ? { outOf: parseInt(of_) }                                         : {}),
-          ...(it    ? { iconType: parseInt(it) }                                       : {}),
-          ...(lp    ? { labelPos: lp as BadgeConfig['labelPos'] }                      : {}),
-          ...(lt    ? { labelText: lt }                                                : {}),
-          ...(ls    ? { labelSize: parseInt(ls) }                                      : {}),
-          ...(lc    ? { labelColor: lc }                                               : {}),
+          ...(x ? { x: parseInt(x) } : {}),
+          ...(y ? { y: parseInt(y) } : {}),
+          ...(bg ? { bg } : {}),
+          ...(txt ? { txt: txt.startsWith('#') ? txt : `#${txt}` } : {}),
+          ...(blur ? { blur: parseInt(blur) } : {}),
+          ...(alpha ? { alpha: parseFloat(alpha) } : {}),
+          ...(rad ? { radius: parseInt(rad) } : {}),
+          ...(sh ? { shadow: parseInt(sh) } : {}),
+          ...(icon ? { icon: icon === '1' } : {}),
+          ...(scale ? { scale: parseFloat(scale) } : {}),
+          ...(bw ? { borderW: parseInt(bw) } : {}),
+          ...(p.has(`${key}_bc`) ? { borderC: bc!.startsWith('#') ? bc! : `#${bc}` } : {}),
+          ...(nt ? { showText: nt !== '1' } : {}),
+          ...(nm ? { normalize: nm === '1' } : {}),
+          ...(of_ ? { outOf: parseInt(of_) } : {}),
+          ...(it ? { iconType: parseInt(it) } : {}),
+          ...(lp ? { labelPos: lp as BadgeConfig['labelPos'] } : {}),
+          ...(lt ? { labelText: lt } : {}),
+          ...(ls ? { labelSize: parseInt(ls) } : {}),
+          ...(lc ? { labelColor: lc } : {}),
         };
       }
     });
@@ -552,24 +643,29 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
     // V2 fallback pool (full names, comma-separated)
     const v2FbRaw = p.get('fb');
     const v2FbPool = v2FbRaw
-      ? v2FbRaw.split(',').map(s => s.trim()).filter(k => ratingKeys.includes(k as RatingType)) as RatingType[]
+      ? (v2FbRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter((k) => ratingKeys.includes(k as RatingType)) as RatingType[])
       : [];
 
     const g_scale = p.get('g_scale');
-    const g_bw    = p.get('g_bw');
-    const g_bc    = p.get('g_bc');
-    const g_bg    = p.get('g_bg');
-    const g_txt   = p.get('g_txt');
-    const g_icon  = p.get('g_icon');
+    const g_bw = p.get('g_bw');
+    const g_bc = p.get('g_bc');
+    const g_bg = p.get('g_bg');
+    const g_txt = p.get('g_txt');
+    const g_icon = p.get('g_icon');
 
     const grayscale = p.get('gs') === '1' || p.get('bw') === '1';
 
     const rawLogoSource = p.get('logo_source');
     const logoSource: LogoSourceType = (['fanart', 'tmdb', 'metahub'] as const).includes(
       rawLogoSource as any
-    ) ? (rawLogoSource as LogoSourceType) : null;
+    )
+      ? (rawLogoSource as LogoSourceType)
+      : null;
 
-    const v2OutOf = p.has('out_of') ? (parseInt(p.get('out_of')!) || undefined) : undefined;
+    const v2OutOf = p.has('out_of') ? parseInt(p.get('out_of')!) || undefined : undefined;
 
     return {
       mediaType,
@@ -578,45 +674,47 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       extension,
       ratings: p.has('r') ? (p.get('r')!.split(',') as RatingType[]) : [],
       fallbackEnabled: v2FbPool.length > 0,
-      fallbackPool:    v2FbPool,
-      source:   (p.get('source') as PosterConfig['source']) || 'tmdb',
-      ptype:    p.get('ptype') || 'auto',
+      fallbackPool: v2FbPool,
+      source: (p.get('source') as PosterConfig['source']) || 'tmdb',
+      ptype: p.get('ptype') || 'auto',
       textless: p.get('textless') === '1',
-      theme:    'glass',
-      size:     'md',
-      shadow:   p.has('sh') ? parseInt(p.get('sh')!) : DEFAULTS.shadow,
-      layout:  (p.get('l')   as PosterConfig['layout'])  || 'custom',
-      preset:  (p.get('pos') as PosterConfig['preset'])  || 'custom',
-      blur:       p.has('blur')    ? parseInt(p.get('blur')!)      : DEFAULTS.blur,
-      alpha:      p.has('alpha')   ? parseFloat(p.get('alpha')!)   : DEFAULTS.alpha,
-      radius:     p.has('rad')     ? parseInt(p.get('rad')!)       : DEFAULTS.radius,
-      posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!)   : DEFAULTS.posterBlur,
+      theme: 'glass',
+      size: 'md',
+      shadow: p.has('sh') ? parseInt(p.get('sh')!) : DEFAULTS.shadow,
+      layout: (p.get('l') as PosterConfig['layout']) || 'custom',
+      preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
+      blur: p.has('blur') ? parseInt(p.get('blur')!) : DEFAULTS.blur,
+      alpha: p.has('alpha') ? parseFloat(p.get('alpha')!) : DEFAULTS.alpha,
+      radius: p.has('rad') ? parseInt(p.get('rad')!) : DEFAULTS.radius,
+      posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!) : DEFAULTS.posterBlur,
       grayscale,
-      scale:      g_scale  ? parseFloat(g_scale)  : DEFAULTS.scale,
-      borderW:    g_bw     ? parseInt(g_bw)        : DEFAULTS.borderW,
-      borderC:    g_bc     ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
-      bg:         g_bg     || undefined,
-      txt:        g_txt    ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
-      icon:       g_icon   ? g_icon === '1' : true,
-      showText:   p.get('nt') !== '1',
-      uiPreset:   (p.get('preset') === 'minimal' ? 'm' : 'b') as 'b' | 'm',
-      normalize:  p.get('normalize') === '1',
-      outOf:      v2OutOf,
-      iconType:   p.has('icon_type') ? parseInt(p.get('icon_type')!) : DEFAULTS.iconType,
-      labelPos:   (p.get('label_pos') || undefined) as PosterConfig['labelPos'],
-      labelText:  p.get('label_text') || undefined,
-      labelSize:  p.has('label_size') ? parseInt(p.get('label_size')!) : undefined,
+      scale: g_scale ? parseFloat(g_scale) : DEFAULTS.scale,
+      borderW: g_bw ? parseInt(g_bw) : DEFAULTS.borderW,
+      borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,
+      bg: g_bg || undefined,
+      txt: g_txt ? (g_txt.startsWith('#') ? g_txt : `#${g_txt}`) : undefined,
+      icon: g_icon ? g_icon === '1' : true,
+      showText: p.get('nt') !== '1',
+      uiPreset: (p.get('preset') === 'minimal' ? 'm' : 'b') as 'b' | 'm',
+      normalize: p.get('normalize') === '1',
+      outOf: v2OutOf,
+      iconType: p.has('icon_type') ? parseInt(p.get('icon_type')!) : DEFAULTS.iconType,
+      labelPos: (p.get('label_pos') || undefined) as PosterConfig['labelPos'],
+      labelText: p.get('label_text') || undefined,
+      labelSize: p.has('label_size') ? parseInt(p.get('label_size')!) : undefined,
       labelColor: p.get('label_color') || undefined,
       keys,
       items,
-      logo:        p.get('logo') === '1',
+      logo: p.get('logo') === '1',
       logoSource,
-      logoX:       p.has('logo_x')       ? parseInt(p.get('logo_x')!)         : null,
-      logoY:       p.has('logo_y')        ? parseInt(p.get('logo_y')!)         : DEFAULTS.logoY,
-      logoW:       p.has('logo_w')        ? parseInt(p.get('logo_w')!)         : DEFAULTS.logoW,
-      logoH:       p.has('logo_h')        ? parseInt(p.get('logo_h')!)         : DEFAULTS.logoH,
-      logoOpacity: p.has('logo_opacity')  ? parseFloat(p.get('logo_opacity')!) : DEFAULTS.logoOpacity,
-      logoShadow:  p.has('logo_sh')       ? parseInt(p.get('logo_sh')!)        : DEFAULTS.logoShadow,
+      logoX: p.has('logo_x') ? parseInt(p.get('logo_x')!) : null,
+      logoY: p.has('logo_y') ? parseInt(p.get('logo_y')!) : DEFAULTS.logoY,
+      logoW: p.has('logo_w') ? parseInt(p.get('logo_w')!) : DEFAULTS.logoW,
+      logoH: p.has('logo_h') ? parseInt(p.get('logo_h')!) : DEFAULTS.logoH,
+      logoOpacity: p.has('logo_opacity')
+        ? parseFloat(p.get('logo_opacity')!)
+        : DEFAULTS.logoOpacity,
+      logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
     };
   } catch (e) {
     console.error('Failed to parse URL', e);

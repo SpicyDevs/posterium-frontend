@@ -360,5 +360,4 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       description: 'Browse ready-made poster examples and open them in the builder.',
     },
   },
-
 };

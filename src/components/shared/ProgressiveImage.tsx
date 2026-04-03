@@ -67,7 +67,13 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
     return (
       <div style={{ position: 'relative', overflow: 'hidden', ...containerStyle }}>
         {!loaded && !errored && src && (
-          <div style={skeletonStyle ? { ...DEFAULT_SKELETON_STYLE, ...skeletonStyle } : DEFAULT_SKELETON_STYLE} />
+          <div
+            style={
+              skeletonStyle
+                ? { ...DEFAULT_SKELETON_STYLE, ...skeletonStyle }
+                : DEFAULT_SKELETON_STYLE
+            }
+          />
         )}
         {errored && fallback}
         {src && (

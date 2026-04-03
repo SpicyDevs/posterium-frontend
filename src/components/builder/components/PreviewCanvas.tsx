@@ -35,18 +35,18 @@ interface Props {
   onResetView?: () => void;
 }
 
-const PreviewCanvas: React.FC<Props> = ({ 
-  config, 
-  setConfig, 
-  selectedIds, 
-  onSelect, 
+const PreviewCanvas: React.FC<Props> = ({
+  config,
+  setConfig,
+  selectedIds,
+  onSelect,
   onContextMenu,
   isFullscreen = false,
   rightSidebarWidth = 0,
   toggleFullscreen,
   onZoomIn,
   onZoomOut,
-  onResetView
+  onResetView,
 }) => {
   const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -207,7 +207,7 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const cleanPosterUrl = useMemo(() => {
-    const id   = config.imdbId || config.tmdbId;
+    const id = config.imdbId || config.tmdbId;
     const type = config.imdbId ? 'poster' : config.mediaType;
     const base = `${DEFAULT_API_BASE}/${type}/${id}.svg`;
     const params = new URLSearchParams();
@@ -216,7 +216,14 @@ const PreviewCanvas: React.FC<Props> = ({
     if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
     params.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
     return `${base}?${params.toString()}`;
-  }, [config.tmdbId, config.imdbId, config.source, config.mediaType, config.textless, config.ptype]);
+  }, [
+    config.tmdbId,
+    config.imdbId,
+    config.source,
+    config.mediaType,
+    config.textless,
+    config.ptype,
+  ]);
 
   const posterCssFilter = useMemo(() => {
     const parts: string[] = [];
@@ -239,13 +246,12 @@ const PreviewCanvas: React.FC<Props> = ({
     setImageError(true);
   };
 
- const logoPreviewUrl = useMemo((): string | null => {
+  const logoPreviewUrl = useMemo((): string | null => {
     if (!config.logo) return null;
-    const id   = config.imdbId || config.tmdbId;
+    const id = config.imdbId || config.tmdbId;
     if (!id) return null;
-    const type = config.mediaType === 'anime' ? 'anime'
-               : config.mediaType === 'tv'    ? 'tv'
-               : 'movie';
+    const type =
+      config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
     const url = new URL(`${DEFAULT_API_BASE}/${type}/${id}/logo`);
     if (config.logoSource) url.searchParams.set('source', config.logoSource);
     url.searchParams.set('_t', config.logoSource || 'auto');
@@ -261,12 +267,8 @@ const PreviewCanvas: React.FC<Props> = ({
       const currentY = prev.logoY;
       return {
         ...prev,
-        logoX: Math.round(
-          Math.max(1 - prev.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1))
-        ),
-        logoY: Math.round(
-          Math.max(1 - prev.logoH, Math.min(currentY + dy, CANVAS_HEIGHT - 1))
-        ),
+        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1))),
+        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(currentY + dy, CANVAS_HEIGHT - 1))),
       };
     });
   };
@@ -334,14 +336,8 @@ const PreviewCanvas: React.FC<Props> = ({
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         // Constrain so at least 1px of the badge remains inside the poster
-        newItems[targetId]!.x = Math.max(
-          1 - selWidth,
-          Math.min(startX + dx, CANVAS_WIDTH - 1)
-        );
-        newItems[targetId]!.y = Math.max(
-          1 - selHeight,
-          Math.min(startY + dy, CANVAS_HEIGHT - 1)
-        );
+        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(startX + dx, CANVAS_WIDTH - 1));
+        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(startY + dy, CANVAS_HEIGHT - 1));
       };
 
       if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
@@ -480,21 +476,23 @@ const PreviewCanvas: React.FC<Props> = ({
       {toggleFullscreen && (
         <div
           className={clsx(
-            "fixed z-40 flex rounded-xl select-none transition-all",
-            isFullscreen 
-              ? "bottom-5 right-5 flex-row items-center gap-1 p-1.5" 
-              : "flex-col items-center gap-1 p-1.5"
+            'fixed z-40 flex rounded-xl select-none transition-all',
+            isFullscreen
+              ? 'bottom-5 right-5 flex-row items-center gap-1 p-1.5'
+              : 'flex-col items-center gap-1 p-1.5'
           )}
           style={{
             background: 'rgba(14,13,11,0.92)',
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(196,124,46,0.18)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            ...(!isFullscreen ? {
-               right: rightSidebarWidth + 20,
-               top: '50%',
-               transform: 'translateY(-50%)'
-            } : {})
+            ...(!isFullscreen
+              ? {
+                  right: rightSidebarWidth + 20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                }
+              : {}),
           }}
         >
           {[
@@ -507,7 +505,12 @@ const PreviewCanvas: React.FC<Props> = ({
               onClick={action}
               title={label}
               className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-              style={{ color: 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+              style={{
+                color: 'var(--film-text-dim)',
+                cursor: 'pointer',
+                background: 'transparent',
+                border: 'none',
+              }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
                 (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
@@ -520,23 +523,32 @@ const PreviewCanvas: React.FC<Props> = ({
               {icon}
             </button>
           ))}
-          <div style={{ 
-            width: isFullscreen ? 1 : 20, 
-            height: isFullscreen ? 20 : 1, 
-            background: 'rgba(255,255,255,0.08)', 
-            margin: isFullscreen ? '0 2px' : '2px 0' 
-          }} />
+          <div
+            style={{
+              width: isFullscreen ? 1 : 20,
+              height: isFullscreen ? 20 : 1,
+              background: 'rgba(255,255,255,0.08)',
+              margin: isFullscreen ? '0 2px' : '2px 0',
+            }}
+          />
           <button
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-            style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
+            style={{
+              color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: 'none',
+            }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
               (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
+              (e.currentTarget as HTMLElement).style.color = isFullscreen
+                ? 'rgba(196,124,46,0.7)'
+                : 'var(--film-text-dim)';
               (e.currentTarget as HTMLElement).style.background = 'transparent';
             }}
           >

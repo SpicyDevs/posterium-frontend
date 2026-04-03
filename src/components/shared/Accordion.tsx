@@ -37,10 +37,19 @@ const Accordion = memo<AccordionProps>(({ title, children, defaultOpen = false }
           textAlign: 'left',
         }}
       >
-        <span className="syne-font" style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em' }}>
+        <span
+          className="syne-font"
+          style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em' }}
+        >
           {title}
         </span>
-        <ChevronDown size={15} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+        <ChevronDown
+          size={15}
+          style={{
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        />
       </button>
 
       {open ? (

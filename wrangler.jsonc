@@ -2,17 +2,17 @@
   "name": "posterium-frontend",
   // Update compatibility date to the current date to get the latest V8 features
   "compatibility_date": "2026-04-02",
-  
+
   // Enable enhanced observability/logging in the Cloudflare Dashboard
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
 
   "assets": {
     "directory": "./dist/",
     "not_found_handling": "404-page",
     // Normalize URLs for better SEO and to prevent duplicate content
-    "html_handling": "drop-trailing-slash"
+    "html_handling": "drop-trailing-slash",
   },
 
   "env": {
@@ -21,17 +21,17 @@
       "routes": [
         {
           "pattern": "posters.spicydevs.xyz",
-          "custom_domain": true
+          "custom_domain": true,
         },
         {
           "pattern": "poster.spicydevs.xyz",
-          "custom_domain": true
+          "custom_domain": true,
         },
         {
           "pattern": "posterium.spicydevs.xyz",
-          "custom_domain": true
-        }
-      ]
-    }
-  }
+          "custom_domain": true,
+        },
+      ],
+    },
+  },
 }

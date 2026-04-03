@@ -215,14 +215,11 @@ const CyclingPoster = memo(() => {
     [goTo, restartInterval]
   );
 
-  const onLoad = useCallback(
-    (i: number) => {
-      if (loadedRef.current[i]) return;
-      loadedRef.current = { ...loadedRef.current, [i]: true };
-      setLoaded((p) => ({ ...p, [i]: true }));
-    },
-    []
-  );
+  const onLoad = useCallback((i: number) => {
+    if (loadedRef.current[i]) return;
+    loadedRef.current = { ...loadedRef.current, [i]: true };
+    setLoaded((p) => ({ ...p, [i]: true }));
+  }, []);
 
   const onError = useCallback((i: number) => {
     if (failedRef.current[i]) return;
@@ -344,17 +341,17 @@ const CyclingPoster = memo(() => {
         </div>
       </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={handlePrev}
-            aria-label="Previous poster"
-            className="carousel-icon-btn"
-            style={{
-              justifyContent: 'center',
-            }}
-          >
-            <ChevronLeft size={12} />
-          </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button
+          onClick={handlePrev}
+          aria-label="Previous poster"
+          className="carousel-icon-btn"
+          style={{
+            justifyContent: 'center',
+          }}
+        >
+          <ChevronLeft size={12} />
+        </button>
 
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {HERO_POSTERS.map((_, i) => (

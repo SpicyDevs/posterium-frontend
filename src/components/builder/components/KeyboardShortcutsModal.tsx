@@ -93,17 +93,16 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
-
   // FIX: Push state to history to intercept mobile back button
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: 'keyboard-shortcuts' }, '');
-      
+
       const handlePopState = (e: PopStateEvent) => {
         e.preventDefault();
         onClose();
       };
-      
+
       window.addEventListener('popstate', handlePopState);
       return () => {
         window.removeEventListener('popstate', handlePopState);
@@ -250,7 +249,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                           <span
                             className="text-[11px]"
                             style={{
-                               color: 'rgba(240,230,204,0.82)',
+                              color: 'rgba(240,230,204,0.82)',
                               fontFamily: 'DM Sans, sans-serif',
                             }}
                           >
@@ -260,7 +259,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                             {keys.map((k, i) => (
                               <React.Fragment key={k}>
                                 {i > 0 && (
-                                   <span style={{ fontSize: 9, color: 'rgba(122,117,110,0.55)' }}>
+                                  <span style={{ fontSize: 9, color: 'rgba(122,117,110,0.55)' }}>
                                     +
                                   </span>
                                 )}
@@ -287,7 +286,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   style={{
                     fontSize: 9,
                     fontFamily: 'JetBrains Mono, monospace',
-                     color: 'rgba(140,130,112,0.62)',
+                    color: 'rgba(140,130,112,0.62)',
                     letterSpacing: '0.1em',
                   }}
                 >
@@ -297,7 +296,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   style={{
                     fontSize: 9,
                     fontFamily: 'JetBrains Mono, monospace',
-                     color: 'rgba(140,130,112,0.5)',
+                    color: 'rgba(140,130,112,0.5)',
                     letterSpacing: '0.08em',
                   }}
                 >

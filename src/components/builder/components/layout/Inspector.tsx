@@ -40,8 +40,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             )}
             style={{
               background: currentMode === 'global' ? 'var(--film-mid)' : 'transparent',
-              color:
-                currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-dim)',
+              color: currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-dim)',
               boxShadow: currentMode === 'global' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
             }}
           >
@@ -57,8 +56,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             )}
             style={{
               background: currentMode === 'selection' ? 'var(--film-mid)' : 'transparent',
-              color:
-                currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-dim)',
+              color: currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-dim)',
               boxShadow: currentMode === 'selection' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
             }}
           >

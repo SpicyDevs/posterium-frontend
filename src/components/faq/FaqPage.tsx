@@ -79,7 +79,16 @@ const FaqPage = memo(() => {
             padding: 14,
           }}
         >
-          <div className="syne-font" style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-dim)', marginBottom: 10 }}>
+          <div
+            className="syne-font"
+            style={{
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--film-text-dim)',
+              marginBottom: 10,
+            }}
+          >
             Table of Contents
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -107,12 +116,31 @@ const FaqPage = memo(() => {
         </aside>
 
         <section style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
             <div>
-              <h1 className="poster-font" style={{ margin: 0, fontSize: 'clamp(38px,7vw,64px)', letterSpacing: '0.08em', lineHeight: 0.9 }}>
+              <h1
+                className="poster-font"
+                style={{
+                  margin: 0,
+                  fontSize: 'clamp(38px,7vw,64px)',
+                  letterSpacing: '0.08em',
+                  lineHeight: 0.9,
+                }}
+              >
                 FAQ
               </h1>
-              <p className="body-font" style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}>
+              <p
+                className="body-font"
+                style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}
+              >
                 Find answers for API usage, builder workflows, and integrations.
               </p>
             </div>
@@ -120,13 +148,30 @@ const FaqPage = memo(() => {
           </div>
 
           {sections.map(([category, items]) => (
-            <section key={category} id={category.toLowerCase().replace(/\s+/g, '-')} style={{ scrollMarginTop: 88 }}>
-              <h2 className="syne-font" style={{ margin: '0 0 10px', fontSize: 14, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-pale)' }}>
+            <section
+              key={category}
+              id={category.toLowerCase().replace(/\s+/g, '-')}
+              style={{ scrollMarginTop: 88 }}
+            >
+              <h2
+                className="syne-font"
+                style={{
+                  margin: '0 0 10px',
+                  fontSize: 14,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--film-pale)',
+                }}
+              >
                 {category}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {items.map((item, index) => (
-                  <Accordion key={item.id} title={item.question} defaultOpen={index === 0 && !search.trim()}>
+                  <Accordion
+                    key={item.id}
+                    title={item.question}
+                    defaultOpen={index === 0 && !search.trim()}
+                  >
                     <div className="body-font faq-markdown">{renderBasicMarkdown(item.answer)}</div>
                   </Accordion>
                 ))}

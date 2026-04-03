@@ -76,18 +76,16 @@ const MainNavbar = memo<MainNavbarProps>(
       const isEditableTarget = (target: EventTarget | null): boolean => {
         if (!(target instanceof HTMLElement)) return false;
         const tag = target.tagName;
-        return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        return (
+          target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+        );
       };
 
       const handleKeyDown = (event: KeyboardEvent) => {
         if (isEditableTarget(event.target)) return;
 
         const isSlash =
-          event.key === '/' &&
-          !event.ctrlKey &&
-          !event.metaKey &&
-          !event.altKey &&
-          !event.shiftKey;
+          event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
         const isFind = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f';
 
         if (!isSlash && !isFind) return;
@@ -118,9 +116,7 @@ const MainNavbar = memo<MainNavbarProps>(
       background: scrolled || !revealOnScroll ? 'rgba(7,7,6,0.97)' : 'transparent',
       backdropFilter: scrolled || !revealOnScroll ? 'blur(24px) saturate(1.3)' : 'none',
       borderBottom:
-        scrolled || !revealOnScroll
-          ? '1px solid rgba(196,124,46,0.1)'
-          : '1px solid transparent',
+        scrolled || !revealOnScroll ? '1px solid rgba(196,124,46,0.1)' : '1px solid transparent',
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(-100%)',
       pointerEvents: visible ? 'all' : 'none',
@@ -178,7 +174,10 @@ const MainNavbar = memo<MainNavbarProps>(
             ))}
           </div>
 
-          <div className="main-nav-search" style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+          <div
+            className="main-nav-search"
+            style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}
+          >
             <div
               style={{
                 width: 'min(440px,100%)',
@@ -215,7 +214,10 @@ const MainNavbar = memo<MainNavbarProps>(
             </div>
           </div>
 
-          <div className="main-nav-right" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div
+            className="main-nav-right"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+          >
             <a
               href="https://buymeacoffee.com/dikhit"
               target="_blank"

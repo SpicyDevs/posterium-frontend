@@ -61,8 +61,12 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad }) => {
                     fontSize: 11,
                   }}
                   autoFocus
-                  onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-                  onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                  onFocus={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                  }}
+                  onBlur={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && val.trim()) {
                       onLoad(val.trim());
@@ -81,7 +85,13 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad }) => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => { if (val.trim()) { onLoad(val.trim()); setVal(''); onClose(); } }}
+                  onClick={() => {
+                    if (val.trim()) {
+                      onLoad(val.trim());
+                      setVal('');
+                      onClose();
+                    }
+                  }}
                   className="px-4 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] syne-font uppercase tracking-wide"
                   style={{ background: 'var(--film-amber)', color: '#070706' }}
                 >

@@ -65,12 +65,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: 'command-palette' }, '');
-      
+
       const handlePopState = (e: PopStateEvent) => {
         e.preventDefault();
         onClose();
       };
-      
+
       window.addEventListener('popstate', handlePopState);
       return () => {
         window.removeEventListener('popstate', handlePopState);
@@ -182,11 +182,14 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     setActiveIdx(0);
   }, [query]);
 
-const handleExecute = useCallback((cmd: PaletteCommand) => {
-    recordRecent(cmd.id);
-    cmd.action();
-    onClose();
-  }, [recordRecent, onClose]);
+  const handleExecute = useCallback(
+    (cmd: PaletteCommand) => {
+      recordRecent(cmd.id);
+      cmd.action();
+      onClose();
+    },
+    [recordRecent, onClose]
+  );
 
   // Group by category when no query
   const groups = React.useMemo(() => {
@@ -273,14 +276,14 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                 fontSize: 13,
-                 color: 'var(--film-cream)',
-                 fontFamily: 'Syne, sans-serif',
-                 fontWeight: 500,
-                 '::placeholder': { color: 'rgba(140,130,112,0.62)' },
-               } as React.CSSProperties
-             }
-           />
+                fontSize: 13,
+                color: 'var(--film-cream)',
+                fontFamily: 'Syne, sans-serif',
+                fontWeight: 500,
+                '::placeholder': { color: 'rgba(140,130,112,0.62)' },
+              } as React.CSSProperties
+            }
+          />
           <button
             onClick={onClose}
             style={{
@@ -358,7 +361,8 @@ const handleExecute = useCallback((cmd: PaletteCommand) => {
                         fontSize: 9,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
-                        color: cat === 'Recent' ? 'rgba(196,124,46,0.72)' : 'rgba(140,130,112,0.62)',
+                        color:
+                          cat === 'Recent' ? 'rgba(196,124,46,0.72)' : 'rgba(140,130,112,0.62)',
                         fontFamily: 'Syne, sans-serif',
                         textTransform: 'uppercase',
                       }}

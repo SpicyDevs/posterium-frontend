@@ -7,19 +7,38 @@ import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
 import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 
 const FEATURE_TUPLES = [
-  ['Drag-Drop Editor', '⌖', '155', 'movie', 'imdb,rt,meta,tmdb', 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244'],
+  [
+    'Drag-Drop Editor',
+    '⌖',
+    '155',
+    'movie',
+    'imdb,rt,meta,tmdb',
+    'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244',
+  ],
   ['Instant API URL', '⚡', '27205', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
   ['Multiple Sources', '⊞', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
   ['Live Ratings', '◉', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
-  ['Movies, TV & Anime', '▣', '238', 'movie', 'imdb,meta', 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88'],
+  [
+    'Movies, TV & Anime',
+    '▣',
+    '238',
+    'movie',
+    'imdb,meta',
+    'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88',
+  ],
   ['Any Export Format', '◫', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
   ['Textless Posters', '◻', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
   ['Plex & Jellyfin Ready', '▤', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
 ] as const;
-const ICON_MAP: Record<string, string> = Object.fromEntries(FEATURE_TUPLES.map(([title, icon]) => [title, icon]));
+const ICON_MAP: Record<string, string> = Object.fromEntries(
+  FEATURE_TUPLES.map(([title, icon]) => [title, icon])
+);
 
 const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
-  FEATURE_TUPLES.map(([title, , id, type, r, pos]) => [title, `${API}/${type}/${id}.svg?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`])
+  FEATURE_TUPLES.map(([title, , id, type, r, pos]) => [
+    title,
+    `${API}/${type}/${id}.svg?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`,
+  ])
 );
 
 const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
@@ -62,11 +81,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
         {FEATURES.map((feat, i) => {
           const isActive = active === i;
           return (
-                <button
-                  key={feat.title}
-                  onClick={() => select(i)}
-                  className={isActive ? undefined : 'hover-bg-subtle'}
-                  style={{
+            <button
+              key={feat.title}
+              onClick={() => select(i)}
+              className={isActive ? undefined : 'hover-bg-subtle'}
+              style={{
                 width: '100%',
                 border: 'none',
                 borderBottom: '1px solid rgba(255,255,255,0.028)',
@@ -81,11 +100,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                 transitionProperty: 'background,border-color,opacity,transform',
                 transitionDuration: `0.18s,0.18s,0.5s,0.5s`,
                 transitionDelay: `0s,0s,${i * 0.04}s,${i * 0.04}s`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                  }}
-                >
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
               <span
                 style={{
                   fontSize: 14,

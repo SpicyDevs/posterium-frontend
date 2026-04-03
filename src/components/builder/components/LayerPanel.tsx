@@ -108,7 +108,9 @@ const SelectBox = memo(
               {({ selected }) => (
                 <>
                   <span className="flex-1 truncate">{opt.label}</span>
-                  {selected && <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />}
+                  {selected && (
+                    <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                  )}
                 </>
               )}
             </ListboxOption>
@@ -133,9 +135,7 @@ const SliderRow: React.FC<{
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
   const [localValue, setLocalValue] = useState(value);
-  const [inputText, setInputText] = useState(() =>
-    formatValue ? formatValue(value) : `${value}`
-  );
+  const [inputText, setInputText] = useState(() => (formatValue ? formatValue(value) : `${value}`));
   const lastUpdate = useRef(Date.now());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -148,37 +148,43 @@ const SliderRow: React.FC<{
     }
   }, [value, formatValue]);
 
-  const commitInput = useCallback((text: string) => {
-    const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
-    const n = parseFloat(raw);
-    if (!isNaN(n)) {
-      const clamped = Math.max(min, Math.min(max, n));
-      setLocalValue(clamped);
-      setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
-      onChange(clamped);
-    } else {
-      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
-    }
-  }, [min, max, onChange, unit, formatValue, localValue]);
+  const commitInput = useCallback(
+    (text: string) => {
+      const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
+      const n = parseFloat(raw);
+      if (!isNaN(n)) {
+        const clamped = Math.max(min, Math.min(max, n));
+        setLocalValue(clamped);
+        setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
+        onChange(clamped);
+      } else {
+        setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
+      }
+    },
+    [min, max, onChange, unit, formatValue, localValue]
+  );
 
-  const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setLocalValue(val);
-    if (!isFocused.current) {
-      setInputText(formatValue ? formatValue(val) : `${val}`);
-    }
-    const now = Date.now();
-    if (now - lastUpdate.current > 33) {
-      onChange(val);
-      lastUpdate.current = now;
-    } else {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
+  const handleRangeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = parseFloat(e.target.value);
+      setLocalValue(val);
+      if (!isFocused.current) {
+        setInputText(formatValue ? formatValue(val) : `${val}`);
+      }
+      const now = Date.now();
+      if (now - lastUpdate.current > 33) {
         onChange(val);
-        lastUpdate.current = Date.now();
-      }, 33);
-    }
-  }, [onChange, formatValue]);
+        lastUpdate.current = now;
+      } else {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          onChange(val);
+          lastUpdate.current = Date.now();
+        }, 33);
+      }
+    },
+    [onChange, formatValue]
+  );
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -217,8 +223,13 @@ const SliderRow: React.FC<{
           inputMode="decimal"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          onFocus={() => { isFocused.current = true; }}
-          onBlur={() => { isFocused.current = false; commitInput(inputText); }}
+          onFocus={() => {
+            isFocused.current = true;
+          }}
+          onBlur={() => {
+            isFocused.current = false;
+            commitInput(inputText);
+          }}
           onKeyDown={handleInputKeyDown}
           className="mono-font tabular-nums focus:outline-none shrink-0"
           style={{
@@ -233,8 +244,13 @@ const SliderRow: React.FC<{
             textAlign: 'center',
             transition: 'border-color 0.15s',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-          onMouseLeave={(e) => { if (!isFocused.current) (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            if (!isFocused.current)
+              (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
+          }}
         />
         <input
           type="range"
@@ -259,7 +275,12 @@ const ToggleRow: React.FC<{
   small?: boolean;
   disabled?: boolean;
 }> = ({ label, sub, checked, onChange, small, disabled }) => (
-  <div className={clsx("flex items-center justify-between gap-3", disabled && "opacity-60 pointer-events-none")}>
+  <div
+    className={clsx(
+      'flex items-center justify-between gap-3',
+      disabled && 'opacity-60 pointer-events-none'
+    )}
+  >
     <div className="min-w-0">
       <p
         className="body-font font-medium"
@@ -271,10 +292,7 @@ const ToggleRow: React.FC<{
         {label}
       </p>
       {sub && (
-        <p
-          className="body-font mt-0.5"
-          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-        >
+        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
           {sub}
         </p>
       )}
@@ -317,9 +335,7 @@ const Section: React.FC<{
           style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           {icon && (
-            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>
-              {icon}
-            </span>
+            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>{icon}</span>
           )}
           {title}
         </span>
@@ -406,10 +422,7 @@ const LogoPanel: React.FC<{
             </button>
           ))}
         </div>
-        <p
-          className="body-font"
-          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-        >
+        <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
           Falls back automatically if source has no logo
         </p>
       </div>
@@ -488,7 +501,12 @@ const ApiKeysPanel: React.FC<{
 
       {[
         { key: 'tmdb' as const, label: 'TMDB Key', show: showTmdb, setShow: setShowTmdb },
-        { key: 'fanart' as const, label: 'Fanart.tv Key', show: showFanart, setShow: setShowFanart },
+        {
+          key: 'fanart' as const,
+          label: 'Fanart.tv Key',
+          show: showFanart,
+          setShow: setShowFanart,
+        },
       ].map(({ key, label, show, setShow }) => (
         <div key={key} className="space-y-1.5">
           <p
@@ -505,22 +523,32 @@ const ApiKeysPanel: React.FC<{
               placeholder={`Override default ${key === 'tmdb' ? 'TMDB' : 'Fanart.tv'} key`}
               style={inputStyle}
               className="focus:outline-none"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+              }}
               onMouseLeave={(e) => {
                 if (document.activeElement !== e.currentTarget) {
                   (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
                 }
               }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+              }}
             />
             <button
               type="button"
               onClick={() => setShow((v) => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
               style={{ color: 'var(--film-text-dim)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+              }}
             >
               <Eye size={12} />
             </button>
@@ -556,7 +584,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   useEffect(() => {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
-      if (!searchQuery || searchQuery.length < 2) { setResults([]); return; }
+      if (!searchQuery || searchQuery.length < 2) {
+        setResults([]);
+        return;
+      }
       setIsSearching(true);
       try {
         const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`, {
@@ -575,7 +606,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setIsSearching(false);
       }
     }, 400);
-    return () => { clearTimeout(t); ctrl.abort(); };
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
   }, [searchQuery]);
 
   useEffect(() => {
@@ -602,7 +636,18 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
         if (data.meta?.year) merged.year = String(data.meta.year);
-        const VALID_RATING_KEYS = ['imdb','rt','rt_popcorn','letterboxd','meta','tmdb','mal','anilist','age','runtime'];
+        const VALID_RATING_KEYS = [
+          'imdb',
+          'rt',
+          'rt_popcorn',
+          'letterboxd',
+          'meta',
+          'tmdb',
+          'mal',
+          'anilist',
+          'age',
+          'runtime',
+        ];
         if (data.ratings) {
           Object.entries(data.ratings).forEach(([k, v]) => {
             if (VALID_RATING_KEYS.includes(k)) merged[k] = String(v);
@@ -705,7 +750,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     .filter((b): b is { id: RatingType; label: string } => !!b);
 
   const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
-    const ia = inactiveOrder.indexOf(a.id), ib = inactiveOrder.indexOf(b.id);
+    const ia = inactiveOrder.indexOf(a.id),
+      ib = inactiveOrder.indexOf(b.id);
     if (ia === -1 && ib === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
     if (ia === -1) return 1;
     if (ib === -1) return -1;
@@ -749,7 +795,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     { id: 'metahub', label: 'Metahub' },
     { id: 'imdb', label: 'IMDb' },
     ...(config.mediaType === 'anime'
-      ? [{ id: 'mal', label: 'MyAnimeList' }, { id: 'anilist', label: 'AniList' }]
+      ? [
+          { id: 'mal', label: 'MyAnimeList' },
+          { id: 'anilist', label: 'AniList' },
+        ]
       : []),
   ];
 
@@ -760,7 +809,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     { id: 'top3', label: 'Top 3' },
     ...(config.source === 'tmdb' ? [{ id: 'best', label: 'Best (Bayesian)' }] : []),
     ...(config.source === 'fanart'
-      ? [{ id: 'latest', label: 'Latest' }, { id: 'oldest', label: 'Oldest' }]
+      ? [
+          { id: 'latest', label: 'Latest' },
+          { id: 'oldest', label: 'Oldest' },
+        ]
       : []),
     { id: 'random', label: 'Random' },
   ];
@@ -775,9 +827,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     const ratingVal = fetchedData[badge.id];
     const iconKey = getIconKey(badge.id);
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
-    const iconColor = isActive
-      ? (iconData?.color ?? 'var(--film-text-dim)')
-      : 'rgba(74,74,82,0.6)';
+    const iconColor = isActive ? (iconData?.color ?? 'var(--film-text-dim)') : 'rgba(74,74,82,0.6)';
     const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-50';
 
     const handleCheckboxClick = (e: React.MouseEvent) => {
@@ -802,11 +852,15 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           isSel
             ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
             : isActive
-            ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
-            : inactiveOpacity,
+              ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
+              : inactiveOpacity,
           isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
         )}
-        style={isDraggingItem ? { background: 'var(--film-mid)', ...(provided?.draggableProps.style ?? {}) } : (provided?.draggableProps.style ?? {})}
+        style={
+          isDraggingItem
+            ? { background: 'var(--film-mid)', ...(provided?.draggableProps.style ?? {}) }
+            : (provided?.draggableProps.style ?? {})
+        }
       >
         {/* Drag handle */}
         {isActive || fallbackEnabled ? (
@@ -815,8 +869,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             onClick={(e) => e.stopPropagation()}
             className="p-0.5 outline-none transition-colors shrink-0"
             style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
           >
             <GripVertical size={13} />
           </div>
@@ -846,10 +904,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           }}
         >
           {badge.id === 'age' ? (
-            <span
-              className="mono-font"
-              style={{ fontSize: 8, fontWeight: 700, color: iconColor }}
-            >
+            <span className="mono-font" style={{ fontSize: 8, fontWeight: 700, color: iconColor }}>
               PG
             </span>
           ) : iconData ? (
@@ -879,17 +934,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               color: isSel
                 ? 'var(--film-cream)'
                 : isActive
-                ? 'var(--film-text-label)'
-                : 'var(--film-text-dim)',
+                  ? 'var(--film-text-label)'
+                  : 'var(--film-text-dim)',
             }}
           >
             {badge.label}
           </span>
           {isActive && ratingVal && (
-            <span
-              className="mono-font"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            >
+            <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
               {ratingVal}
             </span>
           )}
@@ -938,7 +990,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               onClick={() => setActiveTab(tab)}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
-                localMode !== tab && 'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
+                localMode !== tab &&
+                  'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
               )}
               style={{
                 background: localMode === tab ? 'var(--film-mid)' : 'transparent',
@@ -1001,14 +1054,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                           config.mediaType === 'tv'
                             ? 'rgba(59,130,246,0.12)'
                             : config.mediaType === 'anime'
-                            ? 'rgba(168,85,247,0.12)'
-                            : 'rgba(196,124,46,0.12)',
+                              ? 'rgba(168,85,247,0.12)'
+                              : 'rgba(196,124,46,0.12)',
                         color:
                           config.mediaType === 'tv'
                             ? '#60a5fa'
                             : config.mediaType === 'anime'
-                            ? '#c084fc'
-                            : 'var(--film-amber)',
+                              ? '#c084fc'
+                              : 'var(--film-amber)',
                       }}
                     >
                       <MediaIcon size={9} />
@@ -1031,8 +1084,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                       config.mediaType === 'tv'
                         ? 'rgba(59,130,246,0.08)'
                         : config.mediaType === 'anime'
-                        ? 'rgba(168,85,247,0.08)'
-                        : 'rgba(196,124,46,0.08)',
+                          ? 'rgba(168,85,247,0.08)'
+                          : 'rgba(196,124,46,0.08)',
                   }}
                 >
                   <MediaIcon
@@ -1042,8 +1095,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         config.mediaType === 'tv'
                           ? 'rgba(96,165,250,0.6)'
                           : config.mediaType === 'anime'
-                          ? 'rgba(192,132,252,0.6)'
-                          : 'rgba(196,124,46,0.6)',
+                            ? 'rgba(192,132,252,0.6)'
+                            : 'rgba(196,124,46,0.6)',
                     }}
                   />
                 </div>
@@ -1067,7 +1120,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     background: 'rgba(255,255,255,0.04)',
                     border: '1px solid rgba(255,255,255,0.1)',
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                  }}
                   onMouseLeave={(e) => {
                     if (!e.currentTarget.contains(document.activeElement)) {
                       (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
@@ -1082,7 +1137,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 >
                   <div className="pl-3" style={{ color: 'var(--film-text-dim)', flexShrink: 0 }}>
                     {isSearching ? (
-                      <Loader2 size={12} className="animate-spin" style={{ color: 'var(--film-amber)' }} />
+                      <Loader2
+                        size={12}
+                        className="animate-spin"
+                        style={{ color: 'var(--film-amber)' }}
+                      />
                     ) : (
                       <Search size={12} />
                     )}
@@ -1147,8 +1206,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                                   item.media_type === 'tv'
                                     ? 'rgba(59,130,246,0.12)'
                                     : 'rgba(196,124,46,0.12)',
-                                color:
-                                  item.media_type === 'tv' ? '#60a5fa' : 'var(--film-amber)',
+                                color: item.media_type === 'tv' ? '#60a5fa' : 'var(--film-amber)',
                               }}
                             >
                               {item.media_type}
@@ -1195,9 +1253,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onChange={(e) => {
                   const val = e.target.value.trim();
                   if (val.startsWith('tt')) {
-                     setConfig(prev => ({ ...prev, imdbId: val }));
+                    setConfig((prev) => ({ ...prev, imdbId: val }));
                   } else {
-                     setConfig(prev => ({ ...prev, tmdbId: val, imdbId: undefined }));
+                    setConfig((prev) => ({ ...prev, tmdbId: val, imdbId: undefined }));
                   }
                 }}
                 className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
@@ -1207,14 +1265,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   fontSize: 11,
                   color: 'var(--film-pale)',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                }}
                 onMouseLeave={(e) => {
                   if (document.activeElement !== e.currentTarget) {
                     (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
                   }
                 }}
-                onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)'; }}
-                onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                onFocus={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                }}
+                onBlur={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                }}
               />
             </div>
           </div>
@@ -1275,10 +1339,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   >
                     Logo Overlay
                   </p>
-                  <p
-                    className="body-font"
-                    style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-                  >
+                  <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                     {config.logo
                       ? `${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`
                       : 'Transparent title art overlay'}
@@ -1335,8 +1396,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onClick={handleToggleAll}
                 className="flex items-center gap-1.5 transition-colors body-font"
                 style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                }}
               >
                 {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
                 {allVisible ? 'Hide all' : 'Show all'}
@@ -1346,8 +1411,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onClick={() => handleSelectAll(!allVisibleSelected)}
                 className="flex items-center gap-1.5 transition-colors body-font"
                 style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                }}
               >
                 <div
                   className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
@@ -1379,7 +1448,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </Droppable>
             ) : (
               <div className="flex flex-col items-center py-10 gap-2">
-                <EyeOff size={22} strokeWidth={1.5} style={{ color: 'var(--film-text-dim)', opacity: 0.7 }} />
+                <EyeOff
+                  size={22}
+                  strokeWidth={1.5}
+                  style={{ color: 'var(--film-text-dim)', opacity: 0.7 }}
+                />
                 <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
                   No active badges
                 </p>
@@ -1451,9 +1524,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 ) : (
                   <div className="space-y-0.5">
                     {inactiveBadges.map((badge) => (
-                      <React.Fragment key={badge.id}>
-                        {renderBadgeRow(badge, false)}
-                      </React.Fragment>
+                      <React.Fragment key={badge.id}>{renderBadgeRow(badge, false)}</React.Fragment>
                     ))}
                   </div>
                 )}

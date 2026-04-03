@@ -19,21 +19,21 @@ import { BADGE_ICONS } from '../constants';
 // ── Preset defaults (mirrors backend presets/badge.js and presets/minimal.js) ──
 const PRESET_DEFAULTS = {
   b: { blur: 0, alpha: 0.4, radius: 12, shadow: 6, icon: true },
-  m: { blur: 0, alpha: 0.0, radius: 0,  shadow: 0, icon: false },
+  m: { blur: 0, alpha: 0.0, radius: 0, shadow: 0, icon: false },
 } as const;
 
 // ── Provider display names for default label text ──────────────────────────
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
-  imdb:       'IMDb',
-  rt:         'Rotten Tomatoes',
+  imdb: 'IMDb',
+  rt: 'Rotten Tomatoes',
   rt_popcorn: 'Audience Score',
-  tmdb:       'TMDB',
+  tmdb: 'TMDB',
   letterboxd: 'Letterboxd',
-  meta:       'Metacritic',
-  mal:        'MyAnimeList',
-  anilist:    'AniList',
-  age:        'Age Rating',
-  runtime:    'Runtime',
+  meta: 'Metacritic',
+  mal: 'MyAnimeList',
+  anilist: 'AniList',
+  age: 'Age Rating',
+  runtime: 'Runtime',
 };
 
 interface Props {
@@ -126,7 +126,9 @@ const DraggableBadge: React.FC<Props> = ({
 
     onDragEndRef.current(badgeId, dx, dy);
     dragStartRef.current = null;
-    setTimeout(() => { hasDraggedRef.current = false; }, 50);
+    setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 50);
   };
 
   useEffect(() => {
@@ -176,19 +178,23 @@ const DraggableBadge: React.FC<Props> = ({
   const pd = PRESET_DEFAULTS[uiPreset] ?? PRESET_DEFAULTS.b;
 
   // ── Visual style from config ──────────────────────────────────────────────
-  const blurVal    = itemConfig?.blur   ?? config.blur   ?? pd.blur;
-  const alphaVal   = itemConfig?.alpha  ?? config.alpha  ?? pd.alpha;
-  const radiusRaw  = itemConfig?.radius ?? config.radius ?? pd.radius;
-  const radiusVal  = radiusRaw * displayScale;
-  const rawShadow  = itemConfig?.shadow ?? config.shadow ?? pd.shadow;
-  const shadowVal  = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  const showIcon   = itemConfig?.icon   ?? config.icon   ?? pd.icon;
+  const blurVal = itemConfig?.blur ?? config.blur ?? pd.blur;
+  const alphaVal = itemConfig?.alpha ?? config.alpha ?? pd.alpha;
+  const radiusRaw = itemConfig?.radius ?? config.radius ?? pd.radius;
+  const radiusVal = radiusRaw * displayScale;
+  const rawShadow = itemConfig?.shadow ?? config.shadow ?? pd.shadow;
+  const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
+  const showIcon = itemConfig?.icon ?? config.icon ?? pd.icon;
   const showTextVal = itemConfig?.showText ?? config.showText ?? true;
 
   // ── Label props ───────────────────────────────────────────────────────────
-  const labelPos   = itemConfig?.labelPos   ?? config.labelPos   ?? null;
-  const labelText  = itemConfig?.labelText  ?? config.labelText  ?? PROVIDER_DISPLAY_NAMES[badgeId] ?? badgeId.toUpperCase();
-  const labelSizeRaw = itemConfig?.labelSize  ?? config.labelSize  ?? 11;
+  const labelPos = itemConfig?.labelPos ?? config.labelPos ?? null;
+  const labelText =
+    itemConfig?.labelText ??
+    config.labelText ??
+    PROVIDER_DISPLAY_NAMES[badgeId] ??
+    badgeId.toUpperCase();
+  const labelSizeRaw = itemConfig?.labelSize ?? config.labelSize ?? 11;
   const labelSizeVal = labelSizeRaw * displayScale;
   const labelColorVal = itemConfig?.labelColor ?? config.labelColor ?? '#a1a1aa';
 
@@ -214,15 +220,15 @@ const DraggableBadge: React.FC<Props> = ({
 
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
-  const txtColor    = itemConfig?.txt || config.txt || '#ffffff';
+  const txtColor = itemConfig?.txt || config.txt || '#ffffff';
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const dropShadowFilter =
     shadowVal > 0
       ? (() => {
-          const blurPx   = (shadowVal * 0.5).toFixed(2);
-          const dyPx     = (shadowVal * 0.25 + 1.0).toFixed(2);
-          const opacity  = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
+          const blurPx = (shadowVal * 0.5).toFixed(2);
+          const dyPx = (shadowVal * 0.25 + 1.0).toFixed(2);
+          const opacity = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
           return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
         })()
       : '';
@@ -233,11 +239,11 @@ const DraggableBadge: React.FC<Props> = ({
   const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
   const finalBackground = isObscuring ? `${slantPattern}, ${bgFill}` : bgFill;
 
-  const iconSize  = 36 * displayScale;
-  const iconLeft  = 10 * displayScale;
-  const iconTop   = 12 * displayScale;
+  const iconSize = 36 * displayScale;
+  const iconLeft = 10 * displayScale;
+  const iconTop = 12 * displayScale;
   const textRight = 10 * displayScale;
-  const fontSize  = 28 * displayScale;
+  const fontSize = 28 * displayScale;
 
   // ── Label layout helpers ──────────────────────────────────────────────────
   const LABEL_GAP = 5 * displayScale;
@@ -255,13 +261,40 @@ const DraggableBadge: React.FC<Props> = ({
     };
     switch (pos) {
       case 'above':
-        return { ...base, bottom: `calc(100% + ${LABEL_GAP}px)`, left: 0, right: 0, textAlign: 'center' };
+        return {
+          ...base,
+          bottom: `calc(100% + ${LABEL_GAP}px)`,
+          left: 0,
+          right: 0,
+          textAlign: 'center',
+        };
       case 'below':
-        return { ...base, top: `calc(100% + ${LABEL_GAP}px)`, left: 0, right: 0, textAlign: 'center' };
+        return {
+          ...base,
+          top: `calc(100% + ${LABEL_GAP}px)`,
+          left: 0,
+          right: 0,
+          textAlign: 'center',
+        };
       case 'left':
-        return { ...base, right: `calc(100% + ${LABEL_GAP}px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' };
+        return {
+          ...base,
+          right: `calc(100% + ${LABEL_GAP}px)`,
+          top: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+        };
       case 'right':
-        return { ...base, left: `calc(100% + ${LABEL_GAP}px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center' };
+        return {
+          ...base,
+          left: `calc(100% + ${LABEL_GAP}px)`,
+          top: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+        };
       default:
         return base;
     }
@@ -269,15 +302,15 @@ const DraggableBadge: React.FC<Props> = ({
 
   const renderContent = () => {
     const dummyVals: Record<string, string> = {
-      imdb:       '8.7',
-      rt:         '73%',
+      imdb: '8.7',
+      rt: '73%',
       rt_popcorn: '88%',
       letterboxd: '4.2',
-      meta:       '74',
-      tmdb:       '85%',
-      runtime:    '2h 15m',
-      mal:        '8.5',
-      anilist:    '85%',
+      meta: '74',
+      tmdb: '85%',
+      runtime: '2h 15m',
+      mal: '8.5',
+      anilist: '85%',
     };
     const dummyVal = dummyVals[badgeId] || '0.0';
 
@@ -368,8 +401,8 @@ const DraggableBadge: React.FC<Props> = ({
     );
   };
 
-  const selectionDotSize      = 14 * displayScale;
-  const selectionDotInnerSize = 6  * displayScale;
+  const selectionDotSize = 14 * displayScale;
+  const selectionDotInnerSize = 6 * displayScale;
 
   return (
     <div
@@ -404,16 +437,19 @@ const DraggableBadge: React.FC<Props> = ({
       }}
     >
       {/* Clip inner content to badge bounds (prevents icon/text from overflowing) */}
-      <div style={{ position: 'absolute', inset: 0, borderRadius: `${radiusVal}px`, overflow: 'hidden' }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: `${radiusVal}px`,
+          overflow: 'hidden',
+        }}
+      >
         {renderContent()}
       </div>
 
       {/* Label — rendered outside the clipping div so it shows outside badge bounds */}
-      {labelPos && (
-        <div style={labelStyle(labelPos)}>
-          {labelText}
-        </div>
-      )}
+      {labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
 
       {/* Selection dot */}
       {isSelected && (

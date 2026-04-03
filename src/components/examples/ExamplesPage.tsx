@@ -41,9 +41,10 @@ const buildPreviewUrl = (mediaType: 'movie' | 'tv', tmdbId: string, query: strin
 const buildBuilderUrl = (query: string): string => {
   const params = toSearchParams(query);
   const extParam = params.get('ext');
-  const extension: ExtensionType = extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
-    ? extParam
-    : 'png';
+  const extension: ExtensionType =
+    extParam === 'svg' || extParam === 'png' || extParam === 'jpg' || extParam === 'webp'
+      ? extParam
+      : 'png';
 
   params.delete('ext');
   const finalQuery = params.toString();
@@ -88,10 +89,11 @@ const ExamplesPage = memo(() => {
     });
 
     if (!q) return items;
-    return items.filter(({ preset, query }) =>
-      preset.title.toLowerCase().includes(q) ||
-      preset.description.toLowerCase().includes(q) ||
-      query.toLowerCase().includes(q)
+    return items.filter(
+      ({ preset, query }) =>
+        preset.title.toLowerCase().includes(q) ||
+        preset.description.toLowerCase().includes(q) ||
+        query.toLowerCase().includes(q)
     );
   }, [search, reelFallback, queries]);
 
@@ -103,7 +105,9 @@ const ExamplesPage = memo(() => {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}>
+    <div
+      style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}
+    >
       <MainNavbar
         search={{
           value: search,
@@ -117,15 +121,32 @@ const ExamplesPage = memo(() => {
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '84px 20px 40px' }}>
         <header style={{ marginBottom: 18 }}>
-          <h1 className="poster-font" style={{ margin: 0, fontSize: 'clamp(34px,7vw,62px)', lineHeight: 0.88, letterSpacing: '0.08em' }}>
+          <h1
+            className="poster-font"
+            style={{
+              margin: 0,
+              fontSize: 'clamp(34px,7vw,62px)',
+              lineHeight: 0.88,
+              letterSpacing: '0.08em',
+            }}
+          >
             EXAMPLES
           </h1>
-          <p className="body-font" style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}>
+          <p
+            className="body-font"
+            style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}
+          >
             Badge position/style presets from JSON query strings. Edit query and open in builder.
           </p>
         </header>
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 14 }}>
+        <section
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))',
+            gap: 14,
+          }}
+        >
           {filtered.map(({ preset, movie, query, previewUrl, builderUrl }) => {
             const isOpen = activeMenuId === preset.id;
 
@@ -147,7 +168,16 @@ const ExamplesPage = memo(() => {
                     containerStyle={{ width: '100%', height: '100%' }}
                     imageStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     fallback={
-                      <div className="body-font" style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--film-text-dim)' }}>
+                      <div
+                        className="body-font"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          display: 'grid',
+                          placeItems: 'center',
+                          color: 'var(--film-text-dim)',
+                        }}
+                      >
                         Failed to load
                       </div>
                     }
@@ -163,7 +193,8 @@ const ExamplesPage = memo(() => {
                       justifyContent: 'flex-end',
                       gap: 8,
                       padding: 10,
-                      background: 'linear-gradient(180deg, rgba(7,7,6,0) 34%, rgba(7,7,6,0.9) 100%)',
+                      background:
+                        'linear-gradient(180deg, rgba(7,7,6,0) 34%, rgba(7,7,6,0.9) 100%)',
                       opacity: 0,
                       transition: 'opacity 0.2s ease',
                     }}
@@ -173,7 +204,9 @@ const ExamplesPage = memo(() => {
                         exportBtnRefs.current[preset.id] = el;
                       }}
                       type="button"
-                      onClick={() => setActiveMenuId((prev) => (prev === preset.id ? null : preset.id))}
+                      onClick={() =>
+                        setActiveMenuId((prev) => (prev === preset.id ? null : preset.id))
+                      }
                       className="syne-font"
                       style={{
                         border: '1px solid rgba(196,124,46,0.2)',
@@ -216,14 +249,35 @@ const ExamplesPage = memo(() => {
                   </div>
                 </div>
 
-                <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.03em' }}>
+                <div
+                  style={{
+                    padding: '10px 12px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div
+                    className="syne-font"
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: 'var(--film-cream)',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
                     {preset.title}
                   </div>
-                  <div className="body-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
+                  <div
+                    className="body-font"
+                    style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
+                  >
                     {preset.description}
                   </div>
-                  <div className="body-font" style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}>
+                  <div
+                    className="body-font"
+                    style={{ fontSize: 10, color: 'var(--film-text-ghost)' }}
+                  >
                     Preview poster: {movie.title}
                   </div>
 
@@ -289,7 +343,10 @@ const ExamplesPage = memo(() => {
                   config={{ ...baseConfig, extension: getQueryExtension(query) }}
                   baseUrl={API}
                   onExtensionChange={(ext) => {
-                    setQueries((prev) => ({ ...prev, [preset.id]: setExtInQuery(prev[preset.id] ?? preset.query, ext) }));
+                    setQueries((prev) => ({
+                      ...prev,
+                      [preset.id]: setExtInQuery(prev[preset.id] ?? preset.query, ext),
+                    }));
                   }}
                   isOpen={isOpen}
                   onClose={() => setActiveMenuId(null)}

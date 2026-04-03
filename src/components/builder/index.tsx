@@ -39,7 +39,7 @@ import {
   Type,
   ChevronDown,
   Search,
-  Coffee
+  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
@@ -55,14 +55,18 @@ const saveKeysToCookie = (keys: ApiKeys) => {
     const val = encodeURIComponent(JSON.stringify(keys));
     const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
     document.cookie = `${COOKIE_KEY}=${val}; expires=${exp}; path=/; SameSite=Strict`;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 };
 const loadKeysFromCookie = (): ApiKeys => {
   try {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_KEY}=([^;]*)`));
     if (!match) return {};
     return JSON.parse(decodeURIComponent(match[1])) || {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 };
 
 // ── Toolbar button ──────────────────────────────────────────────────────────
@@ -83,17 +87,21 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
       disabled
         ? 'cursor-not-allowed pointer-events-none'
         : active
-        ? 'cursor-pointer'
-        : 'active:scale-95 cursor-pointer'
+          ? 'cursor-pointer'
+          : 'active:scale-95 cursor-pointer'
     }`;
 
     const activeStyle = active
-      ? { color: 'var(--film-amber)', background: 'rgba(196,124,46,0.1)', border: '1px solid rgba(196,124,46,0.2)' }
+      ? {
+          color: 'var(--film-amber)',
+          background: 'rgba(196,124,46,0.1)',
+          border: '1px solid rgba(196,124,46,0.2)',
+        }
       : disabled
-      ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
-      : danger
-      ? { color: 'var(--film-text-dim)', border: '1px solid transparent' }
-      : { color: 'var(--film-text-dim)', border: '1px solid transparent' };
+        ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
+        : danger
+          ? { color: 'var(--film-text-dim)', border: '1px solid transparent' }
+          : { color: 'var(--film-text-dim)', border: '1px solid transparent' };
 
     const tooltip = !disabled && (
       <span
@@ -108,35 +116,52 @@ const ToolbarBtn = memo<ToolbarBtnProps>(
       </span>
     );
 
-    const hoverEvents = !disabled && !active
-      ? {
-          onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-            const el = e.currentTarget as HTMLElement;
-            if (danger) {
-              el.style.color = 'rgba(248,113,113,0.8)';
-              el.style.background = 'rgba(248,113,113,0.08)';
-            } else {
-              el.style.color = 'var(--film-text-label)';
-              el.style.background = 'rgba(196,124,46,0.07)';
-            }
-          },
-          onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.color = 'var(--film-text-dim)';
-            el.style.background = 'transparent';
-          },
-        }
-      : {};
+    const hoverEvents =
+      !disabled && !active
+        ? {
+            onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+              const el = e.currentTarget as HTMLElement;
+              if (danger) {
+                el.style.color = 'rgba(248,113,113,0.8)';
+                el.style.background = 'rgba(248,113,113,0.08)';
+              } else {
+                el.style.color = 'var(--film-text-label)';
+                el.style.background = 'rgba(196,124,46,0.07)';
+              }
+            },
+            onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = 'var(--film-text-dim)';
+              el.style.background = 'transparent';
+            },
+          }
+        : {};
 
     if (href)
       return (
-        <a href={href} target="_blank" rel="noreferrer noopener" className={cls} aria-label={label} style={activeStyle} {...hoverEvents}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={cls}
+          aria-label={label}
+          style={activeStyle}
+          {...hoverEvents}
+        >
           {children}
           {tooltip}
         </a>
       );
     return (
-      <button onClick={onClick} disabled={!!disabled} className={cls} aria-label={label} aria-disabled={disabled} style={activeStyle} {...hoverEvents}>
+      <button
+        onClick={onClick}
+        disabled={!!disabled}
+        className={cls}
+        aria-label={label}
+        aria-disabled={disabled}
+        style={activeStyle}
+        {...hoverEvents}
+      >
         {children}
         {tooltip}
       </button>
@@ -154,73 +179,97 @@ const ZoomOverlay = memo<{
   onZoomOut: () => void;
   onResetView: () => void;
   isMobile: boolean;
-}>(({ isFullscreen, rightSidebarWidth, onToggleFullscreen, onZoomIn, onZoomOut, onResetView, isMobile }) => (
-  <div
-    className={`fixed z-40 flex items-center gap-1 rounded-xl select-none ${isMobile ? 'flex-row' : 'flex-col'}`}
-    style={{
-      ...(isMobile
-        ? { bottom: 76, right: 12 }
-        : {
-            top: '50%',
-            transform: 'translateY(-50%)',
-            right: isFullscreen ? 20 : rightSidebarWidth + 20,
-            transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1)',
-          }),
-      background: 'rgba(14,13,11,0.92)',
-      backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(196,124,46,0.18)',
-      padding: '6px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-    }}
-  >
-    {[
-      { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
-      { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-      { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
-    ].map(({ icon, label, action }) => (
-      <button
-        key={label}
-        onClick={action}
-        title={label}
-        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-        style={{ color: 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-          (e.currentTarget as HTMLElement).style.background = 'transparent';
-        }}
-      >
-        {icon}
-      </button>
-    ))}
-    {/* Divider — hidden on mobile */}
-    {!isMobile && (
-      <div style={{ width: 20, height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
-    )}
-    {/* Fullscreen toggle — desktop only */}
-    {!isMobile && (
-      <button
-        onClick={onToggleFullscreen}
-        title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
-        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-        style={{ color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)', cursor: 'pointer', background: 'transparent', border: 'none' }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.color = isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)';
-          (e.currentTarget as HTMLElement).style.background = 'transparent';
-        }}
-      >
-        {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-      </button>
-    )}
-  </div>
-));
+}>(
+  ({
+    isFullscreen,
+    rightSidebarWidth,
+    onToggleFullscreen,
+    onZoomIn,
+    onZoomOut,
+    onResetView,
+    isMobile,
+  }) => (
+    <div
+      className={`fixed z-40 flex items-center gap-1 rounded-xl select-none ${isMobile ? 'flex-row' : 'flex-col'}`}
+      style={{
+        ...(isMobile
+          ? { bottom: 76, right: 12 }
+          : {
+              top: '50%',
+              transform: 'translateY(-50%)',
+              right: isFullscreen ? 20 : rightSidebarWidth + 20,
+              transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1)',
+            }),
+        background: 'rgba(14,13,11,0.92)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(196,124,46,0.18)',
+        padding: '6px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      }}
+    >
+      {[
+        { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
+        { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
+        { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
+      ].map(({ icon, label, action }) => (
+        <button
+          key={label}
+          onClick={action}
+          title={label}
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+          style={{
+            color: 'var(--film-text-dim)',
+            cursor: 'pointer',
+            background: 'transparent',
+            border: 'none',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+          }}
+        >
+          {icon}
+        </button>
+      ))}
+      {/* Divider — hidden on mobile */}
+      {!isMobile && (
+        <div
+          style={{ width: 20, height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }}
+        />
+      )}
+      {/* Fullscreen toggle — desktop only */}
+      {!isMobile && (
+        <button
+          onClick={onToggleFullscreen}
+          title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+          style={{
+            color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
+            cursor: 'pointer',
+            background: 'transparent',
+            border: 'none',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
+            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = isFullscreen
+              ? 'rgba(196,124,46,0.7)'
+              : 'var(--film-text-dim)';
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+          }}
+        >
+          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </button>
+      )}
+    </div>
+  )
+);
 ZoomOverlay.displayName = 'ZoomOverlay';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
@@ -257,7 +306,7 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
-const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
@@ -278,7 +327,10 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   }, []);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
-    visible: false, x: 0, y: 0, badgeId: null,
+    visible: false,
+    x: 0,
+    y: 0,
+    badgeId: null,
   });
   const openCtxMenu = useCallback((badgeId: RatingType, e: React.MouseEvent) => {
     e.preventDefault();
@@ -289,8 +341,12 @@ const [isResetOpen, setIsResetOpen] = useState(false);
 
   const selectedIdsRef = useRef(selectedIds);
   const configRatingsRef = useRef(config.ratings);
-  useEffect(() => { selectedIdsRef.current = selectedIds; });
-  useEffect(() => { configRatingsRef.current = config.ratings; });
+  useEffect(() => {
+    selectedIdsRef.current = selectedIds;
+  });
+  useEffect(() => {
+    configRatingsRef.current = config.ratings;
+  });
 
   const dispatchZoom = useCallback(
     (delta: number) => window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })),
@@ -302,9 +358,12 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   );
 
   // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
-  const handleSelectionOverride = useCallback((id: RatingType, multi: boolean) => {
-    handleSelection(id, multi);
-  }, [handleSelection]);
+  const handleSelectionOverride = useCallback(
+    (id: RatingType, multi: boolean) => {
+      handleSelection(id, multi);
+    },
+    [handleSelection]
+  );
 
   const moveLayer = useCallback(
     (id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
@@ -367,24 +426,59 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       const mod = e.ctrlKey || e.metaKey;
 
       if (e.key === 'Escape') {
-        if (shortcutsOpen) { setShortcutsOpen(false); return; }
-        if (paletteOpen) { setPaletteOpen(false); return; }
-        if (exportOpen) { setExportOpen(false); return; }
-        if (isFullscreen) { setIsFullscreen(false); return; }
-        if (selectedIds.size > 0) { clearSelection(); return; }
+        if (shortcutsOpen) {
+          setShortcutsOpen(false);
+          return;
+        }
+        if (paletteOpen) {
+          setPaletteOpen(false);
+          return;
+        }
+        if (exportOpen) {
+          setExportOpen(false);
+          return;
+        }
+        if (isFullscreen) {
+          setIsFullscreen(false);
+          return;
+        }
+        if (selectedIds.size > 0) {
+          clearSelection();
+          return;
+        }
         return;
       }
       if (mod && (e.key.toLowerCase() === 'k' || e.key.toLowerCase() === 'p')) {
-        e.preventDefault(); setPaletteOpen((v) => !v); return;
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+        return;
       }
       if (mod && (e.key === '/' || e.key === '?')) {
-        e.preventDefault(); setShortcutsOpen((v) => !v); return;
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        return;
       }
       if (inInput) return;
-      if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); setBatchSelection(configRatingsRef.current); return; }
-      if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); clearSelection(); return; }
-      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
-      if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
+      if (mod && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setBatchSelection(configRatingsRef.current);
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        clearSelection();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size > 0) {
         e.preventDefault();
         const rm = new Set(selectedIdsRef.current);
@@ -394,20 +488,72 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       }
       if (selectedIdsRef.current.size > 0) {
         const sel = Array.from(selectedIdsRef.current);
-        if (mod && e.shiftKey && e.key === ']') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'front')); return; }
-        if (mod && e.shiftKey && e.key === '[') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'toback')); return; }
-        if (mod && e.key === ']') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'forward')); return; }
-        if (mod && e.key === '[') { e.preventDefault(); sel.forEach((id) => moveLayer(id as RatingType, 'back')); return; }
-        if (e.key.toLowerCase() === 'h' && !mod) { e.preventDefault(); sel.forEach((id) => hideBadge(id as RatingType)); return; }
+        if (mod && e.shiftKey && e.key === ']') {
+          e.preventDefault();
+          sel.forEach((id) => moveLayer(id as RatingType, 'front'));
+          return;
+        }
+        if (mod && e.shiftKey && e.key === '[') {
+          e.preventDefault();
+          sel.forEach((id) => moveLayer(id as RatingType, 'toback'));
+          return;
+        }
+        if (mod && e.key === ']') {
+          e.preventDefault();
+          sel.forEach((id) => moveLayer(id as RatingType, 'forward'));
+          return;
+        }
+        if (mod && e.key === '[') {
+          e.preventDefault();
+          sel.forEach((id) => moveLayer(id as RatingType, 'back'));
+          return;
+        }
+        if (e.key.toLowerCase() === 'h' && !mod) {
+          e.preventDefault();
+          sel.forEach((id) => hideBadge(id as RatingType));
+          return;
+        }
       }
-      if (e.key.toLowerCase() === 'f' && !mod && isDesktop) { e.preventDefault(); setIsFullscreen((v) => !v); return; }
-      if (e.key.toLowerCase() === 'g' && !mod) { e.preventDefault(); toggleViewOption('showGrid'); return; }
-      if (e.key === "'" && !mod) { e.preventDefault(); toggleViewOption('showSafeArea'); return; }
-      if (mod && e.key === '1') { e.preventDefault(); dispatchResetView(); return; }
-      if (mod && (e.key === '+' || e.key === '=')) { e.preventDefault(); dispatchZoom(0.25); return; }
-      if (mod && e.key === '-') { e.preventDefault(); dispatchZoom(-0.25); return; }
-      if (e.key === '[' && !mod && !e.shiftKey) { e.preventDefault(); setLeftVisible((v) => !v); return; }
-      if (e.key === ']' && !mod && !e.shiftKey) { e.preventDefault(); setRightVisible((v) => !v); return; }
+      if (e.key.toLowerCase() === 'f' && !mod && isDesktop) {
+        e.preventDefault();
+        setIsFullscreen((v) => !v);
+        return;
+      }
+      if (e.key.toLowerCase() === 'g' && !mod) {
+        e.preventDefault();
+        toggleViewOption('showGrid');
+        return;
+      }
+      if (e.key === "'" && !mod) {
+        e.preventDefault();
+        toggleViewOption('showSafeArea');
+        return;
+      }
+      if (mod && e.key === '1') {
+        e.preventDefault();
+        dispatchResetView();
+        return;
+      }
+      if (mod && (e.key === '+' || e.key === '=')) {
+        e.preventDefault();
+        dispatchZoom(0.25);
+        return;
+      }
+      if (mod && e.key === '-') {
+        e.preventDefault();
+        dispatchZoom(-0.25);
+        return;
+      }
+      if (e.key === '[' && !mod && !e.shiftKey) {
+        e.preventDefault();
+        setLeftVisible((v) => !v);
+        return;
+      }
+      if (e.key === ']' && !mod && !e.shiftKey) {
+        e.preventDefault();
+        setRightVisible((v) => !v);
+        return;
+      }
       if (e.key === 'Tab' && !mod) {
         const ratings = configRatingsRef.current;
         if (ratings.length === 0) return;
@@ -428,9 +574,22 @@ const [isResetOpen, setIsResetOpen] = useState(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
-    undo, redo, setConfig, clearSelection, setBatchSelection,
-    moveLayer, hideBadge, toggleViewOption, dispatchZoom, dispatchResetView,
-    isFullscreen, paletteOpen, shortcutsOpen, exportOpen, selectedIds, isDesktop,
+    undo,
+    redo,
+    setConfig,
+    clearSelection,
+    setBatchSelection,
+    moveLayer,
+    hideBadge,
+    toggleViewOption,
+    dispatchZoom,
+    dispatchResetView,
+    isFullscreen,
+    paletteOpen,
+    shortcutsOpen,
+    exportOpen,
+    selectedIds,
+    isDesktop,
   ]);
 
   // ── Panel widths ──────────────────────────────────────────────────────────
@@ -440,9 +599,15 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const startResizeLeft = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      const sx = e.clientX, sw = leftW;
+      const sx = e.clientX,
+        sw = leftW;
       const move = (m: MouseEvent) => setLeftW(Math.max(220, Math.min(sw + m.clientX - sx, 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; document.body.classList.remove('sidebar-resizing'); };
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.body.style.cursor = '';
+        document.body.classList.remove('sidebar-resizing');
+      };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -454,9 +619,16 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   const startResizeRight = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      const sx = e.clientX, sw = rightW;
-      const move = (m: MouseEvent) => setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; document.body.classList.remove('sidebar-resizing'); };
+      const sx = e.clientX,
+        sw = rightW;
+      const move = (m: MouseEvent) =>
+        setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.body.style.cursor = '';
+        document.body.classList.remove('sidebar-resizing');
+      };
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
       document.body.style.cursor = 'col-resize';
@@ -466,38 +638,240 @@ const [isResetOpen, setIsResetOpen] = useState(false);
   );
 
   const handleExtensionChange = useCallback(
-    (ext: ExtensionType) => { setConfig((prev) => ({ ...prev, extension: ext })); },
+    (ext: ExtensionType) => {
+      setConfig((prev) => ({ ...prev, extension: ext }));
+    },
     [setConfig]
   );
 
   // ── Command palette commands ──────────────────────────────────────────────
   const paletteCommands: PaletteCommand[] = [
-    { id: 'zoom-fit', label: 'Zoom to Fit', category: 'View & Canvas', icon: <Maximize2 size={13} />, shortcut: '⌘1', keywords: ['reset', 'fit', 'view'], action: dispatchResetView },
-    { id: 'zoom-in', label: 'Zoom In', category: 'View & Canvas', icon: <ZoomIn size={13} />, shortcut: '⌘+', action: () => dispatchZoom(0.25) },
-    { id: 'zoom-out', label: 'Zoom Out', category: 'View & Canvas', icon: <ZoomOut size={13} />, shortcut: '⌘-', action: () => dispatchZoom(-0.25) },
-    { id: 'fullscreen', label: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen Canvas', category: 'View & Canvas', icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />, shortcut: 'F', action: toggleFullscreen },
-    { id: 'grid', label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid Overlay`, category: 'View & Canvas', icon: <Grid3x3 size={13} />, shortcut: 'G', keywords: ['grid', 'lines'], action: () => toggleViewOption('showGrid') },
-    { id: 'safe-area', label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`, category: 'View & Canvas', icon: <ShieldCheck size={13} />, shortcut: "'", keywords: ['safe', 'area', 'zone'], action: () => toggleViewOption('showSafeArea') },
-    { id: 'sidebar-left', label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`, category: 'View & Canvas', icon: <PanelLeft size={13} />, shortcut: '[', keywords: ['layers', 'source', 'panel'], action: () => setLeftVisible((v) => !v) },
-    { id: 'sidebar-right', label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`, category: 'View & Canvas', icon: <PanelRight size={13} />, shortcut: ']', keywords: ['inspector', 'panel'], action: () => setRightVisible((v) => !v) },
-    { id: 'shortcuts-help', label: 'Show Keyboard Shortcuts', category: 'View & Canvas', icon: <Keyboard size={13} />, shortcut: '⌘/', keywords: ['help', 'keys', 'hotkeys'], action: () => setShortcutsOpen(true) },
-    { id: 'select-all', label: 'Select All Badges', category: 'Layers & Selection', icon: <CheckSquare size={13} />, shortcut: '⌘A', action: () => setBatchSelection(config.ratings) },
-    { id: 'deselect-all', label: 'Deselect All', category: 'Layers & Selection', icon: <MousePointer2Off size={13} />, shortcut: '⌘D', action: clearSelection },
-    { id: 'show-all', label: 'Show All Badges', category: 'Layers & Selection', icon: <Eye size={13} />, keywords: ['reveal', 'unhide'], action: showAllBadges },
-    { id: 'hide-sel', label: 'Hide Selected Badges', category: 'Layers & Selection', icon: <EyeOff size={13} />, shortcut: 'H', keywords: ['hide', 'selected'], action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)) },
-    { id: 'layer-front', label: 'Bring to Front', category: 'Layers & Selection', icon: <ArrowUpToLine size={13} />, shortcut: '⌘⇧]', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'front')) },
-    { id: 'layer-back', label: 'Send to Back', category: 'Layers & Selection', icon: <ArrowDownToLine size={13} />, shortcut: '⌘⇧[', action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'toback')) },
-    { id: 'delete-sel', label: 'Delete Selected Badges', category: 'Layers & Selection', icon: <Layers size={13} />, shortcut: 'Del', keywords: ['remove', 'delete'], action: () => { const rm = new Set(selectedIds); setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) })); clearSelection(); } },
-    { id: 'grayscale', label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`, category: 'Canvas Properties', icon: <Contrast size={13} />, keywords: ['grayscale', 'bw', 'black', 'white'], action: () => setConfig((p) => ({ ...p, grayscale: !p.grayscale })) },
-    { id: 'blur-0', label: 'Remove Poster Blur', category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur', 'clear', 'sharp'], action: () => setConfig((p) => ({ ...p, posterBlur: 0 })) },
-    { id: 'blur-8', label: 'Poster Blur: Medium (8px)', category: 'Canvas Properties', icon: <ScanLine size={13} />, keywords: ['blur', 'medium'], action: () => setConfig((p) => ({ ...p, posterBlur: 8 })) },
-    { id: 'toggle-text', label: `${config.showText !== false ? 'Hide' : 'Show'} Rating Text`, category: 'Badges', icon: <Type size={13} />, keywords: ['text', 'numbers', 'rating', 'show', 'hide'], action: () => setConfig((p) => ({ ...p, showText: !(p.showText !== false) })) },
-    { id: 'export-svg', label: 'Export as SVG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'svg' })); setExportOpen(true); } },
-    { id: 'export-png', label: 'Export as PNG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'png' })); setExportOpen(true); } },
-    { id: 'export-jpg', label: 'Export as JPG', category: 'Export', icon: <Download size={13} />, action: () => { setConfig((p) => ({ ...p, extension: 'jpg' })); setExportOpen(true); } },
-    { id: 'reset', label: 'Reset All Settings', category: 'File', icon: <RotateCcw size={13} />, keywords: ['reset', 'clear', 'default'], action: () => setIsResetOpen(true) },
-    { id: 'undo', label: 'Undo', category: 'File', icon: <Undo2 size={13} />, shortcut: '⌘Z', action: undo },
-    { id: 'redo', label: 'Redo', category: 'File', icon: <Redo2 size={13} />, shortcut: '⌘Y', action: redo },
+    {
+      id: 'zoom-fit',
+      label: 'Zoom to Fit',
+      category: 'View & Canvas',
+      icon: <Maximize2 size={13} />,
+      shortcut: '⌘1',
+      keywords: ['reset', 'fit', 'view'],
+      action: dispatchResetView,
+    },
+    {
+      id: 'zoom-in',
+      label: 'Zoom In',
+      category: 'View & Canvas',
+      icon: <ZoomIn size={13} />,
+      shortcut: '⌘+',
+      action: () => dispatchZoom(0.25),
+    },
+    {
+      id: 'zoom-out',
+      label: 'Zoom Out',
+      category: 'View & Canvas',
+      icon: <ZoomOut size={13} />,
+      shortcut: '⌘-',
+      action: () => dispatchZoom(-0.25),
+    },
+    {
+      id: 'fullscreen',
+      label: isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen Canvas',
+      category: 'View & Canvas',
+      icon: isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />,
+      shortcut: 'F',
+      action: toggleFullscreen,
+    },
+    {
+      id: 'grid',
+      label: `${viewOptions.showGrid ? 'Hide' : 'Show'} Grid Overlay`,
+      category: 'View & Canvas',
+      icon: <Grid3x3 size={13} />,
+      shortcut: 'G',
+      keywords: ['grid', 'lines'],
+      action: () => toggleViewOption('showGrid'),
+    },
+    {
+      id: 'safe-area',
+      label: `${viewOptions.showSafeArea ? 'Hide' : 'Show'} Safe Area`,
+      category: 'View & Canvas',
+      icon: <ShieldCheck size={13} />,
+      shortcut: "'",
+      keywords: ['safe', 'area', 'zone'],
+      action: () => toggleViewOption('showSafeArea'),
+    },
+    {
+      id: 'sidebar-left',
+      label: `${leftVisible ? 'Hide' : 'Show'} Left Sidebar`,
+      category: 'View & Canvas',
+      icon: <PanelLeft size={13} />,
+      shortcut: '[',
+      keywords: ['layers', 'source', 'panel'],
+      action: () => setLeftVisible((v) => !v),
+    },
+    {
+      id: 'sidebar-right',
+      label: `${rightVisible ? 'Hide' : 'Show'} Right Sidebar`,
+      category: 'View & Canvas',
+      icon: <PanelRight size={13} />,
+      shortcut: ']',
+      keywords: ['inspector', 'panel'],
+      action: () => setRightVisible((v) => !v),
+    },
+    {
+      id: 'shortcuts-help',
+      label: 'Show Keyboard Shortcuts',
+      category: 'View & Canvas',
+      icon: <Keyboard size={13} />,
+      shortcut: '⌘/',
+      keywords: ['help', 'keys', 'hotkeys'],
+      action: () => setShortcutsOpen(true),
+    },
+    {
+      id: 'select-all',
+      label: 'Select All Badges',
+      category: 'Layers & Selection',
+      icon: <CheckSquare size={13} />,
+      shortcut: '⌘A',
+      action: () => setBatchSelection(config.ratings),
+    },
+    {
+      id: 'deselect-all',
+      label: 'Deselect All',
+      category: 'Layers & Selection',
+      icon: <MousePointer2Off size={13} />,
+      shortcut: '⌘D',
+      action: clearSelection,
+    },
+    {
+      id: 'show-all',
+      label: 'Show All Badges',
+      category: 'Layers & Selection',
+      icon: <Eye size={13} />,
+      keywords: ['reveal', 'unhide'],
+      action: showAllBadges,
+    },
+    {
+      id: 'hide-sel',
+      label: 'Hide Selected Badges',
+      category: 'Layers & Selection',
+      icon: <EyeOff size={13} />,
+      shortcut: 'H',
+      keywords: ['hide', 'selected'],
+      action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)),
+    },
+    {
+      id: 'layer-front',
+      label: 'Bring to Front',
+      category: 'Layers & Selection',
+      icon: <ArrowUpToLine size={13} />,
+      shortcut: '⌘⇧]',
+      action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'front')),
+    },
+    {
+      id: 'layer-back',
+      label: 'Send to Back',
+      category: 'Layers & Selection',
+      icon: <ArrowDownToLine size={13} />,
+      shortcut: '⌘⇧[',
+      action: () => Array.from(selectedIds).forEach((id) => moveLayer(id as RatingType, 'toback')),
+    },
+    {
+      id: 'delete-sel',
+      label: 'Delete Selected Badges',
+      category: 'Layers & Selection',
+      icon: <Layers size={13} />,
+      shortcut: 'Del',
+      keywords: ['remove', 'delete'],
+      action: () => {
+        const rm = new Set(selectedIds);
+        setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) }));
+        clearSelection();
+      },
+    },
+    {
+      id: 'grayscale',
+      label: `${config.grayscale ? 'Remove' : 'Apply'} Grayscale`,
+      category: 'Canvas Properties',
+      icon: <Contrast size={13} />,
+      keywords: ['grayscale', 'bw', 'black', 'white'],
+      action: () => setConfig((p) => ({ ...p, grayscale: !p.grayscale })),
+    },
+    {
+      id: 'blur-0',
+      label: 'Remove Poster Blur',
+      category: 'Canvas Properties',
+      icon: <ScanLine size={13} />,
+      keywords: ['blur', 'clear', 'sharp'],
+      action: () => setConfig((p) => ({ ...p, posterBlur: 0 })),
+    },
+    {
+      id: 'blur-8',
+      label: 'Poster Blur: Medium (8px)',
+      category: 'Canvas Properties',
+      icon: <ScanLine size={13} />,
+      keywords: ['blur', 'medium'],
+      action: () => setConfig((p) => ({ ...p, posterBlur: 8 })),
+    },
+    {
+      id: 'toggle-text',
+      label: `${config.showText !== false ? 'Hide' : 'Show'} Rating Text`,
+      category: 'Badges',
+      icon: <Type size={13} />,
+      keywords: ['text', 'numbers', 'rating', 'show', 'hide'],
+      action: () => setConfig((p) => ({ ...p, showText: !(p.showText !== false) })),
+    },
+    {
+      id: 'export-svg',
+      label: 'Export as SVG',
+      category: 'Export',
+      icon: <Download size={13} />,
+      action: () => {
+        setConfig((p) => ({ ...p, extension: 'svg' }));
+        setExportOpen(true);
+      },
+    },
+    {
+      id: 'export-png',
+      label: 'Export as PNG',
+      category: 'Export',
+      icon: <Download size={13} />,
+      action: () => {
+        setConfig((p) => ({ ...p, extension: 'png' }));
+        setExportOpen(true);
+      },
+    },
+    {
+      id: 'export-jpg',
+      label: 'Export as JPG',
+      category: 'Export',
+      icon: <Download size={13} />,
+      action: () => {
+        setConfig((p) => ({ ...p, extension: 'jpg' }));
+        setExportOpen(true);
+      },
+    },
+    {
+      id: 'reset',
+      label: 'Reset All Settings',
+      category: 'File',
+      icon: <RotateCcw size={13} />,
+      keywords: ['reset', 'clear', 'default'],
+      action: () => setIsResetOpen(true),
+    },
+    {
+      id: 'undo',
+      label: 'Undo',
+      category: 'File',
+      icon: <Undo2 size={13} />,
+      shortcut: '⌘Z',
+      action: undo,
+    },
+    {
+      id: 'redo',
+      label: 'Redo',
+      category: 'File',
+      icon: <Redo2 size={13} />,
+      shortcut: '⌘Y',
+      action: redo,
+    },
   ];
 
   const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
@@ -532,8 +906,16 @@ const [isResetOpen, setIsResetOpen] = useState(false);
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        <ResetDialog isOpen={isResetOpen} onClose={() => setIsResetOpen(false)} onConfirm={handleReset} />
-        <ImportDialog isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} onLoad={handleLoadConfig} />
+        <ResetDialog
+          isOpen={isResetOpen}
+          onClose={() => setIsResetOpen(false)}
+          onConfirm={handleReset}
+        />
+        <ImportDialog
+          isOpen={isImportOpen}
+          onClose={() => setIsImportOpen(false)}
+          onLoad={handleLoadConfig}
+        />
         <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         <ContextMenu
           state={ctxMenu}
@@ -552,7 +934,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           onResetBadge={resetBadge}
           onDelete={deleteBadge}
         />
-        <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteCommands} />
+        <CommandPalette
+          isOpen={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          commands={paletteCommands}
+        />
 
         {/* Export popover */}
         <ExportPopover
@@ -565,7 +951,7 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           anchorRef={exportBtnRef}
         />
 
-      {/* ── HEADER ── */}
+        {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
             className="h-12 shrink-0 flex items-center z-30 relative"
@@ -578,17 +964,20 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             <div
               className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
+                background:
+                  'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
               }}
               aria-hidden="true"
             />
 
             {/* Left Header Area */}
-            <div 
-              className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto"
-            >
+            <div className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto">
               {/* Wordmark */}
-              <a href="/" className="flex items-center" style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <a
+                href="/"
+                className="flex items-center"
+                style={{ textDecoration: 'none', flexShrink: 0 }}
+              >
                 <span
                   className="poster-font select-none hidden sm:block"
                   style={{
@@ -620,7 +1009,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
               >
                 <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">Buy me a Coffee</span>
+                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
+                  Buy me a Coffee
+                </span>
               </a>
               <button
                 onClick={() => setPaletteOpen(true)}
@@ -631,8 +1022,12 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   border: '1px solid rgba(255,255,255,0.08)',
                   background: 'rgba(255,255,255,0.03)',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }}
               >
                 <Search size={12} className="shrink-0" />
                 <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
@@ -659,8 +1054,14 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   border: '1px solid transparent',
                   background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = leftVisible
+                    ? 'rgba(196,124,46,0.08)'
+                    : 'transparent';
+                }}
               >
                 <PanelLeft size={14} />
               </button>
@@ -674,14 +1075,21 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   border: '1px solid rgba(255,255,255,0.08)',
                   color: 'var(--film-text-dim)',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }}
               >
                 <Search size={13} className="shrink-0" />
                 <span className="text-[11px] syne-font text-left flex-1 min-w-0 truncate">
                   Search commands...
                 </span>
-                <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                <kbd
+                  className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
+                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                >
                   ⌘K
                 </kbd>
               </button>
@@ -696,19 +1104,26 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   border: '1px solid transparent',
                   background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent'; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = rightVisible
+                    ? 'rgba(196,124,46,0.08)'
+                    : 'transparent';
+                }}
               >
                 <PanelRight size={14} />
               </button>
             </div>
 
             {/* Right Header Area */}
-            <div 
-              className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto"
-            >
-
-              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+            <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
 
               {/* History */}
               <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
@@ -718,7 +1133,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 <Redo2 size={14} />
               </ToolbarBtn>
 
-              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
 
               {/* Import */}
               <button
@@ -735,7 +1154,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 }}
               >
                 <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">Import</span>
+                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
+                  Import
+                </span>
               </button>
 
               {/* Export CTA */}
@@ -750,15 +1171,12 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                   fontWeight: 700,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  boxShadow: exportOpen
-                    ? 'none'
-                    : '0 0 16px rgba(196,124,46,0.2)',
+                  boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
-                  if (!exportOpen)
-                    (e.currentTarget as HTMLElement).style.background = '#d4a245';
+                  if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
                 }}
                 onMouseLeave={(e) => {
                   if (!exportOpen)
@@ -777,7 +1195,11 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 />
               </button>
 
-              <div className="w-px h-4 mx-1 hidden lg:block" style={{ background: 'rgba(196,124,46,0.12)' }} aria-hidden="true" />
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
 
               {/* Reset - permanently placed at top right */}
               <button
@@ -785,13 +1207,15 @@ const [isResetOpen, setIsResetOpen] = useState(false);
                 className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
               >
                 <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">Reset</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
+                  Reset
+                </span>
               </button>
             </div>
           </header>
         )}
 
-  {/* ── BODY ── */}
+        {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
           {!isFullscreen && (
@@ -837,7 +1261,8 @@ const [isResetOpen, setIsResetOpen] = useState(false);
               aria-hidden="true"
               className="absolute inset-0 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                backgroundImage:
+                  'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
                 backgroundSize: '20px 20px',
               }}
             />
@@ -901,28 +1326,32 @@ const [isResetOpen, setIsResetOpen] = useState(false);
           {!isFullscreen && (
             <div
               className={clsx(
-                "lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20",
-                mobileSheetMode !== 'hidden' ? "h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" : "h-0 border-t-0"
+                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
+                mobileSheetMode !== 'hidden'
+                  ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
+                  : 'h-0 border-t-0'
               )}
             >
               {/* Swipe-down dismiss handle */}
-              <div 
-                 className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                 onClick={() => setMobileSheetMode('hidden')}
-                 onTouchStart={(e) => {
-                   const startY = e.touches[0].clientY;
-                   const onMove = (ev: TouchEvent) => {
-                     if (ev.touches[0].clientY - startY > 40) {
-                       setMobileSheetMode('hidden');
-                       window.removeEventListener('touchmove', onMove);
-                     }
-                   };
-                   window.addEventListener('touchmove', onMove, { passive: true });
-                   const cleanup = () => { window.removeEventListener('touchmove', onMove); };
-                   window.addEventListener('touchend', cleanup, { once: true });
-                 }}
+              <div
+                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
+                onClick={() => setMobileSheetMode('hidden')}
+                onTouchStart={(e) => {
+                  const startY = e.touches[0].clientY;
+                  const onMove = (ev: TouchEvent) => {
+                    if (ev.touches[0].clientY - startY > 40) {
+                      setMobileSheetMode('hidden');
+                      window.removeEventListener('touchmove', onMove);
+                    }
+                  };
+                  window.addEventListener('touchmove', onMove, { passive: true });
+                  const cleanup = () => {
+                    window.removeEventListener('touchmove', onMove);
+                  };
+                  window.addEventListener('touchend', cleanup, { once: true });
+                }}
               >
-                 <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
+                <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
@@ -978,7 +1407,9 @@ const BuilderApp: React.FC = () => {
         return { ...cfg, keys: { ...cookieKeys, ...cfg.keys } };
       }
       return cfg;
-    } catch { return DEFAULT_CONFIG; }
+    } catch {
+      return DEFAULT_CONFIG;
+    }
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
@@ -997,7 +1428,11 @@ const BuilderApp: React.FC = () => {
   const handleLoadConfig = useCallback(
     (url: string) => {
       setConfig(parseUrlToConfig(url));
-      try { setBaseUrl(new URL(url).origin); } catch { /* keep */ }
+      try {
+        setBaseUrl(new URL(url).origin);
+      } catch {
+        /* keep */
+      }
     },
     [setConfig]
   );

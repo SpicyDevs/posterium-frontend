@@ -83,9 +83,7 @@ const Section: React.FC<{
           style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
         >
           {icon && (
-            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>
-              {icon}
-            </span>
+            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>{icon}</span>
           )}
           {title}
         </span>
@@ -100,11 +98,7 @@ const Section: React.FC<{
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         </span>
       </button>
-      {open && (
-        <div className="px-3 pb-1 space-y-3.5">
-          {children}
-        </div>
-      )}
+      {open && <div className="px-3 pb-1 space-y-3.5">{children}</div>}
       <div
         className="mt-5 mx-3"
         style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
@@ -126,9 +120,7 @@ const SliderRow: React.FC<{
   formatValue?: (v: number) => string;
 }> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
   const [localValue, setLocalValue] = useState(value);
-  const [inputText, setInputText] = useState(() =>
-    formatValue ? formatValue(value) : `${value}`
-  );
+  const [inputText, setInputText] = useState(() => (formatValue ? formatValue(value) : `${value}`));
   const lastUpdate = useRef(Date.now());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -216,8 +208,13 @@ const SliderRow: React.FC<{
           inputMode="decimal"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          onFocus={() => { isFocused.current = true; }}
-          onBlur={() => { isFocused.current = false; commitInput(inputText); }}
+          onFocus={() => {
+            isFocused.current = true;
+          }}
+          onBlur={() => {
+            isFocused.current = false;
+            commitInput(inputText);
+          }}
           onKeyDown={handleInputKeyDown}
           className="mono-font tabular-nums focus:outline-none shrink-0"
           style={{
@@ -540,9 +537,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   ): BadgeConfig[K] | null => {
     const vals = Array.from(selectedIds).map(
       (id) =>
-        config.items[id]?.[prop] ??
-        (config[prop as keyof PosterConfig] as BadgeConfig[K]) ??
-        def
+        config.items[id]?.[prop] ?? (config[prop as keyof PosterConfig] as BadgeConfig[K]) ?? def
     );
     return vals.length > 0 && vals.every((v) => v === vals[0]) ? vals[0] : null;
   };
@@ -553,7 +548,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   if (showGlobal)
     return (
       <SidebarLayout side="right" bodyClassName="pb-24">
-
         {/* Layout ── position preset + flow direction */}
         <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
           <div className="flex items-start gap-4">
@@ -592,9 +586,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     <span
                       style={{
                         color:
-                          config.layout === opt.id
-                            ? 'var(--film-amber)'
-                            : 'var(--film-text-label)',
+                          config.layout === opt.id ? 'var(--film-amber)' : 'var(--film-text-label)',
                         lineHeight: 0,
                       }}
                     >
@@ -661,11 +653,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </Section>
 
         {/* Badge Shape ── geometry + shadow */}
-        <Section
-          title="Badge Shape"
-          icon={<Sliders size={10} />}
-          sectionId="global-badge-shape"
-        >
+        <Section title="Badge Shape" icon={<Sliders size={10} />} sectionId="global-badge-shape">
           <SliderRow
             label="Scale"
             value={config.scale ?? 1.0}
@@ -773,21 +761,30 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             style={{
               background: config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
               color: config.labelPos ? 'var(--film-pale)' : 'var(--film-text-dim)',
-              border: config.labelPos ? '1px solid rgba(196,124,46,0.22)' : '1px solid rgba(255,255,255,0.05)',
+              border: config.labelPos
+                ? '1px solid rgba(196,124,46,0.22)'
+                : '1px solid rgba(255,255,255,0.05)',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
-              (e.currentTarget as HTMLElement).style.background = config.labelPos ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.background = config.labelPos
+                ? 'rgba(196,124,46,0.15)'
+                : 'rgba(255,255,255,0.05)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = config.labelPos ? 'rgba(196,124,46,0.22)' : 'rgba(255,255,255,0.05)';
-              (e.currentTarget as HTMLElement).style.background = config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = config.labelPos
+                ? 'rgba(196,124,46,0.22)'
+                : 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.background = config.labelPos
+                ? 'rgba(196,124,46,0.1)'
+                : 'rgba(255,255,255,0.02)';
             }}
           >
-            {config.labelPos
-              ? <Eye size={11} style={{ color: 'var(--film-amber)' }} />
-              : <EyeOff size={11} style={{ color: 'var(--film-text-dim)' }} />
-            }
+            {config.labelPos ? (
+              <Eye size={11} style={{ color: 'var(--film-amber)' }} />
+            ) : (
+              <EyeOff size={11} style={{ color: 'var(--film-text-dim)' }} />
+            )}
             {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
           </button>
           <SegmentedRow
@@ -821,9 +818,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             label="Label Color"
             value={config.labelColor ?? '#ffffff'}
             onChange={(v) => updateConfig('labelColor', v)}
-            onReset={
-              config.labelColor ? () => updateConfig('labelColor', undefined) : undefined
-            }
+            onReset={config.labelColor ? () => updateConfig('labelColor', undefined) : undefined}
           />
         </Section>
 
@@ -845,9 +840,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 onClick={() => toggleViewOption(key)}
                 className="h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font"
                 style={{
-                  background: viewOptions[key]
-                    ? 'rgba(196,124,46,0.1)'
-                    : 'rgba(255,255,255,0.02)',
+                  background: viewOptions[key] ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
                   color: viewOptions[key] ? 'var(--film-pale)' : 'var(--film-text-dim)',
                   border: viewOptions[key]
                     ? '1px solid rgba(196,124,46,0.22)'
@@ -855,11 +848,17 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
-                  (e.currentTarget as HTMLElement).style.background = viewOptions[key] ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.background = viewOptions[key]
+                    ? 'rgba(196,124,46,0.15)'
+                    : 'rgba(255,255,255,0.05)';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = viewOptions[key] ? 'rgba(196,124,46,0.22)' : 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.background = viewOptions[key] ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)';
+                  (e.currentTarget as HTMLElement).style.borderColor = viewOptions[key]
+                    ? 'rgba(196,124,46,0.22)'
+                    : 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.background = viewOptions[key]
+                    ? 'rgba(196,124,46,0.1)'
+                    : 'rgba(255,255,255,0.02)';
                 }}
               >
                 <Eye
@@ -907,10 +906,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             >
               No badge selected
             </p>
-            <p
-              className="body-font mt-1"
-              style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
-            >
+            <p className="body-font mt-1" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
               Click a badge on the canvas to edit
             </p>
           </div>
@@ -924,21 +920,34 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const multi = selectedIds.size > 1;
 
   // Resolve common values across the selection (null = mixed)
-  const commonBlur     = getCommonValue('blur',      config.blur)             ?? config.blur;
-  const commonAlpha    = getCommonValue('alpha',     config.alpha)            ?? config.alpha;
-  const commonRadius   = getCommonValue('radius',    config.radius)           ?? config.radius;
-  const commonShadow   = resolveShadow(
-    (getCommonValue('shadow', 6) as number | boolean | null) ?? 6, 6
+  const commonBlur = getCommonValue('blur', config.blur) ?? config.blur;
+  const commonAlpha = getCommonValue('alpha', config.alpha) ?? config.alpha;
+  const commonRadius = getCommonValue('radius', config.radius) ?? config.radius;
+  const commonShadow = resolveShadow(
+    (getCommonValue('shadow', 6) as number | boolean | null) ?? 6,
+    6
   );
-  const commonScale    = (getCommonValue('scale',    config.scale   ?? 1.0)  ?? (config.scale   ?? 1.0))  as number;
-  const commonBorderW  = (getCommonValue('borderW',  config.borderW ?? 0)    ?? (config.borderW ?? 0))    as number;
-  const commonShowText = (getCommonValue('showText', config.showText ?? true) ?? (config.showText ?? true)) as boolean;
-  const commonNorm     = (getCommonValue('normalize', config.normalize ?? false) ?? (config.normalize ?? false)) as boolean;
-  const commonOutOf    = (getCommonValue('outOf',    config.outOf   ?? 0)    ?? (config.outOf   ?? 0))    as number;
-  const commonIconType = (getCommonValue('iconType', config.iconType ?? 1)   ?? (config.iconType ?? 1))   as number;
-  const commonLabelPos = getCommonValue('labelPos',  config.labelPos ?? 'below') as string | null;
-  const commonLabelTxt = getCommonValue('labelText', config.labelText ?? '')  as string | null;
-  const commonLabelSz  = (getCommonValue('labelSize', config.labelSize ?? 11) ?? (config.labelSize ?? 11)) as number;
+  const commonScale = (getCommonValue('scale', config.scale ?? 1.0) ??
+    config.scale ??
+    1.0) as number;
+  const commonBorderW = (getCommonValue('borderW', config.borderW ?? 0) ??
+    config.borderW ??
+    0) as number;
+  const commonShowText = (getCommonValue('showText', config.showText ?? true) ??
+    config.showText ??
+    true) as boolean;
+  const commonNorm = (getCommonValue('normalize', config.normalize ?? false) ??
+    config.normalize ??
+    false) as boolean;
+  const commonOutOf = (getCommonValue('outOf', config.outOf ?? 0) ?? config.outOf ?? 0) as number;
+  const commonIconType = (getCommonValue('iconType', config.iconType ?? 1) ??
+    config.iconType ??
+    1) as number;
+  const commonLabelPos = getCommonValue('labelPos', config.labelPos ?? 'below') as string | null;
+  const commonLabelTxt = getCommonValue('labelText', config.labelText ?? '') as string | null;
+  const commonLabelSz = (getCommonValue('labelSize', config.labelSize ?? 11) ??
+    config.labelSize ??
+    11) as number;
 
   const commonBg = (() => {
     const v = getCommonValue('bg', config.bg ?? '#000000');
@@ -959,7 +968,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
-
       {/* Selection header */}
       <div
         className="mx-3 mt-4 mb-2 px-3 py-2.5 rounded-xl"
@@ -968,16 +976,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           border: '1px solid rgba(196,124,46,0.14)',
         }}
       >
-        <p
-          className="syne-font font-semibold"
-          style={{ fontSize: 11, color: 'var(--film-pale)' }}
-        >
+        <p className="syne-font font-semibold" style={{ fontSize: 11, color: 'var(--film-pale)' }}>
           {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
         </p>
-        <p
-          className="body-font mt-0.5"
-          style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}
-        >
+        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}>
           {multi
             ? 'Changes apply to all selected badges'
             : 'Per-badge overrides · inherits global defaults'}
@@ -1066,7 +1068,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             label="Show Icon"
             checked={
               ((getCommonValue('icon', config.icon ?? true) as boolean | null) ??
-                (config.icon ?? true)) as boolean
+                config.icon ??
+                true) as boolean
             }
             onChange={(v) => updateSelectedBadges({ icon: v })}
           />
@@ -1086,12 +1089,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       </Section>
 
       {/* Score ── normalize + denominator */}
-      <Section
-        title="Score"
-        icon={<Hash size={10} />}
-        defaultOpen={false}
-        sectionId="badge-score"
-      >
+      <Section title="Score" icon={<Hash size={10} />} defaultOpen={false} sectionId="badge-score">
         <ToggleRow
           label="Normalize to /10"
           sub="Convert score to a 0–10 scale"
@@ -1124,7 +1122,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             { id: 'left', label: 'Left' },
             { id: 'right', label: 'Right' },
           ]}
-          value={commonLabelPos ?? (config.labelPos ?? 'below')}
+          value={commonLabelPos ?? config.labelPos ?? 'below'}
           onChange={(v) => updateSelectedBadges({ labelPos: v as BadgeConfig['labelPos'] })}
         />
         <TextInputRow
