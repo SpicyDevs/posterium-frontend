@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import MainNavbar from '@/components/shared/MainNavbar';
 
 export interface DocsSidebarLink {
@@ -18,7 +18,7 @@ interface DocsLayoutProps {
   sidebarTitle?: string;
   sidebarLinks: DocsSidebarLink[];
   search?: DocsSearchConfig;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const DocsLayout = memo<DocsLayoutProps>(
@@ -35,7 +35,6 @@ const DocsLayout = memo<DocsLayoutProps>(
           search={search}
           keepSearchOnMobile
           showMobileBuildCta
-          mobileMenuLeft
         />
 
         <main className="docs-layout-main">

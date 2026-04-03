@@ -115,7 +115,6 @@ const ExamplesPage = memo(() => {
           placeholder: 'Search examples…',
         }}
         keepSearchOnMobile
-        mobileMenuLeft
         showMobileBuildCta
       />
 

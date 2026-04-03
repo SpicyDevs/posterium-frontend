@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d0c0a"/>
+      <stop offset="1" stop-color="#1a140d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="70" y="70" width="1460" height="760" rx="20" fill="#0a0a09" stroke="#c47c2e" stroke-opacity="0.35"/>
+  <rect x="120" y="140" width="1360" height="80" rx="10" fill="#16130f" stroke="#d4a245" stroke-opacity="0.2"/>
+  <rect x="120" y="260" width="860" height="470" rx="10" fill="#11100d" stroke="#c47c2e" stroke-opacity="0.22"/>
+  <rect x="1020" y="260" width="460" height="220" rx="10" fill="#11100d" stroke="#c47c2e" stroke-opacity="0.22"/>
+  <rect x="1020" y="510" width="460" height="220" rx="10" fill="#11100d" stroke="#c47c2e" stroke-opacity="0.22"/>
+  <text x="130" y="190" fill="#e8d8a8" font-family="Syne, sans-serif" font-size="30" letter-spacing="3">POSTERIUM • DESKTOP</text>
+  <text x="130" y="318" fill="#f0e6cc" font-family="DM Sans, sans-serif" font-size="22">Placeholder showcase for installation flow.</text>
+</svg>
