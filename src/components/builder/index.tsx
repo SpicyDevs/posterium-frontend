@@ -46,6 +46,7 @@ import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
 
 const STORAGE_KEY = 'posterium_config_v2';
+const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
 
 // ── Cookie helpers ────────────────────────────────────────────────────────────
 const COOKIE_KEY = 'posterium_apikeys_v1';
@@ -1018,7 +1019,7 @@ const BuilderApp: React.FC = () => {
 
     const configParam = params.get('config');
     if (!configParam) return;
-    if (configParam.length > 12000) return;
+    if (configParam.length > MAX_QUERY_CONFIG_LENGTH) return;
 
     try {
       const decoded = atob(decodeURIComponent(configParam));

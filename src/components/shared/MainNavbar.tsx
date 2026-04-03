@@ -138,9 +138,7 @@ const MainNavbar = memo<MainNavbarProps>(
           </div>
 
           <div className="main-nav-search" style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-            <button
-              type="button"
-              onClick={() => search?.onActivate?.()}
+            <div
               style={{
                 width: 'min(440px,100%)',
                 height: 34,
@@ -152,13 +150,13 @@ const MainNavbar = memo<MainNavbarProps>(
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.03)',
                 color: 'var(--film-text-dim)',
-                cursor: search?.onActivate ? 'pointer' : 'text',
               }}
             >
               <Search size={13} className="shrink-0" />
               <input
                 value={search?.value ?? ''}
-                onChange={(e) => search?.onChange(e.target.value)}
+                onChange={(e) => search?.onChange?.(e.target.value)}
+                onFocus={() => search?.onActivate?.()}
                 readOnly={search?.readOnly || !search?.onChange}
                 placeholder={search?.placeholder ?? 'Search…'}
                 className="syne-font"
@@ -172,7 +170,7 @@ const MainNavbar = memo<MainNavbarProps>(
                   letterSpacing: '0.02em',
                 }}
               />
-            </button>
+            </div>
           </div>
 
           <div className="main-nav-right" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -269,7 +267,7 @@ const MainNavbar = memo<MainNavbarProps>(
               <Search size={13} color="var(--film-text-dim)" />
               <input
                 value={search?.value ?? ''}
-                onChange={(e) => search?.onChange(e.target.value)}
+                onChange={(e) => search?.onChange?.(e.target.value)}
                 readOnly={search?.readOnly || !search?.onChange}
                 placeholder={search?.placeholder ?? 'Search…'}
                 style={{

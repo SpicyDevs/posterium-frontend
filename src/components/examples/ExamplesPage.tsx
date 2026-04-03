@@ -20,7 +20,8 @@ const presets = examplesData as ExamplePreset[];
 const DEFAULT_IMDB = 'tt0468569';
 
 const toSearchParams = (query: string): URLSearchParams => {
-  const q = query.startsWith('?') ? query.slice(1) : query;
+  const normalized = query.trim();
+  const q = normalized.startsWith('?') ? normalized.slice(1) : normalized;
   return new URLSearchParams(q);
 };
 
@@ -222,7 +223,7 @@ const ExamplesPage = memo(() => {
                   <textarea
                     value={query}
                     onChange={(e) => {
-                      setQueries((prev) => ({ ...prev, [preset.id]: e.target.value.trimStart() }));
+                      setQueries((prev) => ({ ...prev, [preset.id]: e.target.value }));
                     }}
                     className="mono-font"
                     style={{
