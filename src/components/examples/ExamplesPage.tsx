@@ -2,10 +2,11 @@ import React, { memo, useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
-import ProgressiveImage from '@/components/shared/ProgressiveImage';
+import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
 import { API, REEL_ITEMS } from '@/lib/dashboard/constants';
-import type { PosterConfig } from '@/components/builder/types';
+import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { DEFAULT_CONFIG } from '@/components/builder/types';
+import { generateApiUrl } from '@/components/builder/utils';
 
 interface ShowcasePoster {
   id: string;
@@ -49,17 +50,10 @@ const showcaseItems: ShowcasePoster[] = REEL_ITEMS.slice(0, 14).map((item) => {
   };
 });
 
-const encodePosterConfig = (config: PosterConfig): string => {
-  try {
-    return encodeURIComponent(btoa(JSON.stringify(config)));
-  } catch {
-    return '';
-  }
-};
-
 const ExamplesPage = memo(() => {
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [extensions, setExtensions] = useState<Partial<Record<string, ExtensionType>>>({});
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -109,7 +103,10 @@ const ExamplesPage = memo(() => {
         >
           {filtered.map((item) => {
             const isOpen = activeMenuId === item.id;
-            const openBuilderHref = `/build?config=${encodePosterConfig(item.config)}`;
+            const currentExtension = extensions[item.id] ?? item.config.extension;
+            const exportConfig: PosterConfig = { ...item.config, extension: currentExtension };
+            const exportUrl = generateApiUrl(exportConfig, API);
+            const openBuilderHref = `/build?url=${encodeURIComponent(exportUrl)}`;
             return (
               <article
                 key={item.id}
@@ -203,9 +200,11 @@ const ExamplesPage = memo(() => {
                 </div>
 
                 <ExportMenu
-                  config={item.config}
+                  config={exportConfig}
                   baseUrl={API}
-                  onExtensionChange={() => {}}
+                  onExtensionChange={(ext) => {
+                    setExtensions((prev) => ({ ...prev, [item.id]: ext }));
+                  }}
                   isOpen={isOpen}
                   onClose={() => setActiveMenuId(null)}
                   containerStyle={{
@@ -215,7 +214,7 @@ const ExamplesPage = memo(() => {
                     width: 300,
                     zIndex: 20,
                   }}
-                  urlOverride={item.url}
+                  urlOverride={exportUrl}
                   openInBuilderHref={openBuilderHref}
                 />
               </article>
