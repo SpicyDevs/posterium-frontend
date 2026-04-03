@@ -124,12 +124,7 @@ const FaqPage = memo(() => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {items.map((item, index) => (
                   <Accordion key={item.id} title={item.question} defaultOpen={index === 0 && !search.trim()}>
-                    <div
-                      className="body-font faq-markdown"
-                      dangerouslySetInnerHTML={{
-                        __html: renderBasicMarkdown(item.answer),
-                      }}
-                    />
+                    <div className="body-font faq-markdown">{renderBasicMarkdown(item.answer)}</div>
                   </Accordion>
                 ))}
               </div>

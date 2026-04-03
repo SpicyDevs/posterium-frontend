@@ -9,7 +9,7 @@ export interface NavbarLink {
 
 interface NavbarSearchConfig {
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   readOnly?: boolean;
   onActivate?: () => void;
@@ -248,7 +248,7 @@ const MainNavbar = memo<MainNavbarProps>(
         {menuOpen && visible && (
           <div
             role="dialog"
-            aria-modal
+            aria-modal="true"
             aria-label="Navigation menu"
             style={{
               position: fixed ? 'fixed' : 'absolute',

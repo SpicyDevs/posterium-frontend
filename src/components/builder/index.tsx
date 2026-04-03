@@ -538,9 +538,9 @@ const [isResetOpen, setIsResetOpen] = useState(false);
             compactLogo
             search={{
               value: '',
-              onChange: () => {},
               placeholder: 'Search commands…',
               readOnly: true,
+              // Builder search opens command palette; typing happens inside that modal.
               onActivate: () => setPaletteOpen(true),
             }}
           />
@@ -1033,6 +1033,7 @@ const BuilderApp: React.FC = () => {
 
     const configParam = params.get('config');
     if (!configParam) return;
+    if (configParam.length > 12000) return;
 
     try {
       const decoded = atob(decodeURIComponent(configParam));
