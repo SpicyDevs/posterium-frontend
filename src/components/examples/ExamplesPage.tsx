@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef, useState } from 'react';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Check, Copy, ExternalLink } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
@@ -34,7 +34,8 @@ const setExtInQuery = (query: string, ext: ExtensionType): string => {
 const buildPreviewUrl = (mediaType: 'movie' | 'tv', tmdbId: string, query: string): string => {
   const params = toSearchParams(query);
   params.delete('ext');
-  return `${API}/${mediaType}/${tmdbId}.webp?${params.toString()}`;
+  const clean = params.toString();
+  return `${API}/${mediaType}/${tmdbId}.webp${clean ? `?${clean}` : ''}`;
 };
 
 const buildBuilderUrl = (query: string): string => {
@@ -275,7 +276,12 @@ const ExamplesPage = memo(() => {
                     }}
                     aria-label={`Copy ${preset.title} query`}
                   >
-                    <Copy size={11} /> {copiedQueryId === preset.id ? 'Query Copied' : 'Copy Query'}
+                    {copiedQueryId === preset.id ? (
+                      <Check size={11} className="text-emerald-400" />
+                    ) : (
+                      <Copy size={11} />
+                    )}{' '}
+                    {copiedQueryId === preset.id ? 'Query Copied' : 'Copy Query'}
                   </button>
                 </div>
 
@@ -288,7 +294,12 @@ const ExamplesPage = memo(() => {
                   isOpen={isOpen}
                   onClose={() => setActiveMenuId(null)}
                   anchorRef={{ current: exportBtnRefs.current[preset.id] }}
-                  urlOverride={previewUrl}
+                  urlOverride={`${API}/poster/${DEFAULT_IMDB}.${getQueryExtension(query)}${(() => {
+                    const params = toSearchParams(query);
+                    params.delete('ext');
+                    const clean = params.toString();
+                    return clean ? `?${clean}` : '';
+                  })()}`}
                   openInBuilderHref={builderUrl}
                 />
               </article>
