@@ -609,7 +609,7 @@ export default function AnalyticsDashboard() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)', paddingTop: 56 }}>
       <style>{`
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
