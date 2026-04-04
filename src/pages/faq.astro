@@ -1,8 +1,63 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
-import FaqPage from '@/components/faq/FaqPage.tsx';
+import MainNavbar from '@/components/shared/MainNavbar';
+import Accordion from '@/components/ui/Accordion.astro';
+import FaqSearch from '@/components/faq/FaqSearch';
+import { AmberTag } from '@/components/shared/primitives';
 import '@/styles/global.css';
+
+// Get all FAQ entries at build time
+const faqEntries = await getCollection('faq');
+
+// Sort by order and group by category
+const sortedFaqs = faqEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+
+const faqsByCategory = new Map<string, typeof sortedFaqs>();
+for (const faq of sortedFaqs) {
+  const category = faq.data.category;
+  if (!faqsByCategory.has(category)) {
+    faqsByCategory.set(category, []);
+  }
+  faqsByCategory.get(category)!.push(faq);
+}
+
+// Define category order
+const categoryOrder = ['Getting Started', 'Builder', 'API', 'Integrations'];
+const orderedCategories = categoryOrder.filter((cat) => faqsByCategory.has(cat));
+
+// Build sidebar links
+const sidebarLinks = orderedCategories.map((category) => ({
+  id: category.toLowerCase().replace(/\s+/g, '-'),
+  label: category,
+  href: `#${category.toLowerCase().replace(/\s+/g, '-')}`,
+}));
+
+// Prepare search items for client-side filtering
+const searchItems = sortedFaqs.map((faq) => ({
+  id: faq.id,
+  category: faq.data.category,
+  question: faq.data.question,
+  contentText: faq.body ?? '',
+}));
+
+// Pre-render all FAQ content
+const renderedFaqs = await Promise.all(
+  sortedFaqs.map(async (faq) => {
+    const { Content } = await faq.render();
+    return { faq, Content };
+  })
+);
+
+const renderedByCategory = new Map<string, typeof renderedFaqs>();
+for (const item of renderedFaqs) {
+  const category = item.faq.data.category;
+  if (!renderedByCategory.has(category)) {
+    renderedByCategory.set(category, []);
+  }
+  renderedByCategory.get(category)!.push(item);
+}
 ---
 
 <BaseLayout
@@ -12,5 +67,153 @@ import '@/styles/global.css';
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/faq" />
-  <FaqPage client:load />
+
+  <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
+    <MainNavbar
+      client:load
+      search={{
+        value: '',
+        placeholder: 'Search FAQs...',
+        readOnly: true,
+      }}
+      keepSearchOnMobile
+      showMobileBuildCta
+    />
+
+    <main class="docs-layout-main">
+      <aside class="docs-layout-sidebar">
+        <div
+          class="syne-font"
+          style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-text-dim); margin-bottom: 10px;"
+        >
+          Categories
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 6px;">
+          {sidebarLinks.map((link) => (
+            <a
+              href={link.href}
+              class="hover-cream syne-font docs-sidebar-link"
+              style="text-decoration: none; color: var(--film-text-label); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </aside>
+
+      <section style="display: flex; flex-direction: column; gap: 18px;">
+        <!-- Page Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <h1
+              class="poster-font"
+              style="margin: 0; font-size: clamp(38px,7vw,64px); letter-spacing: 0.08em; line-height: 0.9;"
+            >
+              FAQ
+            </h1>
+            <p
+              class="body-font"
+              style="margin: 10px 0 0; color: var(--film-text-dim); font-size: 14px;"
+            >
+              Find answers for API usage, builder workflows, and integrations.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <AmberTag>
+              <span data-faq-count>{sortedFaqs.length} results</span>
+            </AmberTag>
+          </div>
+        </div>
+
+        <!-- Search Input (React island for interactivity) -->
+        <FaqSearch client:idle items={searchItems} />
+
+        <!-- FAQ Sections (Static HTML) -->
+        {orderedCategories.map((category) => {
+          const categoryId = category.toLowerCase().replace(/\s+/g, '-');
+          const categoryFaqs = renderedByCategory.get(category) ?? [];
+
+          return (
+            <section
+              id={categoryId}
+              data-faq-section={categoryId}
+              style="scroll-margin-top: 88px;"
+            >
+              <h2
+                class="syne-font"
+                style="margin: 0 0 10px; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-pale);"
+              >
+                {category}
+              </h2>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                {categoryFaqs.map(({ faq, Content }, index) => (
+                  <Accordion
+                    id={faq.id}
+                    title={faq.data.question}
+                    defaultOpen={index === 0}
+                  >
+                    <Content />
+                  </Accordion>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
+        <!-- Empty State (hidden by default) -->
+        <div
+          data-faq-empty
+          class="syne-font"
+          style="display: none; border: 1px solid rgba(196,124,46,0.14); background: rgba(24,22,18,0.6); border-radius: 10px; padding: 16px; color: var(--film-text-dim); font-size: 13px;"
+        >
+          No FAQs matched your search.
+        </div>
+      </section>
+    </main>
+  </div>
 </BaseLayout>
+
+<script>
+  // Simple intersection observer for sidebar active state
+  const sections = document.querySelectorAll<HTMLElement>('[data-faq-section]');
+  const sidebarLinks = document.querySelectorAll<HTMLAnchorElement>('.docs-sidebar-link');
+
+  if (sections.length && sidebarLinks.length) {
+    const setActive = (sectionId: string) => {
+      sidebarLinks.forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href === `#${sectionId}`) {
+          link.style.color = 'var(--film-cream)';
+          link.style.borderColor = 'rgba(212,162,69,0.5)';
+          link.style.background = 'rgba(196,124,46,0.2)';
+        } else {
+          link.style.color = 'var(--film-text-label)';
+          link.style.borderColor = 'rgba(255,255,255,0.06)';
+          link.style.background = 'rgba(255,255,255,0.02)';
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length) {
+          const target = visible[0].target as HTMLElement;
+          const sectionId = target.dataset.faqSection;
+          if (sectionId) setActive(sectionId);
+        }
+      },
+      { rootMargin: '-88px 0px -50% 0px', threshold: [0.1, 0.5, 1] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    // Set initial active state
+    if (sections[0]) {
+      const firstId = sections[0].dataset.faqSection;
+      if (firstId) setActive(firstId);
+    }
+  }
+</script>

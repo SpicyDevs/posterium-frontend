@@ -1,3 +1,14 @@
+---
+name: Emby
+order: 2
+showcaseImages:
+  desktop: /placeholders/install-desktop.svg
+  tv: /placeholders/install-tv.svg
+  mobile:
+    - /placeholders/install-mobile.svg
+    - /placeholders/install-mobile-alt.svg
+---
+
 # Emby installation guide
 
 Use Posterium image URLs in Emby custom artwork fields.

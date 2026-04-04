@@ -1,3 +1,14 @@
+---
+name: Jellyfin
+order: 3
+showcaseImages:
+  desktop: /placeholders/install-desktop.svg
+  tv: /placeholders/install-tv.svg
+  mobile:
+    - /placeholders/install-mobile.svg
+    - /placeholders/install-mobile-alt.svg
+---
+
 # Jellyfin installation guide
 
 Jellyfin accepts remote poster URLs through metadata plugins and manual edits.

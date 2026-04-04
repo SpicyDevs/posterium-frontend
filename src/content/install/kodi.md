@@ -1,3 +1,14 @@
+---
+name: Kodi
+order: 5
+showcaseImages:
+  desktop: /placeholders/install-desktop.svg
+  tv: /placeholders/install-tv.svg
+  mobile:
+    - /placeholders/install-mobile.svg
+    - /placeholders/install-mobile-alt.svg
+---
+
 # Kodi installation guide
 
 Kodi can use Posterium through scrapers, addons, or manual art overrides.

@@ -1,3 +1,14 @@
+---
+name: Plex
+order: 1
+showcaseImages:
+  desktop: /placeholders/install-desktop.svg
+  tv: /placeholders/install-tv.svg
+  mobile:
+    - /placeholders/install-mobile.svg
+    - /placeholders/install-mobile-alt.svg
+---
+
 # Plex installation guide
 
 ![Plex setup preview](/placeholders/install-desktop.svg)

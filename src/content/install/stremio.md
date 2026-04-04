@@ -1,3 +1,14 @@
+---
+name: Stremio
+order: 4
+showcaseImages:
+  desktop: /placeholders/install-desktop.svg
+  tv: /placeholders/install-tv.svg
+  mobile:
+    - /placeholders/install-mobile.svg
+    - /placeholders/install-mobile-alt.svg
+---
+
 # Stremio installation guide
 
 Integrate Posterium output in Stremio addon metadata pipelines.

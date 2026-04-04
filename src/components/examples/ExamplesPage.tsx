@@ -1,21 +1,23 @@
-import React, { memo, useMemo, useRef, useState } from 'react';
-import { Check, Copy, ExternalLink } from 'lucide-react';
+import { memo, useMemo, useRef, useState } from 'react';
+import { Check, Copy, ExternalLink, Search, X } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
-import examplesData from '@/data/examples.json';
+import { PageHeader, EmptyState, Card } from '@/components/ui';
 import { API, REEL_ITEMS } from '@/lib/dashboard/constants';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { DEFAULT_CONFIG } from '@/components/builder/types';
 
-interface ExamplePreset {
+export interface ExamplePreset {
   id: string;
   title: string;
   description: string;
   query: string;
 }
 
-const presets = examplesData as ExamplePreset[];
+interface ExamplesPageProps {
+  presets?: ExamplePreset[];
+}
 
 const DEFAULT_IMDB = 'tt0468569';
 
@@ -62,7 +64,7 @@ const baseConfig: PosterConfig = {
   source: 'tmdb',
 };
 
-const ExamplesPage = memo(() => {
+const ExamplesPage = memo<ExamplesPageProps>(({ presets = [] }) => {
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [copiedQueryId, setCopiedQueryId] = useState<string | null>(null);
@@ -95,7 +97,7 @@ const ExamplesPage = memo(() => {
         preset.description.toLowerCase().includes(q) ||
         query.toLowerCase().includes(q)
     );
-  }, [search, reelFallback, queries]);
+  }, [search, presets, reelFallback, queries]);
 
   const getQueryExtension = (query: string): ExtensionType => {
     const extParam = toSearchParams(query).get('ext');
@@ -112,7 +114,7 @@ const ExamplesPage = memo(() => {
         search={{
           value: search,
           onChange: setSearch,
-          placeholder: 'Search examples…',
+          placeholder: 'Search examples...',
         }}
         keepSearchOnMobile
         showMobileBuildCta
@@ -120,23 +122,10 @@ const ExamplesPage = memo(() => {
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '84px 20px 40px' }}>
         <header style={{ marginBottom: 18 }}>
-          <h1
-            className="poster-font"
-            style={{
-              margin: 0,
-              fontSize: 'clamp(34px,7vw,62px)',
-              lineHeight: 0.88,
-              letterSpacing: '0.08em',
-            }}
-          >
-            EXAMPLES
-          </h1>
-          <p
-            className="body-font"
-            style={{ margin: '10px 0 0', color: 'var(--film-text-dim)', fontSize: 14 }}
-          >
-            Badge position/style presets from JSON query strings. Edit query and open in builder.
-          </p>
+          <PageHeader
+            title="EXAMPLES"
+            subtitle="Badge position/style presets from JSON query strings. Edit query and open in builder."
+          />
         </header>
 
         <section
@@ -150,15 +139,12 @@ const ExamplesPage = memo(() => {
             const isOpen = activeMenuId === preset.id;
 
             return (
-              <article
+              <Card
                 key={preset.id}
-                style={{
-                  position: 'relative',
-                  border: '1px solid rgba(196,124,46,0.15)',
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  background: 'linear-gradient(180deg, rgba(22,20,16,0.8), rgba(14,13,11,0.95))',
-                }}
+                as="article"
+                variant="elevated"
+                padding="none"
+                style={{ position: 'relative' }}
               >
                 <div style={{ aspectRatio: '2 / 3', position: 'relative' }}>
                   <ProgressiveImage
@@ -358,25 +344,14 @@ const ExamplesPage = memo(() => {
                   })()}`}
                   openInBuilderHref={builderUrl}
                 />
-              </article>
+              </Card>
             );
           })}
         </section>
 
         {!filtered.length ? (
-          <div
-            className="syne-font"
-            style={{
-              marginTop: 14,
-              border: '1px solid rgba(196,124,46,0.14)',
-              background: 'rgba(24,22,18,0.6)',
-              borderRadius: 10,
-              padding: 16,
-              color: 'var(--film-text-dim)',
-              fontSize: 13,
-            }}
-          >
-            No examples matched your search.
+          <div style={{ marginTop: 14 }}>
+            <EmptyState message="No examples matched your search." />
           </div>
         ) : null}
       </main>
