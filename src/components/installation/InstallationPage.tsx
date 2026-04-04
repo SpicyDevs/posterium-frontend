@@ -16,6 +16,8 @@ import { extractMarkdownHeadings, type MarkdownHeading } from '@/lib/markdown-he
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
 const MOBILE_SHOWCASE_WIDTH = 'min(42vw, 190px)';
 const MOBILE_SHOWCASE_RATIO = '9 / 16' as const;
+const STICKY_HEADER_OFFSET_PX = 88;
+const TOC_OBSERVER_BOTTOM_MARGIN = '-58%';
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
@@ -66,12 +68,22 @@ const InstallationPage = memo(() => {
     return extractMarkdownHeadings(activeApp.guideMarkdown);
   }, [activeApp]);
 
-  const h2Slugs = useMemo(
-    () => guideHeadings.filter((heading) => heading.depth === 2).map((heading) => heading.slug),
+  const h2SlugByLine = useMemo(
+    () =>
+      new Map(
+        guideHeadings
+          .filter((heading) => heading.depth === 2)
+          .map((heading) => [heading.line, heading.slug] as const)
+      ),
     [guideHeadings]
   );
-  const h3Slugs = useMemo(
-    () => guideHeadings.filter((heading) => heading.depth === 3).map((heading) => heading.slug),
+  const h3SlugByLine = useMemo(
+    () =>
+      new Map(
+        guideHeadings
+          .filter((heading) => heading.depth === 3)
+          .map((heading) => [heading.line, heading.slug] as const)
+      ),
     [guideHeadings]
   );
 
@@ -120,7 +132,7 @@ const InstallationPage = memo(() => {
         if (current.id) setActive(current.id);
       },
       {
-        rootMargin: '-88px 0px -58% 0px',
+        rootMargin: `-${STICKY_HEADER_OFFSET_PX}px 0px ${TOC_OBSERVER_BOTTOM_MARGIN} 0px`,
         threshold: [0.1, 0.25, 0.5, 0.75, 1],
       }
     );
@@ -303,7 +315,7 @@ const InstallationPage = memo(() => {
           key={activeApp.id}
           id={activeApp.id}
           style={{
-            scrollMarginTop: 88,
+            scrollMarginTop: STICKY_HEADER_OFFSET_PX,
             border: '1px solid rgba(196,124,46,0.14)',
             background: 'rgba(14,13,11,0.72)',
             borderRadius: 12,
@@ -316,12 +328,6 @@ const InstallationPage = memo(() => {
             overflow: 'hidden',
           }}
         >
-          {(() => {
-            let h2Cursor = 0;
-            let h3Cursor = 0;
-
-            return (
-              <>
           <h2
             className="syne-font"
             style={{
@@ -362,17 +368,19 @@ const InstallationPage = memo(() => {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h2: (props) => {
-                    const slug = h2Slugs[h2Cursor++];
+                    const line = Number(props.node?.position?.start?.line);
+                    const slug = h2SlugByLine.get(line);
                     return (
-                      <h2 id={slug} style={{ scrollMarginTop: 88 }}>
+                      <h2 id={slug} style={{ scrollMarginTop: STICKY_HEADER_OFFSET_PX }}>
                         {props.children}
                       </h2>
                     );
                   },
                   h3: (props) => {
-                    const slug = h3Slugs[h3Cursor++];
+                    const line = Number(props.node?.position?.start?.line);
+                    const slug = h3SlugByLine.get(line);
                     return (
-                      <h3 id={slug} style={{ scrollMarginTop: 88 }}>
+                      <h3 id={slug} style={{ scrollMarginTop: STICKY_HEADER_OFFSET_PX }}>
                         {props.children}
                       </h3>
                     );
@@ -383,9 +391,6 @@ const InstallationPage = memo(() => {
               </ReactMarkdown>
             </div>
           </section>
-              </>
-            );
-          })()}
         </article>
       ) : null}
 

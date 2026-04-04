@@ -2,11 +2,12 @@ export interface MarkdownHeading {
   depth: number;
   slug: string;
   text: string;
+  line: number;
 }
 
 const punctuationRegex = /[^\p{L}\p{N}\s-]/gu;
 
-const createSlug = (value: string): string => {
+export const slugifyHeadingText = (value: string): string => {
   return value
     .toLowerCase()
     .replace(/`+/g, '')
@@ -29,7 +30,7 @@ export const extractMarkdownHeadings = (markdown: string): MarkdownHeading[] => 
   const headings: MarkdownHeading[] = [];
   const used = new Map<string, number>();
 
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     const match = line.match(/^(#{2,3})\s+(.+?)\s*#*$/);
     if (!match) return;
 
@@ -37,13 +38,13 @@ export const extractMarkdownHeadings = (markdown: string): MarkdownHeading[] => 
     const text = plainText(match[2]);
     if (!text) return;
 
-    const base = createSlug(text);
+    const base = slugifyHeadingText(text);
     if (!base) return;
     const count = used.get(base) ?? 0;
     used.set(base, count + 1);
-    const slug = count ? `${base}-${count + 1}` : base;
+    const slug = count ? `${base}-${count}` : base;
 
-    headings.push({ depth, slug, text });
+    headings.push({ depth, slug, text, line: index + 1 });
   });
 
   return headings;
