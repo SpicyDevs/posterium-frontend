@@ -1,19 +1,23 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DocsLayout, { type DocsSidebarLink } from '@/components/shared/DocsLayout';
 import { AmberTag } from '@/components/shared/primitives';
 import ShowcaseMediaFrame from '@/components/installation/ShowcaseMediaFrame';
+import TableOfContentsClient from '@/components/TableOfContentsClient';
 import {
   installationApps,
   installationPlaceholderImages,
   type InstallationAppConfig,
   type InstallationDevice,
 } from '@/data/installation-config';
+import { extractMarkdownHeadings, type MarkdownHeading } from '@/lib/markdown-headings';
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
 const MOBILE_SHOWCASE_WIDTH = 'min(42vw, 190px)';
 const MOBILE_SHOWCASE_RATIO = '9 / 16' as const;
+const STICKY_HEADER_OFFSET_PX = 88;
+const TOC_OBSERVER_BOTTOM_MARGIN = '-58%';
 
 const labelForDevice = (device: InstallationDevice): string => {
   if (device === 'tv') return 'TV';
@@ -58,6 +62,87 @@ const InstallationPage = memo(() => {
     if (!filteredApps.length) return null;
     return filteredApps.find((app) => app.id === selectedVisibleAppId) ?? filteredApps[0];
   }, [filteredApps, selectedVisibleAppId]);
+
+  const guideHeadings = useMemo<MarkdownHeading[]>(() => {
+    if (!activeApp) return [];
+    return extractMarkdownHeadings(activeApp.guideMarkdown);
+  }, [activeApp]);
+
+  const h2SlugByLine = useMemo(
+    () =>
+      new Map(
+        guideHeadings
+          .filter((heading) => heading.depth === 2)
+          .map((heading) => [heading.line, heading.slug] as const)
+      ),
+    [guideHeadings]
+  );
+  const h3SlugByLine = useMemo(
+    () =>
+      new Map(
+        guideHeadings
+          .filter((heading) => heading.depth === 3)
+          .map((heading) => [heading.line, heading.slug] as const)
+      ),
+    [guideHeadings]
+  );
+
+  useEffect(() => {
+    if (!guideHeadings.length) return;
+
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-toc-link]'));
+    const headings = guideHeadings
+      .map((heading) => document.getElementById(heading.slug))
+      .filter((node): node is HTMLElement => Boolean(node));
+
+    if (!links.length || !headings.length) return;
+
+    const setActive = (slug: string) => {
+      links.forEach((link) => {
+        if (link.dataset.tocLink === slug) link.setAttribute('data-active', 'true');
+        else link.removeAttribute('data-active');
+      });
+    };
+
+    const firstSlug = headings[0]?.id;
+    if (firstSlug) setActive(firstSlug);
+
+    const clickHandlers: Array<() => void> = [];
+    links.forEach((link) => {
+      const handler = (event: Event) => {
+        event.preventDefault();
+        const slug = link.dataset.tocLink;
+        if (!slug) return;
+        const target = document.getElementById(slug);
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActive(slug);
+      };
+      link.addEventListener('click', handler);
+      clickHandlers.push(() => link.removeEventListener('click', handler));
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (!visible.length) return;
+        const current = visible[0].target as HTMLElement;
+        if (current.id) setActive(current.id);
+      },
+      {
+        rootMargin: `-${STICKY_HEADER_OFFSET_PX}px 0px ${TOC_OBSERVER_BOTTOM_MARGIN} 0px`,
+        threshold: [0.1, 0.25, 0.5, 0.75, 1],
+      }
+    );
+
+    headings.forEach((heading) => observer.observe(heading));
+    return () => {
+      observer.disconnect();
+      clickHandlers.forEach((dispose) => dispose());
+    };
+  }, [guideHeadings, activeApp?.id]);
 
   const setActiveDevice = (appId: string, device: InstallationDevice) => {
     setActiveDeviceByApp((prev) => ({
@@ -187,6 +272,7 @@ const InstallationPage = memo(() => {
     <DocsLayout
       sidebarTitle="Apps"
       sidebarLinks={sidebarLinks}
+      sidebarFooter={<TableOfContentsClient headings={guideHeadings} />}
       search={{
         value: search,
         onChange: setSearch,
@@ -229,7 +315,7 @@ const InstallationPage = memo(() => {
           key={activeApp.id}
           id={activeApp.id}
           style={{
-            scrollMarginTop: 88,
+            scrollMarginTop: STICKY_HEADER_OFFSET_PX,
             border: '1px solid rgba(196,124,46,0.14)',
             background: 'rgba(14,13,11,0.72)',
             borderRadius: 12,
@@ -278,7 +364,31 @@ const InstallationPage = memo(() => {
               Guide
             </h3>
             <div className="docs-prose">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeApp.guideMarkdown}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h2: (props) => {
+                    const line = Number(props.node?.position?.start?.line);
+                    const slug = h2SlugByLine.get(line);
+                    return (
+                      <h2 id={slug} style={{ scrollMarginTop: STICKY_HEADER_OFFSET_PX }}>
+                        {props.children}
+                      </h2>
+                    );
+                  },
+                  h3: (props) => {
+                    const line = Number(props.node?.position?.start?.line);
+                    const slug = h3SlugByLine.get(line);
+                    return (
+                      <h3 id={slug} style={{ scrollMarginTop: STICKY_HEADER_OFFSET_PX }}>
+                        {props.children}
+                      </h3>
+                    );
+                  },
+                }}
+              >
+                {activeApp.guideMarkdown}
+              </ReactMarkdown>
             </div>
           </section>
         </article>

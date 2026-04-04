@@ -19,12 +19,13 @@ interface DocsSearchConfig {
 interface DocsLayoutProps {
   sidebarTitle?: string;
   sidebarLinks: DocsSidebarLink[];
+  sidebarFooter?: ReactNode;
   search?: DocsSearchConfig;
   children: ReactNode;
 }
 
 const DocsLayout = memo<DocsLayoutProps>(
-  ({ sidebarTitle = 'Table of Contents', sidebarLinks, search, children }) => {
+  ({ sidebarTitle = 'Table of Contents', sidebarLinks, sidebarFooter, search, children }) => {
     return (
       <div
         style={{
@@ -83,6 +84,7 @@ const DocsLayout = memo<DocsLayoutProps>(
                 </a>
               ))}
             </nav>
+            {sidebarFooter ? <div style={{ marginTop: 12 }}>{sidebarFooter}</div> : null}
           </aside>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>{children}</section>
