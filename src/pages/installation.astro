@@ -22,19 +22,17 @@ const installEntries = await getCollection('install');
 // Sort by order
 const sortedGuides = installEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
 
-// Pre-render all guide content and extract headings
-const renderedGuides = await Promise.all(
-  sortedGuides.map(async (guide) => {
-    const { Content } = await guide.render();
-    const headings = extractMarkdownHeadings(guide.body ?? '');
-    const name = guide.data.name ?? guide.id.charAt(0).toUpperCase() + guide.id.slice(1);
-    const showcaseImages = guide.data.showcaseImages ?? placeholderImages;
-    return { guide, Content, headings, name, showcaseImages };
-  })
-);
+// Prepare guides with extracted headings (content is pre-rendered via glob loader)
+const preparedGuides = sortedGuides.map((guide) => {
+  const headings = extractMarkdownHeadings(guide.body ?? '');
+  const name = guide.data.name ?? guide.id.charAt(0).toUpperCase() + guide.id.slice(1);
+  const showcaseImages = guide.data.showcaseImages ?? placeholderImages;
+  const html = guide.rendered?.html ?? '';
+  return { guide, headings, name, showcaseImages, html };
+});
 
 // Build sidebar links
-const sidebarLinks = renderedGuides.map((g) => ({
+const sidebarLinks = preparedGuides.map((g) => ({
   id: g.guide.id,
   label: g.name,
   href: `#${g.guide.id}`,
@@ -84,8 +82,8 @@ const sidebarLinks = renderedGuides.map((g) => ({
 
         <!-- Table of Contents for active guide -->
         <div id="toc-container" style="margin-top: 14px;">
-          {renderedGuides[0] && (
-            <TableOfContentsClient client:idle headings={renderedGuides[0].headings} />
+          {preparedGuides[0] && (
+            <TableOfContentsClient client:idle headings={preparedGuides[0].headings} />
           )}
         </div>
       </aside>
@@ -107,11 +105,11 @@ const sidebarLinks = renderedGuides.map((g) => ({
               Setup Posterium in Plex, Emby, Jellyfin, Stremio, Kodi, and more.
             </p>
           </div>
-          <AmberTag>{renderedGuides.length} apps</AmberTag>
+          <AmberTag>{preparedGuides.length} apps</AmberTag>
         </div>
 
         <!-- Installation Guide Articles (Static HTML) -->
-        {renderedGuides.map(({ guide, Content, name, showcaseImages }, index) => (
+        {preparedGuides.map(({ guide, name, showcaseImages, html }, index) => (
           <article
             id={guide.id}
             data-guide-id={guide.id}
@@ -142,9 +140,7 @@ const sidebarLinks = renderedGuides.map((g) => ({
               >
                 Guide
               </h3>
-              <div class="prose">
-                <Content />
-              </div>
+              <div class="prose" set:html={html} />
             </section>
           </article>
         ))}
@@ -153,7 +149,7 @@ const sidebarLinks = renderedGuides.map((g) => ({
   </div>
 </BaseLayout>
 
-<script define:vars={{ guideIds: renderedGuides.map(g => g.guide.id), guideHeadings: renderedGuides.map(g => ({ id: g.guide.id, headings: g.headings })) }}>
+<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id), guideHeadings: preparedGuides.map(g => ({ id: g.guide.id, headings: g.headings })) }}>
   // App navigation switching
   const appLinks = document.querySelectorAll('[data-app-link]');
   const guideArticles = document.querySelectorAll('[data-guide-id]');
