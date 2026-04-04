@@ -1,157 +1,80 @@
 // src/components/admin/AnalyticsDashboard.tsx
-// ─── Rasterizer analytics · Grafana-style · v2 ────────────────────────────────
-// Improvements over v1:
-//  • Persistent config (default tab, period, refresh, node filters, alert
-//    thresholds, compact mode, chart style) stored in localStorage
-//  • Settings panel (⚙) accessible from the header
-//  • Removed DB Stats link
-//  • Better text/label visibility (raised contrast on dim/ghost tokens)
-//  • Shared style tokens (S) and extracted sub-components → far less repetition
-//  • Extreme-detail node cards: health score, P50/P95 estimates, alert badges
-//  • Lane comparison grouped bar chart
-//  • Error spike annotation on traffic chart
-//  • Collapsible panels in compact mode
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Rasterizer analytics · Film aesthetic v3 ────────────────────────────────
+// Changes from v2:
+//  • Uses MainNavbar + film CSS variables (matches rest of Posterium site)
+//  • Live mode: 10s auto-refresh option with pulsing indicator
+//  • Fallbacks tab: shows tier usage, escalation rates, win distribution
+//  • Wall Time tab: total request latency from poster handler metrics
+//  • Sub-6h charts now work: analytics.js uses fine-grained bucket expressions
+//  • Simplified settings (localStorage-persisted, popover panel)
+//  • All chart colors pulled from amber/gold palette matching site theme
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  ComposedChart,
-  ReferenceLine,
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell, ComposedChart, ReferenceLine,
 } from 'recharts';
+import MainNavbar from '@/components/shared/MainNavbar';
+import { AmberTag } from '@/components/shared/primitives';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+const API_BASE     = 'https://api.spicydevs.xyz';
+const AUTH_KEY     = 'posterium_analytics_auth_v3';
+const CONFIG_KEY   = 'posterium_dash_config_v3';
+const CORRECT_PW   = 'admin123';
 
-const API_BASE = 'https://api.spicydevs.xyz';
-const AUTH_KEY = 'posterium_analytics_auth_v1';
-const CONFIG_KEY = 'posterium_dash_config_v2';
-const CORRECT_PASSWORD = 'admin123';
-
-interface DashConfig {
-  defaultTab: string;
-  defaultPeriod: string;
-  defaultRefreshMs: number;
-  compactMode: boolean;
-  hiddenNodes: string[];
-  alertSuccessRate: number; // warn below this %
-  alertAvgMs: number; // warn above this ms
-  chartStyle: 'area' | 'line';
-  showLanePanel: boolean;
-  showWinPie: boolean;
-}
-
-const DEFAULT_CONFIG: DashConfig = {
-  defaultTab: 'overview',
-  defaultPeriod: '24h',
-  defaultRefreshMs: 0,
-  compactMode: false,
-  hiddenNodes: [],
-  alertSuccessRate: 90,
-  alertAvgMs: 2000,
-  chartStyle: 'area',
-  showLanePanel: true,
-  showWinPie: true,
+// ── Chart colours (amber/gold palette, work in both light & dark) ─────────────
+const CH = {
+  amber:  '#c47c2e',
+  gold:   '#d4a245',
+  cream:  '#f0e6cc',
+  green:  '#4ade80',
+  red:    '#f87171',
+  orange: '#fb923c',
+  yellow: '#facc15',
+  blue:   '#60a5fa',
+  purple: '#a78bfa',
+  teal:   '#2dd4bf',
+  ghost:  'rgba(140,130,112,0.45)',
+  dim:    'rgba(180,168,148,0.65)',
 };
 
-function loadConfig(): DashConfig {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY);
-    if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
-  } catch {}
-  return DEFAULT_CONFIG;
-}
-function saveConfig(c: DashConfig) {
-  try {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
-  } catch {}
-}
-
-const PERIODS: Record<string, { label: string; short: string }> = {
-  '15m': { label: 'Last 15 Min', short: '15M' },
-  '1h': { label: 'Last 1 Hour', short: '1H' },
-  '3h': { label: 'Last 3 Hours', short: '3H' },
-  '6h': { label: 'Last 6 Hours', short: '6H' },
-  '12h': { label: 'Last 12 Hours', short: '12H' },
-  '24h': { label: 'Last 24 Hours', short: '24H' },
-  '2d': { label: 'Last 2 Days', short: '2D' },
-  '7d': { label: 'Last 7 Days', short: '7D' },
-  '14d': { label: 'Last 14 Days', short: '14D' },
-  '30d': { label: 'Last 30 Days', short: '30D' },
-};
-
-const REFRESH_INTERVALS = [
-  { label: 'Off', ms: 0 },
-  { label: '30s', ms: 30_000 },
-  { label: '1m', ms: 60_000 },
-  { label: '2m', ms: 120_000 },
-  { label: '5m', ms: 300_000 },
-];
-
-const NODE_COLORS: Record<string, string> = {
-  washington: '#3b82f6',
-  ohio: '#8b5cf6',
-  london: '#10b981',
-  tokyo: '#f59e0b',
-  mumbai: '#ef4444',
-  'spaceify-germany': '#06b6d4',
-  'spaceify-france': '#84cc16',
-  wsrv: '#f97316',
-  'render-singapore-1': '#ec4899',
-  'render-singapore-2': '#a78bfa',
-  'render-eu-central': '#14b8a6',
-  'render-us-west': '#78716c',
-  'simple-worker (binding)': '#c47c2e',
-  'simple-worker (http)': '#92400e',
-};
-const PIE_COLORS = [
-  '#c47c2e',
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-  '#ec4899',
-];
+const PIE_COLORS = [CH.amber, CH.blue, CH.green, CH.yellow, CH.orange, CH.purple, CH.teal, CH.red];
 
 function nodeColor(n: string) {
-  return NODE_COLORS[n] ?? '#71717a';
-}
-function nodeShortName(n: string): string {
   const MAP: Record<string, string> = {
-    wsrv: 'wsrv.nl',
-    ohio: 'Ohio · Netlify',
-    washington: 'Washington · Vercel',
-    london: 'London · Vercel',
-    tokyo: 'Tokyo · Vercel',
-    mumbai: 'Mumbai · Vercel',
-    'spaceify-germany': 'Germany · Spaceify',
-    'spaceify-france': 'France · Spaceify',
-    'render-singapore-1': 'Singapore 1 · Render',
-    'render-singapore-2': 'Singapore 2 · Render',
-    'render-eu-central': 'EU Central · Render',
-    'render-us-west': 'US West · Render',
-    'simple-worker (binding)': 'Simple Worker (bind)',
-    'simple-worker (http)': 'Simple Worker (http)',
+    washington: CH.blue, london: CH.green, tokyo: CH.yellow,
+    mumbai: CH.red, 'spaceify-germany': CH.teal, 'spaceify-france': CH.purple,
+    wsrv: CH.orange, 'render-eu': '#ec4899', ohio: CH.purple,
+  };
+  return MAP[n] ?? CH.ghost;
+}
+function nodeLabel(n: string) {
+  const MAP: Record<string, string> = {
+    washington: 'Washington · Vercel', ohio: 'Ohio · Netlify',
+    london: 'London · Vercel', tokyo: 'Tokyo · Vercel', mumbai: 'Mumbai · Vercel',
+    'spaceify-germany': 'Germany · Spaceify', 'spaceify-france': 'France · Spaceify',
+    wsrv: 'wsrv.nl', 'render-eu': 'EU Central · Render',
+    'cf-binding': 'CF Binding', france: 'France · Spaceify', germany: 'Germany · Spaceify',
+    'render_eu': 'EU Central · Render',
   };
   return MAP[n] ?? n;
 }
 
-// ── Number helpers ────────────────────────────────────────────────────────────
+// Lane metadata for fallback tier tab
+const LANE_META: Record<string, { label: string; color: string; tier: number }> = {
+  'geo':           { label: 'Primary (geo)',       color: CH.green,  tier: 1 },
+  'binding':       { label: 'CF Binding',          color: CH.teal,   tier: 1 },
+  'geo-fallback':  { label: 'Tier 1 Fallback',     color: CH.yellow, tier: 2 },
+  'geo-t2':        { label: 'Tier 2 Fallback',     color: CH.orange, tier: 3 },
+  'wsrv-fallback': { label: 'wsrv (fallback)',      color: CH.purple, tier: 2 },
+  'geo-t3':        { label: 'Tier 3 Fallback',     color: CH.red,    tier: 4 },
+  'wsrv-t3':       { label: 'wsrv (Tier 3)',        color: '#dc2626', tier: 4 },
+  'bulk':          { label: 'Bulk',                color: CH.blue,   tier: 0 },
+  'wall':          { label: 'Wall (request level)', color: CH.ghost,  tier: 0 },
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function num(v: any): number {
   if (v == null) return 0;
@@ -173,9 +96,7 @@ function fmtNum(n: number) {
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
   return String(Math.round(n));
 }
-function fmtPct(n: number) {
-  return `${n.toFixed(1)}%`;
-}
+function fmtPct(n: number) { return `${n.toFixed(1)}%`; }
 function relTime(iso: string) {
   const ms = Date.now() - new Date(iso.replace(' ', 'T') + 'Z').getTime();
   const m = Math.floor(ms / 60_000);
@@ -188,357 +109,86 @@ function fmtBucket(s: string) {
   if (!s) return '';
   try {
     const d = new Date(s.replace(' ', 'T') + 'Z');
-    return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
-  } catch {
-    return s.slice(0, 13);
-  }
+    return `${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+  } catch { return s.slice(0, 13); }
 }
-
-// Estimate percentile bucket from latency counts
-function estimateP50(row: any): string {
-  const total = num(row.total_success);
-  if (!total) return '—';
-  const half = total / 2;
-  const u500 = num(row.under_500ms);
-  const u1s = num(row.under_1s);
-  const u2s = num(row.under_2s);
-  const u4s = num(row.under_4s);
-  if (half <= u500) return '< 500ms';
-  if (half <= u1s) return '500ms – 1s';
-  if (half <= u2s) return '1s – 2s';
-  if (half <= u4s) return '2s – 4s';
-  return '> 4s';
-}
-function estimateP95(row: any): string {
-  const total = num(row.total_success);
-  if (!total) return '—';
-  const thresh = total * 0.95;
-  const u500 = num(row.under_500ms);
-  const u1s = num(row.under_1s);
-  const u2s = num(row.under_2s);
-  const u4s = num(row.under_4s);
-  if (thresh <= u500) return '< 500ms';
-  if (thresh <= u1s) return '< 1s';
-  if (thresh <= u2s) return '< 2s';
-  if (thresh <= u4s) return '< 4s';
-  return '> 4s';
-}
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
-
-const C = {
-  black: '#070706',
-  dark: '#0e0d0b',
-  mid: '#141210',
-  char: '#1a1814',
-  border: 'rgba(196,124,46,0.18)',
-  borderFaint: 'rgba(255,255,255,0.07)',
-  amber: '#c47c2e',
-  gold: '#d4a245',
-  cream: '#f0e6cc',
-  // Raised contrast vs v1 — was 0.38/0.55 for ghost/dim
-  ghost: 'rgba(160,150,130,0.65)',
-  dim: 'rgba(200,188,168,0.75)',
-  label: 'rgba(220,208,184,0.90)',
-  body: 'rgba(238,226,204,0.96)',
-  green: '#4ade80',
-  yellow: '#facc15',
-  orange: '#fb923c',
-  red: '#f87171',
-  blue: '#60a5fa',
-  purple: '#a78bfa',
-};
-
 function msColor(ms: number | null) {
-  if (ms === null) return C.ghost;
-  if (ms < 500) return C.green;
-  if (ms < 1200) return C.yellow;
-  if (ms < 3000) return C.orange;
-  return C.red;
+  if (ms === null) return CH.ghost;
+  if (ms < 500)  return CH.green;
+  if (ms < 1200) return CH.yellow;
+  if (ms < 3000) return CH.orange;
+  return CH.red;
 }
 function rateColor(pct: number) {
-  if (pct >= 90) return C.green;
-  if (pct >= 70) return C.yellow;
-  if (pct >= 40) return C.orange;
-  return C.red;
+  if (pct >= 90) return CH.green;
+  if (pct >= 70) return CH.yellow;
+  if (pct >= 40) return CH.orange;
+  return CH.red;
 }
-
-// Health score 0-100 composite: 60% success rate + 40% latency score
-function healthScore(successPct: number, avgMs: number | null): number {
-  const latScore =
-    avgMs === null
-      ? 100
-      : avgMs < 500
-        ? 100
-        : avgMs < 1000
-          ? 80
-          : avgMs < 2000
-            ? 55
-            : avgMs < 4000
-              ? 30
-              : 10;
+function healthScore(successPct: number, avgMs: number | null) {
+  const latScore = avgMs === null ? 100 : avgMs < 500 ? 100 : avgMs < 1000 ? 80 : avgMs < 2000 ? 55 : avgMs < 4000 ? 30 : 10;
   return Math.round(successPct * 0.6 + latScore * 0.4);
 }
 
-// ── Shared style helpers ───────────────────────────────────────────────────────
-
-const S = {
-  monoXs: {
-    fontFamily: 'JetBrains Mono, monospace',
-    fontSize: 8,
-    color: C.ghost,
-    letterSpacing: '0.12em',
-  } as React.CSSProperties,
-  monoSm: {
-    fontFamily: 'JetBrains Mono, monospace',
-    fontSize: 9,
-    color: C.dim,
-    letterSpacing: '0.06em',
-  } as React.CSSProperties,
-  label: {
-    fontFamily: 'JetBrains Mono, monospace',
-    fontSize: 8,
-    color: C.ghost,
-    letterSpacing: '0.16em',
-    textTransform: 'uppercase' as const,
-  },
-  syneXs: {
-    fontFamily: 'Syne, sans-serif',
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase' as const,
-  },
-  flex: { display: 'flex', alignItems: 'center' } as React.CSSProperties,
-  card: {
-    background: C.mid,
-    border: `1px solid ${C.border}`,
-    borderRadius: 10,
-    overflow: 'hidden',
-  } as React.CSSProperties,
-  charBg: {
-    background: C.char,
-    border: `1px solid ${C.border}`,
-    borderRadius: 8,
-  } as React.CSSProperties,
+const PERIODS: Record<string, { label: string; short: string }> = {
+  '15m': { label: '15 Minutes', short: '15M' },
+  '1h':  { label: '1 Hour',     short: '1H'  },
+  '3h':  { label: '3 Hours',    short: '3H'  },
+  '6h':  { label: '6 Hours',    short: '6H'  },
+  '12h': { label: '12 Hours',   short: '12H' },
+  '24h': { label: '24 Hours',   short: '24H' },
+  '2d':  { label: '2 Days',     short: '2D'  },
+  '7d':  { label: '7 Days',     short: '7D'  },
+  '14d': { label: '14 Days',    short: '14D' },
+  '30d': { label: '30 Days',    short: '30D' },
 };
 
-// ── Primitive UI components ───────────────────────────────────────────────────
+const REFRESH_OPTIONS = [
+  { label: 'Off', ms: 0 },
+  { label: '10s', ms: 10_000 },
+  { label: '30s', ms: 30_000 },
+  { label: '1m',  ms: 60_000 },
+  { label: '5m',  ms: 300_000 },
+];
 
-const Skel = ({ h = 80 }: { h?: number }) => (
-  <div
-    style={{
-      height: h,
-      borderRadius: 6,
-      background: 'linear-gradient(110deg,#141210 25%,#1e1b16 50%,#141210 75%)',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.8s linear infinite',
-    }}
-  />
-);
+const TABS = ['overview', 'nodes', 'traffic', 'fallbacks', 'errors', 'breakdown', 'wall-time'] as const;
+type Tab = typeof TABS[number];
 
-const PanelHdr = ({
-  title,
-  tag,
-  action,
-}: {
-  title: string;
-  tag?: string;
-  action?: React.ReactNode;
-}) => (
-  <div
-    style={{
-      padding: '9px 14px',
-      borderBottom: `1px solid ${C.borderFaint}`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: 'rgba(196,124,46,0.025)',
-    }}
-  >
-    <span style={{ ...S.syneXs, color: C.amber }}>{title}</span>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {tag && (
-        <span
-          style={{
-            ...S.monoXs,
-            background: 'rgba(255,255,255,0.05)',
-            border: `1px solid ${C.borderFaint}`,
-            borderRadius: 3,
-            padding: '2px 6px',
-          }}
-        >
-          {tag}
-        </span>
-      )}
-      {action}
-    </div>
-  </div>
-);
+// ── Persisted config ──────────────────────────────────────────────────────────
 
-interface CardProps {
-  title: string;
-  tag?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-  fullWidth?: boolean;
-  noPad?: boolean;
+interface DashConfig {
+  period: string;
+  refreshMs: number;
+  alertRate: number;
+  alertMs: number;
 }
-const Card = ({ title, tag, action, children, fullWidth, noPad }: CardProps) => (
-  <div style={{ ...S.card, gridColumn: fullWidth ? '1 / -1' : undefined }}>
-    <PanelHdr title={title} tag={tag} action={action} />
-    <div style={noPad ? undefined : { padding: 14 }}>{children}</div>
-  </div>
-);
 
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  sub?: string;
-  color?: string;
-  accent?: string;
-  alert?: boolean;
+function loadCfg(): DashConfig {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if (raw) return { period: '24h', refreshMs: 0, alertRate: 90, alertMs: 2000, ...JSON.parse(raw) };
+  } catch {}
+  return { period: '24h', refreshMs: 0, alertRate: 90, alertMs: 2000 };
 }
-const StatCard = ({
-  label,
-  value,
-  sub,
-  color = C.cream,
-  accent = C.amber,
-  alert,
-}: StatCardProps) => (
-  <div
-    style={{
-      padding: '14px 16px',
-      ...S.charBg,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 5,
-      position: 'relative',
-      overflow: 'hidden',
-    }}
-  >
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 2,
-        background: `linear-gradient(90deg, ${alert ? C.red : accent}, transparent)`,
-        opacity: 0.7,
-      }}
-    />
-    {alert && (
-      <div
-        style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          background: C.red,
-          boxShadow: `0 0 6px ${C.red}`,
-          animation: 'pulse-dot 2s ease-in-out infinite',
-        }}
-      />
-    )}
-    <span style={S.label}>{label}</span>
-    <span
-      style={{
-        fontSize: 30,
-        fontWeight: 800,
-        color,
-        fontFamily: 'Bebas Neue, cursive',
-        letterSpacing: '0.04em',
-        lineHeight: 1,
-      }}
-    >
-      {value}
-    </span>
-    {sub && <span style={{ ...S.monoXs, lineHeight: 1.5 }}>{sub}</span>}
-  </div>
-);
+function saveCfg(c: DashConfig) {
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch {}
+}
 
-const Gauge = ({
-  value,
-  size = 48,
-  thresholds,
-}: {
-  value: number;
-  size?: number;
-  thresholds?: { warn: number; ok: number };
-}) => {
-  const r = size / 2 - 5,
-    circ = 2 * Math.PI * r;
-  const fill = Math.max(0, Math.min(value / 100, 1)) * circ;
-  const warnAt = thresholds?.warn ?? 90;
-  const color = value >= warnAt ? C.green : value >= 70 ? C.yellow : value >= 40 ? C.orange : C.red;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke="rgba(255,255,255,0.07)"
-        strokeWidth={4}
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={4}
-        strokeDasharray={`${fill} ${circ}`}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ transition: 'stroke-dasharray 0.6s ease' }}
-      />
-      <text
-        x={size / 2}
-        y={size / 2 + 4}
-        textAnchor="middle"
-        fill={color}
-        fontSize={10}
-        fontWeight="700"
-        fontFamily="JetBrains Mono, monospace"
-      >
-        {value.toFixed(0)}%
-      </text>
-    </svg>
-  );
-};
+// ── Custom tooltip ────────────────────────────────────────────────────────────
 
-const TT = ({ active, payload, label }: any) => {
+const FilmTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div
-      style={{
-        background: C.char,
-        border: `1px solid ${C.border}`,
-        borderRadius: 8,
-        padding: '10px 14px',
-        ...S.monoSm,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-        minWidth: 160,
-      }}
-    >
-      {label && <div style={{ color: C.amber, marginBottom: 6, fontWeight: 700 }}>{label}</div>}
+    <div style={{
+      background: 'var(--film-dark)', border: '1px solid var(--film-border)',
+      borderRadius: 8, padding: '10px 14px',
+      fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.7)', minWidth: 150,
+    }}>
+      {label && <div style={{ color: CH.amber, marginBottom: 6, fontWeight: 700 }}>{label}</div>}
       {payload.map((p: any, i: number) => (
-        <div
-          key={i}
-          style={{
-            color: p.color ?? C.cream,
-            marginBottom: 3,
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <span>{p.name}</span>
+        <div key={i} style={{ color: p.color ?? CH.cream, marginBottom: 3, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ color: CH.dim }}>{p.name}</span>
           <strong>{typeof p.value === 'number' ? fmtNum(p.value) : p.value}</strong>
         </div>
       ))}
@@ -546,600 +196,155 @@ const TT = ({ active, payload, label }: any) => {
   );
 };
 
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+const Skel = ({ h = 80 }: { h?: number }) => (
+  <div style={{
+    height: h, borderRadius: 6,
+    background: 'linear-gradient(110deg,var(--film-dark) 25%,var(--film-char) 50%,var(--film-dark) 75%)',
+    backgroundSize: '200% 100%', animation: 'shimmer 1.8s linear infinite',
+  }} />
+);
+
+// ── Gauge ─────────────────────────────────────────────────────────────────────
+
+const Gauge = ({ value, size = 44 }: { value: number; size?: number }) => {
+  const r = size / 2 - 5, circ = 2 * Math.PI * r;
+  const fill = Math.max(0, Math.min(value / 100, 1)) * circ;
+  const color = value >= 90 ? CH.green : value >= 70 ? CH.yellow : value >= 40 ? CH.orange : CH.red;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={4}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={4}
+        strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: 'stroke-dasharray 0.6s ease' }}/>
+      <text x={size/2} y={size/2+4} textAnchor="middle" fill={color} fontSize={9} fontWeight="700"
+        fontFamily="JetBrains Mono, monospace">{value.toFixed(0)}%</text>
+    </svg>
+  );
+};
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+
+const StatCard = ({ label, value, sub, color = CH.amber, alert }: {
+  label: string; value: string | number; sub?: string; color?: string; alert?: boolean;
+}) => (
+  <div style={{
+    padding: '14px 16px',
+    background: 'var(--film-char)', border: '1px solid var(--film-border)',
+    borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 5,
+    position: 'relative', overflow: 'hidden',
+  }}>
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+      background: `linear-gradient(90deg, ${alert ? CH.red : color}, transparent)` }} />
+    {alert && <div style={{
+      position: 'absolute', top: 8, right: 8, width: 6, height: 6,
+      borderRadius: '50%', background: CH.red, boxShadow: `0 0 6px ${CH.red}`,
+      animation: 'pulse-dot 2s ease-in-out infinite',
+    }} />}
+    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost,
+      letterSpacing: '0.16em', textTransform: 'uppercase' as const }}>{label}</span>
+    <span className="poster-font" style={{ fontSize: 36, color, lineHeight: 1, letterSpacing: '0.04em' }}>
+      {value}
+    </span>
+    {sub && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, lineHeight: 1.5 }}>{sub}</span>}
+  </div>
+);
+
+// ── Card wrapper ──────────────────────────────────────────────────────────────
+
+const Card = ({ title, tag, children, noPad, fullWidth }: {
+  title: string; tag?: string; children: React.ReactNode; noPad?: boolean; fullWidth?: boolean;
+}) => (
+  <div style={{
+    background: 'var(--film-mid)', border: '1px solid var(--film-border)',
+    borderRadius: 10, overflow: 'hidden',
+    gridColumn: fullWidth ? '1 / -1' : undefined,
+  }}>
+    <div style={{ padding: '9px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      background: 'rgba(196,124,46,0.025)' }}>
+      <span className="syne-font" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
+        textTransform: 'uppercase' as const, color: CH.amber }}>{title}</span>
+      {tag && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost,
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 3, padding: '2px 6px' }}>{tag}</span>}
+    </div>
+    <div style={noPad ? undefined : { padding: 14 }}>{children}</div>
+  </div>
+);
+
+// ── Node card ─────────────────────────────────────────────────────────────────
+
+const NodeCard = ({ row, latRow, alertRate, alertMs }: {
+  row: any; latRow?: any; alertRate: number; alertMs: number;
+}) => {
+  const pct    = num(row.success_rate_pct);
+  const avgMs  = nullableNum(row.avg_ms);
+  const score  = healthScore(pct, avgMs);
+  const health = pct >= alertRate ? 'healthy' : pct >= 10 ? 'degraded' : 'down';
+  const hc     = health === 'healthy' ? CH.green : health === 'degraded' ? CH.yellow : CH.red;
+  const alertMs_ = avgMs !== null && avgMs > alertMs;
+  const alertPct = pct < alertRate && num(row.total_attempts) > 0;
+  return (
+    <div style={{ padding: '12px 14px', background: 'var(--film-char)', border: '1px solid var(--film-border)',
+      borderRadius: 8, borderLeft: `3px solid ${nodeColor(row.node)}`, position: 'relative' }}>
+      {(alertMs_ || alertPct) && <div style={{
+        position: 'absolute', top: 8, right: 8, width: 6, height: 6,
+        borderRadius: '50%', background: CH.red, boxShadow: `0 0 6px ${CH.red}`,
+        animation: 'pulse-dot 2s ease-in-out infinite' }} />}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 600 }}>
+            {nodeLabel(row.node).split(' ·')[0]}
+          </div>
+          <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: hc, textTransform: 'uppercase' as const }}>{health}</span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>· {score}/100</span>
+          </div>
+        </div>
+        <Gauge value={pct} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+        {[
+          { l: 'Avg', v: fmtMs(avgMs), c: alertMs_ ? CH.red : msColor(avgMs) },
+          { l: 'Wins', v: fmtNum(num(row.race_wins)), c: num(row.race_wins) > 0 ? CH.gold : CH.ghost },
+          { l: 'Fails', v: fmtNum(num(row.failures)), c: num(row.failures) > 0 ? CH.red : CH.ghost },
+        ].map(m => (
+          <div key={m.l}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, marginBottom: 1 }}>{m.l}</div>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: m.c, fontWeight: 700 }}>{m.v}</div>
+          </div>
+        ))}
+      </div>
+      {latRow && num(latRow.under_4s) > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <LatDist row={latRow} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Latency distribution bar ──────────────────────────────────────────────────
 
-const LatencyDistBar = ({ row, showLabels }: { row: any; showLabels?: boolean }) => {
+const LatDist = ({ row }: { row: any }) => {
   const total = num(row.total_success) || 1;
-  const u500 = num(row.under_500ms);
-  const u1s = num(row.under_1s) - u500;
-  const u2s = num(row.under_2s) - num(row.under_1s);
-  const u4s = num(row.under_4s) - num(row.under_2s);
-  const over = Math.max(0, total - num(row.under_4s));
   const segs = [
-    { n: u500, c: C.green, label: '<500ms' },
-    { n: u1s, c: C.yellow, label: '<1s' },
-    { n: u2s, c: C.orange, label: '<2s' },
-    { n: u4s, c: C.red, label: '<4s' },
-    { n: over, c: '#7f1d1d', label: '>4s' },
-  ].filter((s) => s.n > 0);
+    { n: num(row.under_500ms),                       c: CH.green,  l: '<500ms' },
+    { n: num(row.under_1s) - num(row.under_500ms),   c: CH.yellow, l: '<1s' },
+    { n: num(row.under_2s) - num(row.under_1s),      c: CH.orange, l: '<2s' },
+    { n: num(row.under_4s) - num(row.under_2s),      c: CH.red,    l: '<4s' },
+    { n: Math.max(0, total - num(row.under_4s)),      c: '#7f1d1d', l: '>4s' },
+  ].filter(s => s.n > 0);
   return (
-    <div>
-      <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 1 }}>
-        {segs.map((s, i) => (
-          <div key={i} style={{ flex: s.n / total, background: s.c, minWidth: 2 }} />
-        ))}
-      </div>
-      {showLabels && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
-          {segs.map((s, i) => (
-            <span key={i} style={{ ...S.monoXs, color: s.c, fontSize: 7 }}>
-              {s.label} {fmtPct((s.n / total) * 100)}
-            </span>
-          ))}
-        </div>
-      )}
+    <div style={{ display: 'flex', height: 5, borderRadius: 2, overflow: 'hidden', gap: 1 }}>
+      {segs.map((s, i) => (
+        <div key={i} title={`${s.l}: ${Math.round(s.n/total*100)}%`}
+          style={{ flex: s.n / total, background: s.c, minWidth: 2 }} />
+      ))}
     </div>
   );
-};
-
-// ── Heatmap ───────────────────────────────────────────────────────────────────
-
-const HourHeatmap = ({ data }: { data: any[] }) => {
-  const { hours, hourKeys, nodes } = useMemo(() => {
-    const map: Record<string, Record<string, { failures: number; attempts: number }>> = {};
-    data.forEach((r) => {
-      const h = fmtBucket(r.bucket ?? '');
-      if (!h) return;
-      if (!map[h]) map[h] = {};
-      const node = r.node ?? '';
-      if (!map[h][node]) map[h][node] = { failures: 0, attempts: 0 };
-      map[h][node].failures += num(r.failures);
-      map[h][node].attempts += num(r.attempts);
-    });
-    return {
-      hours: map,
-      hourKeys: Object.keys(map).slice(-24),
-      nodes: [...new Set(data.map((r) => r.node ?? ''))].filter(Boolean),
-    };
-  }, [data]);
-  if (!hourKeys.length || !nodes.length)
-    return (
-      <div style={{ ...S.monoSm, color: C.ghost, padding: 20, textAlign: 'center' }}>
-        No heatmap data
-      </div>
-    );
-  const CELL_W = 28,
-    CELL_H = 20,
-    LABEL_W = 140,
-    LABEL_H = 30;
-  return (
-    <div style={{ overflowX: 'auto' }}>
-      <svg
-        width={LABEL_W + hourKeys.length * CELL_W}
-        height={LABEL_H + nodes.length * CELL_H}
-        style={{ display: 'block' }}
-      >
-        {hourKeys.map((h, i) => (
-          <text
-            key={h}
-            x={LABEL_W + i * CELL_W + CELL_W / 2}
-            y={LABEL_H - 4}
-            textAnchor="middle"
-            fill={C.ghost}
-            fontSize={7}
-            fontFamily="JetBrains Mono, monospace"
-            transform={`rotate(-45, ${LABEL_W + i * CELL_W + CELL_W / 2}, ${LABEL_H - 4})`}
-          >
-            {h.slice(-5)}
-          </text>
-        ))}
-        {nodes.map((node, ni) => (
-          <g key={node}>
-            <text
-              x={LABEL_W - 4}
-              y={LABEL_H + ni * CELL_H + CELL_H / 2 + 3}
-              textAnchor="end"
-              fill={C.dim}
-              fontSize={8}
-              fontFamily="JetBrains Mono, monospace"
-            >
-              {nodeShortName(node).split(' ')[0]}
-            </text>
-            {hourKeys.map((h, hi) => {
-              const cell = hours[h]?.[node];
-              const rate = cell && cell.attempts > 0 ? cell.failures / cell.attempts : 0;
-              const fill =
-                rate === 0
-                  ? 'rgba(74,222,128,0.18)'
-                  : `rgba(248,113,113,${0.15 + Math.min(rate * 4, 1) * 0.75})`;
-              return (
-                <rect
-                  key={h}
-                  x={LABEL_W + hi * CELL_W + 1}
-                  y={LABEL_H + ni * CELL_H + 1}
-                  width={CELL_W - 2}
-                  height={CELL_H - 2}
-                  rx={2}
-                  fill={fill}
-                >
-                  <title>{`${nodeShortName(node)} @ ${h}\n${cell?.failures ?? 0} fail / ${cell?.attempts ?? 0} total`}</title>
-                </rect>
-              );
-            })}
-          </g>
-        ))}
-      </svg>
-      <div style={{ display: 'flex', gap: 14, marginTop: 8, alignItems: 'center', ...S.monoXs }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div
-            style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(74,222,128,0.22)' }}
-          />
-          <span>No failures</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div
-            style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(248,113,113,0.55)' }}
-          />
-          <span>Some failures</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div
-            style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(248,113,113,0.9)' }}
-          />
-          <span>High failure rate</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ── Node health card ──────────────────────────────────────────────────────────
-
-interface NodeRowData {
-  node: string;
-  total_attempts: number;
-  successes: number;
-  failures: number;
-  success_rate_pct: number;
-  avg_ms: number | null;
-  race_wins: number;
-}
-interface LatRowData {
-  node: string;
-  total_success: number;
-  avg_ms: number | null;
-  under_500ms: number;
-  under_1s: number;
-  under_2s: number;
-  under_4s: number;
-}
-
-const NodeCard = ({
-  row,
-  latRow,
-  compact,
-  alertSuccessRate,
-  alertAvgMs,
-}: {
-  row: NodeRowData;
-  latRow?: LatRowData;
-  compact: boolean;
-  alertSuccessRate: number;
-  alertAvgMs: number;
-}) => {
-  const health =
-    row.success_rate_pct >= alertSuccessRate
-      ? 'healthy'
-      : row.success_rate_pct >= 10
-        ? 'degraded'
-        : 'down';
-  const hc = health === 'healthy' ? C.green : health === 'degraded' ? C.yellow : C.red;
-  const score = healthScore(row.success_rate_pct, row.avg_ms);
-  const isAlertMs = row.avg_ms !== null && row.avg_ms > alertAvgMs;
-  const isAlertRate = row.success_rate_pct < alertSuccessRate && row.total_attempts > 0;
-  return (
-    <div
-      style={{
-        padding: compact ? '8px 10px' : '12px 14px',
-        ...S.charBg,
-        borderLeft: `3px solid ${nodeColor(row.node)}`,
-        position: 'relative',
-      }}
-    >
-      {(isAlertMs || isAlertRate) && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: C.red,
-            boxShadow: `0 0 6px ${C.red}`,
-            animation: 'pulse-dot 2s ease-in-out infinite',
-          }}
-        />
-      )}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: compact ? 4 : 8,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: 10,
-              color: C.label,
-              fontWeight: 600,
-              fontFamily: 'JetBrains Mono, monospace',
-            }}
-          >
-            {nodeShortName(row.node).split(' ·')[0]}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-            <span style={{ ...S.monoXs, color: hc, textTransform: 'uppercase', fontSize: 7 }}>
-              {health}
-            </span>
-            <span style={{ ...S.monoXs, color: C.ghost, fontSize: 7 }}>· score {score}</span>
-          </div>
-        </div>
-        <Gauge
-          value={row.success_rate_pct}
-          size={compact ? 32 : 38}
-          thresholds={{ warn: alertSuccessRate, ok: 100 }}
-        />
-      </div>
-      {!compact && (
-        <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 6,
-              marginBottom: latRow && latRow.under_4s > 0 ? 8 : 0,
-            }}
-          >
-            {[
-              { l: 'Avg', v: fmtMs(row.avg_ms), c: isAlertMs ? C.red : msColor(row.avg_ms) },
-              { l: 'Wins', v: fmtNum(row.race_wins), c: row.race_wins > 0 ? C.gold : C.ghost },
-              {
-                l: 'Fails',
-                v: fmtNum(row.failures),
-                c: row.failures > 0 ? (row.failures > 50 ? C.red : C.orange) : C.ghost,
-              },
-            ].map((m) => (
-              <div key={m.l}>
-                <div style={{ ...S.monoXs, fontSize: 7, marginBottom: 1 }}>{m.l}</div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: m.c,
-                    fontWeight: 700,
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}
-                >
-                  {m.v}
-                </div>
-              </div>
-            ))}
-          </div>
-          {latRow && latRow.under_4s > 0 && (
-            <div>
-              <LatencyDistBar row={latRow} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ ...S.monoXs, fontSize: 7 }}>P50: {estimateP50(latRow)}</span>
-                <span style={{ ...S.monoXs, fontSize: 7 }}>P95: {estimateP95(latRow)}</span>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-      {compact && (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <span
-            style={{ ...S.monoXs, color: isAlertMs ? C.red : msColor(row.avg_ms), fontSize: 7 }}
-          >
-            {fmtMs(row.avg_ms)}
-          </span>
-          <span style={{ ...S.monoXs, color: row.failures > 0 ? C.red : C.ghost, fontSize: 7 }}>
-            {row.failures} fail
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Settings panel ────────────────────────────────────────────────────────────
-
-const SettingsPanel = ({
-  config,
-  nodeList,
-  onSave,
-  onClose,
-}: {
-  config: DashConfig;
-  nodeList: string[];
-  onSave: (c: DashConfig) => void;
-  onClose: () => void;
-}) => {
-  const [local, setLocal] = useState<DashConfig>({ ...config });
-  const set = (k: keyof DashConfig, v: any) => setLocal((p) => ({ ...p, [k]: v }));
-  const toggleNode = (node: string) => {
-    const hn = local.hiddenNodes.includes(node)
-      ? local.hiddenNodes.filter((n) => n !== node)
-      : [...local.hiddenNodes, node];
-    set('hiddenNodes', hn);
-  };
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.7)',
-        backdropFilter: 'blur(4px)',
-      }}
-    >
-      <div
-        style={{
-          width: 480,
-          maxHeight: '85vh',
-          overflowY: 'auto',
-          ...S.card,
-          boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
-        }}
-      >
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: `1px solid ${C.borderFaint}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ ...S.syneXs, color: C.amber, fontSize: 11 }}>⚙ Dashboard Settings</span>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.ghost,
-              cursor: 'pointer',
-              fontSize: 16,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Defaults */}
-          <Section label="Startup Defaults">
-            <Row label="Default tab">
-              <select
-                value={local.defaultTab}
-                onChange={(e) => set('defaultTab', e.target.value)}
-                style={selectStyle}
-              >
-                {['overview', 'nodes', 'traffic', 'errors', 'breakdown'].map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </Row>
-            <Row label="Default period">
-              <select
-                value={local.defaultPeriod}
-                onChange={(e) => set('defaultPeriod', e.target.value)}
-                style={selectStyle}
-              >
-                {Object.entries(PERIODS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </Row>
-            <Row label="Auto-refresh">
-              <select
-                value={local.defaultRefreshMs}
-                onChange={(e) => set('defaultRefreshMs', Number(e.target.value))}
-                style={selectStyle}
-              >
-                {REFRESH_INTERVALS.map((r) => (
-                  <option key={r.ms} value={r.ms}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </Row>
-          </Section>
-
-          {/* Display */}
-          <Section label="Display">
-            <Row label="Compact mode">
-              <Toggle value={local.compactMode} onChange={(v) => set('compactMode', v)} />
-            </Row>
-            <Row label="Chart style">
-              <select
-                value={local.chartStyle}
-                onChange={(e) => set('chartStyle', e.target.value as any)}
-                style={selectStyle}
-              >
-                <option value="area">Area charts</option>
-                <option value="line">Line charts</option>
-              </select>
-            </Row>
-            <Row label="Show win distribution pie">
-              <Toggle value={local.showWinPie} onChange={(v) => set('showWinPie', v)} />
-            </Row>
-            <Row label="Show lane panel">
-              <Toggle value={local.showLanePanel} onChange={(v) => set('showLanePanel', v)} />
-            </Row>
-          </Section>
-
-          {/* Alert thresholds */}
-          <Section label="Alert Thresholds">
-            <Row label={`Success rate warn < ${local.alertSuccessRate}%`}>
-              <input
-                type="range"
-                min={50}
-                max={100}
-                step={5}
-                value={local.alertSuccessRate}
-                onChange={(e) => set('alertSuccessRate', Number(e.target.value))}
-                style={{ width: 120, accentColor: C.amber }}
-              />
-            </Row>
-            <Row label={`Latency warn > ${local.alertAvgMs}ms`}>
-              <input
-                type="range"
-                min={500}
-                max={5000}
-                step={100}
-                value={local.alertAvgMs}
-                onChange={(e) => set('alertAvgMs', Number(e.target.value))}
-                style={{ width: 120, accentColor: C.amber }}
-              />
-            </Row>
-          </Section>
-
-          {/* Node visibility */}
-          {nodeList.length > 0 && (
-            <Section label="Node Visibility">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {nodeList.map((n) => (
-                  <Row
-                    key={n}
-                    label={
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: nodeColor(n),
-                            display: 'inline-block',
-                          }}
-                        />
-                        {nodeShortName(n).split(' ·')[0]}
-                      </span>
-                    }
-                  >
-                    <Toggle value={!local.hiddenNodes.includes(n)} onChange={() => toggleNode(n)} />
-                  </Row>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
-            <button
-              onClick={onClose}
-              style={{
-                ...btnStyle,
-                background: 'transparent',
-                color: C.ghost,
-                border: `1px solid ${C.borderFaint}`,
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                saveConfig(local);
-                onSave(local);
-                onClose();
-              }}
-              style={{ ...btnStyle, background: C.amber, color: '#070706' }}
-            >
-              Save & Apply
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div>
-    <div
-      style={{
-        ...S.monoXs,
-        marginBottom: 8,
-        paddingBottom: 4,
-        borderBottom: `1px solid ${C.borderFaint}`,
-      }}
-    >
-      {label}
-    </div>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>
-  </div>
-);
-const Row = ({ label, children }: { label: React.ReactNode; children: React.ReactNode }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-    <span style={{ ...S.monoSm, color: C.label, fontSize: 9 }}>{label}</span>
-    {children}
-  </div>
-);
-const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
-  <button
-    onClick={() => onChange(!value)}
-    style={{
-      width: 36,
-      height: 18,
-      borderRadius: 9,
-      border: 'none',
-      cursor: 'pointer',
-      background: value ? C.amber : 'rgba(255,255,255,0.1)',
-      transition: 'background 0.2s',
-      position: 'relative',
-    }}
-  >
-    <div
-      style={{
-        position: 'absolute',
-        top: 2,
-        left: value ? 18 : 2,
-        width: 14,
-        height: 14,
-        borderRadius: '50%',
-        background: '#fff',
-        transition: 'left 0.2s',
-      }}
-    />
-  </button>
-);
-const selectStyle: React.CSSProperties = {
-  background: C.char,
-  border: `1px solid ${C.borderFaint}`,
-  color: C.cream,
-  padding: '4px 8px',
-  borderRadius: 4,
-  fontSize: 10,
-  fontFamily: 'JetBrains Mono, monospace',
-  outline: 'none',
-};
-const btnStyle: React.CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: 6,
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: 10,
-  fontWeight: 700,
-  fontFamily: 'Syne, sans-serif',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
 };
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
@@ -1149,10 +354,8 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
   const [err, setErr] = useState('');
   const [shake, setShake] = useState(false);
   const submit = () => {
-    if (pw === CORRECT_PASSWORD) {
-      try {
-        localStorage.setItem(AUTH_KEY, '1');
-      } catch {}
+    if (pw === CORRECT_PW) {
+      try { localStorage.setItem(AUTH_KEY, '1'); } catch {}
       onAuth();
     } else {
       setErr('Incorrect password');
@@ -1162,88 +365,34 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
     }
   };
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        background: C.black,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'DM Sans, sans-serif',
-      }}
-    >
+    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
-      <div
-        style={{
-          width: 380,
-          ...S.card,
-          boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
-          animation: shake ? 'shake 0.4s ease' : 'none',
-        }}
-      >
-        <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${C.borderFaint}` }}>
-          <div style={{ ...S.monoXs, color: C.amber, marginBottom: 4 }}>◆ POSTERIUM</div>
-          <div
-            style={{
-              fontSize: 22,
-              color: C.cream,
-              fontFamily: 'Bebas Neue, cursive',
-              letterSpacing: '0.06em',
-            }}
-          >
-            ANALYTICS ACCESS
-          </div>
-          <div style={{ ...S.monoXs, marginTop: 4 }}>
-            Rasterizer node · D1 database · 30-day data
-          </div>
+      <div style={{
+        width: 360, background: 'var(--film-mid)', border: '1px solid var(--film-border)',
+        borderRadius: 12, overflow: 'hidden', animation: shake ? 'shake 0.4s ease' : 'none',
+        boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
+      }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <AmberTag style={{ marginBottom: 8 }}>Posterium</AmberTag>
+          <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-cream)', letterSpacing: '0.06em' }}>Analytics</div>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, marginTop: 4 }}>raster_metrics · CF Analytics Engine</div>
         </div>
         <div style={{ padding: '20px 24px' }}>
-          <label style={{ display: 'block', ...S.label, marginBottom: 6 }}>Admin Password</label>
-          <input
-            type="password"
-            value={pw}
-            onChange={(e) => {
-              setPw(e.target.value);
-              setErr('');
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && submit()}
-            placeholder="Enter password"
-            autoFocus
-            style={{
-              width: '100%',
-              height: 40,
-              padding: '0 12px',
-              background: C.char,
+          <label style={{ display: 'block', fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Admin Password</label>
+          <input type="password" value={pw} onChange={e => { setPw(e.target.value); setErr(''); }}
+            onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Enter password" autoFocus
+            style={{ width: '100%', height: 40, padding: '0 12px', background: 'var(--film-char)',
               border: `1px solid ${err ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: 7,
-              color: C.cream,
-              fontSize: 13,
-              fontFamily: 'JetBrains Mono, monospace',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-          {err && <div style={{ marginTop: 5, ...S.monoXs, color: C.red }}>✕ {err}</div>}
-          <button
-            onClick={submit}
-            style={{
-              width: '100%',
-              height: 40,
-              marginTop: 14,
-              background: `linear-gradient(90deg,${C.amber},${C.gold})`,
-              color: '#070706',
-              border: 'none',
-              borderRadius: 7,
-              cursor: 'pointer',
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              fontFamily: 'Syne, sans-serif',
-            }}
-          >
-            Enter Dashboard
-          </button>
+              borderRadius: 7, color: 'var(--film-cream)', fontSize: 13, fontFamily: 'JetBrains Mono, monospace',
+              outline: 'none', boxSizing: 'border-box' as const }} />
+          {err && <div style={{ marginTop: 5, fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.red }}>✕ {err}</div>}
+          <button onClick={submit} style={{
+            width: '100%', height: 40, marginTop: 14,
+            background: `linear-gradient(90deg,${CH.amber},${CH.gold})`,
+            color: '#070706', border: 'none', borderRadius: 7, cursor: 'pointer',
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' as const,
+            fontFamily: 'Syne, sans-serif',
+          }}>Enter Dashboard</button>
         </div>
       </div>
     </div>
@@ -1253,1160 +402,356 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
 // ── Main dashboard ────────────────────────────────────────────────────────────
 
 export default function AnalyticsDashboard() {
-  const [authed, setAuthed] = useState(() => {
-    try {
-      return localStorage.getItem(AUTH_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const [config, setConfig] = useState<DashConfig>(loadConfig);
+  const [authed, setAuthed] = useState(() => { try { return localStorage.getItem(AUTH_KEY) === '1'; } catch { return false; } });
+  const [cfg, setCfg] = useState<DashConfig>(loadCfg);
   const [data, setData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [period, setPeriod] = useState(() => loadConfig().defaultPeriod);
-  const [tab, setTab] = useState(() => loadConfig().defaultTab);
-  const [refreshMs, setRefreshMs] = useState(() => loadConfig().defaultRefreshMs);
+  const [tab, setTab] = useState<Tab>('overview');
   const [countdown, setCountdown] = useState(0);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const rTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const cTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [live, setLive] = useState(false);
+  const rTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const applyConfig = (c: DashConfig) => {
-    setConfig(c);
-    setPeriod(c.defaultPeriod);
-    setTab(c.defaultTab);
-    setRefreshMs(c.defaultRefreshMs);
+  const updateCfg = (next: Partial<DashConfig>) => {
+    const c = { ...cfg, ...next };
+    setCfg(c);
+    saveCfg(c);
   };
-  const logout = () => {
+
+  const fetchData = useCallback(async (p?: string) => {
+    setLoading(true);
+    setError('');
     try {
-      localStorage.removeItem(AUTH_KEY);
-    } catch {}
-    setAuthed(false);
-    setData(null);
-  };
-
-  const fetchData = useCallback(
-    async (p?: string) => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await fetch(`${API_BASE}/analytics?period=${p ?? period}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        setData(json.data ?? null);
-        setLastFetch(new Date());
-      } catch (e: any) {
-        setError(e.message ?? 'Fetch failed');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [period]
-  );
-
-  useEffect(() => {
-    if (authed) fetchData();
-  }, [authed]);
-
-  useEffect(() => {
-    if (rTimer.current) clearInterval(rTimer.current);
-    if (cTimer.current) clearInterval(cTimer.current);
-    if (!authed || refreshMs === 0) {
-      setCountdown(0);
-      return;
+      const res = await fetch(`${API_BASE}/analytics?period=${p ?? cfg.period}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json.data ?? null);
+      setLastFetch(new Date());
+    } catch (e: any) {
+      setError(e.message ?? 'Fetch failed');
+    } finally {
+      setLoading(false);
     }
-    setCountdown(refreshMs / 1000);
-    rTimer.current = setInterval(() => {
-      fetchData();
-      setCountdown(refreshMs / 1000);
-    }, refreshMs);
-    cTimer.current = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000);
+  }, [cfg.period]);
+
+  useEffect(() => { if (authed) fetchData(); }, [authed]);
+
+  const effectiveRefreshMs = live ? 10_000 : cfg.refreshMs;
+
+  useEffect(() => {
+    if (rTimerRef.current) clearInterval(rTimerRef.current);
+    if (cTimerRef.current) clearInterval(cTimerRef.current);
+    if (!authed || effectiveRefreshMs === 0) { setCountdown(0); return; }
+    setCountdown(effectiveRefreshMs / 1000);
+    rTimerRef.current = setInterval(() => { fetchData(); setCountdown(effectiveRefreshMs / 1000); }, effectiveRefreshMs);
+    cTimerRef.current = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000);
     return () => {
-      if (rTimer.current) clearInterval(rTimer.current);
-      if (cTimer.current) clearInterval(cTimer.current);
+      if (rTimerRef.current) clearInterval(rTimerRef.current);
+      if (cTimerRef.current) clearInterval(cTimerRef.current);
     };
-  }, [refreshMs, authed, fetchData]);
+  }, [effectiveRefreshMs, authed, fetchData]);
 
-  // ── Data normalization ──────────────────────────────────────────────────────
+  // ── Data normalization ─────────────────────────────────────────────────────
 
-  const allNodeRows: NodeRowData[] = useMemo(
-    () =>
-      (data?.node_performance?.data ?? []).map((r: any) => ({
-        node: String(r.node ?? ''),
-        total_attempts: num(r.total_attempts),
-        successes: num(r.successes),
-        failures: num(r.failures),
-        success_rate_pct: num(r.success_rate_pct),
-        avg_ms: nullableNum(r.avg_ms),
-        race_wins: num(r.race_wins),
-      })),
-    [data]
-  );
-
-  const nodeRows = useMemo(
-    () => allNodeRows.filter((r) => !config.hiddenNodes.includes(r.node)),
-    [allNodeRows, config.hiddenNodes]
-  );
+  const nodeRows = useMemo(() => (data?.node_performance?.data ?? []).map((r: any) => ({
+    node: String(r.node ?? ''),
+    total_attempts: num(r.total_attempts), successes: num(r.successes), failures: num(r.failures),
+    success_rate_pct: num(r.success_rate_pct), avg_ms: nullableNum(r.avg_ms), race_wins: num(r.race_wins),
+  })), [data]);
 
   const globalRow = useMemo(() => {
     const raw = data?.global_summary?.data?.[0];
-    if (raw && num(raw.total_attempts) > 0)
-      return {
-        total_attempts: num(raw.total_attempts),
-        successes: num(raw.successes),
-        failures: num(raw.failures),
-        race_wins: num(raw.race_wins),
-        success_rate_pct: num(raw.success_rate_pct),
-        avg_ms: nullableNum(raw.avg_ms),
-      };
-    if (!nodeRows.length)
-      return {
-        total_attempts: 0,
-        successes: 0,
-        failures: 0,
-        race_wins: 0,
-        success_rate_pct: 0,
-        avg_ms: null,
-      };
+    if (raw && num(raw.total_attempts) > 0) return {
+      total_attempts: num(raw.total_attempts), successes: num(raw.successes),
+      failures: num(raw.failures), race_wins: num(raw.race_wins),
+      success_rate_pct: num(raw.success_rate_pct), avg_ms: nullableNum(raw.avg_ms),
+    };
     const total = nodeRows.reduce((s, r) => s + r.total_attempts, 0);
-    const succ = nodeRows.reduce((s, r) => s + r.successes, 0);
-    const wAvg = nodeRows.reduce((s, r) => s + (r.avg_ms ?? 0) * r.successes, 0);
-    return {
-      total_attempts: total,
-      successes: succ,
+    const succ  = nodeRows.reduce((s, r) => s + r.successes, 0);
+    const wAvg  = nodeRows.reduce((s, r) => s + (r.avg_ms ?? 0) * r.successes, 0);
+    return { total_attempts: total, successes: succ,
       failures: nodeRows.reduce((s, r) => s + r.failures, 0),
       race_wins: nodeRows.reduce((s, r) => s + r.race_wins, 0),
       success_rate_pct: total > 0 ? (succ / total) * 100 : 0,
-      avg_ms: succ > 0 ? wAvg / succ : null,
-    };
+      avg_ms: succ > 0 ? wAvg / succ : null };
   }, [data, nodeRows]);
 
-  const trafficData = useMemo(
-    () =>
-      (data?.traffic_timeseries?.data ?? []).map((r: any) => ({
-        bucket: fmtBucket(r.bucket ?? ''),
-        attempts: num(r.attempts),
-        successes: num(r.successes),
-        failures: num(r.failures),
-        wins: num(r.wins),
-        avg_ms: num(r.avg_ms),
-        error_rate: num(r.attempts) > 0 ? (num(r.failures) / num(r.attempts)) * 100 : 0,
-      })),
-    [data]
-  );
+  const trafficData = useMemo(() => (data?.traffic_timeseries?.data ?? []).map((r: any) => ({
+    bucket: fmtBucket(r.bucket ?? ''), attempts: num(r.attempts), successes: num(r.successes),
+    failures: num(r.failures), wins: num(r.wins), avg_ms: num(r.avg_ms),
+    error_rate: num(r.attempts) > 0 ? (num(r.failures) / num(r.attempts)) * 100 : 0,
+  })), [data]);
 
-  const failRows = useMemo(
-    () =>
-      (data?.recent_failures?.data ?? []).map((r: any) => ({
-        node: String(r.node ?? ''),
-        error: String(r.error ?? ''),
-        status_code: num(r.status_code),
-        timestamp: String(r.timestamp ?? ''),
-      })),
-    [data]
-  );
-  const formatRows = useMemo(
-    () =>
-      (data?.format_breakdown?.data ?? []).map((r: any) => ({
-        format: String(r.format ?? '?'),
-        attempts: num(r.attempts),
-        successes: num(r.successes),
-        avg_ms: nullableNum(r.avg_ms),
-      })),
-    [data]
-  );
-  const coloRows = useMemo(
-    () =>
-      (data?.colo_breakdown?.data ?? []).map((r: any) => ({
-        colo: String(r.colo ?? ''),
-        attempts: num(r.attempts),
-        successes: num(r.successes),
-        avg_ms: nullableNum(r.avg_ms),
-      })),
-    [data]
-  );
-  const winRows = useMemo(
-    () =>
-      (data?.win_rate?.data ?? [])
-        .filter((r: any) => !config.hiddenNodes.includes(r.node))
-        .map((r: any) => ({
-          node: String(r.node ?? ''),
-          wins: num(r.wins),
-          successes: num(r.successes),
-          win_rate_pct: num(r.win_rate_pct),
-        })),
-    [data, config.hiddenNodes]
-  );
-  const laneRows = useMemo(
-    () =>
-      (data?.lane_performance?.data ?? []).map((r: any) => ({
-        lane: String(r.lane ?? ''),
-        attempts: num(r.attempts),
-        successes: num(r.successes),
-        success_rate_pct: num(r.success_rate_pct),
-        avg_ms: nullableNum(r.avg_ms),
-        wins: num(r.wins),
-      })),
-    [data]
-  );
+  const fallbackTierRows = useMemo(() => (data?.fallback_tiers?.data ?? [])
+    .filter((r: any) => r.lane && r.lane !== 'wall')
+    .map((r: any) => ({
+      lane: String(r.lane), attempts: num(r.attempts), successes: num(r.successes),
+      success_rate_pct: num(r.success_rate_pct), avg_ms: nullableNum(r.avg_ms),
+      wins: num(r.wins), win_rate_pct: num(r.win_rate_pct),
+    })), [data]);
 
-  const latencyRows: LatRowData[] = useMemo(() => {
-    const rows = data?.latency_percentiles?.data ?? [];
-    if (rows.length)
-      return rows
-        .filter((r: any) => !config.hiddenNodes.includes(r.node))
-        .map((r: any) => ({
-          node: String(r.node ?? ''),
-          total_success: num(r.total_success),
-          avg_ms: nullableNum(r.avg_ms),
-          under_500ms: num(r.under_500ms),
-          under_1s: num(r.under_1s),
-          under_2s: num(r.under_2s),
-          under_4s: num(r.under_4s),
-        }));
-    return nodeRows.map((r) => ({
-      node: r.node,
-      total_success: r.successes,
-      avg_ms: r.avg_ms,
-      under_500ms: 0,
-      under_1s: 0,
-      under_2s: 0,
-      under_4s: 0,
-    }));
-  }, [data, nodeRows, config.hiddenNodes]);
+  const fallbackTimeseries = useMemo(() => (data?.fallback_timeseries?.data ?? []).map((r: any) => ({
+    bucket: fmtBucket(r.bucket ?? ''), primary_hits: num(r.primary_hits),
+    t1_fallbacks: num(r.t1_fallbacks), t2_fallbacks: num(r.t2_fallbacks), t3_fallbacks: num(r.t3_fallbacks),
+  })), [data]);
 
-  const heatmapData = useMemo(() => data?.error_heatmap?.data ?? [], [data]);
-  const winPieData = useMemo(
-    () =>
-      winRows
-        .filter((r) => r.wins > 0)
-        .map((r) => ({
-          name: nodeShortName(r.node).split(' ')[0],
-          value: r.wins,
-          color: nodeColor(r.node),
-        })),
-    [winRows]
-  );
-  const formatPieData = useMemo(
-    () =>
-      formatRows.map((r, i) => ({
-        name: r.format.toUpperCase(),
-        value: r.attempts,
-        color: PIE_COLORS[i % PIE_COLORS.length],
-      })),
-    [formatRows]
-  );
+  const wallStats = useMemo(() => (data?.wall_time_stats?.data ?? [])[0] ?? null, [data]);
+  const wallTimeseries = useMemo(() => (data?.wall_time_timeseries?.data ?? []).map((r: any) => ({
+    bucket: fmtBucket(r.bucket ?? ''), requests: num(r.requests), avg_wall_ms: num(r.avg_wall_ms),
+  })), [data]);
 
-  const allNodeNames = useMemo(() => allNodeRows.map((r) => r.node), [allNodeRows]);
+  const latencyRows = useMemo(() => (data?.latency_percentiles?.data ?? []).map((r: any) => ({
+    node: String(r.node ?? ''), total_success: num(r.total_success),
+    avg_ms: nullableNum(r.avg_ms), under_500ms: num(r.under_500ms),
+    under_1s: num(r.under_1s), under_2s: num(r.under_2s), under_4s: num(r.under_4s),
+  })), [data]);
 
-  // Alert summary
-  const alertNodes = useMemo(
-    () =>
-      nodeRows.filter(
-        (r) =>
-          r.total_attempts > 0 &&
-          (r.success_rate_pct < config.alertSuccessRate ||
-            (r.avg_ms !== null && r.avg_ms > config.alertAvgMs))
-      ),
-    [nodeRows, config]
-  );
+  const failRows = useMemo(() => (data?.recent_failures?.data ?? []).map((r: any) => ({
+    node: String(r.node ?? ''), error: String(r.error ?? ''),
+    status_code: num(r.status_code), timestamp: String(r.timestamp ?? ''),
+  })), [data]);
 
-  const pLabel = PERIODS[period]?.label ?? period;
-  const TABS = ['overview', 'nodes', 'traffic', 'errors', 'breakdown'];
+  const formatRows = useMemo(() => (data?.format_breakdown?.data ?? []).map((r: any) => ({
+    format: String(r.format ?? '?'), attempts: num(r.attempts),
+    successes: num(r.successes), avg_ms: nullableNum(r.avg_ms),
+  })), [data]);
 
-  const chartTag = {
-    fill: config.chartStyle === 'area' ? 'url(#gAt)' : 'none',
-    strokeWidth: config.chartStyle === 'area' ? 2 : 1.5,
-  };
+  const coloRows = useMemo(() => (data?.colo_breakdown?.data ?? []).map((r: any) => ({
+    colo: String(r.colo ?? ''), attempts: num(r.attempts),
+    successes: num(r.successes), avg_ms: nullableNum(r.avg_ms),
+  })), [data]);
+
+  const winRows = useMemo(() => (data?.win_rate?.data ?? []).map((r: any) => ({
+    node: String(r.node ?? ''), wins: num(r.wins),
+    successes: num(r.successes), win_rate_pct: num(r.win_rate_pct),
+  })), [data]);
+
+  const alertNodes = useMemo(() => nodeRows.filter(r =>
+    r.total_attempts > 0 && (r.success_rate_pct < cfg.alertRate || (r.avg_ms !== null && r.avg_ms > cfg.alertMs))
+  ), [nodeRows, cfg]);
+
+  const pLabel = PERIODS[cfg.period]?.label ?? cfg.period;
 
   if (!authed) return <AuthScreen onAuth={() => setAuthed(true)} />;
 
+  const isLiveActive = live || cfg.refreshMs > 0;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        background: C.black,
-        color: C.body,
-        fontFamily: 'DM Sans, sans-serif',
-      }}
-    >
+    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)' }}>
       <style>{`
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
-        *{box-sizing:border-box}
-        ::-webkit-scrollbar{width:3px;height:3px}
-        ::-webkit-scrollbar-track{background:#070706}
-        ::-webkit-scrollbar-thumb{background:rgba(196,124,46,0.22);border-radius:99px}
-        .recharts-text{font-family:'JetBrains Mono',monospace!important;font-size:9px!important;fill:rgba(200,188,168,0.75)!important}
-        .recharts-legend-item-text{font-size:9px!important;font-family:'JetBrains Mono',monospace!important;color:rgba(200,188,168,0.75)!important}
-        select option{background:#0e0d0b;color:#f0e6cc}
-        input[type=range]{accent-color:#c47c2e}
+        @keyframes live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.2)}}
+        .recharts-text{font-family:'JetBrains Mono',monospace!important;font-size:9px!important;fill:rgba(180,168,148,0.65)!important}
+        .recharts-legend-item-text{font-size:9px!important;font-family:'JetBrains Mono',monospace!important}
+        select option{background:var(--film-dark);color:var(--film-cream)}
       `}</style>
 
-      {showSettings && (
-        <SettingsPanel
-          config={config}
-          nodeList={allNodeNames}
-          onSave={applyConfig}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
+      <MainNavbar fixed={true} compactLogo />
 
-      {/* HEADER */}
-      <header
-        style={{
-          background: C.dark,
-          borderBottom: `1px solid ${C.border}`,
-          height: 52,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 16px',
-          justifyContent: 'space-between',
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-          gap: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <span
-            style={{
-              fontSize: 16,
-              fontFamily: 'Bebas Neue, cursive',
-              letterSpacing: '0.1em',
-              color: C.cream,
-            }}
-          >
-            POSTERIUM
+      {/* Controls bar */}
+      <div style={{ position: 'sticky', top: 56, zIndex: 40, background: 'rgba(7,7,6,0.97)',
+        backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--film-border)',
+        padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minHeight: 48 }}>
+
+        {/* Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%',
+            background: loading ? CH.yellow : error ? CH.red : CH.green,
+            boxShadow: `0 0 5px ${loading ? CH.yellow : error ? CH.red : CH.green}`,
+            animation: isLiveActive ? 'live-pulse 1.5s ease-in-out infinite' : 'pulse-dot 2s ease-in-out infinite',
+          }}/>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.12em' }}>
+            {loading ? 'LOADING' : error ? 'ERROR' : isLiveActive ? 'LIVE' : 'CACHED'}
           </span>
-          <div style={{ width: 1, height: 14, background: C.border }} />
-          <span style={{ ...S.syneXs, color: C.amber }}>Analytics</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: loading ? C.yellow : error ? C.red : C.green,
-                animation: 'pulse-dot 2s ease-in-out infinite',
-                boxShadow: `0 0 5px ${loading ? C.yellow : error ? C.red : C.green}`,
-              }}
-            />
-            <span style={{ ...S.monoXs, fontSize: 7 }}>
-              {loading ? 'LOADING' : error ? 'ERROR' : 'LIVE'}
-            </span>
-          </div>
           {alertNodes.length > 0 && (
-            <span
-              style={{
-                background: 'rgba(248,113,113,0.15)',
-                border: '1px solid rgba(248,113,113,0.3)',
-                color: C.red,
-                fontSize: 8,
-                fontFamily: 'Syne, sans-serif',
-                fontWeight: 700,
-                padding: '2px 7px',
-                borderRadius: 3,
-                letterSpacing: '0.08em',
-              }}
-            >
-              ⚠ {alertNodes.length} alert{alertNodes.length > 1 ? 's' : ''}
+            <span style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)',
+              color: CH.red, fontSize: 7, fontFamily: 'Syne, sans-serif', fontWeight: 700,
+              padding: '2px 7px', borderRadius: 3, letterSpacing: '0.08em' }}>
+              ⚠ {alertNodes.length}
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          {/* Period selector */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 1,
-              padding: 3,
-              background: 'rgba(255,255,255,0.03)',
-              border: `1px solid ${C.borderFaint}`,
-              borderRadius: 7,
-            }}
-          >
-            {Object.entries(PERIODS).map(([k, v]) => (
-              <button
-                key={k}
-                onClick={() => {
-                  setPeriod(k);
-                  fetchData(k);
-                }}
-                style={{
-                  padding: '3px 9px',
-                  borderRadius: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  fontFamily: 'Syne, sans-serif',
-                  textTransform: 'uppercase',
-                  background: period === k ? 'rgba(196,124,46,0.18)' : 'transparent',
-                  color: period === k ? C.amber : C.ghost,
-                }}
-              >
-                {v.short}
-              </button>
-            ))}
-          </div>
-          {/* Refresh selector */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 1,
-              padding: 3,
-              background: 'rgba(255,255,255,0.03)',
-              border: `1px solid ${C.borderFaint}`,
-              borderRadius: 7,
-            }}
-          >
-            {REFRESH_INTERVALS.map((ri) => (
-              <button
-                key={ri.label}
-                onClick={() => setRefreshMs(ri.ms)}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  fontFamily: 'Syne, sans-serif',
-                  background: refreshMs === ri.ms ? 'rgba(196,124,46,0.18)' : 'transparent',
-                  color: refreshMs === ri.ms ? C.amber : C.ghost,
-                }}
-              >
-                {ri.label}
-              </button>
-            ))}
-          </div>
-          {refreshMs > 0 && countdown > 0 && <span style={{ ...S.monoXs }}>↺{countdown}s</span>}
-          <button
-            onClick={() => fetchData()}
-            disabled={loading}
-            style={{
-              height: 28,
-              padding: '0 12px',
-              background: loading ? 'rgba(196,124,46,0.3)' : C.amber,
-              color: '#070706',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 11,
-              fontWeight: 800,
-              fontFamily: 'Syne, sans-serif',
-              textTransform: 'uppercase',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? '…' : '↻'}
-          </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            title="Settings"
-            style={{
-              height: 28,
-              width: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(255,255,255,0.04)',
-              color: C.dim,
-              border: `1px solid ${C.borderFaint}`,
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14,
-            }}
-          >
-            ⚙
-          </button>
-          <button
-            onClick={logout}
-            style={{
-              height: 28,
-              padding: '0 10px',
-              background: 'transparent',
-              color: C.ghost,
-              border: `1px solid ${C.borderFaint}`,
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 9,
-              fontFamily: 'Syne, sans-serif',
-              textTransform: 'uppercase',
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      </header>
 
-      {/* TABS */}
-      <nav
-        style={{
-          background: C.dark,
-          borderBottom: `1px solid ${C.borderFaint}`,
-          padding: '0 16px',
-          display: 'flex',
-          overflowX: 'auto',
-        }}
-      >
-        {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '11px 16px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: tab === t ? C.amber : C.ghost,
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: 'Syne, sans-serif',
-              borderBottom: tab === t ? `2px solid ${C.amber}` : '2px solid transparent',
-              marginBottom: -1,
-              textTransform: 'capitalize',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {t}
+        {/* Live toggle */}
+        <button onClick={() => setLive(v => !v)} style={{
+          background: live ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${live ? 'rgba(196,124,46,0.4)' : 'rgba(255,255,255,0.07)'}`,
+          color: live ? CH.amber : CH.ghost, borderRadius: 6, padding: '4px 10px',
+          fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif', cursor: 'pointer', letterSpacing: '0.1em',
+        }}>
+          {live ? '● LIVE (10s)' : '◌ LIVE'}
+        </button>
+
+        {/* Period selector */}
+        <div style={{ display: 'flex', gap: 1, padding: 3,
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7 }}>
+          {Object.entries(PERIODS).map(([k, v]) => (
+            <button key={k} onClick={() => { updateCfg({ period: k }); fetchData(k); }} style={{
+              padding: '3px 9px', borderRadius: 4, border: 'none', cursor: 'pointer',
+              fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif', textTransform: 'uppercase' as const,
+              background: cfg.period === k ? 'rgba(196,124,46,0.18)' : 'transparent',
+              color: cfg.period === k ? CH.amber : CH.ghost,
+            }}>{v.short}</button>
+          ))}
+        </div>
+
+        {/* Refresh selector */}
+        <div style={{ display: 'flex', gap: 1, padding: 3,
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7 }}>
+          {REFRESH_OPTIONS.map(ri => (
+            <button key={ri.label} onClick={() => updateCfg({ refreshMs: ri.ms })} style={{
+              padding: '3px 8px', borderRadius: 4, border: 'none', cursor: 'pointer',
+              fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif',
+              background: cfg.refreshMs === ri.ms && !live ? 'rgba(196,124,46,0.18)' : 'transparent',
+              color: cfg.refreshMs === ri.ms && !live ? CH.amber : CH.ghost,
+            }}>{ri.label}</button>
+          ))}
+        </div>
+
+        {countdown > 0 && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>↺{countdown}s</span>}
+
+        <button onClick={() => fetchData()} disabled={loading} style={{
+          height: 28, padding: '0 12px',
+          background: loading ? 'rgba(196,124,46,0.3)' : CH.amber,
+          color: '#070706', border: 'none', borderRadius: 6, cursor: 'pointer',
+          fontSize: 11, fontWeight: 800, fontFamily: 'Syne, sans-serif', opacity: loading ? 0.7 : 1,
+        }}>{loading ? '…' : '↻'}</button>
+
+        <button onClick={() => { try { localStorage.removeItem(AUTH_KEY); } catch {} setAuthed(false); setData(null); }}
+          style={{ height: 28, padding: '0 10px', background: 'transparent', color: CH.ghost,
+            border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, cursor: 'pointer',
+            fontSize: 9, fontFamily: 'Syne, sans-serif', textTransform: 'uppercase' as const, marginLeft: 'auto' }}>
+          Logout
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <nav style={{ background: 'var(--film-dark)', borderBottom: '1px solid rgba(255,255,255,0.05)',
+        padding: '0 16px', display: 'flex', overflowX: 'auto', gap: 0, scrollbarWidth: 'none' as const }}>
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: '11px 16px', background: 'transparent', border: 'none', cursor: 'pointer',
+            color: tab === t ? CH.amber : CH.ghost, fontSize: 11, fontWeight: 600,
+            fontFamily: 'Syne, sans-serif',
+            borderBottom: tab === t ? `2px solid ${CH.amber}` : '2px solid transparent',
+            marginBottom: -1, textTransform: 'capitalize' as const, whiteSpace: 'nowrap' as const,
+          }}>
+            {t === 'wall-time' ? 'Wall Time' : t === 'fallbacks' ? 'Fallbacks ✦' : t}
           </button>
         ))}
       </nav>
 
       {error && (
-        <div
-          style={{
-            margin: '16px 16px 0',
-            padding: '10px 14px',
-            borderRadius: 8,
-            background: 'rgba(248,113,113,0.07)',
-            border: '1px solid rgba(248,113,113,0.2)',
-            color: C.red,
-            fontSize: 11,
-            fontFamily: 'JetBrains Mono, monospace',
-          }}
-        >
-          ✕ {error} — Check API_BASE / network.
+        <div style={{ margin: '16px 16px 0', padding: '10px 14px', borderRadius: 8,
+          background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)',
+          color: CH.red, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>
+          ✕ {error}
         </div>
       )}
 
       <main style={{ padding: 16, maxWidth: 1400, margin: '0 auto' }}>
+
         {/* ── OVERVIEW ─────────────────────────────────────────────────────── */}
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Alert banner */}
             {alertNodes.length > 0 && !loading && (
-              <div
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  background: 'rgba(248,113,113,0.07)',
-                  border: '1px solid rgba(248,113,113,0.22)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span style={{ color: C.red, ...S.monoXs, fontWeight: 700 }}>⚠ ALERTS</span>
-                {alertNodes.map((n) => (
-                  <span
-                    key={n.node}
-                    style={{
-                      ...S.monoXs,
-                      color: C.label,
-                      background: 'rgba(248,113,113,0.1)',
-                      padding: '2px 8px',
-                      borderRadius: 3,
-                    }}
-                  >
-                    {nodeShortName(n.node).split(' ·')[0]} —{' '}
-                    {n.success_rate_pct < config.alertSuccessRate
-                      ? `rate ${n.success_rate_pct.toFixed(0)}%`
-                      : ''}
-                    {n.avg_ms !== null && n.avg_ms > config.alertAvgMs
-                      ? ` latency ${fmtMs(n.avg_ms)}`
-                      : ''}
+              <div style={{ padding: '10px 16px', borderRadius: 8,
+                background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.22)',
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <span style={{ color: CH.red, fontFamily: 'JetBrains Mono, monospace', fontSize: 7, fontWeight: 700 }}>⚠ ALERTS</span>
+                {alertNodes.map(n => (
+                  <span key={n.node} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: 'var(--film-cream)',
+                    background: 'rgba(248,113,113,0.1)', padding: '2px 8px', borderRadius: 3 }}>
+                    {nodeLabel(n.node).split(' ·')[0]} — {n.success_rate_pct < cfg.alertRate ? `rate ${n.success_rate_pct.toFixed(0)}%` : ''}{n.avg_ms && n.avg_ms > cfg.alertMs ? ` ${fmtMs(n.avg_ms)}` : ''}
                   </span>
                 ))}
               </div>
             )}
 
-            {/* Stat cards */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))',
-                gap: 10,
-              }}
-            >
-              {loading ? (
-                Array(8)
-                  .fill(0)
-                  .map((_, i) => <Skel key={i} h={90} />)
-              ) : (
-                <>
-                  <StatCard
-                    label="Total Attempts"
-                    value={fmtNum(globalRow.total_attempts)}
-                    sub={pLabel}
-                    color={C.amber}
-                    accent={C.amber}
-                  />
-                  <StatCard
-                    label="Race Wins"
-                    value={fmtNum(globalRow.race_wins)}
-                    sub="Posters served"
-                    color={C.gold}
-                    accent={C.gold}
-                  />
-                  <StatCard
-                    label="Successes"
-                    value={fmtNum(globalRow.successes)}
-                    sub={fmtPct(globalRow.success_rate_pct) + ' success rate'}
-                    color={C.green}
-                    accent={C.green}
-                  />
-                  <StatCard
-                    label="Failures"
-                    value={fmtNum(globalRow.failures)}
-                    sub={
-                      fmtPct(
-                        globalRow.total_attempts > 0
-                          ? (globalRow.failures / globalRow.total_attempts) * 100
-                          : 0
-                      ) + ' failure rate'
-                    }
-                    color={globalRow.failures > 50 ? C.red : C.dim}
-                    accent={C.red}
-                    alert={globalRow.failures > 50}
-                  />
-                  <StatCard
-                    label="Avg Latency"
-                    value={fmtMs(globalRow.avg_ms)}
-                    sub="Weighted across nodes"
-                    color={msColor(globalRow.avg_ms)}
-                    accent={C.blue}
-                    alert={globalRow.avg_ms !== null && globalRow.avg_ms > config.alertAvgMs}
-                  />
-                  <StatCard
-                    label="Active Nodes"
-                    value={nodeRows.filter((r) => r.total_attempts > 0).length}
-                    sub={`of ${allNodeRows.length} total`}
-                    color={C.cream}
-                    accent={C.purple}
-                  />
-                  <StatCard
-                    label="Healthy"
-                    value={
-                      nodeRows.filter(
-                        (r) => r.success_rate_pct >= config.alertSuccessRate && r.total_attempts > 0
-                      ).length
-                    }
-                    sub={`≥${config.alertSuccessRate}% success`}
-                    color={C.green}
-                    accent={C.green}
-                  />
-                  <StatCard
-                    label="Degraded / Down"
-                    value={
-                      nodeRows.filter(
-                        (r) => r.success_rate_pct < config.alertSuccessRate && r.total_attempts > 0
-                      ).length
-                    }
-                    sub={`<${config.alertSuccessRate}% success`}
-                    color={C.orange}
-                    accent={C.orange}
-                    alert={alertNodes.length > 0}
-                  />
-                </>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+              {loading ? Array(6).fill(0).map((_,i) => <Skel key={i} h={90}/>) : (<>
+                <StatCard label="Total Attempts" value={fmtNum(globalRow.total_attempts)} sub={pLabel} />
+                <StatCard label="Race Wins" value={fmtNum(globalRow.race_wins)} sub="Posters served" color={CH.gold} />
+                <StatCard label="Success Rate" value={fmtPct(globalRow.success_rate_pct)} sub="of all attempts" color={rateColor(globalRow.success_rate_pct)} />
+                <StatCard label="Failures" value={fmtNum(globalRow.failures)} sub={fmtPct(globalRow.total_attempts > 0 ? globalRow.failures/globalRow.total_attempts*100 : 0)} color={globalRow.failures > 50 ? CH.red : 'var(--film-cream)'} alert={globalRow.failures > 50} />
+                <StatCard label="Avg Latency" value={fmtMs(globalRow.avg_ms)} sub="Weighted avg" color={msColor(globalRow.avg_ms)} alert={globalRow.avg_ms !== null && globalRow.avg_ms > cfg.alertMs} />
+                <StatCard label="Active Nodes" value={nodeRows.filter(r=>r.total_attempts>0).length} sub={`of ${nodeRows.length} total`} color="var(--film-cream)" />
+              </>)}
             </div>
 
-            {/* Traffic chart */}
             <Card title="Traffic Over Time" tag={pLabel}>
-              {loading ? (
-                <Skel h={200} />
-              ) : (
+              {loading ? <Skel h={200}/> : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart
-                    data={trafficData}
-                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-                  >
+                  <ComposedChart data={trafficData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                     <defs>
-                      <linearGradient id="gAt" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.amber} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={C.amber} stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gSc" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.green} stopOpacity={0.18} />
-                        <stop offset="95%" stopColor={C.green} stopOpacity={0} />
+                      <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CH.amber} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={CH.amber} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis
-                      dataKey="bucket"
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={42}
-                    />
-                    <Tooltip content={<TT />} />
-                    <Legend
-                      wrapperStyle={{
-                        fontSize: 9,
-                        fontFamily: 'JetBrains Mono, monospace',
-                        paddingTop: 8,
-                      }}
-                    />
-                    {config.chartStyle === 'area' ? (
-                      <Area
-                        type="monotone"
-                        dataKey="attempts"
-                        name="Attempts"
-                        stroke={C.amber}
-                        fill="url(#gAt)"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="attempts"
-                        name="Attempts"
-                        stroke={C.amber}
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    )}
-                    {config.chartStyle === 'area' ? (
-                      <Area
-                        type="monotone"
-                        dataKey="successes"
-                        name="Successes"
-                        stroke={C.green}
-                        fill="url(#gSc)"
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="successes"
-                        name="Successes"
-                        stroke={C.green}
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    )}
-                    <Line
-                      type="monotone"
-                      dataKey="failures"
-                      name="Failures"
-                      stroke={C.red}
-                      strokeWidth={1.5}
-                      dot={false}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd"/>
+                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42}/>
+                    <Tooltip content={<FilmTooltip/>}/>
+                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }}/>
+                    <Area type="monotone" dataKey="attempts" name="Attempts" stroke={CH.amber} fill="url(#gA)" strokeWidth={2} dot={false}/>
+                    <Line type="monotone" dataKey="successes" name="Successes" stroke={CH.green} strokeWidth={1.5} dot={false}/>
+                    <Line type="monotone" dataKey="failures" name="Failures" stroke={CH.red} strokeWidth={1.5} dot={false}/>
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
 
-            {/* Node health + Win pie */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: config.showWinPie ? '1fr 300px' : '1fr',
-                gap: 14,
-              }}
-            >
-              <Card title="Node Health Matrix" tag={pLabel}>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${config.compactMode ? 180 : 210}px, 1fr))`,
-                    gap: config.compactMode ? 6 : 10,
-                  }}
-                >
-                  {loading ? (
-                    Array(4)
-                      .fill(0)
-                      .map((_, i) => <Skel key={i} h={80} />)
-                  ) : nodeRows.length === 0 ? (
-                    <div style={{ ...S.monoSm, color: C.ghost, padding: 20 }}>
-                      No data for this period.
-                    </div>
-                  ) : (
-                    nodeRows.map((row) => {
-                      const latRow = latencyRows.find((r) => r.node === row.node);
-                      return (
-                        <NodeCard
-                          key={row.node}
-                          row={row}
-                          latRow={latRow}
-                          compact={config.compactMode}
-                          alertSuccessRate={config.alertSuccessRate}
-                          alertAvgMs={config.alertAvgMs}
-                        />
-                      );
-                    })
-                  )}
-                </div>
-              </Card>
-
-              {config.showWinPie && (
-                <Card title="Race Win Distribution">
-                  {loading ? (
-                    <Skel h={180} />
-                  ) : winPieData.length > 0 ? (
-                    <>
-                      <ResponsiveContainer width="100%" height={150}>
-                        <PieChart>
-                          <Pie
-                            data={winPieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={42}
-                            outerRadius={65}
-                            paddingAngle={3}
-                            dataKey="value"
-                          >
-                            {winPieData.map((e, i) => (
-                              <Cell
-                                key={i}
-                                fill={e.color}
-                                stroke="rgba(0,0,0,0.3)"
-                                strokeWidth={1}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(v: any) => [fmtNum(v), 'Wins']}
-                            contentStyle={{
-                              background: C.char,
-                              border: `1px solid ${C.border}`,
-                              borderRadius: 6,
-                              fontSize: 10,
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}
-                      >
-                        {winRows
-                          .filter((r) => r.wins > 0)
-                          .sort((a, b) => b.wins - a.wins)
-                          .map((r) => (
-                            <div
-                              key={r.node}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                <div
-                                  style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 2,
-                                    background: nodeColor(r.node),
-                                  }}
-                                />
-                                <span style={{ ...S.monoXs, color: C.label, fontSize: 8 }}>
-                                  {nodeShortName(r.node).split(' ')[0]}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                <span style={{ ...S.monoXs, color: C.ghost, fontSize: 7 }}>
-                                  {r.win_rate_pct.toFixed(0)}% rate
-                                </span>
-                                <span style={{ ...S.monoXs, color: C.gold, fontWeight: 700 }}>
-                                  ⚡ {fmtNum(r.wins)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ ...S.monoSm, color: C.ghost, textAlign: 'center', padding: 40 }}>
-                      No win data
-                    </div>
-                  )}
-                </Card>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 10 }}>
+              {loading ? Array(4).fill(0).map((_,i) => <Skel key={i} h={110}/>) : nodeRows.map(row => (
+                <NodeCard key={row.node} row={row} latRow={latencyRows.find(r=>r.node===row.node)}
+                  alertRate={cfg.alertRate} alertMs={cfg.alertMs} />
+              ))}
             </div>
-
-            {/* Lane performance */}
-            {config.showLanePanel && laneRows.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <Card title="Lane Performance" tag="A=WA+Ohio  B=DE+Ohio  C=WA+DE">
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                    {laneRows.map((lane) => (
-                      <div
-                        key={lane.lane}
-                        style={{
-                          padding: 12,
-                          ...S.charBg,
-                          borderTop: `2px solid ${rateColor(lane.success_rate_pct)}`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 22,
-                            fontFamily: 'Bebas Neue, cursive',
-                            color: C.amber,
-                            letterSpacing: '0.1em',
-                            marginBottom: 8,
-                          }}
-                        >
-                          Lane {lane.lane}
-                        </div>
-                        {[
-                          { l: 'Attempts', v: fmtNum(lane.attempts), c: C.cream },
-                          {
-                            l: 'Success',
-                            v: fmtPct(lane.success_rate_pct),
-                            c: rateColor(lane.success_rate_pct),
-                          },
-                          { l: 'Avg Latency', v: fmtMs(lane.avg_ms), c: msColor(lane.avg_ms) },
-                          { l: 'Wins', v: fmtNum(lane.wins), c: C.gold },
-                        ].map((m) => (
-                          <div key={m.l} style={{ marginBottom: 5 }}>
-                            <div style={{ ...S.monoXs, fontSize: 7 }}>{m.l}</div>
-                            <div
-                              style={{
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: m.c,
-                                fontFamily: 'JetBrains Mono, monospace',
-                              }}
-                            >
-                              {m.v}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-                <Card title="Lane Comparison">
-                  {loading ? (
-                    <Skel h={180} />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={laneRows} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis
-                          dataKey="lane"
-                          tick={{ fill: C.ghost, fontSize: 9 }}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(l) => `Lane ${l}`}
-                        />
-                        <YAxis
-                          tick={{ fill: C.ghost, fontSize: 8 }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={36}
-                        />
-                        <Tooltip content={<TT />} />
-                        <Legend wrapperStyle={{ fontSize: 9 }} />
-                        <Bar
-                          dataKey="attempts"
-                          name="Attempts"
-                          fill={C.amber}
-                          opacity={0.7}
-                          radius={[3, 3, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="successes"
-                          name="Successes"
-                          fill={C.green}
-                          opacity={0.7}
-                          radius={[3, 3, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="wins"
-                          name="Wins"
-                          fill={C.gold}
-                          opacity={0.7}
-                          radius={[3, 3, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </Card>
-              </div>
-            )}
           </div>
         )}
 
         {/* ── NODES ────────────────────────────────────────────────────────── */}
         {tab === 'nodes' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Card title="Node Performance Table" tag={pLabel} noPad>
+            <Card title="Node Performance" tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? (
-                  <Skel h={300} />
-                ) : (
+                {loading ? <Skel h={300}/> : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                     <thead>
-                      <tr>
-                        {[
-                          'Node',
-                          'Status',
-                          'Attempts',
-                          'Succ. Rate',
-                          'Avg Latency',
-                          'P50 est',
-                          'P95 est',
-                          'Wins',
-                          'Health',
-                          'Dist',
-                        ].map((h) => (
-                          <th
-                            key={h}
-                            style={{
-                              padding: '7px 12px',
-                              textAlign: h === 'Node' || h === 'Status' ? 'left' : 'right',
-                              ...S.label,
-                              borderBottom: `1px solid ${C.borderFaint}`,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
+                      <tr>{['Node','Health','Attempts','Success Rate','Avg Latency','Wins','Score'].map(h => (
+                        <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' || h === 'Health' ? 'left' : 'right',
+                          fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em',
+                          textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                      ))}</tr>
                     </thead>
                     <tbody>
                       {nodeRows.map((row, i) => {
-                        const health =
-                          row.success_rate_pct >= config.alertSuccessRate
-                            ? 'healthy'
-                            : row.success_rate_pct >= 10
-                              ? 'degraded'
-                              : 'down';
-                        const hc =
-                          health === 'healthy' ? C.green : health === 'degraded' ? C.yellow : C.red;
-                        const lRow = latencyRows.find((r) => r.node === row.node);
-                        const score = healthScore(row.success_rate_pct, row.avg_ms);
+                        const pct = row.success_rate_pct;
+                        const health = pct >= cfg.alertRate ? 'healthy' : pct >= 10 ? 'degraded' : 'down';
+                        const hc = health === 'healthy' ? CH.green : health === 'degraded' ? CH.yellow : CH.red;
+                        const score = healthScore(pct, row.avg_ms);
                         return (
-                          <tr
-                            key={row.node}
-                            style={{
-                              background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent',
-                              borderBottom: `1px solid rgba(255,255,255,0.03)`,
-                            }}
-                          >
-                            <td style={{ padding: '9px 12px', minWidth: 170 }}>
+                          <tr key={row.node} style={{ background: i%2===0 ? 'rgba(255,255,255,0.012)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <td style={{ padding: '9px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <div
-                                  style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    background: nodeColor(row.node),
-                                    flexShrink: 0,
-                                  }}
-                                />
-                                <span
-                                  style={{
-                                    ...S.monoSm,
-                                    color: C.label,
-                                    fontWeight: 600,
-                                    fontSize: 10,
-                                  }}
-                                >
-                                  {nodeShortName(row.node)}
-                                </span>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: nodeColor(row.node) }}/>
+                                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 600 }}>{nodeLabel(row.node)}</span>
                               </div>
                             </td>
                             <td style={{ padding: '9px 12px' }}>
-                              <span
-                                style={{
-                                  ...S.monoXs,
-                                  color: hc,
-                                  textTransform: 'uppercase',
-                                  background: `${hc}18`,
-                                  padding: '2px 6px',
-                                  borderRadius: 3,
-                                }}
-                              >
-                                {health}
-                              </span>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: hc, textTransform: 'uppercase' as const, background: `${hc}18`, padding: '2px 6px', borderRadius: 3 }}>{health}</span>
                             </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', ...S.monoSm }}>
-                              {fmtNum(row.total_attempts)}
-                            </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right' }}>
-                              <Gauge
-                                value={row.success_rate_pct}
-                                size={36}
-                                thresholds={{ warn: config.alertSuccessRate, ok: 100 }}
-                              />
-                            </td>
-                            <td
-                              style={{
-                                padding: '9px 12px',
-                                textAlign: 'right',
-                                color: msColor(row.avg_ms),
-                                fontFamily: 'JetBrains Mono, monospace',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {fmtMs(row.avg_ms)}
-                            </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', ...S.monoXs }}>
-                              {lRow ? estimateP50(lRow) : '—'}
-                            </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', ...S.monoXs }}>
-                              {lRow ? estimateP95(lRow) : '—'}
-                            </td>
-                            <td
-                              style={{
-                                padding: '9px 12px',
-                                textAlign: 'right',
-                                color: row.race_wins > 0 ? C.gold : C.ghost,
-                                fontFamily: 'JetBrains Mono, monospace',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {row.race_wins > 0 ? `⚡${fmtNum(row.race_wins)}` : '—'}
-                            </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right' }}>
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  fontFamily: 'JetBrains Mono, monospace',
-                                  color: score >= 80 ? C.green : score >= 60 ? C.yellow : C.red,
-                                }}
-                              >
-                                {score}
-                              </span>
-                            </td>
-                            <td style={{ padding: '9px 12px', minWidth: 120 }}>
-                              {lRow && lRow.under_4s > 0 ? (
-                                <LatencyDistBar row={lRow} showLabels={false} />
-                              ) : (
-                                <span style={{ ...S.monoXs }}>{fmtMs(row.avg_ms)} avg</span>
-                              )}
-                            </td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--film-cream)' }}>{fmtNum(row.total_attempts)}</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right' }}><Gauge value={pct} size={36}/></td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', color: msColor(row.avg_ms), fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{fmtMs(row.avg_ms)}</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', color: row.race_wins > 0 ? CH.gold : CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{row.race_wins > 0 ? `⚡${fmtNum(row.race_wins)}` : '—'}</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: score >= 80 ? CH.green : score >= 60 ? CH.yellow : CH.red }}>{score}</td>
                           </tr>
                         );
                       })}
@@ -2415,745 +760,211 @@ export default function AnalyticsDashboard() {
                 )}
               </div>
             </Card>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <Card title="Avg Latency by Node">
-                {loading ? (
-                  <Skel h={220} />
-                ) : (
+                {loading ? <Skel h={220}/> : (
                   <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={[...nodeRows].sort((a, b) => (a.avg_ms ?? 9999) - (b.avg_ms ?? 9999))}
-                      layout="vertical"
-                      margin={{ left: 0, right: 36, top: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="rgba(255,255,255,0.05)"
-                        horizontal={false}
-                      />
-                      <XAxis
-                        type="number"
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(v) => fmtMs(v)}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="node"
-                        tick={{ fill: C.dim, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={80}
-                        tickFormatter={(n) => nodeShortName(n).split(' ')[0]}
-                      />
-                      <Tooltip content={<TT />} formatter={(v: any) => [fmtMs(v), 'Avg Latency']} />
-                      <ReferenceLine
-                        x={config.alertAvgMs}
-                        stroke={C.red}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                        label={{ value: 'Alert', fill: C.red, fontSize: 7 }}
-                      />
-                      <Bar dataKey="avg_ms" name="Avg Latency" radius={[0, 4, 4, 0]}>
-                        {nodeRows.map((row, i) => (
-                          <Cell key={i} fill={msColor(row.avg_ms)} />
-                        ))}
+                    <BarChart data={[...nodeRows].sort((a,b)=>(a.avg_ms??9999)-(b.avg_ms??9999))} layout="vertical" margin={{ left:0,right:36,top:0,bottom:0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false}/>
+                      <XAxis type="number" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} tickFormatter={v=>fmtMs(v)}/>
+                      <YAxis type="category" dataKey="node" tick={{ fill:CH.dim,fontSize:8 }} tickLine={false} axisLine={false} width={80} tickFormatter={n=>nodeLabel(n).split(' ')[0]}/>
+                      <Tooltip content={<FilmTooltip/>} formatter={(v:any)=>[fmtMs(v),'Avg Latency']}/>
+                      <ReferenceLine x={cfg.alertMs} stroke={CH.red} strokeDasharray="4 3" strokeWidth={1}/>
+                      <Bar dataKey="avg_ms" name="Avg Latency" radius={[0,4,4,0]}>
+                        {nodeRows.map((r,i)=><Cell key={i} fill={msColor(r.avg_ms)}/>)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </Card>
-              <Card title="Health Score by Node">
-                {loading ? (
-                  <Skel h={220} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={[...nodeRows]
-                        .filter((r) => r.total_attempts > 0)
-                        .sort(
-                          (a, b) =>
-                            healthScore(b.success_rate_pct, b.avg_ms) -
-                            healthScore(a.success_rate_pct, a.avg_ms)
-                        )}
-                      layout="vertical"
-                      margin={{ left: 0, right: 36, top: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="rgba(255,255,255,0.05)"
-                        horizontal={false}
-                      />
-                      <XAxis
-                        type="number"
-                        domain={[0, 100]}
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="node"
-                        tick={{ fill: C.dim, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={80}
-                        tickFormatter={(n) => nodeShortName(n).split(' ')[0]}
-                      />
-                      <Tooltip
-                        content={<TT />}
-                        formatter={(v: any) => [`${v}/100`, 'Health Score']}
-                      />
-                      <ReferenceLine
-                        x={80}
-                        stroke={C.green}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                        label={{ value: 'Good', fill: C.green, fontSize: 7 }}
-                      />
-                      <Bar
-                        dataKey={(r) => healthScore(r.success_rate_pct, r.avg_ms)}
-                        name="Health Score"
-                        radius={[0, 4, 4, 0]}
-                      >
-                        {[...nodeRows]
-                          .filter((r) => r.total_attempts > 0)
-                          .sort(
-                            (a, b) =>
-                              healthScore(b.success_rate_pct, b.avg_ms) -
-                              healthScore(a.success_rate_pct, a.avg_ms)
-                          )
-                          .map((row, i) => {
-                            const s = healthScore(row.success_rate_pct, row.avg_ms);
-                            return (
-                              <Cell key={i} fill={s >= 80 ? C.green : s >= 60 ? C.yellow : C.red} />
-                            );
-                          })}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+              <Card title="Race Win Distribution">
+                {loading ? <Skel h={220}/> : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 4 }}>
+                    {winRows.filter(r=>r.wins>0).sort((a,b)=>b.wins-a.wins).map(r => {
+                      const maxW = Math.max(...winRows.map(x=>x.wins), 1);
+                      return (
+                        <div key={r.node}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)' }}>{nodeLabel(r.node).split(' ·')[0]}</span>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>{r.win_rate_pct.toFixed(0)}%</span>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>⚡{fmtNum(r.wins)}</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: nodeColor(r.node), width: `${(r.wins/maxW)*100}%`, borderRadius: 2 }}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </Card>
             </div>
-
-            {/* Latency percentile breakdown per node */}
-            <Card title="Latency Percentile Breakdown" tag="P50 / P95 estimates from bucket data">
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gap: 10,
-                }}
-              >
-                {loading
-                  ? Array(4)
-                      .fill(0)
-                      .map((_, i) => <Skel key={i} h={80} />)
-                  : latencyRows
-                      .filter((r) => r.under_4s > 0)
-                      .map((lRow) => (
-                        <div key={lRow.node} style={{ padding: 12, ...S.charBg }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              marginBottom: 8,
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                background: nodeColor(lRow.node),
-                              }}
-                            />
-                            <span
-                              style={{ ...S.monoSm, color: C.label, fontWeight: 600, fontSize: 9 }}
-                            >
-                              {nodeShortName(lRow.node).split(' ·')[0]}
-                            </span>
-                          </div>
-                          <LatencyDistBar row={lRow} showLabels />
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr 1fr',
-                              gap: 6,
-                              marginTop: 8,
-                            }}
-                          >
-                            {[
-                              { l: 'Avg', v: fmtMs(lRow.avg_ms) },
-                              { l: 'P50', v: estimateP50(lRow) },
-                              { l: 'P95', v: estimateP95(lRow) },
-                            ].map((m) => (
-                              <div key={m.l}>
-                                <div style={{ ...S.monoXs, fontSize: 7 }}>{m.l}</div>
-                                <div
-                                  style={{
-                                    fontSize: 9,
-                                    color: C.label,
-                                    fontFamily: 'JetBrains Mono, monospace',
-                                    marginTop: 1,
-                                  }}
-                                >
-                                  {m.v}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-              </div>
-            </Card>
           </div>
         )}
 
         {/* ── TRAFFIC ──────────────────────────────────────────────────────── */}
         {tab === 'traffic' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                gap: 10,
-              }}
-            >
-              {loading ? (
-                Array(4)
-                  .fill(0)
-                  .map((_, i) => <Skel key={i} h={88} />)
-              ) : (
-                <>
-                  <StatCard
-                    label="Total (period)"
-                    value={fmtNum(globalRow.total_attempts)}
-                    sub={pLabel}
-                    color={C.amber}
-                  />
-                  <StatCard
-                    label="Peak Bucket"
-                    value={fmtNum(Math.max(...trafficData.map((d) => d.attempts), 0))}
-                    sub="Highest single bucket"
-                    color={C.gold}
-                  />
-                  <StatCard
-                    label="Avg / Bucket"
-                    value={fmtNum(
-                      trafficData.length
-                        ? Math.round(
-                            trafficData.reduce((s, d) => s + d.attempts, 0) / trafficData.length
-                          )
-                        : 0
-                    )}
-                    sub="Mean bucket rate"
-                    color={C.cream}
-                  />
-                  <StatCard
-                    label="Peak Error Rate"
-                    value={fmtPct(Math.max(...trafficData.map((d) => d.error_rate), 0))}
-                    sub="Worst bucket"
-                    color={C.red}
-                    alert={Math.max(...trafficData.map((d) => d.error_rate), 0) > 5}
-                  />
-                  <StatCard
-                    label="Win Rate"
-                    value={fmtPct(
-                      globalRow.total_attempts > 0
-                        ? (globalRow.race_wins / globalRow.total_attempts) * 100
-                        : 0
-                    )}
-                    sub="Wins / attempts"
-                    color={C.green}
-                  />
-                  <StatCard
-                    label="Avg Latency"
-                    value={fmtMs(globalRow.avg_ms)}
-                    sub="Global weighted avg"
-                    color={msColor(globalRow.avg_ms)}
-                    alert={globalRow.avg_ms !== null && globalRow.avg_ms > config.alertAvgMs}
-                  />
-                </>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+              {loading ? Array(4).fill(0).map((_,i)=><Skel key={i} h={90}/>) : (<>
+                <StatCard label="Total (period)" value={fmtNum(globalRow.total_attempts)} sub={pLabel}/>
+                <StatCard label="Peak Bucket" value={fmtNum(Math.max(...trafficData.map(d=>d.attempts),0))} sub="Highest single bucket" color={CH.gold}/>
+                <StatCard label="Peak Error Rate" value={fmtPct(Math.max(...trafficData.map(d=>d.error_rate),0))} sub="Worst bucket" color={CH.red} alert={Math.max(...trafficData.map(d=>d.error_rate),0)>5}/>
+                <StatCard label="Avg Latency" value={fmtMs(globalRow.avg_ms)} sub="Global weighted avg" color={msColor(globalRow.avg_ms)} alert={globalRow.avg_ms !== null && globalRow.avg_ms > cfg.alertMs}/>
+              </>)}
             </div>
-
             <Card title="Attempts · Successes · Failures · Wins" tag={pLabel}>
-              {loading ? (
-                <Skel h={240} />
-              ) : (
+              {loading ? <Skel h={240}/> : (
                 <ResponsiveContainer width="100%" height={240}>
-                  <ComposedChart
-                    data={trafficData}
-                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-                  >
+                  <ComposedChart data={trafficData} margin={{ top:4,right:4,bottom:0,left:0 }}>
                     <defs>
-                      <linearGradient id="gA2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.amber} stopOpacity={0.25} />
-                        <stop offset="95%" stopColor={C.amber} stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gS2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.green} stopOpacity={0.15} />
-                        <stop offset="95%" stopColor={C.green} stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gW2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.gold} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={C.gold} stopOpacity={0} />
-                      </linearGradient>
+                      <linearGradient id="gA2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.amber} stopOpacity={0.25}/><stop offset="95%" stopColor={CH.amber} stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gW2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.gold} stopOpacity={0.2}/><stop offset="95%" stopColor={CH.gold} stopOpacity={0}/></linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis
-                      dataKey="bucket"
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={42}
-                    />
-                    <Tooltip content={<TT />} />
-                    <Legend
-                      wrapperStyle={{
-                        fontSize: 9,
-                        fontFamily: 'JetBrains Mono, monospace',
-                        paddingTop: 8,
-                      }}
-                    />
-                    {config.chartStyle === 'area' ? (
-                      <Area
-                        type="monotone"
-                        dataKey="attempts"
-                        name="Attempts"
-                        stroke={C.amber}
-                        fill="url(#gA2)"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="attempts"
-                        name="Attempts"
-                        stroke={C.amber}
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    )}
-                    {config.chartStyle === 'area' ? (
-                      <Area
-                        type="monotone"
-                        dataKey="wins"
-                        name="Race Wins"
-                        stroke={C.gold}
-                        fill="url(#gW2)"
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="wins"
-                        name="Race Wins"
-                        stroke={C.gold}
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    )}
-                    <Line
-                      type="monotone"
-                      dataKey="failures"
-                      name="Failures"
-                      stroke={C.red}
-                      strokeWidth={1.5}
-                      dot={false}
-                    />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                    <XAxis dataKey="bucket" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} interval="preserveStartEnd"/>
+                    <YAxis tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} width={42}/>
+                    <Tooltip content={<FilmTooltip/>}/>
+                    <Legend wrapperStyle={{ fontSize:9,fontFamily:'JetBrains Mono,monospace',paddingTop:8 }}/>
+                    <Area type="monotone" dataKey="attempts" name="Attempts" stroke={CH.amber} fill="url(#gA2)" strokeWidth={2} dot={false}/>
+                    <Area type="monotone" dataKey="wins" name="Wins" stroke={CH.gold} fill="url(#gW2)" strokeWidth={1.5} dot={false}/>
+                    <Line type="monotone" dataKey="failures" name="Failures" stroke={CH.red} strokeWidth={1.5} dot={false}/>
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
+          </div>
+        )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Card title="Avg Latency Over Time">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={trafficData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis
-                        dataKey="bucket"
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={50}
-                        tickFormatter={(v) => fmtMs(v)}
-                      />
-                      <Tooltip content={<TT />} formatter={(v: any) => [fmtMs(v), 'Avg latency']} />
-                      <ReferenceLine
-                        y={1000}
-                        stroke={C.yellow}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                        label={{ value: '1s', fill: C.yellow, fontSize: 8 }}
-                      />
-                      <ReferenceLine
-                        y={config.alertAvgMs}
-                        stroke={C.red}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                        label={{ value: 'Alert', fill: C.red, fontSize: 7 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="avg_ms"
-                        name="Avg Latency"
-                        stroke={C.blue}
-                        strokeWidth={2}
-                        dot={false}
-                        connectNulls
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </Card>
-              <Card title="Error Rate Over Time">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={trafficData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis
-                        dataKey="bucket"
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={36}
-                        tickFormatter={(v) => `${v.toFixed(0)}%`}
-                        domain={[0, 'auto']}
-                      />
-                      <Tooltip
-                        content={<TT />}
-                        formatter={(v: any) => [`${Number(v).toFixed(1)}%`, 'Error Rate']}
-                      />
-                      <ReferenceLine
-                        y={10}
-                        stroke={C.red}
-                        strokeDasharray="4 3"
-                        strokeWidth={1}
-                        label={{ value: '10%', fill: C.red, fontSize: 8 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="error_rate"
-                        name="Error Rate"
-                        stroke={C.red}
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </Card>
+        {/* ── FALLBACKS ────────────────────────────────────────────────────── */}
+        {tab === 'fallbacks' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ padding: '8px 0' }}>
+              <AmberTag>Fallback Tier Analysis</AmberTag>
+              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
+                Tracks which rasterization tier serves each request. Primary (Tier 1) = geo-matched node. Higher tiers = escalations. High Tier 2/3 usage signals primary node issues.
+              </p>
             </div>
+
+            {/* Tier summary cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10 }}>
+              {loading ? Array(4).fill(0).map((_,i)=><Skel key={i} h={90}/>) : (() => {
+                const primary   = fallbackTierRows.filter(r => r.lane === 'geo' || r.lane === 'binding');
+                const t1fb      = fallbackTierRows.filter(r => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback');
+                const t2fb      = fallbackTierRows.filter(r => r.lane === 'geo-t2');
+                const t3fb      = fallbackTierRows.filter(r => r.lane === 'geo-t3' || r.lane === 'wsrv-t3');
+                const total     = fallbackTierRows.reduce((s,r)=>s+r.attempts,0);
+                const primaryN  = primary.reduce((s,r)=>s+r.attempts,0);
+                const t1fbN     = t1fb.reduce((s,r)=>s+r.attempts,0);
+                const t2fbN     = t2fb.reduce((s,r)=>s+r.attempts,0);
+                const t3fbN     = t3fb.reduce((s,r)=>s+r.attempts,0);
+                const pct = (n: number) => total > 0 ? `${(n/total*100).toFixed(1)}%` : '—';
+                return (<>
+                  <StatCard label="Primary (Tier 1)" value={fmtNum(primaryN)} sub={`${pct(primaryN)} of requests`} color={CH.green}/>
+                  <StatCard label="T1 Fallback" value={fmtNum(t1fbN)} sub={`${pct(t1fbN)} escalated`} color={t1fbN > primaryN * 0.1 ? CH.yellow : CH.dim}/>
+                  <StatCard label="T2 Fallback" value={fmtNum(t2fbN)} sub={`${pct(t2fbN)} reached`} color={t2fbN > 0 ? CH.orange : CH.dim} alert={t2fbN > primaryN * 0.05}/>
+                  <StatCard label="T3 Fallback" value={fmtNum(t3fbN)} sub={`${pct(t3fbN)} — critical`} color={t3fbN > 0 ? CH.red : CH.dim} alert={t3fbN > 0}/>
+                </>);
+              })()}
+            </div>
+
+            {/* Tier breakdown table */}
+            <Card title="Lane Breakdown" tag={pLabel}>
+              {loading ? <Skel h={200}/> : fallbackTierRows.length === 0 ? (
+                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>No fallback data — check that rasterBalancer is writing blob7 values</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {fallbackTierRows.map(row => {
+                    const meta = LANE_META[row.lane] ?? { label: row.lane, color: CH.ghost, tier: 0 };
+                    const total = fallbackTierRows.reduce((s,r)=>s+r.attempts,0) || 1;
+                    return (
+                      <div key={row.lane} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }}/>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>{meta.label}</span>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              {row.avg_ms && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: msColor(row.avg_ms) }}>{fmtMs(row.avg_ms)}</span>}
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(row.success_rate_pct) }}>{row.success_rate_pct.toFixed(0)}% ok</span>
+                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(row.attempts)}</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: meta.color, opacity: 0.7, width: `${(row.attempts/total)*100}%`, borderRadius: 2 }}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* Fallback escalation timeseries */}
+            <Card title="Fallback Escalation Over Time" tag="tier 2+ only">
+              {loading ? <Skel h={200}/> : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={fallbackTimeseries} margin={{ top:4,right:4,bottom:0,left:0 }}>
+                    <defs>
+                      <linearGradient id="gPrim" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.green} stopOpacity={0.2}/><stop offset="95%" stopColor={CH.green} stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gT1"   x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.yellow} stopOpacity={0.2}/><stop offset="95%" stopColor={CH.yellow} stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gT2"   x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.orange} stopOpacity={0.25}/><stop offset="95%" stopColor={CH.orange} stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gT3"   x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.red} stopOpacity={0.25}/><stop offset="95%" stopColor={CH.red} stopOpacity={0}/></linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                    <XAxis dataKey="bucket" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} interval="preserveStartEnd"/>
+                    <YAxis tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} width={42}/>
+                    <Tooltip content={<FilmTooltip/>}/>
+                    <Legend wrapperStyle={{ fontSize:9,fontFamily:'JetBrains Mono,monospace',paddingTop:8 }}/>
+                    <Area type="monotone" dataKey="primary_hits"  name="Primary"     stroke={CH.green}  fill="url(#gPrim)" strokeWidth={1.5} dot={false}/>
+                    <Area type="monotone" dataKey="t1_fallbacks"  name="T1 Fallback" stroke={CH.yellow} fill="url(#gT1)"   strokeWidth={1.5} dot={false}/>
+                    <Area type="monotone" dataKey="t2_fallbacks"  name="T2 Fallback" stroke={CH.orange} fill="url(#gT2)"   strokeWidth={1.5} dot={false}/>
+                    <Area type="monotone" dataKey="t3_fallbacks"  name="T3 Fallback" stroke={CH.red}    fill="url(#gT3)"   strokeWidth={1.5} dot={false}/>
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
           </div>
         )}
 
         {/* ── ERRORS ───────────────────────────────────────────────────────── */}
         {tab === 'errors' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))',
-                gap: 10,
-              }}
-            >
-              {loading ? (
-                Array(4)
-                  .fill(0)
-                  .map((_, i) => <Skel key={i} h={88} />)
-              ) : (
-                <>
-                  <StatCard
-                    label="Total Failures"
-                    value={fmtNum(globalRow.failures)}
-                    sub={pLabel}
-                    color={globalRow.failures > 0 ? C.red : C.green}
-                    accent={C.red}
-                    alert={globalRow.failures > 50}
-                  />
-                  <StatCard
-                    label="Failure Rate"
-                    value={fmtPct(
-                      globalRow.total_attempts > 0
-                        ? (globalRow.failures / globalRow.total_attempts) * 100
-                        : 0
-                    )}
-                    sub="Global average"
-                    color={globalRow.failures > 0 ? C.orange : C.green}
-                    accent={C.red}
-                  />
-                  <StatCard
-                    label="Affected Nodes"
-                    value={nodeRows.filter((r) => r.failures > 0).length}
-                    sub="Nodes with any failures"
-                    color={C.orange}
-                    accent={C.orange}
-                  />
-                  <StatCard
-                    label="Most Failures"
-                    value={
-                      nodeRows.sort((a, b) => b.failures - a.failures)[0]?.node
-                        ? nodeShortName(
-                            nodeRows.sort((a, b) => b.failures - a.failures)[0].node
-                          ).split(' ')[0]
-                        : '—'
-                    }
-                    sub={`${fmtNum(nodeRows.reduce((s, r) => s + (r.failures > s ? r.failures : s), 0))} max`}
-                    color={C.label}
-                  />
-                </>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+              {loading ? Array(3).fill(0).map((_,i)=><Skel key={i} h={90}/>) : (<>
+                <StatCard label="Total Failures" value={fmtNum(globalRow.failures)} sub={pLabel} color={globalRow.failures > 0 ? CH.red : CH.green} alert={globalRow.failures > 50}/>
+                <StatCard label="Failure Rate" value={fmtPct(globalRow.total_attempts > 0 ? globalRow.failures/globalRow.total_attempts*100 : 0)} sub="Global average" color={CH.orange}/>
+                <StatCard label="Affected Nodes" value={nodeRows.filter(r=>r.failures>0).length} sub="Nodes with failures" color="var(--film-cream)"/>
+              </>)}
             </div>
-
-            <Card title="Failure Heatmap — Node × Time" tag="colour = failure intensity">
-              {loading ? (
-                <Skel h={160} />
-              ) : (
-                <HourHeatmap
-                  data={
-                    heatmapData.length > 0
-                      ? heatmapData
-                      : trafficData.map((d) => ({ ...d, node: 'global' }))
-                  }
-                />
-              )}
-            </Card>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Card title="Failures by Node">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart
-                      data={[...nodeRows]
-                        .filter((r) => r.failures > 0)
-                        .sort((a, b) => b.failures - a.failures)}
-                      layout="vertical"
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="rgba(255,255,255,0.05)"
-                        horizontal={false}
-                      />
-                      <XAxis
-                        type="number"
-                        tick={{ fill: C.ghost, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="node"
-                        tick={{ fill: C.dim, fontSize: 8 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={80}
-                        tickFormatter={(n) => nodeShortName(n).split(' ')[0]}
-                      />
-                      <Tooltip content={<TT />} />
-                      <Bar dataKey="failures" name="Failures" fill={C.red} radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </Card>
-              <Card title="Error Breakdown">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {(data?.error_breakdown?.data ?? []).map((r: any, i: number) => {
-                      const maxOcc = Math.max(
-                        ...(data?.error_breakdown?.data ?? []).map((x: any) => num(x.occurrences)),
-                        1
-                      );
-                      return (
-                        <div key={i} style={{ padding: '10px 12px', ...S.charBg }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              marginBottom: 6,
-                            }}
-                          >
-                            <div>
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  fontFamily: 'JetBrains Mono, monospace',
-                                  color: C.red,
-                                  marginRight: 8,
-                                }}
-                              >
-                                {r.error}
-                              </span>
-                              <span style={{ ...S.monoXs }}>
-                                {nodeShortName(String(r.node ?? '')).split(' ')[0]}
-                              </span>
-                            </div>
-                            <span
-                              style={{
-                                fontSize: 14,
-                                fontWeight: 800,
-                                fontFamily: 'Bebas Neue, cursive',
-                                color: C.red,
-                                letterSpacing: '0.04em',
-                              }}
-                            >
-                              {fmtNum(num(r.occurrences))}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              height: 4,
-                              borderRadius: 2,
-                              background: 'rgba(255,255,255,0.06)',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                height: '100%',
-                                borderRadius: 2,
-                                background: C.red,
-                                width: `${(num(r.occurrences) / maxOcc) * 100}%`,
-                                opacity: 0.7,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {(data?.error_breakdown?.data ?? []).length === 0 && (
-                      <div
-                        style={{ ...S.monoSm, color: C.green, textAlign: 'center', padding: 20 }}
-                      >
-                        ✓ No errors recorded
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </div>
-
             <Card title={`Recent Failures (${failRows.length})`} tag={pLabel} noPad>
-              <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
-                {loading ? (
-                  <div style={{ padding: 14 }}>
-                    <Skel h={200} />
-                  </div>
-                ) : failRows.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', ...S.monoSm, color: C.green }}>
-                    ✓ No failures in this period
-                  </div>
+              <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
+                {loading ? <div style={{ padding: 14 }}><Skel h={200}/></div> : failRows.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: CH.green }}>✓ No failures in this period</div>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-                    <thead style={{ position: 'sticky', top: 0, background: C.mid, zIndex: 1 }}>
-                      <tr>
-                        {['Time', 'Node', 'Status', 'Error'].map((h) => (
-                          <th
-                            key={h}
-                            style={{
-                              padding: '7px 12px',
-                              textAlign: 'left',
-                              ...S.label,
-                              borderBottom: `1px solid ${C.borderFaint}`,
-                            }}
-                          >
-                            {h}
-                          </th>
-                        ))}
+                    <thead><tr style={{ background: 'var(--film-mid)', position: 'sticky', top: 0 }}>
+                      {['Time','Node','Status','Error'].map(h=><th key={h} style={{ padding:'7px 12px',textAlign:'left',fontFamily:'JetBrains Mono,monospace',fontSize:7,color:CH.ghost,letterSpacing:'0.16em',textTransform:'uppercase' as const,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>{h}</th>)}
+                    </tr></thead>
+                    <tbody>{failRows.slice(0,100).map((r,i)=>(
+                      <tr key={i} style={{ background:i%2===0?'rgba(248,113,113,0.025)':'transparent',borderBottom:'1px solid rgba(255,255,255,0.025)' }}>
+                        <td style={{ padding:'6px 12px',fontFamily:'JetBrains Mono,monospace',fontSize:8,color:CH.ghost,whiteSpace:'nowrap' as const }}>{relTime(r.timestamp)}</td>
+                        <td style={{ padding:'6px 12px' }}>
+                          <div style={{ display:'flex',alignItems:'center',gap:5 }}>
+                            <div style={{ width:6,height:6,borderRadius:'50%',background:nodeColor(r.node) }}/>
+                            <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:9,color:'var(--film-cream)' }}>{nodeLabel(r.node).split(' ')[0]}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding:'6px 12px' }}>
+                          <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:r.status_code===0?CH.orange:CH.red,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:3,padding:'1px 5px' }}>
+                            {r.status_code===0?'TIMEOUT':`HTTP ${Math.round(r.status_code)}`}
+                          </span>
+                        </td>
+                        <td style={{ padding:'6px 12px',fontFamily:'JetBrains Mono,monospace',fontSize:8,color:CH.dim,maxWidth:300,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const }}>{r.error}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {failRows.slice(0, 100).map((r, i) => (
-                        <tr
-                          key={i}
-                          style={{
-                            background: i % 2 === 0 ? 'rgba(248,113,113,0.025)' : 'transparent',
-                            borderBottom: `1px solid rgba(255,255,255,0.025)`,
-                          }}
-                        >
-                          <td style={{ padding: '6px 12px', ...S.monoXs, whiteSpace: 'nowrap' }}>
-                            {relTime(r.timestamp)}
-                          </td>
-                          <td style={{ padding: '6px 12px', ...S.monoSm, color: C.label }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div
-                                style={{
-                                  width: 6,
-                                  height: 6,
-                                  borderRadius: '50%',
-                                  background: nodeColor(r.node),
-                                }}
-                              />
-                              {nodeShortName(r.node).split(' ')[0]}
-                            </div>
-                          </td>
-                          <td style={{ padding: '6px 12px' }}>
-                            <span
-                              style={{
-                                ...S.monoXs,
-                                color: r.status_code === 0 ? C.orange : C.red,
-                                background: 'rgba(255,255,255,0.04)',
-                                border: `1px solid ${C.borderFaint}`,
-                                borderRadius: 3,
-                                padding: '1px 5px',
-                              }}
-                            >
-                              {r.status_code === 0
-                                ? 'TIMEOUT'
-                                : `HTTP ${Math.round(r.status_code)}`}
-                            </span>
-                          </td>
-                          <td
-                            style={{
-                              padding: '6px 12px',
-                              ...S.monoXs,
-                              maxWidth: 300,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              color: C.dim,
-                            }}
-                          >
-                            {r.error}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    ))}</tbody>
                   </table>
                 )}
               </div>
@@ -3164,277 +975,108 @@ export default function AnalyticsDashboard() {
         {/* ── BREAKDOWN ────────────────────────────────────────────────────── */}
         {tab === 'breakdown' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px,1fr))',
-                gap: 14,
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
               <Card title="Format Distribution">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <>
-                    <ResponsiveContainer width="100%" height={110}>
-                      <PieChart>
-                        <Pie
-                          data={formatPieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={28}
-                          outerRadius={48}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {formatPieData.map((e, i) => (
-                            <Cell key={i} fill={e.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(v: any) => [fmtNum(v), 'Attempts']}
-                          contentStyle={{
-                            background: C.char,
-                            border: `1px solid ${C.border}`,
-                            borderRadius: 6,
-                            fontSize: 10,
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                      {formatRows.map((r, i) => (
-                        <div
-                          key={r.format}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: 2,
-                                background: PIE_COLORS[i % PIE_COLORS.length],
-                              }}
-                            />
-                            <span style={{ ...S.monoSm, fontWeight: 700, color: C.label }}>
-                              {r.format.toUpperCase()}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: 10 }}>
-                            <span style={{ ...S.monoXs }}>{fmtNum(r.attempts)} req</span>
-                            <span style={{ ...S.monoXs, color: msColor(r.avg_ms) }}>
-                              {fmtMs(r.avg_ms)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </Card>
-
-              <Card title="Input Type Distribution">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  (() => {
-                    const typeRows = (data?.type_breakdown?.data ?? []).map(
-                      (r: any, i: number) => ({
-                        input_type: String(r.input_type ?? ''),
-                        attempts: num(r.attempts),
-                        avg_ms: nullableNum(r.avg_ms),
-                        color: PIE_COLORS[(i + 3) % PIE_COLORS.length],
-                      })
-                    );
-                    const maxA = Math.max(...typeRows.map((r) => r.attempts), 1);
-                    if (!typeRows.length)
+                {loading ? <Skel h={180}/> : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {formatRows.map((r, i) => {
+                      const total = formatRows.reduce((s,x)=>s+x.attempts,0)||1;
                       return (
-                        <div
-                          style={{ ...S.monoSm, color: C.ghost, padding: 20, textAlign: 'center' }}
-                        >
-                          No data
-                        </div>
-                      );
-                    return (
-                      <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}
-                      >
-                        {typeRows.map((r) => (
-                          <div key={r.input_type}>
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                marginBottom: 5,
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  color: C.amber,
-                                  fontFamily: 'Bebas Neue, cursive',
-                                  letterSpacing: '0.08em',
-                                }}
-                              >
-                                {(r.input_type || 'UNKNOWN').toUpperCase()}
-                              </span>
-                              <div style={{ display: 'flex', gap: 10 }}>
-                                <span style={{ ...S.monoXs }}>{fmtNum(r.attempts)} req</span>
-                                <span style={{ ...S.monoXs, color: msColor(r.avg_ms) }}>
-                                  {fmtMs(r.avg_ms)}
-                                </span>
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                height: 5,
-                                borderRadius: 2.5,
-                                background: 'rgba(255,255,255,0.06)',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  height: '100%',
-                                  borderRadius: 2.5,
-                                  background: r.color,
-                                  width: `${(r.attempts / maxA) * 100}%`,
-                                  transition: 'width 0.6s ease',
-                                }}
-                              />
+                        <div key={r.format}>
+                          <div style={{ display:'flex',justifyContent:'space-between',marginBottom:4 }}>
+                            <span className="syne-font" style={{ fontSize:12,fontWeight:700,color:CH.amber,letterSpacing:'0.08em' }}>{r.format.toUpperCase()}</span>
+                            <div style={{ display:'flex',gap:10 }}>
+                              <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:CH.ghost }}>{fmtNum(r.attempts)}</span>
+                              <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    );
-                  })()
-                )}
-              </Card>
-
-              <Card title="Top Datacenters">
-                {loading ? (
-                  <Skel h={180} />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {coloRows.map((r) => {
-                      const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
-                      const maxA = Math.max(...coloRows.map((c) => c.attempts), 1);
-                      return (
-                        <div key={r.colo}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              marginBottom: 3,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: C.cream,
-                                fontFamily: 'JetBrains Mono, monospace',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {r.colo}
-                            </span>
-                            <div style={{ display: 'flex', gap: 10 }}>
-                              <span style={{ ...S.monoXs, color: rateColor(rate) }}>
-                                {fmtPct(rate)}
-                              </span>
-                              <span style={{ ...S.monoXs, color: msColor(r.avg_ms) }}>
-                                {fmtMs(r.avg_ms)}
-                              </span>
-                              <span style={{ ...S.monoXs }}>{fmtNum(r.attempts)}</span>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              height: 3,
-                              borderRadius: 2,
-                              background: 'rgba(255,255,255,0.06)',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                height: '100%',
-                                borderRadius: 2,
-                                background: rateColor(rate),
-                                width: `${(r.attempts / maxA) * 100}%`,
-                              }}
-                            />
+                          <div style={{ height:5,borderRadius:2,background:'rgba(255,255,255,0.06)',overflow:'hidden' }}>
+                            <div style={{ height:'100%',background:PIE_COLORS[i%PIE_COLORS.length],width:`${(r.attempts/total)*100}%`,borderRadius:2 }}/>
                           </div>
                         </div>
                       );
                     })}
-                    {!coloRows.length && (
-                      <div style={{ ...S.monoSm, color: C.ghost, padding: 10 }}>No colo data</div>
-                    )}
+                  </div>
+                )}
+              </Card>
+              <Card title="Top Datacenters">
+                {loading ? <Skel h={180}/> : (
+                  <div style={{ display:'flex',flexDirection:'column',gap:8 }}>
+                    {coloRows.map(r => {
+                      const rate = r.attempts > 0 ? (r.successes/r.attempts)*100 : 0;
+                      const maxA = Math.max(...coloRows.map(c=>c.attempts),1);
+                      return (
+                        <div key={r.colo}>
+                          <div style={{ display:'flex',justifyContent:'space-between',marginBottom:3 }}>
+                            <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:11,color:'var(--film-cream)',fontWeight:700 }}>{r.colo}</span>
+                            <div style={{ display:'flex',gap:8 }}>
+                              <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:rateColor(rate) }}>{fmtPct(rate)}</span>
+                              <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</span>
+                              <span style={{ fontFamily:'JetBrains Mono,monospace',fontSize:8,color:CH.ghost }}>{fmtNum(r.attempts)}</span>
+                            </div>
+                          </div>
+                          <div style={{ height:3,borderRadius:2,background:'rgba(255,255,255,0.06)',overflow:'hidden' }}>
+                            <div style={{ height:'100%',background:rateColor(rate),width:`${(r.attempts/maxA)*100}%` }}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!coloRows.length && <div style={{ color:CH.ghost,fontFamily:'JetBrains Mono,monospace',fontSize:11 }}>No colo data</div>}
                   </div>
                 )}
               </Card>
             </div>
-
-            <Card title="Datacenter Volume · Colour = Success Rate">
-              {loading ? (
-                <Skel h={200} />
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart
-                    data={coloRows.slice(0, 20)}
-                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis
-                      dataKey="colo"
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: C.ghost, fontSize: 8 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={40}
-                    />
-                    <Tooltip content={<TT />} />
-                    <Bar dataKey="attempts" name="Attempts" radius={[4, 4, 0, 0]}>
-                      {coloRows.map((r, i) => {
-                        const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
-                        return <Cell key={i} fill={rateColor(rate)} fillOpacity={0.7} />;
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </Card>
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: 28,
-            paddingTop: 14,
-            borderTop: `1px solid ${C.borderFaint}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 8,
-          }}
-        >
-          <span style={{ ...S.monoXs, fontSize: 7 }}>
-            POSTERIUM · raster_metrics · CF Analytics Engine · v2
-          </span>
-          <span style={{ ...S.monoXs, fontSize: 7 }}>
-            {lastFetch ? `Refreshed ${lastFetch.toLocaleTimeString()}` : ''} · {pLabel} ·{' '}
-            {config.compactMode ? 'compact' : 'full'} view
+        {/* ── WALL TIME ────────────────────────────────────────────────────── */}
+        {tab === 'wall-time' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ padding: '8px 0' }}>
+              <AmberTag>Request-Level Wall Time</AmberTag>
+              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
+                End-to-end request duration from the poster handler — includes SVG generation, rasterization, and response time. Written by the poster handler with <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>blob1='req'</code>.
+              </p>
+            </div>
+            {loading ? <Skel h={100}/> : !wallStats || !num(wallStats.total_requests) ? (
+              <div style={{ padding: 20, color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, background: 'var(--film-char)', borderRadius: 8, border: '1px solid var(--film-border)' }}>
+                No wall time data yet — add <code>writeWallTime()</code> calls to <code>handlers/poster.js</code> for this tab to populate. See the implementation guide in the PR.
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+                  <StatCard label="Total Requests" value={fmtNum(num(wallStats.total_requests))} sub={pLabel}/>
+                  <StatCard label="Avg Wall Time" value={fmtMs(nullableNum(wallStats.avg_wall_ms))} sub="End-to-end" color={msColor(nullableNum(wallStats.avg_wall_ms))}/>
+                  <StatCard label="Under 1s" value={fmtPct(num(wallStats.total_requests)>0?num(wallStats.under_1s)/num(wallStats.total_requests)*100:0)} sub="of requests" color={CH.green}/>
+                  <StatCard label="Under 2s" value={fmtPct(num(wallStats.total_requests)>0?num(wallStats.under_2s)/num(wallStats.total_requests)*100:0)} sub="cumulative" color={CH.yellow}/>
+                </div>
+                <Card title="Wall Time Over Time" tag={pLabel}>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <ComposedChart data={wallTimeseries} margin={{ top:4,right:4,bottom:0,left:0 }}>
+                      <defs>
+                        <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={CH.amber} stopOpacity={0.25}/><stop offset="95%" stopColor={CH.amber} stopOpacity={0}/></linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
+                      <XAxis dataKey="bucket" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} interval="preserveStartEnd"/>
+                      <YAxis yAxisId="left" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} width={42}/>
+                      <YAxis yAxisId="right" orientation="right" tick={{ fill:CH.ghost,fontSize:8 }} tickLine={false} axisLine={false} width={50} tickFormatter={v=>fmtMs(v)}/>
+                      <Tooltip content={<FilmTooltip/>}/>
+                      <Legend wrapperStyle={{ fontSize:9,fontFamily:'JetBrains Mono,monospace',paddingTop:8 }}/>
+                      <Area yAxisId="left" type="monotone" dataKey="requests" name="Requests" stroke={CH.amber} fill="url(#gWall)" strokeWidth={2} dot={false}/>
+                      <Line yAxisId="right" type="monotone" dataKey="avg_wall_ms" name="Avg Wall ms" stroke={CH.blue} strokeWidth={1.5} dot={false}/>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </Card>
+              </>
+            )}
+          </div>
+        )}
+
+        <div style={{ marginTop: 24, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>POSTERIUM · raster_metrics · CF Analytics Engine · v3</span>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>
+            {lastFetch ? `Updated ${lastFetch.toLocaleTimeString()}` : ''} · {pLabel}
           </span>
         </div>
       </main>
