@@ -1,15 +1,17 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DocsLayout, { type DocsSidebarLink } from '@/components/shared/DocsLayout';
 import { AmberTag } from '@/components/shared/primitives';
 import ShowcaseMediaFrame from '@/components/installation/ShowcaseMediaFrame';
+import TableOfContentsClient from '@/components/TableOfContentsClient';
 import {
   installationApps,
   installationPlaceholderImages,
   type InstallationAppConfig,
   type InstallationDevice,
 } from '@/data/installation-config';
+import { extractMarkdownHeadings, type MarkdownHeading } from '@/lib/markdown-headings';
 
 const devices: InstallationDevice[] = ['desktop', 'tv', 'mobile'];
 const MOBILE_SHOWCASE_WIDTH = 'min(42vw, 190px)';
@@ -58,6 +60,77 @@ const InstallationPage = memo(() => {
     if (!filteredApps.length) return null;
     return filteredApps.find((app) => app.id === selectedVisibleAppId) ?? filteredApps[0];
   }, [filteredApps, selectedVisibleAppId]);
+
+  const guideHeadings = useMemo<MarkdownHeading[]>(() => {
+    if (!activeApp) return [];
+    return extractMarkdownHeadings(activeApp.guideMarkdown);
+  }, [activeApp]);
+
+  const h2Slugs = useMemo(
+    () => guideHeadings.filter((heading) => heading.depth === 2).map((heading) => heading.slug),
+    [guideHeadings]
+  );
+  const h3Slugs = useMemo(
+    () => guideHeadings.filter((heading) => heading.depth === 3).map((heading) => heading.slug),
+    [guideHeadings]
+  );
+
+  useEffect(() => {
+    if (!guideHeadings.length) return;
+
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-toc-link]'));
+    const headings = guideHeadings
+      .map((heading) => document.getElementById(heading.slug))
+      .filter((node): node is HTMLElement => Boolean(node));
+
+    if (!links.length || !headings.length) return;
+
+    const setActive = (slug: string) => {
+      links.forEach((link) => {
+        if (link.dataset.tocLink === slug) link.setAttribute('data-active', 'true');
+        else link.removeAttribute('data-active');
+      });
+    };
+
+    const firstSlug = headings[0]?.id;
+    if (firstSlug) setActive(firstSlug);
+
+    const clickHandlers: Array<() => void> = [];
+    links.forEach((link) => {
+      const handler = (event: Event) => {
+        event.preventDefault();
+        const slug = link.dataset.tocLink;
+        if (!slug) return;
+        const target = document.getElementById(slug);
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActive(slug);
+      };
+      link.addEventListener('click', handler);
+      clickHandlers.push(() => link.removeEventListener('click', handler));
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (!visible.length) return;
+        const current = visible[0].target as HTMLElement;
+        if (current.id) setActive(current.id);
+      },
+      {
+        rootMargin: '-88px 0px -58% 0px',
+        threshold: [0.1, 0.25, 0.5, 0.75, 1],
+      }
+    );
+
+    headings.forEach((heading) => observer.observe(heading));
+    return () => {
+      observer.disconnect();
+      clickHandlers.forEach((dispose) => dispose());
+    };
+  }, [guideHeadings, activeApp?.id]);
 
   const setActiveDevice = (appId: string, device: InstallationDevice) => {
     setActiveDeviceByApp((prev) => ({
@@ -187,6 +260,7 @@ const InstallationPage = memo(() => {
     <DocsLayout
       sidebarTitle="Apps"
       sidebarLinks={sidebarLinks}
+      sidebarFooter={<TableOfContentsClient headings={guideHeadings} />}
       search={{
         value: search,
         onChange: setSearch,
@@ -242,6 +316,12 @@ const InstallationPage = memo(() => {
             overflow: 'hidden',
           }}
         >
+          {(() => {
+            let h2Cursor = 0;
+            let h3Cursor = 0;
+
+            return (
+              <>
           <h2
             className="syne-font"
             style={{
@@ -278,9 +358,34 @@ const InstallationPage = memo(() => {
               Guide
             </h3>
             <div className="docs-prose">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeApp.guideMarkdown}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h2: (props) => {
+                    const slug = h2Slugs[h2Cursor++];
+                    return (
+                      <h2 id={slug} style={{ scrollMarginTop: 88 }}>
+                        {props.children}
+                      </h2>
+                    );
+                  },
+                  h3: (props) => {
+                    const slug = h3Slugs[h3Cursor++];
+                    return (
+                      <h3 id={slug} style={{ scrollMarginTop: 88 }}>
+                        {props.children}
+                      </h3>
+                    );
+                  },
+                }}
+              >
+                {activeApp.guideMarkdown}
+              </ReactMarkdown>
             </div>
           </section>
+              </>
+            );
+          })()}
         </article>
       ) : null}
 
