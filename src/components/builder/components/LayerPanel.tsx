@@ -721,16 +721,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     [setConfig]
   );
 
-  const disableBadges = useCallback((persistDisabledPreference = true) => {
-    if (persistDisabledPreference) writeBadgesPreference(false);
-    setConfig((prev) => {
-      if (prev.ratings.length > 0) {
-        savedActiveBadgesRef.current = [...prev.ratings];
-      }
-      return { ...prev, ratings: [] };
-    });
-    setBatchSelection([]);
-  }, [setConfig, setBatchSelection]);
+  const disableBadges = useCallback(
+    ({ persistPreference = true }: { persistPreference?: boolean } = {}) => {
+      if (persistPreference) writeBadgesPreference(false);
+      setConfig((prev) => {
+        if (prev.ratings.length > 0) {
+          savedActiveBadgesRef.current = [...prev.ratings];
+        }
+        return { ...prev, ratings: [] };
+      });
+      setBatchSelection([]);
+    },
+    [setConfig, setBatchSelection]
+  );
 
   const enableBadges = useCallback(() => {
     writeBadgesPreference(true);
@@ -751,10 +754,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     if (minimalModeHandledRef.current) return;
     if (config.ratings.length > 0) {
       writeBadgesPreference(true);
-      disableBadges(false);
+      disableBadges({ persistPreference: false });
     }
     minimalModeHandledRef.current = true;
-  }, [isMinimalPreset, config.ratings.length, disableBadges]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMinimalPreset, config.ratings.length]);
 
   useEffect(() => {
     if (isMinimalPreset && !config.textless) {
@@ -1409,13 +1413,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   onClick={() => {
                     if (opt.id === 'm') {
                       setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
-                      disableBadges(false);
+                      disableBadges({ persistPreference: false });
                       return;
                     }
                     const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
                     setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
                     if (shouldEnableBadges) enableBadges();
-                    else disableBadges(true);
+                    else disableBadges({ persistPreference: true });
                   }}
                   className={clsx(
                     'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border',
@@ -1439,7 +1443,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               onChange={(v) => {
                 if (isMinimalPreset) return;
                 if (v) enableBadges();
-                else disableBadges(true);
+                else disableBadges({ persistPreference: true });
               }}
               disabled={isMinimalPreset}
             />
