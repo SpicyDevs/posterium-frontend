@@ -283,7 +283,7 @@ const CyclingPoster = memo(() => {
               }}
             />
           );
-        }))}
+        })}
 
         {activeIdx !== 0 && !loaded[activeIdx] && !failed[activeIdx] && (
           <div
