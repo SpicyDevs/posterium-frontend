@@ -24,6 +24,9 @@ import '@/styles/global.css';
           return;
         }
         sessionStorage.setItem(key, '1');
+        setTimeout(() => {
+          document.body.classList.add('disable-animations');
+        }, 1600);
       } catch {
         // Ignore storage errors in restricted environments.
       }
