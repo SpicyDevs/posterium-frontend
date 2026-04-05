@@ -197,37 +197,37 @@ nav a.syne-font {
   transform: none;
 }
 
-:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a1 {
+.hero-anims-active .h-a1 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a2 {
+.hero-anims-active .h-a2 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a3 {
+.hero-anims-active .h-a3 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a4 {
+.hero-anims-active .h-a4 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a5 {
+.hero-anims-active .h-a5 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
 
-:root[data-hero-intro-played='1'] .hero-anims-active .h-a1,
-:root[data-hero-intro-played='1'] .hero-anims-active .h-a2,
-:root[data-hero-intro-played='1'] .hero-anims-active .h-a3,
-:root[data-hero-intro-played='1'] .hero-anims-active .h-a4,
-:root[data-hero-intro-played='1'] .hero-anims-active .h-a5 {
+body.disable-animations .hero-anims-active .h-a1,
+body.disable-animations .hero-anims-active .h-a2,
+body.disable-animations .hero-anims-active .h-a3,
+body.disable-animations .hero-anims-active .h-a4,
+body.disable-animations .hero-anims-active .h-a5 {
   animation: none;
   opacity: 1;
   transform: none;

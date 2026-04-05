@@ -422,35 +422,8 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (root.dataset.heroIntroPlayed === '1') return;
-
-    const sectionEl = sectionRef.current;
-    if (!sectionEl) return;
-
-    const onAnimationEnd = (event: AnimationEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (!target.classList.contains('h-a5')) return;
-      root.dataset.heroIntroPlayed = '1';
-    };
-
-    sectionEl.addEventListener('animationend', onAnimationEnd);
-    return () => {
-      sectionEl.removeEventListener('animationend', onAnimationEnd);
-    };
-  }, []);
-
   return (
-    <section
-      ref={sectionRef}
-      aria-label="Hero"
-      className="hero-anims-active"
-      style={HERO_SECTION_STYLE}
-    >
+    <section aria-label="Hero" className="hero-anims-active" style={HERO_SECTION_STYLE}>
       <div aria-hidden="true" style={AMBIENT_STYLE} />
       <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
