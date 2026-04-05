@@ -422,8 +422,26 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
+  const [shouldAnimateIntro, setShouldAnimateIntro] = useState(false);
+
+  useEffect(() => {
+    try {
+      const key = 'hero-intro-played';
+      const alreadyPlayed = sessionStorage.getItem(key) === '1';
+      if (alreadyPlayed) return;
+      sessionStorage.setItem(key, '1');
+      setShouldAnimateIntro(true);
+    } catch {
+      setShouldAnimateIntro(true);
+    }
+  }, []);
+
   return (
-    <section aria-label="Hero" className="hero-anims-active" style={HERO_SECTION_STYLE}>
+    <section
+      aria-label="Hero"
+      className={shouldAnimateIntro ? 'hero-anims-active' : undefined}
+      style={HERO_SECTION_STYLE}
+    >
       <div aria-hidden="true" style={AMBIENT_STYLE} />
       <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
