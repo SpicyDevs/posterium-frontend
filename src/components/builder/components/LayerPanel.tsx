@@ -619,7 +619,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
-  const savedActiveBadgesRef = useRef<RatingType[]>(DEFAULT_CONFIG.ratings);
+  const savedActiveBadgesRef = useRef<RatingType[]>([]);
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesEnabled = config.ratings.length > 0;
 
@@ -703,12 +703,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     [setConfig]
   );
 
-  useEffect(() => {
-    if (config.ratings.length > 0) {
-      savedActiveBadgesRef.current = [...config.ratings];
-    }
-  }, [config.ratings]);
-
   const disableBadges = useCallback(() => {
     setConfig((prev) => {
       if (prev.ratings.length > 0) {
@@ -731,9 +725,15 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   useEffect(() => {
     if (isMinimalPreset && config.ratings.length > 0) {
-      disableBadges();
+      setConfig((prev) => {
+        if (prev.ratings.length > 0) {
+          savedActiveBadgesRef.current = [...prev.ratings];
+        }
+        return { ...prev, ratings: [] };
+      });
+      setBatchSelection([]);
     }
-  }, [isMinimalPreset, config.ratings.length, disableBadges]);
+  }, [isMinimalPreset, config.ratings.length, setConfig, setBatchSelection]);
 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
