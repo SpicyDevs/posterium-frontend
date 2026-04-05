@@ -4,7 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
-import TableOfContentsClient from '@/components/TableOfContentsClient';
+import InstallationSidebarClient from '@/components/installation/InstallationSidebarClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
 import '@/styles/global.css';
@@ -36,6 +36,7 @@ const sidebarLinks = preparedGuides.map((g) => ({
   id: g.guide.id,
   label: g.name,
   href: `#${g.guide.id}`,
+  headings: g.headings,
 }));
 ---
 
@@ -47,9 +48,9 @@ const sidebarLinks = preparedGuides.map((g) => ({
 >
   <PageSEO slot="head" routeKey="/installation" />
 
-  <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
+  <div class="min-h-dvh bg-[var(--film-black)] text-[var(--film-cream)]">
     <MainNavbar
-      client:load
+      client:idle
       search={{
         value: '',
         placeholder: 'Search guides...',
@@ -61,47 +62,21 @@ const sidebarLinks = preparedGuides.map((g) => ({
 
     <main class="docs-layout-main">
       <aside class="docs-layout-sidebar">
-        <div
-          class="syne-font"
-          style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-text-dim); margin-bottom: 10px;"
-        >
-          Apps
-        </div>
-        <nav id="app-nav" style="display: flex; flex-direction: column; gap: 6px;">
-          {sidebarLinks.map((link, idx) => (
-            <a
-              href={link.href}
-              class="hover-cream syne-font docs-sidebar-link"
-              data-app-link={link.id}
-              style={`text-decoration: none; color: ${idx === 0 ? 'var(--film-cream)' : 'var(--film-text-label)'}; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 8px; border-radius: 6px; border: 1px solid ${idx === 0 ? 'rgba(212,162,69,0.5)' : 'rgba(255,255,255,0.06)'}; background: ${idx === 0 ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.02)'};`}
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <!-- Table of Contents for active guide -->
-        <div id="toc-container" style="margin-top: 14px;">
-          {preparedGuides[0] && (
-            <TableOfContentsClient client:idle headings={preparedGuides[0].headings} />
-          )}
-        </div>
+        <InstallationSidebarClient
+          client:idle
+          guides={sidebarLinks}
+          initialGuideId={preparedGuides[0]?.guide.id ?? ''}
+        />
       </aside>
 
-      <section style="display: flex; flex-direction: column; gap: 18px;">
+      <section class="flex flex-col gap-[18px]">
         <!-- Page Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1
-              class="poster-font"
-              style="margin: 0; font-size: clamp(38px,7vw,64px); letter-spacing: 0.08em; line-height: 0.9;"
-            >
+            <h1 class="poster-font m-0 text-[clamp(38px,7vw,64px)] leading-[0.9] tracking-[0.08em]">
               Installation
             </h1>
-            <p
-              class="body-font"
-              style="margin: 10px 0 0; color: var(--film-text-dim); font-size: 14px;"
-            >
+            <p class="body-font mt-2.5 mb-0 text-sm text-[var(--film-text-dim)]">
               Setup Posterium in Plex, Emby, Jellyfin, Stremio, Kodi, and more.
             </p>
           </div>
@@ -113,12 +88,13 @@ const sidebarLinks = preparedGuides.map((g) => ({
           <article
             id={guide.id}
             data-guide-id={guide.id}
-            style={`scroll-margin-top: 88px; border: 1px solid rgba(196,124,46,0.14); background: rgba(14,13,11,0.72); border-radius: 12px; padding: 14px 14px 16px; display: ${index === 0 ? 'flex' : 'none'}; flex-direction: column; gap: 14px; width: 100%; max-width: 100%; overflow: hidden;`}
+            aria-hidden={index === 0 ? 'false' : 'true'}
+            class:list={[
+              'w-full max-w-full overflow-hidden rounded-xl border border-[rgba(196,124,46,0.14)] bg-[rgba(14,13,11,0.72)] p-[14px] pb-4 scroll-mt-[88px] flex-col gap-3.5',
+              index === 0 ? 'flex' : 'hidden',
+            ]}
           >
-            <h2
-              class="syne-font"
-              style="margin: 0; font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-pale);"
-            >
+            <h2 class="syne-font m-0 text-[15px] tracking-[0.12em] text-[var(--film-pale)] uppercase">
               {name}
             </h2>
 
@@ -131,13 +107,8 @@ const sidebarLinks = preparedGuides.map((g) => ({
             />
 
             <!-- Guide Content (Static markdown) -->
-            <section
-              style="border: 1px solid rgba(196,124,46,0.16); background: rgba(10,10,9,0.66); border-radius: 12px; padding: 14px;"
-            >
-              <h3
-                class="syne-font"
-                style="margin: 0 0 12px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--film-pale);"
-              >
+            <section class="rounded-xl border border-[rgba(196,124,46,0.16)] bg-[rgba(10,10,9,0.66)] p-[14px]">
+              <h3 class="syne-font m-0 mb-3 text-[13px] tracking-[0.1em] text-[var(--film-pale)] uppercase">
                 Guide
               </h3>
               <div class="prose" set:html={html} />
@@ -149,50 +120,15 @@ const sidebarLinks = preparedGuides.map((g) => ({
   </div>
 </BaseLayout>
 
-<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id), guideHeadings: preparedGuides.map(g => ({ id: g.guide.id, headings: g.headings })) }}>
-  // App navigation switching
-  const appLinks = document.querySelectorAll('[data-app-link]');
-  const guideArticles = document.querySelectorAll('[data-guide-id]');
-
-  const setActiveGuide = (guideId) => {
-    // Update sidebar links
-    appLinks.forEach((link) => {
-      const isActive = link.dataset.appLink === guideId;
-      link.style.color = isActive ? 'var(--film-cream)' : 'var(--film-text-label)';
-      link.style.borderColor = isActive ? 'rgba(212,162,69,0.5)' : 'rgba(255,255,255,0.06)';
-      link.style.background = isActive ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.02)';
-    });
-
-    // Show/hide guide articles
-    guideArticles.forEach((article) => {
-      article.style.display = article.dataset.guideId === guideId ? 'flex' : 'none';
-    });
-  };
-
-  // Handle click on app links
-  appLinks.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const guideId = link.dataset.appLink;
-      if (guideId) {
-        setActiveGuide(guideId);
-        // Update URL hash
-        history.pushState(null, '', `#${guideId}`);
-      }
-    });
-  });
-
-  // Handle initial hash
+<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id) }}>
+  // Keep content in sync for no-JS/hydration-delay edge cases
   const initialHash = window.location.hash.slice(1);
   if (initialHash && guideIds.includes(initialHash)) {
-    setActiveGuide(initialHash);
+    document.querySelectorAll('[data-guide-id]').forEach((article) => {
+      const isActive = article.getAttribute('data-guide-id') === initialHash;
+      article.classList.toggle('hidden', !isActive);
+      article.classList.toggle('flex', isActive);
+      article.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    });
   }
-
-  // Handle hash change
-  window.addEventListener('hashchange', () => {
-    const hash = window.location.hash.slice(1);
-    if (hash && guideIds.includes(hash)) {
-      setActiveGuide(hash);
-    }
-  });
 </script>
