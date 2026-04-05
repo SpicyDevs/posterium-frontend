@@ -1010,7 +1010,7 @@ const StudioLayout: React.FC<{
               >
                 <Coffee size={12} className="shrink-0 fill-current" />
                 <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Buy me a Coffee
+                  Support
                 </span>
               </a>
               <button
