@@ -177,14 +177,27 @@ const DraggableBadge: React.FC<Props> = ({
   const uiPreset = config.uiPreset ?? 'b';
   const pd = PRESET_DEFAULTS[uiPreset] ?? PRESET_DEFAULTS.b;
 
-  // For 'm' (minimal), use the preset values as the effective base — the global
-  // config sliders are irrelevant for this style.  For 'b' (badge), the global
-  // config takes precedence over the preset defaults, as before.
-  const baseBlur = uiPreset === 'm' ? pd.blur : (config.blur ?? pd.blur);
-  const baseAlpha = uiPreset === 'm' ? pd.alpha : (config.alpha ?? pd.alpha);
-  const baseRadius = uiPreset === 'm' ? pd.radius : (config.radius ?? pd.radius);
-  const baseShadow = uiPreset === 'm' ? pd.shadow : (config.shadow ?? pd.shadow);
-  const baseIcon = uiPreset === 'm' ? pd.icon : (config.icon ?? pd.icon);
+  // Backend precedence: preset defaults apply first, then explicit params override.
+  // In builder state global fields are always populated with default values, so in
+  // minimal mode we treat unchanged defaults as "not explicitly set" and keep preset
+  // values, while honoring non-default globals as explicit overrides.
+  const isExplicitGlobal = {
+    blur: config.blur !== PRESET_DEFAULTS.b.blur,
+    alpha: config.alpha !== PRESET_DEFAULTS.b.alpha,
+    radius: config.radius !== PRESET_DEFAULTS.b.radius,
+    shadow: config.shadow !== PRESET_DEFAULTS.b.shadow,
+    icon: (config.icon ?? PRESET_DEFAULTS.b.icon) !== PRESET_DEFAULTS.b.icon,
+  };
+
+  const baseBlur = uiPreset === 'm' && !isExplicitGlobal.blur ? pd.blur : (config.blur ?? pd.blur);
+  const baseAlpha =
+    uiPreset === 'm' && !isExplicitGlobal.alpha ? pd.alpha : (config.alpha ?? pd.alpha);
+  const baseRadius =
+    uiPreset === 'm' && !isExplicitGlobal.radius ? pd.radius : (config.radius ?? pd.radius);
+  const baseShadow =
+    uiPreset === 'm' && !isExplicitGlobal.shadow ? pd.shadow : (config.shadow ?? pd.shadow);
+  const baseIcon =
+    uiPreset === 'm' && !isExplicitGlobal.icon ? pd.icon : (config.icon ?? pd.icon);
 
   // ── Visual style from config ──────────────────────────────────────────────
   const blurVal = itemConfig?.blur ?? baseBlur;
