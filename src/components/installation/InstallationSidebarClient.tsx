@@ -58,7 +58,7 @@ const InstallationSidebarClient = memo<InstallationSidebarClientProps>(({ guides
 
   const onGuideChange = (guideId: string) => {
     setActiveGuideId(guideId);
-    history.pushState(null, '', `#${guideId}`);
+    window.history.pushState(null, '', `#${guideId}`);
   };
 
   if (!guides.length || !activeGuide) return null;

@@ -17,13 +17,19 @@ const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
 
   useEffect(() => {
     if (!headingSlugs.length) return;
+    if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') return;
 
-    const activeGuideArticle = activeGuideId
-      ? document.querySelector<HTMLElement>(`[data-guide-id="${activeGuideId}"]`)
+    const safeGuideId = activeGuideId ? CSS.escape(activeGuideId) : null;
+
+    const activeGuideArticle = safeGuideId
+      ? document.querySelector<HTMLElement>(`[data-guide-id="${safeGuideId}"]`)
       : null;
 
     const headingElements = headingSlugs
-      .map((slug) => activeGuideArticle?.querySelector<HTMLElement>(`[id="${slug}"]`) ?? null)
+      .map((slug) => {
+        const safeSlug = CSS.escape(slug);
+        return activeGuideArticle?.querySelector<HTMLElement>(`[id="${safeSlug}"]`) ?? null;
+      })
       .filter((element): element is HTMLElement => Boolean(element));
 
     if (!headingElements.length) return;
@@ -60,11 +66,14 @@ const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
               data-active={activeHeadingSlug === heading.slug}
               onClick={(event) => {
                 if (!activeGuideId) return;
+                if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') return;
                 event.preventDefault();
+                const safeGuideId = CSS.escape(activeGuideId);
+                const safeSlug = CSS.escape(heading.slug);
                 const activeGuideArticle = document.querySelector<HTMLElement>(
-                  `[data-guide-id="${activeGuideId}"]`
+                  `[data-guide-id="${safeGuideId}"]`
                 );
-                const target = activeGuideArticle?.querySelector<HTMLElement>(`[id="${heading.slug}"]`);
+                const target = activeGuideArticle?.querySelector<HTMLElement>(`[id="${safeSlug}"]`);
                 if (!target) return;
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 setActiveHeadingSlug(heading.slug);
