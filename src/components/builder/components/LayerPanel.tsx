@@ -54,6 +54,23 @@ interface SearchResult {
   media_type: 'movie' | 'tv';
 }
 
+const BADGES_PREF_STORAGE_KEY = 'posterium_badges_toggle_pref_v1';
+
+const readBadgesPreference = (fallback: boolean): boolean => {
+  try {
+    const raw = localStorage.getItem(BADGES_PREF_STORAGE_KEY);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch {}
+  return fallback;
+};
+
+const writeBadgesPreference = (enabled: boolean) => {
+  try {
+    localStorage.setItem(BADGES_PREF_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {}
+};
+
 // ── SelectBox ────────────────────────────────────────────────────────────────
 const SelectBox = memo(
   ({
@@ -703,7 +720,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     [setConfig]
   );
 
-  const disableBadges = useCallback(() => {
+  const disableBadges = useCallback((persistDisabledPreference = true) => {
+    if (persistDisabledPreference) writeBadgesPreference(false);
     setConfig((prev) => {
       if (prev.ratings.length > 0) {
         savedActiveBadgesRef.current = [...prev.ratings];
@@ -714,6 +732,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [setConfig, setBatchSelection]);
 
   const enableBadges = useCallback(() => {
+    writeBadgesPreference(true);
     setConfig((prev) => {
       if (prev.ratings.length > 0) return prev;
       const restored = savedActiveBadgesRef.current.filter((id) =>
@@ -725,6 +744,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   useEffect(() => {
     if (isMinimalPreset && config.ratings.length > 0) {
+      const wasEnabled = config.ratings.length > 0;
+      writeBadgesPreference(wasEnabled);
       setConfig((prev) => {
         if (prev.ratings.length > 0) {
           savedActiveBadgesRef.current = [...prev.ratings];
@@ -734,6 +755,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       setBatchSelection([]);
     }
   }, [isMinimalPreset, config.ratings.length, setConfig, setBatchSelection]);
+
+  useEffect(() => {
+    if (isMinimalPreset && !config.textless) {
+      setConfig((prev) => ({ ...prev, textless: true }));
+    }
+  }, [isMinimalPreset, config.textless, setConfig]);
 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
@@ -1353,10 +1380,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Textless toggle */}
           <ToggleRow
             label="Textless Poster"
-            sub="Remove title text from image"
-            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+            sub={
+              isMinimalPreset
+                ? 'Forced on in Minimal mode'
+                : 'Remove title text from image'
+            }
+            checked={isMinimalPreset ? true : ['metahub', 'imdb'].includes(config.source) ? false : config.textless}
             onChange={(v) => updateConfig('textless', v)}
-            disabled={['metahub', 'imdb'].includes(config.source)}
+            disabled={isMinimalPreset || ['metahub', 'imdb'].includes(config.source)}
           />
 
           {/* Display options */}
@@ -1376,8 +1407,15 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   key={opt.id}
                   type="button"
                   onClick={() => {
-                    updateConfig('uiPreset', opt.id);
-                    if (opt.id === 'm') disableBadges();
+                    if (opt.id === 'm') {
+                      setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
+                      disableBadges(false);
+                      return;
+                    }
+                    const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
+                    setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
+                    if (shouldEnableBadges) enableBadges();
+                    else disableBadges(true);
                   }}
                   className={clsx(
                     'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border',
@@ -1401,7 +1439,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               onChange={(v) => {
                 if (isMinimalPreset) return;
                 if (v) enableBadges();
-                else disableBadges();
+                else disableBadges(true);
               }}
               disabled={isMinimalPreset}
             />

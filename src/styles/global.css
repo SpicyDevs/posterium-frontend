@@ -37,6 +37,26 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  button,
+  [type='button'],
+  [type='submit'],
+  [type='reset'],
+  [role='button'],
+  [role='tab'],
+  [role='switch'],
+  a[href],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [type='button']:disabled,
+  [type='submit']:disabled,
+  [type='reset']:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
   /* ── Range inputs (unified — was duplicated in dashboard.css) ── */
   input[type='range'] {
     -webkit-appearance: none;

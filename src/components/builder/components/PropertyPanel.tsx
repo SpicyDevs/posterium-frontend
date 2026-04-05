@@ -644,16 +644,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 onChange={(v) => updateConfig('icon', v)}
               />
               <ToggleRow
-                label="Alt Icon Variant"
-                sub="Use secondary icon style where available"
-                checked={(config.iconType ?? 1) > 1}
-                onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
-              />
-              <ToggleRow
                 label="Show Rating Text"
                 sub="Hide to show icons only"
                 checked={config.showText !== false}
                 onChange={(v) => updateConfig('showText', v)}
+              />
+              <ToggleRow
+                label="Alt Icon Variant"
+                sub="Use secondary icon style where available"
+                checked={(config.iconType ?? 1) > 1}
+                onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
               />
             </Section>
 
