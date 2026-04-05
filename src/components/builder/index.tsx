@@ -1438,9 +1438,16 @@ const BuilderApp: React.FC = () => {
   );
 
   const handleReset = useCallback(() => {
-    setConfig(DEFAULT_CONFIG);
-    localStorage.removeItem(STORAGE_KEY);
-    document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
+    setConfig((current) => ({
+      ...DEFAULT_CONFIG,
+      mediaType: current.mediaType,
+      tmdbId: current.tmdbId,
+      imdbId: current.imdbId,
+      source: current.source,
+      ptype: current.ptype,
+      textless: current.textless,
+      keys: current.keys,
+    }));
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   }, [setConfig]);
 

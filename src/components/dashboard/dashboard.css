@@ -187,30 +187,51 @@ nav a.syne-font {
   }
 }
 
-.h-a1 {
+/* Hero animation elements are hidden by default; animations activate once
+   React mounts and the parent section gains the .hero-anims-active class.
+   This prevents the animation from running twice (once from SSR HTML and
+   once again during React hydration/updates). */
+.h-a1,
+.h-a2,
+.h-a3,
+.h-a4,
+.h-a5 {
+  opacity: 0;
+}
+
+.hero-anims-active .h-a1 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.h-a2 {
+.hero-anims-active .h-a2 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.h-a3 {
+.hero-anims-active .h-a3 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.h-a4 {
+.hero-anims-active .h-a4 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.h-a5 {
+.hero-anims-active .h-a5 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both;
   backface-visibility: hidden;
   transform: translateZ(0);
+}
+
+@media (max-width: 820px) {
+  .hero-two-col {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-poster-right {
+    display: none !important;
+  }
 }
 
 /* ── Shimmer (skeleton loaders) ── */
