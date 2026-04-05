@@ -421,168 +421,163 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
   opacity: 0.6,
 };
 
-const HeroSection = memo(() => (
-  <section aria-label="Hero" style={HERO_SECTION_STYLE}>
-    <div aria-hidden="true" style={AMBIENT_STYLE} />
-    <div aria-hidden="true" style={DOT_GRID_STYLE} />
+const HeroSection = memo(() => {
+  return (
+    <section aria-label="Hero" className="hero-anims-active" style={HERO_SECTION_STYLE}>
+      <div aria-hidden="true" style={AMBIENT_STYLE} />
+      <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
-    <div
-      className="hero-two-col"
-      style={{
-        position: 'relative',
-        zIndex: 10,
-        width: '100%',
-        maxWidth: 1280,
-        margin: '0 auto',
-        padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)',
-        display: 'grid',
-        gridTemplateColumns: '1fr auto',
-        gap: 'clamp(40px,6vw,80px)',
-        alignItems: 'center',
-      }}
-    >
-      <div>
-        <h1
-          className="h-a1 poster-font"
-          style={{
-            fontSize: 'clamp(88px,13vw,200px)',
-            lineHeight: 0.84,
-            letterSpacing: '0.03em',
-            marginBottom: 0,
-          }}
-          aria-label="Posterium"
-        >
-          <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>
-            POSTER
-          </span>
-          <span
-            aria-hidden="true"
+      <div
+        className="hero-two-col"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          width: '100%',
+          maxWidth: 1280,
+          margin: '0 auto',
+          padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: 'clamp(40px,6vw,80px)',
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <h1
+            className="h-a1 poster-font"
             style={{
-              color: 'transparent',
-              WebkitTextStroke: '2px var(--film-amber)',
-              display: 'block',
+              fontSize: 'clamp(88px,13vw,200px)',
+              lineHeight: 0.84,
+              letterSpacing: '0.03em',
+              marginBottom: 0,
             }}
+            aria-label="Posterium"
           >
-            IUM
-          </span>
-        </h1>
+            <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>
+              POSTER
+            </span>
+            <span
+              aria-hidden="true"
+              style={{
+                color: 'transparent',
+                WebkitTextStroke: '2px var(--film-amber)',
+                display: 'block',
+              }}
+            >
+              IUM
+            </span>
+          </h1>
 
-        <div className="h-a2" style={AMBER_RULE_STYLE} />
+          <div className="h-a2" style={AMBER_RULE_STYLE} />
 
-        <p
-          className="h-a2 syne-font"
-          style={{
-            fontSize: 'clamp(13px,1.4vw,16px)',
-            color: 'var(--film-silver)',
-            fontWeight: 400,
-            maxWidth: 480,
-            lineHeight: 1.7,
-            marginBottom: 36,
-          }}
-        >
-          Movie &amp; TV poster images with glassmorphism rating badges from{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>, and
-          more — all from a single URL.
-        </p>
-
-        <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a
-            href="/build"
-            title="Open Poster Builder"
-            aria-label="Open Movie Poster Builder"
-            className="glow-cta syne-font"
+          <p
+            className="h-a2 syne-font"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-              background: 'var(--film-amber)',
-              color: '#070706',
-              fontWeight: 700,
-              fontSize: 11,
-              letterSpacing: '0.09em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              padding: '12px 24px',
-              borderRadius: 4,
-            }}
-          >
-            Open Builder <ArrowRight size={12} />
-          </a>
-          <a
-            href="/installation"
-            className="syne-font border-hover-amber"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
+              fontSize: 'clamp(13px,1.4vw,16px)',
               color: 'var(--film-silver)',
-              fontWeight: 600,
-              fontSize: 11,
-              letterSpacing: '0.09em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              padding: '11px 20px',
-              borderRadius: 4,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.02)',
+              fontWeight: 400,
+              maxWidth: 480,
+              lineHeight: 1.7,
+              marginBottom: 36,
             }}
           >
-            Installation Guide
-          </a>
+            Movie &amp; TV poster images with glassmorphism rating badges from{' '}
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>, and
+            more — all from a single URL.
+          </p>
+
+          <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <a
+              href="/build"
+              title="Open Poster Builder"
+              aria-label="Open Movie Poster Builder"
+              className="glow-cta syne-font"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                background: 'var(--film-amber)',
+                color: '#070706',
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.09em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                padding: '12px 24px',
+                borderRadius: 4,
+              }}
+            >
+              Open Builder <ArrowRight size={12} />
+            </a>
+            <a
+              href="/installation"
+              className="syne-font border-hover-amber"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                color: 'var(--film-silver)',
+                fontWeight: 600,
+                fontSize: 11,
+                letterSpacing: '0.09em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                padding: '11px 20px',
+                borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.02)',
+              }}
+            >
+              Installation Guide
+            </a>
+          </div>
+
+          <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
+            {(
+              [
+                ['∞', 'Free API calls'],
+                ['10+', 'Rating sources'],
+                ['0', 'Auth required'],
+              ] as const
+            ).map(([val, label]) => (
+              <div key={label}>
+                <div
+                  className="poster-font"
+                  style={{
+                    fontSize: 28,
+                    color: 'var(--film-amber)',
+                    lineHeight: 1,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {val}
+                </div>
+                <div
+                  className="mono-font"
+                  style={{
+                    fontSize: 8,
+                    color: 'var(--film-text-dim)',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    marginTop: 3,
+                  }}
+                >
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
-          {(
-            [
-              ['∞', 'Free API calls'],
-              ['10+', 'Rating sources'],
-              ['0', 'Auth required'],
-            ] as const
-          ).map(([val, label]) => (
-            <div key={label}>
-              <div
-                className="poster-font"
-                style={{
-                  fontSize: 28,
-                  color: 'var(--film-amber)',
-                  lineHeight: 1,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {val}
-              </div>
-              <div
-                className="mono-font"
-                style={{
-                  fontSize: 8,
-                  color: 'var(--film-text-dim)',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  marginTop: 3,
-                }}
-              >
-                {label}
-              </div>
-            </div>
-          ))}
+        <div className="h-a5 hero-poster-right" aria-label="Poster showcase">
+          <CyclingPoster />
         </div>
       </div>
-
-      <div className="h-a5 hero-poster-right" aria-label="Poster showcase">
-        <CyclingPoster />
-      </div>
-    </div>
-
-    <style>{`
-      @media (max-width: 820px) {
-        .hero-two-col { grid-template-columns: 1fr !important; }
-        .hero-poster-right { display: none !important; }
-      }
-    `}</style>
-  </section>
-));
+    </section>
+  );
+});
 
 HeroSection.displayName = 'HeroSection';
 export default HeroSection;
