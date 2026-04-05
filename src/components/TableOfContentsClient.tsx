@@ -69,7 +69,7 @@ const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 setActiveHeadingSlug(heading.slug);
               }}
-              aria-current={activeHeadingSlug === heading.slug ? 'true' : undefined}
+              aria-current={activeHeadingSlug === heading.slug ? 'location' : undefined}
             >
               {heading.text}
             </a>

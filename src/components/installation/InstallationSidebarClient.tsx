@@ -75,7 +75,6 @@ const InstallationSidebarClient = memo<InstallationSidebarClientProps>(({ guides
         </label>
         <select
           id="installation-app-select"
-          aria-label="Select installation app"
           value={activeGuideId}
           onChange={(event) => onGuideChange(event.target.value)}
           className="syne-font w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs tracking-[0.06em] text-[var(--film-cream)] uppercase"
