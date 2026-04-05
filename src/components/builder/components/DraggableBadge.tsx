@@ -177,14 +177,23 @@ const DraggableBadge: React.FC<Props> = ({
   const uiPreset = config.uiPreset ?? 'b';
   const pd = PRESET_DEFAULTS[uiPreset] ?? PRESET_DEFAULTS.b;
 
+  // For 'm' (minimal), use the preset values as the effective base — the global
+  // config sliders are irrelevant for this style.  For 'b' (badge), the global
+  // config takes precedence over the preset defaults, as before.
+  const baseBlur = uiPreset === 'm' ? pd.blur : (config.blur ?? pd.blur);
+  const baseAlpha = uiPreset === 'm' ? pd.alpha : (config.alpha ?? pd.alpha);
+  const baseRadius = uiPreset === 'm' ? pd.radius : (config.radius ?? pd.radius);
+  const baseShadow = uiPreset === 'm' ? pd.shadow : (config.shadow ?? pd.shadow);
+  const baseIcon = uiPreset === 'm' ? pd.icon : (config.icon ?? pd.icon);
+
   // ── Visual style from config ──────────────────────────────────────────────
-  const blurVal = itemConfig?.blur ?? config.blur ?? pd.blur;
-  const alphaVal = itemConfig?.alpha ?? config.alpha ?? pd.alpha;
-  const radiusRaw = itemConfig?.radius ?? config.radius ?? pd.radius;
+  const blurVal = itemConfig?.blur ?? baseBlur;
+  const alphaVal = itemConfig?.alpha ?? baseAlpha;
+  const radiusRaw = itemConfig?.radius ?? baseRadius;
   const radiusVal = radiusRaw * displayScale;
-  const rawShadow = itemConfig?.shadow ?? config.shadow ?? pd.shadow;
+  const rawShadow = itemConfig?.shadow ?? baseShadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  const showIcon = itemConfig?.icon ?? config.icon ?? pd.icon;
+  const showIcon = itemConfig?.icon ?? baseIcon;
   const showTextVal = itemConfig?.showText ?? config.showText ?? true;
 
   // ── Label props ───────────────────────────────────────────────────────────

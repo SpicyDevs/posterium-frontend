@@ -1,12 +1,12 @@
 ---
 // src/pages/index.astro
 //
-// PERF NOTE: Dashboard stays client:load because the hero section fires
-// entrance animations on mount — delaying hydration would cause a visible
-// flash where the hero is static then suddenly animates.
-// The animation class (.hero-anims-active) is applied client-side after
-// hydration so SSR renders the final state (opacity:1, no transform) and
-// the animation only plays when JS is available.
+// The hero-anims-active class is included on <body> at render time so that
+// CSS animation-fill-mode:backwards keeps the h-a* elements in their "from"
+// state (opacity:0, translated) from the very first paint.  This avoids the
+// visible→invisible flash that occurred when the class was added via a
+// DOMContentLoaded script after the SSR content had already been painted.
+// Animations are CSS-only and require no JavaScript.
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
@@ -18,21 +18,8 @@ import '@/styles/global.css';
   title="Posterium - Free Movie & TV Poster Generator with Live Ratings"
   description="Generate custom movie and TV show posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more."
   canonical="https://posters.spicydevs.xyz"
-  bodyClass="bg-[#070706]"
+  bodyClass="bg-[#070706] hero-anims-active"
 >
   <PageSEO slot="head" routeKey="/" />
   <Dashboard client:load />
 </BaseLayout>
-
-<script>
-  // Apply hero animation class only after JS hydration to prevent SSR flash
-  document.addEventListener('DOMContentLoaded', () => {
-    const hero = document.querySelector('[class*="hero"]') ?? document.body;
-    // Small delay ensures React has painted its first frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.body.classList.add('hero-anims-active');
-      });
-    });
-  });
-</script>
