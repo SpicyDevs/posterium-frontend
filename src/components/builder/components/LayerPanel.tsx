@@ -723,14 +723,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const disableBadges = useCallback((persistDisabledPreference = true) => {
     if (persistDisabledPreference) writeBadgesPreference(false);
-    if (config.ratings.length > 0) {
-      savedActiveBadgesRef.current = [...config.ratings];
-    }
     setConfig((prev) => {
+      if (prev.ratings.length > 0) {
+        savedActiveBadgesRef.current = [...prev.ratings];
+      }
       return { ...prev, ratings: [] };
     });
     setBatchSelection([]);
-  }, [config.ratings, setConfig, setBatchSelection]);
+  }, [setConfig, setBatchSelection]);
 
   const enableBadges = useCallback(() => {
     writeBadgesPreference(true);
@@ -751,12 +751,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     if (minimalModeHandledRef.current) return;
     if (config.ratings.length > 0) {
       writeBadgesPreference(true);
-      savedActiveBadgesRef.current = [...config.ratings];
-      setConfig((prev) => ({ ...prev, ratings: [] }));
-      setBatchSelection([]);
+      disableBadges(false);
     }
     minimalModeHandledRef.current = true;
-  }, [isMinimalPreset, config.ratings.length, setConfig, setBatchSelection]);
+  }, [isMinimalPreset, config.ratings.length, disableBadges]);
 
   useEffect(() => {
     if (isMinimalPreset && !config.textless) {
