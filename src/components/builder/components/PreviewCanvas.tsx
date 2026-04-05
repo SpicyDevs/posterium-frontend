@@ -483,7 +483,7 @@ const PreviewCanvas: React.FC<Props> = ({
           );
           })}
 
-        {!isMinimalPreset && config.logo && (
+        {config.logo && (
           <DraggableLogo
             config={config}
             logoUrl={logoPreviewUrl}
