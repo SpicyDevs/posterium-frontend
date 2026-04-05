@@ -1,11 +1,47 @@
-import { memo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import type { MarkdownHeading } from '@/lib/markdown-headings';
 
 interface Props {
   headings: MarkdownHeading[];
+  activeGuideId?: string;
 }
 
-const TableOfContentsClient = memo<Props>(({ headings }) => {
+const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
+  const [activeHeadingSlug, setActiveHeadingSlug] = useState<string | null>(headings[0]?.slug ?? null);
+
+  const headingSlugs = useMemo(() => headings.map((heading) => heading.slug), [headings]);
+
+  useEffect(() => {
+    setActiveHeadingSlug(headings[0]?.slug ?? null);
+  }, [activeGuideId, headings]);
+
+  useEffect(() => {
+    if (!headingSlugs.length) return;
+
+    const headingElements = headingSlugs
+      .map((slug) => document.getElementById(slug))
+      .filter((element): element is HTMLElement => Boolean(element));
+
+    if (!headingElements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visible.length) {
+          const headingId = visible[0].target.id;
+          if (headingId) setActiveHeadingSlug(headingId);
+        }
+      },
+      { rootMargin: '-88px 0px -50% 0px', threshold: [0.1, 0.45, 1] }
+    );
+
+    headingElements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [headingSlugs, activeGuideId]);
+
   if (!headings.length) return null;
 
   return (
@@ -14,7 +50,7 @@ const TableOfContentsClient = memo<Props>(({ headings }) => {
       <ul className="toc-list">
         {headings.map((heading) => (
           <li key={`${heading.slug}-${heading.depth}`} className={`toc-item depth-${heading.depth}`}>
-            <a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+            <a href={`#${heading.slug}`} data-toc-link={heading.slug} data-active={activeHeadingSlug === heading.slug}>
               {heading.text}
             </a>
           </li>
