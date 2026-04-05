@@ -235,7 +235,8 @@ const PreviewCanvas: React.FC<Props> = ({
     }
   }, [config, isMinimalPreset]);
 
-  const previewImageUrl = isMinimalPreset && minimalCompositeUrl ? minimalCompositeUrl : cleanPosterUrl;
+  const hasMinimalUrlError = isMinimalPreset && !minimalCompositeUrl;
+  const previewImageUrl = isMinimalPreset ? minimalCompositeUrl : cleanPosterUrl;
 
   const posterCssFilter = useMemo(() => {
     if (isMinimalPreset) return 'none';
@@ -248,7 +249,11 @@ const PreviewCanvas: React.FC<Props> = ({
   useEffect(() => {
     setIsImageLoading(true);
     setImageError(false);
-  }, [previewImageUrl]);
+    if (hasMinimalUrlError) {
+      setIsImageLoading(false);
+      setImageError(true);
+    }
+  }, [previewImageUrl, hasMinimalUrlError]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const id = config.imdbId || config.tmdbId;
@@ -416,17 +421,19 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
-        <img
-          key={previewImageUrl}
-          src={previewImageUrl}
-          alt="Poster"
-          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
-            isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
-          }`}
-          style={{ filter: posterCssFilter }}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-        />
+        {!hasMinimalUrlError && (
+          <img
+            key={previewImageUrl}
+            src={previewImageUrl}
+            alt="Poster"
+            className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
+              isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
+            }`}
+            style={{ filter: posterCssFilter }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        )}
 
         {/* Badge overlays */}
         {!isMinimalPreset &&
