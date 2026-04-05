@@ -14,22 +14,4 @@ import '@/styles/global.css';
   <PageSEO slot="head" routeKey="/" />
   {/* Keep SSR HTML and hydrate on load so hero intro starts promptly once JS boots */}
   <Dashboard client:load />
-  <script is:inline>
-    (() => {
-      try {
-        const key = 'hero-intro-played';
-        const alreadyPlayed = sessionStorage.getItem(key) === '1';
-        if (alreadyPlayed) {
-          document.body.classList.add('disable-animations');
-          return;
-        }
-        sessionStorage.setItem(key, '1');
-        setTimeout(() => {
-          document.body.classList.add('disable-animations');
-        }, 1600);
-      } catch {
-        // Ignore storage errors in restricted environments.
-      }
-    })();
-  </script>
 </BaseLayout>

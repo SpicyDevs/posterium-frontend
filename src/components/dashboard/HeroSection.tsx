@@ -283,7 +283,7 @@ const CyclingPoster = memo(() => {
               }}
             />
           );
-        }))}
+        })}
 
         {activeIdx !== 0 && !loaded[activeIdx] && !failed[activeIdx] && (
           <div
@@ -423,7 +423,7 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 
 const HeroSection = memo(() => {
   return (
-    <section aria-label="Hero" className="hero-anims-active" style={HERO_SECTION_STYLE}>
+    <section aria-label="Hero" style={HERO_SECTION_STYLE}>
       <div aria-hidden="true" style={AMBIENT_STYLE} />
       <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
