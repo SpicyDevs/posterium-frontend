@@ -18,8 +18,12 @@ const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
   useEffect(() => {
     if (!headingSlugs.length) return;
 
+    const activeGuideArticle = activeGuideId
+      ? document.querySelector<HTMLElement>(`[data-guide-id="${activeGuideId}"]`)
+      : null;
+
     const headingElements = headingSlugs
-      .map((slug) => document.getElementById(slug))
+      .map((slug) => activeGuideArticle?.querySelector<HTMLElement>(`[id="${slug}"]`) ?? null)
       .filter((element): element is HTMLElement => Boolean(element));
 
     if (!headingElements.length) return;
@@ -50,7 +54,23 @@ const TableOfContentsClient = memo<Props>(({ headings, activeGuideId }) => {
       <ul className="toc-list">
         {headings.map((heading) => (
           <li key={`${heading.slug}-${heading.depth}`} className={`toc-item depth-${heading.depth}`}>
-            <a href={`#${heading.slug}`} data-toc-link={heading.slug} data-active={activeHeadingSlug === heading.slug}>
+            <a
+              href={`#${heading.slug}`}
+              data-toc-link={heading.slug}
+              data-active={activeHeadingSlug === heading.slug}
+              onClick={(event) => {
+                if (!activeGuideId) return;
+                event.preventDefault();
+                const activeGuideArticle = document.querySelector<HTMLElement>(
+                  `[data-guide-id="${activeGuideId}"]`
+                );
+                const target = activeGuideArticle?.querySelector<HTMLElement>(`[id="${heading.slug}"]`);
+                if (!target) return;
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setActiveHeadingSlug(heading.slug);
+              }}
+              aria-current={activeHeadingSlug === heading.slug ? 'true' : undefined}
+            >
               {heading.text}
             </a>
           </li>

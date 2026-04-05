@@ -35,6 +35,7 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
           alt={alt}
           style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
           loading="lazy"
+          decoding="async"
         />
       </div>
     );
@@ -82,6 +83,7 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(({ src, alt, ratio, mob
             objectPosition: MOBILE_IMAGE_OBJECT_POSITION,
           }}
           loading="lazy"
+          decoding="async"
         />
       </div>
     </div>

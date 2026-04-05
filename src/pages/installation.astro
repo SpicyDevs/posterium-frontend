@@ -120,7 +120,7 @@ const sidebarLinks = preparedGuides.map((g) => ({
   </div>
 </BaseLayout>
 
-<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id), guideHeadings: preparedGuides.map(g => ({ id: g.guide.id, headings: g.headings })) }}>
+<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id) }}>
   // Keep content in sync for no-JS/hydration-delay edge cases
   const initialHash = window.location.hash.slice(1);
   if (initialHash && guideIds.includes(initialHash)) {
