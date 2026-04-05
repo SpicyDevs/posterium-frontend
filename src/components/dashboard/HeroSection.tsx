@@ -422,10 +422,16 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <section
       aria-label="Hero"
-      className="hero-anims-active"
+      className={mounted ? 'hero-anims-active' : ''}
       style={HERO_SECTION_STYLE}
     >
       <div aria-hidden="true" style={AMBIENT_STYLE} />

@@ -12,6 +12,6 @@ import '@/styles/global.css';
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/" />
-  {/* Keep SSR HTML and defer hydration until browser idle for faster initial load */}
-  <Dashboard client:idle />
+  {/* Keep SSR HTML and hydrate on load so hero intro starts promptly once JS boots */}
+  <Dashboard client:load />
 </BaseLayout>
