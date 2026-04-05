@@ -1406,12 +1406,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Textless toggle */}
           <ToggleRow
             label="Textless Poster"
-            sub={
+            sub={isMinimalPreset ? 'Forced on in Minimal mode' : 'Remove title text from image'}
+            checked={
               isMinimalPreset
-                ? 'Forced on in Minimal mode'
-                : 'Remove title text from image'
+                ? true
+                : ['metahub', 'imdb'].includes(config.source)
+                  ? false
+                  : config.textless
             }
-            checked={isMinimalPreset ? true : ['metahub', 'imdb'].includes(config.source) ? false : config.textless}
             onChange={(v) => updateConfig('textless', v)}
             disabled={isMinimalPreset || ['metahub', 'imdb'].includes(config.source)}
           />
@@ -1458,11 +1460,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </div>
             <ToggleRow
               label="Badges"
-              sub={
-                isMinimalPreset
-                  ? 'Disabled in Minimal mode'
-                  : 'Show/hide all rating badges'
-              }
+              sub={isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
               checked={badgesEnabled && !isMinimalPreset}
               onChange={(v) => {
                 if (isMinimalPreset) return;
@@ -1489,7 +1487,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     Logo Overlay
                   </p>
                   <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                    {config.logo ? 'Enabled · Configure in right sidebar' : 'Transparent title art overlay'}
+                    {config.logo
+                      ? 'Enabled · Configure in right sidebar'
+                      : 'Transparent title art overlay'}
                   </p>
                 </div>
               </div>
@@ -1535,7 +1535,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               }}
             >
               <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
-                {isMinimalPreset ? 'Badge layers are hidden in Minimal mode.' : 'Badges are currently disabled.'}
+                {isMinimalPreset
+                  ? 'Badge layers are hidden in Minimal mode.'
+                  : 'Badges are currently disabled.'}
               </p>
               <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                 Open the Source tab to switch display mode or re-enable badges.
@@ -1544,137 +1546,66 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           )}
           {!isMinimalPreset && badgesEnabled && (
             <>
-          <div className="flex items-center justify-between mb-3">
-            <span
-              className="syne-font uppercase tracking-widest"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-            >
-              Badges
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleToggleAll}
-                className="flex items-center gap-1.5 transition-colors body-font"
-                style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
-                {allVisible ? 'Hide all' : 'Show all'}
-              </button>
-              <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.08)' }} />
-              <button
-                onClick={() => handleSelectAll(!allVisibleSelected)}
-                className="flex items-center gap-1.5 transition-colors body-font"
-                style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <div
-                  className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
-                  style={{
-                    background: allVisibleSelected ? '#C47C2E' : 'var(--film-char)',
-                    borderColor: allVisibleSelected ? '#D4A245' : 'rgba(255,255,255,0.15)',
-                  }}
+              <div className="flex items-center justify-between mb-3">
+                <span
+                  className="syne-font uppercase tracking-widest"
+                  style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
                 >
-                  {allVisibleSelected && <Check size={9} className="text-white" />}
-                </div>
-                Select all
-              </button>
-            </div>
-          </div>
-
-          <DragDropContext onDragEnd={handleDragEnd}>
-            {activeBadges.length > 0 ? (
-              <Droppable droppableId="active">
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
-                    {activeBadges.map((badge, idx) => (
-                      <Draggable key={badge.id} draggableId={badge.id} index={idx}>
-                        {(prov, snap) => renderBadgeRow(badge, true, prov, snap.isDragging)}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            ) : (
-              <div className="flex flex-col items-center py-10 gap-2">
-                <EyeOff
-                  size={22}
-                  strokeWidth={1.5}
-                  style={{ color: 'var(--film-text-dim)', opacity: 0.7 }}
-                />
-                <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
-                  No active badges
-                </p>
-                <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                  Enable some from the list below
-                </p>
-              </div>
-            )}
-
-            {inactiveBadges.length > 0 && (
-              <>
-                <div className="mt-5 mb-2 flex items-center justify-between">
-                  <span
-                    className="syne-font uppercase tracking-widest"
-                    style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+                  Badges
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleToggleAll}
+                    className="flex items-center gap-1.5 transition-colors body-font"
+                    style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                    }}
                   >
-                    Available
-                  </span>
-                  {/* Fallback toggle */}
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="body-font"
-                      style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-                    >
-                      Fallback
-                    </span>
-                    <Switch
-                      checked={fallbackEnabled}
-                      onChange={(v) => {
-                        setFallbackEnabled(v);
-                        setConfig((prev) => ({
-                          ...prev,
-                          fallbackEnabled: v,
-                          fallbackPool: v ? inactiveBadges.map((b) => b.id) : [],
-                        }));
+                    {allVisible ? <Eye size={11} /> : <EyeOff size={11} />}
+                    {allVisible ? 'Hide all' : 'Show all'}
+                  </button>
+                  <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.08)' }} />
+                  <button
+                    onClick={() => handleSelectAll(!allVisibleSelected)}
+                    className="flex items-center gap-1.5 transition-colors body-font"
+                    style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                    }}
+                  >
+                    <div
+                      className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
+                      style={{
+                        background: allVisibleSelected ? '#C47C2E' : 'var(--film-char)',
+                        borderColor: allVisibleSelected ? '#D4A245' : 'rgba(255,255,255,0.15)',
                       }}
-                      className={clsx(
-                        'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none',
-                        fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
-                      )}
                     >
-                      <span
-                        className={clsx(
-                          'inline-block w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform',
-                          fallbackEnabled ? 'translate-x-[13px]' : 'translate-x-[2px]'
-                        )}
-                      />
-                    </Switch>
-                  </div>
+                      {allVisibleSelected && <Check size={9} className="text-white" />}
+                    </div>
+                    Select all
+                  </button>
                 </div>
+              </div>
 
-                {fallbackEnabled ? (
-                  <Droppable droppableId="inactive">
+              <DragDropContext onDragEnd={handleDragEnd}>
+                {activeBadges.length > 0 ? (
+                  <Droppable droppableId="active">
                     {(provided) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className="space-y-0.5"
                       >
-                        {inactiveBadges.map((badge, idx) => (
-                          <Draggable key={badge.id} draggableId={`fb-${badge.id}`} index={idx}>
-                            {(prov, snap) => renderBadgeRow(badge, false, prov, snap.isDragging)}
+                        {activeBadges.map((badge, idx) => (
+                          <Draggable key={badge.id} draggableId={badge.id} index={idx}>
+                            {(prov, snap) => renderBadgeRow(badge, true, prov, snap.isDragging)}
                           </Draggable>
                         ))}
                         {provided.placeholder}
@@ -1682,15 +1613,97 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     )}
                   </Droppable>
                 ) : (
-                  <div className="space-y-0.5">
-                    {inactiveBadges.map((badge) => (
-                      <React.Fragment key={badge.id}>{renderBadgeRow(badge, false)}</React.Fragment>
-                    ))}
+                  <div className="flex flex-col items-center py-10 gap-2">
+                    <EyeOff
+                      size={22}
+                      strokeWidth={1.5}
+                      style={{ color: 'var(--film-text-dim)', opacity: 0.7 }}
+                    />
+                    <p
+                      className="syne-font"
+                      style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
+                    >
+                      No active badges
+                    </p>
+                    <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                      Enable some from the list below
+                    </p>
                   </div>
                 )}
-              </>
-            )}
-          </DragDropContext>
+
+                {inactiveBadges.length > 0 && (
+                  <>
+                    <div className="mt-5 mb-2 flex items-center justify-between">
+                      <span
+                        className="syne-font uppercase tracking-widest"
+                        style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+                      >
+                        Available
+                      </span>
+                      {/* Fallback toggle */}
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="body-font"
+                          style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+                        >
+                          Fallback
+                        </span>
+                        <Switch
+                          checked={fallbackEnabled}
+                          onChange={(v) => {
+                            setFallbackEnabled(v);
+                            setConfig((prev) => ({
+                              ...prev,
+                              fallbackEnabled: v,
+                              fallbackPool: v ? inactiveBadges.map((b) => b.id) : [],
+                            }));
+                          }}
+                          className={clsx(
+                            'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none',
+                            fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                          )}
+                        >
+                          <span
+                            className={clsx(
+                              'inline-block w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform',
+                              fallbackEnabled ? 'translate-x-[13px]' : 'translate-x-[2px]'
+                            )}
+                          />
+                        </Switch>
+                      </div>
+                    </div>
+
+                    {fallbackEnabled ? (
+                      <Droppable droppableId="inactive">
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className="space-y-0.5"
+                          >
+                            {inactiveBadges.map((badge, idx) => (
+                              <Draggable key={badge.id} draggableId={`fb-${badge.id}`} index={idx}>
+                                {(prov, snap) =>
+                                  renderBadgeRow(badge, false, prov, snap.isDragging)
+                                }
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {inactiveBadges.map((badge) => (
+                          <React.Fragment key={badge.id}>
+                            {renderBadgeRow(badge, false)}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </DragDropContext>
             </>
           )}
         </div>

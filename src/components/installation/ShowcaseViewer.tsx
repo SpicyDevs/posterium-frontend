@@ -33,8 +33,8 @@ interface ShowcaseViewerProps {
 
 const devices: { value: InstallationDevice; label: string }[] = [
   { value: 'desktop', label: 'Desktop' },
-  { value: 'tv',      label: 'TV'      },
-  { value: 'mobile',  label: 'Mobile'  },
+  { value: 'tv', label: 'TV' },
+  { value: 'mobile', label: 'Mobile' },
 ];
 
 const ShowcaseViewer = memo<ShowcaseViewerProps>(({ appName, images, placeholderImages }) => {
@@ -50,33 +50,39 @@ const ShowcaseViewer = memo<ShowcaseViewerProps>(({ appName, images, placeholder
   );
 
   const desktopSrc = images.desktop || placeholderImages.desktop;
-  const tvSrc      = images.tv      || placeholderImages.tv;
+  const tvSrc = images.tv || placeholderImages.tv;
 
   return (
     <section
       aria-label={`${appName} screenshot showcase`}
       style={{
-        border:      '1px solid rgba(196,124,46,0.16)',
-        background:  'linear-gradient(180deg, rgba(24,22,18,0.72), rgba(11,10,9,0.84))',
+        border: '1px solid rgba(196,124,46,0.16)',
+        background: 'linear-gradient(180deg, rgba(24,22,18,0.72), rgba(11,10,9,0.84))',
         borderRadius: 12,
-        padding:     14,
-        overflow:    'hidden', // FIX: prevent child overflow from breaking layout
+        padding: 14,
+        overflow: 'hidden', // FIX: prevent child overflow from breaking layout
       }}
     >
       {/* Header row */}
       <div
         style={{
-          display:        'flex',
-          alignItems:     'center',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          gap:            10,
-          marginBottom:   12,
-          flexWrap:       'wrap',
+          gap: 10,
+          marginBottom: 12,
+          flexWrap: 'wrap',
         }}
       >
         <h3
           className="syne-font"
-          style={{ margin: 0, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--film-pale)' }}
+          style={{
+            margin: 0,
+            fontSize: 13,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--film-pale)',
+          }}
         >
           Showcase
         </h3>
@@ -92,24 +98,24 @@ const ShowcaseViewer = memo<ShowcaseViewerProps>(({ appName, images, placeholder
       {/* Content area */}
       <div
         style={{
-          border:         '1px solid rgba(196,124,46,0.2)',
-          background:     'rgba(7,7,6,0.8)',
-          borderRadius:   10,
-          padding:        12,
-          display:        'flex',
+          border: '1px solid rgba(196,124,46,0.2)',
+          background: 'rgba(7,7,6,0.8)',
+          borderRadius: 10,
+          padding: 12,
+          display: 'flex',
           justifyContent: 'center',
-          overflow:       'hidden',
-          minHeight:      120, // prevent layout shift while images load
+          overflow: 'hidden',
+          minHeight: 120, // prevent layout shift while images load
         }}
       >
         {activeDevice === 'mobile' ? (
           // FIX: fluid grid — columns collapse gracefully below 320 px
           <div
             style={{
-              display:             'grid',
+              display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(min(140px, 100%), 1fr))',
-              gap:                 10,
-              width:               '100%',
+              gap: 10,
+              width: '100%',
             }}
           >
             {mobileSlots.map((slotSrc, idx) => (

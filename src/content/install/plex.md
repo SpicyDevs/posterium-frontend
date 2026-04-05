@@ -40,12 +40,12 @@ https://api.spicydevs.xyz/poster/{imdb_id}?source=tmdb&imdb=true&rt=true&metacri
 
 ### Optional: query template table
 
-| Parameter | Description | Example |
-| --- | --- | --- |
-| `source` | Metadata source | `tmdb` |
-| `imdb` | Include IMDb badge | `true` |
-| `rt` | Include Rotten Tomatoes badge | `true` |
-| `metacritic` | Include Metacritic badge | `true` |
+| Parameter    | Description                   | Example |
+| ------------ | ----------------------------- | ------- |
+| `source`     | Metadata source               | `tmdb`  |
+| `imdb`       | Include IMDb badge            | `true`  |
+| `rt`         | Include Rotten Tomatoes badge | `true`  |
+| `metacritic` | Include Metacritic badge      | `true`  |
 
 ## Verification checklist
 

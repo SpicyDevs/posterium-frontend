@@ -278,8 +278,7 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
     const gridSize = 10;
-    const snap = (n: number) =>
-      viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
+    const snap = (n: number) => (viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n);
     setConfig((prev) => {
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
@@ -448,50 +447,50 @@ const PreviewCanvas: React.FC<Props> = ({
         {/* Badge overlays */}
         {!isMinimalPreset &&
           config.ratings.map((id: RatingType, index: number) => {
-          const auto = calculateAutoPosition(id, index, config.ratings.length, config);
-          const iCfg = config.items[id];
-          let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
-          let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
-          if (!isFinite(x)) x = auto.x;
-          if (!isFinite(y)) y = auto.y;
+            const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+            const iCfg = config.items[id];
+            let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
+            let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
+            if (!isFinite(x)) x = auto.x;
+            if (!isFinite(y)) y = auto.y;
 
-          let isObscuring = false;
-          if (hoveredBadgeId && hoveredBadgeId !== id) {
-            const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
-            isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
-          }
-
-          if (dragSession) {
-            const isTarget = dragSession.id === id;
-            const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
-            if (isTarget || isGroup) {
-              const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
-              const bW = BASE_BADGE_W * selScale;
-              const bH = BASE_BADGE_H * selScale;
-              // Preview clamp: at least 1px inside poster
-              x = Math.max(1 - bW, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
-              y = Math.max(1 - bH, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
+            let isObscuring = false;
+            if (hoveredBadgeId && hoveredBadgeId !== id) {
+              const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
+              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
             }
-          }
 
-          return (
-            <DraggableBadge
-              key={id}
-              badgeId={id}
-              config={config}
-              value={liveRatings[id]}
-              x={x}
-              y={y}
-              canvasScale={currentScale}
-              onDragMove={handleDragMove}
-              onDragEnd={handleDragEnd}
-              isSelected={selectedIds.has(id)}
-              onSelect={onSelect}
-              onContextMenu={onContextMenu}
-              isObscuring={isObscuring}
-              onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
-            />
-          );
+            if (dragSession) {
+              const isTarget = dragSession.id === id;
+              const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
+              if (isTarget || isGroup) {
+                const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
+                const bW = BASE_BADGE_W * selScale;
+                const bH = BASE_BADGE_H * selScale;
+                // Preview clamp: at least 1px inside poster
+                x = Math.max(1 - bW, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
+              }
+            }
+
+            return (
+              <DraggableBadge
+                key={id}
+                badgeId={id}
+                config={config}
+                value={liveRatings[id]}
+                x={x}
+                y={y}
+                canvasScale={currentScale}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+                isSelected={selectedIds.has(id)}
+                onSelect={onSelect}
+                onContextMenu={onContextMenu}
+                isObscuring={isObscuring}
+                onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+              />
+            );
           })}
 
         {config.logo && (

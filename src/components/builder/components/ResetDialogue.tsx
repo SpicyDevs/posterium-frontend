@@ -54,7 +54,8 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
               className="mt-3 text-xs leading-5 body-font"
               style={{ color: 'var(--film-text-dim)' }}
             >
-              Badge and layout settings will be restored to defaults. Your current poster will be kept. This action cannot be undone.
+              Badge and layout settings will be restored to defaults. Your current poster will be
+              kept. This action cannot be undone.
             </p>
             <div className="mt-5 flex gap-2">
               <button

@@ -657,7 +657,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               />
             </Section>
 
-            <Section title="Badge Shape" icon={<Sliders size={10} />} sectionId="global-badge-shape">
+            <Section
+              title="Badge Shape"
+              icon={<Sliders size={10} />}
+              sectionId="global-badge-shape"
+            >
               <SliderRow
                 label="Scale"
                 value={config.scale ?? 1.0}
@@ -816,20 +820,32 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 label="Label Color"
                 value={config.labelColor ?? '#ffffff'}
                 onChange={(v) => updateConfig('labelColor', v)}
-                onReset={config.labelColor ? () => updateConfig('labelColor', undefined) : undefined}
+                onReset={
+                  config.labelColor ? () => updateConfig('labelColor', undefined) : undefined
+                }
               />
             </Section>
           </>
         )}
 
         {config.logo && (
-          <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="global-logo-overlay">
+          <Section
+            title="Logo Overlay"
+            icon={<ImagePlay size={10} />}
+            sectionId="global-logo-overlay"
+          >
             <SegmentedRow
               label="Source"
-              options={LOGO_SOURCES.map((opt) => ({ id: String(opt.id ?? 'auto'), label: opt.label }))}
+              options={LOGO_SOURCES.map((opt) => ({
+                id: String(opt.id ?? 'auto'),
+                label: opt.label,
+              }))}
               value={String(config.logoSource ?? 'auto')}
               onChange={(v) =>
-                updateConfig('logoSource', (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource'])
+                updateConfig(
+                  'logoSource',
+                  (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource']
+                )
               }
             />
             <SliderRow
@@ -860,7 +876,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               max={30}
               onChange={(v) => updateConfig('logoShadow', v)}
             />
-            <p className="body-font leading-relaxed" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+            <p
+              className="body-font leading-relaxed"
+              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+            >
               Drag the logo on the canvas to reposition it.
             </p>
           </Section>

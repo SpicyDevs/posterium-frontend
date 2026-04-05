@@ -87,7 +87,9 @@ const DocsLayout = memo<DocsLayoutProps>(
             {sidebarFooter ? <div style={{ marginTop: 12 }}>{sidebarFooter}</div> : null}
           </aside>
 
-          <section style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>{children}</section>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {children}
+          </section>
         </main>
       </div>
     );

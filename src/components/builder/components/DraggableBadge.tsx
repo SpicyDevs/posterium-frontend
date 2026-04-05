@@ -198,8 +198,7 @@ const DraggableBadge: React.FC<Props> = ({
     uiPreset === 'm' && !isExplicitGlobal.radius ? pd.radius : (config.radius ?? pd.radius);
   const baseShadow =
     uiPreset === 'm' && !isExplicitGlobal.shadow ? pd.shadow : (config.shadow ?? pd.shadow);
-  const baseIcon =
-    uiPreset === 'm' && !isExplicitGlobal.icon ? pd.icon : (config.icon ?? pd.icon);
+  const baseIcon = uiPreset === 'm' && !isExplicitGlobal.icon ? pd.icon : (config.icon ?? pd.icon);
 
   // ── Visual style from config ──────────────────────────────────────────────
   const blurVal = itemConfig?.blur ?? baseBlur;
@@ -353,7 +352,9 @@ const DraggableBadge: React.FC<Props> = ({
       return `${num.toFixed(1).replace(/\.0$/, '')}`;
     })();
     const displayValue =
-      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized) ? `${normalized}/${outOfVal}` : normalized;
+      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized)
+        ? `${normalized}/${outOfVal}`
+        : normalized;
 
     if (badgeId === 'age') {
       return (
