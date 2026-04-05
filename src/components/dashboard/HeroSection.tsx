@@ -2,8 +2,6 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
 
-let didPlayHeroIntroWithoutStorage = false;
-
 interface HeroPoster {
   id: string;
   type: 'movie' | 'tv';
@@ -424,29 +422,8 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
-  const [shouldAnimateIntro, setShouldAnimateIntro] = useState(false);
-
-  useEffect(() => {
-    try {
-      const key = 'hero-intro-played';
-      const alreadyPlayed = sessionStorage.getItem(key) === '1';
-      if (alreadyPlayed) return;
-      sessionStorage.setItem(key, '1');
-      setShouldAnimateIntro(true);
-    } catch {
-      if (!didPlayHeroIntroWithoutStorage) {
-        didPlayHeroIntroWithoutStorage = true;
-        setShouldAnimateIntro(true);
-      }
-    }
-  }, []);
-
   return (
-    <section
-      aria-label="Hero"
-      className={shouldAnimateIntro ? 'hero-anims-active' : undefined}
-      style={HERO_SECTION_STYLE}
-    >
+    <section aria-label="Hero" style={HERO_SECTION_STYLE}>
       <div aria-hidden="true" style={AMBIENT_STYLE} />
       <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
