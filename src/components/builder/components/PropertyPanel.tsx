@@ -1,7 +1,7 @@
 // src/components/builder/components/PropertyPanel.tsx
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Switch } from '@headlessui/react';
-import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
+import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType } from '../types';
 import {
   Layers,
   Layout,
@@ -17,6 +17,7 @@ import {
   Type,
   Hash,
   Sliders,
+  ImagePlay,
 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
@@ -483,6 +484,8 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
 // ── Main component ─────────────────────────────────────────────────────────────
 const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
   const { toggleViewOption, viewOptions } = useEditor();
+  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+  const badgesEnabled = config.ratings.length > 0;
 
   const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
     setConfig((prev) => {
@@ -543,6 +546,15 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   };
 
   const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
+  const LOGO_BASE_W = 320;
+  const LOGO_BASE_H = 84;
+  const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
+  const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
+    { id: null, label: 'Auto' },
+    { id: 'fanart', label: 'Fanart' },
+    { id: 'tmdb', label: 'TMDB' },
+    { id: 'metahub', label: 'Hub' },
+  ];
 
   // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
@@ -600,227 +612,259 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </div>
         </Section>
 
-        {/* Poster ── image filters */}
-        <Section title="Poster" icon={<Layers size={10} />} sectionId="global-poster">
-          <SliderRow
-            label="Background Blur"
-            value={config.posterBlur}
-            min={0}
-            max={20}
-            unit="px"
-            onChange={(v) => updateConfig('posterBlur', v)}
-          />
-          <ToggleRow
-            label="Grayscale"
-            sub="Desaturate the poster image"
-            checked={config.grayscale}
-            onChange={(v) => updateConfig('grayscale', v)}
-          />
-        </Section>
-
-        {/* Badge Appearance ── display style + visibility toggles */}
-        <Section
-          title="Badge Appearance"
-          icon={<Palette size={10} />}
-          sectionId="global-badge-appearance"
-        >
-          <SegmentedRow
-            label="Display Style"
-            options={[
-              { id: 'b', label: 'Badge' },
-              { id: 'm', label: 'Minimal' },
-            ]}
-            value={config.uiPreset ?? 'b'}
-            onChange={(v) => updateConfig('uiPreset', v as 'b' | 'm')}
-          />
-          <ToggleRow
-            label="Show Icons"
-            checked={config.icon ?? true}
-            onChange={(v) => updateConfig('icon', v)}
-          />
-          <ToggleRow
-            label="Alt Icon Variant"
-            sub="Use secondary icon style where available"
-            checked={(config.iconType ?? 1) > 1}
-            onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
-          />
-          <ToggleRow
-            label="Show Rating Text"
-            sub="Hide to show icons only"
-            checked={config.showText !== false}
-            onChange={(v) => updateConfig('showText', v)}
-          />
-        </Section>
-
-        {/* Badge Shape ── geometry + shadow */}
-        <Section title="Badge Shape" icon={<Sliders size={10} />} sectionId="global-badge-shape">
-          <SliderRow
-            label="Scale"
-            value={config.scale ?? 1.0}
-            min={0.5}
-            max={2.0}
-            step={0.05}
-            formatValue={(v) => `${v.toFixed(2)}×`}
-            onChange={(v) => updateConfig('scale', v)}
-          />
-          <SliderRow
-            label="Glass Blur"
-            value={config.blur}
-            min={0}
-            max={20}
-            unit="px"
-            onChange={(v) => updateConfig('blur', v)}
-          />
-          <SliderRow
-            label="Corner Radius"
-            value={config.radius}
-            min={0}
-            max={30}
-            unit="px"
-            onChange={(v) => updateConfig('radius', v)}
-          />
-          <SliderRow
-            label="Drop Shadow"
-            value={resolveShadow(config.shadow as number | boolean, 6)}
-            min={0}
-            max={30}
-            onChange={(v) => updateConfig('shadow', v)}
-          />
-        </Section>
-
-        {/* Badge Colors ── fill, text, border */}
-        <Section title="Badge Colors" sectionId="global-badge-colors">
-          <ColorRow
-            label="Background"
-            value={config.bg ?? '#000000'}
-            onChange={(v) => updateConfig('bg', v)}
-            onReset={config.bg ? () => clearGlobalColor('bg') : undefined}
-            showOpacity
-            opacity={config.alpha}
-            onOpacityChange={(v) => updateConfig('alpha', v)}
-          />
-          <ColorRow
-            label="Text & Icon Color"
-            value={config.txt ?? '#ffffff'}
-            onChange={(v) => updateConfig('txt', v)}
-            onReset={config.txt ? () => clearGlobalColor('txt') : undefined}
-          />
-          <SliderRow
-            label="Border Width"
-            value={config.borderW ?? 0}
-            min={0}
-            max={10}
-            unit="px"
-            onChange={(v) => updateConfig('borderW', v)}
-          />
-          {(config.borderW ?? 0) > 0 && (
-            <ColorRow
-              label="Border Color"
-              value={config.borderC ?? '#ffffff'}
-              onChange={(v) => updateConfig('borderC', v)}
+        {!isMinimalPreset && (
+          <Section title="Poster" icon={<Layers size={10} />} sectionId="global-poster">
+            <SliderRow
+              label="Background Blur"
+              value={config.posterBlur}
+              min={0}
+              max={20}
+              unit="px"
+              onChange={(v) => updateConfig('posterBlur', v)}
             />
-          )}
-        </Section>
+            <ToggleRow
+              label="Grayscale"
+              sub="Desaturate the poster image"
+              checked={config.grayscale}
+              onChange={(v) => updateConfig('grayscale', v)}
+            />
+          </Section>
+        )}
 
-        {/* Score ── normalization + denominator */}
-        <Section
-          title="Score"
-          icon={<Hash size={10} />}
-          defaultOpen={false}
-          sectionId="global-score"
-        >
-          <ToggleRow
-            label="Normalize to /10"
-            sub="Convert all scores to a 0–10 scale"
-            checked={config.normalize ?? false}
-            onChange={(v) => updateConfig('normalize', v)}
-          />
-          <SliderRow
-            label="Show Denominator"
-            value={config.outOf ?? 0}
-            min={0}
-            max={100}
-            step={1}
-            formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
-            onChange={(v) => updateConfig('outOf', v === 0 ? undefined : v)}
-          />
-        </Section>
+        {!isMinimalPreset && badgesEnabled && (
+          <>
+            <Section
+              title="Badge Appearance"
+              icon={<Palette size={10} />}
+              sectionId="global-badge-appearance"
+            >
+              <ToggleRow
+                label="Show Icons"
+                checked={config.icon ?? true}
+                onChange={(v) => updateConfig('icon', v)}
+              />
+              <ToggleRow
+                label="Show Rating Text"
+                sub="Hide to show icons only"
+                checked={config.showText !== false}
+                onChange={(v) => updateConfig('showText', v)}
+              />
+              <ToggleRow
+                label="Alt Icon Variant"
+                sub="Use secondary icon style where available"
+                checked={(config.iconType ?? 1) > 1}
+                onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
+              />
+            </Section>
 
-        {/* Labels ── position, text, size, color */}
-        <Section
-          title="Labels"
-          icon={<Type size={10} />}
-          defaultOpen={false}
-          sectionId="global-labels"
-        >
-          {/* Show/Hide Labels toggle */}
-          <button
-            type="button"
-            onClick={() => updateConfig('labelPos', config.labelPos ? undefined : 'below')}
-            className="w-full h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font mb-1"
-            style={{
-              background: config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
-              color: config.labelPos ? 'var(--film-pale)' : 'var(--film-text-dim)',
-              border: config.labelPos
-                ? '1px solid rgba(196,124,46,0.22)'
-                : '1px solid rgba(255,255,255,0.05)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
-              (e.currentTarget as HTMLElement).style.background = config.labelPos
-                ? 'rgba(196,124,46,0.15)'
-                : 'rgba(255,255,255,0.05)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = config.labelPos
-                ? 'rgba(196,124,46,0.22)'
-                : 'rgba(255,255,255,0.05)';
-              (e.currentTarget as HTMLElement).style.background = config.labelPos
-                ? 'rgba(196,124,46,0.1)'
-                : 'rgba(255,255,255,0.02)';
-            }}
-          >
-            {config.labelPos ? (
-              <Eye size={11} style={{ color: 'var(--film-amber)' }} />
-            ) : (
-              <EyeOff size={11} style={{ color: 'var(--film-text-dim)' }} />
-            )}
-            {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
-          </button>
-          <SegmentedRow
-            label="Label Position"
-            options={[
-              { id: 'above', label: 'Above' },
-              { id: 'below', label: 'Below' },
-              { id: 'left', label: 'Left' },
-              { id: 'right', label: 'Right' },
-            ]}
-            value={config.labelPos ?? null}
-            onChange={(v) => updateConfig('labelPos', v as PosterConfig['labelPos'])}
-          />
-          <TextInputRow
-            label="Label Text"
-            value={config.labelText ?? ''}
-            placeholder="Default (provider name)"
-            onChange={(v) => updateConfig('labelText', v || undefined)}
-            onClear={() => updateConfig('labelText', undefined)}
-          />
-          <SliderRow
-            label="Label Size"
-            value={config.labelSize ?? 11}
-            min={6}
-            max={32}
-            step={1}
-            unit="px"
-            onChange={(v) => updateConfig('labelSize', v)}
-          />
-          <ColorRow
-            label="Label Color"
-            value={config.labelColor ?? '#ffffff'}
-            onChange={(v) => updateConfig('labelColor', v)}
-            onReset={config.labelColor ? () => updateConfig('labelColor', undefined) : undefined}
-          />
-        </Section>
+            <Section title="Badge Shape" icon={<Sliders size={10} />} sectionId="global-badge-shape">
+              <SliderRow
+                label="Scale"
+                value={config.scale ?? 1.0}
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                formatValue={(v) => `${v.toFixed(2)}×`}
+                onChange={(v) => updateConfig('scale', v)}
+              />
+              <SliderRow
+                label="Glass Blur"
+                value={config.blur}
+                min={0}
+                max={20}
+                unit="px"
+                onChange={(v) => updateConfig('blur', v)}
+              />
+              <SliderRow
+                label="Corner Radius"
+                value={config.radius}
+                min={0}
+                max={30}
+                unit="px"
+                onChange={(v) => updateConfig('radius', v)}
+              />
+              <SliderRow
+                label="Drop Shadow"
+                value={resolveShadow(config.shadow as number | boolean, 6)}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('shadow', v)}
+              />
+            </Section>
+
+            <Section title="Badge Colors" sectionId="global-badge-colors">
+              <ColorRow
+                label="Background"
+                value={config.bg ?? '#000000'}
+                onChange={(v) => updateConfig('bg', v)}
+                onReset={config.bg ? () => clearGlobalColor('bg') : undefined}
+                showOpacity
+                opacity={config.alpha}
+                onOpacityChange={(v) => updateConfig('alpha', v)}
+              />
+              <ColorRow
+                label="Text & Icon Color"
+                value={config.txt ?? '#ffffff'}
+                onChange={(v) => updateConfig('txt', v)}
+                onReset={config.txt ? () => clearGlobalColor('txt') : undefined}
+              />
+              <SliderRow
+                label="Border Width"
+                value={config.borderW ?? 0}
+                min={0}
+                max={10}
+                unit="px"
+                onChange={(v) => updateConfig('borderW', v)}
+              />
+              {(config.borderW ?? 0) > 0 && (
+                <ColorRow
+                  label="Border Color"
+                  value={config.borderC ?? '#ffffff'}
+                  onChange={(v) => updateConfig('borderC', v)}
+                />
+              )}
+            </Section>
+
+            <Section
+              title="Score"
+              icon={<Hash size={10} />}
+              defaultOpen={false}
+              sectionId="global-score"
+            >
+              <ToggleRow
+                label="Normalize to /10"
+                sub="Convert all scores to a 0–10 scale"
+                checked={config.normalize ?? false}
+                onChange={(v) => updateConfig('normalize', v)}
+              />
+              <ToggleRow
+                label="Show Denominator"
+                sub="Append /10 to ratings"
+                checked={(config.outOf ?? 0) > 0}
+                onChange={(v) => updateConfig('outOf', v ? 10 : undefined)}
+              />
+            </Section>
+
+            <Section
+              title="Labels"
+              icon={<Type size={10} />}
+              defaultOpen={false}
+              sectionId="global-labels"
+            >
+              {/* Show/Hide Labels toggle */}
+              <button
+                type="button"
+                onClick={() => updateConfig('labelPos', config.labelPos ? undefined : 'below')}
+                className="w-full h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font mb-1"
+                style={{
+                  background: config.labelPos ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
+                  color: config.labelPos ? 'var(--film-pale)' : 'var(--film-text-dim)',
+                  border: config.labelPos
+                    ? '1px solid rgba(196,124,46,0.22)'
+                    : '1px solid rgba(255,255,255,0.05)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
+                  (e.currentTarget as HTMLElement).style.background = config.labelPos
+                    ? 'rgba(196,124,46,0.15)'
+                    : 'rgba(255,255,255,0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = config.labelPos
+                    ? 'rgba(196,124,46,0.22)'
+                    : 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.background = config.labelPos
+                    ? 'rgba(196,124,46,0.1)'
+                    : 'rgba(255,255,255,0.02)';
+                }}
+              >
+                {config.labelPos ? (
+                  <Eye size={11} style={{ color: 'var(--film-amber)' }} />
+                ) : (
+                  <EyeOff size={11} style={{ color: 'var(--film-text-dim)' }} />
+                )}
+                {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
+              </button>
+              <SegmentedRow
+                label="Label Position"
+                options={[
+                  { id: 'above', label: 'Above' },
+                  { id: 'below', label: 'Below' },
+                  { id: 'left', label: 'Left' },
+                  { id: 'right', label: 'Right' },
+                ]}
+                value={config.labelPos ?? null}
+                onChange={(v) => updateConfig('labelPos', v as PosterConfig['labelPos'])}
+              />
+              <TextInputRow
+                label="Label Text"
+                value={config.labelText ?? ''}
+                placeholder="Default (provider name)"
+                onChange={(v) => updateConfig('labelText', v || undefined)}
+                onClear={() => updateConfig('labelText', undefined)}
+              />
+              <SliderRow
+                label="Label Size"
+                value={config.labelSize ?? 11}
+                min={6}
+                max={32}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('labelSize', v)}
+              />
+              <ColorRow
+                label="Label Color"
+                value={config.labelColor ?? '#ffffff'}
+                onChange={(v) => updateConfig('labelColor', v)}
+                onReset={config.labelColor ? () => updateConfig('labelColor', undefined) : undefined}
+              />
+            </Section>
+          </>
+        )}
+
+        {config.logo && (
+          <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="global-logo-overlay">
+            <SegmentedRow
+              label="Source"
+              options={LOGO_SOURCES.map((opt) => ({ id: String(opt.id ?? 'auto'), label: opt.label }))}
+              value={String(config.logoSource ?? 'auto')}
+              onChange={(v) =>
+                updateConfig('logoSource', (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource'])
+              }
+            />
+            <SliderRow
+              label="Size"
+              value={config.logoW}
+              min={100}
+              max={490}
+              unit="px"
+              onChange={(newW) => {
+                const w = Math.round(newW);
+                const h = Math.round(w / LOGO_ASPECT);
+                setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
+              }}
+            />
+            <SliderRow
+              label="Opacity"
+              value={config.logoOpacity}
+              min={0}
+              max={1}
+              step={0.05}
+              formatValue={(v) => `${Math.round(v * 100)}%`}
+              onChange={(v) => updateConfig('logoOpacity', v)}
+            />
+            <SliderRow
+              label="Drop Shadow"
+              value={config.logoShadow}
+              min={0}
+              max={30}
+              onChange={(v) => updateConfig('logoShadow', v)}
+            />
+            <p className="body-font leading-relaxed" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+              Drag the logo on the canvas to reposition it.
+            </p>
+          </Section>
+        )}
 
         {/* Canvas Overlays ── guides, not exported */}
         <Section
@@ -833,6 +877,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             {[
               { key: 'showSafeArea' as const, label: 'Safe Area' },
               { key: 'showGrid' as const, label: 'Grid Lines' },
+              { key: 'snapToGrid' as const, label: 'Snap to Grid' },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -1096,14 +1141,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           checked={commonNorm}
           onChange={(v) => updateSelectedBadges({ normalize: v })}
         />
-        <SliderRow
+        <ToggleRow
           label="Show Denominator"
-          value={commonOutOf ?? 0}
-          min={0}
-          max={100}
-          step={1}
-          formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
-          onChange={(v) => updateSelectedBadges({ outOf: v === 0 ? undefined : v })}
+          sub="Append /10 to ratings"
+          checked={(commonOutOf ?? 0) > 0}
+          onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
         />
       </Section>
 

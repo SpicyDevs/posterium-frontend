@@ -49,6 +49,7 @@ interface Props {
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
+  value?: string;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -64,6 +65,7 @@ const DraggableBadge: React.FC<Props> = ({
   onContextMenu,
   isObscuring,
   onHoverChange,
+  value,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? 1.0;
@@ -177,15 +179,39 @@ const DraggableBadge: React.FC<Props> = ({
   const uiPreset = config.uiPreset ?? 'b';
   const pd = PRESET_DEFAULTS[uiPreset] ?? PRESET_DEFAULTS.b;
 
+  // Backend precedence: preset defaults apply first, then explicit params override.
+  // In builder state global fields are always populated with default values, so in
+  // minimal mode we treat unchanged defaults as "not explicitly set" and keep preset
+  // values, while honoring non-default globals as explicit overrides.
+  const isExplicitGlobal = {
+    blur: config.blur !== PRESET_DEFAULTS.b.blur,
+    alpha: config.alpha !== PRESET_DEFAULTS.b.alpha,
+    radius: config.radius !== PRESET_DEFAULTS.b.radius,
+    shadow: config.shadow !== PRESET_DEFAULTS.b.shadow,
+    icon: (config.icon ?? PRESET_DEFAULTS.b.icon) !== PRESET_DEFAULTS.b.icon,
+  };
+
+  const baseBlur = uiPreset === 'm' && !isExplicitGlobal.blur ? pd.blur : (config.blur ?? pd.blur);
+  const baseAlpha =
+    uiPreset === 'm' && !isExplicitGlobal.alpha ? pd.alpha : (config.alpha ?? pd.alpha);
+  const baseRadius =
+    uiPreset === 'm' && !isExplicitGlobal.radius ? pd.radius : (config.radius ?? pd.radius);
+  const baseShadow =
+    uiPreset === 'm' && !isExplicitGlobal.shadow ? pd.shadow : (config.shadow ?? pd.shadow);
+  const baseIcon =
+    uiPreset === 'm' && !isExplicitGlobal.icon ? pd.icon : (config.icon ?? pd.icon);
+
   // ── Visual style from config ──────────────────────────────────────────────
-  const blurVal = itemConfig?.blur ?? config.blur ?? pd.blur;
-  const alphaVal = itemConfig?.alpha ?? config.alpha ?? pd.alpha;
-  const radiusRaw = itemConfig?.radius ?? config.radius ?? pd.radius;
+  const blurVal = itemConfig?.blur ?? baseBlur;
+  const alphaVal = itemConfig?.alpha ?? baseAlpha;
+  const radiusRaw = itemConfig?.radius ?? baseRadius;
   const radiusVal = radiusRaw * displayScale;
-  const rawShadow = itemConfig?.shadow ?? config.shadow ?? pd.shadow;
+  const rawShadow = itemConfig?.shadow ?? baseShadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
-  const showIcon = itemConfig?.icon ?? config.icon ?? pd.icon;
+  const showIcon = itemConfig?.icon ?? baseIcon;
   const showTextVal = itemConfig?.showText ?? config.showText ?? true;
+  const normalizeVal = itemConfig?.normalize ?? config.normalize ?? false;
+  const outOfVal = itemConfig?.outOf ?? config.outOf;
 
   // ── Label props ───────────────────────────────────────────────────────────
   const labelPos = itemConfig?.labelPos ?? config.labelPos ?? null;
@@ -312,7 +338,22 @@ const DraggableBadge: React.FC<Props> = ({
       mal: '8.5',
       anilist: '85%',
     };
-    const dummyVal = dummyVals[badgeId] || '0.0';
+    const rawValue = (value ?? dummyVals[badgeId] ?? '0.0').trim();
+    const normalized = (() => {
+      if (!normalizeVal) return rawValue;
+      const pct = rawValue.match(/^(-?\d+(?:\.\d+)?)%$/);
+      if (pct) {
+        const n = Number(pct[1]);
+        if (!Number.isFinite(n)) return rawValue;
+        return `${((Math.max(0, n) / 100) * 10).toFixed(1).replace(/\.0$/, '')}`;
+      }
+      const num = Number(rawValue);
+      if (!Number.isFinite(num)) return rawValue;
+      if (num > 10) return `${(num / 10).toFixed(1).replace(/\.0$/, '')}`;
+      return `${num.toFixed(1).replace(/\.0$/, '')}`;
+    })();
+    const displayValue =
+      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized) ? `${normalized}/${outOfVal}` : normalized;
 
     if (badgeId === 'age') {
       return (
@@ -357,7 +398,7 @@ const DraggableBadge: React.FC<Props> = ({
             lineHeight: 1,
           }}
         >
-          {dummyVal}
+          {displayValue}
         </span>
       ) : null;
     }
@@ -394,7 +435,7 @@ const DraggableBadge: React.FC<Props> = ({
               lineHeight: 1,
             }}
           >
-            {dummyVal}
+            {displayValue}
           </span>
         )}
       </>

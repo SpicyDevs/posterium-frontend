@@ -29,7 +29,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import type { PosterConfig, RatingType, LogoSourceType, ApiKeys } from '../types';
-import { ALL_BADGES } from '../types';
+import { ALL_BADGES, DEFAULT_CONFIG } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
 import { useEditor } from '../context/EditorContext';
@@ -53,6 +53,39 @@ interface SearchResult {
   first_air_date?: string;
   media_type: 'movie' | 'tv';
 }
+
+const BADGES_PREF_STORAGE_KEY = 'posterium_badges_toggle_pref_v1';
+const TEXTLESS_PREF_STORAGE_KEY = 'posterium_textless_toggle_pref_v1';
+
+const readBadgesPreference = (fallback: boolean): boolean => {
+  try {
+    const raw = localStorage.getItem(BADGES_PREF_STORAGE_KEY);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch {}
+  return fallback;
+};
+
+const writeBadgesPreference = (enabled: boolean) => {
+  try {
+    localStorage.setItem(BADGES_PREF_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {}
+};
+
+const readTextlessPreference = (fallback: boolean): boolean => {
+  try {
+    const raw = localStorage.getItem(TEXTLESS_PREF_STORAGE_KEY);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch {}
+  return fallback;
+};
+
+const writeTextlessPreference = (enabled: boolean) => {
+  try {
+    localStorage.setItem(TEXTLESS_PREF_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {}
+};
 
 // ── SelectBox ────────────────────────────────────────────────────────────────
 const SelectBox = memo(
@@ -619,6 +652,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
+  const savedActiveBadgesRef = useRef<RatingType[]>([]);
+  const minimalModeHandledRef = useRef(false);
+  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+  const badgesEnabled = config.ratings.length > 0;
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -699,6 +736,57 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       setConfig((prev) => ({ ...prev, [key]: value })),
     [setConfig]
   );
+
+  const disableBadges = useCallback(
+    ({ persistPreference = true }: { persistPreference?: boolean } = {}) => {
+      if (persistPreference) writeBadgesPreference(false);
+      setConfig((prev) => {
+        if (prev.ratings.length > 0) {
+          savedActiveBadgesRef.current = [...prev.ratings];
+        }
+        return { ...prev, ratings: [] };
+      });
+      setBatchSelection([]);
+    },
+    [setConfig, setBatchSelection]
+  );
+
+  const enableBadges = useCallback(() => {
+    writeBadgesPreference(true);
+    setConfig((prev) => {
+      if (prev.ratings.length > 0) return prev;
+      const restored = savedActiveBadgesRef.current.filter((id) =>
+        ALL_BADGES.some((badge) => badge.id === id)
+      );
+      return { ...prev, ratings: restored.length > 0 ? restored : DEFAULT_CONFIG.ratings };
+    });
+  }, [setConfig]);
+
+  useEffect(() => {
+    if (!isMinimalPreset) {
+      minimalModeHandledRef.current = false;
+      return;
+    }
+    if (minimalModeHandledRef.current) return;
+    if (config.ratings.length > 0) {
+      writeBadgesPreference(true);
+      disableBadges({ persistPreference: false });
+    }
+    minimalModeHandledRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMinimalPreset, config.ratings.length]);
+
+  useEffect(() => {
+    if (isMinimalPreset && !config.textless) {
+      setConfig((prev) => ({ ...prev, textless: true }));
+    }
+  }, [isMinimalPreset, config.textless, setConfig]);
+
+  useEffect(() => {
+    if (!isMinimalPreset) {
+      writeTextlessPreference(config.textless);
+    }
+  }, [isMinimalPreset, config.textless]);
 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
@@ -1318,13 +1406,74 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Textless toggle */}
           <ToggleRow
             label="Textless Poster"
-            sub="Remove title text from image"
-            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+            sub={
+              isMinimalPreset
+                ? 'Forced on in Minimal mode'
+                : 'Remove title text from image'
+            }
+            checked={isMinimalPreset ? true : ['metahub', 'imdb'].includes(config.source) ? false : config.textless}
             onChange={(v) => updateConfig('textless', v)}
-            disabled={['metahub', 'imdb'].includes(config.source)}
+            disabled={isMinimalPreset || ['metahub', 'imdb'].includes(config.source)}
           />
 
-          {/* Logo overlay — Section container (flat collapsible, no card border) */}
+          {/* Display options */}
+          <div className="pt-1 space-y-2">
+            <p
+              className="syne-font uppercase tracking-widest"
+              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+            >
+              Display
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {[
+                { id: 'b' as const, label: 'Badges' },
+                { id: 'm' as const, label: 'Minimal' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    if (opt.id === 'm') {
+                      writeTextlessPreference(config.textless);
+                      setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
+                      disableBadges({ persistPreference: false });
+                      return;
+                    }
+                    const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
+                    const restoredTextless = readTextlessPreference(config.textless);
+                    setConfig((prev) => ({ ...prev, uiPreset: 'b', textless: restoredTextless }));
+                    if (shouldEnableBadges) enableBadges();
+                    else disableBadges({ persistPreference: true });
+                  }}
+                  className={clsx(
+                    'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border',
+                    (config.uiPreset ?? 'b') === opt.id
+                      ? 'bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]'
+                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)]'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <ToggleRow
+              label="Badges"
+              sub={
+                isMinimalPreset
+                  ? 'Disabled in Minimal mode'
+                  : 'Show/hide all rating badges'
+              }
+              checked={badgesEnabled && !isMinimalPreset}
+              onChange={(v) => {
+                if (isMinimalPreset) return;
+                if (v) enableBadges();
+                else disableBadges({ persistPreference: true });
+              }}
+              disabled={isMinimalPreset}
+            />
+          </div>
+
+          {/* Logo overlay — toggle only */}
           <div className="pt-5">
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
@@ -1340,9 +1489,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     Logo Overlay
                   </p>
                   <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                    {config.logo
-                      ? `${config.logoSource ?? 'Auto'} · ${config.logoW}×${config.logoH}px`
-                      : 'Transparent title art overlay'}
+                    {config.logo ? 'Enabled · Configure in right sidebar' : 'Transparent title art overlay'}
                   </p>
                 </div>
               </div>
@@ -1362,11 +1509,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 />
               </Switch>
             </div>
-            {config.logo && (
-              <div className="px-1">
-                <LogoPanel config={config} setConfig={setConfig} />
-              </div>
-            )}
             <div
               className="mt-5 mx-1"
               style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
@@ -1384,6 +1526,24 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
         <div className="px-1">
+          {(isMinimalPreset || !badgesEnabled) && (
+            <div
+              className="mb-4 p-3 rounded-xl"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+            >
+              <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
+                {isMinimalPreset ? 'Badge layers are hidden in Minimal mode.' : 'Badges are currently disabled.'}
+              </p>
+              <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                Open the Source tab to switch display mode or re-enable badges.
+              </p>
+            </div>
+          )}
+          {!isMinimalPreset && badgesEnabled && (
+            <>
           <div className="flex items-center justify-between mb-3">
             <span
               className="syne-font uppercase tracking-widest"
@@ -1531,6 +1691,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </>
             )}
           </DragDropContext>
+            </>
+          )}
         </div>
       )}
     </SidebarLayout>

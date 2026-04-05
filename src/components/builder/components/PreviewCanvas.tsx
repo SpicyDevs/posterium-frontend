@@ -16,7 +16,7 @@ import type { PosterConfig, RatingType } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
-import { calculateAutoPosition, DEFAULT_API_BASE, getScale } from '../utils';
+import { calculateAutoPosition, DEFAULT_API_BASE, generateApiUrl, getScale } from '../utils';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
@@ -48,7 +48,7 @@ const PreviewCanvas: React.FC<Props> = ({
   onZoomOut,
   onResetView,
 }) => {
-  const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
+  const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [autoScale, setAutoScale] = useState(1);
@@ -119,6 +119,7 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const currentScale = autoScale * zoom;
+  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
 
   const clampPan = (newX: number, newY: number) => {
     const limitX = CANVAS_WIDTH / 3;
@@ -225,17 +226,34 @@ const PreviewCanvas: React.FC<Props> = ({
     config.ptype,
   ]);
 
+  const minimalCompositeUrl = useMemo(() => {
+    if (!isMinimalPreset) return '';
+    try {
+      return generateApiUrl(config, DEFAULT_API_BASE);
+    } catch {
+      return '';
+    }
+  }, [config, isMinimalPreset]);
+
+  const hasMinimalUrlError = isMinimalPreset && !minimalCompositeUrl;
+  const previewImageUrl = isMinimalPreset ? minimalCompositeUrl : cleanPosterUrl;
+
   const posterCssFilter = useMemo(() => {
+    if (isMinimalPreset) return 'none';
     const parts: string[] = [];
     if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
     if (config.grayscale) parts.push('grayscale(1)');
     return parts.join(' ') || 'none';
-  }, [config.posterBlur, config.grayscale]);
+  }, [config.posterBlur, config.grayscale, isMinimalPreset]);
 
   useEffect(() => {
     setIsImageLoading(true);
     setImageError(false);
-  }, [cleanPosterUrl]);
+    if (hasMinimalUrlError) {
+      setIsImageLoading(false);
+      setImageError(true);
+    }
+  }, [previewImageUrl, hasMinimalUrlError]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const id = config.imdbId || config.tmdbId;
@@ -259,16 +277,21 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
+    const gridSize = 10;
+    const snap = (n: number) =>
+      viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
     setConfig((prev) => {
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
+      const nextX = snap(currentX + dx);
+      const nextY = snap(currentY + dy);
       return {
         ...prev,
-        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1))),
-        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(currentY + dy, CANVAS_HEIGHT - 1))),
+        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))),
+        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))),
       };
     });
   };
@@ -294,6 +317,9 @@ const PreviewCanvas: React.FC<Props> = ({
     if (dx === 0 && dy === 0) return;
 
     setConfig((prev: PosterConfig) => {
+      const gridSize = 10;
+      const snap = (n: number) =>
+        viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
       const newItems = { ...prev.items };
       (Object.keys(newItems) as RatingType[]).forEach((k) => {
         newItems[k] = { ...newItems[k] };
@@ -336,8 +362,10 @@ const PreviewCanvas: React.FC<Props> = ({
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         // Constrain so at least 1px of the badge remains inside the poster
-        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(startX + dx, CANVAS_WIDTH - 1));
-        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(startY + dy, CANVAS_HEIGHT - 1));
+        const nextX = snap(startX + dx);
+        const nextY = snap(startY + dy);
+        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
+        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
       };
 
       if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
@@ -403,20 +431,23 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
-        <img
-          key={cleanPosterUrl}
-          src={cleanPosterUrl}
-          alt="Poster"
-          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
-            isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
-          }`}
-          style={{ filter: posterCssFilter }}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-        />
+        {!hasMinimalUrlError && (
+          <img
+            key={previewImageUrl}
+            src={previewImageUrl}
+            alt="Poster"
+            className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
+              isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
+            }`}
+            style={{ filter: posterCssFilter }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        )}
 
         {/* Badge overlays */}
-        {config.ratings.map((id: RatingType, index: number) => {
+        {!isMinimalPreset &&
+          config.ratings.map((id: RatingType, index: number) => {
           const auto = calculateAutoPosition(id, index, config.ratings.length, config);
           const iCfg = config.items[id];
           let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
@@ -448,6 +479,7 @@ const PreviewCanvas: React.FC<Props> = ({
               key={id}
               badgeId={id}
               config={config}
+              value={liveRatings[id]}
               x={x}
               y={y}
               canvasScale={currentScale}
@@ -460,7 +492,7 @@ const PreviewCanvas: React.FC<Props> = ({
               onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
             />
           );
-        })}
+          })}
 
         {config.logo && (
           <DraggableLogo
