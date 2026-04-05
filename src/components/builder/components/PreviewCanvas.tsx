@@ -48,7 +48,7 @@ const PreviewCanvas: React.FC<Props> = ({
   onZoomOut,
   onResetView,
 }) => {
-  const { viewOptions, mobileSheetMode, clearSelection } = useEditor();
+  const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [autoScale, setAutoScale] = useState(1);
@@ -277,16 +277,21 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
+    const gridSize = 10;
+    const snap = (n: number) =>
+      viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
     setConfig((prev) => {
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
+      const nextX = snap(currentX + dx);
+      const nextY = snap(currentY + dy);
       return {
         ...prev,
-        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1))),
-        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(currentY + dy, CANVAS_HEIGHT - 1))),
+        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))),
+        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))),
       };
     });
   };
@@ -312,6 +317,9 @@ const PreviewCanvas: React.FC<Props> = ({
     if (dx === 0 && dy === 0) return;
 
     setConfig((prev: PosterConfig) => {
+      const gridSize = 10;
+      const snap = (n: number) =>
+        viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
       const newItems = { ...prev.items };
       (Object.keys(newItems) as RatingType[]).forEach((k) => {
         newItems[k] = { ...newItems[k] };
@@ -354,8 +362,10 @@ const PreviewCanvas: React.FC<Props> = ({
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         // Constrain so at least 1px of the badge remains inside the poster
-        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(startX + dx, CANVAS_WIDTH - 1));
-        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(startY + dy, CANVAS_HEIGHT - 1));
+        const nextX = snap(startX + dx);
+        const nextY = snap(startY + dy);
+        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
+        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
       };
 
       if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
@@ -469,6 +479,7 @@ const PreviewCanvas: React.FC<Props> = ({
               key={id}
               badgeId={id}
               config={config}
+              value={liveRatings[id]}
               x={x}
               y={y}
               canvasScale={currentScale}

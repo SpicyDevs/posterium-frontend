@@ -49,6 +49,7 @@ interface Props {
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
+  value?: string;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -64,6 +65,7 @@ const DraggableBadge: React.FC<Props> = ({
   onContextMenu,
   isObscuring,
   onHoverChange,
+  value,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? 1.0;
@@ -208,6 +210,8 @@ const DraggableBadge: React.FC<Props> = ({
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
   const showIcon = itemConfig?.icon ?? baseIcon;
   const showTextVal = itemConfig?.showText ?? config.showText ?? true;
+  const normalizeVal = itemConfig?.normalize ?? config.normalize ?? false;
+  const outOfVal = itemConfig?.outOf ?? config.outOf;
 
   // ── Label props ───────────────────────────────────────────────────────────
   const labelPos = itemConfig?.labelPos ?? config.labelPos ?? null;
@@ -334,7 +338,22 @@ const DraggableBadge: React.FC<Props> = ({
       mal: '8.5',
       anilist: '85%',
     };
-    const dummyVal = dummyVals[badgeId] || '0.0';
+    const rawValue = (value ?? dummyVals[badgeId] ?? '0.0').trim();
+    const normalized = (() => {
+      if (!normalizeVal) return rawValue;
+      const pct = rawValue.match(/^(-?\d+(?:\.\d+)?)%$/);
+      if (pct) {
+        const n = Number(pct[1]);
+        if (!Number.isFinite(n)) return rawValue;
+        return `${(Math.max(0, n) / 10).toFixed(1).replace(/\.0$/, '')}`;
+      }
+      const num = Number(rawValue);
+      if (!Number.isFinite(num)) return rawValue;
+      if (num > 10) return `${(num / 10).toFixed(1).replace(/\.0$/, '')}`;
+      return `${num.toFixed(1).replace(/\.0$/, '')}`;
+    })();
+    const displayValue =
+      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized) ? `${normalized}/${outOfVal}` : normalized;
 
     if (badgeId === 'age') {
       return (
@@ -379,7 +398,7 @@ const DraggableBadge: React.FC<Props> = ({
             lineHeight: 1,
           }}
         >
-          {dummyVal}
+          {displayValue}
         </span>
       ) : null;
     }
@@ -416,7 +435,7 @@ const DraggableBadge: React.FC<Props> = ({
               lineHeight: 1,
             }}
           >
-            {dummyVal}
+            {displayValue}
           </span>
         )}
       </>

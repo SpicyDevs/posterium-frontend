@@ -55,6 +55,7 @@ interface SearchResult {
 }
 
 const BADGES_PREF_STORAGE_KEY = 'posterium_badges_toggle_pref_v1';
+const TEXTLESS_PREF_STORAGE_KEY = 'posterium_textless_toggle_pref_v1';
 
 const readBadgesPreference = (fallback: boolean): boolean => {
   try {
@@ -68,6 +69,21 @@ const readBadgesPreference = (fallback: boolean): boolean => {
 const writeBadgesPreference = (enabled: boolean) => {
   try {
     localStorage.setItem(BADGES_PREF_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {}
+};
+
+const readTextlessPreference = (fallback: boolean): boolean => {
+  try {
+    const raw = localStorage.getItem(TEXTLESS_PREF_STORAGE_KEY);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch {}
+  return fallback;
+};
+
+const writeTextlessPreference = (enabled: boolean) => {
+  try {
+    localStorage.setItem(TEXTLESS_PREF_STORAGE_KEY, enabled ? '1' : '0');
   } catch {}
 };
 
@@ -766,6 +782,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     }
   }, [isMinimalPreset, config.textless, setConfig]);
 
+  useEffect(() => {
+    if (!isMinimalPreset) {
+      writeTextlessPreference(config.textless);
+    }
+  }, [isMinimalPreset, config.textless]);
+
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
       if (visible) {
@@ -1412,12 +1434,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   type="button"
                   onClick={() => {
                     if (opt.id === 'm') {
+                      writeTextlessPreference(config.textless);
                       setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
                       disableBadges({ persistPreference: false });
                       return;
                     }
                     const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
-                    setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
+                    const restoredTextless = readTextlessPreference(config.textless);
+                    setConfig((prev) => ({ ...prev, uiPreset: 'b', textless: restoredTextless }));
                     if (shouldEnableBadges) enableBadges();
                     else disableBadges({ persistPreference: true });
                   }}

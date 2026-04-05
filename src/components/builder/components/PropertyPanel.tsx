@@ -877,6 +877,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             {[
               { key: 'showSafeArea' as const, label: 'Safe Area' },
               { key: 'showGrid' as const, label: 'Grid Lines' },
+              { key: 'snapToGrid' as const, label: 'Snap to Grid' },
             ].map(({ key, label }) => (
               <button
                 key={key}

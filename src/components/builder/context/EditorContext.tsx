@@ -8,6 +8,7 @@ export type SheetMode = 'hidden' | 'half' | 'full';
 interface ViewOptions {
   showSafeArea: boolean;
   showGrid: boolean;
+  snapToGrid: boolean;
 }
 
 export type LiveRatings = Partial<Record<string, string>>;
@@ -44,6 +45,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
+    snapToGrid: false,
   });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
