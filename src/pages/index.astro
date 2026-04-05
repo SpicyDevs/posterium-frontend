@@ -12,6 +12,6 @@ import '@/styles/global.css';
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/" />
-  {/* Changed from client:only to client:load to enable static HTML generation */}
-  <Dashboard client:load />
+  {/* Keep SSR HTML and defer hydration until browser idle for faster initial load */}
+  <Dashboard client:idle />
 </BaseLayout>
