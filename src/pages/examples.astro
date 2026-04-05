@@ -1,21 +1,25 @@
 ---
+// src/pages/examples.astro
+//
+// PERF: Changed client:load → client:visible.
+// The examples grid is fully below the fold on load; there is zero reason to
+// block the main thread hydrating it before the user has even scrolled to it.
+
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import ExamplesPage from '@/components/examples/ExamplesPage';
 import '@/styles/global.css';
 
-// Get all examples at build time from content collection
 const exampleEntries = await getCollection('examples');
 
-// Sort by order and transform to match ExamplePreset interface
 const presets = exampleEntries
   .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
   .map((entry) => ({
-    id: entry.id,
-    title: entry.data.title,
+    id:          entry.id,
+    title:       entry.data.title,
     description: entry.data.description,
-    query: entry.data.query,
+    query:       entry.data.query,
   }));
 ---
 
@@ -26,5 +30,11 @@ const presets = exampleEntries
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/examples" />
-  <ExamplesPage client:load presets={presets} />
+
+  <!--
+    client:visible — only hydrate once the component scrolls into the viewport.
+    The MainNavbar inside ExamplesPage uses client:load, but the gallery grid
+    itself has no above-the-fold interactivity that justifies eager hydration.
+  -->
+  <ExamplesPage client:visible presets={presets} />
 </BaseLayout>

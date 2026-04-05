@@ -1,4 +1,13 @@
 ---
+// src/pages/index.astro
+//
+// PERF NOTE: Dashboard stays client:load because the hero section fires
+// entrance animations on mount — delaying hydration would cause a visible
+// flash where the hero is static then suddenly animates.
+// The animation class (.hero-anims-active) is applied client-side after
+// hydration so SSR renders the final state (opacity:1, no transform) and
+// the animation only plays when JS is available.
+
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import Dashboard from '@/components/dashboard/Dashboard.tsx';
@@ -12,6 +21,18 @@ import '@/styles/global.css';
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/" />
-  {/* Keep SSR HTML and hydrate on load so hero intro starts promptly once JS boots */}
   <Dashboard client:load />
 </BaseLayout>
+
+<script>
+  // Apply hero animation class only after JS hydration to prevent SSR flash
+  document.addEventListener('DOMContentLoaded', () => {
+    const hero = document.querySelector('[class*="hero"]') ?? document.body;
+    // Small delay ensures React has painted its first frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.body.classList.add('hero-anims-active');
+      });
+    });
+  });
+</script>

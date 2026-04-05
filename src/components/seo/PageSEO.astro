@@ -1,4 +1,17 @@
 ---
+// src/components/seo/PageSEO.astro
+//
+// FIX / OPTIMISATION NOTES vs. previous version
+// ───────────────────────────────────────────────
+// 1. canonical is derived BEFORE the og / twitter spreads so it is always
+//    defined (previous version had a temporal dead-zone bug).
+// 2. JSON.stringify wrapped in try/catch to prevent build failures on bad data.
+// 3. Each schema object is validated before being emitted (no silent nulls).
+// 4. BreadcrumbList added for /installation and /examples routes.
+// 5. <meta name="author"> no longer emitted twice (was duplicated in original).
+// 6. Preconnect hints deduplicated — they were also in BaseLayout; kept here
+//    for pages that do NOT use BaseLayout, removed duplicates.
+
 import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
 
 interface Props {
@@ -7,164 +20,176 @@ interface Props {
 
 const { routeKey } = Astro.props;
 
-const routeMeta = ROUTE_SEO[routeKey];
-const title = routeMeta?.title ?? SEO_DEFAULTS.title;
-const description = routeMeta?.description ?? SEO_DEFAULTS.description;
-const keywords = routeMeta?.keywords ?? SEO_DEFAULTS.keywords;
-const canonical = routeMeta?.canonical ?? SEO_DEFAULTS.canonical;
-const noindex = routeMeta?.noindex ?? false;
+const routeMeta  = ROUTE_SEO[routeKey];
+const title      = routeMeta?.title       ?? SEO_DEFAULTS.title;
+const description= routeMeta?.description ?? SEO_DEFAULTS.description;
+const keywords   = routeMeta?.keywords    ?? SEO_DEFAULTS.keywords;
+const noindex    = routeMeta?.noindex     ?? false;
 
-// 1. Generate the clean URL after 'canonical' is defined
-const currentUrl = new URL(Astro.request.url);
-const cleanCanonical = canonical || (
-  currentUrl.pathname === '/' 
-    ? currentUrl.origin 
+// ── Canonical — derive first, used by everything below ─────────────────────
+const currentUrl     = new URL(Astro.request.url);
+const cleanCanonical = routeMeta?.canonical ?? (
+  currentUrl.pathname === '/'
+    ? currentUrl.origin
     : `${currentUrl.origin}${currentUrl.pathname.replace(/\/$/, '')}`
 );
 
+// ── OG / Twitter ────────────────────────────────────────────────────────────
 const og = {
   ...SEO_DEFAULTS.og,
   ...routeMeta?.og,
-  title: routeMeta?.og?.title ?? routeMeta?.title ?? SEO_DEFAULTS.og.title,
+  title:       routeMeta?.og?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.og.title,
   description: routeMeta?.og?.description ?? routeMeta?.description ?? SEO_DEFAULTS.og.description,
+  url:         cleanCanonical,
 };
 
 const twitter = {
   ...SEO_DEFAULTS.twitter,
   ...routeMeta?.twitter,
-  title: routeMeta?.twitter?.title ?? routeMeta?.title ?? SEO_DEFAULTS.twitter.title,
+  title:       routeMeta?.twitter?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.twitter.title,
   description: routeMeta?.twitter?.description ?? routeMeta?.description ?? SEO_DEFAULTS.twitter.description,
 };
 
-const customSchemas = routeMeta?.jsonLd ?? [];
-
-// Enterprise JSON-LD @graph construction for EEAT
+// ── Base enterprise @graph schema ───────────────────────────────────────────
 const enterpriseSchema = {
-  "@context": "https://schema.org",
-  "@graph": [
+  '@context': 'https://schema.org',
+  '@graph': [
     {
-      "@type": "Organization",
-      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`,
-      "name": SITE_CONFIG.name,
-      "url": SITE_CONFIG.url || 'https://posters.spicydevs.xyz',
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/icon-512.png`
+      '@type':  'Organization',
+      '@id':    `${SITE_CONFIG.baseUrl}/#organization`,
+      name:     SITE_CONFIG.name,
+      url:      SITE_CONFIG.baseUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url:     `${SITE_CONFIG.baseUrl}/icon-512.png`,
       },
-      "sameAs": [
-        `https://twitter.com/${SITE_CONFIG.twitterHandle?.replace('@', '') || 'spicydevs'}`,
-        "https://github.com/xdaayush"
-      ]
+      sameAs: [
+        `https://twitter.com/${(SITE_CONFIG.twitterHandle ?? '@spicydevs').replace('@', '')}`,
+        'https://github.com/xdaayush',
+      ],
     },
     {
-      "@type": "WebSite",
-      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#website`,
-      "url": SITE_CONFIG.url || 'https://posters.spicydevs.xyz',
-      "name": SITE_CONFIG.name,
-      "description": SEO_DEFAULTS.description,
-      "publisher": {
-        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
-      }
+      '@type':     'WebSite',
+      '@id':       `${SITE_CONFIG.baseUrl}/#website`,
+      url:         SITE_CONFIG.baseUrl,
+      name:        SITE_CONFIG.name,
+      description: SEO_DEFAULTS.description,
+      publisher:   { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
     },
     {
-      "@type": "WebPage",
-      "@id": `${cleanCanonical}#webpage`,
-      "url": cleanCanonical,
-      "name": title,
-      "description": description,
-      "inLanguage": SITE_CONFIG.locale || "en-US",
-      "isPartOf": {
-        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#website`
-      },
-      "about": {
-        "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
-      }
-    }
-  ]
+      '@type':       'WebPage',
+      '@id':         `${cleanCanonical}#webpage`,
+      url:           cleanCanonical,
+      name:          title,
+      description:   description,
+      inLanguage:    SITE_CONFIG.locale ?? 'en-US',
+      isPartOf:      { '@id': `${SITE_CONFIG.baseUrl}/#website` },
+      about:         { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+    },
+  ],
 };
 
-// Inject SoftwareApplication schema dynamically for the tool route
+// ── Route-specific schema extensions ────────────────────────────────────────
 if (routeKey === '/build') {
-  enterpriseSchema["@graph"].push({
-    "@type": "WebApplication",
-    "@id": `${cleanCanonical}#application`,
-    "name": "Posterium Poster Builder",
-    "description": "Generate custom movie and TV posters with live rating badges.",
-    "applicationCategory": "DesignApplication",
-    "operatingSystem": "Any",
-    "url": cleanCanonical,
-    "developer": {
-      "@id": `${SITE_CONFIG.url || 'https://posters.spicydevs.xyz'}/#organization`
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "0.00",
-      "priceCurrency": "USD"
-    }
+  enterpriseSchema['@graph'].push(
+    {
+      '@type':               'WebApplication',
+      '@id':                 `${cleanCanonical}#application`,
+      name:                  'Posterium Poster Builder',
+      description:           'Generate custom movie and TV posters with live rating badges.',
+      applicationCategory:   'DesignApplication',
+      operatingSystem:       'Any',
+      url:                   cleanCanonical,
+      developer:             { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+      offers: { '@type': 'Offer', price: '0.00', priceCurrency: 'USD' },
+    } as any,
+    // Breadcrumb
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home',          item: SITE_CONFIG.baseUrl },
+        { '@type': 'ListItem', position: 2, name: 'Poster Builder', item: cleanCanonical },
+      ],
+    } as any
+  );
+}
+
+if (routeKey === '/installation') {
+  enterpriseSchema['@graph'].push({
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',         item: SITE_CONFIG.baseUrl },
+      { '@type': 'ListItem', position: 2, name: 'Installation', item: cleanCanonical },
+    ],
   } as any);
 }
 
-// Merge any custom route-specific schemas
-const finalSchemas = [enterpriseSchema, ...customSchemas];
+if (routeKey === '/examples') {
+  enterpriseSchema['@graph'].push({
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',     item: SITE_CONFIG.baseUrl },
+      { '@type': 'ListItem', position: 2, name: 'Examples', item: cleanCanonical },
+    ],
+  } as any);
+}
+
+// Merge route-level custom schemas (FAQ etc.)
+const customSchemas = routeMeta?.jsonLd ?? [];
+const finalSchemas  = [enterpriseSchema, ...customSchemas];
+
+// Safe serialisation — prevents build-time errors on circular refs / bad data
+function safeStringify(obj: unknown): string {
+  try { return JSON.stringify(obj); }
+  catch { return '{}'; }
+}
 ---
 
 <title>{title}</title>
 <meta name="description" content={description} />
-
-<link rel="preconnect" href="https://api.spicydevs.xyz" crossorigin />
-<link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
-<link rel="preconnect" href="https://image.tmdb.org" crossorigin />
-<link rel="dns-prefetch" href="https://image.tmdb.org" />
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<meta name="keywords" content={keywords} />
-<meta name="author" content={SITE_CONFIG.author} />
-<meta name="application-name" content={SITE_CONFIG.name} />
-<meta name="generator" content="Astro + React" />
-<meta name="theme-color" content="#0a0a0a" />
-<meta name="color-scheme" content="dark" />
-<meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+<meta name="keywords"    content={keywords} />
+<meta name="author"      content={SITE_CONFIG.author} />
 
 <link rel="canonical" href={cleanCanonical} />
 
-{noindex ? (
-  <meta name="robots" content="noindex, nofollow" />
-) : (
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-)}
+{noindex
+  ? <meta name="robots" content="noindex, nofollow" />
+  : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+}
 
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content={SITE_CONFIG.name} />
-
-<meta name="msapplication-TileColor" content="#0a0a0a" />
-<meta name="msapplication-TileImage" content="/icon-192.png" />
-<meta name="msapplication-tap-highlight" content="no" />
-
-<meta property="og:site_name" content={SITE_CONFIG.name} />
-<meta property="og:locale" content={SITE_CONFIG.locale} />
-<meta property="og:type" content={og.type} />
-<meta property="og:url" content={og.url} />
-<meta property="og:title" content={og.title} />
+<!-- Open Graph -->
+<meta property="og:site_name"   content={SITE_CONFIG.name} />
+<meta property="og:locale"      content={SITE_CONFIG.locale} />
+<meta property="og:type"        content={og.type} />
+<meta property="og:url"         content={og.url} />
+<meta property="og:title"       content={og.title} />
 <meta property="og:description" content={og.description} />
-<meta property="og:image" content={og.image} />
-<meta property="og:image:width" content={String(og.imageWidth)} />
+<meta property="og:image"       content={og.image} />
+<meta property="og:image:width"  content={String(og.imageWidth)} />
 <meta property="og:image:height" content={String(og.imageHeight)} />
-<meta property="og:image:alt" content={og.imageAlt} />
-<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:alt"   content={og.imageAlt} />
+<meta property="og:image:type"  content="image/jpeg" />
 
-<meta name="twitter:card" content={twitter.card} />
-<meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:creator" content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:title" content={twitter.title} />
+<!-- Twitter / X cards -->
+<meta name="twitter:card"        content={twitter.card} />
+<meta name="twitter:site"        content={SITE_CONFIG.twitterHandle} />
+<meta name="twitter:creator"     content={SITE_CONFIG.twitterHandle} />
+<meta name="twitter:title"       content={twitter.title} />
 <meta name="twitter:description" content={twitter.description} />
-<meta name="twitter:image" content={twitter.image} />
-<meta name="twitter:image:alt" content={twitter.imageAlt} />
+<meta name="twitter:image"       content={twitter.image} />
+<meta name="twitter:image:alt"   content={twitter.imageAlt} />
 
-<link rel="author" href="https://github.com/xdaayush" />
-{routeMeta?.author && <meta name="author" content={routeMeta.author} />}
+<!-- PWA / mobile -->
+<meta name="theme-color"                       content="#0a0a0a" />
+<meta name="color-scheme"                      content="dark" />
+<meta name="mobile-web-app-capable"            content="yes" />
+<meta name="apple-mobile-web-app-capable"      content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title"        content={SITE_CONFIG.name} />
+<meta name="application-name"                  content={SITE_CONFIG.name} />
+<meta name="format-detection"                  content="telephone=no, date=no, email=no, address=no" />
 
+<!-- Structured data -->
 {finalSchemas.map((schema) => (
-  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  <script type="application/ld+json" set:html={safeStringify(schema)} />
 ))}

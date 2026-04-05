@@ -1,8 +1,22 @@
-/* Tailwind v4 - single import replaces the old @tailwind directives */
+/* src/styles/global.css
+ *
+ * OPTIMIZATION NOTES vs. previous version
+ * ────────────────────────────────────────
+ * 1. CSS variables now declared once here — removed the duplicate :root block
+ *    that existed verbatim in dashboard.css.
+ * 2. Typography classes (.poster-font, .syne-font, etc.) declared once here —
+ *    previously duplicated in dashboard.css.
+ * 3. @keyframes shimmer, grain-anim, hero-*, marquee-scroll deduplicated here —
+ *    dashboard.css can import/extend without redefining them.
+ * 4. New .install-* responsive rules live here (mobile-first).
+ * 5. Range input styles unified into one rule block.
+ * 6. No new dependencies — pure CSS optimizations.
+ */
+
+/* Tailwind v4 */
 @import 'tailwindcss';
 
 @theme {
-  /* Migrate from tailwind.config.js */
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
   --color-glass-100: rgba(255, 255, 255, 0.1);
@@ -10,13 +24,12 @@
   --color-glass-300: rgba(255, 255, 255, 0.3);
   --color-glass-900: rgba(0, 0, 0, 0.8);
 }
-/* ─── Global base fixes ─────────────────────────────────────────────────────── */
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
 @layer base {
   *,
   *::before,
-  *::after {
-    box-sizing: border-box;
-  }
+  *::after { box-sizing: border-box; }
 
   body {
     margin: 0;
@@ -24,6 +37,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* ── Range inputs (unified — was duplicated in dashboard.css) ── */
   input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
@@ -49,9 +63,7 @@
     margin-top: -5px;
     border: 2px solid rgba(9, 9, 11, 0.7);
     box-shadow: 0 0 0 1.5px rgba(196, 124, 46, 0.35);
-    transition:
-      background 0.15s,
-      box-shadow 0.15s;
+    transition: background 0.15s, box-shadow 0.15s;
   }
 
   input[type='range']::-webkit-slider-thumb:hover {
@@ -76,51 +88,37 @@
     box-shadow: 0 0 0 1.5px rgba(196, 124, 46, 0.35);
   }
 
-  select {
-    -webkit-appearance: none;
-    appearance: none;
-  }
-}
+  select { -webkit-appearance: none; appearance: none; }
 
-/* ─── Film CSS variables — available on ALL pages including /build ──────────── */
-@layer base {
+  /* ── CSS custom properties — SINGLE SOURCE OF TRUTH ──────────────────── */
   :root {
-    --film-black: #070706;
-    --film-dark: #0e0d0b;
-    --film-mid: #181612;
-    --film-char: #222018;
-    --film-amber: #c47c2e;
-    --film-gold: #d4a245;
-    --film-pale: #e8d8a8;
-    --film-cream: #f0e6cc;
-    --film-white: #faf6ec;
-    --film-silver: #b0a898;
-    --film-dust: #453f37;
-    --film-red: #a82018;
-    --film-border: rgba(196, 124, 46, 0.16);
-    --film-glow: rgba(196, 124, 46, 0.07);
-    --film-text-body: rgba(230, 218, 196, 0.92);
+    --film-black:      #070706;
+    --film-dark:       #0e0d0b;
+    --film-mid:        #181612;
+    --film-char:       #222018;
+    --film-amber:      #c47c2e;
+    --film-gold:       #d4a245;
+    --film-pale:       #e8d8a8;
+    --film-cream:      #f0e6cc;
+    --film-white:      #faf6ec;
+    --film-silver:     #b0a898;
+    --film-dust:       #453f37;
+    --film-red:        #a82018;
+    --film-border:     rgba(196, 124, 46, 0.16);
+    --film-glow:       rgba(196, 124, 46, 0.07);
+    --film-text-body:  rgba(230, 218, 196, 0.92);
     --film-text-label: rgba(212, 198, 172, 0.82);
-    --film-text-dim: rgba(180, 168, 148, 0.62);
+    --film-text-dim:   rgba(180, 168, 148, 0.62);
     --film-text-ghost: rgba(140, 130, 112, 0.38);
   }
 
-  /* Font utility classes — available on all pages */
-  .poster-font {
-    font-family: 'Bebas Neue', cursive;
-    letter-spacing: 0.04em;
-  }
-  .syne-font {
-    font-family: 'Syne', sans-serif;
-  }
-  .body-font {
-    font-family: 'DM Sans', sans-serif;
-  }
-  .mono-font {
-    font-family: 'JetBrains Mono', monospace;
-  }
+  /* ── Typography (was duplicated in dashboard.css) ─────────────────────── */
+  .poster-font { font-family: 'Bebas Neue', cursive; letter-spacing: 0.04em; }
+  .syne-font   { font-family: 'Syne', sans-serif; }
+  .body-font   { font-family: 'DM Sans', sans-serif; }
+  .mono-font   { font-family: 'JetBrains Mono', monospace; }
 
-  /* Film grain overlay — persistent, CSS-only, zero JS cost */
+  /* ── Film overlays ────────────────────────────────────────────────────── */
   .grain-layer {
     position: fixed;
     inset: 0;
@@ -133,7 +131,6 @@
     animation: grain-anim 0.14s steps(1) infinite;
   }
 
-  /* Scanlines overlay */
   .scan-layer {
     position: fixed;
     inset: 0;
@@ -148,43 +145,65 @@
     );
   }
 
+  /* ── Keyframes (deduplicated — dashboard.css no longer needs to redefine) */
   @keyframes grain-anim {
-    0% {
-      transform: translate(0, 0);
-    }
-    14% {
-      transform: translate(-3%, -4%);
-    }
-    28% {
-      transform: translate(4%, 2%);
-    }
-    42% {
-      transform: translate(-2%, 5%);
-    }
-    57% {
-      transform: translate(5%, -3%);
-    }
-    71% {
-      transform: translate(-4%, 3%);
-    }
-    85% {
-      transform: translate(2%, -5%);
-    }
+    0%   { transform: translate(0, 0);        }
+    14%  { transform: translate(-3%, -4%);    }
+    28%  { transform: translate(4%, 2%);      }
+    42%  { transform: translate(-2%, 5%);     }
+    57%  { transform: translate(5%, -3%);     }
+    71%  { transform: translate(-4%, 3%);     }
+    85%  { transform: translate(2%, -5%);     }
   }
 
-  /* Shimmer animation for loading states */
   @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
+    0%   { background-position:  200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes marquee-scroll {
+    from { transform: translateX(0);    }
+    to   { transform: translateX(-50%); }
+  }
+
+  @keyframes hero-reveal {
+    from { opacity: 0; transform: translateY(36px) skewY(0.8deg); }
+    to   { opacity: 1; transform: translateY(0)    skewY(0deg);   }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  @keyframes reel-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes float-a {
+    0%, 100% { transform: translateY(0px)  rotate(-1.2deg); }
+    50%       { transform: translateY(-16px) rotate( 0.8deg); }
+  }
+  @keyframes float-b {
+    0%, 100% { transform: translateY(-6px) rotate( 0.5deg); }
+    50%       { transform: translateY(12px) rotate(-0.7deg); }
+  }
+  @keyframes float-c {
+    0%, 100% { transform: translateY(4px)  rotate(-0.3deg); }
+    50%       { transform: translateY(-10px) rotate( 0.4deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration:   0.01ms !important;
+      transition-duration:  0.01ms !important;
     }
   }
 }
 
-/* ─── Prose Styles (unified markdown content styling) ──────────────────────── */
+/* ─── Component styles ──────────────────────────────────────────────────────── */
 @layer components {
+  /* ── Prose (markdown content) ─────────────────────────────────────────── */
   .prose {
     color: var(--film-text-body);
     font-family: 'DM Sans', sans-serif;
@@ -192,53 +211,21 @@
     line-height: 1.65;
   }
 
-  .prose h1,
-  .prose h2,
-  .prose h3,
-  .prose h4 {
+  .prose h1, .prose h2, .prose h3, .prose h4 {
     font-family: 'Syne', sans-serif;
     color: var(--film-cream);
     letter-spacing: 0.02em;
     margin: 0 0 12px;
   }
 
-  .prose h2 {
-    margin-top: 18px;
-    font-size: 20px;
-  }
-
-  .prose h3 {
-    margin-top: 14px;
-    font-size: 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-  }
-
-  .prose p {
-    margin: 0 0 12px;
-  }
-
-  .prose p:last-child {
-    margin-bottom: 0;
-  }
-
-  .prose ul,
-  .prose ol {
-    margin: 0 0 12px;
-    padding-left: 20px;
-  }
-
-  .prose li {
-    margin: 0 0 6px;
-  }
-
-  .prose a {
-    color: var(--film-gold);
-  }
-
-  .prose strong {
-    color: var(--film-cream);
-  }
+  .prose h2 { margin-top: 18px; font-size: 20px; }
+  .prose h3 { margin-top: 14px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.07em; }
+  .prose p  { margin: 0 0 12px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose ul, .prose ol { margin: 0 0 12px; padding-left: 20px; }
+  .prose li { margin: 0 0 6px; }
+  .prose a  { color: var(--film-gold); }
+  .prose strong { color: var(--film-cream); }
 
   .prose code {
     font-family: 'JetBrains Mono', monospace;
@@ -259,40 +246,16 @@
     margin: 0 0 12px;
   }
 
-  .prose pre code {
-    border: 0;
-    padding: 0;
-    background: transparent;
-    color: var(--film-cream);
-    font-size: 12px;
-    line-height: 1.6;
-  }
+  .prose pre code { border: 0; padding: 0; background: transparent; color: var(--film-cream); font-size: 12px; line-height: 1.6; }
 
-  .prose table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0 0 14px;
-    font-size: 13px;
-  }
+  .prose table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 13px; }
+  .prose th, .prose td { border: 1px solid rgba(196, 124, 46, 0.16); padding: 8px 10px; text-align: left; }
+  .prose th { color: var(--film-pale); background: rgba(196, 124, 46, 0.08); }
 
-  .prose th,
-  .prose td {
-    border: 1px solid rgba(196, 124, 46, 0.16);
-    padding: 8px 10px;
-    text-align: left;
-  }
+  /* On very narrow screens, let tables scroll horizontally instead of overflowing */
+  .prose { overflow-x: auto; }
 
-  .prose th {
-    color: var(--film-pale);
-    background: rgba(196, 124, 46, 0.08);
-  }
-
-  .prose img {
-    max-width: 100%;
-    border-radius: 8px;
-    border: 1px solid rgba(196, 124, 46, 0.16);
-    margin: 8px 0 12px;
-  }
+  .prose img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(196, 124, 46, 0.16); margin: 8px 0 12px; }
 
   .prose blockquote {
     border-left: 3px solid var(--film-amber);
@@ -302,27 +265,13 @@
     font-style: italic;
   }
 
-  .prose hr {
-    border: none;
-    border-top: 1px solid rgba(196, 124, 46, 0.16);
-    margin: 18px 0;
-  }
+  .prose hr { border: none; border-top: 1px solid rgba(196, 124, 46, 0.16); margin: 18px 0; }
 
-  /* Compact prose variant for smaller contexts */
-  .prose-compact {
-    font-size: 13px;
-    line-height: 1.6;
-  }
+  .prose-compact { font-size: 13px; line-height: 1.6; }
+  .prose-compact h2 { font-size: 17px; }
+  .prose-compact h3 { font-size: 14px; }
 
-  .prose-compact h2 {
-    font-size: 17px;
-  }
-
-  .prose-compact h3 {
-    font-size: 14px;
-  }
-
-  /* Docs layout styles */
+  /* ── Docs / installation shared layout ────────────────────────────────── */
   .docs-layout-main {
     max-width: 1240px;
     margin: 0 auto;
@@ -340,52 +289,52 @@
     background: rgba(14, 13, 11, 0.72);
     border-radius: 12px;
     padding: 14px;
+    /* Prevent sidebar from overflowing the viewport on short screens */
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
   }
 
   @media (max-width: 960px) {
     .docs-layout-main {
       grid-template-columns: 1fr;
+      padding-top: 72px;
     }
+
     .docs-layout-sidebar {
       position: static;
+      max-height: none;
+      overflow: visible;
     }
   }
+
+  /* ── Custom scrollbar ─────────────────────────────────────────────────── */
+  .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 9999px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 }
 
-/* ─── Custom utilities ──────────────────────────────────────────────────────── */
+/* ─── Utilities ─────────────────────────────────────────────────────────────── */
 @layer utilities {
   .sidebar-label {
     @apply block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5;
   }
 
-  .hover-cream:hover {
-    color: var(--film-cream);
+  .hover-cream:hover  { color: var(--film-cream) !important; }
+  .hover-amber:hover  { color: var(--film-amber) !important; }
+
+  .border-hover-amber {
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .border-hover-amber:hover {
+    border-color: rgba(196, 124, 46, 0.32) !important;
+    color: var(--film-cream) !important;
   }
 
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 9999px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
-  }
-}
-@layer utilities {
-  /* CYBERPUNK ANGLED CUTOUTS */
+  /* ── Cyberpunk sidebar cut paths ─────────────────────────────────────── */
   .cyber-path-left {
     --cut: 24px;
     clip-path: polygon(
@@ -397,6 +346,7 @@
       0 100%
     );
   }
+
   .cyber-path-right {
     --cut: 24px;
     clip-path: polygon(
@@ -409,24 +359,8 @@
     );
   }
 
-  /* WRAPPERS FOR PARALLEL BORDER LINES */
-  /* Left Sidebar (Cuts on Right Edge) */
-  .cyber-border-outer-left {
-    background: rgba(196, 124, 46, 0.4); /* Outer amber line */
-    padding-right: 1px; /* Line thickness */
-  }
-  .cyber-border-gap-left {
-    background: var(--film-black); /* Gap color */
-    padding-right: 3px; /* Gap thickness */
-  }
-
-  /* Right Sidebar (Cuts on Left Edge) */
-  .cyber-border-outer-right {
-    background: rgba(196, 124, 46, 0.4); /* Outer amber line */
-    padding-left: 1px; /* Line thickness */
-  }
-  .cyber-border-gap-right {
-    background: var(--film-black); /* Gap color */
-    padding-left: 3px; /* Gap thickness */
-  }
+  .cyber-border-outer-left  { background: rgba(196,124,46,0.4); padding-right: 1px; }
+  .cyber-border-gap-left    { background: var(--film-black);    padding-right: 3px; }
+  .cyber-border-outer-right { background: rgba(196,124,46,0.4); padding-left:  1px; }
+  .cyber-border-gap-right   { background: var(--film-black);    padding-left:  3px; }
 }

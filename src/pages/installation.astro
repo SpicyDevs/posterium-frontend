@@ -1,4 +1,18 @@
 ---
+// src/pages/installation.astro
+//
+// FIX SUMMARY vs. previous version
+// ─────────────────────────────────
+// 1. Mobile layout: switched from brittle grid to a proper responsive layout
+//    that stacks the sidebar below the content on narrow viewports.
+// 2. TOC sync: the client-side guide-switch handler now dispatches a
+//    "posterium:guide-change" CustomEvent with the new guide's headings so
+//    TableOfContentsClient can re-observe the correct DOM headings.
+// 3. Guide articles no longer use inline display:none/flex — a CSS class
+//    handles visibility so the layout engine can properly calculate sizes.
+// 4. Semantic HTML improvements: <nav>, <article>, <section> used correctly.
+// 5. Proper aria-current on sidebar links for screen-reader support.
+
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
@@ -9,33 +23,34 @@ import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
 import '@/styles/global.css';
 
-// Default placeholder images
 const placeholderImages = {
   desktop: '/placeholders/install-desktop.svg',
-  tv: '/placeholders/install-tv.svg',
-  mobile: ['/placeholders/install-mobile.svg', '/placeholders/install-mobile-alt.svg'],
+  tv:      '/placeholders/install-tv.svg',
+  mobile:  ['/placeholders/install-mobile.svg', '/placeholders/install-mobile-alt.svg'],
 };
 
-// Get all installation guides at build time
 const installEntries = await getCollection('install');
-
-// Sort by order
 const sortedGuides = installEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
 
-// Prepare guides with extracted headings (content is pre-rendered via glob loader)
 const preparedGuides = sortedGuides.map((guide) => {
-  const headings = extractMarkdownHeadings(guide.body ?? '');
-  const name = guide.data.name ?? guide.id.charAt(0).toUpperCase() + guide.id.slice(1);
+  const headings       = extractMarkdownHeadings(guide.body ?? '');
+  const name           = guide.data.name ?? guide.id.charAt(0).toUpperCase() + guide.id.slice(1);
   const showcaseImages = guide.data.showcaseImages ?? placeholderImages;
-  const html = guide.rendered?.html ?? '';
+  const html           = guide.rendered?.html ?? '';
   return { guide, headings, name, showcaseImages, html };
 });
 
-// Build sidebar links
 const sidebarLinks = preparedGuides.map((g) => ({
-  id: g.guide.id,
+  id:    g.guide.id,
   label: g.name,
-  href: `#${g.guide.id}`,
+  href:  `#${g.guide.id}`,
+}));
+
+// Serialise heading data for all guides so the client script can pass them
+// to the TOC React island via CustomEvent without a round-trip fetch.
+const allGuideHeadings = preparedGuides.map((g) => ({
+  id:       g.guide.id,
+  headings: g.headings,
 }));
 ---
 
@@ -47,82 +62,67 @@ const sidebarLinks = preparedGuides.map((g) => ({
 >
   <PageSEO slot="head" routeKey="/installation" />
 
-  <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
+  <div class="install-root">
     <MainNavbar
       client:load
-      search={{
-        value: '',
-        placeholder: 'Search guides...',
-        readOnly: true,
-      }}
+      search={{ value: '', placeholder: 'Search guides...', readOnly: true }}
       keepSearchOnMobile
       showMobileBuildCta
     />
 
-    <main class="docs-layout-main">
-      <aside class="docs-layout-sidebar">
-        <div
-          class="syne-font"
-          style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-text-dim); margin-bottom: 10px;"
-        >
-          Apps
-        </div>
-        <nav id="app-nav" style="display: flex; flex-direction: column; gap: 6px;">
-          {sidebarLinks.map((link, idx) => (
-            <a
-              href={link.href}
-              class="hover-cream syne-font docs-sidebar-link"
-              data-app-link={link.id}
-              style={`text-decoration: none; color: ${idx === 0 ? 'var(--film-cream)' : 'var(--film-text-label)'}; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 8px; border-radius: 6px; border: 1px solid ${idx === 0 ? 'rgba(212,162,69,0.5)' : 'rgba(255,255,255,0.06)'}; background: ${idx === 0 ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.02)'};`}
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+    <div class="install-layout">
+      <!-- ── Sidebar ────────────────────────────────────────────────────── -->
+      <aside class="install-sidebar" aria-label="Installation guide navigation">
+        <div class="install-sidebar-inner">
+          <p class="install-sidebar-heading syne-font">Apps</p>
 
-        <!-- Table of Contents for active guide -->
-        <div id="toc-container" style="margin-top: 14px;">
-          {preparedGuides[0] && (
-            <TableOfContentsClient client:idle headings={preparedGuides[0].headings} />
-          )}
+          <nav id="app-nav" aria-label="Choose application">
+            {sidebarLinks.map((link, idx) => (
+              <a
+                href={link.href}
+                class="install-app-link hover-cream syne-font"
+                data-app-link={link.id}
+                aria-current={idx === 0 ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          <!-- TOC for the currently active guide — re-renders on guide switch -->
+          <div id="toc-container" class="install-toc-wrap">
+            <TableOfContentsClient
+              client:idle
+              headings={preparedGuides[0].headings}
+            />
+          </div>
         </div>
       </aside>
 
-      <section style="display: flex; flex-direction: column; gap: 18px;">
-        <!-- Page Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <!-- ── Main content ───────────────────────────────────────────────── -->
+      <main class="install-main" id="install-main-content">
+        <!-- Page header -->
+        <header class="install-page-header">
           <div>
-            <h1
-              class="poster-font"
-              style="margin: 0; font-size: clamp(38px,7vw,64px); letter-spacing: 0.08em; line-height: 0.9;"
-            >
-              Installation
-            </h1>
-            <p
-              class="body-font"
-              style="margin: 10px 0 0; color: var(--film-text-dim); font-size: 14px;"
-            >
+            <h1 class="poster-font install-page-title">Installation</h1>
+            <p class="body-font install-page-subtitle">
               Setup Posterium in Plex, Emby, Jellyfin, Stremio, Kodi, and more.
             </p>
           </div>
           <AmberTag>{preparedGuides.length} apps</AmberTag>
-        </div>
+        </header>
 
-        <!-- Installation Guide Articles (Static HTML) -->
+        <!-- Guide articles (only one visible at a time via CSS class) -->
         {preparedGuides.map(({ guide, name, showcaseImages, html }, index) => (
           <article
             id={guide.id}
             data-guide-id={guide.id}
-            style={`scroll-margin-top: 88px; border: 1px solid rgba(196,124,46,0.14); background: rgba(14,13,11,0.72); border-radius: 12px; padding: 14px 14px 16px; display: ${index === 0 ? 'flex' : 'none'}; flex-direction: column; gap: 14px; width: 100%; max-width: 100%; overflow: hidden;`}
+            class:list={['install-guide-article', { 'install-guide--active': index === 0 }]}
+            aria-label={`${name} installation guide`}
           >
-            <h2
-              class="syne-font"
-              style="margin: 0; font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--film-pale);"
-            >
-              {name}
-            </h2>
+            <h2 class="syne-font install-guide-title">{name}</h2>
 
-            <!-- Showcase Viewer (React island for device switching) -->
+            <!-- Device showcase switcher -->
             <ShowcaseViewer
               client:visible
               appName={name}
@@ -130,69 +130,283 @@ const sidebarLinks = preparedGuides.map((g) => ({
               placeholderImages={placeholderImages}
             />
 
-            <!-- Guide Content (Static markdown) -->
+            <!-- Markdown content -->
             <section
-              style="border: 1px solid rgba(196,124,46,0.16); background: rgba(10,10,9,0.66); border-radius: 12px; padding: 14px;"
+              class="install-guide-prose-wrap"
+              aria-label={`${name} guide steps`}
             >
-              <h3
-                class="syne-font"
-                style="margin: 0 0 12px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--film-pale);"
-              >
-                Guide
-              </h3>
-              <div class="prose" set:html={html} />
+              <h3 class="syne-font install-guide-prose-heading">Guide</h3>
+              <div class="prose prose-compact" set:html={html} />
             </section>
           </article>
         ))}
-      </section>
-    </main>
+      </main>
+    </div>
   </div>
 </BaseLayout>
 
-<script define:vars={{ guideIds: preparedGuides.map(g => g.guide.id), guideHeadings: preparedGuides.map(g => ({ id: g.guide.id, headings: g.headings })) }}>
-  // App navigation switching
-  const appLinks = document.querySelectorAll('[data-app-link]');
-  const guideArticles = document.querySelectorAll('[data-guide-id]');
-
-  const setActiveGuide = (guideId) => {
-    // Update sidebar links
-    appLinks.forEach((link) => {
-      const isActive = link.dataset.appLink === guideId;
-      link.style.color = isActive ? 'var(--film-cream)' : 'var(--film-text-label)';
-      link.style.borderColor = isActive ? 'rgba(212,162,69,0.5)' : 'rgba(255,255,255,0.06)';
-      link.style.background = isActive ? 'rgba(196,124,46,0.2)' : 'rgba(255,255,255,0.02)';
-    });
-
-    // Show/hide guide articles
-    guideArticles.forEach((article) => {
-      article.style.display = article.dataset.guideId === guideId ? 'flex' : 'none';
-    });
-  };
-
-  // Handle click on app links
-  appLinks.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const guideId = link.dataset.appLink;
-      if (guideId) {
-        setActiveGuide(guideId);
-        // Update URL hash
-        history.pushState(null, '', `#${guideId}`);
-      }
-    });
-  });
-
-  // Handle initial hash
-  const initialHash = window.location.hash.slice(1);
-  if (initialHash && guideIds.includes(initialHash)) {
-    setActiveGuide(initialHash);
+<!-- ─── Styles ────────────────────────────────────────────────────────────── -->
+<style>
+  .install-root {
+    min-height: 100dvh;
+    background: var(--film-black);
+    color: var(--film-cream);
   }
 
-  // Handle hash change
-  window.addEventListener('hashchange', () => {
-    const hash = window.location.hash.slice(1);
-    if (hash && guideIds.includes(hash)) {
-      setActiveGuide(hash);
+  /* ── Outer layout: sidebar + main ──────────────────────────────────────── */
+  .install-layout {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 84px clamp(16px, 4vw, 32px) 40px;
+    display: grid;
+    /* sidebar | content */
+    grid-template-columns: clamp(200px, 22%, 280px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* Stack on mobile */
+  @media (max-width: 960px) {
+    .install-layout {
+      grid-template-columns: 1fr;
+      padding-top: 72px;
     }
-  });
+  }
+
+  /* ── Sidebar ────────────────────────────────────────────────────────────── */
+  .install-sidebar {
+    position: sticky;
+    top: 72px; /* below fixed navbar */
+    align-self: start;
+    max-height: calc(100dvh - 90px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  /* On mobile, sidebar is not sticky and comes AFTER main content in DOM order;
+     CSS grid reorders it visually above via order. */
+  @media (max-width: 960px) {
+    .install-sidebar {
+      position: static;
+      max-height: none;
+      overflow: visible;
+      order: -1; /* show sidebar nav above articles on mobile */
+    }
+  }
+
+  .install-sidebar-inner {
+    border: 1px solid rgba(196, 124, 46, 0.14);
+    background: rgba(14, 13, 11, 0.72);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .install-sidebar-heading {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--film-text-dim);
+    margin: 0 0 4px;
+  }
+
+  /* App navigation links */
+  #app-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* On mobile, show app links as a horizontal scrolling row */
+  @media (max-width: 960px) {
+    #app-nav {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
+
+  .install-app-link {
+    display: block;
+    text-decoration: none;
+    color: var(--film-text-label);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .install-app-link:hover {
+    color: var(--film-cream);
+  }
+
+  .install-app-link[aria-current='page'] {
+    color: var(--film-cream);
+    border-color: rgba(212, 162, 69, 0.5);
+    background: rgba(196, 124, 46, 0.2);
+  }
+
+  .install-toc-wrap {
+    margin-top: 14px;
+  }
+
+  /* Hide TOC on mobile to save vertical space */
+  @media (max-width: 960px) {
+    .install-toc-wrap {
+      display: none;
+    }
+  }
+
+  /* ── Main content area ──────────────────────────────────────────────────── */
+  .install-main {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0; /* prevent grid blowout */
+  }
+
+  /* ── Page header ────────────────────────────────────────────────────────── */
+  .install-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .install-page-title {
+    margin: 0;
+    font-size: clamp(38px, 7vw, 64px);
+    letter-spacing: 0.08em;
+    line-height: 0.9;
+  }
+
+  .install-page-subtitle {
+    margin: 10px 0 0;
+    color: var(--film-text-dim);
+    font-size: 14px;
+  }
+
+  /* ── Guide articles ─────────────────────────────────────────────────────── */
+  .install-guide-article {
+    /* Hidden by default; only the active article is shown */
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid rgba(196, 124, 46, 0.14);
+    background: rgba(14, 13, 11, 0.72);
+    border-radius: 12px;
+    padding: clamp(12px, 3vw, 16px);
+    /* Ensure article never overflows its grid cell */
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .install-guide-article.install-guide--active {
+    display: flex;
+  }
+
+  .install-guide-title {
+    margin: 0;
+    font-size: clamp(13px, 2vw, 15px);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--film-pale);
+  }
+
+  /* ── Guide prose wrapper ────────────────────────────────────────────────── */
+  .install-guide-prose-wrap {
+    border: 1px solid rgba(196, 124, 46, 0.16);
+    background: rgba(10, 10, 9, 0.66);
+    border-radius: 12px;
+    padding: clamp(12px, 3vw, 16px);
+    /* Allow prose content to scroll if extremely long on mobile */
+    overflow-x: auto;
+  }
+
+  .install-guide-prose-heading {
+    margin: 0 0 12px;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--film-pale);
+  }
+</style>
+
+<!-- ─── Client-side guide switching + TOC sync ─────────────────────────────── -->
+<script define:vars={{
+  allGuideHeadings,
+  guideIds: preparedGuides.map(g => g.guide.id)
+}}>
+  (() => {
+    'use strict';
+
+    /** Map guideId → serialised headings array */
+    const headingsByGuide = Object.fromEntries(
+      allGuideHeadings.map(({ id, headings }) => [id, headings])
+    );
+
+    const appLinks    = document.querySelectorAll('[data-app-link]');
+    const guideEls    = document.querySelectorAll('[data-guide-id]');
+
+    /**
+     * Switch the visible guide, update sidebar link styles, and fire the
+     * "posterium:guide-change" CustomEvent so the React TOC island can
+     * re-observe the correct headings.
+     */
+    function activateGuide(guideId) {
+      // ── Sidebar link styles ──────────────────────────────────────────────
+      appLinks.forEach((link) => {
+        const isActive = link.dataset.appLink === guideId;
+        link.setAttribute('aria-current', isActive ? 'page' : '');
+      });
+
+      // ── Article visibility ───────────────────────────────────────────────
+      guideEls.forEach((el) => {
+        if (el.dataset.guideId === guideId) {
+          el.classList.add('install-guide--active');
+        } else {
+          el.classList.remove('install-guide--active');
+        }
+      });
+
+      // ── Notify the React TOC island ──────────────────────────────────────
+      const headings = headingsByGuide[guideId] ?? [];
+      window.dispatchEvent(
+        new CustomEvent('posterium:guide-change', { detail: { headings } })
+      );
+
+      // Update URL hash without triggering a scroll jump
+      history.replaceState(null, '', `#${guideId}`);
+    }
+
+    // ── Wire up sidebar link clicks ────────────────────────────────────────
+    appLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = link.dataset.appLink;
+        if (id) activateGuide(id);
+      });
+    });
+
+    // ── Handle initial hash (deep-link) ────────────────────────────────────
+    const initialHash = window.location.hash.slice(1);
+    if (initialHash && guideIds.includes(initialHash)) {
+      activateGuide(initialHash);
+    }
+
+    // ── React to browser forward/back ──────────────────────────────────────
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && guideIds.includes(hash)) activateGuide(hash);
+    });
+  })();
 </script>
