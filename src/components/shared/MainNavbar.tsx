@@ -242,7 +242,7 @@ const MainNavbar = memo<MainNavbarProps>(
               }}
             >
               <Coffee size={12} className="shrink-0" />
-              <span className="main-nav-bmc-text">Buy me a Coffee</span>
+              <span className="main-nav-bmc-text">Support</span>
             </a>
 
             <a
