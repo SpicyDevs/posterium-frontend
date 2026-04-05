@@ -422,16 +422,33 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
-  const [mounted, setMounted] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const root = document.documentElement;
+    if (root.dataset.heroIntroPlayed === '1') return;
+
+    const sectionEl = sectionRef.current;
+    if (!sectionEl) return;
+
+    const onAnimationEnd = (event: AnimationEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.classList.contains('h-a5')) return;
+      root.dataset.heroIntroPlayed = '1';
+    };
+
+    sectionEl.addEventListener('animationend', onAnimationEnd);
+    return () => {
+      sectionEl.removeEventListener('animationend', onAnimationEnd);
+    };
   }, []);
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Hero"
-      className={mounted ? 'hero-anims-active' : ''}
+      className="hero-anims-active"
       style={HERO_SECTION_STYLE}
     >
       <div aria-hidden="true" style={AMBIENT_STYLE} />

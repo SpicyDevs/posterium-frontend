@@ -187,42 +187,50 @@ nav a.syne-font {
   }
 }
 
-/* Hero animation elements are hidden by default; animations activate once
-   React mounts and the parent section gains the .hero-anims-active class.
-   This prevents the animation from running twice (once from SSR HTML and
-   once again during React hydration/updates). */
+/* Hero animation elements default to final visible state so SSR is never blank. */
 .h-a1,
 .h-a2,
 .h-a3,
 .h-a4,
 .h-a5 {
-  opacity: 0;
+  opacity: 1;
+  transform: none;
 }
 
-.hero-anims-active .h-a1 {
+:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a1 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.hero-anims-active .h-a2 {
+:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a2 {
   animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.hero-anims-active .h-a3 {
+:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a3 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.hero-anims-active .h-a4 {
+:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a4 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.hero-anims-active .h-a5 {
+:root:not([data-hero-intro-played='1']) .hero-anims-active .h-a5 {
   animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both;
   backface-visibility: hidden;
   transform: translateZ(0);
+}
+
+:root[data-hero-intro-played='1'] .hero-anims-active .h-a1,
+:root[data-hero-intro-played='1'] .hero-anims-active .h-a2,
+:root[data-hero-intro-played='1'] .hero-anims-active .h-a3,
+:root[data-hero-intro-played='1'] .hero-anims-active .h-a4,
+:root[data-hero-intro-played='1'] .hero-anims-active .h-a5 {
+  animation: none;
+  opacity: 1;
+  transform: none;
 }
 
 @media (max-width: 820px) {
