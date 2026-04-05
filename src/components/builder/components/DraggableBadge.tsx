@@ -345,7 +345,7 @@ const DraggableBadge: React.FC<Props> = ({
       if (pct) {
         const n = Number(pct[1]);
         if (!Number.isFinite(n)) return rawValue;
-        return `${(Math.max(0, n) / 10).toFixed(1).replace(/\.0$/, '')}`;
+        return `${((Math.max(0, n) / 100) * 10).toFixed(1).replace(/\.0$/, '')}`;
       }
       const num = Number(rawValue);
       if (!Number.isFinite(num)) return rawValue;
