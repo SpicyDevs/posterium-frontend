@@ -637,6 +637,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
+  const minimalModeHandledRef = useRef(false);
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesEnabled = config.ratings.length > 0;
 
@@ -722,14 +723,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const disableBadges = useCallback((persistDisabledPreference = true) => {
     if (persistDisabledPreference) writeBadgesPreference(false);
+    if (config.ratings.length > 0) {
+      savedActiveBadgesRef.current = [...config.ratings];
+    }
     setConfig((prev) => {
-      if (prev.ratings.length > 0) {
-        savedActiveBadgesRef.current = [...prev.ratings];
-      }
       return { ...prev, ratings: [] };
     });
     setBatchSelection([]);
-  }, [setConfig, setBatchSelection]);
+  }, [config.ratings, setConfig, setBatchSelection]);
 
   const enableBadges = useCallback(() => {
     writeBadgesPreference(true);
@@ -743,17 +744,18 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [setConfig]);
 
   useEffect(() => {
-    if (isMinimalPreset && config.ratings.length > 0) {
-      const wasEnabled = config.ratings.length > 0;
-      writeBadgesPreference(wasEnabled);
-      setConfig((prev) => {
-        if (prev.ratings.length > 0) {
-          savedActiveBadgesRef.current = [...prev.ratings];
-        }
-        return { ...prev, ratings: [] };
-      });
+    if (!isMinimalPreset) {
+      minimalModeHandledRef.current = false;
+      return;
+    }
+    if (minimalModeHandledRef.current) return;
+    if (config.ratings.length > 0) {
+      writeBadgesPreference(true);
+      savedActiveBadgesRef.current = [...config.ratings];
+      setConfig((prev) => ({ ...prev, ratings: [] }));
       setBatchSelection([]);
     }
+    minimalModeHandledRef.current = true;
   }, [isMinimalPreset, config.ratings.length, setConfig, setBatchSelection]);
 
   useEffect(() => {

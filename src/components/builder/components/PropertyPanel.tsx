@@ -737,14 +737,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 checked={config.normalize ?? false}
                 onChange={(v) => updateConfig('normalize', v)}
               />
-              <SliderRow
+              <ToggleRow
                 label="Show Denominator"
-                value={config.outOf ?? 0}
-                min={0}
-                max={100}
-                step={1}
-                formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
-                onChange={(v) => updateConfig('outOf', v === 0 ? undefined : v)}
+                sub="Append /10 to ratings"
+                checked={(config.outOf ?? 0) > 0}
+                onChange={(v) => updateConfig('outOf', v ? 10 : undefined)}
               />
             </Section>
 
@@ -1143,14 +1140,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           checked={commonNorm}
           onChange={(v) => updateSelectedBadges({ normalize: v })}
         />
-        <SliderRow
+        <ToggleRow
           label="Show Denominator"
-          value={commonOutOf ?? 0}
-          min={0}
-          max={100}
-          step={1}
-          formatValue={(v) => (v === 0 ? 'Off' : `/${v}`)}
-          onChange={(v) => updateSelectedBadges({ outOf: v === 0 ? undefined : v })}
+          sub="Append /10 to ratings"
+          checked={(commonOutOf ?? 0) > 0}
+          onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
         />
       </Section>
 
