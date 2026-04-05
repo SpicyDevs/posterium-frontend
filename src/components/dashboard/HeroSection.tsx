@@ -2,6 +2,8 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
 
+let didPlayHeroIntroWithoutStorage = false;
+
 interface HeroPoster {
   id: string;
   type: 'movie' | 'tv';
@@ -432,7 +434,10 @@ const HeroSection = memo(() => {
       sessionStorage.setItem(key, '1');
       setShouldAnimateIntro(true);
     } catch {
-      setShouldAnimateIntro(true);
+      if (!didPlayHeroIntroWithoutStorage) {
+        didPlayHeroIntroWithoutStorage = true;
+        setShouldAnimateIntro(true);
+      }
     }
   }, []);
 
