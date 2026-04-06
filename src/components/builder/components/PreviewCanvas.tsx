@@ -62,6 +62,10 @@ const PreviewCanvas: React.FC<Props> = ({
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
+  const snapDragOffset = useCallback(
+    (n: number) => (viewOptions?.snapToGrid ? Math.round(n / 10) * 10 : n),
+    [viewOptions?.snapToGrid]
+  );
 
   // rAF throttle for drag move updates
   const pendingDragRef = useRef<{ id: RatingType; dx: number; dy: number } | null>(null);
@@ -390,9 +394,8 @@ const PreviewCanvas: React.FC<Props> = ({
     const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
     const bW = BASE_BADGE_W * selScale;
     const bH = BASE_BADGE_H * selScale;
-    const snapOffset = (n: number) => Math.round(n / 10) * 10;
-    const snappedDx = snapOffset(dragSession.dx);
-    const snappedDy = snapOffset(dragSession.dy);
+    const snappedDx = snapDragOffset(dragSession.dx);
+    const snappedDy = snapDragOffset(dragSession.dy);
     const nextX = Math.max(1 - bW, Math.min(x + snappedDx, CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(y + snappedDy, CANVAS_HEIGHT - 1));
 
@@ -400,7 +403,7 @@ const PreviewCanvas: React.FC<Props> = ({
       centerX: nextX + bW / 2,
       centerY: nextY + bH / 2,
     };
-  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config]);
+  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, snapDragOffset]);
 
   return (
     <div
@@ -521,10 +524,8 @@ const PreviewCanvas: React.FC<Props> = ({
                 const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
-                const snapOffset = (n: number) =>
-                  viewOptions?.snapToGrid ? Math.round(n / 10) * 10 : n;
-                const snappedDx = snapOffset(dragSession.dx);
-                const snappedDy = snapOffset(dragSession.dy);
+                const snappedDx = snapDragOffset(dragSession.dx);
+                const snappedDy = snapDragOffset(dragSession.dy);
                 // Preview clamp: at least 1px inside poster
                 x = Math.max(1 - bW, Math.min(x + snappedDx, CANVAS_WIDTH - 1));
                 y = Math.max(1 - bH, Math.min(y + snappedDy, CANVAS_HEIGHT - 1));
