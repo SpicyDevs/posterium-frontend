@@ -399,10 +399,17 @@ const PreviewCanvas: React.FC<Props> = ({
     const bH = BASE_BADGE_H * selScale;
     const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+    const centerX = nextX + bW / 2;
+    const centerY = nextY + bH / 2;
+    const middleX = CANVAS_WIDTH / 2;
+    const middleY = CANVAS_HEIGHT / 2;
+    const snapTolerance = 8;
 
     return {
-      centerX: nextX + bW / 2,
-      centerY: nextY + bH / 2,
+      showVertical: Math.abs(centerX - middleX) < snapTolerance,
+      showHorizontal: Math.abs(centerY - middleY) < snapTolerance,
+      middleX,
+      middleY,
     };
   }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid]);
 
@@ -460,31 +467,31 @@ const PreviewCanvas: React.FC<Props> = ({
             </div>
           </div>
         )}
-        {badgeSnapGuide && (
-          <>
-            <div
-              className="absolute pointer-events-none z-30"
-              style={{
-                left: badgeSnapGuide.centerX,
-                top: 0,
-                bottom: 0,
-                width: 1,
-                background: 'rgba(196,124,46,0.8)',
-                transform: 'translateX(-50%)',
-              }}
-            />
-            <div
-              className="absolute pointer-events-none z-30"
-              style={{
-                top: badgeSnapGuide.centerY,
-                left: 0,
-                right: 0,
-                height: 1,
-                background: 'rgba(196,124,46,0.8)',
-                transform: 'translateY(-50%)',
-              }}
-            />
-          </>
+        {badgeSnapGuide?.showVertical && (
+          <div
+            className="absolute pointer-events-none z-30"
+            style={{
+              left: badgeSnapGuide.middleX,
+              top: 0,
+              bottom: 0,
+              width: 1,
+              background: 'rgba(196,124,46,0.8)',
+              transform: 'translateX(-50%)',
+            }}
+          />
+        )}
+        {badgeSnapGuide?.showHorizontal && (
+          <div
+            className="absolute pointer-events-none z-30"
+            style={{
+              top: badgeSnapGuide.middleY,
+              left: 0,
+              right: 0,
+              height: 1,
+              background: 'rgba(196,124,46,0.8)',
+              transform: 'translateY(-50%)',
+            }}
+          />
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
