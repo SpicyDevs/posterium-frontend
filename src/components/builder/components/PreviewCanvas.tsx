@@ -16,7 +16,13 @@ import type { PosterConfig, RatingType } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
-import { calculateAutoPosition, DEFAULT_API_BASE, generateApiUrl, getScale } from '../utils';
+import {
+  calculateAutoPosition,
+  DEFAULT_API_BASE,
+  generateApiUrl,
+  getScale,
+  snapToGridSize,
+} from '../utils';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
@@ -61,6 +67,10 @@ const PreviewCanvas: React.FC<Props> = ({
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
+  );
+  const applySnapGrid = useCallback(
+    (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n),
+    [viewOptions?.snapToGrid]
   );
 
   // rAF throttle for drag move updates
@@ -277,8 +287,7 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
-    const gridSize = 10;
-    const snap = (n: number) => (viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n);
+    const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
     setConfig((prev) => {
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
@@ -316,9 +325,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (dx === 0 && dy === 0) return;
 
     setConfig((prev: PosterConfig) => {
-      const gridSize = 10;
-      const snap = (n: number) =>
-        viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
+      const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
       const newItems = { ...prev.items };
       (Object.keys(newItems) as RatingType[]).forEach((k) => {
         newItems[k] = { ...newItems[k] };
@@ -374,6 +381,38 @@ const PreviewCanvas: React.FC<Props> = ({
     });
   };
 
+  const badgeSnapGuide = useMemo(() => {
+    if (!dragSession || !viewOptions?.snapToGrid || isMinimalPreset) return null;
+    const targetId = dragSession.id;
+    const index = config.ratings.indexOf(targetId);
+    if (index === -1) return null;
+
+    const auto = calculateAutoPosition(targetId, index, config.ratings.length, config);
+    const iCfg = config.items[targetId];
+    let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
+    let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
+    if (!isFinite(x)) x = auto.x;
+    if (!isFinite(y)) y = auto.y;
+
+    const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
+    const bW = BASE_BADGE_W * selScale;
+    const bH = BASE_BADGE_H * selScale;
+    const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
+    const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+    const centerX = nextX + bW / 2;
+    const centerY = nextY + bH / 2;
+    const middleX = CANVAS_WIDTH / 2;
+    const middleY = CANVAS_HEIGHT / 2;
+    const snapTolerance = 8;
+
+    return {
+      showVertical: Math.abs(centerX - middleX) < snapTolerance,
+      showHorizontal: Math.abs(centerY - middleY) < snapTolerance,
+      middleX,
+      middleY,
+    };
+  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid]);
+
   return (
     <div
       ref={containerRef}
@@ -428,6 +467,32 @@ const PreviewCanvas: React.FC<Props> = ({
             </div>
           </div>
         )}
+        {badgeSnapGuide?.showVertical && (
+          <div
+            className="absolute pointer-events-none z-30"
+            style={{
+              left: badgeSnapGuide.middleX,
+              top: 0,
+              bottom: 0,
+              width: 1,
+              background: 'rgba(196,124,46,0.8)',
+              transform: 'translateX(-50%)',
+            }}
+          />
+        )}
+        {badgeSnapGuide?.showHorizontal && (
+          <div
+            className="absolute pointer-events-none z-30"
+            style={{
+              top: badgeSnapGuide.middleY,
+              left: 0,
+              right: 0,
+              height: 1,
+              background: 'rgba(196,124,46,0.8)',
+              transform: 'translateY(-50%)',
+            }}
+          />
+        )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
         {!hasMinimalUrlError && (
@@ -468,8 +533,8 @@ const PreviewCanvas: React.FC<Props> = ({
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
                 // Preview clamp: at least 1px inside poster
-                x = Math.max(1 - bW, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
+                x = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
               }
             }
 

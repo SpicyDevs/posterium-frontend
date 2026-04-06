@@ -902,7 +902,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 key={key}
                 type="button"
                 onClick={() => toggleViewOption(key)}
-                className="h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font"
+                className={clsx(
+                  'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
+                  key === 'snapToGrid' && 'col-span-2'
+                )}
                 style={{
                   background: viewOptions[key] ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
                   color: viewOptions[key] ? 'var(--film-pale)' : 'var(--film-text-dim)',
