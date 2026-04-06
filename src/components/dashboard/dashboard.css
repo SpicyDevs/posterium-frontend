@@ -197,24 +197,6 @@ nav a.syne-font {
   transform: none;
 }
 
-.hero-anims-active .h-a1 {
-  animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-.hero-anims-active .h-a2 {
-  animation: hero-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-body.disable-animations .hero-anims-active .h-a1,
-body.disable-animations .hero-anims-active .h-a2 {
-  animation: none;
-  opacity: 1;
-  transform: none;
-}
-
 @media (max-width: 820px) {
   .hero-two-col {
     grid-template-columns: 1fr !important;
