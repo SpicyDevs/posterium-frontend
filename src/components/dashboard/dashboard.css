@@ -207,21 +207,6 @@ nav a.syne-font {
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-.hero-anims-active .h-a3 {
-  animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-.hero-anims-active .h-a4 {
-  animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-.hero-anims-active .h-a5 {
-  animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
 
 body.disable-animations .hero-anims-active .h-a1,
 body.disable-animations .hero-anims-active .h-a2,
