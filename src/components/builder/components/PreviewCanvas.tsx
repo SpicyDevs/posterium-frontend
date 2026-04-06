@@ -16,7 +16,13 @@ import type { PosterConfig, RatingType } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
-import { calculateAutoPosition, DEFAULT_API_BASE, generateApiUrl, getScale } from '../utils';
+import {
+  calculateAutoPosition,
+  DEFAULT_API_BASE,
+  generateApiUrl,
+  getScale,
+  snapToGridSize,
+} from '../utils';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
@@ -62,8 +68,8 @@ const PreviewCanvas: React.FC<Props> = ({
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
-  const snapToGrid = useCallback(
-    (n: number) => (viewOptions?.snapToGrid ? Math.round(n / 10) * 10 : n),
+  const applySnapGrid = useCallback(
+    (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n),
     [viewOptions?.snapToGrid]
   );
 
@@ -281,8 +287,7 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
-    const gridSize = 10;
-    const snap = (n: number) => (viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n);
+    const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
     setConfig((prev) => {
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
@@ -320,9 +325,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (dx === 0 && dy === 0) return;
 
     setConfig((prev: PosterConfig) => {
-      const gridSize = 10;
-      const snap = (n: number) =>
-        viewOptions?.snapToGrid ? Math.round(n / gridSize) * gridSize : n;
+      const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
       const newItems = { ...prev.items };
       (Object.keys(newItems) as RatingType[]).forEach((k) => {
         newItems[k] = { ...newItems[k] };
@@ -394,14 +397,14 @@ const PreviewCanvas: React.FC<Props> = ({
     const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
     const bW = BASE_BADGE_W * selScale;
     const bH = BASE_BADGE_H * selScale;
-    const nextX = Math.max(1 - bW, Math.min(snapToGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
-    const nextY = Math.max(1 - bH, Math.min(snapToGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+    const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
+    const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
 
     return {
       centerX: nextX + bW / 2,
       centerY: nextY + bH / 2,
     };
-  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, snapToGrid]);
+  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid]);
 
   return (
     <div
@@ -523,8 +526,8 @@ const PreviewCanvas: React.FC<Props> = ({
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
                 // Preview clamp: at least 1px inside poster
-                x = Math.max(1 - bW, Math.min(snapToGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(snapToGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+                x = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
               }
             }
 

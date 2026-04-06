@@ -134,6 +134,9 @@ const DEFAULTS = {
 // ── Canvas layout helpers ─────────────────────────────────────────────────
 
 export const getScale = (size: string): number => (size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0);
+export const SNAP_GRID_SIZE = 10;
+export const snapToGridSize = (n: number, gridSize = SNAP_GRID_SIZE): number =>
+  Math.round(n / gridSize) * gridSize;
 
 export const calculateAutoPosition = (
   _ratingId: RatingType,
