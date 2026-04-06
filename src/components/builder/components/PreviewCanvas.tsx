@@ -374,6 +374,34 @@ const PreviewCanvas: React.FC<Props> = ({
     });
   };
 
+  const badgeSnapGuide = useMemo(() => {
+    if (!dragSession || !viewOptions?.snapToGrid || isMinimalPreset) return null;
+    const targetId = dragSession.id;
+    const index = config.ratings.indexOf(targetId);
+    if (index === -1) return null;
+
+    const auto = calculateAutoPosition(targetId, index, config.ratings.length, config);
+    const iCfg = config.items[targetId];
+    let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
+    let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
+    if (!isFinite(x)) x = auto.x;
+    if (!isFinite(y)) y = auto.y;
+
+    const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
+    const bW = BASE_BADGE_W * selScale;
+    const bH = BASE_BADGE_H * selScale;
+    const snapOffset = (n: number) => Math.round(n / 10) * 10;
+    const snappedDx = snapOffset(dragSession.dx);
+    const snappedDy = snapOffset(dragSession.dy);
+    const nextX = Math.max(1 - bW, Math.min(x + snappedDx, CANVAS_WIDTH - 1));
+    const nextY = Math.max(1 - bH, Math.min(y + snappedDy, CANVAS_HEIGHT - 1));
+
+    return {
+      centerX: nextX + bW / 2,
+      centerY: nextY + bH / 2,
+    };
+  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config]);
+
   return (
     <div
       ref={containerRef}
@@ -427,6 +455,32 @@ const PreviewCanvas: React.FC<Props> = ({
               </div>
             </div>
           </div>
+        )}
+        {badgeSnapGuide && (
+          <>
+            <div
+              className="absolute pointer-events-none z-30"
+              style={{
+                left: badgeSnapGuide.centerX,
+                top: 0,
+                bottom: 0,
+                width: 1,
+                background: 'rgba(196,124,46,0.8)',
+                transform: 'translateX(-50%)',
+              }}
+            />
+            <div
+              className="absolute pointer-events-none z-30"
+              style={{
+                top: badgeSnapGuide.centerY,
+                left: 0,
+                right: 0,
+                height: 1,
+                background: 'rgba(196,124,46,0.8)',
+                transform: 'translateY(-50%)',
+              }}
+            />
+          </>
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}

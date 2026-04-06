@@ -655,7 +655,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
   const minimalModeHandledRef = useRef(false);
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
-  const badgesEnabled = config.ratings.length > 0;
+  const badgesVisible = config.ratings.length > 0;
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -1461,7 +1461,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             <ToggleRow
               label="Badges"
               sub={isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
-              checked={badgesEnabled && !isMinimalPreset}
+              checked={badgesVisible && !isMinimalPreset}
               onChange={(v) => {
                 if (isMinimalPreset) return;
                 if (v) enableBadges();
@@ -1526,7 +1526,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
         <div className="px-1">
-          {(isMinimalPreset || !badgesEnabled) && (
+          {isMinimalPreset && (
             <div
               className="mb-4 p-3 rounded-xl"
               style={{
@@ -1535,16 +1535,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               }}
             >
               <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
-                {isMinimalPreset
-                  ? 'Badge layers are hidden in Minimal mode.'
-                  : 'Badges are currently disabled.'}
+                Badge layers are hidden in Minimal mode.
               </p>
               <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Open the Source tab to switch display mode or re-enable badges.
+                Open the Source tab to switch display mode.
               </p>
             </div>
           )}
-          {!isMinimalPreset && badgesEnabled && (
+          {!isMinimalPreset && (
             <>
               <div className="flex items-center justify-between mb-3">
                 <span
