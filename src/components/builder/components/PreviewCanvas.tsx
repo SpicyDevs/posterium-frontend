@@ -285,8 +285,8 @@ const PreviewCanvas: React.FC<Props> = ({
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
-      const nextX = snap(currentX + dx);
-      const nextY = snap(currentY + dy);
+      const nextX = currentX + snap(dx);
+      const nextY = currentY + snap(dy);
       return {
         ...prev,
         logoX: Math.round(Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))),
@@ -361,8 +361,8 @@ const PreviewCanvas: React.FC<Props> = ({
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         // Constrain so at least 1px of the badge remains inside the poster
-        const nextX = snap(startX + dx);
-        const nextY = snap(startY + dy);
+        const nextX = startX + snap(dx);
+        const nextY = startY + snap(dy);
         newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
         newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
       };
@@ -467,9 +467,13 @@ const PreviewCanvas: React.FC<Props> = ({
                 const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
+                const snapOffset = (n: number) =>
+                  viewOptions?.snapToGrid ? Math.round(n / 10) * 10 : n;
+                const snappedDx = snapOffset(dragSession.dx);
+                const snappedDy = snapOffset(dragSession.dy);
                 // Preview clamp: at least 1px inside poster
-                x = Math.max(1 - bW, Math.min(x + dragSession.dx, CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(y + dragSession.dy, CANVAS_HEIGHT - 1));
+                x = Math.max(1 - bW, Math.min(x + snappedDx, CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(y + snappedDy, CANVAS_HEIGHT - 1));
               }
             }
 

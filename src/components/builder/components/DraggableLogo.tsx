@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { PosterConfig } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import { ImageOff, Move } from 'lucide-react';
+import { useEditor } from '../context/EditorContext';
 
 interface Props {
   config: PosterConfig;
@@ -19,6 +20,7 @@ const DraggableLogo: React.FC<Props> = ({
   onDragEnd,
   onLogoLoad,
 }) => {
+  const { viewOptions } = useEditor();
   const lw = config.logoW,
     lh = config.logoH;
   const baseX =
@@ -75,8 +77,10 @@ const DraggableLogo: React.FC<Props> = ({
       window.removeEventListener('touchend', onTE);
     };
   }, [isDragging]);
-  const renderX = baseX + liveOffset.dx,
-    renderY = baseY + liveOffset.dy;
+  const snapVal = (val: number) =>
+    viewOptions?.snapToGrid ? Math.round(val / 10) * 10 : val;
+  const renderX = snapVal(baseX + liveOffset.dx),
+    renderY = snapVal(baseY + liveOffset.dy);
   const centreX = CANVAS_WIDTH / 2,
     centreY = CANVAS_HEIGHT / 2,
     snapTolerance = 8;
