@@ -1,0 +1,729 @@
+---
+// src/pages/terms.astro
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import MainNavbar from '@/components/shared/MainNavbar';
+import { AmberTag } from '@/components/shared/primitives';
+import '@/styles/global.css';
+
+const LAST_UPDATED = 'April 6, 2026';
+const SITE_URL     = 'https://posters.spicydevs.xyz';
+const CONTACT      = 'https://github.com/xdaayush/freeposterapi/issues';
+const REPO         = 'https://github.com/xdaayush/freeposterapi';
+---
+
+<BaseLayout
+  title="Terms of Service | Posterium"
+  description="Terms of Service for Posterium — the free movie and TV poster generator with live rating badges."
+  canonical={`${SITE_URL}/terms`}
+>
+
+  <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
+    <MainNavbar client:load keepSearchOnMobile showMobileBuildCta />
+
+    <!-- ── Page header ─────────────────────────────────────────────── -->
+    <header class="legal-hero">
+      <div class="legal-hero-inner">
+        <AmberTag>Legal</AmberTag>
+        <h1 class="poster-font legal-title">Terms of<br />Service</h1>
+        <p class="body-font legal-subtitle">
+          Posterium is free and open-source. These terms describe the rules for using
+          the API and editor, what we promise, and what we don't.
+        </p>
+        <p class="mono-font legal-date">Last updated: {LAST_UPDATED}</p>
+      </div>
+      <div class="legal-hero-rule" aria-hidden="true"></div>
+    </header>
+
+    <!-- ── Content ────────────────────────────────────────────────── -->
+    <main class="legal-main">
+      <div class="legal-grid">
+
+        <!-- Sticky TOC -->
+        <nav class="legal-toc" aria-label="Terms of service sections">
+          <p class="syne-font legal-toc-heading">Contents</p>
+          <ol class="legal-toc-list">
+            <li><a href="#acceptance" class="legal-toc-link hover-cream">Acceptance</a></li>
+            <li><a href="#the-service" class="legal-toc-link hover-cream">The Service</a></li>
+            <li><a href="#acceptable-use" class="legal-toc-link hover-cream">Acceptable Use</a></li>
+            <li><a href="#prohibited-use" class="legal-toc-link hover-cream">Prohibited Use</a></li>
+            <li><a href="#api-keys" class="legal-toc-link hover-cream">API Keys</a></li>
+            <li><a href="#ip-and-data" class="legal-toc-link hover-cream">IP &amp; Data Rights</a></li>
+            <li><a href="#disclaimers" class="legal-toc-link hover-cream">Disclaimers</a></li>
+            <li><a href="#liability" class="legal-toc-link hover-cream">Limitation of Liability</a></li>
+            <li><a href="#third-party" class="legal-toc-link hover-cream">Third-Party Content</a></li>
+            <li><a href="#open-source" class="legal-toc-link hover-cream">Open-Source Licence</a></li>
+            <li><a href="#termination" class="legal-toc-link hover-cream">Termination</a></li>
+            <li><a href="#governing-law" class="legal-toc-link hover-cream">Governing Law</a></li>
+            <li><a href="#changes" class="legal-toc-link hover-cream">Changes to Terms</a></li>
+            <li><a href="#contact" class="legal-toc-link hover-cream">Contact</a></li>
+          </ol>
+        </nav>
+
+        <!-- Body -->
+        <article class="legal-body">
+
+          <!-- ── 1. Acceptance ──────────────────────────────────────── -->
+          <section id="acceptance" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">01</div>
+            <h2 class="syne-font legal-section-title">Acceptance of Terms</h2>
+            <div class="legal-prose body-font">
+              <p>
+                These Terms of Service (<strong>"Terms"</strong>) constitute a legally
+                binding agreement between you and <strong>SpicyDevs</strong>
+                (<strong>"we"</strong>, <strong>"our"</strong>, <strong>"us"</strong>)
+                regarding your use of the Posterium website at
+                <a href={SITE_URL}>posters.spicydevs.xyz</a> and the API at
+                <code>api.spicydevs.xyz</code> (collectively, the <strong>"Service"</strong>).
+              </p>
+              <p>
+                By accessing or using any part of the Service, you confirm that you are
+                at least 13 years of age and that you agree to be bound by these Terms.
+                If you do not agree, you must not use the Service.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 2. The Service ─────────────────────────────────────── -->
+          <section id="the-service" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">02</div>
+            <h2 class="syne-font legal-section-title">The Service</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Posterium is a <strong>free, open-source</strong> image-generation API
+                and visual editor that produces movie and television poster images
+                overlaid with live rating badges from third-party data sources (IMDb,
+                Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MyAnimeList, AniList,
+                and others).
+              </p>
+              <p>
+                The Service is provided <strong>as-is and free of charge</strong> with
+                no account requirement. We reserve the right to modify, suspend, or
+                discontinue the Service at any time and without prior notice. We will
+                make reasonable efforts to maintain availability but make no uptime
+                guarantee.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 3. Acceptable Use ──────────────────────────────────── -->
+          <section id="acceptable-use" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">03</div>
+            <h2 class="syne-font legal-section-title">Acceptable Use</h2>
+            <div class="legal-prose body-font">
+              <p>
+                The Service has no enforced rate limits. This is intentional — we want
+                the API to be usable in media servers, automation workflows, Discord
+                bots, websites, and other integrations without friction.
+              </p>
+              <p>
+                In return, you agree to use the Service <strong>fairly and in good
+                faith</strong>. Acceptable use includes:
+              </p>
+              <ul>
+                <li>Generating poster images for personal media libraries (Plex, Jellyfin, Emby, Kodi, Stremio)</li>
+                <li>Embedding API URLs in personal or commercial websites, applications, and bots</li>
+                <li>Building tools, plugins, or integrations on top of the API</li>
+                <li>Using the visual editor to design and export poster configurations</li>
+                <li>Forking or self-hosting the project under the terms of the MIT Licence</li>
+              </ul>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 4. Prohibited Use ──────────────────────────────────── -->
+          <section id="prohibited-use" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">04</div>
+            <h2 class="syne-font legal-section-title">Prohibited Use</h2>
+            <div class="legal-prose body-font">
+              <p>You must <strong>not</strong>:</p>
+              <ul>
+                <li>
+                  <strong>Abuse the API at scale.</strong> This includes using the API
+                  to bulk-generate or pre-render large volumes of images in a way that
+                  materially degrades performance for other users, or that could
+                  reasonably be characterised as a denial-of-service attack.
+                </li>
+                <li>
+                  <strong>Resell or repackage the API.</strong> You may not operate a
+                  commercial proxy or reselling service that substantially reproduces
+                  the Posterium API's functionality and charges end users for access.
+                  (Self-hosting under the MIT Licence is explicitly permitted.)
+                </li>
+                <li>
+                  <strong>Misrepresent the source of rating data.</strong> Posterium
+                  retrieves rating data from third-party platforms and displays it for
+                  informational purposes. Do not present Posterium-generated ratings as
+                  official, verified, or certified by those platforms.
+                </li>
+                <li>
+                  <strong>Use the Service for illegal purposes</strong> or in any way
+                  that violates applicable laws or regulations in your jurisdiction.
+                </li>
+                <li>
+                  <strong>Attempt to reverse-engineer, circumvent, or disrupt</strong>
+                  any security or access controls protecting the Service.
+                </li>
+                <li>
+                  <strong>Scrape rating data for redistribution.</strong> The Service
+                  generates images intended for display, not a data pipeline for
+                  extracting and redistributing structured rating data at scale.
+                </li>
+              </ul>
+              <p>
+                Violation of these restrictions may result in your IP address or API
+                requests being blocked without notice.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 5. API Keys ────────────────────────────────────────── -->
+          <section id="api-keys" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">05</div>
+            <h2 class="syne-font legal-section-title">API Keys</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Posterium uses shared API keys for TMDB and Fanart.tv on your behalf by
+                default. These shared keys have usage quotas. If your use case requires
+                high-volume requests, you are encouraged to supply your own keys via the
+                builder's settings panel.
+              </p>
+              <p>
+                If you provide your own TMDB or Fanart.tv API keys, you are responsible
+                for complying with those platforms' own terms of service. We accept no
+                liability for suspended or revoked third-party API keys.
+              </p>
+              <p>
+                You must not intentionally exhaust the shared API key quotas in a way
+                that degrades the Service for other users.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 6. IP & Data Rights ────────────────────────────────── -->
+          <section id="ip-and-data" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">06</div>
+            <h2 class="syne-font legal-section-title">Intellectual Property &amp; Data Rights</h2>
+            <div class="legal-prose body-font">
+              <h3 class="syne-font">Posterium software</h3>
+              <p>
+                The Posterium codebase (frontend editor and API worker) is published
+                under the <strong>MIT Licence</strong> and is free to use, modify, and
+                redistribute. See <a href="#open-source">Open-Source Licence</a>.
+              </p>
+
+              <h3 class="syne-font">Poster artwork</h3>
+              <p>
+                Poster images are sourced from TMDB, Fanart.tv, IMDb, and Metahub.
+                These images are the property of their respective copyright holders
+                (studios, distributors, or the platforms themselves). Posterium does
+                not claim ownership of any poster artwork and makes no grant of rights
+                to use that artwork beyond personal, non-commercial display.
+              </p>
+              <p>
+                If you are using Posterium-generated poster images in a commercial
+                context, you are responsible for ensuring you have the appropriate
+                licences to display the underlying artwork.
+              </p>
+
+              <h3 class="syne-font">Rating data</h3>
+              <p>
+                Rating scores are retrieved from third-party platforms and displayed
+                as factual data. Rating data is not copyrightable per se, but the
+                underlying databases may be protected by database rights in some
+                jurisdictions. We do not grant any right to reproduce or redistribute
+                rating data at scale.
+              </p>
+
+              <h3 class="syne-font">Your configurations</h3>
+              <p>
+                Any poster configuration you create using the builder is yours. We do
+                not claim ownership of configurations stored locally in your browser
+                or shared via API URL.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 7. Disclaimers ─────────────────────────────────────── -->
+          <section id="disclaimers" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">07</div>
+            <h2 class="syne-font legal-section-title">Disclaimers</h2>
+            <div class="legal-prose body-font">
+              <p>
+                <strong>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT
+                WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.</strong> To the fullest
+                extent permitted by law, SpicyDevs disclaims all warranties, including
+                but not limited to:
+              </p>
+              <ul>
+                <li>Merchantability or fitness for a particular purpose</li>
+                <li>Accuracy, completeness, or currency of rating data retrieved from third-party sources</li>
+                <li>Uninterrupted, error-free, or secure access to the Service</li>
+                <li>Continued availability of third-party poster artwork sources</li>
+                <li>Compatibility with any specific media server, application, or workflow</li>
+              </ul>
+              <p>
+                Rating scores displayed by the Service are retrieved in real-time from
+                external platforms. We do not verify their accuracy and they may differ
+                from what those platforms currently display due to caching, API delays,
+                or data changes.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 8. Limitation of Liability ─────────────────────────── -->
+          <section id="liability" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">08</div>
+            <h2 class="syne-font legal-section-title">Limitation of Liability</h2>
+            <div class="legal-prose body-font">
+              <p>
+                To the maximum extent permitted by applicable law, SpicyDevs and its
+                contributors shall not be liable for any indirect, incidental, special,
+                consequential, or punitive damages, including but not limited to loss
+                of data, loss of revenue, or business interruption, arising out of or
+                in connection with your use of the Service, even if advised of the
+                possibility of such damages.
+              </p>
+              <p>
+                In jurisdictions that do not allow the exclusion of certain warranties
+                or limitation of liability, our liability is limited to the greatest
+                extent permitted by applicable law. Because the Service is provided
+                free of charge, our aggregate liability to you shall not exceed
+                <strong>USD $0</strong> (zero dollars).
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 9. Third-Party Content ─────────────────────────────── -->
+          <section id="third-party" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">09</div>
+            <h2 class="syne-font legal-section-title">Third-Party Content &amp; Services</h2>
+            <div class="legal-prose body-font">
+              <p>
+                The Service retrieves content from TMDB, Fanart.tv, IMDb, Rotten
+                Tomatoes, Metacritic, Letterboxd, MyAnimeList, and AniList. These
+                services are independent of SpicyDevs and governed by their own terms
+                and policies. We are not responsible for:
+              </p>
+              <ul>
+                <li>Changes to data or APIs made by those platforms</li>
+                <li>Interruptions caused by those platforms' outages</li>
+                <li>The accuracy of ratings, artwork, or metadata sourced from those platforms</li>
+                <li>Any terms-of-service violations you commit on those platforms by using Posterium</li>
+              </ul>
+              <p>
+                The Service infrastructure runs on <strong>Cloudflare Workers</strong>.
+                Use of the Service is also subject to
+                <a href="https://www.cloudflare.com/website-terms/" target="_blank" rel="noreferrer">Cloudflare's Terms of Service</a>.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 10. Open-Source Licence ────────────────────────────── -->
+          <section id="open-source" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">10</div>
+            <h2 class="syne-font legal-section-title">Open-Source Licence</h2>
+            <div class="legal-prose body-font">
+              <p>
+                The Posterium source code is distributed under the
+                <strong>MIT Licence</strong>. A copy of the full licence text is
+                available in the repository:
+              </p>
+              <p>
+                <a href={`${REPO}/blob/main/LICENSE`} target="_blank" rel="noreferrer" class="legal-cta-link syne-font">
+                  github.com/xdaayush/freeposterapi/blob/main/LICENSE →
+                </a>
+              </p>
+              <p>
+                In summary, the MIT Licence permits you to use, copy, modify, merge,
+                publish, distribute, sublicense, and sell copies of the software,
+                provided you include the copyright notice and licence text in all
+                copies or substantial portions of the software.
+              </p>
+              <p>
+                The MIT Licence applies to the <em>software</em> only. It does not
+                grant rights to the poster artwork, rating data, or any third-party
+                content retrieved by the Service. See <a href="#ip-and-data">Intellectual
+                Property &amp; Data Rights</a> above.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 11. Termination ────────────────────────────────────── -->
+          <section id="termination" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">11</div>
+            <h2 class="syne-font legal-section-title">Termination</h2>
+            <div class="legal-prose body-font">
+              <p>
+                We reserve the right to restrict or block access to the Service, at
+                our sole discretion and without prior notice, if we reasonably believe
+                you are violating these Terms or otherwise causing harm to the Service
+                or its users.
+              </p>
+              <p>
+                You may stop using the Service at any time. Because no account exists,
+                no deregistration is required. Clearing your browser's local data for
+                this site removes all locally stored preferences.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 12. Governing Law ───────────────────────────────────── -->
+          <section id="governing-law" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">12</div>
+            <h2 class="syne-font legal-section-title">Governing Law</h2>
+            <div class="legal-prose body-font">
+              <p>
+                These Terms shall be governed by and construed in accordance with the
+                laws of <strong>India</strong>, without regard to its conflict-of-law
+                provisions. Any dispute arising under these Terms shall be subject to
+                the exclusive jurisdiction of the courts located in India.
+              </p>
+              <p>
+                If any provision of these Terms is found to be unenforceable, the
+                remaining provisions shall remain in full force and effect.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 13. Changes to Terms ───────────────────────────────── -->
+          <section id="changes" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">13</div>
+            <h2 class="syne-font legal-section-title">Changes to Terms</h2>
+            <div class="legal-prose body-font">
+              <p>
+                We may update these Terms at any time. Material changes will be
+                reflected in the "Last updated" date at the top of this page and
+                noted in the
+                <a href="https://github.com/xdaayush/freeposterapi/commits/main" target="_blank" rel="noreferrer">repository commit history</a>.
+                Continued use of the Service after changes constitutes acceptance of
+                the revised Terms.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 14. Contact ────────────────────────────────────────── -->
+          <section id="contact" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">14</div>
+            <h2 class="syne-font legal-section-title">Contact</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Questions about these Terms, or to report a violation, please open an
+                issue on GitHub:
+              </p>
+              <p>
+                <a href={CONTACT} target="_blank" rel="noreferrer" class="legal-cta-link syne-font">
+                  github.com/xdaayush/freeposterapi/issues →
+                </a>
+              </p>
+            </div>
+          </section>
+
+        </article>
+      </div><!-- /legal-grid -->
+    </main>
+
+    <!-- ── Footer strip ──────────────────────────────────────────────── -->
+    <footer class="legal-footer">
+      <span class="mono-font">© 2026 SpicyDevs · MIT License</span>
+      <nav style="display:flex;gap:18px;flex-wrap:wrap;" aria-label="Legal navigation">
+        <a href="/privacy" class="mono-font legal-footer-link">Privacy Policy</a>
+        <a href="/terms"   class="mono-font legal-footer-link" aria-current="page">Terms of Service</a>
+        <a href="/"        class="mono-font legal-footer-link">Home</a>
+      </nav>
+    </footer>
+  </div>
+
+</BaseLayout>
+
+<style>
+  /* Reuse identical styles from privacy.astro — both pages share the same
+     legal layout. These are scoped to this component. */
+
+  .legal-hero {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(96px,14vh,140px) clamp(20px,5vw,80px) 0;
+    background: var(--film-black);
+  }
+
+  .legal-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 70% at 12% 50%, rgba(196,124,46,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .legal-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 740px;
+  }
+
+  .legal-title {
+    margin: 14px 0 18px;
+    font-size: clamp(72px, 13vw, 168px);
+    line-height: 0.86;
+    letter-spacing: 0.02em;
+    color: var(--film-cream);
+  }
+
+  .legal-subtitle {
+    font-size: clamp(13px, 1.5vw, 16px);
+    color: var(--film-silver);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 0 20px;
+  }
+
+  .legal-date {
+    font-size: 10px;
+    color: var(--film-text-ghost);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin: 0 0 40px;
+  }
+
+  .legal-hero-rule {
+    margin-top: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--film-amber), rgba(196,124,46,0.12) 70%, transparent);
+    opacity: 0.5;
+  }
+
+  .legal-main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 56px clamp(20px,5vw,80px) 80px;
+  }
+
+  .legal-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .legal-grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+
+  .legal-toc {
+    position: sticky;
+    top: 72px;
+    align-self: start;
+    border: 1px solid rgba(196,124,46,0.14);
+    background: rgba(14,13,11,0.72);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .legal-toc { position: static; }
+  }
+
+  .legal-toc-heading {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--film-text-dim);
+    margin: 0 0 10px;
+  }
+
+  .legal-toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .legal-toc-link {
+    display: block;
+    text-decoration: none;
+    font-size: 11px;
+    color: var(--film-text-label);
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.04em;
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .legal-toc-link:hover {
+    color: var(--film-cream);
+    background: rgba(196,124,46,0.06);
+    border-color: rgba(196,124,46,0.2);
+  }
+
+  .legal-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .legal-section {
+    padding: 32px 0;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 20px;
+  }
+
+  .legal-section-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(196,124,46,0.35);
+    text-transform: uppercase;
+    padding-top: 6px;
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .legal-section-title {
+    margin: 0 0 18px;
+    font-size: clamp(16px, 2.2vw, 22px);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--film-pale);
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+  }
+
+  .legal-prose {
+    grid-row: 2;
+    grid-column: 2;
+    font-size: 14px;
+    line-height: 1.72;
+    color: var(--film-text-body);
+  }
+
+  .legal-prose p { margin: 0 0 14px; }
+  .legal-prose p:last-child { margin-bottom: 0; }
+
+  .legal-prose h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--film-amber);
+    margin: 22px 0 8px;
+  }
+
+  .legal-prose h3:first-child { margin-top: 0; }
+
+  .legal-prose ul, .legal-prose ol {
+    margin: 0 0 14px;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .legal-prose li {
+    color: var(--film-text-label);
+    font-size: 14px;
+  }
+
+  .legal-prose a {
+    color: var(--film-gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(212,162,69,0.3);
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .legal-prose a:hover {
+    color: var(--film-cream);
+    border-bottom-color: var(--film-cream);
+  }
+
+  .legal-prose strong {
+    color: var(--film-cream);
+    font-weight: 600;
+  }
+
+  .legal-prose code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--film-pale);
+  }
+
+  .legal-divider {
+    height: 1px;
+    background: rgba(196,124,46,0.08);
+    margin: 0;
+  }
+
+  .legal-cta-link {
+    font-size: 12px;
+    color: var(--film-amber) !important;
+    border-bottom-color: rgba(196,124,46,0.4) !important;
+    letter-spacing: 0.04em;
+  }
+
+  .legal-footer {
+    border-top: 1px solid rgba(196,124,46,0.08);
+    padding: 16px clamp(20px,5vw,80px);
+    background: rgba(255,255,255,0.01);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .legal-footer .mono-font {
+    font-size: 8px;
+    color: var(--film-text-ghost);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .legal-footer-link {
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .legal-footer-link:hover { color: var(--film-amber) !important; }
+  .legal-footer-link[aria-current="page"] { color: var(--film-amber) !important; }
+
+  @media (max-width: 640px) {
+    .legal-section { grid-template-columns: 1fr; }
+    .legal-section-label { display: none; }
+    .legal-section-title, .legal-prose { grid-column: 1; }
+  }
+</style>

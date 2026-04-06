@@ -1,0 +1,748 @@
+---
+// src/pages/privacy.astro
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import MainNavbar from '@/components/shared/MainNavbar';
+import { AmberTag } from '@/components/shared/primitives';
+import '@/styles/global.css';
+
+const LAST_UPDATED = 'April 6, 2026';
+const SITE_URL     = 'https://posters.spicydevs.xyz';
+const CONTACT      = 'https://github.com/xdaayush/freeposterapi/issues';
+---
+
+<BaseLayout
+  title="Privacy Policy | Posterium"
+  description="Privacy Policy for Posterium — the free movie and TV poster generator with live rating badges."
+  canonical={`${SITE_URL}/privacy`}
+>
+
+  <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
+    <MainNavbar client:load keepSearchOnMobile showMobileBuildCta />
+
+    <!-- ── Page header ─────────────────────────────────────────────────── -->
+    <header class="legal-hero">
+      <div class="legal-hero-inner">
+        <AmberTag>Legal</AmberTag>
+        <h1 class="poster-font legal-title">Privacy<br />Policy</h1>
+        <p class="body-font legal-subtitle">
+          Posterium is built to respect your privacy. This document explains exactly
+          what data is collected, why, and how it is used.
+        </p>
+        <p class="mono-font legal-date">Last updated: {LAST_UPDATED}</p>
+      </div>
+      <div class="legal-hero-rule" aria-hidden="true"></div>
+    </header>
+
+    <!-- ── Content ────────────────────────────────────────────────────── -->
+    <main class="legal-main">
+      <div class="legal-grid">
+
+        <!-- Sticky TOC -->
+        <nav class="legal-toc" aria-label="Privacy policy sections">
+          <p class="syne-font legal-toc-heading">Contents</p>
+          <ol class="legal-toc-list">
+            <li><a href="#overview" class="legal-toc-link hover-cream">Overview</a></li>
+            <li><a href="#data-we-collect" class="legal-toc-link hover-cream">Data We Collect</a></li>
+            <li><a href="#how-we-use-data" class="legal-toc-link hover-cream">How We Use Data</a></li>
+            <li><a href="#cookies" class="legal-toc-link hover-cream">Cookies &amp; Local Storage</a></li>
+            <li><a href="#third-parties" class="legal-toc-link hover-cream">Third-Party Services</a></li>
+            <li><a href="#data-retention" class="legal-toc-link hover-cream">Data Retention</a></li>
+            <li><a href="#your-rights" class="legal-toc-link hover-cream">Your Rights</a></li>
+            <li><a href="#children" class="legal-toc-link hover-cream">Children</a></li>
+            <li><a href="#changes" class="legal-toc-link hover-cream">Policy Changes</a></li>
+            <li><a href="#contact" class="legal-toc-link hover-cream">Contact</a></li>
+          </ol>
+        </nav>
+
+        <!-- Body -->
+        <article class="legal-body">
+
+          <!-- ── 1. Overview ─────────────────────────────────────────── -->
+          <section id="overview" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">01</div>
+            <h2 class="syne-font legal-section-title">Overview</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Posterium (<strong>"we"</strong>, <strong>"our"</strong>, or <strong>"the Service"</strong>)
+                is a free, open-source poster-generation API and visual editor operated by
+                <strong>SpicyDevs</strong>. We do not sell your data. We do not display
+                advertising. We do not require an account to use any part of the Service.
+              </p>
+              <p>
+                By accessing <a href={SITE_URL}>posters.spicydevs.xyz</a> or the API at
+                <code>api.spicydevs.xyz</code>, you agree to this Privacy Policy. If you
+                disagree, please discontinue use of the Service.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 2. Data We Collect ──────────────────────────────────── -->
+          <section id="data-we-collect" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">02</div>
+            <h2 class="syne-font legal-section-title">Data We Collect</h2>
+            <div class="legal-prose body-font">
+
+              <h3 class="syne-font">Automatically collected — API requests</h3>
+              <p>
+                Every request to <code>api.spicydevs.xyz</code> is routed through
+                <strong>Cloudflare Workers</strong> at the network edge. Cloudflare
+                automatically processes your IP address, geographic region (country and
+                city-level), and user-agent string to route traffic and protect against
+                abuse. This data is processed by Cloudflare under their own privacy terms
+                (see <a href="#third-parties">Third-Party Services</a>) and is not directly
+                accessible to us in raw form on a per-request basis.
+              </p>
+              <p>
+                Our internal analytics pipeline additionally records the following aggregated
+                data per API request:
+              </p>
+              <ul>
+                <li>Country of origin (two-letter country code — no city or postal data)</li>
+                <li>Device category inferred from user-agent (desktop, mobile, tablet, TV)</li>
+                <li>Requested media type and format (movie/tv/anime, svg/png/jpg/webp)</li>
+                <li>Which rating badge providers were requested (e.g. <code>r=imdb,rt</code>)</li>
+                <li>Cache hit or miss status</li>
+                <li>Response time bucket (latency band, not exact millisecond)</li>
+              </ul>
+              <p>
+                <strong>We do not log individual IP addresses</strong> in our own database.
+                No data is attributed to a persistent user identifier.
+              </p>
+
+              <h3 class="syne-font">Voluntarily provided — API keys</h3>
+              <p>
+                The visual editor provides optional fields where you can enter your own
+                <strong>TMDB API key</strong> or <strong>Fanart.tv API key</strong> to
+                override the default shared keys. If you enter these values:
+              </p>
+              <ul>
+                <li>They are stored in a <strong>browser cookie</strong> on your device only (<code>posterium_apikeys_v1</code>).</li>
+                <li>They are appended as query parameters to API URLs you generate.</li>
+                <li>They are never transmitted to our servers independently of the URL you construct.</li>
+                <li>We never store, log, or process third-party API keys on our servers.</li>
+              </ul>
+
+              <h3 class="syne-font">Voluntarily provided — builder preferences</h3>
+              <p>
+                The builder stores your most recent poster configuration (badge positions,
+                style settings, selected media) in <strong>browser localStorage</strong>
+                under the key <code>posterium_config_v2</code>. This data never leaves your
+                device unless you explicitly copy an export URL and share it.
+              </p>
+
+              <h3 class="syne-font">What we do not collect</h3>
+              <ul>
+                <li>Names, email addresses, or any contact information</li>
+                <li>Account credentials (there are no accounts)</li>
+                <li>Payment information (the Service is free)</li>
+                <li>Precise location data (only country-level)</li>
+                <li>The specific movie or TV titles you search for or generate posters of</li>
+              </ul>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 3. How We Use Data ──────────────────────────────────── -->
+          <section id="how-we-use-data" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">03</div>
+            <h2 class="syne-font legal-section-title">How We Use Data</h2>
+            <div class="legal-prose body-font">
+              <p>Aggregated analytics data is used exclusively to:</p>
+              <ul>
+                <li>Monitor API availability and performance across global edge nodes</li>
+                <li>Understand which rating sources and export formats are most popular</li>
+                <li>Detect and mitigate abusive traffic patterns</li>
+                <li>Plan infrastructure capacity</li>
+              </ul>
+              <p>
+                We do not use this data for targeted advertising, profiling, or sale to
+                third parties. All analytics are reviewed in aggregate form only.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 4. Cookies & Local Storage ─────────────────────────── -->
+          <section id="cookies" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">04</div>
+            <h2 class="syne-font legal-section-title">Cookies &amp; Local Storage</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Posterium uses the browser storage mechanisms listed below. No third-party
+                tracking cookies are set.
+              </p>
+
+              <div class="legal-table-wrap">
+                <table class="legal-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Purpose</th>
+                      <th>Expiry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>posterium_apikeys_v1</code></td>
+                      <td>Cookie</td>
+                      <td>Stores optional TMDB / Fanart.tv API key overrides you supply</td>
+                      <td>1 year</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_config_v2</code></td>
+                      <td>localStorage</td>
+                      <td>Saves your most recent builder configuration locally</td>
+                      <td>Persistent (until cleared)</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_section_states_v2</code></td>
+                      <td>localStorage</td>
+                      <td>Remembers which inspector panels are expanded or collapsed</td>
+                      <td>Persistent (until cleared)</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_badges_toggle_pref_v1</code></td>
+                      <td>localStorage</td>
+                      <td>Remembers whether badge overlays are toggled on or off</td>
+                      <td>Persistent (until cleared)</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_recent_cmds</code></td>
+                      <td>sessionStorage</td>
+                      <td>Tracks recently used command palette commands this session</td>
+                      <td>Session</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p>
+                You can clear all of the above at any time by clearing your browser's
+                cookies and site data for <code>posters.spicydevs.xyz</code>. Doing so
+                will reset the builder to default settings.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 5. Third-Party Services ────────────────────────────── -->
+          <section id="third-parties" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">05</div>
+            <h2 class="syne-font legal-section-title">Third-Party Services</h2>
+            <div class="legal-prose body-font">
+              <p>
+                The Service integrates with the following external services to function.
+                Each is governed by its own privacy policy.
+              </p>
+
+              <h3 class="syne-font">Cloudflare</h3>
+              <p>
+                All traffic is proxied through Cloudflare's global network for DDoS
+                protection, CDN delivery, and edge compute. Cloudflare processes request
+                metadata (IP addresses, headers) in accordance with their
+                <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Privacy Policy</a>.
+              </p>
+
+              <h3 class="syne-font">TMDB — The Movie Database</h3>
+              <p>
+                Poster artwork, media metadata, and ratings are fetched from the TMDB API
+                when generating poster images. Requests include a shared API key maintained
+                by SpicyDevs (or your own override key if you provide one). TMDB's
+                <a href="https://www.themoviedb.org/privacy-policy" target="_blank" rel="noreferrer">Privacy Policy</a>
+                applies to data originating from their platform.
+              </p>
+
+              <h3 class="syne-font">Fanart.tv</h3>
+              <p>
+                Textless poster artwork and logo overlays are optionally fetched from
+                Fanart.tv. Their
+                <a href="https://fanart.tv/privacy-policy/" target="_blank" rel="noreferrer">Privacy Policy</a>
+                applies. You may supply your own Fanart.tv API key in the builder.
+              </p>
+
+              <h3 class="syne-font">Other rating data providers</h3>
+              <p>
+                Rating data is sourced from IMDb, Rotten Tomatoes, Metacritic, Letterboxd,
+                MyAnimeList, and AniList via public data aggregation. We do not have a data
+                processing relationship with these services — their ratings are displayed
+                informational only and are subject to change at any time.
+              </p>
+
+              <h3 class="syne-font">Google Fonts</h3>
+              <p>
+                The frontend loads fonts (Bebas Neue, Syne, DM Sans, JetBrains Mono) from
+                Google Fonts, which may set its own cookies. See
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google's Privacy Policy</a>.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 6. Data Retention ───────────────────────────────────── -->
+          <section id="data-retention" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">06</div>
+            <h2 class="syne-font legal-section-title">Data Retention</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Aggregated analytics records (country, device type, format, cache status)
+                are retained for a rolling <strong>90-day</strong> window in our
+                Cloudflare Analytics Engine dataset. They are deleted automatically after
+                this period.
+              </p>
+              <p>
+                Data stored in your browser (localStorage, sessionStorage, cookies) is
+                retained until you clear it. There is no server-side copy of this data.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 7. Your Rights ─────────────────────────────────────── -->
+          <section id="your-rights" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">07</div>
+            <h2 class="syne-font legal-section-title">Your Rights</h2>
+            <div class="legal-prose body-font">
+              <p>
+                Because Posterium does not collect personally identifiable information and
+                does not maintain user accounts, there is no personal data profile
+                associated with you on our servers that we can access, export, or delete
+                on request.
+              </p>
+              <p>
+                Data stored in your own browser is entirely under your control — you can
+                delete it at any time via your browser settings. If you have questions or
+                concerns, please <a href={CONTACT} target="_blank" rel="noreferrer">open a GitHub issue</a>.
+              </p>
+              <p>
+                If you are located in the European Economic Area or the United Kingdom and
+                believe any data processing affects you, you may have rights under the GDPR
+                or UK GDPR. Given the absence of personal data collection described above,
+                these rights are unlikely to be applicable to the Service, but we are
+                committed to responding to any enquiry in good faith.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 8. Children ────────────────────────────────────────── -->
+          <section id="children" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">08</div>
+            <h2 class="syne-font legal-section-title">Children</h2>
+            <div class="legal-prose body-font">
+              <p>
+                The Service is not directed at children under 13 years of age. We do not
+                knowingly collect data from children. If you believe a child has submitted
+                data through the Service, please contact us and we will address the
+                concern promptly.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 9. Policy Changes ───────────────────────────────────── -->
+          <section id="changes" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">09</div>
+            <h2 class="syne-font legal-section-title">Policy Changes</h2>
+            <div class="legal-prose body-font">
+              <p>
+                We may update this policy to reflect changes to our practices or for legal
+                reasons. Material changes will be noted in the
+                <a href="https://github.com/xdaayush/freeposterapi/commits/main" target="_blank" rel="noreferrer">repository commit history</a>
+                and the "Last updated" date at the top of this page will be revised.
+                Continued use of the Service after changes constitutes acceptance of the
+                updated policy.
+              </p>
+            </div>
+          </section>
+
+          <div class="legal-divider" aria-hidden="true"></div>
+
+          <!-- ── 10. Contact ────────────────────────────────────────── -->
+          <section id="contact" class="legal-section" style="scroll-margin-top:80px;">
+            <div class="legal-section-label syne-font">10</div>
+            <h2 class="syne-font legal-section-title">Contact</h2>
+            <div class="legal-prose body-font">
+              <p>
+                For privacy-related questions or to report a concern, please open an issue
+                on the project repository:
+              </p>
+              <p>
+                <a href={CONTACT} target="_blank" rel="noreferrer" class="legal-cta-link syne-font">
+                  github.com/xdaayush/freeposterapi/issues →
+                </a>
+              </p>
+            </div>
+          </section>
+
+        </article>
+      </div><!-- /legal-grid -->
+    </main>
+
+    <!-- ── Footer strip ────────────────────────────────────────────────── -->
+    <footer class="legal-footer">
+      <span class="mono-font">© 2026 SpicyDevs · MIT License</span>
+      <nav style="display:flex;gap:18px;flex-wrap:wrap;" aria-label="Legal navigation">
+        <a href="/privacy" class="mono-font legal-footer-link" aria-current="page">Privacy Policy</a>
+        <a href="/terms"   class="mono-font legal-footer-link">Terms of Service</a>
+        <a href="/"        class="mono-font legal-footer-link">Home</a>
+      </nav>
+    </footer>
+  </div>
+
+</BaseLayout>
+
+<style>
+  /* ── Hero ────────────────────────────────────────────────────────── */
+  .legal-hero {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(96px,14vh,140px) clamp(20px,5vw,80px) 0;
+    background: var(--film-black);
+  }
+
+  .legal-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 70% at 12% 50%, rgba(196,124,46,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .legal-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 740px;
+  }
+
+  .legal-title {
+    margin: 14px 0 18px;
+    font-size: clamp(72px, 13vw, 168px);
+    line-height: 0.86;
+    letter-spacing: 0.02em;
+    color: var(--film-cream);
+  }
+
+  .legal-subtitle {
+    font-size: clamp(13px, 1.5vw, 16px);
+    color: var(--film-silver);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 0 20px;
+  }
+
+  .legal-date {
+    font-size: 10px;
+    color: var(--film-text-ghost);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin: 0 0 40px;
+  }
+
+  .legal-hero-rule {
+    margin-top: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--film-amber), rgba(196,124,46,0.12) 70%, transparent);
+    opacity: 0.5;
+  }
+
+  /* ── Main grid ───────────────────────────────────────────────────── */
+  .legal-main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 56px clamp(20px,5vw,80px) 80px;
+  }
+
+  .legal-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .legal-grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+
+  /* ── TOC ─────────────────────────────────────────────────────────── */
+  .legal-toc {
+    position: sticky;
+    top: 72px;
+    align-self: start;
+    border: 1px solid rgba(196,124,46,0.14);
+    background: rgba(14,13,11,0.72);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .legal-toc {
+      position: static;
+    }
+  }
+
+  .legal-toc-heading {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--film-text-dim);
+    margin: 0 0 10px;
+  }
+
+  .legal-toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    counter-reset: toc;
+  }
+
+  .legal-toc-link {
+    display: block;
+    text-decoration: none;
+    font-size: 11px;
+    color: var(--film-text-label);
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.04em;
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .legal-toc-link:hover {
+    color: var(--film-cream);
+    background: rgba(196,124,46,0.06);
+    border-color: rgba(196,124,46,0.2);
+  }
+
+  /* ── Body ─────────────────────────────────────────────────────────── */
+  .legal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .legal-section {
+    padding: 32px 0;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 20px;
+  }
+
+  .legal-section-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(196,124,46,0.35);
+    text-transform: uppercase;
+    padding-top: 6px;
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .legal-section-title {
+    margin: 0 0 18px;
+    font-size: clamp(16px, 2.2vw, 22px);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--film-pale);
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+  }
+
+  .legal-prose {
+    grid-row: 2;
+    grid-column: 2;
+    font-size: 14px;
+    line-height: 1.72;
+    color: var(--film-text-body);
+  }
+
+  .legal-prose p {
+    margin: 0 0 14px;
+  }
+
+  .legal-prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  .legal-prose h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--film-amber);
+    margin: 22px 0 8px;
+  }
+
+  .legal-prose h3:first-child {
+    margin-top: 0;
+  }
+
+  .legal-prose ul, .legal-prose ol {
+    margin: 0 0 14px;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .legal-prose li {
+    color: var(--film-text-label);
+    font-size: 14px;
+  }
+
+  .legal-prose a {
+    color: var(--film-gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(212,162,69,0.3);
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .legal-prose a:hover {
+    color: var(--film-cream);
+    border-bottom-color: var(--film-cream);
+  }
+
+  .legal-prose strong {
+    color: var(--film-cream);
+    font-weight: 600;
+  }
+
+  .legal-prose code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--film-pale);
+  }
+
+  /* ── Table ─────────────────────────────────────────────────────── */
+  .legal-table-wrap {
+    overflow-x: auto;
+    margin: 14px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(196,124,46,0.16);
+  }
+
+  .legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .legal-table th,
+  .legal-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(196,124,46,0.1);
+  }
+
+  .legal-table th {
+    background: rgba(196,124,46,0.07);
+    color: var(--film-pale);
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .legal-table td {
+    color: var(--film-text-label);
+  }
+
+  .legal-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .legal-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 3px;
+    padding: 1px 4px;
+    color: var(--film-pale);
+    white-space: nowrap;
+  }
+
+  /* ── Divider ─────────────────────────────────────────────────────── */
+  .legal-divider {
+    height: 1px;
+    background: rgba(196,124,46,0.08);
+    margin: 0;
+  }
+
+  /* ── CTA link ────────────────────────────────────────────────────── */
+  .legal-cta-link {
+    font-size: 12px;
+    color: var(--film-amber) !important;
+    border-bottom-color: rgba(196,124,46,0.4) !important;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  .legal-footer {
+    border-top: 1px solid rgba(196,124,46,0.08);
+    padding: 16px clamp(20px,5vw,80px);
+    background: rgba(255,255,255,0.01);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .legal-footer .mono-font {
+    font-size: 8px;
+    color: var(--film-text-ghost);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .legal-footer-link {
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .legal-footer-link:hover {
+    color: var(--film-amber) !important;
+  }
+
+  .legal-footer-link[aria-current="page"] {
+    color: var(--film-amber) !important;
+  }
+
+  /* ── Mobile ──────────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .legal-section {
+      grid-template-columns: 1fr;
+    }
+    .legal-section-label {
+      display: none;
+    }
+    .legal-section-title,
+    .legal-prose {
+      grid-column: 1;
+    }
+  }
+</style>

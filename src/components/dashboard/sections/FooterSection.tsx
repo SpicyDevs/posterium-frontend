@@ -11,6 +11,11 @@ const FOOTER_LINKS = [
   ['API Docs', '#combined'],
 ] as const;
 
+const LEGAL_LINKS = [
+  ['Privacy Policy', '/privacy'],
+  ['Terms of Service', '/terms'],
+] as const;
+
 const SprocketEdge = memo<{ border: 'borderTop' | 'borderBottom' }>(({ border }) => (
   <div
     style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}
@@ -127,6 +132,7 @@ export const FooterSection = memo(() => (
         }}
       />
 
+      {/* ── Main nav links ────────────────────────────────────────────── */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px)',
@@ -190,6 +196,7 @@ export const FooterSection = memo(() => (
         }}
       />
 
+      {/* ── Bottom bar: copyright + legal links + GitHub ─────────────── */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px) clamp(40px,5vw,60px)',
@@ -200,50 +207,97 @@ export const FooterSection = memo(() => (
           gap: 16,
         }}
       >
+        {/* Left: metadata + legal links */}
         <div
           style={{
             display: 'flex',
-            gap: 'clamp(16px,3vw,36px)',
-            flexWrap: 'wrap',
-            alignItems: 'center',
+            flexDirection: 'column',
+            gap: 10,
           }}
         >
-          {[
-            ['PROD', 'SpicyDevs'],
-            ['DIR', 'Aayu5h'],
-            ['REL', '2.0'],
-            ['LIC', 'MIT'],
-            [`© 2026`, ''],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span
-                className="mono-font"
-                style={{
-                  fontSize: 7,
-                  color: 'rgba(196,124,46,0.38)',
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {k}
-              </span>
-              {v ? (
+          <div
+            style={{
+              display: 'flex',
+              gap: 'clamp(16px,3vw,36px)',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+            }}
+          >
+            {[
+              ['PROD', 'SpicyDevs'],
+              ['DIR', 'Aayu5h'],
+              ['REL', '2.0'],
+              ['LIC', 'MIT'],
+              [`© 2026`, ''],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                 <span
-                  className="syne-font"
+                  className="mono-font"
                   style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: 'rgba(110,104,96,0.45)',
-                    letterSpacing: '0.05em',
+                    fontSize: 7,
+                    color: 'rgba(196,124,46,0.38)',
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
                   }}
                 >
-                  {v}
+                  {k}
                 </span>
-              ) : null}
-            </div>
-          ))}
+                {v ? (
+                  <span
+                    className="syne-font"
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: 'rgba(110,104,96,0.45)',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {v}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {/* Legal links row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            {LEGAL_LINKS.map(([label, href], i) => (
+              <span key={label}>
+                <a
+                  href={href}
+                  className="hover-amber"
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    color: 'rgba(110,104,96,0.42)',
+                    fontFamily: 'Syne, sans-serif',
+                    transition: 'color 0.18s',
+                  }}
+                >
+                  {label}
+                </a>
+                {i < LEGAL_LINKS.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      margin: '0 12px',
+                      color: 'rgba(196,124,46,0.15)',
+                      fontSize: 8,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    ·
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
         </div>
 
+        {/* Right: GitHub */}
         <a
           href="https://github.com/xdaayush/freeposterapi"
           target="_blank"
