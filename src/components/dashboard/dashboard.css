@@ -209,10 +209,7 @@ nav a.syne-font {
 }
 
 body.disable-animations .hero-anims-active .h-a1,
-body.disable-animations .hero-anims-active .h-a2,
-body.disable-animations .hero-anims-active .h-a3,
-body.disable-animations .hero-anims-active .h-a4,
-body.disable-animations .hero-anims-active .h-a5 {
+body.disable-animations .hero-anims-active .h-a2 {
   animation: none;
   opacity: 1;
   transform: none;
