@@ -70,6 +70,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
   const f = FEATURES[active];
   return (
     <div
+      className="combined-features-pane"
       style={{
         display: 'grid',
         gridTemplateColumns: 'clamp(200px,34%,300px) 1fr',
@@ -77,7 +78,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
         minHeight: 400,
       }}
     >
-      <div style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="combined-features-list" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
         {FEATURES.map((feat, i) => {
           const isActive = active === i;
           return (
@@ -164,6 +165,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
       </div>
       <div
         key={active}
+        className="combined-features-detail"
         style={{
           padding: 'clamp(20px,3vw,36px)',
           display: 'flex',
