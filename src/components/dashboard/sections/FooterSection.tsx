@@ -107,13 +107,13 @@ export const FooterSection = memo(() => (
 
           <p
             className="syne-font"
-            style={{
-              fontSize: 'clamp(12px,1.6vw,16px)',
-              color: 'rgba(110,104,96,0.7)',
-              lineHeight: 1.7,
-              maxWidth: 520,
-              marginBottom: 0,
-            }}
+                style={{
+                  fontSize: 'clamp(12px,1.6vw,16px)',
+                  color: 'rgba(205,195,178,0.78)',
+                  lineHeight: 1.7,
+                  maxWidth: 520,
+                  marginBottom: 0,
+                }}
           >
             Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No
             account. No rate limits.
@@ -151,17 +151,17 @@ export const FooterSection = memo(() => (
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noreferrer' : undefined}
                 className={external ? 'hover-amber' : 'hover-cream'}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  color: 'rgba(110,104,96,0.55)',
-                  fontFamily: 'Syne, sans-serif',
-                  padding: '5px 0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    color: 'rgba(212,198,172,0.74)',
+                    fontFamily: 'Syne, sans-serif',
+                    padding: '5px 0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
                   gap: 4,
                   transition: 'color 0.18s',
                 }}
@@ -248,7 +248,7 @@ export const FooterSection = memo(() => (
                     style={{
                       fontSize: 9,
                       fontWeight: 700,
-                      color: 'rgba(110,104,96,0.45)',
+                      color: 'rgba(212,198,172,0.68)',
                       letterSpacing: '0.05em',
                     }}
                   >
@@ -266,16 +266,16 @@ export const FooterSection = memo(() => (
                 <a
                   href={href}
                   className="hover-amber"
-                  style={{
-                    fontSize: 8,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    textDecoration: 'none',
-                    color: 'rgba(110,104,96,0.42)',
-                    fontFamily: 'Syne, sans-serif',
-                    transition: 'color 0.18s',
-                  }}
+                   style={{
+                     fontSize: 8,
+                     fontWeight: 700,
+                     letterSpacing: '0.1em',
+                     textTransform: 'uppercase',
+                     textDecoration: 'none',
+                     color: 'rgba(212,198,172,0.64)',
+                     fontFamily: 'Syne, sans-serif',
+                     transition: 'color 0.18s',
+                   }}
                 >
                   {label}
                 </a>
@@ -345,7 +345,7 @@ export const FooterSection = memo(() => (
         className="mono-font"
         style={{
           fontSize: 7,
-          color: 'rgba(122,117,110,0.2)',
+          color: 'rgba(212,198,172,0.5)',
           letterSpacing: '0.14em',
           textTransform: 'uppercase',
         }}
