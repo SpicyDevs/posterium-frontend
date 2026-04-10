@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/user-attachments/assets/5588f8f3-9cad-427c-a44c-6636ebaac61b" alt="Posterium Banner" width="100%" style="border-radius: 12px;" />
+<img src="#" alt="Posterium Banner" width="100%" style="border-radius: 12px;" />
 
 <br />
 <br />
@@ -14,35 +14,35 @@ Drag. Drop. Copy URL. Done.</p>
 
 <!-- Badges row 1: Status -->
 
-[![Live Site](https://img.shields.io/badge/Live%20Site-posters.spicydevs.xyz-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://posters.spicydevs.xyz)
-[![API](https://img.shields.io/badge/API-api.spicydevs.xyz-10b981?style=for-the-badge&logo=cloudflare&logoColor=white)](https://api.spicydevs.xyz)
-[![License](https://img.shields.io/github/license/xdaayush/freeposterapi?style=for-the-badge&color=f59e0b)](LICENSE)
+[![Live Site](#)](#)
+[![API](#)](#)
+[![License](#)](#)
 
 <br />
 
 <!-- Badges row 2: Repo stats -->
 
-[![Stars](https://img.shields.io/github/stars/xdaayush/freeposterapi?style=for-the-badge&logo=github&color=facc15&labelColor=18181b)](https://github.com/xdaayush/freeposterapi/stargazers)
-[![Forks](https://img.shields.io/github/forks/xdaayush/freeposterapi?style=for-the-badge&logo=github&color=818cf8&labelColor=18181b)](https://github.com/xdaayush/freeposterapi/network/members)
-[![Issues](https://img.shields.io/github/issues/xdaayush/freeposterapi?style=for-the-badge&logo=github&color=f87171&labelColor=18181b)](https://github.com/xdaayush/freeposterapi/issues)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-34d399?style=for-the-badge&logo=github&logoColor=white&labelColor=18181b)](https://github.com/xdaayush/freeposterapi/pulls)
+[![Stars](#)](#)
+[![Forks](#)](#)
+[![Issues](#)](#)
+[![PRs Welcome](#)](#)
 
 <br />
 
 <!-- Badges row 3: Tech stack -->
 
-![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare_Workers-API-f6821f?style=flat-square&logo=cloudflare&logoColor=white)
+![React](#)
+![TypeScript](#)
+![Vite](#)
+![Tailwind CSS](#)
+![Cloudflare Workers](#)
 
 <br />
 
 <!-- Support -->
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-dikhit-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/dikhit)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-ikrdikhit-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/ikrdikhit)
+[![Buy Me a Coffee](#)](#)
+[![GitHub Sponsors](#)](#)
 
 </div>
 
@@ -55,7 +55,7 @@ Posterium is a **free, open-source visual editor** that generates custom movie a
 Search any title, drag rating badges to exactly where you want them, tweak the glassmorphism effects, then copy one URL that works in Plex, Jellyfin, Discord bots, Notion, or any image tag on the web. No account. No rate limits. No nonsense.
 
 ```
-https://api.spicydevs.xyz/movie/453395.png
+#
   ?r=imdb,rt,meta,tmdb
   &blur=8&alpha=0.45&rad=12
   &imdb_x=310&imdb_y=20
@@ -102,7 +102,7 @@ That URL above is a fully rendered poster image - live ratings included - return
 
 The fastest way is to use the live editor - no setup required.
 
-1. Go to **[posters.spicydevs.xyz/build](https://posters.spicydevs.xyz/build)**
+1. Go to **[posters.project-team.xyz/build](#)**
 2. Search for a movie or TV show in the **Source** panel on the left
 3. Toggle badges on/off in the **Layers** panel and drag them on the canvas
 4. Tweak glass effects in the **Canvas / Badge** inspector on the right
@@ -112,23 +112,23 @@ The fastest way is to use the live editor - no setup required.
 
 ## 🏠 Self-Hosting
 
-> See [**SELFHOST.md**](SELFHOST.md) for the full detailed guide. A quick overview is below.
+> See [**SELFHOST.md**](#) for the full detailed guide. A quick overview is below.
 
 Posterium is split into two parts: this **frontend editor** (React/Vite) and a separate **Cloudflare Worker** that powers the API. You can self-host the frontend and point it at the public API, or deploy the full stack yourself.
 
 ### Frontend Only (5 minutes)
 
 ```bash
-git clone https://github.com/xdaayush/freeposterapi.git
+git clone #
 cd freeposterapi
 npm install
-npm run dev          # → http://localhost:5173
+npm run dev          # → #localhost:5173
 ```
 
 To point the editor at a custom API, create a `.env.local` file:
 
 ```env
-VITE_API_URL=https://your-api-worker.workers.dev
+VITE_API_URL=#
 ```
 
 ### Build for Production
@@ -146,7 +146,7 @@ Deploy the `/dist` folder to Vercel, Netlify, Cloudflare Pages, or any static ho
 The API endpoint format is:
 
 ```
-https://api.spicydevs.xyz/{type}/{id}.{ext}
+#
 ```
 
 where `type` is `movie`, `tv`, or `anime`, `id` is the TMDB or IMDb ID, and `ext` is `svg`, `png`, `jpg`, or `webp`.
@@ -217,9 +217,9 @@ Posterium is free and will stay free. If it saves you time or brings you joy, co
 
 <div align="center">
 
-[![Buy Me a Coffee](https://img.shields.io/badge/☕%20Buy%20Me%20a%20Coffee-dikhit-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/dikhit)
+[![Buy Me a Coffee](#)](#)
 
-[![GitHub Sponsors](https://img.shields.io/badge/💖%20Sponsor%20on%20GitHub-ikrdikhit-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/ikrdikhit)
+[![GitHub Sponsors](#)](#)
 
 ⭐ **Starring the repo is free and helps more people discover the project!**
 
@@ -229,10 +229,10 @@ Posterium is free and will stay free. If it saves you time or brings you joy, co
 
 ## 📄 License
 
-MIT © [SpicyDevs](https://spicydevs.xyz)
+MIT © [Project Team](#)
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://spicydevs.xyz">SpicyDevs</a> · <a href="https://posters.spicydevs.xyz">Live Editor</a> · <a href="https://github.com/xdaayush/freeposterapi">GitHub</a></sub>
+  <sub>Built with ❤️ by <a href="#">Project Team</a> · <a href="#">Live Editor</a> · <a href="#">GitHub</a></sub>
 </div>

@@ -5,9 +5,9 @@ import { SprocketStrip } from '../primitives';
 
 const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
-  ['GitHub', 'https://github.com/xdaayush/freeposterapi', true],
-  ['SpicyDevs', 'https://spicydevs.xyz', true],
-  ['MIT License', 'https://github.com/xdaayush/freeposterapi/blob/main/LICENSE', true],
+  ['Project Repo', '#', false],
+  ['Project Team', '#', false],
+  ['MIT License', '#', false],
   ['API Docs', '#combined'],
 ] as const;
 
@@ -107,13 +107,13 @@ export const FooterSection = memo(() => (
 
           <p
             className="syne-font"
-                style={{
-                  fontSize: 'clamp(12px,1.6vw,16px)',
-                  color: 'rgba(205,195,178,0.78)',
-                  lineHeight: 1.7,
-                  maxWidth: 520,
-                  marginBottom: 0,
-                }}
+            style={{
+              fontSize: 'clamp(12px,1.6vw,16px)',
+              color: 'rgba(205,195,178,0.78)',
+              lineHeight: 1.7,
+              maxWidth: 520,
+              marginBottom: 0,
+            }}
           >
             Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No
             account. No rate limits.
@@ -151,17 +151,17 @@ export const FooterSection = memo(() => (
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noreferrer' : undefined}
                 className={external ? 'hover-amber' : 'hover-cream'}
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    textDecoration: 'none',
-                    color: 'rgba(212,198,172,0.74)',
-                    fontFamily: 'Syne, sans-serif',
-                    padding: '5px 0',
-                    display: 'inline-flex',
-                    alignItems: 'center',
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                  color: 'rgba(212,198,172,0.74)',
+                  fontFamily: 'Syne, sans-serif',
+                  padding: '5px 0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
                   gap: 4,
                   transition: 'color 0.18s',
                 }}
@@ -224,8 +224,8 @@ export const FooterSection = memo(() => (
             }}
           >
             {[
-              ['PROD', 'SpicyDevs'],
-              ['DIR', 'Aayu5h'],
+              ['PROD', 'Project Team'],
+              ['DIR', 'Core Team'],
               ['REL', '2.0'],
               ['LIC', 'MIT'],
               [`© 2026`, ''],
@@ -266,16 +266,16 @@ export const FooterSection = memo(() => (
                 <a
                   href={href}
                   className="hover-amber"
-                   style={{
-                     fontSize: 8,
-                     fontWeight: 700,
-                     letterSpacing: '0.1em',
-                     textTransform: 'uppercase',
-                     textDecoration: 'none',
-                     color: 'rgba(212,198,172,0.64)',
-                     fontFamily: 'Syne, sans-serif',
-                     transition: 'color 0.18s',
-                   }}
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    color: 'rgba(212,198,172,0.64)',
+                    fontFamily: 'Syne, sans-serif',
+                    transition: 'color 0.18s',
+                  }}
                 >
                   {label}
                 </a>
@@ -299,9 +299,7 @@ export const FooterSection = memo(() => (
 
         {/* Right: GitHub */}
         <a
-          href="https://github.com/xdaayush/freeposterapi"
-          target="_blank"
-          rel="noreferrer"
+          href="#"
           style={{
             display: 'inline-flex',
             alignItems: 'center',

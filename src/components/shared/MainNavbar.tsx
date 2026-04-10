@@ -219,10 +219,8 @@ const MainNavbar = memo<MainNavbarProps>(
             style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
           >
             <a
-              href="https://buymeacoffee.com/dikhit"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Buy me a coffee"
+              href="#"
+              aria-label="Support"
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',
@@ -246,10 +244,8 @@ const MainNavbar = memo<MainNavbarProps>(
             </a>
 
             <a
-              href="https://github.com/xdaayush/freeposterapi"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="GitHub"
+              href="#"
+              aria-label="Repository"
               className="nav-desktop-item hover-cream"
               style={{
                 color: 'rgba(200, 185, 155, 0.78)',

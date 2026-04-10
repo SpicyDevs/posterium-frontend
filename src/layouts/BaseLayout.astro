@@ -12,7 +12,7 @@ const {
   title,
   description,
   canonical,
-  ogImage = 'https://posters.spicydevs.xyz/og-image.png',
+  ogImage = '/og-image.png',
   noindex = false,
   bodyClass,
 } = Astro.props;
@@ -35,15 +35,15 @@ const {
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-   <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=block" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" />
+   <link rel="preconnect" href="#" />
+    <link rel="preconnect" href="#" crossorigin />
+    <link rel="stylesheet" href="#" />
+    <link rel="stylesheet" href="#" />
 
-    <link rel="preconnect" href="https://api.spicydevs.xyz" />
-    <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
-    <link rel="dns-prefetch" href="https://api.spicydevs.xyz" />
-    <link rel="dns-prefetch" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="#" />
+    <link rel="preconnect" href="#" crossorigin />
+    <link rel="dns-prefetch" href="#" />
+    <link rel="dns-prefetch" href="#" />
 
     <slot name="head" />
   </head>
@@ -52,7 +52,7 @@ const {
       <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
         <p>Generate custom movie and TV show posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, TMDB — all from a single API URL.</p>
-        <p>Visit <a href="https://posters.spicydevs.xyz/build">posters.spicydevs.xyz/build</a> to open the visual editor.</p>
+        <p>Visit <a href="#">posters.spicydevs.xyz/build</a> to open the visual editor.</p>
       </div>
     </noscript>
     <slot />

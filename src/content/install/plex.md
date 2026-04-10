@@ -13,8 +13,8 @@ showcaseImages:
 
 ![Plex setup preview](/placeholders/install-desktop.svg)
 
-[![Plex](https://img.shields.io/badge/Plex-Client-F5A623?style=for-the-badge&logo=plex)](https://www.plex.tv/)
-[![Posterium](https://img.shields.io/badge/Posterium-Open%20Source-C47C2E?style=for-the-badge)](https://posters.spicydevs.xyz)
+[![Plex](#)](#)
+[![Posterium](#)](#)
 
 Use this flow to connect Posterium generated posters inside Plex metadata workflows.
 
