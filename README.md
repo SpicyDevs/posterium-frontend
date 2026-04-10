@@ -119,10 +119,10 @@ Posterium is split into two parts: this **frontend editor** (React/Vite) and a s
 ### Frontend Only (5 minutes)
 
 ```bash
-git clone #
+git clone <REPOSITORY_URL>
 cd freeposterapi
 npm install
-npm run dev          # → #localhost:5173
+npm run dev          # → http://localhost:5173
 ```
 
 To point the editor at a custom API, create a `.env.local` file:

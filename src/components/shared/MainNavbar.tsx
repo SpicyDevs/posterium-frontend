@@ -220,7 +220,9 @@ const MainNavbar = memo<MainNavbarProps>(
           >
             <a
               href="#"
-              aria-label="Support"
+              onClick={(event) => event.preventDefault()}
+              aria-hidden="true"
+              tabIndex={-1}
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',
@@ -245,7 +247,9 @@ const MainNavbar = memo<MainNavbarProps>(
 
             <a
               href="#"
-              aria-label="Repository"
+              onClick={(event) => event.preventDefault()}
+              aria-hidden="true"
+              tabIndex={-1}
               className="nav-desktop-item hover-cream"
               style={{
                 color: 'rgba(200, 185, 155, 0.78)',
