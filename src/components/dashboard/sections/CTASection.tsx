@@ -8,7 +8,7 @@ const STRIPE_INDICES = Array.from({ length: 28 }, (_, i) => i);
 
 const SLATE_FIELDS = [
   ['PROD', 'POSTERIUM'],
-  ['DIR', 'SPICYDEVS'],
+  ['DIR', 'PROJECT TEAM'],
   ['SCENE', 'CTA'],
   ['TAKE', '1'],
   ['ROLL', '01'],
@@ -172,7 +172,7 @@ export const CTASection = memo(() => {
             Open Free Builder <ArrowRight size={13} />
           </a>
           <a
-            href="https://github.com/spicydevs/posterium"
+            href="#"
             target="_blank"
             rel="noreferrer"
             className="syne-font border-hover-amber"
@@ -192,7 +192,7 @@ export const CTASection = memo(() => {
               background: 'rgba(255,255,255,0.025)',
             }}
           >
-            <Github size={13} /> Star on GitHub{' '}
+            <Github size={13} /> Star Project{' '}
             <Star size={10} color="var(--film-amber)" fill="var(--film-amber)" />
           </a>
         </div>

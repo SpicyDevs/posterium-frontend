@@ -11,13 +11,13 @@ export const SITE_CONFIG = {
   apiBase: 'https://api.spicydevs.xyz',
   themeColor: '#0a0a0a',
   locale: 'en_US',
-  twitterHandle: '@spicydevs',
-  github: 'https://github.com/xdaayush/freeposterapi',
+  twitterHandle: '@project',
+  github: '#',
   ogImageUrl: 'https://posters.spicydevs.xyz/og-image.png',
   ogImageWidth: 1200,
   ogImageHeight: 630,
-  author: 'SpicyDevs',
-  authorUrl: 'https://spicydevs.xyz',
+  author: 'Project Team',
+  authorUrl: '#',
 } as const;
 
 // ── Shared sub-types ──────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export const SEO_DEFAULTS: {
 const ORGANIZATION_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'SpicyDevs',
+  name: 'Project Team',
   url: SITE_CONFIG.authorUrl,
   sameAs: [SITE_CONFIG.github],
 };
@@ -119,7 +119,7 @@ const SOFTWARE_APP_SCHEMA = {
   operatingSystem: 'Web Browser',
   browserRequirements: 'Requires JavaScript. Requires a modern browser.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  author: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+  author: { '@type': 'Organization', name: 'Project Team', url: SITE_CONFIG.authorUrl },
   description:
     'Free online movie and TV poster generator with live rating badges from IMDb, ' +
     'Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. No account required.',
@@ -155,7 +155,7 @@ const WEBSITE_SCHEMA = {
   url: `${SITE_CONFIG.baseUrl}/`,
   description:
     'Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.',
-  publisher: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+  publisher: { '@type': 'Organization', name: 'Project Team', url: SITE_CONFIG.authorUrl },
   potentialAction: {
     '@type': 'SearchAction',
     target: {
@@ -285,7 +285,7 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
         applicationCategory: 'DesignApplication',
         operatingSystem: 'Web Browser',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-        author: { '@type': 'Organization', name: 'SpicyDevs', url: SITE_CONFIG.authorUrl },
+        author: { '@type': 'Organization', name: 'Project Team', url: SITE_CONFIG.authorUrl },
         description:
           'Visual drag-and-drop editor for building custom movie and TV posters with ' +
           'live rating badge overlays. Real-time preview with instant API URL export.',

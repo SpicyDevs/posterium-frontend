@@ -108,10 +108,8 @@ const Nav = memo(() => {
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <a
-            href="https://github.com/xdaayush/freeposterapi"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
+            href="#"
+            aria-label="Repository"
             className="nav-links-desktop hover-cream"
             style={GITHUB_BASE}
           >
@@ -224,9 +222,7 @@ const Nav = memo(() => {
             Open Builder
           </a>
           <a
-            href="https://github.com/xdaayush/freeposterapi"
-            target="_blank"
-            rel="noreferrer"
+            href="#"
             onClick={closeMenu}
             className="syne-font"
             style={{
@@ -243,7 +239,7 @@ const Nav = memo(() => {
               marginTop: 2,
             }}
           >
-            <Github size={13} /> GitHub
+            <Github size={13} /> Repository
           </a>
         </div>
       )}

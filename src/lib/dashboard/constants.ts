@@ -412,7 +412,7 @@ export const USE_CASES: UseCase[] = [
     title: 'Notion & Obsidian',
     tags: ['Notion', 'Obsidian', 'Databases'],
     desc: 'Embed live poster images directly in watchlist databases and movie notes. Scores update in the image - no manual edits.',
-    codeSnippet: '![poster](https://api.spicydevs.xyz/movie/238.svg?r=imdb)',
+    codeSnippet: '![poster](#)',
     previewId: '238',
     previewType: 'movie',
     previewBadges: 'imdb',
