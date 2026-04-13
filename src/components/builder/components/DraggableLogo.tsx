@@ -159,7 +159,6 @@ const DraggableLogo: React.FC<Props> = ({
               : '1.5px dashed rgba(255,255,255,0.12)',
           outlineOffset: 3,
           borderRadius: hasStandaloneBorder ? config.logoBgRadius : 2,
-          border: hasStandaloneBorder ? `${config.logoBgBorderW}px solid ${bgBorderColor}` : 'none',
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
       >
@@ -172,10 +171,22 @@ const DraggableLogo: React.FC<Props> = ({
               background: config.logoBgColor ?? '#000000',
               opacity: config.logoBgOpacity,
               boxShadow: bgShadow,
-              border:
+              outline:
                 config.logoBgBorderW > 0
                   ? `${config.logoBgBorderW}px solid ${bgBorderColor}`
                   : 'none',
+              outlineOffset: 0,
+            }}
+          />
+        )}
+        {hasStandaloneBorder && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              inset: 0,
+              borderRadius: config.logoBgRadius,
+              outline: `${config.logoBgBorderW}px solid ${bgBorderColor}`,
+              outlineOffset: 0,
             }}
           />
         )}
