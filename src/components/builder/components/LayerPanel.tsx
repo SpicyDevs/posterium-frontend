@@ -25,7 +25,6 @@ import {
   KeyRound,
   ChevronRight,
   Monitor,
-  Download,
   ShieldCheck,
   Grid3x3,
   Magnet,
@@ -1612,25 +1611,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </div>
           </Section>
 
-          <Section title="Export" icon={<Download size={13} />} defaultOpen>
-            <div className="grid grid-cols-4 gap-1.5">
-              {(['svg', 'png', 'jpg', 'webp'] as const).map((ext) => (
-                <button
-                  key={ext}
-                  type="button"
-                  onClick={() => updateConfig('extension', ext)}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border uppercase',
-                    config.extension === ext
-                      ? 'bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  {ext}
-                </button>
-              ))}
-            </div>
-          </Section>
         </div>
       )}
 
