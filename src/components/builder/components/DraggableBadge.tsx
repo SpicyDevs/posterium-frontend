@@ -4,7 +4,7 @@
 // ──────────────────────────────────────
 // 1. SHADOW — updated CSS formula to match the new backend SVG filter formula.
 // 2. BLUR — CSS `backdrop-filter: blur(Xpx)` ≈ SVG stdDeviation X/2.
-// 3. BORDER — changed from CSS `outline` to `box-shadow inset` approach.
+// 3. BORDER — rendered as an outline layer so border width does not shrink badge content.
 // 4. SCALE — badge scaling on the canvas is purely display: CSS transform.
 // 5. showText — badge value text is hidden when showText === false (nt=1).
 // 6. labels — labelPos/labelText/labelSize/labelColor render outside badge.
@@ -258,9 +258,6 @@ const DraggableBadge: React.FC<Props> = ({
         })()
       : '';
 
-  // ── BORDER ────────────────────────────────────────────────────────────────
-  const borderBoxShadow = borderWidth > 0 ? `inset 0 0 0 ${borderWidth}px ${borderColor}` : '';
-
   const slantPattern = `repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.1) 4px, rgba(255,255,255,0.1) 8px)`;
   const finalBackground = isObscuring ? `${slantPattern}, ${bgFill}` : bgFill;
 
@@ -468,7 +465,7 @@ const DraggableBadge: React.FC<Props> = ({
         overflow: 'visible',
         background: finalBackground,
         borderRadius: `${radiusVal}px`,
-        boxShadow: [borderBoxShadow].filter(Boolean).join(', ') || 'none',
+        boxShadow: 'none',
         filter: dropShadowFilter || 'none',
         backdropFilter: `blur(${blurVal}px)`,
         WebkitBackdropFilter: `blur(${blurVal}px)`,
@@ -489,6 +486,18 @@ const DraggableBadge: React.FC<Props> = ({
       >
         {renderContent()}
       </div>
+
+      {borderWidth > 0 && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            inset: 0,
+            borderRadius: `${radiusVal}px`,
+            outline: `${borderWidth}px solid ${borderColor}`,
+            outlineOffset: 0,
+          }}
+        />
+      )}
 
       {/* Label — rendered outside the clipping div so it shows outside badge bounds */}
       {labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}

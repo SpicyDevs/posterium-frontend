@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { RatingType } from '../types';
 
-type TabType = 'source' | 'layers' | 'canvas' | 'badge';
+type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
 export type SheetMode = 'hidden' | 'half' | 'full';
 
 interface ViewOptions {
@@ -39,7 +39,7 @@ interface EditorContextType {
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTabState] = useState<TabType>('canvas');
+  const [activeTab, setActiveTabState] = useState<TabType>('source');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
@@ -76,8 +76,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Use queueMicrotask so we read nextSize after the setter has run,
       // avoiding stale-closure issues in React 18 concurrent mode.
       queueMicrotask(() => {
-        if (nextSize > 0) setActiveTab('badge');
-        else setActiveTab('canvas');
+        if (nextSize > 0) setActiveTab('selection');
+        else setActiveTab('badges');
       });
     },
     [setActiveTab]
@@ -86,14 +86,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setBatchSelection = useCallback(
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
-      if (ids.length > 0) setActiveTab('badge');
+      if (ids.length > 0) setActiveTab('selection');
     },
     [setActiveTab]
   );
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
-    setActiveTab('canvas');
+    setActiveTab('badges');
   }, [setActiveTab]);
 
   const toggleViewOption = useCallback((key: keyof ViewOptions) => {

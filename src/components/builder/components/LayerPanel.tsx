@@ -24,6 +24,10 @@ import {
   ImagePlay,
   KeyRound,
   ChevronRight,
+  Monitor,
+  ShieldCheck,
+  Grid3x3,
+  Magnet,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
@@ -601,13 +605,16 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setLiveRatings,
     fallbackEnabled,
     setFallbackEnabled,
+    viewOptions,
+    toggleViewOption,
   } = useEditor();
 
-  const [localMode, setLocalMode] = useState<'source' | 'layers'>('source');
+  const [localMode, setLocalMode] = useState<'source' | 'layers' | 'poster'>('source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
-    if (activeTab === 'source' || activeTab === 'layers') setLocalMode(activeTab);
+    if (activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster')
+      setLocalMode(activeTab);
   }, [activeTab]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -1072,27 +1079,27 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             border: '1px solid rgba(255,255,255,0.05)',
           }}
         >
-          {(['source', 'layers'] as const).map((tab) => (
+          {([
+            { id: 'source', label: 'Source', icon: <Film size={11} strokeWidth={2} /> },
+            { id: 'layers', label: 'Layers', icon: <Layers size={11} strokeWidth={2} /> },
+            { id: 'poster', label: 'Poster', icon: <Monitor size={11} strokeWidth={2} /> },
+          ] as const).map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
-                localMode !== tab &&
+                localMode !== tab.id &&
                   'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
               )}
               style={{
-                background: localMode === tab ? 'var(--film-mid)' : 'transparent',
-                color: localMode === tab ? 'var(--film-cream)' : 'var(--film-text-dim)',
-                boxShadow: localMode === tab ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                background: localMode === tab.id ? 'var(--film-mid)' : 'transparent',
+                color: localMode === tab.id ? 'var(--film-cream)' : 'var(--film-text-dim)',
+                boxShadow: localMode === tab.id ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
               }}
             >
-              {tab === 'source' ? (
-                <Film size={11} strokeWidth={2} />
-              ) : (
-                <Layers size={11} strokeWidth={2} />
-              )}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab.icon}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -1520,6 +1527,90 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           <Section title="API Keys" icon={<KeyRound size={13} />}>
             <ApiKeysPanel config={config} setConfig={setConfig} />
           </Section>
+        </div>
+      )}
+
+      {/* ── Poster/Canvas Tab ─────────────────────────────────────────────── */}
+      {localMode === 'poster' && (
+        <div className="space-y-4 px-1">
+          <div
+            className="p-2.5 rounded-xl"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)',
+            }}
+          >
+            <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
+              Poster / Canvas
+            </p>
+            <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+              500×750 canvas · central controls for poster effects, overlays, and export format.
+            </p>
+          </div>
+
+          {!isMinimalPreset && (
+            <Section title="Background" icon={<Monitor size={13} />} defaultOpen>
+              <SliderRow
+                label="Poster Blur"
+                value={config.posterBlur}
+                min={0}
+                max={20}
+                unit="px"
+                onChange={(v) => updateConfig('posterBlur', v)}
+              />
+              <ToggleRow
+                label="Grayscale"
+                sub="Desaturate poster image"
+                checked={config.grayscale}
+                onChange={(v) => updateConfig('grayscale', v)}
+              />
+            </Section>
+          )}
+
+          <Section title="Canvas Overlays" icon={<ShieldCheck size={13} />} defaultOpen>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => toggleViewOption('showSafeArea')}
+                className={clsx(
+                  'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
+                  viewOptions.showSafeArea
+                    ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
+                    : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
+                )}
+              >
+                <ShieldCheck size={10} />
+                Safe Area
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleViewOption('showGrid')}
+                className={clsx(
+                  'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
+                  viewOptions.showGrid
+                    ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
+                    : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
+                )}
+              >
+                <Grid3x3 size={10} />
+                Grid
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleViewOption('snapToGrid')}
+                className={clsx(
+                  'h-8 rounded-lg text-[11px] font-medium col-span-2 flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
+                  viewOptions.snapToGrid
+                    ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
+                    : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
+                )}
+              >
+                <Magnet size={10} />
+                Snap to Grid
+              </button>
+            </div>
+          </Section>
+
         </div>
       )}
 
