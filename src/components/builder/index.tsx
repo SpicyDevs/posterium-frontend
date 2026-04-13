@@ -594,7 +594,7 @@ const StudioLayout: React.FC<{
 
   // ── Panel widths ──────────────────────────────────────────────────────────
   const [leftW, setLeftW] = useState(272);
-  const [rightW, setRightW] = useState(308);
+  const [rightW, setRightW] = useState(272);
 
   const startResizeLeft = useCallback(
     (e: React.MouseEvent) => {
