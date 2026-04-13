@@ -1353,7 +1353,7 @@ const StudioLayout: React.FC<{
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers') && (
+                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
                   <LayerPanel
                     config={config}
                     setConfig={setConfig}
@@ -1361,7 +1361,7 @@ const StudioLayout: React.FC<{
                     onSelect={handleSelectionOverride}
                   />
                 )}
-                {(activeTab === 'canvas' || activeTab === 'badge') && (
+                {(activeTab === 'badges' || activeTab === 'logo' || activeTab === 'selection') && (
                   <Inspector config={config} setConfig={setConfig} />
                 )}
               </div>
@@ -1370,7 +1370,11 @@ const StudioLayout: React.FC<{
         </div>
 
         {/* Mobile dock */}
-        <MobileDock />
+        <MobileDock
+          hasLogo={config.logo}
+          hasBadges={config.ratings.length > 0}
+          selectedCount={selectedIds.size}
+        />
 
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay

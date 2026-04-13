@@ -24,6 +24,12 @@ const DraggableLogo: React.FC<Props> = ({
   const { viewOptions } = useEditor();
   const lw = config.logoW,
     lh = config.logoH;
+  const bgPadding = config.logoBgEnabled ? config.logoBgPadding : 0;
+  const bgShadow =
+    config.logoBgEnabled && config.logoBgShadow > 0
+      ? `0 ${config.logoBgShadow * 0.5}px ${config.logoBgShadow}px rgba(0,0,0,0.5)`
+      : undefined;
+  const bgBorderColor = config.logoBgBorderC ?? '#ffffff';
   const baseX =
     config.logoX !== null && config.logoX !== undefined
       ? config.logoX
@@ -141,6 +147,7 @@ const DraggableLogo: React.FC<Props> = ({
           top: renderY,
           width: lw,
           height: lh,
+          overflow: 'visible',
           opacity: config.logoOpacity,
           filter: dropShadow,
           touchAction: 'none',
@@ -154,6 +161,22 @@ const DraggableLogo: React.FC<Props> = ({
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
       >
+        {config.logoBgEnabled && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              inset: `${-bgPadding}px`,
+              borderRadius: config.logoBgRadius,
+              background: config.logoBgColor ?? '#000000',
+              opacity: config.logoBgOpacity,
+              boxShadow: bgShadow,
+              border:
+                config.logoBgBorderW > 0
+                  ? `${config.logoBgBorderW}px solid ${bgBorderColor}`
+                  : '1px solid transparent',
+            }}
+          />
+        )}
         {logoUrl && !imgError ? (
           <img
             src={logoUrl}
@@ -164,11 +187,11 @@ const DraggableLogo: React.FC<Props> = ({
               const img = e.currentTarget;
               onLogoLoad?.(img.naturalWidth, img.naturalHeight);
             }}
-            className="w-full h-full object-contain pointer-events-none"
+            className="w-full h-full object-contain pointer-events-none relative z-10"
             style={{ userSelect: 'none' }}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded relative z-10">
             <ImageOff size={18} className="text-[#D4A245]/40" />
             <span className="text-[9px] font-mono text-[#D4A245]/40 uppercase tracking-widest leading-none">
               logo

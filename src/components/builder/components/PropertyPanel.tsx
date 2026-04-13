@@ -5,7 +5,6 @@ import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType 
 import {
   Layers,
   Layout,
-  Smartphone,
   Palette,
   ChevronDown,
   ChevronRight,
@@ -19,7 +18,6 @@ import {
   Sliders,
   ImagePlay,
 } from 'lucide-react';
-import { useEditor } from '../context/EditorContext';
 import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
 import SidebarLayout from './SidebarLayout';
@@ -29,6 +27,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   viewMode?: 'global' | 'selection';
+  mode?: 'badges' | 'logo' | 'selection';
 }
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
@@ -482,8 +481,7 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode }) => {
-  const { toggleViewOption, viewOptions } = useEditor();
+const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode, mode }) => {
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesEnabled = config.ratings.length > 0;
 
@@ -545,7 +543,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     return vals.length > 0 && vals.every((v) => v === vals[0]) ? vals[0] : null;
   };
 
-  const showGlobal = viewMode ? viewMode === 'global' : selectedIds.size === 0;
+  const panelMode = mode ?? (viewMode === 'selection' ? 'selection' : 'badges');
+  const showGlobal = panelMode !== 'selection';
+  const showBadgeSettings = panelMode === 'badges';
+  const showLogoSettings = panelMode === 'logo';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
@@ -560,78 +561,62 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   if (showGlobal)
     return (
       <SidebarLayout side="right" bodyClassName="pb-24">
-        {/* Layout ── position preset + flow direction */}
-        <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
-          <div className="flex items-start gap-4">
-            <div>
-              <p
-                className="body-font mb-2"
-                style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
-              >
-                Position preset
-              </p>
-              <AlignmentGrid value={config.preset} onChange={(v) => updateConfig('preset', v)} />
-            </div>
-            <div className="flex-1">
-              <p
-                className="body-font mb-2"
-                style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
-              >
-                Flow direction
-              </p>
-              <div className="space-y-1.5">
-                {[
-                  { id: 'col' as const, label: 'Column', icon: <Rows2 size={12} /> },
-                  { id: 'row' as const, label: 'Row', icon: <Columns2 size={12} /> },
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => updateConfig('layout', opt.id)}
-                    className={clsx(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors border syne-font',
-                      config.layout === opt.id
-                        ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border-[rgba(196,124,46,0.22)]'
-                        : INACTIVE_OPTION_HOVER_CLASSES
-                    )}
-                  >
-                    <span
-                      style={{
-                        color:
-                          config.layout === opt.id ? 'var(--film-amber)' : 'var(--film-text-label)',
-                        lineHeight: 0,
-                      }}
+        {showBadgeSettings && (
+          <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
+            <div className="flex items-start gap-4">
+              <div>
+                <p
+                  className="body-font mb-2"
+                  style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
+                >
+                  Position preset
+                </p>
+                <AlignmentGrid value={config.preset} onChange={(v) => updateConfig('preset', v)} />
+              </div>
+              <div className="flex-1">
+                <p
+                  className="body-font mb-2"
+                  style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
+                >
+                  Flow direction
+                </p>
+                <div className="space-y-1.5">
+                  {[
+                    { id: 'col' as const, label: 'Column', icon: <Rows2 size={12} /> },
+                    { id: 'row' as const, label: 'Row', icon: <Columns2 size={12} /> },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => updateConfig('layout', opt.id)}
+                      className={clsx(
+                        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-colors border syne-font',
+                        config.layout === opt.id
+                          ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border-[rgba(196,124,46,0.22)]'
+                          : INACTIVE_OPTION_HOVER_CLASSES
+                      )}
                     >
-                      {opt.icon}
-                    </span>
-                    {opt.label}
-                  </button>
-                ))}
+                      <span
+                        style={{
+                          color:
+                            config.layout === opt.id
+                              ? 'var(--film-amber)'
+                              : 'var(--film-text-label)',
+                          lineHeight: 0,
+                        }}
+                      >
+                        {opt.icon}
+                      </span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </Section>
-
-        {!isMinimalPreset && (
-          <Section title="Poster" icon={<Layers size={10} />} sectionId="global-poster">
-            <SliderRow
-              label="Background Blur"
-              value={config.posterBlur}
-              min={0}
-              max={20}
-              unit="px"
-              onChange={(v) => updateConfig('posterBlur', v)}
-            />
-            <ToggleRow
-              label="Grayscale"
-              sub="Desaturate the poster image"
-              checked={config.grayscale}
-              onChange={(v) => updateConfig('grayscale', v)}
-            />
           </Section>
         )}
 
-        {!isMinimalPreset && badgesEnabled && (
+        {showBadgeSettings && !isMinimalPreset && badgesEnabled && (
           <>
             <Section
               title="Badge Appearance"
@@ -828,7 +813,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </>
         )}
 
-        {config.logo && (
+        {showLogoSettings && config.logo && (
           <Section
             title="Logo Overlay"
             icon={<ImagePlay size={10} />}
@@ -876,6 +861,87 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               max={30}
               onChange={(v) => updateConfig('logoShadow', v)}
             />
+            <ToggleRow
+              label="Background"
+              sub="Add a styled panel behind the logo"
+              checked={config.logoBgEnabled}
+              onChange={(v) => updateConfig('logoBgEnabled', v)}
+            />
+            {config.logoBgEnabled && (
+              <>
+                <ColorRow
+                  label="Background Color"
+                  value={config.logoBgColor ?? '#000000'}
+                  onChange={(v) => updateConfig('logoBgColor', v)}
+                  showOpacity
+                  opacity={config.logoBgOpacity}
+                  onOpacityChange={(v) => updateConfig('logoBgOpacity', v)}
+                />
+                <SliderRow
+                  label="Padding"
+                  value={config.logoBgPadding}
+                  min={0}
+                  max={48}
+                  unit="px"
+                  onChange={(v) => updateConfig('logoBgPadding', v)}
+                />
+                <SliderRow
+                  label="Corner Radius"
+                  value={config.logoBgRadius}
+                  min={0}
+                  max={40}
+                  unit="px"
+                  onChange={(v) => updateConfig('logoBgRadius', v)}
+                />
+                <SliderRow
+                  label="Background Shadow"
+                  value={config.logoBgShadow}
+                  min={0}
+                  max={30}
+                  onChange={(v) => updateConfig('logoBgShadow', v)}
+                />
+                <SliderRow
+                  label="Border Width"
+                  value={config.logoBgBorderW}
+                  min={0}
+                  max={10}
+                  unit="px"
+                  onChange={(v) => updateConfig('logoBgBorderW', v)}
+                />
+                {config.logoBgBorderW > 0 && (
+                  <ColorRow
+                    label="Border Color"
+                    value={config.logoBgBorderC ?? '#ffffff'}
+                    onChange={(v) => updateConfig('logoBgBorderC', v)}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      logoBgEnabled: true,
+                      logoBgColor: prev.bg ?? '#000000',
+                      logoBgOpacity: prev.alpha,
+                      logoBgRadius: prev.radius,
+                      logoBgPadding: 10,
+                      logoBgBorderW: prev.borderW ?? 0,
+                      logoBgBorderC: prev.borderC ?? '#ffffff',
+                      logoBgShadow: resolveShadow(prev.shadow as number | boolean, 6),
+                    }))
+                  }
+                  className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
+                  style={{
+                    border: '1px solid rgba(196,124,46,0.16)',
+                    background: 'rgba(196,124,46,0.08)',
+                    color: 'var(--film-pale)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Apply Current Badge Style
+                </button>
+              </>
+            )}
             <p
               className="body-font leading-relaxed"
               style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
@@ -884,72 +950,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             </p>
           </Section>
         )}
-
-        {/* Canvas Overlays ── guides, not exported */}
-        <Section
-          title="Canvas Overlays"
-          icon={<Smartphone size={10} />}
-          defaultOpen={false}
-          sectionId="global-overlays"
-        >
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { key: 'showSafeArea' as const, label: 'Safe Area' },
-              { key: 'showGrid' as const, label: 'Grid Lines' },
-              { key: 'snapToGrid' as const, label: 'Snap to Grid' },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => toggleViewOption(key)}
-                className={clsx(
-                  'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
-                  key === 'snapToGrid' && 'col-span-2'
-                )}
-                style={{
-                  background: viewOptions[key] ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
-                  color: viewOptions[key] ? 'var(--film-pale)' : 'var(--film-text-dim)',
-                  border: viewOptions[key]
-                    ? '1px solid rgba(196,124,46,0.22)'
-                    : '1px solid rgba(255,255,255,0.05)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.35)';
-                  (e.currentTarget as HTMLElement).style.background = viewOptions[key]
-                    ? 'rgba(196,124,46,0.15)'
-                    : 'rgba(255,255,255,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = viewOptions[key]
-                    ? 'rgba(196,124,46,0.22)'
-                    : 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.background = viewOptions[key]
-                    ? 'rgba(196,124,46,0.1)'
-                    : 'rgba(255,255,255,0.02)';
-                }}
-              >
-                <Eye
-                  size={10}
-                  style={{
-                    color: viewOptions[key] ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                  }}
-                />
-                {label}
-              </button>
-            ))}
-          </div>
-          <p
-            className="body-font leading-relaxed"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-          >
-            Canvas-only guides — not visible in exported images.
-          </p>
-        </Section>
       </SidebarLayout>
     );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
-  if (selectedIds.size === 0)
+  if (panelMode === 'selection' && selectedIds.size === 0)
     return (
       <SidebarLayout side="right">
         <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">

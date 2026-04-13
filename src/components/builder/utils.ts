@@ -127,6 +127,11 @@ const DEFAULTS = {
   logoH: 100,
   logoOpacity: 1.0,
   logoShadow: 6,
+  logoBgOpacity: 0.45,
+  logoBgRadius: 12,
+  logoBgPadding: 10,
+  logoBgBorderW: 0,
+  logoBgShadow: 6,
   iconType: 1,
   labelSize: 11,
 } as const;
@@ -335,6 +340,20 @@ export const generateApiUrl = (
     if (config.logoOpacity !== DEFAULTS.logoOpacity)
       p.set('logo_opacity', config.logoOpacity.toFixed(2));
     if (config.logoShadow !== DEFAULTS.logoShadow) p.set('logo_sh', config.logoShadow.toString());
+    if (config.logoBgEnabled) p.set('logo_bg', '1');
+    if (config.logoBgColor && config.logoBgColor !== '#000000') p.set('logo_bg_c', config.logoBgColor);
+    if (config.logoBgOpacity !== DEFAULTS.logoBgOpacity)
+      p.set('logo_bg_a', config.logoBgOpacity.toFixed(2));
+    if (config.logoBgRadius !== DEFAULTS.logoBgRadius)
+      p.set('logo_bg_r', config.logoBgRadius.toString());
+    if (config.logoBgPadding !== DEFAULTS.logoBgPadding)
+      p.set('logo_bg_p', config.logoBgPadding.toString());
+    if (config.logoBgBorderW !== DEFAULTS.logoBgBorderW)
+      p.set('logo_bg_bw', config.logoBgBorderW.toString());
+    if (config.logoBgBorderC && config.logoBgBorderC !== '#ffffff')
+      p.set('logo_bg_bc', config.logoBgBorderC);
+    if (config.logoBgShadow !== DEFAULTS.logoBgShadow)
+      p.set('logo_bg_sh', config.logoBgShadow.toString());
   }
 
   const queryString = p.toString();
@@ -563,6 +582,24 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ? parseFloat(p.get('logo_opacity')!)
           : DEFAULTS.logoOpacity,
         logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+        logoBgEnabled: p.get('logo_bg') === '1',
+        logoBgColor: p.get('logo_bg_c') || '#000000',
+        logoBgOpacity: p.has('logo_bg_a')
+          ? parseFloat(p.get('logo_bg_a')!)
+          : DEFAULTS.logoBgOpacity,
+        logoBgRadius: p.has('logo_bg_r')
+          ? parseInt(p.get('logo_bg_r')!)
+          : DEFAULTS.logoBgRadius,
+        logoBgPadding: p.has('logo_bg_p')
+          ? parseInt(p.get('logo_bg_p')!)
+          : DEFAULTS.logoBgPadding,
+        logoBgBorderW: p.has('logo_bg_bw')
+          ? parseInt(p.get('logo_bg_bw')!)
+          : DEFAULTS.logoBgBorderW,
+        logoBgBorderC: p.get('logo_bg_bc') || '#ffffff',
+        logoBgShadow: p.has('logo_bg_sh')
+          ? parseInt(p.get('logo_bg_sh')!)
+          : DEFAULTS.logoBgShadow,
       };
     }
 
@@ -718,6 +755,18 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         ? parseFloat(p.get('logo_opacity')!)
         : DEFAULTS.logoOpacity,
       logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+      logoBgEnabled: p.get('logo_bg') === '1',
+      logoBgColor: p.get('logo_bg_c') || '#000000',
+      logoBgOpacity: p.has('logo_bg_a')
+        ? parseFloat(p.get('logo_bg_a')!)
+        : DEFAULTS.logoBgOpacity,
+      logoBgRadius: p.has('logo_bg_r') ? parseInt(p.get('logo_bg_r')!) : DEFAULTS.logoBgRadius,
+      logoBgPadding: p.has('logo_bg_p') ? parseInt(p.get('logo_bg_p')!) : DEFAULTS.logoBgPadding,
+      logoBgBorderW: p.has('logo_bg_bw')
+        ? parseInt(p.get('logo_bg_bw')!)
+        : DEFAULTS.logoBgBorderW,
+      logoBgBorderC: p.get('logo_bg_bc') || '#ffffff',
+      logoBgShadow: p.has('logo_bg_sh') ? parseInt(p.get('logo_bg_sh')!) : DEFAULTS.logoBgShadow,
     };
   } catch (e) {
     console.error('Failed to parse URL', e);

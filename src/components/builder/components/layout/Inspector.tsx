@@ -1,9 +1,8 @@
-// src/components/builder/components/layout/Inspector.tsx
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
 import type { PosterConfig } from '../../types';
-import { Globe, MousePointer2 } from 'lucide-react';
+import { Badge, ImagePlay, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';
 
@@ -11,58 +10,65 @@ interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
+
+type InspectorTab = 'badges' | 'logo' | 'selection';
 const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
-  const { activeTab, setActiveTab, selectedIds, clearSelection } = useEditor();
-  const currentMode = selectedIds.size > 0 || activeTab === 'badge' ? 'selection' : 'global';
-  const selCount = selectedIds.size;
+  const { activeTab, setActiveTab, selectedIds } = useEditor();
+
+  const tabs: { id: InspectorTab; label: string; Icon: React.ElementType; visible: boolean }[] = [
+    { id: 'badges', label: 'Badges', Icon: Badge, visible: config.ratings.length > 0 },
+    { id: 'logo', label: 'Logo', Icon: ImagePlay, visible: config.logo },
+    {
+      id: 'selection',
+      label: selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Selection',
+      Icon: MousePointer2,
+      visible: true,
+    },
+  ];
+
+  const visibleTabs = tabs.filter((tab) => tab.visible);
+  const currentTab = (visibleTabs.some((tab) => tab.id === activeTab) ? activeTab : visibleTabs[0]?.id) as
+    | InspectorTab
+    | undefined;
+
+  useEffect(() => {
+    if (!currentTab) return;
+    if (activeTab !== currentTab) setActiveTab(currentTab);
+  }, [activeTab, currentTab, setActiveTab]);
+
+  if (!currentTab) return null;
 
   return (
     <SidebarLayout
       header={
         <div
-          className="flex rounded-lg p-0.5"
+          className="flex rounded-lg p-0.5 gap-0.5"
           style={{
             background: 'var(--film-char)',
             border: '1px solid rgba(255,255,255,0.05)',
           }}
         >
-          <button
-            onClick={() => {
-              clearSelection();
-              setActiveTab('canvas');
-            }}
-            aria-pressed={currentMode === 'global'}
-            className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
-              currentMode !== 'global' && INACTIVE_TAB_HOVER_CLASSES
-            )}
-            style={{
-              background: currentMode === 'global' ? 'var(--film-mid)' : 'transparent',
-              color: currentMode === 'global' ? 'var(--film-cream)' : 'var(--film-text-dim)',
-              boxShadow: currentMode === 'global' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}
-          >
-            <Globe size={11} strokeWidth={2} />
-            Canvas
-          </button>
-          <button
-            onClick={() => setActiveTab('badge')}
-            aria-pressed={currentMode === 'selection'}
-            className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
-              currentMode !== 'selection' && INACTIVE_TAB_HOVER_CLASSES
-            )}
-            style={{
-              background: currentMode === 'selection' ? 'var(--film-mid)' : 'transparent',
-              color: currentMode === 'selection' ? 'var(--film-cream)' : 'var(--film-text-dim)',
-              boxShadow: currentMode === 'selection' ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}
-          >
-            <MousePointer2 size={11} strokeWidth={2} />
-            {selCount > 0 ? `${selCount} selected` : 'Selection'}
-          </button>
+          {visibleTabs.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              aria-pressed={currentTab === id}
+              className={clsx(
+                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
+                currentTab !== id && INACTIVE_TAB_HOVER_CLASSES
+              )}
+              style={{
+                background: currentTab === id ? 'var(--film-mid)' : 'transparent',
+                color: currentTab === id ? 'var(--film-cream)' : 'var(--film-text-dim)',
+                boxShadow: currentTab === id ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+              }}
+            >
+              <Icon size={11} strokeWidth={2} />
+              {label}
+            </button>
+          ))}
         </div>
       }
     >
@@ -70,7 +76,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         config={config}
         setConfig={setConfig}
         selectedIds={selectedIds}
-        viewMode={currentMode}
+        mode={currentTab}
       />
     </SidebarLayout>
   );

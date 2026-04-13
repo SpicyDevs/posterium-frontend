@@ -139,6 +139,14 @@ export interface PosterConfig {
   logoH: number;
   logoOpacity: number;
   logoShadow: number;
+  logoBgEnabled: boolean;
+  logoBgColor?: string;
+  logoBgOpacity: number;
+  logoBgRadius: number;
+  logoBgPadding: number;
+  logoBgBorderW: number;
+  logoBgBorderC?: string;
+  logoBgShadow: number;
 
   // Fallback chain
   fallbackEnabled: boolean;
@@ -213,6 +221,14 @@ export const DEFAULT_CONFIG: PosterConfig = {
   logoH: 100,
   logoOpacity: 1.0,
   logoShadow: 6,
+  logoBgEnabled: false,
+  logoBgColor: '#000000',
+  logoBgOpacity: 0.45,
+  logoBgRadius: 12,
+  logoBgPadding: 10,
+  logoBgBorderW: 0,
+  logoBgBorderC: '#ffffff',
+  logoBgShadow: 6,
 
   // Fallback
   fallbackEnabled: false,
