@@ -30,6 +30,7 @@ const DraggableLogo: React.FC<Props> = ({
       ? `0 ${config.logoBgShadow * 0.5}px ${config.logoBgShadow}px rgba(0,0,0,0.5)`
       : undefined;
   const bgBorderColor = config.logoBgBorderC ?? '#ffffff';
+  const hasStandaloneBorder = !config.logoBgEnabled && config.logoBgBorderW > 0;
   const baseX =
     config.logoX !== null && config.logoX !== undefined
       ? config.logoX
@@ -157,7 +158,8 @@ const DraggableLogo: React.FC<Props> = ({
               ? '1.5px dashed rgba(255,255,255,0.35)'
               : '1.5px dashed rgba(255,255,255,0.12)',
           outlineOffset: 3,
-          borderRadius: 2,
+          borderRadius: hasStandaloneBorder ? config.logoBgRadius : 2,
+          border: hasStandaloneBorder ? `${config.logoBgBorderW}px solid ${bgBorderColor}` : 'none',
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
       >
@@ -173,7 +175,7 @@ const DraggableLogo: React.FC<Props> = ({
               border:
                 config.logoBgBorderW > 0
                   ? `${config.logoBgBorderW}px solid ${bgBorderColor}`
-                  : '1px solid transparent',
+                  : 'none',
             }}
           />
         )}

@@ -867,6 +867,21 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               checked={config.logoBgEnabled}
               onChange={(v) => updateConfig('logoBgEnabled', v)}
             />
+            <SliderRow
+              label="Border Width"
+              value={config.logoBgBorderW}
+              min={0}
+              max={10}
+              unit="px"
+              onChange={(v) => updateConfig('logoBgBorderW', v)}
+            />
+            {config.logoBgBorderW > 0 && (
+              <ColorRow
+                label="Border Color"
+                value={config.logoBgBorderC ?? '#ffffff'}
+                onChange={(v) => updateConfig('logoBgBorderC', v)}
+              />
+            )}
             {config.logoBgEnabled && (
               <>
                 <ColorRow
@@ -900,21 +915,6 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                   max={30}
                   onChange={(v) => updateConfig('logoBgShadow', v)}
                 />
-                <SliderRow
-                  label="Border Width"
-                  value={config.logoBgBorderW}
-                  min={0}
-                  max={10}
-                  unit="px"
-                  onChange={(v) => updateConfig('logoBgBorderW', v)}
-                />
-                {config.logoBgBorderW > 0 && (
-                  <ColorRow
-                    label="Border Color"
-                    value={config.logoBgBorderC ?? '#ffffff'}
-                    onChange={(v) => updateConfig('logoBgBorderC', v)}
-                  />
-                )}
                 <button
                   type="button"
                   onClick={() =>
