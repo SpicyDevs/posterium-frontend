@@ -301,8 +301,12 @@ const PreviewCanvas: React.FC<Props> = ({
       const nextY = snap(currentY + dy);
       return {
         ...prev,
-        logoX: Math.round(Math.max(1 - effectiveW + bgPadding, Math.min(nextX, CANVAS_WIDTH - 1 + bgPadding))),
-        logoY: Math.round(Math.max(1 - effectiveH + bgPadding, Math.min(nextY, CANVAS_HEIGHT - 1 + bgPadding))),
+        logoX: Math.round(
+          Math.max(1 - effectiveW + bgPadding, Math.min(nextX, CANVAS_WIDTH - 1 - bgPadding))
+        ),
+        logoY: Math.round(
+          Math.max(1 - effectiveH + bgPadding, Math.min(nextY, CANVAS_HEIGHT - 1 - bgPadding))
+        ),
       };
     });
   };

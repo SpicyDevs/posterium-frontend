@@ -16,7 +16,7 @@ const MobileDock: React.FC<{ hasLogo: boolean; hasBadges: boolean; selectedCount
       {
         id: 'selection',
         Icon: MousePointer2,
-        label: selectedCount > 0 ? `${selectedCount}` : 'Select',
+        label: selectedCount > 0 ? `${selectedCount} selected` : 'Selection',
         visible: true,
       },
     ];

@@ -927,7 +927,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                       logoBgPadding: 10,
                       logoBgBorderW: prev.borderW ?? 0,
                       logoBgBorderC: prev.borderC ?? '#ffffff',
-                      logoBgShadow: resolveShadow(prev.shadow as number | boolean, 6),
+                      logoBgShadow: resolveShadow(prev.shadow, 6),
                     }))
                   }
                   className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
@@ -938,7 +938,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                     letterSpacing: '0.04em',
                   }}
                 >
-                  Apply Current Badge Style
+                  Apply Badge Style to Logo Background
                 </button>
               </>
             )}

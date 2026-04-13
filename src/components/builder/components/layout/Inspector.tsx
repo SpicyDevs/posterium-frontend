@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
 import type { PosterConfig } from '../../types';
@@ -13,6 +13,8 @@ interface Props {
 
 type InspectorTab = 'badges' | 'logo' | 'selection';
 const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
+const isInspectorTab = (value: string): value is InspectorTab =>
+  value === 'badges' || value === 'logo' || value === 'selection';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds } = useEditor();
@@ -29,14 +31,10 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   ];
 
   const visibleTabs = tabs.filter((tab) => tab.visible);
-  const currentTab = (visibleTabs.some((tab) => tab.id === activeTab) ? activeTab : visibleTabs[0]?.id) as
-    | InspectorTab
-    | undefined;
-
-  useEffect(() => {
-    if (!currentTab) return;
-    if (activeTab !== currentTab) setActiveTab(currentTab);
-  }, [activeTab, currentTab, setActiveTab]);
+  const activeInspectorTab = isInspectorTab(activeTab) ? activeTab : undefined;
+  const currentTab = visibleTabs.some((tab) => tab.id === activeInspectorTab)
+    ? activeInspectorTab
+    : visibleTabs[0]?.id;
 
   if (!currentTab) return null;
 
