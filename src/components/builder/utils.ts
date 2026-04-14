@@ -134,6 +134,9 @@ const DEFAULTS = {
   logoBgShadow: 6,
   iconType: 1,
   labelSize: 11,
+  minimalTextSize: 42,
+  minimalTextX: 250,
+  minimalTextY: 660,
 } as const;
 
 // ── Canvas layout helpers ─────────────────────────────────────────────────
@@ -261,6 +264,9 @@ export const generateApiUrl = (
   // Poster effects
   if (config.posterBlur > DEFAULTS.posterBlur) p.set('pb', config.posterBlur.toString());
   if (config.grayscale) p.set('gs', '1');
+  if (config.minimalTextSize !== DEFAULTS.minimalTextSize) p.set('mts', config.minimalTextSize.toString());
+  if (config.minimalTextX !== DEFAULTS.minimalTextX) p.set('mtx', config.minimalTextX.toString());
+  if (config.minimalTextY !== DEFAULTS.minimalTextY) p.set('mty', config.minimalTextY.toString());
 
   // Layout / preset
   if (config.layout !== 'custom') p.set('l', config.layout);
@@ -559,6 +565,21 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
         posterBlur: getNum('pb', 'bg_blur', DEFAULTS.posterBlur),
         grayscale: p.get('gs') === '1' || p.get('bw') === '1',
+        minimalTextSize: p.has('mts')
+          ? parseInt(p.get('mts')!)
+          : p.has('minimal_text_size')
+            ? parseInt(p.get('minimal_text_size')!)
+            : DEFAULTS.minimalTextSize,
+        minimalTextX: p.has('mtx')
+          ? parseInt(p.get('mtx')!)
+          : p.has('minimal_text_x')
+            ? parseInt(p.get('minimal_text_x')!)
+            : DEFAULTS.minimalTextX,
+        minimalTextY: p.has('mty')
+          ? parseInt(p.get('mty')!)
+          : p.has('minimal_text_y')
+            ? parseInt(p.get('minimal_text_y')!)
+            : DEFAULTS.minimalTextY,
         scale: getFloat('sc', 'g_scale', DEFAULTS.scale),
         borderW: p.has('bw') && p.get('bw') !== '1' ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
         borderC: p.has('bc')
@@ -746,6 +767,21 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       radius: p.has('rad') ? parseInt(p.get('rad')!) : DEFAULTS.radius,
       posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!) : DEFAULTS.posterBlur,
       grayscale,
+      minimalTextSize: p.has('minimal_text_size')
+        ? parseInt(p.get('minimal_text_size')!)
+        : p.has('mts')
+          ? parseInt(p.get('mts')!)
+          : DEFAULTS.minimalTextSize,
+      minimalTextX: p.has('minimal_text_x')
+        ? parseInt(p.get('minimal_text_x')!)
+        : p.has('mtx')
+          ? parseInt(p.get('mtx')!)
+          : DEFAULTS.minimalTextX,
+      minimalTextY: p.has('minimal_text_y')
+        ? parseInt(p.get('minimal_text_y')!)
+        : p.has('mty')
+          ? parseInt(p.get('mty')!)
+          : DEFAULTS.minimalTextY,
       scale: g_scale ? parseFloat(g_scale) : DEFAULTS.scale,
       borderW: g_bw ? parseInt(g_bw) : DEFAULTS.borderW,
       borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,

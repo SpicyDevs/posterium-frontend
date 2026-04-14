@@ -55,8 +55,15 @@ const PreviewCanvas: React.FC<Props> = ({
   onResetView,
 }) => {
   const SNAP_CENTER_TOLERANCE = 8;
-  const { viewOptions, mobileSheetMode, clearSelection, liveRatings, selectedLogo, handleLogoSelection } =
-    useEditor();
+  const {
+    viewOptions,
+    mobileSheetMode,
+    clearSelection,
+    liveRatings,
+    liveTitle,
+    selectedLogo,
+    handleLogoSelection,
+  } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [autoScale, setAutoScale] = useState(1);
@@ -71,6 +78,9 @@ const PreviewCanvas: React.FC<Props> = ({
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
+  const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
+  const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
+  const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
     if (isMinimalPreset) return [] as RatingType[];
@@ -341,6 +351,43 @@ const PreviewCanvas: React.FC<Props> = ({
       };
     });
   };
+
+  const handleMinimalTextDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const nextX = Math.max(20, Math.min(CANVAS_WIDTH - 20, Math.round(prev.minimalTextX + dx)));
+        const nextY = Math.max(20, Math.min(CANVAS_HEIGHT - 20, Math.round(prev.minimalTextY + dy)));
+        return { ...prev, minimalTextX: nextX, minimalTextY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
+  useEffect(() => {
+    if (!isDraggingMinimalText) return;
+    const onMM = (e: MouseEvent) => {
+      if (!minimalTextStartRef.current) return;
+      setMinimalTextOffset({
+        dx: (e.clientX - minimalTextStartRef.current.mouseX) / currentScale,
+        dy: (e.clientY - minimalTextStartRef.current.mouseY) / currentScale,
+      });
+    };
+    const onMU = (e: MouseEvent) => {
+      if (!minimalTextStartRef.current) return;
+      const dx = (e.clientX - minimalTextStartRef.current.mouseX) / currentScale;
+      const dy = (e.clientY - minimalTextStartRef.current.mouseY) / currentScale;
+      handleMinimalTextDragEnd(dx, dy);
+      minimalTextStartRef.current = null;
+      setMinimalTextOffset({ dx: 0, dy: 0 });
+      setIsDraggingMinimalText(false);
+    };
+    window.addEventListener('mousemove', onMM);
+    window.addEventListener('mouseup', onMU);
+    return () => {
+      window.removeEventListener('mousemove', onMM);
+      window.removeEventListener('mouseup', onMU);
+    };
+  }, [isDraggingMinimalText, currentScale, handleMinimalTextDragEnd]);
 
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
@@ -633,6 +680,36 @@ const PreviewCanvas: React.FC<Props> = ({
             isSelected={selectedLogo}
             onSelect={(multi) => handleLogoSelection(multi)}
           />
+        )}
+
+        {isMinimalPreset && (
+          <div
+            className="absolute z-40 cursor-move select-none"
+            style={{
+              left: config.minimalTextX + minimalTextOffset.dx,
+              top: config.minimalTextY + minimalTextOffset.dy,
+              transform: 'translate(-50%, -50%)',
+              fontSize: `${config.minimalTextSize}px`,
+              lineHeight: 1,
+              color: 'rgba(245,245,245,0.9)',
+              fontWeight: 700,
+              letterSpacing: '0.02em',
+              textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+              border: '1px dashed rgba(196,124,46,0.45)',
+              borderRadius: 8,
+              padding: '4px 8px',
+              background: 'rgba(0,0,0,0.22)',
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsDraggingMinimalText(true);
+              minimalTextStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+            }}
+            title="Drag to position minimal mode text"
+          >
+            {liveTitle || 'Title'}
+          </div>
         )}
       </div>
 

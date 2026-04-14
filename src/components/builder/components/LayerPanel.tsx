@@ -502,6 +502,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     activeTab,
     setActiveTab,
     setLiveRatings,
+    setLiveTitle,
     fallbackEnabled,
     setFallbackEnabled,
     viewOptions,
@@ -604,6 +605,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           });
         }
         setLiveRatings(liveRatingsFiltered);
+        setLiveTitle(merged.title ?? '');
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig((prev) => ({ ...prev, imdbId: data.ids.imdb }));
         }
@@ -612,7 +614,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
     })();
     return () => ctrl.abort();
-  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
+  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setLiveTitle, setConfig]);
 
   useEffect(() => {
     setFallbackEnabled(config.fallbackEnabled);
@@ -1497,6 +1499,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 checked={config.grayscale}
                 onChange={(v) => updateConfig('grayscale', v)}
               />
+            </Section>
+          )}
+
+          {isMinimalPreset && (
+            <Section title="Minimal Text" icon={<Monitor size={13} />} defaultOpen>
+              <SliderRow
+                label="Font Size"
+                value={config.minimalTextSize}
+                min={18}
+                max={96}
+                unit="px"
+                onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
+              />
+              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                Drag the title text directly on the canvas to reposition.
+              </p>
             </Section>
           )}
 

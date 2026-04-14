@@ -87,6 +87,9 @@ export interface PosterConfig {
   extension: ExtensionType;
   posterBlur: number; // blur applied to the poster image, px
   grayscale: boolean; // desaturate the poster image
+  minimalTextSize: number; // minimal mode title font size
+  minimalTextX: number; // minimal mode title x position
+  minimalTextY: number; // minimal mode title y position
 
   // Badge layout
   layout: LayoutType;
@@ -177,6 +180,9 @@ export const DEFAULT_CONFIG: PosterConfig = {
   extension: 'png',
   posterBlur: 0,
   grayscale: false,
+  minimalTextSize: 42,
+  minimalTextX: 250,
+  minimalTextY: 660,
 
   // Badge layout
   layout: 'custom',
