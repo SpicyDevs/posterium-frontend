@@ -45,7 +45,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
-    snapToGrid: false,
+    snapToGrid: true,
   });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);

@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import PropertyPanel from '../PropertyPanel';
 import type { PosterConfig } from '../../types';
-import { Badge, ImagePlay, MousePointer2 } from 'lucide-react';
+import { Badge, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';
 
@@ -11,17 +11,16 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
 
-type InspectorTab = 'badges' | 'logo' | 'selection';
+type InspectorTab = 'badges' | 'selection';
 const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
 const isInspectorTab = (value: string): value is InspectorTab =>
-  value === 'badges' || value === 'logo' || value === 'selection';
+  value === 'badges' || value === 'selection';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds } = useEditor();
 
   const tabs: { id: InspectorTab; label: string; Icon: React.ElementType; visible: boolean }[] = [
     { id: 'badges', label: 'Badges', Icon: Badge, visible: config.ratings.length > 0 },
-    { id: 'logo', label: 'Logo', Icon: ImagePlay, visible: config.logo },
     {
       id: 'selection',
       label: selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Selection',

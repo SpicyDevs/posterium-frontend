@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
-import { Film, Layers, Monitor, Sliders, ImagePlay, MousePointer2 } from 'lucide-react';
+import { Film, Layers, Monitor, Sliders, MousePointer2 } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
-type TabId = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
+type TabId = 'source' | 'layers' | 'poster' | 'badges' | 'selection';
 
 const MobileDock: React.FC<{ hasLogo: boolean; hasBadges: boolean; selectedCount: number }> = memo(
   ({ hasLogo, hasBadges, selectedCount }) => {
@@ -12,7 +12,6 @@ const MobileDock: React.FC<{ hasLogo: boolean; hasBadges: boolean; selectedCount
       { id: 'layers', Icon: Layers, label: 'Layers', visible: true },
       { id: 'poster', Icon: Monitor, label: 'Canvas', visible: true },
       { id: 'badges', Icon: Sliders, label: 'Badges', visible: hasBadges },
-      { id: 'logo', Icon: ImagePlay, label: 'Logo', visible: hasLogo },
       {
         id: 'selection',
         Icon: MousePointer2,

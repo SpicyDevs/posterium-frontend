@@ -144,18 +144,32 @@ export const snapToGridSize = (n: number, gridSize = SNAP_GRID_SIZE): number =>
   Math.round(n / gridSize) * gridSize;
 
 export const calculateAutoPosition = (
-  _ratingId: RatingType,
+  ratingId: RatingType,
   index: number,
   totalBadges: number,
   config: PosterConfig
 ): { x: number; y: number } => {
-  const scale = getScale(config.size);
-  const badgeW = BASE_BADGE_W * scale;
-  const badgeH = BASE_BADGE_H * scale;
+  const sizeScale = getScale(config.size);
+  const ratings = config.ratings.slice(0, Math.max(totalBadges, 0));
+  const fallbackId = ratings[index] ?? ratingId;
+  const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
+  const dims = orderedIds.map((id) => {
+    const perBadgeScale = config.items[id]?.scale ?? 1.0;
+    return {
+      id,
+      w: BASE_BADGE_W * sizeScale * perBadgeScale,
+      h: BASE_BADGE_H * sizeScale * perBadgeScale,
+    };
+  });
+  const current = dims[index] ?? dims.find((d) => d.id === ratingId) ?? dims[0];
   const isRow = config.layout === 'row';
 
-  const groupW = isRow ? totalBadges * badgeW + (totalBadges - 1) * GAP : badgeW;
-  const groupH = isRow ? badgeH : totalBadges * badgeH + (totalBadges - 1) * GAP;
+  const groupW = isRow
+    ? dims.reduce((sum, d) => sum + d.w, 0) + Math.max(dims.length - 1, 0) * GAP
+    : Math.max(...dims.map((d) => d.w), current.w);
+  const groupH = isRow
+    ? Math.max(...dims.map((d) => d.h), current.h)
+    : dims.reduce((sum, d) => sum + d.h, 0) + Math.max(dims.length - 1, 0) * GAP;
 
   let presetX = 0,
     presetY = 0;
@@ -168,8 +182,12 @@ export const calculateAutoPosition = (
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
   else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
-  const x = isRow ? presetX + index * (badgeW + GAP) : presetX;
-  const y = isRow ? presetY : presetY + index * (badgeH + GAP);
+  const x = isRow
+    ? presetX + dims.slice(0, index).reduce((sum, d) => sum + d.w, 0) + index * GAP
+    : presetX + (groupW - current.w) / 2;
+  const y = isRow
+    ? presetY + (groupH - current.h) / 2
+    : presetY + dims.slice(0, index).reduce((sum, d) => sum + d.h, 0) + index * GAP;
 
   return { x: Math.round(x), y: Math.round(y) };
 };

@@ -33,6 +33,18 @@ interface Props {
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
 const INACTIVE_OPTION_HOVER_CLASSES =
   'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-label)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-cream)]';
+const BADGE_DISPLAY_NAMES: Record<string, string> = {
+  imdb: 'IMDb',
+  rt: 'Rotten Tomatoes',
+  rt_popcorn: 'Audience Score',
+  tmdb: 'TMDB',
+  letterboxd: 'Letterboxd',
+  meta: 'Metacritic',
+  mal: 'MyAnimeList',
+  anilist: 'AniList',
+  age: 'Age Rating',
+  runtime: 'Runtime',
+};
 
 const readSectionStates = (): Record<string, boolean> => {
   try {
@@ -113,12 +125,13 @@ const SliderRow: React.FC<{
   label: string;
   value: number;
   onChange: (v: number) => void;
+  onReset?: () => void;
   min: number;
   max: number;
   step?: number;
   unit?: string;
   formatValue?: (v: number) => string;
-}> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
+}> = ({ label, value, onChange, onReset, min, max, step = 1, unit = '', formatValue }) => {
   const [localValue, setLocalValue] = useState(value);
   const [inputText, setInputText] = useState(() => (formatValue ? formatValue(value) : `${value}`));
   const lastUpdate = useRef(Date.now());
@@ -195,12 +208,31 @@ const SliderRow: React.FC<{
 
   return (
     <div className="space-y-1.5">
-      <span
-        className="body-font"
-        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-      >
-        {label}
-      </span>
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="body-font"
+          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+        >
+          {label}
+        </span>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1 text-[9px] mono-font transition-colors"
+            style={{ color: 'var(--film-text-dim)' }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+          >
+            <RotateCcw size={10} />
+            Reset
+          </button>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -655,6 +687,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 step={0.05}
                 formatValue={(v) => `${v.toFixed(2)}×`}
                 onChange={(v) => updateConfig('scale', v)}
+                onReset={config.scale !== 1 ? () => updateConfig('scale', 1.0) : undefined}
               />
               <SliderRow
                 label="Glass Blur"
@@ -663,6 +696,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 max={20}
                 unit="px"
                 onChange={(v) => updateConfig('blur', v)}
+                onReset={config.blur !== 0 ? () => updateConfig('blur', 0) : undefined}
               />
               <SliderRow
                 label="Corner Radius"
@@ -678,6 +712,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 min={0}
                 max={30}
                 onChange={(v) => updateConfig('shadow', v)}
+                onReset={
+                  resolveShadow(config.shadow as number | boolean, 6) !== 6
+                    ? () => updateConfig('shadow', 6)
+                    : undefined
+                }
               />
             </Section>
 
@@ -781,9 +820,15 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                   { id: 'below', label: 'Below' },
                   { id: 'left', label: 'Left' },
                   { id: 'right', label: 'Right' },
+                  { id: 'none', label: 'Hide' },
                 ]}
-                value={config.labelPos ?? null}
-                onChange={(v) => updateConfig('labelPos', v as PosterConfig['labelPos'])}
+                value={config.labelPos ?? 'none'}
+                onChange={(v) =>
+                  updateConfig(
+                    'labelPos',
+                    (v === 'none' ? undefined : (v as PosterConfig['labelPos'])) as PosterConfig['labelPos']
+                  )
+                }
               />
               <TextInputRow
                 label="Label Text"
@@ -990,6 +1035,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   const isAgeSelected = selectedIds.has('age');
   const multi = selectedIds.size > 1;
+  const selectedBadgeLabel = (() => {
+    const first = Array.from(selectedIds)[0];
+    if (!first) return 'Selection';
+    return BADGE_DISPLAY_NAMES[first] ?? first.toUpperCase();
+  })();
 
   // Resolve common values across the selection (null = mixed)
   const commonBlur = getCommonValue('blur', config.blur) ?? config.blur;
@@ -1049,7 +1099,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         }}
       >
         <p className="syne-font font-semibold" style={{ fontSize: 11, color: 'var(--film-pale)' }}>
-          {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
+          {multi ? `${selectedIds.size} badges selected` : selectedBadgeLabel}
         </p>
         <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}>
           {multi
@@ -1068,6 +1118,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           step={0.05}
           formatValue={(v) => `${v.toFixed(2)}×`}
           onChange={(v) => updateSelectedBadges({ scale: v })}
+          onReset={commonScale !== 1.0 ? () => updateSelectedBadges({ scale: 1.0 }) : undefined}
         />
       </Section>
 
@@ -1080,6 +1131,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           max={20}
           unit="px"
           onChange={(v) => updateSelectedBadges({ blur: v })}
+          onReset={commonBlur !== 0 ? () => updateSelectedBadges({ blur: 0 }) : undefined}
         />
         <SliderRow
           label="Corner Radius"
@@ -1095,6 +1147,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           min={0}
           max={30}
           onChange={(v) => updateSelectedBadges({ shadow: v })}
+          onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
         />
         <SliderRow
           label="Border Width"
@@ -1190,9 +1243,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             { id: 'below', label: 'Below' },
             { id: 'left', label: 'Left' },
             { id: 'right', label: 'Right' },
+            { id: 'none', label: 'Hide' },
           ]}
-          value={commonLabelPos ?? config.labelPos ?? 'below'}
-          onChange={(v) => updateSelectedBadges({ labelPos: v as BadgeConfig['labelPos'] })}
+          value={commonLabelPos ?? config.labelPos ?? 'none'}
+          onChange={(v) =>
+            updateSelectedBadges({
+              labelPos: (v === 'none' ? undefined : (v as BadgeConfig['labelPos'])) as
+                | BadgeConfig['labelPos']
+                | undefined,
+            })
+          }
         />
         <TextInputRow
           label="Label Text"

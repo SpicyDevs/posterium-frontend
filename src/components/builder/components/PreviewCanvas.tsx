@@ -54,6 +54,7 @@ const PreviewCanvas: React.FC<Props> = ({
   onZoomOut,
   onResetView,
 }) => {
+  const SNAP_CENTER_TOLERANCE = 8;
   const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -62,12 +63,22 @@ const PreviewCanvas: React.FC<Props> = ({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const [isPanning, setIsPanning] = useState(false);
   const panFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
+  const hasLiveRatings = Object.keys(liveRatings).length > 0;
+  const previewRatings = useMemo(() => {
+    if (isMinimalPreset) return [] as RatingType[];
+    if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
+    return config.ratings.filter((id) => {
+      const v = liveRatings[id];
+      return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
+    });
+  }, [config.ratings, config.fallbackEnabled, liveRatings, hasLiveRatings, isMinimalPreset]);
   const applySnapGrid = useCallback(
     (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n),
     [viewOptions?.snapToGrid]
@@ -86,7 +97,12 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
-    const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+    const auto = calculateAutoPosition(
+      id,
+      index,
+      previewRatings.length,
+      { ...config, ratings: previewRatings }
+    );
     const x = itemConfig?.x ?? auto.x;
     const y = itemConfig?.y ?? auto.y;
     const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
@@ -129,16 +145,24 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const currentScale = autoScale * zoom;
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
 
-  const clampPan = (newX: number, newY: number) => {
-    const limitX = CANVAS_WIDTH / 3;
-    const limitY = CANVAS_HEIGHT / 3;
-    return {
-      x: Math.max(-limitX, Math.min(limitX, newX)),
-      y: Math.max(-limitY, Math.min(limitY, newY)),
-    };
-  };
+  const clampPan = useCallback(
+    (newX: number, newY: number) => {
+      const container = containerRef.current;
+      if (!container) return { x: newX, y: newY };
+      const scaledW = CANVAS_WIDTH * currentScale;
+      const scaledH = CANVAS_HEIGHT * currentScale;
+      const extraX = Math.max(0, (scaledW - container.clientWidth) / 2) + 40;
+      const extraY = Math.max(0, (scaledH - container.clientHeight) / 2) + 40;
+      const limitX = Math.max(CANVAS_WIDTH / 3, extraX);
+      const limitY = Math.max(CANVAS_HEIGHT / 3, extraY);
+      return {
+        x: Math.max(-limitX, Math.min(limitX, newX)),
+        y: Math.max(-limitY, Math.min(limitY, newY)),
+      };
+    },
+    [currentScale]
+  );
 
   const handleWheel = (e: React.WheelEvent) => {
     const ZOOM_SENSITIVITY = 0.004;
@@ -297,8 +321,16 @@ const PreviewCanvas: React.FC<Props> = ({
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
-      const nextX = snap(currentX + dx);
-      const nextY = snap(currentY + dy);
+      let nextX = snap(currentX + dx);
+      let nextY = snap(currentY + dy);
+      if (viewOptions?.snapToGrid) {
+        const centerX = nextX + prev.logoW / 2;
+        const centerY = nextY + prev.logoH / 2;
+        const middleX = CANVAS_WIDTH / 2;
+        const middleY = CANVAS_HEIGHT / 2;
+        if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - prev.logoW / 2;
+        if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
+      }
       return {
         ...prev,
         logoX: Math.round(
@@ -375,8 +407,16 @@ const PreviewCanvas: React.FC<Props> = ({
         const selWidth = BASE_BADGE_W * selScale;
         const selHeight = BASE_BADGE_H * selScale;
         // Constrain so at least 1px of the badge remains inside the poster
-        const nextX = snap(startX + dx);
-        const nextY = snap(startY + dy);
+        let nextX = snap(startX + dx);
+        let nextY = snap(startY + dy);
+        if (viewOptions?.snapToGrid) {
+          const centerX = nextX + selWidth / 2;
+          const centerY = nextY + selHeight / 2;
+          const middleX = CANVAS_WIDTH / 2;
+          const middleY = CANVAS_HEIGHT / 2;
+          if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - selWidth / 2;
+          if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - selHeight / 2;
+        }
         newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
         newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
       };
@@ -391,10 +431,15 @@ const PreviewCanvas: React.FC<Props> = ({
   const badgeSnapGuide = useMemo(() => {
     if (!dragSession || !viewOptions?.snapToGrid || isMinimalPreset) return null;
     const targetId = dragSession.id;
-    const index = config.ratings.indexOf(targetId);
+    const index = previewRatings.indexOf(targetId);
     if (index === -1) return null;
 
-    const auto = calculateAutoPosition(targetId, index, config.ratings.length, config);
+    const auto = calculateAutoPosition(
+      targetId,
+      index,
+      previewRatings.length,
+      { ...config, ratings: previewRatings }
+    );
     const iCfg = config.items[targetId];
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
@@ -410,15 +455,13 @@ const PreviewCanvas: React.FC<Props> = ({
     const centerY = nextY + bH / 2;
     const middleX = CANVAS_WIDTH / 2;
     const middleY = CANVAS_HEIGHT / 2;
-    const snapTolerance = 8;
-
     return {
-      showVertical: Math.abs(centerX - middleX) < snapTolerance,
-      showHorizontal: Math.abs(centerY - middleY) < snapTolerance,
+      showVertical: Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE,
+      showHorizontal: Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE,
       middleX,
       middleY,
     };
-  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid]);
+  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid, previewRatings]);
 
   return (
     <div
@@ -518,8 +561,13 @@ const PreviewCanvas: React.FC<Props> = ({
 
         {/* Badge overlays */}
         {!isMinimalPreset &&
-          config.ratings.map((id: RatingType, index: number) => {
-            const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+          previewRatings.map((id: RatingType, index: number) => {
+            const auto = calculateAutoPosition(
+              id,
+              index,
+              previewRatings.length,
+              { ...config, ratings: previewRatings }
+            );
             const iCfg = config.items[id];
             let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
             let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
@@ -528,8 +576,8 @@ const PreviewCanvas: React.FC<Props> = ({
 
             let isObscuring = false;
             if (hoveredBadgeId && hoveredBadgeId !== id) {
-              const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
-              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
+              const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
+              if (hoveredIdx !== -1) isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
             }
 
             if (dragSession) {
@@ -540,8 +588,20 @@ const PreviewCanvas: React.FC<Props> = ({
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
                 // Preview clamp: at least 1px inside poster
-                x = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+                let nextX = applySnapGrid(x + dragSession.dx);
+                let nextY = applySnapGrid(y + dragSession.dy);
+                if (viewOptions?.snapToGrid) {
+                  const centerX = nextX + bW / 2;
+                  const centerY = nextY + bH / 2;
+                  const middleX = CANVAS_WIDTH / 2;
+                  const middleY = CANVAS_HEIGHT / 2;
+                  if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE)
+                    nextX = middleX - bW / 2;
+                  if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE)
+                    nextY = middleY - bH / 2;
+                }
+                x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
               }
             }
 

@@ -280,6 +280,7 @@ const DraggableBadge: React.FC<Props> = ({
       fontFamily: "'DM Sans', sans-serif",
       fontWeight: 500,
       lineHeight: 1,
+      textShadow: '0 1px 2px rgba(0,0,0,0.45)',
     };
     switch (pos) {
       case 'above':
@@ -341,17 +342,25 @@ const DraggableBadge: React.FC<Props> = ({
       if (pct) {
         const n = Number(pct[1]);
         if (!Number.isFinite(n)) return rawValue;
-        return `${((Math.max(0, n) / 100) * 10).toFixed(1).replace(/\.0$/, '')}`;
+        return `${((Math.max(0, n) / 100) * 10).toFixed(1)}`;
       }
       const num = Number(rawValue);
       if (!Number.isFinite(num)) return rawValue;
-      if (num > 10) return `${(num / 10).toFixed(1).replace(/\.0$/, '')}`;
-      return `${num.toFixed(1).replace(/\.0$/, '')}`;
+      if (num > 10) return `${(num / 10).toFixed(1)}`;
+      return `${num.toFixed(1)}`;
     })();
-    const displayValue =
-      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized)
-        ? `${normalized}/${outOfVal}`
-        : normalized;
+    const runtimeCompact = (() => {
+      if (badgeId !== 'runtime') return normalized;
+      const m = normalized.match(/^(\d+)\s*h(?:\s*(\d+)\s*m?)?$/i);
+      if (!m) return normalized;
+      const hh = m[1];
+      const mm = (m[2] ?? '0').padStart(2, '0');
+      return `${hh}:${mm}`;
+    })();
+    const numericDisplay = /^\d+(\.\d+)?$/.test(runtimeCompact)
+      ? Number(runtimeCompact).toFixed(1)
+      : runtimeCompact;
+    const displayValue = numericDisplay;
 
     if (badgeId === 'age') {
       return (
@@ -401,19 +410,55 @@ const DraggableBadge: React.FC<Props> = ({
       ) : null;
     }
 
+    const iconType = itemConfig?.iconType ?? config.iconType ?? 1;
     const iconKey =
-      badgeId === 'rt' ? 'rt_fresh' : badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId;
+      badgeId === 'rt'
+        ? iconType > 1
+          ? 'rt_rotten'
+          : 'rt_fresh'
+        : badgeId === 'rt_popcorn'
+          ? iconType > 1
+            ? 'popcorn_rotten'
+            : 'popcorn_fresh'
+          : badgeId;
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
+    const isRtPercent = (badgeId === 'rt' || badgeId === 'rt_popcorn') && /%$/.test(displayValue);
+    const rtBase = isRtPercent ? displayValue.replace(/%$/, '') : displayValue;
+    const valueNode =
+      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(displayValue) ? (
+        <span className="inline-flex items-end gap-[0.1em]">
+          <span>{displayValue}</span>
+          <span style={{ fontSize: '0.72em', opacity: 0.9, lineHeight: 1 }}>{`/${outOfVal}`}</span>
+        </span>
+      ) : isRtPercent ? (
+        <span className="inline-flex items-end gap-[0.08em]">
+          <span>{rtBase}</span>
+          <span style={{ fontSize: '0.7em', lineHeight: 1, opacity: 0.92 }}>%</span>
+        </span>
+      ) : (
+        displayValue
+      );
 
     return (
       <>
         {iconData && (
-          <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: iconLeft,
+              top: iconTop,
+              lineHeight: 0,
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <svg
               viewBox={iconData.vb}
               width={iconSize}
               height={iconSize}
-              style={{ display: 'block', color: txtColor }}
+              style={{ display: 'block', color: txtColor, pointerEvents: 'none' }}
               dangerouslySetInnerHTML={{ __html: iconData.body }}
             />
           </div>
@@ -431,9 +476,12 @@ const DraggableBadge: React.FC<Props> = ({
               fontWeight: 'bold',
               color: txtColor,
               lineHeight: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              pointerEvents: 'none',
             }}
           >
-            {displayValue}
+            {valueNode}
           </span>
         )}
       </>
@@ -482,6 +530,7 @@ const DraggableBadge: React.FC<Props> = ({
           inset: 0,
           borderRadius: `${radiusVal}px`,
           overflow: 'hidden',
+          pointerEvents: 'none',
         }}
       >
         {renderContent()}

@@ -93,10 +93,12 @@ const DraggableLogo: React.FC<Props> = ({
     snapTolerance = 8;
   const nearCentreX = isDragging && Math.abs(renderX + lw / 2 - centreX) < snapTolerance;
   const nearCentreY = isDragging && Math.abs(renderY + lh / 2 - centreY) < snapTolerance;
-  const dropShadow =
+  const userDropShadow =
     config.logoShadow > 0
       ? `drop-shadow(0 ${config.logoShadow * 0.5}px ${config.logoShadow}px rgba(0,0,0,0.65))`
-      : undefined;
+      : '';
+  const defaultReadabilityShadow = 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))';
+  const dropShadow = `${defaultReadabilityShadow}${userDropShadow ? ` ${userDropShadow}` : ''}`.trim();
   const startDrag = (mouseX: number, mouseY: number) => {
     setIsDragging(true);
     dragStartRef.current = { mouseX, mouseY };
@@ -200,7 +202,7 @@ const DraggableLogo: React.FC<Props> = ({
               const img = e.currentTarget;
               onLogoLoad?.(img.naturalWidth, img.naturalHeight);
             }}
-            className="w-full h-full object-contain pointer-events-none relative z-10"
+            className="w-full h-full max-w-xs max-h-16 object-contain pointer-events-none relative z-10 mx-auto"
             style={{ userSelect: 'none' }}
           />
         ) : (

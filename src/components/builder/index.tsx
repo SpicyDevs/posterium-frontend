@@ -1361,7 +1361,7 @@ const StudioLayout: React.FC<{
                     onSelect={handleSelectionOverride}
                   />
                 )}
-                {(activeTab === 'badges' || activeTab === 'logo' || activeTab === 'selection') && (
+                {(activeTab === 'badges' || activeTab === 'selection') && (
                   <Inspector config={config} setConfig={setConfig} />
                 )}
               </div>

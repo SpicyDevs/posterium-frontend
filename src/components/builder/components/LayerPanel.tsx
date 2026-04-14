@@ -1478,7 +1478,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             />
           </div>
 
-          {/* Logo overlay — toggle only */}
+          {/* Logo overlay */}
           <div className="pt-5">
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
@@ -1495,7 +1495,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </p>
                   <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                     {config.logo
-                      ? 'Enabled · Configure in right sidebar'
+                      ? 'Enabled · Configure below'
                       : 'Transparent title art overlay'}
                   </p>
                 </div>
@@ -1521,6 +1521,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
               aria-hidden="true"
             />
+            {config.logo && <LogoPanel config={config} setConfig={setConfig} />}
           </div>
 
           {/* API Keys — Section */}
