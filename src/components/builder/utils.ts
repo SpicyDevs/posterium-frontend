@@ -153,7 +153,7 @@ export const calculateAutoPosition = (
   config: PosterConfig
 ): { x: number; y: number } => {
   const sizeScale = getScale(config.size);
-  const ratings = config.ratings.slice(0, Math.max(totalBadges, 0));
+  const ratings = config.ratings.slice(0, totalBadges);
   const fallbackId = ratings[index] ?? ratingId;
   const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
   const dims = orderedIds.map((id) => {
@@ -164,6 +164,14 @@ export const calculateAutoPosition = (
       h: BASE_BADGE_H * sizeScale * perBadgeScale,
     };
   });
+  if (dims.length === 0) {
+    const fallbackW = BASE_BADGE_W * sizeScale;
+    const fallbackH = BASE_BADGE_H * sizeScale;
+    return {
+      x: Math.round((CANVAS_WIDTH - fallbackW) / 2),
+      y: Math.round((CANVAS_HEIGHT - fallbackH) / 2),
+    };
+  }
   const current = dims[index] ?? dims.find((d) => d.id === ratingId) ?? dims[0];
   const isRow = config.layout === 'row';
 
