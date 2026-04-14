@@ -19,7 +19,9 @@ interface EditorContextType {
   mobileSheetMode: SheetMode;
   setMobileSheetMode: (mode: SheetMode) => void;
   selectedIds: Set<RatingType>;
+  selectedLogo: boolean;
   handleSelection: (id: RatingType, multi: boolean) => void;
+  handleLogoSelection: (multi: boolean) => void;
   setBatchSelection: (ids: RatingType[]) => void;
   clearSelection: () => void;
   viewOptions: ViewOptions;
@@ -42,6 +44,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('source');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
+  const [selectedLogo, setSelectedLogo] = useState(false);
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
@@ -64,6 +67,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const handleSelection = useCallback(
     (id: RatingType, multi: boolean) => {
       let nextSize = 0;
+      let logoSelected = false;
       setSelectedIds((prev) => {
         const next = new Set(multi ? prev : []);
         if (next.has(id)) {
@@ -73,11 +77,34 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         nextSize = next.size;
         return next;
       });
+      setSelectedLogo((prev) => {
+        logoSelected = multi ? prev : false;
+        return logoSelected;
+      });
       // Use queueMicrotask so we read nextSize after the setter has run,
       // avoiding stale-closure issues in React 18 concurrent mode.
       queueMicrotask(() => {
-        if (nextSize > 0) setActiveTab('selection');
+        if (nextSize > 0 || logoSelected) setActiveTab('selection');
         else setActiveTab('badges');
+      });
+    },
+    [setActiveTab]
+  );
+
+  const handleLogoSelection = useCallback(
+    (multi: boolean) => {
+      let badgeCount = 0;
+      setSelectedIds((prev) => {
+        badgeCount = multi ? prev.size : 0;
+        return multi ? prev : new Set<RatingType>();
+      });
+      setSelectedLogo((prev) => {
+        const next = multi ? !prev : true;
+        queueMicrotask(() => {
+          if (next || badgeCount > 0) setActiveTab('selection');
+          else setActiveTab('badges');
+        });
+        return next;
       });
     },
     [setActiveTab]
@@ -86,6 +113,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setBatchSelection = useCallback(
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
+      setSelectedLogo(false);
       if (ids.length > 0) setActiveTab('selection');
     },
     [setActiveTab]
@@ -93,6 +121,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
+    setSelectedLogo(false);
     setActiveTab('badges');
   }, [setActiveTab]);
 
@@ -108,7 +137,9 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         mobileSheetMode,
         setMobileSheetMode,
         selectedIds,
+        selectedLogo,
         handleSelection,
+        handleLogoSelection,
         setBatchSelection,
         clearSelection,
         viewOptions,

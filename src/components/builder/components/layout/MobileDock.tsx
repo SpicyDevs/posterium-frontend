@@ -4,8 +4,8 @@ import { useEditor } from '../../context/EditorContext';
 
 type TabId = 'source' | 'layers' | 'poster' | 'badges' | 'selection';
 
-const MobileDock: React.FC<{ hasLogo: boolean; hasBadges: boolean; selectedCount: number }> = memo(
-  ({ hasLogo, hasBadges, selectedCount }) => {
+const MobileDock: React.FC<{ hasBadges: boolean; selectedCount: number }> = memo(
+  ({ hasBadges, selectedCount }) => {
     const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
     const tabs: { id: TabId; Icon: React.ElementType; label: string; visible: boolean }[] = [
       { id: 'source', Icon: Film, label: 'Media', visible: true },

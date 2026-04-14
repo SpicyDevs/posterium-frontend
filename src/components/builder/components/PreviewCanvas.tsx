@@ -55,7 +55,8 @@ const PreviewCanvas: React.FC<Props> = ({
   onResetView,
 }) => {
   const SNAP_CENTER_TOLERANCE = 8;
-  const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
+  const { viewOptions, mobileSheetMode, clearSelection, liveRatings, selectedLogo, handleLogoSelection } =
+    useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [autoScale, setAutoScale] = useState(1);
@@ -263,7 +264,7 @@ const PreviewCanvas: React.FC<Props> = ({
   const minimalCompositeUrl = useMemo(() => {
     if (!isMinimalPreset) return '';
     try {
-      return generateApiUrl(config, DEFAULT_API_BASE);
+      return generateApiUrl({ ...config, logo: false }, DEFAULT_API_BASE);
     } catch {
       return '';
     }
@@ -323,14 +324,12 @@ const PreviewCanvas: React.FC<Props> = ({
       const currentY = prev.logoY;
       let nextX = snap(currentX + dx);
       let nextY = snap(currentY + dy);
-      if (viewOptions?.snapToGrid) {
-        const centerX = nextX + prev.logoW / 2;
-        const centerY = nextY + prev.logoH / 2;
-        const middleX = CANVAS_WIDTH / 2;
-        const middleY = CANVAS_HEIGHT / 2;
-        if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - prev.logoW / 2;
-        if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
-      }
+      const centerX = nextX + prev.logoW / 2;
+      const centerY = nextY + prev.logoH / 2;
+      const middleX = CANVAS_WIDTH / 2;
+      const middleY = CANVAS_HEIGHT / 2;
+      if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - prev.logoW / 2;
+      if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
       return {
         ...prev,
         logoX: Math.round(
@@ -631,6 +630,8 @@ const PreviewCanvas: React.FC<Props> = ({
             logoUrl={logoPreviewUrl}
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
+            isSelected={selectedLogo}
+            onSelect={(multi) => handleLogoSelection(multi)}
           />
         )}
       </div>

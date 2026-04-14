@@ -26,6 +26,7 @@ interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
+  selectedLogo?: boolean;
   viewMode?: 'global' | 'selection';
   mode?: 'badges' | 'logo' | 'selection';
 }
@@ -513,9 +514,17 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode, mode }) => {
+const PropertyPanel: React.FC<Props> = ({
+  config,
+  setConfig,
+  selectedIds,
+  selectedLogo = false,
+  viewMode,
+  mode,
+}) => {
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesEnabled = config.ratings.length > 0;
+  const logoSettingsRef = useRef<HTMLDivElement | null>(null);
 
   const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
     setConfig((prev) => {
@@ -578,7 +587,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const panelMode = mode ?? (viewMode === 'selection' ? 'selection' : 'badges');
   const showGlobal = panelMode !== 'selection';
   const showBadgeSettings = panelMode === 'badges';
-  const showLogoSettings = panelMode === 'logo';
+  const showLogoSettings = panelMode === 'badges';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
@@ -588,6 +597,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     { id: 'tmdb', label: 'TMDB' },
     { id: 'metahub', label: 'Hub' },
   ];
+
+  useEffect(() => {
+    const handler = () => {
+      requestAnimationFrame(() => {
+        logoSettingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    };
+    window.addEventListener('builder-scroll-logo-settings', handler);
+    return () => window.removeEventListener('builder-scroll-logo-settings', handler);
+  }, []);
 
   // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
@@ -859,11 +878,12 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         )}
 
         {showLogoSettings && config.logo && (
-          <Section
-            title="Logo Overlay"
-            icon={<ImagePlay size={10} />}
-            sectionId="global-logo-overlay"
-          >
+          <div ref={logoSettingsRef}>
+            <Section
+              title="Logo Overlay"
+              icon={<ImagePlay size={10} />}
+              sectionId="global-logo-overlay"
+            >
             <SegmentedRow
               label="Source"
               options={LOGO_SOURCES.map((opt) => ({
@@ -993,13 +1013,14 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             >
               Drag the logo on the canvas to reposition it.
             </p>
-          </Section>
+            </Section>
+          </div>
         )}
       </SidebarLayout>
     );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
-  if (panelMode === 'selection' && selectedIds.size === 0)
+  if (panelMode === 'selection' && selectedIds.size === 0 && !selectedLogo)
     return (
       <SidebarLayout side="right">
         <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
@@ -1021,10 +1042,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               className="syne-font font-semibold"
               style={{ fontSize: 12, color: 'var(--film-text-dim)' }}
             >
-              No badge selected
+              Nothing selected
             </p>
             <p className="body-font mt-1" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
-              Click a badge on the canvas to edit
+              Click a badge or logo on the canvas to edit
             </p>
           </div>
         </div>
@@ -1033,9 +1054,11 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   // ── Per-badge / selection view ─────────────────────────────────────────────
 
+  const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0);
   const isAgeSelected = selectedIds.has('age');
-  const multi = selectedIds.size > 1;
+  const multi = selectionCount > 1;
   const selectedBadgeLabel = (() => {
+    if (selectedLogo && selectedIds.size === 0) return 'Logo Overlay';
     const first = Array.from(selectedIds)[0];
     if (!first) return 'Selection';
     return BADGE_DISPLAY_NAMES[first] ?? first.toUpperCase();
@@ -1099,7 +1122,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         }}
       >
         <p className="syne-font font-semibold" style={{ fontSize: 11, color: 'var(--film-pale)' }}>
-          {multi ? `${selectedIds.size} badges selected` : selectedBadgeLabel}
+          {multi ? `${selectionCount} items selected` : selectedBadgeLabel}
         </p>
         <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}>
           {multi
@@ -1108,6 +1131,8 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         </p>
       </div>
 
+      {selectedIds.size > 0 && (
+        <>
       {/* Transform ── scale */}
       <Section title="Transform" sectionId="badge-transform">
         <SliderRow
@@ -1277,8 +1302,58 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onReset={() => clearSelectedBadgeProp('labelColor')}
         />
       </Section>
+      </>
+      )}
+
+      {selectedLogo && config.logo && (
+        <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="selection-logo-overlay">
+          <SegmentedRow
+            label="Source"
+            options={LOGO_SOURCES.map((opt) => ({
+              id: String(opt.id ?? 'auto'),
+              label: opt.label,
+            }))}
+            value={String(config.logoSource ?? 'auto')}
+            onChange={(v) =>
+              updateConfig(
+                'logoSource',
+                (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource']
+              )
+            }
+          />
+          <SliderRow
+            label="Size"
+            value={config.logoW}
+            min={100}
+            max={490}
+            unit="px"
+            onChange={(newW) => {
+              const w = Math.round(newW);
+              const h = Math.round(w / LOGO_ASPECT);
+              setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
+            }}
+          />
+          <SliderRow
+            label="Opacity"
+            value={config.logoOpacity}
+            min={0}
+            max={1}
+            step={0.05}
+            formatValue={(v) => `${Math.round(v * 100)}%`}
+            onChange={(v) => updateConfig('logoOpacity', v)}
+          />
+          <SliderRow
+            label="Drop Shadow"
+            value={config.logoShadow}
+            min={0}
+            max={30}
+            onChange={(v) => updateConfig('logoShadow', v)}
+          />
+        </Section>
+      )}
 
       {/* Reset */}
+      {selectedIds.size > 0 && (
       <div className="px-3 pt-3">
         <button
           type="button"
@@ -1308,6 +1383,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           <RotateCcw size={11} /> Reset to global defaults
         </button>
       </div>
+      )}
     </SidebarLayout>
   );
 };

@@ -16,6 +16,7 @@ import {
   GripVertical,
   Film,
   Layers,
+  Badge,
   Tv,
   Clapperboard,
   Eye,
@@ -32,7 +33,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
-import type { PosterConfig, RatingType, LogoSourceType, ApiKeys } from '../types';
+import type { PosterConfig, RatingType, ApiKeys } from '../types';
 import { ALL_BADGES, DEFAULT_CONFIG } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
@@ -393,108 +394,6 @@ const Section: React.FC<{
         style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
         aria-hidden="true"
       />
-    </div>
-  );
-};
-
-const LOGO_BASE_W = 320;
-const LOGO_BASE_H = 84;
-const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
-
-const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
-  { id: null, label: 'Auto' },
-  { id: 'fanart', label: 'Fanart' },
-  { id: 'tmdb', label: 'TMDB' },
-  { id: 'metahub', label: 'Hub' },
-];
-
-const LogoPanel: React.FC<{
-  config: PosterConfig;
-  setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
-}> = ({ config, setConfig }) => {
-  const update = useCallback(
-    <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
-      setConfig((prev) => ({ ...prev, [key]: value })),
-    [setConfig]
-  );
-
-  const handleSizeChange = (newW: number) => {
-    const w = Math.round(newW);
-    const h = Math.round(w / LOGO_ASPECT);
-    setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
-  };
-
-  return (
-    <div className="space-y-4 pt-2">
-      <div className="space-y-1.5">
-        <span
-          className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-        >
-          Source
-        </span>
-        <div className="grid grid-cols-4 gap-1">
-          {LOGO_SOURCES.map((opt) => (
-            <button
-              key={String(opt.id)}
-              type="button"
-              onClick={() => update('logoSource', opt.id as PosterConfig['logoSource'])}
-              className="h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font"
-              style={{
-                background:
-                  (config.logoSource ?? null) === opt.id
-                    ? 'rgba(196,124,46,0.12)'
-                    : 'rgba(255,255,255,0.02)',
-                color:
-                  (config.logoSource ?? null) === opt.id
-                    ? 'var(--film-pale)'
-                    : 'var(--film-text-dim)',
-                border:
-                  (config.logoSource ?? null) === opt.id
-                    ? '1px solid rgba(196,124,46,0.25)'
-                    : '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-          Falls back automatically if source has no logo
-        </p>
-      </div>
-
-      <SliderRow
-        label="Size"
-        value={config.logoW}
-        min={100}
-        max={490}
-        unit="px"
-        onChange={handleSizeChange}
-      />
-      <SliderRow
-        label="Opacity"
-        value={config.logoOpacity}
-        min={0}
-        max={1}
-        step={0.05}
-        formatValue={(v) => `${Math.round(v * 100)}%`}
-        onChange={(v) => update('logoOpacity', v)}
-      />
-      <SliderRow
-        label="Drop Shadow"
-        value={config.logoShadow}
-        min={0}
-        max={30}
-        onChange={(v) => update('logoShadow', v)}
-      />
-
-      <p
-        className="body-font leading-relaxed"
-        style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-      >
-        ⟠ Drag the logo on the canvas to reposition. Snap guides appear near the centre.
-      </p>
     </div>
   );
 };
@@ -1465,17 +1364,43 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 </button>
               ))}
             </div>
-            <ToggleRow
-              label="Badges"
-              sub={isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
-              checked={badgesVisible && !isMinimalPreset}
-              onChange={(v) => {
-                if (isMinimalPreset) return;
-                if (v) enableBadges();
-                else disableBadges({ persistPreference: true });
-              }}
-              disabled={isMinimalPreset}
-            />
+            <div
+              className={clsx(
+                'flex items-center justify-between gap-3',
+                isMinimalPreset && 'opacity-60 pointer-events-none'
+              )}
+            >
+              <div className="min-w-0">
+                <p
+                  className="body-font font-medium flex items-center gap-1.5"
+                  style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+                >
+                  <Badge size={11} /> Badges
+                </p>
+                <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                  {isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
+                </p>
+              </div>
+              <Switch
+                checked={badgesVisible && !isMinimalPreset}
+                onChange={(v) => {
+                  if (isMinimalPreset) return;
+                  if (v) enableBadges();
+                  else disableBadges({ persistPreference: true });
+                }}
+                className={clsx(
+                  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
+                  badgesVisible && !isMinimalPreset ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                )}
+              >
+                <span
+                  className={clsx(
+                    'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+                    badgesVisible && !isMinimalPreset ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  )}
+                />
+              </Switch>
+            </div>
           </div>
 
           {/* Logo overlay */}
@@ -1495,14 +1420,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </p>
                   <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                     {config.logo
-                      ? 'Enabled · Configure below'
+                      ? 'Enabled · Customizable in the Badges/Logo tab'
                       : 'Transparent title art overlay'}
                   </p>
                 </div>
               </div>
               <Switch
                 checked={config.logo}
-                onChange={(v) => updateConfig('logo', v)}
+                onChange={(v) => {
+                  updateConfig('logo', v);
+                  if (v) {
+                    setActiveTab('badges');
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('builder-scroll-logo-settings'));
+                    }, 60);
+                  }
+                }}
                 className={clsx(
                   'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
                   config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
@@ -1521,7 +1454,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
               aria-hidden="true"
             />
-            {config.logo && <LogoPanel config={config} setConfig={setConfig} />}
           </div>
 
           {/* API Keys — Section */}

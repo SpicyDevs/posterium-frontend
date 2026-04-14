@@ -299,6 +299,7 @@ const StudioLayout: React.FC<{
     mobileSheetMode,
     setMobileSheetMode,
     selectedIds,
+    selectedLogo,
     handleSelection,
     clearSelection,
     setBatchSelection,
@@ -340,9 +341,13 @@ const StudioLayout: React.FC<{
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const selectedIdsRef = useRef(selectedIds);
+  const selectedLogoRef = useRef(selectedLogo);
   const configRatingsRef = useRef(config.ratings);
   useEffect(() => {
     selectedIdsRef.current = selectedIds;
+  });
+  useEffect(() => {
+    selectedLogoRef.current = selectedLogo;
   });
   useEffect(() => {
     configRatingsRef.current = config.ratings;
@@ -442,7 +447,7 @@ const StudioLayout: React.FC<{
           setIsFullscreen(false);
           return;
         }
-        if (selectedIds.size > 0) {
+        if (selectedIds.size > 0 || selectedLogo) {
           clearSelection();
           return;
         }
@@ -479,10 +484,15 @@ const StudioLayout: React.FC<{
         redo();
         return;
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size > 0) {
+      if (
+        (e.key === 'Delete' || e.key === 'Backspace') &&
+        (selectedIdsRef.current.size > 0 || selectedLogoRef.current)
+      ) {
         e.preventDefault();
         const rm = new Set(selectedIdsRef.current);
-        setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) }));
+        if (rm.size > 0) {
+          setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) }));
+        }
         clearSelection();
         return;
       }
@@ -589,6 +599,7 @@ const StudioLayout: React.FC<{
     shortcutsOpen,
     exportOpen,
     selectedIds,
+    selectedLogo,
     isDesktop,
   ]);
 
@@ -1371,9 +1382,8 @@ const StudioLayout: React.FC<{
 
         {/* Mobile dock */}
         <MobileDock
-          hasLogo={config.logo}
           hasBadges={config.ratings.length > 0}
-          selectedCount={selectedIds.size}
+          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
         />
 
         {/* Zoom + fullscreen overlay — always visible */}

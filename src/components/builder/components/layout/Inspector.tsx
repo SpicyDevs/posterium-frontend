@@ -17,13 +17,14 @@ const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
-  const { activeTab, setActiveTab, selectedIds } = useEditor();
+  const { activeTab, setActiveTab, selectedIds, selectedLogo } = useEditor();
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0);
 
   const tabs: { id: InspectorTab; label: string; Icon: React.ElementType; visible: boolean }[] = [
     { id: 'badges', label: 'Badges', Icon: Badge, visible: config.ratings.length > 0 },
     {
       id: 'selection',
-      label: selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Selection',
+      label: selectedCount > 0 ? `${selectedCount} selected` : 'Selection',
       Icon: MousePointer2,
       visible: true,
     },
@@ -73,6 +74,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         config={config}
         setConfig={setConfig}
         selectedIds={selectedIds}
+        selectedLogo={selectedLogo}
         mode={currentTab}
       />
     </SidebarLayout>
