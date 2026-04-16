@@ -648,7 +648,9 @@ const PropertyPanel: React.FC<Props> = ({
       const placed = placeMinimalRatings(list, prev.preset, prev.layout);
       return { ...prev, minimalRatings: placed };
     });
-    setMinimalRatingEditorIndex((v) => Math.max(0, Math.min(v, minimalRatings.length - 2)));
+    setMinimalRatingEditorIndex((v) =>
+      Math.max(0, Math.min(v, Math.max(0, minimalRatings.length - 2)))
+    );
   };
 
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) =>
