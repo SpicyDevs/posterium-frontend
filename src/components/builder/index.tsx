@@ -1383,6 +1383,8 @@ const StudioLayout: React.FC<{
         {/* Mobile dock */}
         <MobileDock
           hasBadges={config.ratings.length > 0}
+          hasLogo={config.logo}
+          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
           selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
         />
 

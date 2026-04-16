@@ -588,6 +588,7 @@ const PropertyPanel: React.FC<Props> = ({
   const showGlobal = panelMode !== 'selection';
   const showBadgeSettings = panelMode === 'badges';
   const showLogoSettings = panelMode === 'badges';
+  const logoSectionTitle = isMinimalPreset ? 'Title & Logo' : 'Logo Overlay';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
@@ -877,10 +878,34 @@ const PropertyPanel: React.FC<Props> = ({
           </>
         )}
 
+        {showLogoSettings && isMinimalPreset && (
+          <Section
+            title={config.logo ? 'Title' : 'Title Overlay'}
+            icon={<Type size={10} />}
+            sectionId="global-minimal-title"
+          >
+            <SliderRow
+              label="Font Size"
+              value={config.minimalTextSize}
+              min={18}
+              max={96}
+              step={1}
+              unit="px"
+              onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
+            />
+            <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
+              <span>Position (drag on canvas)</span>
+              <span>
+                {Math.round(config.minimalTextX)}, {Math.round(config.minimalTextY)}
+              </span>
+            </div>
+          </Section>
+        )}
+
         {showLogoSettings && config.logo && (
           <div ref={logoSettingsRef}>
             <Section
-              title="Logo Overlay"
+              title={logoSectionTitle}
               icon={<ImagePlay size={10} />}
               sectionId="global-logo-overlay"
             >

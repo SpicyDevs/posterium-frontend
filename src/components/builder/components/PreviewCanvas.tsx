@@ -19,7 +19,6 @@ import DraggableLogo from './DraggableLogo';
 import {
   calculateAutoPosition,
   DEFAULT_API_BASE,
-  generateApiUrl,
   getScale,
   snapToGridSize,
 } from '../utils';
@@ -271,17 +270,7 @@ const PreviewCanvas: React.FC<Props> = ({
     config.ptype,
   ]);
 
-  const minimalCompositeUrl = useMemo(() => {
-    if (!isMinimalPreset) return '';
-    try {
-      return generateApiUrl({ ...config, logo: false }, DEFAULT_API_BASE);
-    } catch {
-      return '';
-    }
-  }, [config, isMinimalPreset]);
-
-  const hasMinimalUrlError = isMinimalPreset && !minimalCompositeUrl;
-  const previewImageUrl = isMinimalPreset ? minimalCompositeUrl : cleanPosterUrl;
+  const previewImageUrl = cleanPosterUrl;
 
   const posterCssFilter = useMemo(() => {
     if (isMinimalPreset) return 'none';
@@ -294,11 +283,7 @@ const PreviewCanvas: React.FC<Props> = ({
   useEffect(() => {
     setIsImageLoading(true);
     setImageError(false);
-    if (hasMinimalUrlError) {
-      setIsImageLoading(false);
-      setImageError(true);
-    }
-  }, [previewImageUrl, hasMinimalUrlError]);
+  }, [previewImageUrl]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const id = config.imdbId || config.tmdbId;
@@ -591,19 +576,17 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
-        {!hasMinimalUrlError && (
-          <img
-            key={previewImageUrl}
-            src={previewImageUrl}
-            alt="Poster"
-            className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
-              isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
-            }`}
-            style={{ filter: posterCssFilter }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        )}
+        <img
+          key={previewImageUrl}
+          src={previewImageUrl}
+          alt="Poster"
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
+            isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
+          }`}
+          style={{ filter: posterCssFilter }}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
 
         {/* Badge overlays */}
         {!isMinimalPreset &&

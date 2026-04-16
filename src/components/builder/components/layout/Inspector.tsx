@@ -19,9 +19,21 @@ const isInspectorTab = (value: string): value is InspectorTab =>
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   const { activeTab, setActiveTab, selectedIds, selectedLogo } = useEditor();
   const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0);
+  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+  const hasBadges = config.ratings.length > 0;
+  const hasLogo = config.logo;
+  const primaryTabLabel = isMinimalPreset
+    ? hasLogo
+      ? 'Title / Logo'
+      : 'Title'
+    : hasBadges && hasLogo
+      ? 'Badges / Logo'
+      : hasLogo
+        ? 'Logo'
+        : 'Badges';
 
   const tabs: { id: InspectorTab; label: string; Icon: React.ElementType; visible: boolean }[] = [
-    { id: 'badges', label: 'Badges', Icon: Badge, visible: config.ratings.length > 0 },
+    { id: 'badges', label: primaryTabLabel, Icon: Badge, visible: hasBadges || hasLogo || isMinimalPreset },
     {
       id: 'selection',
       label: selectedCount > 0 ? `${selectedCount} selected` : 'Selection',

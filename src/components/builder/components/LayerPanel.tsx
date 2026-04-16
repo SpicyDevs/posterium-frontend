@@ -1502,22 +1502,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </Section>
           )}
 
-          {isMinimalPreset && (
-            <Section title="Minimal Text" icon={<Monitor size={13} />} defaultOpen>
-              <SliderRow
-                label="Font Size"
-                value={config.minimalTextSize}
-                min={18}
-                max={96}
-                unit="px"
-                onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
-              />
-              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Drag the title text directly on the canvas to reposition.
-              </p>
-            </Section>
-          )}
-
           <Section title="Canvas Overlays" icon={<ShieldCheck size={13} />} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
               <button
