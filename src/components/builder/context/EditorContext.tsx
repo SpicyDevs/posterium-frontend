@@ -30,6 +30,8 @@ interface EditorContextType {
   setLiveRatings: (r: LiveRatings) => void;
   liveTitle: string;
   setLiveTitle: (title: string) => void;
+  liveYear: string;
+  setLiveYear: (year: string) => void;
   resolvedLogoSource: string | null;
   setResolvedLogoSource: (src: string | null) => void;
   /** Direct poster image URL (TMDB/fanart/etc.) — set by LayerPanel when media loads.
@@ -54,6 +56,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
   const [liveTitle, setLiveTitle] = useState('');
+  const [liveYear, setLiveYear] = useState('');
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
@@ -151,6 +154,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setLiveRatings,
         liveTitle,
         setLiveTitle,
+        liveYear,
+        setLiveYear,
         resolvedLogoSource,
         setResolvedLogoSource,
         livePosterUrl,

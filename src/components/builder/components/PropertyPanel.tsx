@@ -1,6 +1,6 @@
 // src/components/builder/components/PropertyPanel.tsx
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import { Switch } from '@headlessui/react';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType } from '../types';
 import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import {
@@ -18,6 +18,7 @@ import {
   Hash,
   Sliders,
   ImagePlay,
+  Check,
 } from 'lucide-react';
 import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
@@ -420,6 +421,67 @@ const TextInputRow: React.FC<{
   );
 };
 
+const SelectBox = memo(
+  ({
+    value,
+    onChange,
+    options,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { id: string; label: string }[];
+  }) => (
+    <Listbox value={value} onChange={onChange}>
+      <div className="relative">
+        <ListboxButton
+          className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'var(--film-pale)',
+          }}
+        >
+          <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
+          <ChevronDown size={10} style={{ color: 'var(--film-text-dim)', flexShrink: 0 }} />
+        </ListboxButton>
+        <ListboxOptions
+          transition
+          className="absolute z-50 mt-1 w-full py-1 rounded-xl shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
+          style={{
+            background: 'var(--film-mid)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          {options.map((opt) => (
+            <ListboxOption
+              key={opt.id}
+              value={opt.id}
+              className={({ active, selected }) =>
+                clsx(
+                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors syne-font',
+                  active && 'bg-[rgba(196,124,46,0.1)]',
+                  !active && selected && 'text-[var(--film-pale)]',
+                  !active && !selected && 'text-[var(--film-text-label)]'
+                )
+              }
+            >
+              {({ selected }) => (
+                <>
+                  <span className="flex-1 truncate">{opt.label}</span>
+                  {selected && (
+                    <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                  )}
+                </>
+              )}
+            </ListboxOption>
+          ))}
+        </ListboxOptions>
+      </div>
+    </Listbox>
+  )
+);
+SelectBox.displayName = 'SelectBox';
+
 // ── ColorRow — label + optional reset button above a ColorPicker ──────────────
 const ColorRow: React.FC<{
   label: string;
@@ -516,26 +578,27 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
 
 const makeDefaultMinimalRating = (provider: RatingType = 'imdb', x = 342, y = 688) => ({
   provider,
+  enabled: true,
   x,
   y,
-  size: 24,
+  size: 26,
   color: '#facc15',
   opacity: 1,
   iconMode: 'star' as const,
   symbol: '★',
   bgEnabled: false,
   bgColor: '#000000',
-  bgOpacity: 0.25,
+  bgOpacity: 0,
   borderW: 0,
   borderColor: '#ffffff',
   borderOpacity: 0.7,
-  radius: 10,
-  paddingX: 10,
-  paddingY: 6,
-  shadowEnabled: true,
+  radius: 0,
+  paddingX: 0,
+  paddingY: 0,
+  shadowEnabled: false,
   shadowX: 0,
-  shadowY: 2,
-  shadowBlur: 6,
+  shadowY: 0,
+  shadowBlur: 0,
   shadowColor: '#000000',
 });
 
@@ -547,8 +610,8 @@ const placeMinimalRatings = (
   const activePreset = preset === 'custom' ? 'bc' : preset;
   const activeLayout = layout === 'custom' ? 'row' : layout;
   const gap = 14;
-  const chipW = 150;
-  const chipH = 44;
+  const chipW = 120;
+  const chipH = 34;
   const total = ratings.length;
   if (total === 0) return ratings;
   const groupW = activeLayout === 'row' ? total * chipW + (total - 1) * gap : chipW;
@@ -627,13 +690,22 @@ const PropertyPanel: React.FC<Props> = ({
     });
   };
 
+  const updateAllMinimalRatings = (
+    updates: Partial<NonNullable<PosterConfig['minimalRatings']>[number]>
+  ) => {
+    setConfig((prev) => {
+      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
+      return { ...prev, minimalRatings: list.map((item) => ({ ...item, ...updates })) };
+    });
+  };
+
   const addMinimalRating = () => {
     setConfig((prev) => {
       const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
       if (list.length >= 3) return prev;
       const used = new Set(list.map((r) => r.provider));
       const nextProvider = (ALL_BADGES.find((b) => !used.has(b.id))?.id ?? 'rt') as RatingType;
-      const next = [...list, makeDefaultMinimalRating(nextProvider, 342, 688)];
+      const next = [...list, makeDefaultMinimalRating(nextProvider, 140, 672)];
       const placed = placeMinimalRatings(next, prev.preset, prev.layout);
       return { ...prev, minimalRatings: placed };
     });
@@ -714,6 +786,16 @@ const PropertyPanel: React.FC<Props> = ({
     window.addEventListener('builder-scroll-logo-settings', handler);
     return () => window.removeEventListener('builder-scroll-logo-settings', handler);
   }, []);
+
+  useEffect(() => {
+    const onSelectMinimalRating = (event: Event) => {
+      const idx = (event as CustomEvent<number>).detail;
+      if (typeof idx !== 'number' || Number.isNaN(idx)) return;
+      setMinimalRatingEditorIndex(Math.max(0, Math.min(idx, minimalRatings.length - 1)));
+    };
+    window.addEventListener('builder-select-minimal-rating', onSelectMinimalRating);
+    return () => window.removeEventListener('builder-select-minimal-rating', onSelectMinimalRating);
+  }, [minimalRatings.length]);
 
   // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
@@ -986,7 +1068,11 @@ const PropertyPanel: React.FC<Props> = ({
 
         {showLogoSettings && isMinimalPreset && (
           <>
-            <Section title="Title" icon={<Type size={10} />} sectionId="global-minimal-title">
+            <Section
+              title="Minimal Typography & Meta"
+              icon={<Type size={10} />}
+              sectionId="global-minimal-title"
+            >
               <ToggleRow
                 label="Show Title"
                 checked={config.minimalTitleEnabled ?? true}
@@ -1050,15 +1136,15 @@ const PropertyPanel: React.FC<Props> = ({
                 value={config.minimalTitleColor ?? '#f5f5f5'}
                 onChange={(v) => updateConfig('minimalTitleColor', v)}
                 showOpacity
-                opacity={config.minimalTitleOpacity ?? 0.95}
+                opacity={config.minimalTitleOpacity ?? 1}
                 onOpacityChange={(v) => updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))}
               />
               <ToggleRow
                 label="Shadow"
-                checked={config.minimalTitleShadowEnabled ?? true}
+                checked={config.minimalTitleShadowEnabled ?? false}
                 onChange={(v) => updateConfig('minimalTitleShadowEnabled', v)}
               />
-              {(config.minimalTitleShadowEnabled ?? true) && (
+              {(config.minimalTitleShadowEnabled ?? false) && (
                 <>
                   <SliderRow
                     label="Shadow X"
@@ -1096,10 +1182,10 @@ const PropertyPanel: React.FC<Props> = ({
               )}
               <ToggleRow
                 label="Background"
-                checked={config.minimalTitleBgEnabled ?? true}
+                checked={config.minimalTitleBgEnabled ?? false}
                 onChange={(v) => updateConfig('minimalTitleBgEnabled', v)}
               />
-              {(config.minimalTitleBgEnabled ?? true) && (
+              {(config.minimalTitleBgEnabled ?? false) && (
                 <>
                   <ColorRow
                     label="Background Color"
@@ -1167,9 +1253,70 @@ const PropertyPanel: React.FC<Props> = ({
                   {Math.round(config.minimalTextX)}, {Math.round(config.minimalTextY)}
                 </span>
               </div>
+              <ToggleRow
+                label="Show Year"
+                checked={config.minimalYearEnabled ?? true}
+                onChange={(v) => updateConfig('minimalYearEnabled', v)}
+              />
+              <ToggleRow
+                label="Show Duration"
+                checked={config.minimalDurationEnabled ?? false}
+                onChange={(v) => updateConfig('minimalDurationEnabled', v)}
+              />
+              <SliderRow
+                label="Meta Size"
+                value={config.minimalMetaSize ?? 50}
+                min={18}
+                max={80}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('minimalMetaSize', Math.round(v))}
+              />
+              <SliderRow
+                label="Meta Weight"
+                value={config.minimalMetaWeight ?? 600}
+                min={300}
+                max={900}
+                step={100}
+                onChange={(v) => updateConfig('minimalMetaWeight', Math.round(v))}
+              />
+              <SliderRow
+                label="Meta Letter Spacing"
+                value={config.minimalMetaLetterSpacing ?? 0}
+                min={-2}
+                max={8}
+                step={0.1}
+                unit="px"
+                onChange={(v) => updateConfig('minimalMetaLetterSpacing', Number(v.toFixed(1)))}
+              />
+              <ColorRow
+                label="Meta Color"
+                value={config.minimalMetaColor ?? '#d6dde3'}
+                onChange={(v) => updateConfig('minimalMetaColor', v)}
+                showOpacity
+                opacity={config.minimalMetaOpacity ?? 0.92}
+                onOpacityChange={(v) => updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))}
+              />
+              <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
+                <span>Year position</span>
+                <span>
+                  {Math.round(config.minimalMetaX ?? 26)}, {Math.round(config.minimalMetaY ?? 672)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
+                <span>Duration position</span>
+                <span>
+                  {Math.round(config.minimalDurationX ?? 90)}, {Math.round(config.minimalDurationY ?? 672)}
+                </span>
+              </div>
             </Section>
 
             <Section title="Minimal Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
+              <ToggleRow
+                label="Show Ratings"
+                checked={config.minimalRatingsEnabled ?? true}
+                onChange={(v) => updateConfig('minimalRatingsEnabled', v)}
+              />
               <div className="flex items-center justify-between">
                 <p className="body-font text-[11px]" style={{ color: 'var(--film-text-label)' }}>
                   Up to 3 draggable ratings
@@ -1201,8 +1348,33 @@ const PropertyPanel: React.FC<Props> = ({
                 value={String(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1))}
                 onChange={(v) => setMinimalRatingEditorIndex(parseInt(v, 10) || 0)}
               />
+              <button
+                type="button"
+                onClick={() =>
+                  removeMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1))
+                }
+                disabled={minimalRatings.length <= 1}
+                className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] syne-font"
+                style={{
+                  border: '1px solid rgba(248,113,113,0.12)',
+                  background: 'rgba(248,113,113,0.04)',
+                  color:
+                    minimalRatings.length <= 1 ? 'rgba(248,113,113,0.35)' : 'rgba(248,113,113,0.75)',
+                }}
+              >
+                Remove This Rating
+              </button>
               {selectedMinimalRating && (
                 <>
+                  <ToggleRow
+                    label="Show Selected Slot"
+                    checked={selectedMinimalRating.enabled}
+                    onChange={(v) =>
+                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
+                        enabled: v,
+                      })
+                    }
+                  />
                   <div className="space-y-1.5">
                     <span
                       className="body-font"
@@ -1210,22 +1382,16 @@ const PropertyPanel: React.FC<Props> = ({
                     >
                       Provider
                     </span>
-                    <select
+                    <SelectBox
                       value={selectedMinimalRating.provider}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         updateMinimalRating(
                           Math.min(minimalRatingEditorIndex, minimalRatings.length - 1),
-                          { provider: e.target.value as RatingType }
+                          { provider: v as RatingType }
                         )
                       }
-                      className="w-full h-8 rounded-lg px-2 text-[11px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--film-cream)]"
-                    >
-                      {ALL_BADGES.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.label}
-                        </option>
-                      ))}
-                    </select>
+                      options={ALL_BADGES.map((b) => ({ id: b.id, label: b.label }))}
+                    />
                   </div>
                   <SegmentedRow
                     label="Icon Style"
@@ -1239,9 +1405,120 @@ const PropertyPanel: React.FC<Props> = ({
                     onChange={(v) =>
                       updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
                         iconMode: v as 'star' | 'original' | 'flat' | 'symbol',
-                      })
-                    }
+                        })
+                      }
+                    />
+                  <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
+                    <span>Slot position (drag on canvas)</span>
+                    <span>
+                      {Math.round(selectedMinimalRating.x)}, {Math.round(selectedMinimalRating.y)}
+                    </span>
+                  </div>
+                  <SliderRow
+                    label="Global Size"
+                    value={selectedMinimalRating.size}
+                    min={12}
+                    max={54}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateAllMinimalRatings({ size: Math.round(v) })}
                   />
+                  <ColorRow
+                    label="Global Color"
+                    value={selectedMinimalRating.color}
+                    showOpacity
+                    opacity={selectedMinimalRating.opacity}
+                    onChange={(v) => updateAllMinimalRatings({ color: v })}
+                    onOpacityChange={(v) => updateAllMinimalRatings({ opacity: Number(v.toFixed(2)) })}
+                  />
+                  <ToggleRow
+                    label="Global Background"
+                    checked={selectedMinimalRating.bgEnabled}
+                    onChange={(v) => updateAllMinimalRatings({ bgEnabled: v })}
+                  />
+                  {selectedMinimalRating.bgEnabled && (
+                    <ColorRow
+                      label="Global Background Color"
+                      value={selectedMinimalRating.bgColor}
+                      showOpacity
+                      opacity={selectedMinimalRating.bgOpacity}
+                      onChange={(v) => updateAllMinimalRatings({ bgColor: v })}
+                      onOpacityChange={(v) =>
+                        updateAllMinimalRatings({ bgOpacity: Number(v.toFixed(2)) })
+                      }
+                    />
+                  )}
+                  <SliderRow
+                    label="Global Border Width"
+                    value={selectedMinimalRating.borderW}
+                    min={0}
+                    max={8}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateAllMinimalRatings({ borderW: Math.round(v) })}
+                  />
+                  {selectedMinimalRating.borderW > 0 && (
+                    <ColorRow
+                      label="Global Border Color"
+                      value={selectedMinimalRating.borderColor}
+                      showOpacity
+                      opacity={selectedMinimalRating.borderOpacity}
+                      onChange={(v) => updateAllMinimalRatings({ borderColor: v })}
+                      onOpacityChange={(v) =>
+                        updateAllMinimalRatings({ borderOpacity: Number(v.toFixed(2)) })
+                      }
+                    />
+                  )}
+                  <SliderRow
+                    label="Global Radius"
+                    value={selectedMinimalRating.radius}
+                    min={0}
+                    max={24}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateAllMinimalRatings({ radius: Math.round(v) })}
+                  />
+                  <ToggleRow
+                    label="Global Shadow"
+                    checked={selectedMinimalRating.shadowEnabled}
+                    onChange={(v) => updateAllMinimalRatings({ shadowEnabled: v })}
+                  />
+                  {selectedMinimalRating.shadowEnabled && (
+                    <>
+                      <SliderRow
+                        label="Global Shadow X"
+                        value={selectedMinimalRating.shadowX}
+                        min={-20}
+                        max={20}
+                        step={1}
+                        unit="px"
+                        onChange={(v) => updateAllMinimalRatings({ shadowX: Math.round(v) })}
+                      />
+                      <SliderRow
+                        label="Global Shadow Y"
+                        value={selectedMinimalRating.shadowY}
+                        min={-20}
+                        max={20}
+                        step={1}
+                        unit="px"
+                        onChange={(v) => updateAllMinimalRatings({ shadowY: Math.round(v) })}
+                      />
+                      <SliderRow
+                        label="Global Shadow Blur"
+                        value={selectedMinimalRating.shadowBlur}
+                        min={0}
+                        max={40}
+                        step={1}
+                        unit="px"
+                        onChange={(v) => updateAllMinimalRatings({ shadowBlur: Math.round(v) })}
+                      />
+                      <ColorRow
+                        label="Global Shadow Color"
+                        value={selectedMinimalRating.shadowColor}
+                        onChange={(v) => updateAllMinimalRatings({ shadowColor: v })}
+                      />
+                    </>
+                  )}
                   {selectedMinimalRating.iconMode === 'symbol' && (
                     <TextInputRow
                       label="Symbol"
@@ -1254,139 +1531,6 @@ const PropertyPanel: React.FC<Props> = ({
                       }
                     />
                   )}
-                  <SliderRow
-                    label="Size"
-                    value={selectedMinimalRating.size}
-                    min={12}
-                    max={54}
-                    step={1}
-                    unit="px"
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        size: Math.round(v),
-                      })
-                    }
-                  />
-                  <ColorRow
-                    label="Color"
-                    value={selectedMinimalRating.color}
-                    showOpacity
-                    opacity={selectedMinimalRating.opacity}
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        color: v,
-                      })
-                    }
-                    onOpacityChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        opacity: Number(v.toFixed(2)),
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Background"
-                    checked={selectedMinimalRating.bgEnabled}
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        bgEnabled: v,
-                      })
-                    }
-                  />
-                  {selectedMinimalRating.bgEnabled && (
-                    <ColorRow
-                      label="Background Color"
-                      value={selectedMinimalRating.bgColor}
-                      showOpacity
-                      opacity={selectedMinimalRating.bgOpacity}
-                      onChange={(v) =>
-                        updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                          bgColor: v,
-                        })
-                      }
-                      onOpacityChange={(v) =>
-                        updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                          bgOpacity: Number(v.toFixed(2)),
-                        })
-                      }
-                    />
-                  )}
-                  <SliderRow
-                    label="Border Width"
-                    value={selectedMinimalRating.borderW}
-                    min={0}
-                    max={8}
-                    step={1}
-                    unit="px"
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        borderW: Math.round(v),
-                      })
-                    }
-                  />
-                  {selectedMinimalRating.borderW > 0 && (
-                    <ColorRow
-                      label="Border Color"
-                      value={selectedMinimalRating.borderColor}
-                      showOpacity
-                      opacity={selectedMinimalRating.borderOpacity}
-                      onChange={(v) =>
-                        updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                          borderColor: v,
-                        })
-                      }
-                      onOpacityChange={(v) =>
-                        updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                          borderOpacity: Number(v.toFixed(2)),
-                        })
-                      }
-                    />
-                  )}
-                  <SliderRow
-                    label="Radius"
-                    value={selectedMinimalRating.radius}
-                    min={0}
-                    max={24}
-                    step={1}
-                    unit="px"
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        radius: Math.round(v),
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Shadow"
-                    checked={selectedMinimalRating.shadowEnabled}
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        shadowEnabled: v,
-                      })
-                    }
-                  />
-                  <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
-                    <span>Position (drag on canvas)</span>
-                    <span>
-                      {Math.round(selectedMinimalRating.x)}, {Math.round(selectedMinimalRating.y)}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      removeMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1))
-                    }
-                    disabled={minimalRatings.length <= 1}
-                    className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] syne-font"
-                    style={{
-                      border: '1px solid rgba(248,113,113,0.12)',
-                      background: 'rgba(248,113,113,0.04)',
-                      color:
-                        minimalRatings.length <= 1
-                          ? 'rgba(248,113,113,0.35)'
-                          : 'rgba(248,113,113,0.75)',
-                    }}
-                  >
-                    Remove This Rating
-                  </button>
                 </>
               )}
             </Section>

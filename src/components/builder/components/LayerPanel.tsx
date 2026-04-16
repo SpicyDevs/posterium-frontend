@@ -503,6 +503,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setActiveTab,
     setLiveRatings,
     setLiveTitle,
+    setLiveYear,
     fallbackEnabled,
     setFallbackEnabled,
     viewOptions,
@@ -613,6 +614,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         }
         setLiveRatings(liveRatingsFiltered);
         setLiveTitle(merged.title ?? '');
+        setLiveYear(merged.year ?? '');
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig((prev) => ({ ...prev, imdbId: data.ids.imdb }));
         }
@@ -621,7 +623,16 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
     })();
     return () => ctrl.abort();
-  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setLiveTitle, setConfig]);
+  }, [
+    config.tmdbId,
+    config.imdbId,
+    config.mediaType,
+    config.source,
+    setLiveRatings,
+    setLiveTitle,
+    setLiveYear,
+    setConfig,
+  ]);
 
   useEffect(() => {
     setFallbackEnabled(config.fallbackEnabled);
@@ -1359,32 +1370,36 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         uiPreset: 'm',
                         textless: true,
                         minimalTitleEnabled: prev.minimalTitleEnabled ?? true,
+                        minimalRatingsEnabled: prev.minimalRatingsEnabled ?? true,
+                        minimalYearEnabled: prev.minimalYearEnabled ?? true,
+                        minimalDurationEnabled: prev.minimalDurationEnabled ?? false,
                         minimalRatings:
                           prev.minimalRatings && prev.minimalRatings.length > 0
                             ? prev.minimalRatings.slice(0, 3)
                             : [
                                 {
                                   provider: 'imdb',
-                                  x: 342,
-                                  y: 688,
-                                  size: 24,
+                                  enabled: true,
+                                  x: 140,
+                                  y: 672,
+                                  size: 26,
                                   color: '#facc15',
                                   opacity: 1,
                                   iconMode: 'star',
                                   symbol: '★',
                                   bgEnabled: false,
                                   bgColor: '#000000',
-                                  bgOpacity: 0.25,
+                                  bgOpacity: 0,
                                   borderW: 0,
                                   borderColor: '#ffffff',
                                   borderOpacity: 0.7,
-                                  radius: 10,
-                                  paddingX: 10,
-                                  paddingY: 6,
-                                  shadowEnabled: true,
+                                  radius: 0,
+                                  paddingX: 0,
+                                  paddingY: 0,
+                                  shadowEnabled: false,
                                   shadowX: 0,
-                                  shadowY: 2,
-                                  shadowBlur: 6,
+                                  shadowY: 0,
+                                  shadowBlur: 0,
                                   shadowColor: '#000000',
                                 },
                               ],

@@ -23,6 +23,7 @@ export type MinimalRatingIconMode = 'star' | 'original' | 'flat' | 'symbol';
 
 export interface MinimalRatingConfig {
   provider: RatingType;
+  enabled: boolean;
   x: number;
   y: number;
   size: number;
@@ -138,7 +139,19 @@ export interface PosterConfig {
   minimalTitlePaddingX?: number;
   minimalTitlePaddingY?: number;
   minimalTitleRadius?: number;
+  minimalRatingsEnabled?: boolean;
   minimalRatings?: MinimalRatingConfig[];
+  minimalYearEnabled?: boolean;
+  minimalDurationEnabled?: boolean;
+  minimalMetaX?: number;
+  minimalMetaY?: number;
+  minimalDurationX?: number;
+  minimalDurationY?: number;
+  minimalMetaSize?: number;
+  minimalMetaColor?: string;
+  minimalMetaOpacity?: number;
+  minimalMetaWeight?: number;
+  minimalMetaLetterSpacing?: number;
 
   // Badge layout
   layout: LayoutType;
@@ -229,57 +242,70 @@ export const DEFAULT_CONFIG: PosterConfig = {
   extension: 'png',
   posterBlur: 0,
   grayscale: false,
-  minimalTextSize: 42,
-  minimalTextX: 42,
-  minimalTextY: 610,
+  minimalTextSize: 60,
+  minimalTextX: 26,
+  minimalTextY: 556,
   minimalTitleEnabled: true,
-  minimalTitleWidth: 420,
+  minimalTitleWidth: 360,
   minimalTitleAlign: 'left',
   minimalTitleColor: '#f5f5f5',
-  minimalTitleOpacity: 0.95,
+  minimalTitleOpacity: 1,
   minimalTitleWeight: 700,
-  minimalTitleLetterSpacing: 0.4,
-  minimalTitleLineHeight: 1.08,
-  minimalTitleShadowEnabled: true,
+  minimalTitleLetterSpacing: 0,
+  minimalTitleLineHeight: 1.02,
+  minimalTitleShadowEnabled: false,
   minimalTitleShadowX: 0,
-  minimalTitleShadowY: 2,
-  minimalTitleShadowBlur: 8,
+  minimalTitleShadowY: 0,
+  minimalTitleShadowBlur: 0,
   minimalTitleShadowColor: '#000000',
   minimalTitleBorderW: 0,
   minimalTitleBorderColor: '#d4a245',
   minimalTitleBorderOpacity: 0.6,
-  minimalTitleBgEnabled: true,
+  minimalTitleBgEnabled: false,
   minimalTitleBgColor: '#000000',
-  minimalTitleBgOpacity: 0.24,
+  minimalTitleBgOpacity: 0,
   minimalTitlePaddingX: 10,
   minimalTitlePaddingY: 8,
   minimalTitleRadius: 8,
+  minimalRatingsEnabled: true,
   minimalRatings: [
     {
       provider: 'imdb',
-      x: 342,
-      y: 688,
-      size: 24,
+      enabled: true,
+      x: 140,
+      y: 672,
+      size: 26,
       color: '#facc15',
       opacity: 1,
       iconMode: 'star',
       symbol: '★',
       bgEnabled: false,
       bgColor: '#000000',
-      bgOpacity: 0.25,
+      bgOpacity: 0,
       borderW: 0,
       borderColor: '#ffffff',
       borderOpacity: 0.7,
-      radius: 10,
-      paddingX: 10,
-      paddingY: 6,
-      shadowEnabled: true,
+      radius: 0,
+      paddingX: 0,
+      paddingY: 0,
+      shadowEnabled: false,
       shadowX: 0,
-      shadowY: 2,
-      shadowBlur: 6,
+      shadowY: 0,
+      shadowBlur: 0,
       shadowColor: '#000000',
     },
   ],
+  minimalYearEnabled: true,
+  minimalDurationEnabled: false,
+  minimalMetaX: 26,
+  minimalMetaY: 672,
+  minimalDurationX: 90,
+  minimalDurationY: 672,
+  minimalMetaSize: 50,
+  minimalMetaColor: '#d6dde3',
+  minimalMetaOpacity: 0.92,
+  minimalMetaWeight: 600,
+  minimalMetaLetterSpacing: 0,
 
   // Badge layout
   layout: 'custom',

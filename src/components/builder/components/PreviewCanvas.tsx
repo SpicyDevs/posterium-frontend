@@ -40,6 +40,20 @@ interface Props {
   onResetView?: () => void;
 }
 
+type MinimalElementSelection =
+  | { kind: 'title' }
+  | { kind: 'year' }
+  | { kind: 'duration' }
+  | { kind: 'rating'; index: number }
+  | null;
+
+type MinimalContextState = {
+  visible: boolean;
+  x: number;
+  y: number;
+  target: MinimalElementSelection;
+};
+
 const PreviewCanvas: React.FC<Props> = ({
   config,
   setConfig,
@@ -60,6 +74,7 @@ const PreviewCanvas: React.FC<Props> = ({
     clearSelection,
     liveRatings,
     liveTitle,
+    liveYear,
     selectedLogo,
     handleLogoSelection,
   } = useEditor();
@@ -81,10 +96,21 @@ const PreviewCanvas: React.FC<Props> = ({
   const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
   const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
+  const [draggingMinimalYear, setDraggingMinimalYear] = useState(false);
+  const [draggingMinimalDuration, setDraggingMinimalDuration] = useState(false);
   const [minimalRatingOffset, setMinimalRatingOffset] = useState({ dx: 0, dy: 0 });
+  const [minimalMetaOffset, setMinimalMetaOffset] = useState({ dx: 0, dy: 0 });
   const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
+  const [selectedMinimalElement, setSelectedMinimalElement] = useState<MinimalElementSelection>(null);
+  const [minimalContext, setMinimalContext] = useState<MinimalContextState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null,
+  });
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
     if (isMinimalPreset) return [];
@@ -176,26 +202,27 @@ const PreviewCanvas: React.FC<Props> = ({
     return [
       {
         provider: 'imdb' as RatingType,
-        x: 342,
-        y: 688,
-        size: 24,
+        enabled: true,
+        x: 140,
+        y: 672,
+        size: 26,
         color: '#facc15',
         opacity: 1,
         iconMode: 'star' as const,
         symbol: '★',
         bgEnabled: false,
         bgColor: '#000000',
-        bgOpacity: 0.25,
+        bgOpacity: 0,
         borderW: 0,
         borderColor: '#ffffff',
         borderOpacity: 0.7,
-        radius: 10,
-        paddingX: 10,
-        paddingY: 6,
-        shadowEnabled: true,
+        radius: 0,
+        paddingX: 0,
+        paddingY: 0,
+        shadowEnabled: false,
         shadowX: 0,
-        shadowY: 2,
-        shadowBlur: 6,
+        shadowY: 0,
+        shadowBlur: 0,
         shadowColor: '#000000',
       },
     ];
@@ -412,8 +439,42 @@ const PreviewCanvas: React.FC<Props> = ({
     [setConfig]
   );
 
+  const handleMinimalYearDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalMetaX ?? 26) + dx)));
+        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalMetaY ?? 672) + dy)));
+        return { ...prev, minimalMetaX: nextX, minimalMetaY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
+  const handleMinimalDurationDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const nextX = Math.max(
+          0,
+          Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalDurationX ?? 90) + dx))
+        );
+        const nextY = Math.max(
+          0,
+          Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalDurationY ?? 672) + dy))
+        );
+        return { ...prev, minimalDurationX: nextX, minimalDurationY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
   useEffect(() => {
-    if (!isDraggingMinimalText && draggingMinimalRatingIndex === null) return;
+    if (
+      !isDraggingMinimalText &&
+      draggingMinimalRatingIndex === null &&
+      !draggingMinimalYear &&
+      !draggingMinimalDuration
+    )
+      return;
     const onMM = (e: MouseEvent) => {
       if (isDraggingMinimalText && minimalTextStartRef.current) {
         minimalPendingOffsetRef.current = {
@@ -425,6 +486,11 @@ const PreviewCanvas: React.FC<Props> = ({
           dx: (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale,
           dy: (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale,
         };
+      } else if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale,
+        };
       }
       if (minimalDragRafRef.current === null) {
         minimalDragRafRef.current = requestAnimationFrame(() => {
@@ -432,6 +498,8 @@ const PreviewCanvas: React.FC<Props> = ({
           if (!minimalPendingOffsetRef.current) return;
           if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
           if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
+          if (draggingMinimalYear || draggingMinimalDuration)
+            setMinimalMetaOffset(minimalPendingOffsetRef.current);
         });
       }
     };
@@ -446,12 +514,22 @@ const PreviewCanvas: React.FC<Props> = ({
         const dy = (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale;
         handleMinimalRatingDragEnd(draggingMinimalRatingIndex, dx, dy);
       }
+      if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
+        const dx = (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale;
+        if (draggingMinimalYear) handleMinimalYearDragEnd(dx, dy);
+        if (draggingMinimalDuration) handleMinimalDurationDragEnd(dx, dy);
+      }
       minimalTextStartRef.current = null;
       minimalRatingStartRef.current = null;
+      minimalMetaStartRef.current = null;
       setMinimalTextOffset({ dx: 0, dy: 0 });
       setMinimalRatingOffset({ dx: 0, dy: 0 });
+      setMinimalMetaOffset({ dx: 0, dy: 0 });
       setIsDraggingMinimalText(false);
       setDraggingMinimalRatingIndex(null);
+      setDraggingMinimalYear(false);
+      setDraggingMinimalDuration(false);
     };
     window.addEventListener('mousemove', onMM);
     window.addEventListener('mouseup', onMU);
@@ -466,9 +544,13 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [
     isDraggingMinimalText,
     draggingMinimalRatingIndex,
+    draggingMinimalYear,
+    draggingMinimalDuration,
     currentScale,
     handleMinimalTextDragEnd,
     handleMinimalRatingDragEnd,
+    handleMinimalYearDragEnd,
+    handleMinimalDurationDragEnd,
   ]);
 
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
@@ -591,6 +673,17 @@ const PreviewCanvas: React.FC<Props> = ({
     };
   }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid, previewRatings]);
 
+  useEffect(() => {
+    if (!minimalContext.visible) return;
+    const close = () => setMinimalContext((prev) => ({ ...prev, visible: false }));
+    window.addEventListener('mousedown', close);
+    window.addEventListener('keydown', close);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', close);
+    };
+  }, [minimalContext.visible]);
+
   return (
     <div
       ref={containerRef}
@@ -600,7 +693,11 @@ const PreviewCanvas: React.FC<Props> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={(e) => {
-        if (e.target === e.currentTarget) clearSelection();
+        if (e.target === e.currentTarget) {
+          clearSelection();
+          setSelectedMinimalElement(null);
+          setMinimalContext((prev) => ({ ...prev, visible: false }));
+        }
       }}
     >
       {/* Poster Canvas */}
@@ -613,7 +710,11 @@ const PreviewCanvas: React.FC<Props> = ({
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
         onClick={(e) => {
-          if (e.target === e.currentTarget) clearSelection();
+          if (e.target === e.currentTarget) {
+            clearSelection();
+            setSelectedMinimalElement(null);
+            setMinimalContext((prev) => ({ ...prev, visible: false }));
+          }
         }}
       >
         {isImageLoading && !imageError && (
@@ -763,7 +864,9 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {isMinimalPreset &&
+          (config.minimalRatingsEnabled ?? true) &&
           minimalRatings.map((r, idx) => {
+            if (r.enabled === false) return null;
             const isDragging = draggingMinimalRatingIndex === idx;
             const iconText =
               r.iconMode === 'symbol'
@@ -810,12 +913,30 @@ const PreviewCanvas: React.FC<Props> = ({
                   boxShadow: r.shadowEnabled
                     ? `${r.shadowX}px ${r.shadowY}px ${r.shadowBlur}px ${r.shadowColor}`
                     : 'none',
+                  outline:
+                    selectedMinimalElement?.kind === 'rating' && selectedMinimalElement.index === idx
+                      ? '1px dashed rgba(196,124,46,0.8)'
+                      : 'none',
                 }}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
+                  setSelectedMinimalElement({ kind: 'rating', index: idx });
+                  window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
                   setDraggingMinimalRatingIndex(idx);
                   minimalRatingStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedMinimalElement({ kind: 'rating', index: idx });
+                  window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
+                  setMinimalContext({
+                    visible: true,
+                    x: e.clientX,
+                    y: e.clientY,
+                    target: { kind: 'rating', index: idx },
+                  });
                 }}
                 title="Drag minimal rating"
               >
@@ -826,6 +947,90 @@ const PreviewCanvas: React.FC<Props> = ({
               </div>
             );
           })}
+
+        {isMinimalPreset && (config.minimalYearEnabled ?? true) && (
+          <div
+            className="absolute z-40 select-none"
+            style={{
+              left: (config.minimalMetaX ?? 26) + (draggingMinimalYear ? minimalMetaOffset.dx : 0),
+              top: (config.minimalMetaY ?? 672) + (draggingMinimalYear ? minimalMetaOffset.dy : 0),
+              fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
+              color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
+              fontWeight: config.minimalMetaWeight ?? 600,
+              letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
+              lineHeight: 1,
+              cursor: draggingMinimalYear ? 'grabbing' : 'grab',
+              outline:
+                selectedMinimalElement?.kind === 'year'
+                  ? '1px dashed rgba(196,124,46,0.8)'
+                  : 'none',
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedMinimalElement({ kind: 'year' });
+              setDraggingMinimalYear(true);
+              minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedMinimalElement({ kind: 'year' });
+              setMinimalContext({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                target: { kind: 'year' },
+              });
+            }}
+            title="Drag year"
+          >
+            {liveYear || '2026'}
+          </div>
+        )}
+
+        {isMinimalPreset && (config.minimalDurationEnabled ?? false) && (
+          <div
+            className="absolute z-40 select-none"
+            style={{
+              left:
+                (config.minimalDurationX ?? 90) + (draggingMinimalDuration ? minimalMetaOffset.dx : 0),
+              top:
+                (config.minimalDurationY ?? 672) + (draggingMinimalDuration ? minimalMetaOffset.dy : 0),
+              fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
+              color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
+              fontWeight: config.minimalMetaWeight ?? 600,
+              letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
+              lineHeight: 1,
+              cursor: draggingMinimalDuration ? 'grabbing' : 'grab',
+              outline:
+                selectedMinimalElement?.kind === 'duration'
+                  ? '1px dashed rgba(196,124,46,0.8)'
+                  : 'none',
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedMinimalElement({ kind: 'duration' });
+              setDraggingMinimalDuration(true);
+              minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedMinimalElement({ kind: 'duration' });
+              setMinimalContext({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                target: { kind: 'duration' },
+              });
+            }}
+            title="Drag duration"
+          >
+            {(liveRatings.runtime ?? '').toString().trim() || '102m'}
+          </div>
+        )}
 
         {isMinimalPreset && (config.minimalTitleEnabled ?? true) && (
           <div
@@ -841,7 +1046,7 @@ const PreviewCanvas: React.FC<Props> = ({
               fontWeight: config.minimalTitleWeight ?? 700,
               letterSpacing: `${config.minimalTitleLetterSpacing ?? 0.4}px`,
               textShadow:
-                config.minimalTitleShadowEnabled ?? true
+                config.minimalTitleShadowEnabled ?? false
                   ? `${config.minimalTitleShadowX ?? 0}px ${config.minimalTitleShadowY ?? 2}px ${
                       config.minimalTitleShadowBlur ?? 8
                     }px ${config.minimalTitleShadowColor ?? '#000000'}`
@@ -856,20 +1061,102 @@ const PreviewCanvas: React.FC<Props> = ({
               borderRadius: config.minimalTitleRadius ?? 8,
               padding: `${config.minimalTitlePaddingY ?? 8}px ${config.minimalTitlePaddingX ?? 10}px`,
               background:
-                config.minimalTitleBgEnabled ?? true
+                config.minimalTitleBgEnabled ?? false
                   ? toRgba(config.minimalTitleBgColor, config.minimalTitleBgOpacity ?? 0.24)
                   : 'transparent',
               cursor: isDraggingMinimalText ? 'grabbing' : 'grab',
+              outline:
+                selectedMinimalElement?.kind === 'title'
+                  ? '1px dashed rgba(196,124,46,0.8)'
+                  : 'none',
             }}
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
+              setSelectedMinimalElement({ kind: 'title' });
               setIsDraggingMinimalText(true);
               minimalTextStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedMinimalElement({ kind: 'title' });
+              setMinimalContext({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                target: { kind: 'title' },
+              });
             }}
             title="Drag minimal title"
           >
             {liveTitle || 'Title'}
+          </div>
+        )}
+
+        {minimalContext.visible && isMinimalPreset && minimalContext.target && (
+          <div
+            className="fixed z-[9001] min-w-[170px] rounded-lg p-1"
+            style={{
+              left: minimalContext.x,
+              top: minimalContext.y,
+              background: 'rgba(14,13,11,0.94)',
+              border: '1px solid rgba(196,124,46,0.2)',
+              boxShadow: '0 18px 40px rgba(0,0,0,0.6)',
+            }}
+          >
+            <button
+              className="w-full text-left px-2 py-1.5 text-[11px] rounded-md hover:bg-[rgba(196,124,46,0.14)]"
+              style={{ color: 'var(--film-cream)' }}
+              onClick={() => {
+                const target = minimalContext.target;
+                if (!target) return;
+                if (target.kind === 'title') {
+                  setConfig((prev) => ({ ...prev, minimalTitleEnabled: !(prev.minimalTitleEnabled ?? true) }));
+                } else if (target.kind === 'year') {
+                  setConfig((prev) => ({ ...prev, minimalYearEnabled: !(prev.minimalYearEnabled ?? true) }));
+                } else if (target.kind === 'duration') {
+                  setConfig((prev) => ({
+                    ...prev,
+                    minimalDurationEnabled: !(prev.minimalDurationEnabled ?? false),
+                  }));
+                } else if (target.kind === 'rating') {
+                  setConfig((prev) => {
+                    const list = [...(prev.minimalRatings ?? [])];
+                    if (!list[target.index]) return prev;
+                    list[target.index] = { ...list[target.index], enabled: !(list[target.index].enabled ?? true) };
+                    return { ...prev, minimalRatings: list };
+                  });
+                }
+                setMinimalContext((prev) => ({ ...prev, visible: false }));
+              }}
+            >
+              Toggle Visibility
+            </button>
+            <button
+              className="w-full text-left px-2 py-1.5 text-[11px] rounded-md hover:bg-[rgba(196,124,46,0.14)]"
+              style={{ color: 'var(--film-cream)' }}
+              onClick={() => {
+                const target = minimalContext.target;
+                if (!target) return;
+                setConfig((prev) => {
+                  if (target.kind === 'title') return { ...prev, minimalTextX: 26, minimalTextY: 556 };
+                  if (target.kind === 'year') return { ...prev, minimalMetaX: 26, minimalMetaY: 672 };
+                  if (target.kind === 'duration')
+                    return { ...prev, minimalDurationX: 90, minimalDurationY: 672 };
+                  if (target.kind === 'rating') {
+                    const list = [...(prev.minimalRatings ?? [])];
+                    if (!list[target.index]) return prev;
+                    list[target.index] = { ...list[target.index], x: 140, y: 672 };
+                    return { ...prev, minimalRatings: list };
+                  }
+                  return prev;
+                });
+                setMinimalContext((prev) => ({ ...prev, visible: false }));
+              }}
+            >
+              Reset Position
+            </button>
           </div>
         )}
       </div>
