@@ -1028,7 +1028,7 @@ const PreviewCanvas: React.FC<Props> = ({
             }}
             title="Drag duration"
           >
-            {(liveRatings.runtime ?? '').toString().trim() || '102m'}
+            {(liveRatings.runtime ?? '').toString().trim() || '--'}
           </div>
         )}
 
