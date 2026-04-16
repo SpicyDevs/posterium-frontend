@@ -641,16 +641,16 @@ const PropertyPanel: React.FC<Props> = ({
   };
 
   const removeMinimalRating = (index: number) => {
+    let nextEditorIndex = 0;
     setConfig((prev) => {
       const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
       if (list.length <= 1 || !list[index]) return prev;
       list.splice(index, 1);
+      nextEditorIndex = Math.max(0, Math.min(index, list.length - 1));
       const placed = placeMinimalRatings(list, prev.preset, prev.layout);
       return { ...prev, minimalRatings: placed };
     });
-    setMinimalRatingEditorIndex((v) =>
-      Math.max(0, Math.min(v, Math.max(0, minimalRatings.length - 2)))
-    );
+    setMinimalRatingEditorIndex(nextEditorIndex);
   };
 
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) =>
