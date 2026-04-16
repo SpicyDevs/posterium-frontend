@@ -44,6 +44,7 @@ type MinimalElementSelection =
   | { kind: 'title' }
   | { kind: 'year' }
   | { kind: 'duration' }
+  | { kind: 'logo' }
   | { kind: 'rating'; index: number }
   | null;
 
@@ -76,6 +77,8 @@ const PreviewCanvas: React.FC<Props> = ({
     liveTitle,
     liveYear,
     selectedLogo,
+    selectedMinimalElements,
+    handleMinimalSelection,
     handleLogoSelection,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,7 +107,6 @@ const PreviewCanvas: React.FC<Props> = ({
   const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
-  const [selectedMinimalElement, setSelectedMinimalElement] = useState<MinimalElementSelection>(null);
   const [minimalContext, setMinimalContext] = useState<MinimalContextState>({
     visible: false,
     x: 0,
@@ -415,7 +417,11 @@ const PreviewCanvas: React.FC<Props> = ({
         const boxW = Math.max(120, prev.minimalTitleWidth ?? 420);
         const boxH = Math.max(36, (prev.minimalTextSize ?? 42) * 1.5);
         const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx)));
-        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(prev.minimalTextY + dy)));
+        const flow = prev.minimalTitleFlow ?? 'up';
+        const nextY =
+          flow === 'up'
+            ? Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round(prev.minimalTextY + dy)))
+            : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(prev.minimalTextY + dy)));
         return { ...prev, minimalTextX: nextX, minimalTextY: nextY };
       });
     },
@@ -695,7 +701,6 @@ const PreviewCanvas: React.FC<Props> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           clearSelection();
-          setSelectedMinimalElement(null);
           setMinimalContext((prev) => ({ ...prev, visible: false }));
         }
       }}
@@ -712,7 +717,6 @@ const PreviewCanvas: React.FC<Props> = ({
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             clearSelection();
-            setSelectedMinimalElement(null);
             setMinimalContext((prev) => ({ ...prev, visible: false }));
           }
         }}
@@ -858,8 +862,21 @@ const PreviewCanvas: React.FC<Props> = ({
             logoUrl={logoPreviewUrl}
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
-            isSelected={selectedLogo}
-            onSelect={(multi) => handleLogoSelection(multi)}
+            isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
+            onSelect={(multi) => {
+              handleLogoSelection(multi);
+              if (isMinimalPreset) handleMinimalSelection('minimal-logo', multi);
+            }}
+            onContextMenu={(e) => {
+              if (!isMinimalPreset) return;
+              handleMinimalSelection('minimal-logo', e.shiftKey || e.ctrlKey || e.metaKey);
+              setMinimalContext({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                target: { kind: 'logo' },
+              });
+            }}
           />
         )}
 
@@ -868,12 +885,14 @@ const PreviewCanvas: React.FC<Props> = ({
           minimalRatings.map((r, idx) => {
             if (r.enabled === false) return null;
             const isDragging = draggingMinimalRatingIndex === idx;
+            const iconMode = config.minimalRatingIconMode ?? r.iconMode;
+            const symbol = config.minimalRatingSymbol ?? r.symbol;
             const iconText =
-              r.iconMode === 'symbol'
-                ? r.symbol || '★'
-                : r.iconMode === 'flat'
+              iconMode === 'symbol'
+                ? symbol || '★'
+                : iconMode === 'flat'
                   ? '●'
-                  : r.iconMode === 'star'
+                  : iconMode === 'star'
                     ? '★'
                     : r.provider === 'imdb'
                       ? 'IMDb'
@@ -914,14 +933,14 @@ const PreviewCanvas: React.FC<Props> = ({
                     ? `${r.shadowX}px ${r.shadowY}px ${r.shadowBlur}px ${r.shadowColor}`
                     : 'none',
                   outline:
-                    selectedMinimalElement?.kind === 'rating' && selectedMinimalElement.index === idx
+                    selectedMinimalElements.has(`minimal-rating-${idx}`)
                       ? '1px dashed rgba(196,124,46,0.8)'
                       : 'none',
                 }}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  setSelectedMinimalElement({ kind: 'rating', index: idx });
+                  handleMinimalSelection(`minimal-rating-${idx}`, e.shiftKey || e.ctrlKey || e.metaKey);
                   window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
                   setDraggingMinimalRatingIndex(idx);
                   minimalRatingStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
@@ -929,7 +948,7 @@ const PreviewCanvas: React.FC<Props> = ({
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setSelectedMinimalElement({ kind: 'rating', index: idx });
+                  handleMinimalSelection(`minimal-rating-${idx}`, e.shiftKey || e.ctrlKey || e.metaKey);
                   window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
                   setMinimalContext({
                     visible: true,
@@ -961,21 +980,21 @@ const PreviewCanvas: React.FC<Props> = ({
               lineHeight: 1,
               cursor: draggingMinimalYear ? 'grabbing' : 'grab',
               outline:
-                selectedMinimalElement?.kind === 'year'
+                selectedMinimalElements.has('minimal-year')
                   ? '1px dashed rgba(196,124,46,0.8)'
                   : 'none',
             }}
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedMinimalElement({ kind: 'year' });
+              handleMinimalSelection('minimal-year', e.shiftKey || e.ctrlKey || e.metaKey);
               setDraggingMinimalYear(true);
               minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
             }}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedMinimalElement({ kind: 'year' });
+              handleMinimalSelection('minimal-year', e.shiftKey || e.ctrlKey || e.metaKey);
               setMinimalContext({
                 visible: true,
                 x: e.clientX,
@@ -1004,21 +1023,21 @@ const PreviewCanvas: React.FC<Props> = ({
               lineHeight: 1,
               cursor: draggingMinimalDuration ? 'grabbing' : 'grab',
               outline:
-                selectedMinimalElement?.kind === 'duration'
+                selectedMinimalElements.has('minimal-duration')
                   ? '1px dashed rgba(196,124,46,0.8)'
                   : 'none',
             }}
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedMinimalElement({ kind: 'duration' });
+              handleMinimalSelection('minimal-duration', e.shiftKey || e.ctrlKey || e.metaKey);
               setDraggingMinimalDuration(true);
               minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
             }}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedMinimalElement({ kind: 'duration' });
+              handleMinimalSelection('minimal-duration', e.shiftKey || e.ctrlKey || e.metaKey);
               setMinimalContext({
                 visible: true,
                 x: e.clientX,
@@ -1065,22 +1084,23 @@ const PreviewCanvas: React.FC<Props> = ({
                   ? toRgba(config.minimalTitleBgColor, config.minimalTitleBgOpacity ?? 0.24)
                   : 'transparent',
               cursor: isDraggingMinimalText ? 'grabbing' : 'grab',
+              transform: (config.minimalTitleFlow ?? 'up') === 'up' ? 'translateY(-100%)' : 'none',
               outline:
-                selectedMinimalElement?.kind === 'title'
+                selectedMinimalElements.has('minimal-title')
                   ? '1px dashed rgba(196,124,46,0.8)'
                   : 'none',
             }}
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              setSelectedMinimalElement({ kind: 'title' });
+              handleMinimalSelection('minimal-title', e.shiftKey || e.ctrlKey || e.metaKey);
               setIsDraggingMinimalText(true);
               minimalTextStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
             }}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setSelectedMinimalElement({ kind: 'title' });
+              handleMinimalSelection('minimal-title', e.shiftKey || e.ctrlKey || e.metaKey);
               setMinimalContext({
                 visible: true,
                 x: e.clientX,
@@ -1095,7 +1115,7 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {minimalContext.visible && isMinimalPreset && minimalContext.target && (
-          <div
+          <menu
             className="fixed z-[9001] min-w-[170px] rounded-lg p-1"
             style={{
               left: minimalContext.x,
@@ -1103,6 +1123,7 @@ const PreviewCanvas: React.FC<Props> = ({
               background: 'rgba(14,13,11,0.94)',
               border: '1px solid rgba(196,124,46,0.2)',
               boxShadow: '0 18px 40px rgba(0,0,0,0.6)',
+              listStyle: 'none',
             }}
           >
             <button
@@ -1120,6 +1141,8 @@ const PreviewCanvas: React.FC<Props> = ({
                     ...prev,
                     minimalDurationEnabled: !(prev.minimalDurationEnabled ?? false),
                   }));
+                } else if (target.kind === 'logo') {
+                  setConfig((prev) => ({ ...prev, logo: !prev.logo }));
                 } else if (target.kind === 'rating') {
                   setConfig((prev) => {
                     const list = [...(prev.minimalRatings ?? [])];
@@ -1144,6 +1167,7 @@ const PreviewCanvas: React.FC<Props> = ({
                   if (target.kind === 'year') return { ...prev, minimalMetaX: 26, minimalMetaY: 672 };
                   if (target.kind === 'duration')
                     return { ...prev, minimalDurationX: 90, minimalDurationY: 672 };
+                  if (target.kind === 'logo') return { ...prev, logoX: null, logoY: 630 };
                   if (target.kind === 'rating') {
                     const list = [...(prev.minimalRatings ?? [])];
                     if (!list[target.index]) return prev;
@@ -1157,7 +1181,7 @@ const PreviewCanvas: React.FC<Props> = ({
             >
               Reset Position
             </button>
-          </div>
+          </menu>
         )}
       </div>
 

@@ -1370,7 +1370,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         uiPreset: 'm',
                         textless: true,
                         minimalTitleEnabled: prev.minimalTitleEnabled ?? true,
+                        minimalTitleFlow: prev.minimalTitleFlow ?? 'up',
+                        minimalTitleWidth: prev.minimalTitleWidth ?? 420,
                         minimalRatingsEnabled: prev.minimalRatingsEnabled ?? true,
+                        minimalRatingIconMode: prev.minimalRatingIconMode ?? 'star',
+                        minimalRatingSymbol: prev.minimalRatingSymbol ?? '★',
                         minimalYearEnabled: prev.minimalYearEnabled ?? true,
                         minimalDurationEnabled: prev.minimalDurationEnabled ?? false,
                         minimalRatings:

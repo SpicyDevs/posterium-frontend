@@ -13,6 +13,7 @@ interface Props {
   onDragEnd: (dx: number, dy: number) => void;
   isSelected?: boolean;
   onSelect?: (multi: boolean) => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
   onLogoLoad?: (naturalW: number, naturalH: number) => void;
 }
 
@@ -23,6 +24,7 @@ const DraggableLogo: React.FC<Props> = ({
   onDragEnd,
   isSelected = false,
   onSelect,
+  onContextMenu,
   onLogoLoad,
 }) => {
   const { viewOptions } = useEditor();
@@ -163,6 +165,11 @@ const DraggableLogo: React.FC<Props> = ({
           e.stopPropagation();
           if (hasDraggedRef.current) return;
           onSelect?.(e.shiftKey || e.ctrlKey || e.metaKey);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onContextMenu?.(e);
         }}
         className="absolute select-none cursor-move z-40"
         style={{

@@ -20,7 +20,9 @@ interface EditorContextType {
   setMobileSheetMode: (mode: SheetMode) => void;
   selectedIds: Set<RatingType>;
   selectedLogo: boolean;
+  selectedMinimalElements: Set<string>;
   handleSelection: (id: RatingType, multi: boolean) => void;
+  handleMinimalSelection: (id: string, multi: boolean) => void;
   handleLogoSelection: (multi: boolean) => void;
   setBatchSelection: (ids: RatingType[]) => void;
   clearSelection: () => void;
@@ -49,6 +51,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
   const [selectedLogo, setSelectedLogo] = useState(false);
+  const [selectedMinimalElements, setSelectedMinimalElements] = useState<Set<string>>(new Set());
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
@@ -87,8 +90,35 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         logoSelected = multi ? prev : false;
         return logoSelected;
       });
+      if (!multi) setSelectedMinimalElements(new Set());
       // Use queueMicrotask so we read nextSize after the setter has run,
       // avoiding stale-closure issues in React 18 concurrent mode.
+      queueMicrotask(() => {
+        if (nextSize > 0 || logoSelected) setActiveTab('selection');
+        else setActiveTab('badges');
+      });
+    },
+    [setActiveTab]
+  );
+
+  const handleMinimalSelection = useCallback(
+    (id: string, multi: boolean) => {
+      let nextSize = 0;
+      let logoSelected = false;
+      setSelectedMinimalElements((prev) => {
+        const next = new Set(multi ? prev : []);
+        if (next.has(id)) {
+          if (multi) next.delete(id);
+          else next.clear();
+        } else next.add(id);
+        nextSize = next.size;
+        return next;
+      });
+      setSelectedIds((prev) => (multi ? prev : new Set<RatingType>()));
+      setSelectedLogo((prev) => {
+        logoSelected = multi ? prev : false;
+        return logoSelected;
+      });
       queueMicrotask(() => {
         if (nextSize > 0 || logoSelected) setActiveTab('selection');
         else setActiveTab('badges');
@@ -104,6 +134,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         badgeCount = multi ? prev.size : 0;
         return multi ? prev : new Set<RatingType>();
       });
+      if (!multi) setSelectedMinimalElements(new Set());
       setSelectedLogo((prev) => {
         const next = multi ? !prev : true;
         queueMicrotask(() => {
@@ -120,6 +151,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
       setSelectedLogo(false);
+      setSelectedMinimalElements(new Set());
       if (ids.length > 0) setActiveTab('selection');
     },
     [setActiveTab]
@@ -128,6 +160,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
     setSelectedLogo(false);
+    setSelectedMinimalElements(new Set());
     setActiveTab('badges');
   }, [setActiveTab]);
 
@@ -144,7 +177,9 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setMobileSheetMode,
         selectedIds,
         selectedLogo,
+        selectedMinimalElements,
         handleSelection,
+        handleMinimalSelection,
         handleLogoSelection,
         setBatchSelection,
         clearSelection,

@@ -17,8 +17,8 @@ const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
-  const { activeTab, setActiveTab, selectedIds, selectedLogo } = useEditor();
-  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0);
+  const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedMinimalElements } = useEditor();
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const hasBadges = config.ratings.length > 0;
   const hasLogo = config.logo;
@@ -87,6 +87,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         setConfig={setConfig}
         selectedIds={selectedIds}
         selectedLogo={selectedLogo}
+        selectedMinimalElements={selectedMinimalElements}
         mode={currentTab}
       />
     </SidebarLayout>

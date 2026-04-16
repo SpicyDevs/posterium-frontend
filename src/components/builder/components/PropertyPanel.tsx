@@ -29,6 +29,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   selectedLogo?: boolean;
+  selectedMinimalElements?: Set<string>;
   viewMode?: 'global' | 'selection';
   mode?: 'badges' | 'logo' | 'selection';
 }
@@ -637,6 +638,7 @@ const PropertyPanel: React.FC<Props> = ({
   setConfig,
   selectedIds,
   selectedLogo = false,
+  selectedMinimalElements = new Set<string>(),
   viewMode,
   mode,
 }) => {
@@ -1131,6 +1133,15 @@ const PropertyPanel: React.FC<Props> = ({
                 value={config.minimalTitleAlign ?? 'left'}
                 onChange={(v) => updateConfig('minimalTitleAlign', v as PosterConfig['minimalTitleAlign'])}
               />
+              <SegmentedRow
+                label="Wrap Direction"
+                options={[
+                  { id: 'up', label: 'Grow Up' },
+                  { id: 'down', label: 'Grow Down' },
+                ]}
+                value={config.minimalTitleFlow ?? 'up'}
+                onChange={(v) => updateConfig('minimalTitleFlow', v as PosterConfig['minimalTitleFlow'])}
+              />
               <ColorRow
                 label="Text Color"
                 value={config.minimalTitleColor ?? '#f5f5f5'}
@@ -1401,13 +1412,14 @@ const PropertyPanel: React.FC<Props> = ({
                       { id: 'flat', label: 'Flat' },
                       { id: 'symbol', label: 'Symbol' },
                     ]}
-                    value={selectedMinimalRating.iconMode}
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
+                    value={config.minimalRatingIconMode ?? selectedMinimalRating.iconMode}
+                    onChange={(v) => {
+                      updateConfig('minimalRatingIconMode', v as PosterConfig['minimalRatingIconMode']);
+                      updateAllMinimalRatings({
                         iconMode: v as 'star' | 'original' | 'flat' | 'symbol',
-                        })
-                      }
-                    />
+                      });
+                    }}
+                  />
                   <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
                     <span>Slot position (drag on canvas)</span>
                     <span>
@@ -1415,7 +1427,7 @@ const PropertyPanel: React.FC<Props> = ({
                     </span>
                   </div>
                   <SliderRow
-                    label="Global Size"
+                    label="Size"
                     value={selectedMinimalRating.size}
                     min={12}
                     max={54}
@@ -1424,7 +1436,7 @@ const PropertyPanel: React.FC<Props> = ({
                     onChange={(v) => updateAllMinimalRatings({ size: Math.round(v) })}
                   />
                   <ColorRow
-                    label="Global Color"
+                    label="Color"
                     value={selectedMinimalRating.color}
                     showOpacity
                     opacity={selectedMinimalRating.opacity}
@@ -1432,13 +1444,13 @@ const PropertyPanel: React.FC<Props> = ({
                     onOpacityChange={(v) => updateAllMinimalRatings({ opacity: Number(v.toFixed(2)) })}
                   />
                   <ToggleRow
-                    label="Global Background"
+                    label="Background"
                     checked={selectedMinimalRating.bgEnabled}
                     onChange={(v) => updateAllMinimalRatings({ bgEnabled: v })}
                   />
                   {selectedMinimalRating.bgEnabled && (
                     <ColorRow
-                      label="Global Background Color"
+                      label="Background Color"
                       value={selectedMinimalRating.bgColor}
                       showOpacity
                       opacity={selectedMinimalRating.bgOpacity}
@@ -1449,7 +1461,7 @@ const PropertyPanel: React.FC<Props> = ({
                     />
                   )}
                   <SliderRow
-                    label="Global Border Width"
+                    label="Border Width"
                     value={selectedMinimalRating.borderW}
                     min={0}
                     max={8}
@@ -1459,7 +1471,7 @@ const PropertyPanel: React.FC<Props> = ({
                   />
                   {selectedMinimalRating.borderW > 0 && (
                     <ColorRow
-                      label="Global Border Color"
+                      label="Border Color"
                       value={selectedMinimalRating.borderColor}
                       showOpacity
                       opacity={selectedMinimalRating.borderOpacity}
@@ -1470,7 +1482,7 @@ const PropertyPanel: React.FC<Props> = ({
                     />
                   )}
                   <SliderRow
-                    label="Global Radius"
+                    label="Radius"
                     value={selectedMinimalRating.radius}
                     min={0}
                     max={24}
@@ -1479,14 +1491,14 @@ const PropertyPanel: React.FC<Props> = ({
                     onChange={(v) => updateAllMinimalRatings({ radius: Math.round(v) })}
                   />
                   <ToggleRow
-                    label="Global Shadow"
+                    label="Shadow"
                     checked={selectedMinimalRating.shadowEnabled}
                     onChange={(v) => updateAllMinimalRatings({ shadowEnabled: v })}
                   />
                   {selectedMinimalRating.shadowEnabled && (
                     <>
                       <SliderRow
-                        label="Global Shadow X"
+                        label="Shadow X"
                         value={selectedMinimalRating.shadowX}
                         min={-20}
                         max={20}
@@ -1495,7 +1507,7 @@ const PropertyPanel: React.FC<Props> = ({
                         onChange={(v) => updateAllMinimalRatings({ shadowX: Math.round(v) })}
                       />
                       <SliderRow
-                        label="Global Shadow Y"
+                        label="Shadow Y"
                         value={selectedMinimalRating.shadowY}
                         min={-20}
                         max={20}
@@ -1504,7 +1516,7 @@ const PropertyPanel: React.FC<Props> = ({
                         onChange={(v) => updateAllMinimalRatings({ shadowY: Math.round(v) })}
                       />
                       <SliderRow
-                        label="Global Shadow Blur"
+                        label="Shadow Blur"
                         value={selectedMinimalRating.shadowBlur}
                         min={0}
                         max={40}
@@ -1513,22 +1525,22 @@ const PropertyPanel: React.FC<Props> = ({
                         onChange={(v) => updateAllMinimalRatings({ shadowBlur: Math.round(v) })}
                       />
                       <ColorRow
-                        label="Global Shadow Color"
+                        label="Shadow Color"
                         value={selectedMinimalRating.shadowColor}
                         onChange={(v) => updateAllMinimalRatings({ shadowColor: v })}
                       />
                     </>
                   )}
-                  {selectedMinimalRating.iconMode === 'symbol' && (
+                  {(config.minimalRatingIconMode ?? selectedMinimalRating.iconMode) === 'symbol' && (
                     <TextInputRow
                       label="Symbol"
-                      value={selectedMinimalRating.symbol}
+                      value={config.minimalRatingSymbol ?? selectedMinimalRating.symbol}
                       placeholder="★"
-                      onChange={(v) =>
-                        updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                          symbol: v || '★',
-                        })
-                      }
+                      onChange={(v) => {
+                        const symbol = v || '★';
+                        updateConfig('minimalRatingSymbol', symbol);
+                        updateAllMinimalRatings({ symbol });
+                      }}
                     />
                   )}
                 </>
@@ -1682,7 +1694,12 @@ const PropertyPanel: React.FC<Props> = ({
     );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
-  if (panelMode === 'selection' && selectedIds.size === 0 && !selectedLogo)
+  if (
+    panelMode === 'selection' &&
+    selectedIds.size === 0 &&
+    !selectedLogo &&
+    selectedMinimalElements.size === 0
+  )
     return (
       <SidebarLayout side="right">
         <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
@@ -1707,7 +1724,7 @@ const PropertyPanel: React.FC<Props> = ({
               Nothing selected
             </p>
             <p className="body-font mt-1" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
-              Click a badge or logo on the canvas to edit
+              Click a layer on the canvas to edit
             </p>
           </div>
         </div>
@@ -1716,11 +1733,20 @@ const PropertyPanel: React.FC<Props> = ({
 
   // ── Per-badge / selection view ─────────────────────────────────────────────
 
-  const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0);
+  const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isAgeSelected = selectedIds.has('age');
   const multi = selectionCount > 1;
   const selectedBadgeLabel = (() => {
-    if (selectedLogo && selectedIds.size === 0) return 'Logo Overlay';
+    if (selectedLogo && selectedIds.size === 0 && selectedMinimalElements.size === 0) return 'Logo Overlay';
+    if (selectedMinimalElements.size > 0 && selectedIds.size === 0 && !selectedLogo) {
+      if (selectedMinimalElements.size > 1) return 'Minimal Selection';
+      const only = Array.from(selectedMinimalElements)[0];
+      if (only === 'minimal-title') return 'Title';
+      if (only === 'minimal-year') return 'Year';
+      if (only === 'minimal-duration') return 'Duration';
+      if (only === 'minimal-logo') return 'Logo Overlay';
+      if (only.startsWith('minimal-rating-')) return `Rating Slot ${Number(only.split('-').at(-1) ?? 0) + 1}`;
+    }
     const first = Array.from(selectedIds)[0];
     if (!first) return 'Selection';
     return BADGE_DISPLAY_NAMES[first] ?? first.toUpperCase();
@@ -1772,6 +1798,32 @@ const PropertyPanel: React.FC<Props> = ({
     const v = getCommonValue('borderC', config.borderC ?? '#ffffff');
     return (v === null ? (config.borderC ?? '#ffffff') : v) as string;
   })();
+  const minimalSelectedIds = Array.from(selectedMinimalElements);
+  const minimalRatingIndexes = minimalSelectedIds
+    .filter((id) => id.startsWith('minimal-rating-'))
+    .map((id) => Number(id.split('-').at(-1) ?? -1))
+    .filter((idx) => Number.isFinite(idx) && idx >= 0);
+  const minimalTitleSelected = selectedMinimalElements.has('minimal-title');
+  const minimalYearSelected = selectedMinimalElements.has('minimal-year');
+  const minimalDurationSelected = selectedMinimalElements.has('minimal-duration');
+
+  const updateSelectionMinimalRatings = (
+    updates: Partial<NonNullable<PosterConfig['minimalRatings']>[number]>
+  ) => {
+    if (minimalRatingIndexes.length === 0) return;
+    setConfig((prev) => {
+      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
+      for (const idx of minimalRatingIndexes) {
+        if (!list[idx]) continue;
+        list[idx] = { ...list[idx], ...updates };
+      }
+      return { ...prev, minimalRatings: list };
+    });
+  };
+  const selectedMinimalRatingRef =
+    minimalRatingIndexes.length > 0
+      ? minimalRatings[minimalRatingIndexes[0]] ?? minimalRatings[0]
+      : minimalRatings[0];
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1787,11 +1839,126 @@ const PropertyPanel: React.FC<Props> = ({
           {multi ? `${selectionCount} items selected` : selectedBadgeLabel}
         </p>
         <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}>
-          {multi
-            ? 'Changes apply to all selected badges'
-            : 'Per-badge overrides · inherits global defaults'}
+          {multi ? 'Changes apply to all selected layers' : 'Layer-specific configuration'}
         </p>
       </div>
+
+      {isMinimalPreset && selectedMinimalElements.size > 0 && (
+        <>
+          {minimalRatingIndexes.length > 0 && selectedMinimalRatingRef && (
+            <Section title="Selected Ratings" sectionId="selection-minimal-ratings">
+              <SliderRow
+                label="Size"
+                value={selectedMinimalRatingRef.size}
+                min={12}
+                max={54}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectionMinimalRatings({ size: Math.round(v) })}
+              />
+              <ColorRow
+                label="Color"
+                value={selectedMinimalRatingRef.color}
+                showOpacity
+                opacity={selectedMinimalRatingRef.opacity}
+                onChange={(v) => updateSelectionMinimalRatings({ color: v })}
+                onOpacityChange={(v) =>
+                  updateSelectionMinimalRatings({ opacity: Number(v.toFixed(2)) })
+                }
+              />
+              <ToggleRow
+                label="Background"
+                checked={selectedMinimalRatingRef.bgEnabled}
+                onChange={(v) => updateSelectionMinimalRatings({ bgEnabled: v })}
+              />
+              {selectedMinimalRatingRef.bgEnabled && (
+                <ColorRow
+                  label="Background Color"
+                  value={selectedMinimalRatingRef.bgColor}
+                  showOpacity
+                  opacity={selectedMinimalRatingRef.bgOpacity}
+                  onChange={(v) => updateSelectionMinimalRatings({ bgColor: v })}
+                  onOpacityChange={(v) =>
+                    updateSelectionMinimalRatings({ bgOpacity: Number(v.toFixed(2)) })
+                  }
+                />
+              )}
+              <SliderRow
+                label="Border Width"
+                value={selectedMinimalRatingRef.borderW}
+                min={0}
+                max={8}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectionMinimalRatings({ borderW: Math.round(v) })}
+              />
+              {selectedMinimalRatingRef.borderW > 0 && (
+                <ColorRow
+                  label="Border Color"
+                  value={selectedMinimalRatingRef.borderColor}
+                  showOpacity
+                  opacity={selectedMinimalRatingRef.borderOpacity}
+                  onChange={(v) => updateSelectionMinimalRatings({ borderColor: v })}
+                  onOpacityChange={(v) =>
+                    updateSelectionMinimalRatings({ borderOpacity: Number(v.toFixed(2)) })
+                  }
+                />
+              )}
+              <ToggleRow
+                label="Shadow"
+                checked={selectedMinimalRatingRef.shadowEnabled}
+                onChange={(v) => updateSelectionMinimalRatings({ shadowEnabled: v })}
+              />
+            </Section>
+          )}
+          {(minimalTitleSelected || minimalYearSelected || minimalDurationSelected) && (
+            <Section title="Selected Text" sectionId="selection-minimal-text">
+              {minimalTitleSelected && (
+                <>
+                  <SliderRow
+                    label="Title Size"
+                    value={config.minimalTextSize}
+                    min={14}
+                    max={120}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
+                  />
+                  <ColorRow
+                    label="Title Color"
+                    value={config.minimalTitleColor ?? '#f5f5f5'}
+                    onChange={(v) => updateConfig('minimalTitleColor', v)}
+                    showOpacity
+                    opacity={config.minimalTitleOpacity ?? 1}
+                    onOpacityChange={(v) => updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))}
+                  />
+                </>
+              )}
+              {(minimalYearSelected || minimalDurationSelected) && (
+                <>
+                  <SliderRow
+                    label="Meta Size"
+                    value={config.minimalMetaSize ?? 50}
+                    min={18}
+                    max={80}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('minimalMetaSize', Math.round(v))}
+                  />
+                  <ColorRow
+                    label="Meta Color"
+                    value={config.minimalMetaColor ?? '#d6dde3'}
+                    onChange={(v) => updateConfig('minimalMetaColor', v)}
+                    showOpacity
+                    opacity={config.minimalMetaOpacity ?? 0.92}
+                    onOpacityChange={(v) => updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))}
+                  />
+                </>
+              )}
+            </Section>
+          )}
+        </>
+      )}
 
       {selectedIds.size > 0 && (
         <>

@@ -120,6 +120,7 @@ export interface PosterConfig {
   minimalTitleEnabled?: boolean;
   minimalTitleWidth?: number;
   minimalTitleAlign?: 'left' | 'center' | 'right';
+  minimalTitleFlow?: 'up' | 'down';
   minimalTitleColor?: string;
   minimalTitleOpacity?: number;
   minimalTitleWeight?: number;
@@ -140,6 +141,8 @@ export interface PosterConfig {
   minimalTitlePaddingY?: number;
   minimalTitleRadius?: number;
   minimalRatingsEnabled?: boolean;
+  minimalRatingIconMode?: MinimalRatingIconMode;
+  minimalRatingSymbol?: string;
   minimalRatings?: MinimalRatingConfig[];
   minimalYearEnabled?: boolean;
   minimalDurationEnabled?: boolean;
@@ -246,8 +249,9 @@ export const DEFAULT_CONFIG: PosterConfig = {
   minimalTextX: 26,
   minimalTextY: 556,
   minimalTitleEnabled: true,
-  minimalTitleWidth: 360,
+  minimalTitleWidth: 420,
   minimalTitleAlign: 'left',
+  minimalTitleFlow: 'up',
   minimalTitleColor: '#f5f5f5',
   minimalTitleOpacity: 1,
   minimalTitleWeight: 700,
@@ -268,6 +272,8 @@ export const DEFAULT_CONFIG: PosterConfig = {
   minimalTitlePaddingY: 8,
   minimalTitleRadius: 8,
   minimalRatingsEnabled: true,
+  minimalRatingIconMode: 'star',
+  minimalRatingSymbol: '★',
   minimalRatings: [
     {
       provider: 'imdb',
