@@ -80,9 +80,14 @@ const PreviewCanvas: React.FC<Props> = ({
   const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
   const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
   const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
+  const [minimalRatingOffset, setMinimalRatingOffset] = useState({ dx: 0, dy: 0 });
+  const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const minimalDragRafRef = useRef<number | null>(null);
+  const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
-    if (isMinimalPreset) return [] as RatingType[];
+    if (isMinimalPreset) return [];
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
     return config.ratings.filter((id) => {
       const v = liveRatings[id];
@@ -155,6 +160,46 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const currentScale = autoScale * zoom;
+  const toRgba = useCallback((hex: string | undefined, opacity: number) => {
+    const c = (hex || '#000000').replace('#', '');
+    const valid = c.length === 3 || c.length === 6;
+    if (!valid) return `rgba(0,0,0,${opacity})`;
+    const expanded = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c;
+    const r = parseInt(expanded.slice(0, 2), 16);
+    const g = parseInt(expanded.slice(2, 4), 16);
+    const b = parseInt(expanded.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }, []);
+  const minimalRatings = useMemo(() => {
+    const raw = config.minimalRatings?.slice(0, 3) ?? [];
+    if (raw.length > 0) return raw;
+    return [
+      {
+        provider: 'imdb' as RatingType,
+        x: 342,
+        y: 688,
+        size: 24,
+        color: '#facc15',
+        opacity: 1,
+        iconMode: 'star' as const,
+        symbol: '★',
+        bgEnabled: false,
+        bgColor: '#000000',
+        bgOpacity: 0.25,
+        borderW: 0,
+        borderColor: '#ffffff',
+        borderOpacity: 0.7,
+        radius: 10,
+        paddingX: 10,
+        paddingY: 6,
+        shadowEnabled: true,
+        shadowX: 0,
+        shadowY: 2,
+        shadowBlur: 6,
+        shadowColor: '#000000',
+      },
+    ];
+  }, [config.minimalRatings]);
 
   const clampPan = useCallback(
     (newX: number, newY: number) => {
@@ -340,39 +385,91 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleMinimalTextDragEnd = useCallback(
     (dx: number, dy: number) => {
       setConfig((prev) => {
-        const nextX = Math.max(20, Math.min(CANVAS_WIDTH - 20, Math.round(prev.minimalTextX + dx)));
-        const nextY = Math.max(20, Math.min(CANVAS_HEIGHT - 20, Math.round(prev.minimalTextY + dy)));
+        const boxW = Math.max(120, prev.minimalTitleWidth ?? 420);
+        const boxH = Math.max(36, (prev.minimalTextSize ?? 42) * 1.5);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx)));
+        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(prev.minimalTextY + dy)));
         return { ...prev, minimalTextX: nextX, minimalTextY: nextY };
       });
     },
     [setConfig]
   );
 
-  useEffect(() => {
-    if (!isDraggingMinimalText) return;
-    const onMM = (e: MouseEvent) => {
-      if (!minimalTextStartRef.current) return;
-      setMinimalTextOffset({
-        dx: (e.clientX - minimalTextStartRef.current.mouseX) / currentScale,
-        dy: (e.clientY - minimalTextStartRef.current.mouseY) / currentScale,
+  const handleMinimalRatingDragEnd = useCallback(
+    (index: number, dx: number, dy: number) => {
+      setConfig((prev) => {
+        const items = [...(prev.minimalRatings ?? [])];
+        const item = items[index];
+        if (!item) return prev;
+        const boxW = 140;
+        const boxH = Math.max(32, item.size + item.paddingY * 2);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(item.x + dx)));
+        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(item.y + dy)));
+        items[index] = { ...item, x: nextX, y: nextY };
+        return { ...prev, minimalRatings: items };
       });
+    },
+    [setConfig]
+  );
+
+  useEffect(() => {
+    if (!isDraggingMinimalText && draggingMinimalRatingIndex === null) return;
+    const onMM = (e: MouseEvent) => {
+      if (isDraggingMinimalText && minimalTextStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalTextStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalTextStartRef.current.mouseY) / currentScale,
+        };
+      } else if (draggingMinimalRatingIndex !== null && minimalRatingStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale,
+        };
+      }
+      if (minimalDragRafRef.current === null) {
+        minimalDragRafRef.current = requestAnimationFrame(() => {
+          minimalDragRafRef.current = null;
+          if (!minimalPendingOffsetRef.current) return;
+          if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
+          if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
+        });
+      }
     };
     const onMU = (e: MouseEvent) => {
-      if (!minimalTextStartRef.current) return;
-      const dx = (e.clientX - minimalTextStartRef.current.mouseX) / currentScale;
-      const dy = (e.clientY - minimalTextStartRef.current.mouseY) / currentScale;
-      handleMinimalTextDragEnd(dx, dy);
+      if (isDraggingMinimalText && minimalTextStartRef.current) {
+        const dx = (e.clientX - minimalTextStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalTextStartRef.current.mouseY) / currentScale;
+        handleMinimalTextDragEnd(dx, dy);
+      }
+      if (draggingMinimalRatingIndex !== null && minimalRatingStartRef.current) {
+        const dx = (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale;
+        handleMinimalRatingDragEnd(draggingMinimalRatingIndex, dx, dy);
+      }
       minimalTextStartRef.current = null;
+      minimalRatingStartRef.current = null;
       setMinimalTextOffset({ dx: 0, dy: 0 });
+      setMinimalRatingOffset({ dx: 0, dy: 0 });
       setIsDraggingMinimalText(false);
+      setDraggingMinimalRatingIndex(null);
     };
     window.addEventListener('mousemove', onMM);
     window.addEventListener('mouseup', onMU);
     return () => {
       window.removeEventListener('mousemove', onMM);
       window.removeEventListener('mouseup', onMU);
+      if (minimalDragRafRef.current !== null) {
+        cancelAnimationFrame(minimalDragRafRef.current);
+        minimalDragRafRef.current = null;
+      }
     };
-  }, [isDraggingMinimalText, currentScale, handleMinimalTextDragEnd]);
+  }, [
+    isDraggingMinimalText,
+    draggingMinimalRatingIndex,
+    currentScale,
+    handleMinimalTextDragEnd,
+    handleMinimalRatingDragEnd,
+  ]);
 
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
@@ -665,23 +762,104 @@ const PreviewCanvas: React.FC<Props> = ({
           />
         )}
 
-        {isMinimalPreset && (
+        {isMinimalPreset &&
+          minimalRatings.map((r, idx) => {
+            const isDragging = draggingMinimalRatingIndex === idx;
+            const iconText =
+              r.iconMode === 'symbol'
+                ? r.symbol || '★'
+                : r.iconMode === 'flat'
+                  ? '●'
+                  : r.iconMode === 'star'
+                    ? '★'
+                    : r.provider === 'imdb'
+                      ? 'IMDb'
+                      : r.provider === 'rt'
+                        ? '🍅'
+                        : r.provider === 'tmdb'
+                          ? 'TMDB'
+                          : r.provider === 'meta'
+                            ? 'M'
+                            : r.provider === 'letterboxd'
+                              ? 'L'
+                              : r.provider === 'rt_popcorn'
+                                ? '🍿'
+                                : r.provider.toUpperCase();
+            const ratingValue = (liveRatings[r.provider] ?? '').toString().trim() || '--';
+            return (
+              <div
+                key={`minimal-rating-${idx}`}
+                className="absolute z-40 select-none"
+                style={{
+                  left: r.x + (isDragging ? minimalRatingOffset.dx : 0),
+                  top: r.y + (isDragging ? minimalRatingOffset.dy : 0),
+                  padding: `${r.paddingY}px ${r.paddingX}px`,
+                  borderRadius: r.radius,
+                  border:
+                    r.borderW > 0
+                      ? `${r.borderW}px solid ${toRgba(r.borderColor, r.borderOpacity)}`
+                      : 'none',
+                  background: r.bgEnabled ? toRgba(r.bgColor, r.bgOpacity) : 'transparent',
+                  color: toRgba(r.color, r.opacity),
+                  fontSize: `${r.size}px`,
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                  boxShadow: r.shadowEnabled
+                    ? `${r.shadowX}px ${r.shadowY}px ${r.shadowBlur}px ${r.shadowColor}`
+                    : 'none',
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setDraggingMinimalRatingIndex(idx);
+                  minimalRatingStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+                }}
+                title="Drag minimal rating"
+              >
+                <span>{iconText}</span>
+                <span className="mono-font" style={{ fontSize: `${Math.max(11, r.size * 0.72)}px` }}>
+                  {ratingValue}
+                </span>
+              </div>
+            );
+          })}
+
+        {isMinimalPreset && (config.minimalTitleEnabled ?? true) && (
           <div
-            className="absolute z-40 cursor-move select-none"
+            className="absolute z-40 select-none"
             style={{
               left: config.minimalTextX + minimalTextOffset.dx,
               top: config.minimalTextY + minimalTextOffset.dy,
-              transform: 'translate(-50%, -50%)',
+              width: Math.max(120, config.minimalTitleWidth ?? 420),
               fontSize: `${config.minimalTextSize}px`,
-              lineHeight: 1,
-              color: 'rgba(245,245,245,0.9)',
-              fontWeight: 700,
-              letterSpacing: '0.02em',
-              textShadow: '0 1px 3px rgba(0,0,0,0.7)',
-              border: '1px dashed rgba(196,124,46,0.45)',
-              borderRadius: 8,
-              padding: '4px 8px',
-              background: 'rgba(0,0,0,0.22)',
+              textAlign: config.minimalTitleAlign ?? 'left',
+              lineHeight: config.minimalTitleLineHeight ?? 1.08,
+              color: toRgba(config.minimalTitleColor, config.minimalTitleOpacity ?? 0.95),
+              fontWeight: config.minimalTitleWeight ?? 700,
+              letterSpacing: `${config.minimalTitleLetterSpacing ?? 0.4}px`,
+              textShadow:
+                config.minimalTitleShadowEnabled ?? true
+                  ? `${config.minimalTitleShadowX ?? 0}px ${config.minimalTitleShadowY ?? 2}px ${
+                      config.minimalTitleShadowBlur ?? 8
+                    }px ${config.minimalTitleShadowColor ?? '#000000'}`
+                  : 'none',
+              border:
+                (config.minimalTitleBorderW ?? 0) > 0
+                  ? `${config.minimalTitleBorderW}px solid ${toRgba(
+                      config.minimalTitleBorderColor,
+                      config.minimalTitleBorderOpacity ?? 0.6
+                    )}`
+                  : 'none',
+              borderRadius: config.minimalTitleRadius ?? 8,
+              padding: `${config.minimalTitlePaddingY ?? 8}px ${config.minimalTitlePaddingX ?? 10}px`,
+              background:
+                config.minimalTitleBgEnabled ?? true
+                  ? toRgba(config.minimalTitleBgColor, config.minimalTitleBgOpacity ?? 0.24)
+                  : 'transparent',
+              cursor: isDraggingMinimalText ? 'grabbing' : 'grab',
             }}
             onMouseDown={(e) => {
               e.stopPropagation();
@@ -689,7 +867,7 @@ const PreviewCanvas: React.FC<Props> = ({
               setIsDraggingMinimalText(true);
               minimalTextStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
             }}
-            title="Drag to position minimal mode text"
+            title="Drag minimal title"
           >
             {liveTitle || 'Title'}
           </div>

@@ -19,6 +19,32 @@ export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' |
 export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal' | 'anilist' | 'imdb';
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 export type LogoSourceType = 'fanart' | 'tmdb' | 'metahub' | null;
+export type MinimalRatingIconMode = 'star' | 'original' | 'flat' | 'symbol';
+
+export interface MinimalRatingConfig {
+  provider: RatingType;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  opacity: number;
+  iconMode: MinimalRatingIconMode;
+  symbol: string;
+  bgEnabled: boolean;
+  bgColor: string;
+  bgOpacity: number;
+  borderW: number;
+  borderColor: string;
+  borderOpacity: number;
+  radius: number;
+  paddingX: number;
+  paddingY: number;
+  shadowEnabled: boolean;
+  shadowX: number;
+  shadowY: number;
+  shadowBlur: number;
+  shadowColor: string;
+}
 
 // ── Per-badge overrides ───────────────────────────────────────────────────────
 // All fields are optional — absent means "inherit from global PosterConfig".
@@ -90,6 +116,29 @@ export interface PosterConfig {
   minimalTextSize: number; // minimal mode title font size
   minimalTextX: number; // minimal mode title x position
   minimalTextY: number; // minimal mode title y position
+  minimalTitleEnabled?: boolean;
+  minimalTitleWidth?: number;
+  minimalTitleAlign?: 'left' | 'center' | 'right';
+  minimalTitleColor?: string;
+  minimalTitleOpacity?: number;
+  minimalTitleWeight?: number;
+  minimalTitleLetterSpacing?: number;
+  minimalTitleLineHeight?: number;
+  minimalTitleShadowEnabled?: boolean;
+  minimalTitleShadowX?: number;
+  minimalTitleShadowY?: number;
+  minimalTitleShadowBlur?: number;
+  minimalTitleShadowColor?: string;
+  minimalTitleBorderW?: number;
+  minimalTitleBorderColor?: string;
+  minimalTitleBorderOpacity?: number;
+  minimalTitleBgEnabled?: boolean;
+  minimalTitleBgColor?: string;
+  minimalTitleBgOpacity?: number;
+  minimalTitlePaddingX?: number;
+  minimalTitlePaddingY?: number;
+  minimalTitleRadius?: number;
+  minimalRatings?: MinimalRatingConfig[];
 
   // Badge layout
   layout: LayoutType;
@@ -181,8 +230,56 @@ export const DEFAULT_CONFIG: PosterConfig = {
   posterBlur: 0,
   grayscale: false,
   minimalTextSize: 42,
-  minimalTextX: 250,
-  minimalTextY: 660,
+  minimalTextX: 42,
+  minimalTextY: 610,
+  minimalTitleEnabled: true,
+  minimalTitleWidth: 420,
+  minimalTitleAlign: 'left',
+  minimalTitleColor: '#f5f5f5',
+  minimalTitleOpacity: 0.95,
+  minimalTitleWeight: 700,
+  minimalTitleLetterSpacing: 0.4,
+  minimalTitleLineHeight: 1.08,
+  minimalTitleShadowEnabled: true,
+  minimalTitleShadowX: 0,
+  minimalTitleShadowY: 2,
+  minimalTitleShadowBlur: 8,
+  minimalTitleShadowColor: '#000000',
+  minimalTitleBorderW: 0,
+  minimalTitleBorderColor: '#d4a245',
+  minimalTitleBorderOpacity: 0.6,
+  minimalTitleBgEnabled: true,
+  minimalTitleBgColor: '#000000',
+  minimalTitleBgOpacity: 0.24,
+  minimalTitlePaddingX: 10,
+  minimalTitlePaddingY: 8,
+  minimalTitleRadius: 8,
+  minimalRatings: [
+    {
+      provider: 'imdb',
+      x: 342,
+      y: 688,
+      size: 24,
+      color: '#facc15',
+      opacity: 1,
+      iconMode: 'star',
+      symbol: '★',
+      bgEnabled: false,
+      bgColor: '#000000',
+      bgOpacity: 0.25,
+      borderW: 0,
+      borderColor: '#ffffff',
+      borderOpacity: 0.7,
+      radius: 10,
+      paddingX: 10,
+      paddingY: 6,
+      shadowEnabled: true,
+      shadowX: 0,
+      shadowY: 2,
+      shadowBlur: 6,
+      shadowColor: '#000000',
+    },
+  ],
 
   // Badge layout
   layout: 'custom',

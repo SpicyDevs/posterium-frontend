@@ -22,7 +22,7 @@ const MobileDock: React.FC<{
           : 'Badges';
     const tabs: { id: TabId; Icon: React.ElementType; label: string; visible: boolean }[] = [
       { id: 'source', Icon: Film, label: 'Media', visible: true },
-      { id: 'layers', Icon: Layers, label: 'Layers', visible: true },
+      { id: 'layers', Icon: Layers, label: 'Layers', visible: !isMinimalPreset },
       { id: 'poster', Icon: Monitor, label: 'Canvas', visible: true },
       { id: 'badges', Icon: Sliders, label: badgesTabLabel, visible: hasBadges || hasLogo || isMinimalPreset },
       {

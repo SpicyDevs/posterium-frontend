@@ -513,7 +513,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
-    if (activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster')
+    if (activeTab === 'source' || activeTab === 'poster' || activeTab === 'layers')
       setLocalMode(activeTab);
   }, [activeTab]);
 
@@ -563,6 +563,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const minimalModeHandledRef = useRef(false);
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesVisible = config.ratings.length > 0;
+
+  useEffect(() => {
+    if (isMinimalPreset && localMode === 'layers') {
+      setLocalMode('source');
+      setActiveTab('source');
+    }
+  }, [isMinimalPreset, localMode, setActiveTab]);
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -984,7 +991,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             { id: 'source', label: 'Source', icon: <Film size={11} strokeWidth={2} /> },
             { id: 'layers', label: 'Layers', icon: <Layers size={11} strokeWidth={2} /> },
             { id: 'poster', label: 'Poster', icon: <Monitor size={11} strokeWidth={2} /> },
-          ] as const).map((tab) => (
+          ] as const)
+            .filter((tab) => !(isMinimalPreset && tab.id === 'layers'))
+            .map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1345,7 +1354,41 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   onClick={() => {
                     if (opt.id === 'm') {
                       writeTextlessPreference(config.textless);
-                      setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
+                      setConfig((prev) => ({
+                        ...prev,
+                        uiPreset: 'm',
+                        textless: true,
+                        minimalTitleEnabled: prev.minimalTitleEnabled ?? true,
+                        minimalRatings:
+                          prev.minimalRatings && prev.minimalRatings.length > 0
+                            ? prev.minimalRatings.slice(0, 3)
+                            : [
+                                {
+                                  provider: 'imdb',
+                                  x: 342,
+                                  y: 688,
+                                  size: 24,
+                                  color: '#facc15',
+                                  opacity: 1,
+                                  iconMode: 'star',
+                                  symbol: '★',
+                                  bgEnabled: false,
+                                  bgColor: '#000000',
+                                  bgOpacity: 0.25,
+                                  borderW: 0,
+                                  borderColor: '#ffffff',
+                                  borderOpacity: 0.7,
+                                  radius: 10,
+                                  paddingX: 10,
+                                  paddingY: 6,
+                                  shadowEnabled: true,
+                                  shadowX: 0,
+                                  shadowY: 2,
+                                  shadowBlur: 6,
+                                  shadowColor: '#000000',
+                                },
+                              ],
+                      }));
                       disableBadges({ persistPreference: false });
                       return;
                     }
