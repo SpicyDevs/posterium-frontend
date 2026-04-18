@@ -1016,243 +1016,151 @@ const PropertyPanel: React.FC<Props> = ({
         {showLogoSettings && (
           <>
             <Section
-              title="Typography & Meta"
+              title="Title & Year Typography"
               icon={<Type size={10} />}
-              sectionId="global-minimal-title"
+              sectionId="global-title-year-typography"
             >
               <SliderRow
-                label="Font Size"
-                value={config.minimalTextSize}
-                min={14}
+                label="Title Font Size"
+                value={config.items.title?.textSize ?? 36}
+                min={10}
                 max={120}
                 step={1}
                 unit="px"
-                onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textSize: Math.round(v) },
+                    },
+                  }))
+                }
               />
               <SliderRow
-                label="Box Width"
-                value={config.minimalTitleWidth ?? 420}
-                min={120}
-                max={480}
-                step={2}
-                unit="px"
-                onChange={(v) => updateConfig('minimalTitleWidth', Math.round(v))}
-              />
-              <SliderRow
-                label="Weight"
-                value={config.minimalTitleWeight ?? 700}
+                label="Title Font Weight"
+                value={config.items.title?.textWeight ?? 700}
                 min={300}
                 max={900}
                 step={100}
-                onChange={(v) => updateConfig('minimalTitleWeight', Math.round(v))}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textWeight: Math.round(v) },
+                    },
+                  }))
+                }
               />
               <SliderRow
-                label="Line Height"
-                value={config.minimalTitleLineHeight ?? 1.08}
+                label="Title Letter Spacing"
+                value={config.items.title?.textLetterSpacing ?? 0.2}
                 min={0.8}
-                max={1.8}
-                step={0.02}
-                onChange={(v) => updateConfig('minimalTitleLineHeight', Number(v.toFixed(2)))}
-              />
-              <SliderRow
-                label="Letter Spacing"
-                value={config.minimalTitleLetterSpacing ?? 0.4}
-                min={-2}
                 max={8}
                 step={0.1}
                 unit="px"
-                onChange={(v) => updateConfig('minimalTitleLetterSpacing', Number(v.toFixed(1)))}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textLetterSpacing: Number(v.toFixed(1)) },
+                    },
+                  }))
+                }
+              />
+              <SliderRow
+                label="Title Ellipsis Cutoff"
+                value={config.items.title?.textMaxChars ?? 64}
+                min={0}
+                max={240}
+                step={1}
+                unit="ch"
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textMaxChars: Math.round(v) },
+                    },
+                  }))
+                }
               />
               <SegmentedRow
-                label="Align"
+                label="Title Alignment"
                 options={[
                   { id: 'left', label: 'Left' },
                   { id: 'center', label: 'Center' },
                   { id: 'right', label: 'Right' },
                 ]}
-                value={config.minimalTitleAlign ?? 'left'}
-                onChange={(v) => updateConfig('minimalTitleAlign', v as PosterConfig['minimalTitleAlign'])}
-              />
-              <SegmentedRow
-                label="Wrap Direction"
-                options={[
-                  { id: 'up', label: 'Grow Up' },
-                  { id: 'down', label: 'Grow Down' },
-                ]}
-                value={config.minimalTitleFlow ?? 'up'}
-                onChange={(v) => updateConfig('minimalTitleFlow', v as PosterConfig['minimalTitleFlow'])}
+                value={config.items.title?.textAlign ?? 'left'}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textAlign: v as BadgeConfig['textAlign'] },
+                    },
+                  }))
+                }
               />
               <ColorRow
-                label="Text Color"
-                value={config.minimalTitleColor ?? '#f5f5f5'}
-                onChange={(v) => updateConfig('minimalTitleColor', v)}
-                showOpacity
-                opacity={config.minimalTitleOpacity ?? 1}
-                onOpacityChange={(v) => updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))}
+                label="Title Text Color"
+                value={config.items.title?.txt ?? '#f5f5f5'}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), txt: v } },
+                  }))
+                }
               />
-              <ToggleRow
-                label="Shadow"
-                checked={config.minimalTitleShadowEnabled ?? false}
-                onChange={(v) => updateConfig('minimalTitleShadowEnabled', v)}
-              />
-              {(config.minimalTitleShadowEnabled ?? false) && (
-                <>
-                  <SliderRow
-                    label="Shadow X"
-                    value={config.minimalTitleShadowX ?? 0}
-                    min={-20}
-                    max={20}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitleShadowX', Math.round(v))}
-                  />
-                  <SliderRow
-                    label="Shadow Y"
-                    value={config.minimalTitleShadowY ?? 2}
-                    min={-20}
-                    max={20}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitleShadowY', Math.round(v))}
-                  />
-                  <SliderRow
-                    label="Shadow Blur"
-                    value={config.minimalTitleShadowBlur ?? 8}
-                    min={0}
-                    max={40}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitleShadowBlur', Math.round(v))}
-                  />
-                  <ColorRow
-                    label="Shadow Color"
-                    value={config.minimalTitleShadowColor ?? '#000000'}
-                    onChange={(v) => updateConfig('minimalTitleShadowColor', v)}
-                  />
-                </>
-              )}
-              <ToggleRow
-                label="Background"
-                checked={config.minimalTitleBgEnabled ?? false}
-                onChange={(v) => updateConfig('minimalTitleBgEnabled', v)}
-              />
-              {(config.minimalTitleBgEnabled ?? false) && (
-                <>
-                  <ColorRow
-                    label="Background Color"
-                    value={config.minimalTitleBgColor ?? '#000000'}
-                    onChange={(v) => updateConfig('minimalTitleBgColor', v)}
-                    showOpacity
-                    opacity={config.minimalTitleBgOpacity ?? 0.24}
-                    onOpacityChange={(v) => updateConfig('minimalTitleBgOpacity', Number(v.toFixed(2)))}
-                  />
-                  <SliderRow
-                    label="Padding X"
-                    value={config.minimalTitlePaddingX ?? 10}
-                    min={0}
-                    max={40}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitlePaddingX', Math.round(v))}
-                  />
-                  <SliderRow
-                    label="Padding Y"
-                    value={config.minimalTitlePaddingY ?? 8}
-                    min={0}
-                    max={40}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitlePaddingY', Math.round(v))}
-                  />
-                  <SliderRow
-                    label="Radius"
-                    value={config.minimalTitleRadius ?? 8}
-                    min={0}
-                    max={40}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTitleRadius', Math.round(v))}
-                  />
-                </>
-              )}
               <SliderRow
-                label="Border Width"
-                value={config.minimalTitleBorderW ?? 0}
-                min={0}
-                max={10}
+                label="Year Font Size"
+                value={config.items.year?.textSize ?? 42}
+                min={10}
+                max={120}
                 step={1}
                 unit="px"
-                onChange={(v) => updateConfig('minimalTitleBorderW', Math.round(v))}
-              />
-              {(config.minimalTitleBorderW ?? 0) > 0 && (
-                <>
-                  <ColorRow
-                    label="Border Color"
-                    value={config.minimalTitleBorderColor ?? '#d4a245'}
-                    onChange={(v) => updateConfig('minimalTitleBorderColor', v)}
-                    showOpacity
-                    opacity={config.minimalTitleBorderOpacity ?? 0.6}
-                    onOpacityChange={(v) =>
-                      updateConfig('minimalTitleBorderOpacity', Number(v.toFixed(2)))
-                    }
-                  />
-                </>
-              )}
-              <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
-                <span>Position (drag on canvas)</span>
-                <span>
-                  {Math.round(config.minimalTextX)}, {Math.round(config.minimalTextY)}
-                </span>
-              </div>
-              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Title and year visibility are controlled from the Layers panel.
-              </p>
-              <SliderRow
-                label="Meta Size"
-                value={config.minimalMetaSize ?? 50}
-                min={18}
-                max={80}
-                step={1}
-                unit="px"
-                onChange={(v) => updateConfig('minimalMetaSize', Math.round(v))}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      year: { ...(prev.items.year ?? {}), textSize: Math.round(v) },
+                    },
+                  }))
+                }
               />
               <SliderRow
-                label="Meta Weight"
-                value={config.minimalMetaWeight ?? 600}
+                label="Year Font Weight"
+                value={config.items.year?.textWeight ?? 700}
                 min={300}
                 max={900}
                 step={100}
-                onChange={(v) => updateConfig('minimalMetaWeight', Math.round(v))}
-              />
-              <SliderRow
-                label="Meta Letter Spacing"
-                value={config.minimalMetaLetterSpacing ?? 0}
-                min={-2}
-                max={8}
-                step={0.1}
-                unit="px"
-                onChange={(v) => updateConfig('minimalMetaLetterSpacing', Number(v.toFixed(1)))}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      year: { ...(prev.items.year ?? {}), textWeight: Math.round(v) },
+                    },
+                  }))
+                }
               />
               <ColorRow
-                label="Meta Color"
-                value={config.minimalMetaColor ?? '#d6dde3'}
-                onChange={(v) => updateConfig('minimalMetaColor', v)}
-                showOpacity
-                opacity={config.minimalMetaOpacity ?? 0.92}
-                onOpacityChange={(v) => updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))}
+                label="Year Text Color"
+                value={config.items.year?.txt ?? '#d6dde3'}
+                onChange={(v) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), txt: v } },
+                  }))
+                }
               />
-              <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
-                <span>Year position</span>
-                <span>
-                  {Math.round(config.minimalMetaX ?? 26)}, {Math.round(config.minimalMetaY ?? 672)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
-                <span>Duration position</span>
-                <span>
-                  {Math.round(config.minimalDurationX ?? 90)}, {Math.round(config.minimalDurationY ?? 672)}
-                </span>
-              </div>
+              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                Visibility and drag position are managed in the Layers tab.
+              </p>
             </Section>
 
           </>
@@ -1442,6 +1350,9 @@ const PropertyPanel: React.FC<Props> = ({
 
   const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isAgeSelected = selectedIds.has('age');
+  const isOnlyTitleSelected = selectedIds.size === 1 && selectedIds.has('title');
+  const isOnlyYearSelected = selectedIds.size === 1 && selectedIds.has('year');
+  const isTitleOrYearOnlySelection = isOnlyTitleSelected || isOnlyYearSelected;
   const multi = selectionCount > 1;
   const selectedBadgeLabel = (() => {
     if (selectedLogo && selectedIds.size === 0 && selectedMinimalElements.size === 0) return 'Logo Overlay';
@@ -1508,6 +1419,21 @@ const PropertyPanel: React.FC<Props> = ({
   const minimalTitleSelected = selectedMinimalElements.has('minimal-title');
   const minimalYearSelected = selectedMinimalElements.has('minimal-year');
   const minimalDurationSelected = selectedMinimalElements.has('minimal-duration');
+  const commonTextSize = (getCommonValue('textSize', isOnlyYearSelected ? 42 : 36) ??
+    (isOnlyYearSelected ? 42 : 36)) as number;
+  const commonTextWeight = (getCommonValue('textWeight', 700) ?? 700) as number;
+  const commonTextLetterSpacing = (getCommonValue('textLetterSpacing', 0) ?? 0) as number;
+  const commonTextLineHeight = (getCommonValue('textLineHeight', 1.1) ?? 1.1) as number;
+  const commonTextAlign = (getCommonValue('textAlign', 'left') ?? 'left') as
+    | 'left'
+    | 'center'
+    | 'right';
+  const commonTextMaxChars = (getCommonValue('textMaxChars', 64) ?? 64) as number;
+  const commonTextShadowEnabled = (getCommonValue('textShadowEnabled', false) ?? false) as boolean;
+  const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
+  const commonTextShadowY = (getCommonValue('textShadowY', 2) ?? 2) as number;
+  const commonTextShadowBlur = (getCommonValue('textShadowBlur', 8) ?? 8) as number;
+  const commonTextShadowColor = (getCommonValue('textShadowColor', '#000000') ?? '#000000') as string;
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1580,10 +1506,110 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedIds.size > 0 && (
         <>
+      {isTitleOrYearOnlySelection && (
+        <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">
+          <SliderRow
+            label="Font Size"
+            value={commonTextSize}
+            min={10}
+            max={120}
+            step={1}
+            unit="px"
+            onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
+          />
+          <SliderRow
+            label="Font Weight"
+            value={commonTextWeight}
+            min={100}
+            max={900}
+            step={100}
+            onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
+          />
+          <SliderRow
+            label="Line Height"
+            value={commonTextLineHeight}
+            min={0.8}
+            max={2}
+            step={0.02}
+            onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
+          />
+          <SliderRow
+            label="Letter Spacing"
+            value={commonTextLetterSpacing}
+            min={-2}
+            max={8}
+            step={0.1}
+            unit="px"
+            onChange={(v) => updateSelectedBadges({ textLetterSpacing: Number(v.toFixed(1)) })}
+          />
+          <SegmentedRow
+            label="Text Align"
+            options={[
+              { id: 'left', label: 'Left' },
+              { id: 'center', label: 'Center' },
+              { id: 'right', label: 'Right' },
+            ]}
+            value={commonTextAlign}
+            onChange={(v) => updateSelectedBadges({ textAlign: v as BadgeConfig['textAlign'] })}
+          />
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Ellipsis Cutoff"
+              value={commonTextMaxChars}
+              min={0}
+              max={240}
+              step={1}
+              unit="ch"
+              onChange={(v) => updateSelectedBadges({ textMaxChars: Math.round(v) })}
+            />
+          )}
+          <ToggleRow
+            label="Text Shadow"
+            checked={commonTextShadowEnabled}
+            onChange={(v) => updateSelectedBadges({ textShadowEnabled: v })}
+          />
+          {commonTextShadowEnabled && (
+            <>
+              <SliderRow
+                label="Shadow X"
+                value={commonTextShadowX}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowX: Math.round(v) })}
+              />
+              <SliderRow
+                label="Shadow Y"
+                value={commonTextShadowY}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowY: Math.round(v) })}
+              />
+              <SliderRow
+                label="Shadow Blur"
+                value={commonTextShadowBlur}
+                min={0}
+                max={40}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowBlur: Math.round(v) })}
+              />
+              <ColorRow
+                label="Shadow Color"
+                value={commonTextShadowColor}
+                onChange={(v) => updateSelectedBadges({ textShadowColor: v })}
+              />
+            </>
+          )}
+        </Section>
+      )}
       {/* Transform ── scale */}
       <Section title="Transform" sectionId="badge-transform">
         <SliderRow
-          label="Scale"
+          label={isTitleOrYearOnlySelection ? 'Layer Width' : 'Scale'}
           value={commonScale}
           min={0.5}
           max={2.0}
@@ -1595,7 +1621,7 @@ const PropertyPanel: React.FC<Props> = ({
       </Section>
 
       {/* Shape ── blur, radius, shadow, border */}
-      <Section title="Shape" sectionId="badge-shape">
+      <Section title={isTitleOrYearOnlySelection ? 'Container' : 'Shape'} sectionId="badge-shape">
         <SliderRow
           label="Glass Blur"
           value={commonBlur}
@@ -1640,7 +1666,7 @@ const PropertyPanel: React.FC<Props> = ({
       </Section>
 
       {/* Colors ── fill + text */}
-      <Section title="Colors" sectionId="badge-colors">
+      <Section title={isTitleOrYearOnlySelection ? 'Text & Colors' : 'Colors'} sectionId="badge-colors">
         <ColorRow
           label="Background"
           value={commonBg}
@@ -1651,7 +1677,7 @@ const PropertyPanel: React.FC<Props> = ({
           onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
         />
         <ColorRow
-          label="Text & Icon Color"
+          label={isTitleOrYearOnlySelection ? 'Text Color' : 'Text & Icon Color'}
           value={commonTxt}
           onChange={(v) => updateSelectedBadges({ txt: v })}
           onReset={() => clearSelectedBadgeProp('txt')}
@@ -1659,6 +1685,7 @@ const PropertyPanel: React.FC<Props> = ({
       </Section>
 
       {/* Visibility ── icons, text, icon variant */}
+      {!isTitleOrYearOnlySelection && (
       <Section title="Visibility" icon={<Eye size={10} />} sectionId="badge-visibility">
         {!isAgeSelected && (
           <ToggleRow
@@ -1688,8 +1715,10 @@ const PropertyPanel: React.FC<Props> = ({
           onChange={(v) => updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })}
         />
       </Section>
+      )}
 
       {/* Score ── normalize + denominator */}
+      {!isTitleOrYearOnlySelection && (
       <Section title="Score" icon={<Hash size={10} />} defaultOpen={false} sectionId="badge-score">
         <ToggleRow
           label="Normalize to /10"
@@ -1704,8 +1733,10 @@ const PropertyPanel: React.FC<Props> = ({
           onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
         />
       </Section>
+      )}
 
       {/* Labels ── position, custom text, size, color */}
+      {!isTitleOrYearOnlySelection && (
       <Section
         title="Labels"
         icon={<Type size={10} />}
@@ -1753,6 +1784,7 @@ const PropertyPanel: React.FC<Props> = ({
           onReset={() => clearSelectedBadgeProp('labelColor')}
         />
       </Section>
+      )}
       </>
       )}
 
@@ -1792,14 +1824,6 @@ const PropertyPanel: React.FC<Props> = ({
             step={0.05}
             formatValue={(v) => `${Math.round(v * 100)}%`}
             onChange={(v) => updateConfig('logoOpacity', v)}
-          />
-          <SliderRow
-            label="Z-Index"
-            value={config.logoZ ?? 90}
-            min={1}
-            max={220}
-            step={1}
-            onChange={(v) => updateConfig('logoZ', Math.round(v))}
           />
           <SliderRow
             label="Drop Shadow"

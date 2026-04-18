@@ -930,7 +930,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           >
             {badge.label}
           </span>
-          {isActive && ratingVal && (
+          {isActive && ratingVal && badge.id !== 'title' && (
             <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
               {ratingVal}
             </span>
@@ -1668,49 +1668,41 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 )}
               </DragDropContext>
 
-              <div
-                className="mt-5 p-3 rounded-xl space-y-3"
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p
-                      className="body-font font-medium flex items-center gap-1.5"
-                      style={{ fontSize: 11, color: 'var(--film-text-label)' }}
-                    >
-                      <ImagePlay size={11} /> Logo Layer
-                    </p>
-                    <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                      Enable logo and control its layer depth
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.logo}
-                    onChange={(v) => updateConfig('logo', v)}
-                    className={clsx(
-                      'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none',
-                      config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
-                    )}
+              <div className="mt-5 space-y-0.5">
+                <div
+                  className="flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none hover:bg-[rgba(196,124,46,0.06)]"
+                  onClick={() => updateConfig('logo', !config.logo)}
+                >
+                  <div className="w-5 shrink-0" />
+                  <div className="w-4 h-4 rounded border flex items-center justify-center transition-all bg-[var(--film-char)] border-[rgba(255,255,255,0.15)]" />
+                  <div
+                    className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                    }}
                   >
+                    <ImagePlay size={12} style={{ color: 'var(--film-text-dim)' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
                     <span
-                      className={clsx(
-                        'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-                        config.logo ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                      )}
-                    />
-                  </Switch>
+                      className="block syne-font truncate"
+                      style={{ fontSize: 11, fontWeight: 600, color: 'var(--film-text-label)' }}
+                    >
+                      Logo
+                    </span>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <button
+                      onClick={() => updateConfig('logo', !config.logo)}
+                      className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                      style={{ color: config.logo ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+                      title={config.logo ? 'Hide layer' : 'Show layer'}
+                    >
+                      {config.logo ? <Eye size={13} /> : <EyeOff size={13} />}
+                    </button>
+                  </div>
                 </div>
-                <SliderRow
-                  label="Logo Z-Index"
-                  value={config.logoZ ?? 90}
-                  min={1}
-                  max={220}
-                  step={1}
-                  onChange={(v) => updateConfig('logoZ', Math.round(v))}
-                />
               </div>
           </>
         </div>

@@ -250,6 +250,22 @@ const DraggableBadge: React.FC<Props> = ({
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
   const txtColor = itemConfig?.txt || config.txt || '#ffffff';
+  const textSize = Math.max(8, itemConfig?.textSize ?? 28) * displayScale;
+  const textWeight = Math.max(100, Math.min(900, itemConfig?.textWeight ?? 700));
+  const textLetterSpacing = (itemConfig?.textLetterSpacing ?? 0) * displayScale;
+  const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
+  const textAlign = itemConfig?.textAlign ?? 'left';
+  const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
+  const textShadow =
+    itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
+      ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
+          itemConfig.textShadowBlur ?? 8
+        }px ${itemConfig.textShadowColor ?? '#000000'}`
+      : itemConfig?.textShadowEnabled
+        ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
+            itemConfig.textShadowBlur ?? 8
+          }px ${itemConfig.textShadowColor ?? '#000000'}`
+        : 'none';
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const dropShadowFilter =
@@ -367,6 +383,10 @@ const DraggableBadge: React.FC<Props> = ({
       ? Number(runtimeCompact).toFixed(1)
       : runtimeCompact;
     const displayValue = numericDisplay;
+    const truncatedTitleValue =
+      badgeId === 'title' && textMaxChars > 0 && displayValue.length > textMaxChars
+        ? `${displayValue.slice(0, textMaxChars).trimEnd()}…`
+        : displayValue;
 
     if (badgeId === 'title' || badgeId === 'year') {
       return showTextVal ? (
@@ -377,19 +397,21 @@ const DraggableBadge: React.FC<Props> = ({
             right: 8 * displayScale,
             top: '50%',
             transform: 'translateY(-50%)',
-            fontSize: badgeId === 'title' ? fontSize * 0.85 : fontSize,
+            fontSize: textSize,
             fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: badgeId === 'title' ? 700 : 'bold',
+            fontWeight: textWeight,
             color: txtColor,
-            lineHeight: 1.1,
-            textAlign: 'left',
+            lineHeight: textLineHeight,
+            letterSpacing: `${textLetterSpacing}px`,
+            textAlign,
+            textShadow,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             pointerEvents: 'none',
           }}
         >
-          {displayValue}
+          {badgeId === 'title' ? truncatedTitleValue : displayValue}
         </span>
       ) : null;
     }

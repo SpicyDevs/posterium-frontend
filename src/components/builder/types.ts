@@ -85,6 +85,19 @@ export interface BadgeConfig {
   labelText?: string; // custom label string (default: provider name)
   labelSize?: number; // label font size, 6–32 (default: 11)
   labelColor?: string; // label hex color override
+
+  // Text typography (primarily for title/year layers)
+  textSize?: number; // px
+  textWeight?: number; // 100-900
+  textLetterSpacing?: number; // px
+  textLineHeight?: number; // unitless
+  textAlign?: 'left' | 'center' | 'right';
+  textMaxChars?: number; // 0 disables truncation
+  textShadowEnabled?: boolean;
+  textShadowX?: number;
+  textShadowY?: number;
+  textShadowBlur?: number;
+  textShadowColor?: string;
 }
 
 // ── API keys ──────────────────────────────────────────────────────────────────
@@ -357,6 +370,11 @@ export const DEFAULT_CONFIG: PosterConfig = {
       radius: 0,
       shadow: 0,
       borderW: 0,
+      textSize: 42,
+      textWeight: 700,
+      textLetterSpacing: 0,
+      textLineHeight: 1.1,
+      textAlign: 'left',
     },
     title: {
       x: 24,
@@ -368,6 +386,12 @@ export const DEFAULT_CONFIG: PosterConfig = {
       shadow: 0,
       borderW: 0,
       scale: 1.45,
+      textSize: 36,
+      textWeight: 700,
+      textLetterSpacing: 0.2,
+      textLineHeight: 1.1,
+      textAlign: 'left',
+      textMaxChars: 64,
     },
   },
 

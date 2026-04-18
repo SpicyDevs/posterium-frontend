@@ -177,7 +177,7 @@ const DraggableLogo: React.FC<Props> = ({
           top: renderY,
           width: lw,
           height: lh,
-          zIndex: config.logoZ ?? 90,
+          zIndex: 90,
           overflow: 'visible',
           opacity: config.logoOpacity,
           filter: dropShadow,
