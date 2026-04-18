@@ -42,7 +42,7 @@ import {
   Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
-import ContextMenu, { type ContextMenuState } from './components/ContextMenu';
+import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
 
 const STORAGE_KEY = 'posterium_config_v2';
@@ -302,6 +302,7 @@ const StudioLayout: React.FC<{
     selectedLogo,
     selectedMinimalElements,
     handleSelection,
+    handleLogoSelection,
     clearSelection,
     setBatchSelection,
     viewOptions,
@@ -334,7 +335,7 @@ const StudioLayout: React.FC<{
     y: 0,
     badgeId: null,
   });
-  const openCtxMenu = useCallback((badgeId: RatingType, e: React.MouseEvent) => {
+  const openCtxMenu = useCallback((badgeId: LayerTargetId, e: React.MouseEvent) => {
     e.preventDefault();
     setCtxMenu({ visible: true, x: e.clientX, y: e.clientY, badgeId });
   }, []);
@@ -503,6 +504,67 @@ const StudioLayout: React.FC<{
       clearSelection();
     },
     [setConfig, clearSelection]
+  );
+  const moveLogoLayer = useCallback(
+    (direction: 'front' | 'forward' | 'back' | 'toback') => {
+      setConfig((prev) => {
+        const current = prev.logoZ ?? 90;
+        if (direction === 'front') return { ...prev, logoZ: 220 };
+        if (direction === 'toback') return { ...prev, logoZ: 1 };
+        if (direction === 'forward') return { ...prev, logoZ: Math.min(220, current + 1) };
+        return { ...prev, logoZ: Math.max(1, current - 1) };
+      });
+    },
+    [setConfig]
+  );
+  const hideLayer = useCallback(
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({ ...prev, logo: false }));
+        clearSelection();
+        return;
+      }
+      hideBadge(id);
+    },
+    [setConfig, clearSelection, hideBadge]
+  );
+  const resetLayer = useCallback(
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({
+          ...prev,
+          logoX: DEFAULT_CONFIG.logoX,
+          logoY: DEFAULT_CONFIG.logoY,
+          logoW: DEFAULT_CONFIG.logoW,
+          logoH: DEFAULT_CONFIG.logoH,
+          logoOpacity: DEFAULT_CONFIG.logoOpacity,
+          logoZ: DEFAULT_CONFIG.logoZ,
+          logoShadow: DEFAULT_CONFIG.logoShadow,
+          logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
+          logoBgColor: DEFAULT_CONFIG.logoBgColor,
+          logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
+          logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
+          logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
+          logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
+          logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
+          logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
+        }));
+        return;
+      }
+      resetBadge(id);
+    },
+    [setConfig, resetBadge]
+  );
+  const deleteLayer = useCallback(
+    (id: LayerTargetId) => {
+      if (id === 'logo') {
+        setConfig((prev) => ({ ...prev, logo: false }));
+        clearSelection();
+        return;
+      }
+      deleteBadge(id);
+    },
+    [setConfig, clearSelection, deleteBadge]
   );
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
@@ -983,7 +1045,11 @@ const StudioLayout: React.FC<{
     },
   ];
 
-  const ctxBadgeSelected = ctxMenu.badgeId ? selectedIds.has(ctxMenu.badgeId) : false;
+  const ctxBadgeSelected = ctxMenu.badgeId
+    ? ctxMenu.badgeId === 'logo'
+      ? selectedLogo
+      : selectedIds.has(ctxMenu.badgeId)
+    : false;
 
   return (
     <>
@@ -1030,18 +1096,20 @@ const StudioLayout: React.FC<{
           state={ctxMenu}
           onClose={closeCtxMenu}
           isSelected={ctxBadgeSelected}
-          onBringToFront={(id) => moveLayer(id, 'front')}
-          onBringForward={(id) => moveLayer(id, 'forward')}
-          onSendBackward={(id) => moveLayer(id, 'back')}
-          onSendToBack={(id) => moveLayer(id, 'toback')}
-          onHide={hideBadge}
+          onBringToFront={(id) => (id === 'logo' ? moveLogoLayer('front') : moveLayer(id, 'front'))}
+          onBringForward={(id) =>
+            id === 'logo' ? moveLogoLayer('forward') : moveLayer(id, 'forward')
+          }
+          onSendBackward={(id) => (id === 'logo' ? moveLogoLayer('back') : moveLayer(id, 'back'))}
+          onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
+          onHide={hideLayer}
           onShowAll={showAllBadges}
-          onSelect={(id) => handleSelectionOverride(id, false)}
+          onSelect={(id) => (id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false))}
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
-          onResetBadge={resetBadge}
-          onDelete={deleteBadge}
+          onResetBadge={resetLayer}
+          onDelete={deleteLayer}
         />
         <CommandPalette
           isOpen={paletteOpen}
@@ -1382,6 +1450,7 @@ const StudioLayout: React.FC<{
               selectedIds={selectedIds}
               onSelect={handleSelectionOverride}
               onContextMenu={openCtxMenu}
+              onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (

@@ -76,7 +76,7 @@ const DraggableBadge: React.FC<Props> = ({
   const sizeScale = getScale(config.size);
   const displayScale = itemScale * sizeScale;
 
-  const width = BASE_BADGE_W * displayScale;
+  const baseWidth = BASE_BADGE_W * displayScale;
   const height = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
@@ -266,6 +266,22 @@ const DraggableBadge: React.FC<Props> = ({
             itemConfig.textShadowBlur ?? 8
           }px ${itemConfig.textShadowColor ?? '#000000'}`
         : 'none';
+  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : ''))
+    .toString()
+    .trim() || (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : '')
+  ).trim();
+  const displayTextForSizing =
+    badgeId === 'title' && textMaxChars > 0 && rawTextForSizing.length > textMaxChars
+      ? `${rawTextForSizing.slice(0, textMaxChars).trimEnd()}…`
+      : rawTextForSizing;
+  const dynamicTextWidth =
+    badgeId === 'title' || badgeId === 'year'
+      ? Math.max(
+          baseWidth,
+          Math.ceil(displayTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
+        )
+      : baseWidth;
+  const width = dynamicTextWidth;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const dropShadowFilter =
@@ -406,8 +422,8 @@ const DraggableBadge: React.FC<Props> = ({
             textAlign,
             textShadow,
             whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            overflow: textMaxChars > 0 ? 'hidden' : 'visible',
+            textOverflow: textMaxChars > 0 ? 'ellipsis' : 'clip',
             pointerEvents: 'none',
           }}
         >

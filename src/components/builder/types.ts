@@ -362,8 +362,6 @@ export const DEFAULT_CONFIG: PosterConfig = {
     rt: { x: 340, y: 90 },
     age: { x: 8, y: 683 },
     year: {
-      x: 24,
-      y: 676,
       icon: false,
       alpha: 0,
       blur: 0,
@@ -377,8 +375,6 @@ export const DEFAULT_CONFIG: PosterConfig = {
       textAlign: 'left',
     },
     title: {
-      x: 24,
-      y: 590,
       icon: false,
       alpha: 0,
       blur: 0,
@@ -391,7 +387,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
       textLetterSpacing: 0.2,
       textLineHeight: 1.1,
       textAlign: 'left',
-      textMaxChars: 64,
+      textMaxChars: 0,
     },
   },
 

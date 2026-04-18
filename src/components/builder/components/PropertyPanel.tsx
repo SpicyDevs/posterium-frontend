@@ -2,7 +2,7 @@
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType } from '../types';
-import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
+import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
 import {
   Layers,
   Layout,
@@ -1036,6 +1036,12 @@ const PropertyPanel: React.FC<Props> = ({
                     },
                   }))
                 }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textSize: 36 } },
+                  }))
+                }
               />
               <SliderRow
                 label="Title Font Weight"
@@ -1050,6 +1056,12 @@ const PropertyPanel: React.FC<Props> = ({
                       ...prev.items,
                       title: { ...(prev.items.title ?? {}), textWeight: Math.round(v) },
                     },
+                  }))
+                }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textWeight: 700 } },
                   }))
                 }
               />
@@ -1069,14 +1081,24 @@ const PropertyPanel: React.FC<Props> = ({
                     },
                   }))
                 }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: {
+                      ...prev.items,
+                      title: { ...(prev.items.title ?? {}), textLetterSpacing: 0.2 },
+                    },
+                  }))
+                }
               />
               <SliderRow
                 label="Title Ellipsis Cutoff"
-                value={config.items.title?.textMaxChars ?? 64}
+                value={config.items.title?.textMaxChars ?? 0}
                 min={0}
-                max={240}
+                max={300}
                 step={1}
                 unit="ch"
+                formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
                 onChange={(v) =>
                   setConfig((prev) => ({
                     ...prev,
@@ -1084,6 +1106,12 @@ const PropertyPanel: React.FC<Props> = ({
                       ...prev.items,
                       title: { ...(prev.items.title ?? {}), textMaxChars: Math.round(v) },
                     },
+                  }))
+                }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textMaxChars: 0 } },
                   }))
                 }
               />
@@ -1131,6 +1159,12 @@ const PropertyPanel: React.FC<Props> = ({
                     },
                   }))
                 }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), textSize: 42 } },
+                  }))
+                }
               />
               <SliderRow
                 label="Year Font Weight"
@@ -1145,6 +1179,12 @@ const PropertyPanel: React.FC<Props> = ({
                       ...prev.items,
                       year: { ...(prev.items.year ?? {}), textWeight: Math.round(v) },
                     },
+                  }))
+                }
+                onReset={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), textWeight: 700 } },
                   }))
                 }
               />
@@ -1428,7 +1468,7 @@ const PropertyPanel: React.FC<Props> = ({
     | 'left'
     | 'center'
     | 'right';
-  const commonTextMaxChars = (getCommonValue('textMaxChars', 64) ?? 64) as number;
+  const commonTextMaxChars = (getCommonValue('textMaxChars', 0) ?? 0) as number;
   const commonTextShadowEnabled = (getCommonValue('textShadowEnabled', false) ?? false) as boolean;
   const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
   const commonTextShadowY = (getCommonValue('textShadowY', 2) ?? 2) as number;
@@ -1516,6 +1556,7 @@ const PropertyPanel: React.FC<Props> = ({
             step={1}
             unit="px"
             onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
+            onReset={() => updateSelectedBadges({ textSize: isOnlyYearSelected ? 42 : 36 })}
           />
           <SliderRow
             label="Font Weight"
@@ -1524,6 +1565,7 @@ const PropertyPanel: React.FC<Props> = ({
             max={900}
             step={100}
             onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
+            onReset={() => updateSelectedBadges({ textWeight: 700 })}
           />
           <SliderRow
             label="Line Height"
@@ -1532,6 +1574,7 @@ const PropertyPanel: React.FC<Props> = ({
             max={2}
             step={0.02}
             onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
+            onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
           />
           <SliderRow
             label="Letter Spacing"
@@ -1541,6 +1584,7 @@ const PropertyPanel: React.FC<Props> = ({
             step={0.1}
             unit="px"
             onChange={(v) => updateSelectedBadges({ textLetterSpacing: Number(v.toFixed(1)) })}
+            onReset={() => updateSelectedBadges({ textLetterSpacing: isOnlyTitleSelected ? 0.2 : 0 })}
           />
           <SegmentedRow
             label="Text Align"
@@ -1557,10 +1601,12 @@ const PropertyPanel: React.FC<Props> = ({
               label="Ellipsis Cutoff"
               value={commonTextMaxChars}
               min={0}
-              max={240}
+              max={300}
               step={1}
               unit="ch"
+              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
               onChange={(v) => updateSelectedBadges({ textMaxChars: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textMaxChars: 0 })}
             />
           )}
           <ToggleRow
@@ -1891,7 +1937,7 @@ const PropertyPanel: React.FC<Props> = ({
       )}
 
       {/* Reset */}
-      {selectedIds.size > 0 && (
+      {(selectedIds.size > 0 || selectedLogo) && (
       <div className="px-3 pt-3">
         <button
           type="button"
@@ -1899,7 +1945,26 @@ const PropertyPanel: React.FC<Props> = ({
             setConfig((prev) => {
               const ni = { ...prev.items };
               selectedIds.forEach((id) => delete ni[id]);
-              return { ...prev, items: ni };
+              if (!selectedLogo) return { ...prev, items: ni };
+              return {
+                ...prev,
+                items: ni,
+                logoX: DEFAULT_CONFIG.logoX,
+                logoY: DEFAULT_CONFIG.logoY,
+                logoW: DEFAULT_CONFIG.logoW,
+                logoH: DEFAULT_CONFIG.logoH,
+                logoOpacity: DEFAULT_CONFIG.logoOpacity,
+                logoZ: DEFAULT_CONFIG.logoZ,
+                logoShadow: DEFAULT_CONFIG.logoShadow,
+                logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
+                logoBgColor: DEFAULT_CONFIG.logoBgColor,
+                logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
+                logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
+                logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
+                logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
+                logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
+                logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
+              };
             })
           }
           className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
@@ -1918,7 +1983,7 @@ const PropertyPanel: React.FC<Props> = ({
             (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.6)';
           }}
         >
-          <RotateCcw size={11} /> Reset to global defaults
+          <RotateCcw size={11} /> Reset selected to defaults
         </button>
       </div>
       )}

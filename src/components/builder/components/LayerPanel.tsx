@@ -501,6 +501,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setBatchSelection,
     activeTab,
     setActiveTab,
+    selectedLogo,
+    handleLogoSelection,
     setLiveRatings,
     setLiveTitle,
     setLiveYear,
@@ -693,9 +695,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
       if (visible) {
-        setConfig((prev) =>
-          prev.ratings.includes(id) ? prev : { ...prev, ratings: [id, ...prev.ratings] }
-        );
+        setConfig((prev) => {
+          if (prev.ratings.includes(id)) return prev;
+          if (id !== 'title' && id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
+          const nextItems = { ...prev.items, [id]: { ...(prev.items[id] ?? {}) } };
+          delete nextItems[id].x;
+          delete nextItems[id].y;
+          return { ...prev, ratings: [id, ...prev.ratings], items: nextItems };
+        });
         setInactiveOrder((prev) => prev.filter((x) => x !== id));
       } else {
         setConfig((prev) => ({ ...prev, ratings: prev.ratings.filter((r) => r !== id) }));
@@ -735,9 +742,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const activeBadges = [...config.ratings]
     .filter((id) => ALL_BADGES.some((b) => b.id === id))
-    .reverse()
-    .map((id) => ALL_BADGES.find((b) => b.id === id))
-    .filter((b): b is { id: RatingType; label: string } => !!b);
+    .map((id, idx) => ({
+      kind: 'badge' as const,
+      id,
+      label: ALL_BADGES.find((b) => b.id === id)?.label ?? id.toUpperCase(),
+      z: 100 + idx,
+    }));
+  const activeLayers = [
+    ...activeBadges,
+    ...(config.logo
+      ? [
+          {
+            kind: 'logo' as const,
+            id: 'logo',
+            label: 'Logo',
+            z: config.logoZ ?? 90,
+          },
+        ]
+      : []),
+  ].sort((a, b) => b.z - a.z);
 
   const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
     const ia = inactiveOrder.indexOf(a.id),
@@ -753,10 +776,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       if (!result.destination) return;
       if (result.source.droppableId === 'active' && result.destination.droppableId === 'active') {
         if (result.source.index === result.destination.index) return;
-        const rev = [...config.ratings].reverse();
-        const [removed] = rev.splice(result.source.index, 1);
-        rev.splice(result.destination.index, 0, removed);
-        setConfig((prev) => ({ ...prev, ratings: rev.reverse() }));
+        const ordered = activeLayers.map((l) => l.id);
+        const [removed] = ordered.splice(result.source.index, 1);
+        ordered.splice(result.destination.index, 0, removed);
+        const logoIndex = ordered.indexOf('logo');
+        const badgeTopToBottom = ordered.filter((id): id is RatingType => id !== 'logo');
+        setConfig((prev) => ({
+          ...prev,
+          ratings: [...badgeTopToBottom].reverse(),
+          logoZ:
+            logoIndex === -1
+              ? prev.logoZ
+              : 100 + (ordered.length - logoIndex - 1),
+        }));
       } else if (
         result.source.droppableId === 'inactive' &&
         result.destination.droppableId === 'inactive' &&
@@ -770,7 +802,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setConfig((prev) => ({ ...prev, fallbackPool: nextOrder }));
       }
     },
-    [config.ratings, inactiveBadges, fallbackEnabled, setConfig]
+    [activeLayers, inactiveBadges, fallbackEnabled, setConfig]
   );
 
   const getIconKey = (id: string): BadgeIconKey =>
@@ -961,6 +993,82 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       </div>
     );
   };
+
+  const renderLogoLayerRow = (
+    isActive = true,
+    provided?: DraggableProvided,
+    isDraggingItem?: boolean
+  ) => (
+    <div
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      onClick={(e) => {
+        if (isActive) handleLogoSelection(e.shiftKey || e.ctrlKey || e.metaKey);
+      }}
+      className={clsx(
+        'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
+        selectedLogo && isActive
+          ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
+          : isActive
+            ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
+            : 'opacity-60',
+        isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
+      )}
+      style={
+        isDraggingItem
+          ? { background: 'var(--film-mid)', ...(provided?.draggableProps.style ?? {}) }
+          : (provided?.draggableProps.style ?? {})
+      }
+    >
+      {isActive ? (
+        <div
+          {...provided?.dragHandleProps}
+          onClick={(e) => e.stopPropagation()}
+          className="p-0.5 outline-none transition-colors shrink-0"
+          style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
+        >
+          <GripVertical size={13} />
+        </div>
+      ) : (
+        <div className="w-5 shrink-0" />
+      )}
+      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="w-4 h-4 rounded border flex items-center justify-center transition-all"
+          style={{
+            background: selectedLogo && isActive ? '#C47C2E' : 'var(--film-char)',
+            borderColor: selectedLogo && isActive ? '#D4A245' : 'rgba(255,255,255,0.15)',
+          }}
+        >
+          {selectedLogo && isActive && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
+        </div>
+      </div>
+      <div
+        className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center"
+        style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
+        <ImagePlay size={12} style={{ color: 'var(--film-text-dim)' }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="block syne-font truncate" style={{ fontSize: 11, fontWeight: 600 }}>
+          Logo
+        </span>
+      </div>
+      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <button
+          onClick={() => updateConfig('logo', !config.logo)}
+          className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+          style={{ color: config.logo ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+          title={config.logo ? 'Hide layer' : 'Show layer'}
+        >
+          {config.logo ? <Eye size={13} /> : <EyeOff size={13} />}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <SidebarLayout
@@ -1558,7 +1666,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </div>
 
               <DragDropContext onDragEnd={handleDragEnd}>
-                {activeBadges.length > 0 ? (
+                {activeLayers.length > 0 ? (
                   <Droppable droppableId="active">
                     {(provided) => (
                       <div
@@ -1566,9 +1674,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         {...provided.droppableProps}
                         className="space-y-0.5"
                       >
-                        {activeBadges.map((badge, idx) => (
-                          <Draggable key={badge.id} draggableId={badge.id} index={idx}>
-                            {(prov, snap) => renderBadgeRow(badge, true, prov, snap.isDragging)}
+                        {activeLayers.map((layer, idx) => (
+                          <Draggable
+                            key={layer.id}
+                            draggableId={layer.id === 'logo' ? 'logo' : layer.id}
+                            index={idx}
+                          >
+                            {(prov, snap) =>
+                              layer.kind === 'logo'
+                                ? renderLogoLayerRow(true, prov, snap.isDragging)
+                                : renderBadgeRow(
+                                    { id: layer.id as RatingType, label: layer.label },
+                                    true,
+                                    prov,
+                                    snap.isDragging
+                                  )
+                            }
                           </Draggable>
                         ))}
                         {provided.placeholder}
@@ -1666,44 +1787,13 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     )}
                   </>
                 )}
+                {!config.logo && (
+                  <div className={clsx(inactiveBadges.length > 0 ? 'mt-2' : 'mt-5')}>
+                    {renderLogoLayerRow(false)}
+                  </div>
+                )}
               </DragDropContext>
 
-              <div className="mt-5 space-y-0.5">
-                <div
-                  className="flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none hover:bg-[rgba(196,124,46,0.06)]"
-                  onClick={() => updateConfig('logo', !config.logo)}
-                >
-                  <div className="w-5 shrink-0" />
-                  <div className="w-4 h-4 rounded border flex items-center justify-center transition-all bg-[var(--film-char)] border-[rgba(255,255,255,0.15)]" />
-                  <div
-                    className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center"
-                    style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                    }}
-                  >
-                    <ImagePlay size={12} style={{ color: 'var(--film-text-dim)' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className="block syne-font truncate"
-                      style={{ fontSize: 11, fontWeight: 600, color: 'var(--film-text-label)' }}
-                    >
-                      Logo
-                    </span>
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                    <button
-                      onClick={() => updateConfig('logo', !config.logo)}
-                      className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-                      style={{ color: config.logo ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
-                      title={config.logo ? 'Hide layer' : 'Show layer'}
-                    >
-                      {config.logo ? <Eye size={13} /> : <EyeOff size={13} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
           </>
         </div>
       )}

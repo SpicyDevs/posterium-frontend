@@ -34,6 +34,7 @@ interface Props {
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  onLogoContextMenu?: (e: React.MouseEvent) => void;
   isFullscreen?: boolean;
   rightSidebarWidth?: number;
   toggleFullscreen?: () => void;
@@ -48,6 +49,7 @@ const PreviewCanvas: React.FC<Props> = ({
   selectedIds,
   onSelect,
   onContextMenu,
+  onLogoContextMenu,
   isFullscreen = false,
   rightSidebarWidth = 0,
   toggleFullscreen,
@@ -117,6 +119,30 @@ const PreviewCanvas: React.FC<Props> = ({
     []
   );
 
+  const getBadgeSize = useCallback(
+    (id: RatingType, itemCfg: PosterConfig['items'][RatingType], baseValue?: string) => {
+      const scale = getScale(config.size) * (itemCfg?.scale ?? 1.0);
+      const h = BASE_BADGE_H * scale;
+      const textSize = Math.max(8, itemCfg?.textSize ?? 28) * scale;
+      const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
+      const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
+      if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
+      const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
+      const fallback = id === 'year' ? '2026' : 'Title';
+      const measured = raw.length > 0 ? raw : fallback;
+      const shown =
+        id === 'title' && textMaxChars > 0 && measured.length > textMaxChars
+          ? `${measured.slice(0, textMaxChars).trimEnd()}…`
+          : measured;
+      const w = Math.max(
+        BASE_BADGE_W * scale,
+        Math.ceil(shown.length * (textSize * 0.62 + textLetterSpacing) + 28 * scale)
+      );
+      return { w, h };
+    },
+    [config.size, liveTitle, liveYear]
+  );
+
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
     const auto = calculateAutoPosition(
@@ -127,9 +153,7 @@ const PreviewCanvas: React.FC<Props> = ({
     );
     const x = itemConfig?.x ?? auto.x;
     const y = itemConfig?.y ?? auto.y;
-    const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
-    const w = BASE_BADGE_W * scale;
-    const h = BASE_BADGE_H * scale;
+    const { w, h } = getBadgeSize(id, itemConfig);
     return { x, y, w, h };
   };
 
@@ -597,9 +621,11 @@ const PreviewCanvas: React.FC<Props> = ({
           startX = startX ?? auto.x;
           startY = startY ?? auto.y;
         }
-        const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
-        const selWidth = BASE_BADGE_W * selScale;
-        const selHeight = BASE_BADGE_H * selScale;
+        const { w: selWidth, h: selHeight } = getBadgeSize(
+          targetId,
+          newItems[targetId],
+          targetId === 'year' ? liveYear : targetId === 'title' ? liveTitle : undefined
+        );
         // Constrain so at least 1px of the badge remains inside the poster
         let nextX = snap(startX + dx);
         let nextY = snap(startY + dy);
@@ -640,9 +666,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (!isFinite(x)) x = auto.x;
     if (!isFinite(y)) y = auto.y;
 
-    const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
-    const bW = BASE_BADGE_W * selScale;
-    const bH = BASE_BADGE_H * selScale;
+    const { w: bW, h: bH } = getBadgeSize(targetId, iCfg);
     const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
     const centerX = nextX + bW / 2;
@@ -779,9 +803,7 @@ const PreviewCanvas: React.FC<Props> = ({
               const isTarget = dragSession.id === id;
               const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
               if (isTarget || isGroup) {
-                const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
-                const bW = BASE_BADGE_W * selScale;
-                const bH = BASE_BADGE_H * selScale;
+                const { w: bW, h: bH } = getBadgeSize(id, iCfg);
                 // Preview clamp: at least 1px inside poster
                 let nextX = x + dragSession.dx;
                 let nextY = y + dragSession.dy;
@@ -834,10 +856,8 @@ const PreviewCanvas: React.FC<Props> = ({
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
             isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
-            onSelect={(multi) => {
-              handleLogoSelection(multi);
-              handleMinimalSelection('minimal-logo', multi);
-            }}
+            onSelect={(multi) => handleLogoSelection(multi)}
+            onContextMenu={onLogoContextMenu}
           />
         )}
 
