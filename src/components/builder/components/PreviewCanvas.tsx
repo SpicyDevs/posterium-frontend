@@ -88,7 +88,6 @@ const PreviewCanvas: React.FC<Props> = ({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const [isPanning, setIsPanning] = useState(false);
   const panFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
@@ -115,13 +114,12 @@ const PreviewCanvas: React.FC<Props> = ({
   });
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
-    if (isMinimalPreset) return [];
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
     return config.ratings.filter((id) => {
       const v = liveRatings[id];
       return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
     });
-  }, [config.ratings, config.fallbackEnabled, liveRatings, hasLiveRatings, isMinimalPreset]);
+  }, [config.ratings, config.fallbackEnabled, liveRatings, hasLiveRatings]);
   const applySnapGrid = useCallback(
     (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n),
     [viewOptions?.snapToGrid]
@@ -347,12 +345,11 @@ const PreviewCanvas: React.FC<Props> = ({
   const previewImageUrl = cleanPosterUrl;
 
   const posterCssFilter = useMemo(() => {
-    if (isMinimalPreset) return 'none';
     const parts: string[] = [];
     if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
     if (config.grayscale) parts.push('grayscale(1)');
     return parts.join(' ') || 'none';
-  }, [config.posterBlur, config.grayscale, isMinimalPreset]);
+  }, [config.posterBlur, config.grayscale]);
 
   useEffect(() => {
     setIsImageLoading(true);
@@ -645,7 +642,7 @@ const PreviewCanvas: React.FC<Props> = ({
   };
 
   const badgeSnapGuide = useMemo(() => {
-    if (!dragSession || !viewOptions?.snapToGrid || isMinimalPreset) return null;
+    if (!dragSession || !viewOptions?.snapToGrid) return null;
     const targetId = dragSession.id;
     const index = previewRatings.indexOf(targetId);
     if (index === -1) return null;
@@ -677,7 +674,7 @@ const PreviewCanvas: React.FC<Props> = ({
       middleX,
       middleY,
     };
-  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid, previewRatings]);
+  }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
 
   useEffect(() => {
     if (!minimalContext.visible) return;
@@ -791,8 +788,7 @@ const PreviewCanvas: React.FC<Props> = ({
         />
 
         {/* Badge overlays */}
-        {!isMinimalPreset &&
-          previewRatings.map((id: RatingType, index: number) => {
+        {previewRatings.map((id: RatingType, index: number) => {
             const auto = calculateAutoPosition(
               id,
               index,
@@ -865,10 +861,9 @@ const PreviewCanvas: React.FC<Props> = ({
             isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
             onSelect={(multi) => {
               handleLogoSelection(multi);
-              if (isMinimalPreset) handleMinimalSelection('minimal-logo', multi);
+              handleMinimalSelection('minimal-logo', multi);
             }}
             onContextMenu={(e) => {
-              if (!isMinimalPreset) return;
               handleMinimalSelection('minimal-logo', e.shiftKey || e.ctrlKey || e.metaKey);
               setMinimalContext({
                 visible: true,
@@ -880,8 +875,7 @@ const PreviewCanvas: React.FC<Props> = ({
           />
         )}
 
-        {isMinimalPreset &&
-          (config.minimalRatingsEnabled ?? true) &&
+        {(config.minimalRatingsEnabled ?? true) &&
           minimalRatings.map((r, idx) => {
             if (r.enabled === false) return null;
             const isDragging = draggingMinimalRatingIndex === idx;
@@ -967,7 +961,7 @@ const PreviewCanvas: React.FC<Props> = ({
             );
           })}
 
-        {isMinimalPreset && (config.minimalYearEnabled ?? true) && (
+        {(config.minimalYearEnabled ?? true) && (
           <div
             className="absolute z-40 select-none"
             style={{
@@ -1008,7 +1002,7 @@ const PreviewCanvas: React.FC<Props> = ({
           </div>
         )}
 
-        {isMinimalPreset && (config.minimalDurationEnabled ?? false) && (
+        {(config.minimalDurationEnabled ?? false) && (
           <div
             className="absolute z-40 select-none"
             style={{
@@ -1051,7 +1045,7 @@ const PreviewCanvas: React.FC<Props> = ({
           </div>
         )}
 
-        {isMinimalPreset && (config.minimalTitleEnabled ?? true) && (
+        {(config.minimalTitleEnabled ?? true) && (
           <div
             className="absolute z-40 select-none"
             style={{
@@ -1114,7 +1108,7 @@ const PreviewCanvas: React.FC<Props> = ({
           </div>
         )}
 
-        {minimalContext.visible && isMinimalPreset && minimalContext.target && (
+        {minimalContext.visible && minimalContext.target && (
           <menu
             className="fixed z-[9001] min-w-[170px] rounded-lg p-1"
             style={{

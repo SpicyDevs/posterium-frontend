@@ -561,16 +561,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
-  const minimalModeHandledRef = useRef(false);
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+  const isMinimalPreset = false;
   const badgesVisible = config.ratings.length > 0;
 
   useEffect(() => {
-    if (isMinimalPreset && localMode === 'layers') {
-      setLocalMode('source');
-      setActiveTab('source');
+    if ((config.uiPreset ?? 'b') !== 'b') {
+      setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
     }
-  }, [isMinimalPreset, localMode, setActiveTab]);
+  }, [config.uiPreset, setConfig]);
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -687,26 +685,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       return { ...prev, ratings: restored.length > 0 ? restored : DEFAULT_CONFIG.ratings };
     });
   }, [setConfig]);
-
-  useEffect(() => {
-    if (!isMinimalPreset) {
-      minimalModeHandledRef.current = false;
-      return;
-    }
-    if (minimalModeHandledRef.current) return;
-    if (config.ratings.length > 0) {
-      writeBadgesPreference(true);
-      disableBadges({ persistPreference: false });
-    }
-    minimalModeHandledRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMinimalPreset, config.ratings.length]);
-
-  useEffect(() => {
-    if (isMinimalPreset && !config.textless) {
-      setConfig((prev) => ({ ...prev, textless: true }));
-    }
-  }, [isMinimalPreset, config.textless, setConfig]);
 
   useEffect(() => {
     if (!isMinimalPreset) {
@@ -1334,16 +1312,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Textless toggle */}
           <ToggleRow
             label="Textless Poster"
-            sub={isMinimalPreset ? 'Forced on in Minimal mode' : 'Remove title text from image'}
-            checked={
-              isMinimalPreset
-                ? true
-                : ['metahub', 'imdb'].includes(config.source)
-                  ? false
-                  : config.textless
-            }
+            sub="Remove title text from image"
+            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
             onChange={(v) => updateConfig('textless', v)}
-            disabled={isMinimalPreset || ['metahub', 'imdb'].includes(config.source)}
+            disabled={['metahub', 'imdb'].includes(config.source)}
           />
 
           {/* Display options */}
@@ -1354,79 +1326,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             >
               Display
             </p>
-            <div className="grid grid-cols-2 gap-1">
-              {[
-                { id: 'b' as const, label: 'Badges' },
-                { id: 'm' as const, label: 'Minimal' },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    if (opt.id === 'm') {
-                      writeTextlessPreference(config.textless);
-                      setConfig((prev) => ({
-                        ...prev,
-                        uiPreset: 'm',
-                        textless: true,
-                        minimalTitleEnabled: prev.minimalTitleEnabled ?? true,
-                        minimalTitleFlow: prev.minimalTitleFlow ?? 'up',
-                        minimalTitleWidth: prev.minimalTitleWidth ?? 420,
-                        minimalRatingsEnabled: prev.minimalRatingsEnabled ?? true,
-                        minimalRatingIconMode: prev.minimalRatingIconMode ?? 'star',
-                        minimalRatingSymbol: prev.minimalRatingSymbol ?? '★',
-                        minimalYearEnabled: prev.minimalYearEnabled ?? true,
-                        minimalDurationEnabled: prev.minimalDurationEnabled ?? false,
-                        minimalRatings:
-                          prev.minimalRatings && prev.minimalRatings.length > 0
-                            ? prev.minimalRatings.slice(0, 3)
-                            : [
-                                {
-                                  provider: 'imdb',
-                                  enabled: true,
-                                  x: 140,
-                                  y: 672,
-                                  size: 26,
-                                  color: '#facc15',
-                                  opacity: 1,
-                                  iconMode: 'star',
-                                  symbol: '★',
-                                  bgEnabled: false,
-                                  bgColor: '#000000',
-                                  bgOpacity: 0,
-                                  borderW: 0,
-                                  borderColor: '#ffffff',
-                                  borderOpacity: 0.7,
-                                  radius: 0,
-                                  paddingX: 0,
-                                  paddingY: 0,
-                                  shadowEnabled: false,
-                                  shadowX: 0,
-                                  shadowY: 0,
-                                  shadowBlur: 0,
-                                  shadowColor: '#000000',
-                                },
-                              ],
-                      }));
-                      disableBadges({ persistPreference: false });
-                      return;
-                    }
-                    const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
-                    const restoredTextless = readTextlessPreference(config.textless);
-                    setConfig((prev) => ({ ...prev, uiPreset: 'b', textless: restoredTextless }));
-                    if (shouldEnableBadges) enableBadges();
-                    else disableBadges({ persistPreference: true });
-                  }}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border',
-                    (config.uiPreset ?? 'b') === opt.id
-                      ? 'bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="h-8 rounded-lg text-[11px] font-medium syne-font border flex items-center justify-center bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]">
+              Badges
             </div>
             <div
               className={clsx(

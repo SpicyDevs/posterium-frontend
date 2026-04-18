@@ -410,14 +410,14 @@ const DraggableBadge: React.FC<Props> = ({
       ) : null;
     }
 
-    const iconType = itemConfig?.iconType ?? config.iconType ?? 1;
+    const iconType = Math.max(1, Math.min(3, itemConfig?.iconType ?? config.iconType ?? 1));
     const iconKey =
       badgeId === 'rt'
-        ? iconType > 1
+        ? iconType === 2
           ? 'rt_rotten'
           : 'rt_fresh'
         : badgeId === 'rt_popcorn'
-          ? iconType > 1
+          ? iconType === 2
             ? 'popcorn_rotten'
             : 'popcorn_fresh'
           : badgeId;
@@ -458,7 +458,12 @@ const DraggableBadge: React.FC<Props> = ({
               viewBox={iconData.vb}
               width={iconSize}
               height={iconSize}
-              style={{ display: 'block', color: txtColor, pointerEvents: 'none' }}
+              style={{
+                display: 'block',
+                color: txtColor,
+                pointerEvents: 'none',
+                filter: iconType === 3 ? 'grayscale(1) contrast(1.15)' : 'none',
+              }}
               dangerouslySetInnerHTML={{ __html: iconData.body }}
             />
           </div>

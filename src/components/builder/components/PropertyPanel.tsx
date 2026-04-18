@@ -642,7 +642,6 @@ const PropertyPanel: React.FC<Props> = ({
   viewMode,
   mode,
 }) => {
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesEnabled = config.ratings.length > 0;
   const logoSettingsRef = useRef<HTMLDivElement | null>(null);
 
@@ -858,7 +857,7 @@ const PropertyPanel: React.FC<Props> = ({
           </Section>
         )}
 
-        {showBadgeSettings && !isMinimalPreset && badgesEnabled && (
+        {showBadgeSettings && badgesEnabled && (
           <>
             <Section
               title="Badge Appearance"
@@ -876,11 +875,15 @@ const PropertyPanel: React.FC<Props> = ({
                 checked={config.showText !== false}
                 onChange={(v) => updateConfig('showText', v)}
               />
-              <ToggleRow
-                label="Alt Icon Variant"
-                sub="Use secondary icon style where available"
-                checked={(config.iconType ?? 1) > 1}
-                onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
+              <SegmentedRow
+                label="Icon Style"
+                options={[
+                  { id: '1', label: 'Default' },
+                  { id: '2', label: 'Alt' },
+                  { id: '3', label: 'Mono' },
+                ]}
+                value={String(config.iconType ?? 1)}
+                onChange={(v) => updateConfig('iconType', Math.max(1, Math.min(3, Number(v) || 1)))}
               />
             </Section>
 
@@ -1068,10 +1071,10 @@ const PropertyPanel: React.FC<Props> = ({
           </>
         )}
 
-        {showLogoSettings && isMinimalPreset && (
+        {showLogoSettings && (
           <>
             <Section
-              title="Minimal Typography & Meta"
+              title="Typography & Meta"
               icon={<Type size={10} />}
               sectionId="global-minimal-title"
             >
@@ -1322,7 +1325,7 @@ const PropertyPanel: React.FC<Props> = ({
               </div>
             </Section>
 
-            <Section title="Minimal Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
+            <Section title="Inline Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
               <ToggleRow
                 label="Show Ratings"
                 checked={config.minimalRatingsEnabled ?? true}
@@ -1652,7 +1655,6 @@ const PropertyPanel: React.FC<Props> = ({
                   max={30}
                   onChange={(v) => updateConfig('logoBgShadow', v)}
                 />
-                {!isMinimalPreset && (
                 <button
                   type="button"
                   onClick={() =>
@@ -1678,7 +1680,6 @@ const PropertyPanel: React.FC<Props> = ({
                 >
                   Apply Badge Style to Logo Background
                 </button>
-                )}
               </>
             )}
             <p
@@ -1843,7 +1844,7 @@ const PropertyPanel: React.FC<Props> = ({
         </p>
       </div>
 
-      {isMinimalPreset && selectedMinimalElements.size > 0 && (
+      {selectedMinimalElements.size > 0 && (
         <>
           {minimalRatingIndexes.length > 0 && selectedMinimalRatingRef && (
             <Section title="Selected Ratings" sectionId="selection-minimal-ratings">
@@ -2059,11 +2060,15 @@ const PropertyPanel: React.FC<Props> = ({
           checked={commonShowText !== false}
           onChange={(v) => updateSelectedBadges({ showText: v })}
         />
-        <ToggleRow
-          label="Alt Icon Variant"
-          sub="Use secondary icon style where available"
-          checked={commonIconType > 1}
-          onChange={(v) => updateSelectedBadges({ iconType: v ? 2 : 1 })}
+        <SegmentedRow
+          label="Icon Style"
+          options={[
+            { id: '1', label: 'Default' },
+            { id: '2', label: 'Alt' },
+            { id: '3', label: 'Mono' },
+          ]}
+          value={String(Math.max(1, Math.min(3, commonIconType)))}
+          onChange={(v) => updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })}
         />
       </Section>
 

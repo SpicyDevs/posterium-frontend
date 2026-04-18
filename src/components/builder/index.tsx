@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
-import { DEFAULT_CONFIG, ALL_BADGES } from './types';
-import { parseUrlToConfig, DEFAULT_API_BASE } from './utils';
+import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
+import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
@@ -300,6 +300,7 @@ const StudioLayout: React.FC<{
     setMobileSheetMode,
     selectedIds,
     selectedLogo,
+    selectedMinimalElements,
     handleSelection,
     clearSelection,
     setBatchSelection,
@@ -342,12 +343,16 @@ const StudioLayout: React.FC<{
 
   const selectedIdsRef = useRef(selectedIds);
   const selectedLogoRef = useRef(selectedLogo);
+  const selectedMinimalElementsRef = useRef(selectedMinimalElements);
   const configRatingsRef = useRef(config.ratings);
   useEffect(() => {
     selectedIdsRef.current = selectedIds;
   });
   useEffect(() => {
     selectedLogoRef.current = selectedLogo;
+  });
+  useEffect(() => {
+    selectedMinimalElementsRef.current = selectedMinimalElements;
   });
   useEffect(() => {
     configRatingsRef.current = config.ratings;
@@ -360,6 +365,83 @@ const StudioLayout: React.FC<{
   const dispatchResetView = useCallback(
     () => window.dispatchEvent(new CustomEvent('reset-canvas-view')),
     []
+  );
+  const nudgeSelection = useCallback(
+    (dx: number, dy: number) => {
+      const activeBadges = Array.from(selectedIdsRef.current);
+      const activeMinimal = Array.from(selectedMinimalElementsRef.current);
+      const hasLogo = selectedLogoRef.current || activeMinimal.includes('minimal-logo');
+      if (activeBadges.length === 0 && activeMinimal.length === 0 && !hasLogo) return;
+      setConfig((prev) => {
+        const next: PosterConfig = { ...prev, items: { ...prev.items } };
+        if (activeBadges.length > 0) {
+          activeBadges.forEach((id) => {
+            const base = next.items[id] ?? {};
+            const idx = next.ratings.indexOf(id);
+            const auto = calculateAutoPosition(id, Math.max(0, idx), next.ratings.length, next);
+            const currX = base.x ?? auto.x;
+            const currY = base.y ?? auto.y;
+            const scale = getScale(next.size) * (base.scale ?? 1.0);
+            const w = BASE_BADGE_W * scale;
+            const h = BASE_BADGE_H * scale;
+            next.items[id] = {
+              ...base,
+              x: Math.max(1 - w, Math.min(currX + dx, CANVAS_WIDTH - 1)),
+              y: Math.max(1 - h, Math.min(currY + dy, CANVAS_HEIGHT - 1)),
+            };
+          });
+          next.layout = 'custom';
+          next.preset = 'custom';
+        }
+        if (hasLogo) {
+          const currentX =
+            next.logoX !== null && next.logoX !== undefined ? next.logoX : Math.round((CANVAS_WIDTH - next.logoW) / 2);
+          next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
+          next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
+        }
+        if (activeMinimal.includes('minimal-title')) {
+          const boxW = Math.max(120, next.minimalTitleWidth ?? 420);
+          const boxH = Math.max(36, (next.minimalTextSize ?? 42) * 1.5);
+          next.minimalTextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, next.minimalTextX + dx));
+          const flow = next.minimalTitleFlow ?? 'up';
+          next.minimalTextY =
+            flow === 'up'
+              ? Math.max(boxH, Math.min(CANVAS_HEIGHT, next.minimalTextY + dy))
+              : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
+        }
+        if (activeMinimal.includes('minimal-year')) {
+          next.minimalMetaX = Math.max(0, Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx));
+          next.minimalMetaY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy));
+        }
+        if (activeMinimal.includes('minimal-duration')) {
+          next.minimalDurationX = Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - 120, (next.minimalDurationX ?? 90) + dx)
+          );
+          next.minimalDurationY = Math.max(
+            0,
+            Math.min(CANVAS_HEIGHT - 40, (next.minimalDurationY ?? 672) + dy)
+          );
+        }
+        if (activeMinimal.some((id) => id.startsWith('minimal-rating-'))) {
+          const list = [...(next.minimalRatings ?? [])];
+          activeMinimal
+            .filter((id) => id.startsWith('minimal-rating-'))
+            .forEach((id) => {
+              const idx = Number(id.split('-').at(-1) ?? -1);
+              if (!Number.isFinite(idx) || !list[idx]) return;
+              list[idx] = {
+                ...list[idx],
+                x: Math.max(0, Math.min(CANVAS_WIDTH - 140, list[idx].x + dx)),
+                y: Math.max(0, Math.min(CANVAS_HEIGHT - 40, list[idx].y + dy)),
+              };
+            });
+          next.minimalRatings = list;
+        }
+        return next;
+      });
+    },
+    [setConfig]
   );
 
   // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
@@ -464,6 +546,20 @@ const StudioLayout: React.FC<{
         return;
       }
       if (inInput) return;
+      if (
+        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        (selectedIdsRef.current.size > 0 ||
+          selectedLogoRef.current ||
+          selectedMinimalElementsRef.current.size > 0)
+      ) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === 'ArrowUp') nudgeSelection(0, -step);
+        else if (e.key === 'ArrowDown') nudgeSelection(0, step);
+        else if (e.key === 'ArrowLeft') nudgeSelection(-step, 0);
+        else if (e.key === 'ArrowRight') nudgeSelection(step, 0);
+        return;
+      }
       if (mod && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         setBatchSelection(configRatingsRef.current);
@@ -594,12 +690,14 @@ const StudioLayout: React.FC<{
     toggleViewOption,
     dispatchZoom,
     dispatchResetView,
+    nudgeSelection,
     isFullscreen,
     paletteOpen,
     shortcutsOpen,
     exportOpen,
     selectedIds,
     selectedLogo,
+    selectedMinimalElements,
     isDesktop,
   ]);
 
