@@ -561,7 +561,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
-  const isMinimalPreset = false;
   const badgesVisible = config.ratings.length > 0;
   const titleBadgeEnabled = config.ratings.includes('title');
 
@@ -688,10 +687,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [setConfig]);
 
   useEffect(() => {
-    if (!isMinimalPreset) {
-      writeTextlessPreference(config.textless);
-    }
-  }, [isMinimalPreset, config.textless]);
+    writeTextlessPreference(config.textless);
+  }, [config.textless]);
 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
@@ -981,9 +978,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             { id: 'source', label: 'Source', icon: <Film size={11} strokeWidth={2} /> },
             { id: 'layers', label: 'Layers', icon: <Layers size={11} strokeWidth={2} /> },
             { id: 'poster', label: 'Poster', icon: <Monitor size={11} strokeWidth={2} /> },
-          ] as const)
-            .filter((tab) => !(isMinimalPreset && tab.id === 'layers'))
-            .map((tab) => (
+          ] as const).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1446,24 +1441,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </p>
           </div>
 
-          {!isMinimalPreset && (
-            <Section title="Background" icon={<Monitor size={13} />} defaultOpen>
-              <SliderRow
-                label="Poster Blur"
-                value={config.posterBlur}
-                min={0}
-                max={20}
-                unit="px"
-                onChange={(v) => updateConfig('posterBlur', v)}
-              />
-              <ToggleRow
-                label="Grayscale"
-                sub="Desaturate poster image"
-                checked={config.grayscale}
-                onChange={(v) => updateConfig('grayscale', v)}
-              />
-            </Section>
-          )}
+          <Section title="Background" icon={<Monitor size={13} />} defaultOpen>
+            <SliderRow
+              label="Poster Blur"
+              value={config.posterBlur}
+              min={0}
+              max={20}
+              unit="px"
+              onChange={(v) => updateConfig('posterBlur', v)}
+            />
+            <ToggleRow
+              label="Grayscale"
+              sub="Desaturate poster image"
+              checked={config.grayscale}
+              onChange={(v) => updateConfig('grayscale', v)}
+            />
+          </Section>
 
           <Section title="Canvas Overlays" icon={<ShieldCheck size={13} />} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
@@ -1515,24 +1508,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
         <div className="px-1">
-          {isMinimalPreset && (
-            <div
-              className="mb-4 p-3 rounded-xl"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
-                Badge layers are hidden in Minimal mode.
-              </p>
-              <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Open the Source tab to switch display mode.
-              </p>
-            </div>
-          )}
-          {!isMinimalPreset && (
-            <>
+          <>
               <div className="flex items-center justify-between mb-3">
                 <span
                   className="syne-font uppercase tracking-widest"
@@ -1736,8 +1712,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   onChange={(v) => updateConfig('logoZ', Math.round(v))}
                 />
               </div>
-            </>
-          )}
+          </>
         </div>
       )}
     </SidebarLayout>

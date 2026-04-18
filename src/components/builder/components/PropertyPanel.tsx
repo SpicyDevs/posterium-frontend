@@ -681,53 +681,6 @@ const PropertyPanel: React.FC<Props> = ({
     });
   };
 
-  const updateMinimalRating = (
-    index: number,
-    updates: Partial<NonNullable<PosterConfig['minimalRatings']>[number]>
-  ) => {
-    setConfig((prev) => {
-      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
-      if (!list[index]) return prev;
-      list[index] = { ...list[index], ...updates };
-      return { ...prev, minimalRatings: list };
-    });
-  };
-
-  const updateAllMinimalRatings = (
-    updates: Partial<NonNullable<PosterConfig['minimalRatings']>[number]>
-  ) => {
-    setConfig((prev) => {
-      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
-      return { ...prev, minimalRatings: list.map((item) => ({ ...item, ...updates })) };
-    });
-  };
-
-  const addMinimalRating = () => {
-    setConfig((prev) => {
-      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
-      if (list.length >= 3) return prev;
-      const used = new Set(list.map((r) => r.provider));
-      const nextProvider = (ALL_BADGES.find((b) => !used.has(b.id))?.id ?? 'rt') as RatingType;
-      const next = [...list, makeDefaultMinimalRating(nextProvider, 140, 672)];
-      const placed = placeMinimalRatings(next, prev.preset, prev.layout);
-      return { ...prev, minimalRatings: placed };
-    });
-    setMinimalRatingEditorIndex((v) => Math.min(v + 1, 2));
-  };
-
-  const removeMinimalRating = (index: number) => {
-    let nextEditorIndex = 0;
-    setConfig((prev) => {
-      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
-      if (list.length <= 1 || !list[index]) return prev;
-      list.splice(index, 1);
-      nextEditorIndex = Math.max(0, Math.min(index, list.length - 1));
-      const placed = placeMinimalRatings(list, prev.preset, prev.layout);
-      return { ...prev, minimalRatings: placed };
-    });
-    setMinimalRatingEditorIndex(nextEditorIndex);
-  };
-
   const updateSelectedBadges = (updates: Partial<BadgeConfig>) =>
     setConfig((prev) => {
       const newItems = { ...prev.items };
@@ -767,9 +720,6 @@ const PropertyPanel: React.FC<Props> = ({
   const showBadgeSettings = panelMode === 'badges';
   const showLogoSettings = panelMode === 'badges';
   const logoSectionTitle = 'Logo Overlay';
-  const minimalRatings = (config.minimalRatings ?? [makeDefaultMinimalRating()]).slice(0, 3);
-  const [minimalRatingEditorIndex, setMinimalRatingEditorIndex] = useState(0);
-  const selectedMinimalRating = minimalRatings[Math.min(minimalRatingEditorIndex, minimalRatings.length - 1)];
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
@@ -789,16 +739,6 @@ const PropertyPanel: React.FC<Props> = ({
     window.addEventListener('builder-scroll-logo-settings', handler);
     return () => window.removeEventListener('builder-scroll-logo-settings', handler);
   }, []);
-
-  useEffect(() => {
-    const onSelectMinimalRating = (event: Event) => {
-      const idx = (event as CustomEvent<number>).detail;
-      if (typeof idx !== 'number' || Number.isNaN(idx)) return;
-      setMinimalRatingEditorIndex(Math.max(0, Math.min(idx, minimalRatings.length - 1)));
-    };
-    window.addEventListener('builder-select-minimal-rating', onSelectMinimalRating);
-    return () => window.removeEventListener('builder-select-minimal-rating', onSelectMinimalRating);
-  }, [minimalRatings.length]);
 
   // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
@@ -1315,232 +1255,6 @@ const PropertyPanel: React.FC<Props> = ({
               </div>
             </Section>
 
-            {false && (
-              <Section title="Inline Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
-              <ToggleRow
-                label="Show Ratings"
-                checked={config.minimalRatingsEnabled ?? true}
-                onChange={(v) => updateConfig('minimalRatingsEnabled', v)}
-              />
-              <div className="flex items-center justify-between">
-                <p className="body-font text-[11px]" style={{ color: 'var(--film-text-label)' }}>
-                  Up to 3 draggable ratings
-                </p>
-                <button
-                  type="button"
-                  onClick={addMinimalRating}
-                  disabled={minimalRatings.length >= 3}
-                  className="px-2.5 h-7 rounded-md text-[10px] syne-font border"
-                  style={{
-                    color: minimalRatings.length >= 3 ? 'var(--film-text-dim)' : 'var(--film-pale)',
-                    borderColor:
-                      minimalRatings.length >= 3
-                        ? 'rgba(255,255,255,0.08)'
-                        : 'rgba(196,124,46,0.25)',
-                    background:
-                      minimalRatings.length >= 3 ? 'rgba(255,255,255,0.02)' : 'rgba(196,124,46,0.08)',
-                  }}
-                >
-                  Add Rating
-                </button>
-              </div>
-              <SegmentedRow
-                label="Edit Slot"
-                options={minimalRatings.map((r, idx) => ({
-                  id: String(idx),
-                  label: `${idx + 1}: ${BADGE_DISPLAY_NAMES[r.provider] ?? r.provider}`,
-                }))}
-                value={String(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1))}
-                onChange={(v) => setMinimalRatingEditorIndex(parseInt(v, 10) || 0)}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  removeMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1))
-                }
-                disabled={minimalRatings.length <= 1}
-                className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] syne-font"
-                style={{
-                  border: '1px solid rgba(248,113,113,0.12)',
-                  background: 'rgba(248,113,113,0.04)',
-                  color:
-                    minimalRatings.length <= 1 ? 'rgba(248,113,113,0.35)' : 'rgba(248,113,113,0.75)',
-                }}
-              >
-                Remove This Rating
-              </button>
-              {selectedMinimalRating && (
-                <>
-                  <ToggleRow
-                    label="Show Selected Slot"
-                    checked={selectedMinimalRating.enabled}
-                    onChange={(v) =>
-                      updateMinimalRating(Math.min(minimalRatingEditorIndex, minimalRatings.length - 1), {
-                        enabled: v,
-                      })
-                    }
-                  />
-                  <div className="space-y-1.5">
-                    <span
-                      className="body-font"
-                      style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-                    >
-                      Provider
-                    </span>
-                    <SelectBox
-                      value={selectedMinimalRating.provider}
-                      onChange={(v) =>
-                        updateMinimalRating(
-                          Math.min(minimalRatingEditorIndex, minimalRatings.length - 1),
-                          { provider: v as RatingType }
-                        )
-                      }
-                      options={ALL_BADGES.map((b) => ({ id: b.id, label: b.label }))}
-                    />
-                  </div>
-                  <SegmentedRow
-                    label="Icon Style"
-                    options={[
-                      { id: 'star', label: 'Star' },
-                      { id: 'original', label: 'Original' },
-                      { id: 'flat', label: 'Flat' },
-                      { id: 'symbol', label: 'Symbol' },
-                    ]}
-                    value={config.minimalRatingIconMode ?? selectedMinimalRating.iconMode}
-                    onChange={(v) => {
-                      updateConfig('minimalRatingIconMode', v as PosterConfig['minimalRatingIconMode']);
-                      updateAllMinimalRatings({
-                        iconMode: v as 'star' | 'original' | 'flat' | 'symbol',
-                      });
-                    }}
-                  />
-                  <div className="flex items-center justify-between text-[10px] body-font text-[var(--film-text-dim)]">
-                    <span>Slot position (drag on canvas)</span>
-                    <span>
-                      {Math.round(selectedMinimalRating.x)}, {Math.round(selectedMinimalRating.y)}
-                    </span>
-                  </div>
-                  <SliderRow
-                    label="Size"
-                    value={selectedMinimalRating.size}
-                    min={12}
-                    max={54}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateAllMinimalRatings({ size: Math.round(v) })}
-                  />
-                  <ColorRow
-                    label="Color"
-                    value={selectedMinimalRating.color}
-                    showOpacity
-                    opacity={selectedMinimalRating.opacity}
-                    onChange={(v) => updateAllMinimalRatings({ color: v })}
-                    onOpacityChange={(v) => updateAllMinimalRatings({ opacity: Number(v.toFixed(2)) })}
-                  />
-                  <ToggleRow
-                    label="Background"
-                    checked={selectedMinimalRating.bgEnabled}
-                    onChange={(v) => updateAllMinimalRatings({ bgEnabled: v })}
-                  />
-                  {selectedMinimalRating.bgEnabled && (
-                    <ColorRow
-                      label="Background Color"
-                      value={selectedMinimalRating.bgColor}
-                      showOpacity
-                      opacity={selectedMinimalRating.bgOpacity}
-                      onChange={(v) => updateAllMinimalRatings({ bgColor: v })}
-                      onOpacityChange={(v) =>
-                        updateAllMinimalRatings({ bgOpacity: Number(v.toFixed(2)) })
-                      }
-                    />
-                  )}
-                  <SliderRow
-                    label="Border Width"
-                    value={selectedMinimalRating.borderW}
-                    min={0}
-                    max={8}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateAllMinimalRatings({ borderW: Math.round(v) })}
-                  />
-                  {selectedMinimalRating.borderW > 0 && (
-                    <ColorRow
-                      label="Border Color"
-                      value={selectedMinimalRating.borderColor}
-                      showOpacity
-                      opacity={selectedMinimalRating.borderOpacity}
-                      onChange={(v) => updateAllMinimalRatings({ borderColor: v })}
-                      onOpacityChange={(v) =>
-                        updateAllMinimalRatings({ borderOpacity: Number(v.toFixed(2)) })
-                      }
-                    />
-                  )}
-                  <SliderRow
-                    label="Radius"
-                    value={selectedMinimalRating.radius}
-                    min={0}
-                    max={24}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateAllMinimalRatings({ radius: Math.round(v) })}
-                  />
-                  <ToggleRow
-                    label="Shadow"
-                    checked={selectedMinimalRating.shadowEnabled}
-                    onChange={(v) => updateAllMinimalRatings({ shadowEnabled: v })}
-                  />
-                  {selectedMinimalRating.shadowEnabled && (
-                    <>
-                      <SliderRow
-                        label="Shadow X"
-                        value={selectedMinimalRating.shadowX}
-                        min={-20}
-                        max={20}
-                        step={1}
-                        unit="px"
-                        onChange={(v) => updateAllMinimalRatings({ shadowX: Math.round(v) })}
-                      />
-                      <SliderRow
-                        label="Shadow Y"
-                        value={selectedMinimalRating.shadowY}
-                        min={-20}
-                        max={20}
-                        step={1}
-                        unit="px"
-                        onChange={(v) => updateAllMinimalRatings({ shadowY: Math.round(v) })}
-                      />
-                      <SliderRow
-                        label="Shadow Blur"
-                        value={selectedMinimalRating.shadowBlur}
-                        min={0}
-                        max={40}
-                        step={1}
-                        unit="px"
-                        onChange={(v) => updateAllMinimalRatings({ shadowBlur: Math.round(v) })}
-                      />
-                      <ColorRow
-                        label="Shadow Color"
-                        value={selectedMinimalRating.shadowColor}
-                        onChange={(v) => updateAllMinimalRatings({ shadowColor: v })}
-                      />
-                    </>
-                  )}
-                  {(config.minimalRatingIconMode ?? selectedMinimalRating.iconMode) === 'symbol' && (
-                    <TextInputRow
-                      label="Symbol"
-                      value={config.minimalRatingSymbol ?? selectedMinimalRating.symbol}
-                      placeholder="★"
-                      onChange={(v) => {
-                        const symbol = v || '★';
-                        updateConfig('minimalRatingSymbol', symbol);
-                        updateAllMinimalRatings({ symbol });
-                      }}
-                    />
-                  )}
-                </>
-              )}
-              </Section>
-            )}
           </>
         )}
 
@@ -1791,32 +1505,9 @@ const PropertyPanel: React.FC<Props> = ({
     const v = getCommonValue('borderC', config.borderC ?? '#ffffff');
     return (v === null ? (config.borderC ?? '#ffffff') : v) as string;
   })();
-  const minimalSelectedIds = Array.from(selectedMinimalElements);
-  const minimalRatingIndexes = minimalSelectedIds
-    .filter((id) => id.startsWith('minimal-rating-'))
-    .map((id) => Number(id.split('-').at(-1) ?? -1))
-    .filter((idx) => Number.isFinite(idx) && idx >= 0);
   const minimalTitleSelected = selectedMinimalElements.has('minimal-title');
   const minimalYearSelected = selectedMinimalElements.has('minimal-year');
   const minimalDurationSelected = selectedMinimalElements.has('minimal-duration');
-
-  const updateSelectionMinimalRatings = (
-    updates: Partial<NonNullable<PosterConfig['minimalRatings']>[number]>
-  ) => {
-    if (minimalRatingIndexes.length === 0) return;
-    setConfig((prev) => {
-      const list = [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3);
-      for (const idx of minimalRatingIndexes) {
-        if (!list[idx]) continue;
-        list[idx] = { ...list[idx], ...updates };
-      }
-      return { ...prev, minimalRatings: list };
-    });
-  };
-  const selectedMinimalRatingRef =
-    minimalRatingIndexes.length > 0
-      ? minimalRatings[minimalRatingIndexes[0]] ?? minimalRatings[0]
-      : minimalRatings[0];
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1838,72 +1529,6 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedMinimalElements.size > 0 && (
         <>
-          {false && minimalRatingIndexes.length > 0 && selectedMinimalRatingRef && (
-            <Section title="Selected Ratings" sectionId="selection-minimal-ratings">
-              <SliderRow
-                label="Size"
-                value={selectedMinimalRatingRef.size}
-                min={12}
-                max={54}
-                step={1}
-                unit="px"
-                onChange={(v) => updateSelectionMinimalRatings({ size: Math.round(v) })}
-              />
-              <ColorRow
-                label="Color"
-                value={selectedMinimalRatingRef.color}
-                showOpacity
-                opacity={selectedMinimalRatingRef.opacity}
-                onChange={(v) => updateSelectionMinimalRatings({ color: v })}
-                onOpacityChange={(v) =>
-                  updateSelectionMinimalRatings({ opacity: Number(v.toFixed(2)) })
-                }
-              />
-              <ToggleRow
-                label="Background"
-                checked={selectedMinimalRatingRef.bgEnabled}
-                onChange={(v) => updateSelectionMinimalRatings({ bgEnabled: v })}
-              />
-              {selectedMinimalRatingRef.bgEnabled && (
-                <ColorRow
-                  label="Background Color"
-                  value={selectedMinimalRatingRef.bgColor}
-                  showOpacity
-                  opacity={selectedMinimalRatingRef.bgOpacity}
-                  onChange={(v) => updateSelectionMinimalRatings({ bgColor: v })}
-                  onOpacityChange={(v) =>
-                    updateSelectionMinimalRatings({ bgOpacity: Number(v.toFixed(2)) })
-                  }
-                />
-              )}
-              <SliderRow
-                label="Border Width"
-                value={selectedMinimalRatingRef.borderW}
-                min={0}
-                max={8}
-                step={1}
-                unit="px"
-                onChange={(v) => updateSelectionMinimalRatings({ borderW: Math.round(v) })}
-              />
-              {selectedMinimalRatingRef.borderW > 0 && (
-                <ColorRow
-                  label="Border Color"
-                  value={selectedMinimalRatingRef.borderColor}
-                  showOpacity
-                  opacity={selectedMinimalRatingRef.borderOpacity}
-                  onChange={(v) => updateSelectionMinimalRatings({ borderColor: v })}
-                  onOpacityChange={(v) =>
-                    updateSelectionMinimalRatings({ borderOpacity: Number(v.toFixed(2)) })
-                  }
-                />
-              )}
-              <ToggleRow
-                label="Shadow"
-                checked={selectedMinimalRatingRef.shadowEnabled}
-                onChange={(v) => updateSelectionMinimalRatings({ shadowEnabled: v })}
-              />
-            </Section>
-          )}
           {(minimalTitleSelected || minimalYearSelected || minimalDurationSelected) && (
             <Section title="Selected Text" sectionId="selection-minimal-text">
               {minimalTitleSelected && (
