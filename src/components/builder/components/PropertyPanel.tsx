@@ -1068,7 +1068,7 @@ const PropertyPanel: React.FC<Props> = ({
               <SliderRow
                 label="Title Letter Spacing"
                 value={config.items.title?.textLetterSpacing ?? 0.2}
-                min={0.8}
+                min={-2}
                 max={8}
                 step={0.1}
                 unit="px"
