@@ -72,7 +72,7 @@ export interface BadgeConfig {
   showText?: boolean; // show rating value text
 
   // Icon style
-  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome
+  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome (invalid values are clamped)
 
   // Score display
   normalize?: boolean; // normalize score to a 0–10 scale
@@ -180,7 +180,7 @@ export interface PosterConfig {
   showText?: boolean; // show rating value text (default true)
 
   // Icon style
-  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome (default 1)
+  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome (default 1, invalid values are clamped)
 
   // Display preset
   uiPreset?: 'b' | 'm'; // 'b' = badge (default), 'm' = minimal

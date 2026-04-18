@@ -26,6 +26,8 @@ import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'luc
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
 
+const SNAP_CENTER_TOLERANCE = 8;
+
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
@@ -68,7 +70,6 @@ const PreviewCanvas: React.FC<Props> = ({
   onZoomOut,
   onResetView,
 }) => {
-  const SNAP_CENTER_TOLERANCE = 8;
   const {
     viewOptions,
     mobileSheetMode,
