@@ -10,6 +10,8 @@ export type RatingType =
   | 'tmdb'
   | 'age'
   | 'runtime'
+  | 'year'
+  | 'title'
   | 'mal'
   | 'anilist';
 export type ThemeType = 'glass' | 'solid';
@@ -206,6 +208,7 @@ export interface PosterConfig {
   logoW: number;
   logoH: number;
   logoOpacity: number;
+  logoZ?: number;
   logoShadow: number;
   logoBgEnabled: boolean;
   logoBgColor?: string;
@@ -248,7 +251,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   minimalTextSize: 60,
   minimalTextX: 26,
   minimalTextY: 556,
-  minimalTitleEnabled: true,
+  minimalTitleEnabled: false,
   minimalTitleWidth: 420,
   minimalTitleAlign: 'left',
   minimalTitleFlow: 'up',
@@ -271,7 +274,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   minimalTitlePaddingX: 10,
   minimalTitlePaddingY: 8,
   minimalTitleRadius: 8,
-  minimalRatingsEnabled: true,
+  minimalRatingsEnabled: false,
   minimalRatingIconMode: 'star',
   minimalRatingSymbol: '★',
   minimalRatings: [
@@ -301,7 +304,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
       shadowColor: '#000000',
     },
   ],
-  minimalYearEnabled: true,
+  minimalYearEnabled: false,
   minimalDurationEnabled: false,
   minimalMetaX: 26,
   minimalMetaY: 672,
@@ -345,6 +348,27 @@ export const DEFAULT_CONFIG: PosterConfig = {
     imdb: { x: 340, y: 20 },
     rt: { x: 340, y: 90 },
     age: { x: 8, y: 683 },
+    year: {
+      x: 24,
+      y: 676,
+      icon: false,
+      alpha: 0,
+      blur: 0,
+      radius: 0,
+      shadow: 0,
+      borderW: 0,
+    },
+    title: {
+      x: 24,
+      y: 590,
+      icon: false,
+      alpha: 0,
+      blur: 0,
+      radius: 0,
+      shadow: 0,
+      borderW: 0,
+      scale: 1.45,
+    },
   },
 
   // Logo
@@ -355,6 +379,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   logoW: 380,
   logoH: 100,
   logoOpacity: 1.0,
+  logoZ: 90,
   logoShadow: 6,
   logoBgEnabled: false,
   logoBgColor: '#000000',
@@ -392,4 +417,6 @@ export const ALL_BADGES: { id: RatingType; label: string }[] = [
   { id: 'anilist', label: 'AniList' },
   { id: 'age', label: 'Age Rating' },
   { id: 'runtime', label: 'Runtime' },
+  { id: 'year', label: 'Year' },
+  { id: 'title', label: 'Title' },
 ];

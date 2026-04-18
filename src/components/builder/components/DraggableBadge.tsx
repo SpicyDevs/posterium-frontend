@@ -34,6 +34,8 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   anilist: 'AniList',
   age: 'Age Rating',
   runtime: 'Runtime',
+  year: 'Year',
+  title: 'Title',
 };
 
 interface Props {
@@ -50,6 +52,7 @@ interface Props {
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
   value?: string;
+  zIndex?: number;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -66,6 +69,7 @@ const DraggableBadge: React.FC<Props> = ({
   isObscuring,
   onHoverChange,
   value,
+  zIndex,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? 1.0;
@@ -332,6 +336,8 @@ const DraggableBadge: React.FC<Props> = ({
       meta: '74',
       tmdb: '85%',
       runtime: '2h 15m',
+      year: '2026',
+      title: 'Title',
       mal: '8.5',
       anilist: '85%',
     };
@@ -361,6 +367,32 @@ const DraggableBadge: React.FC<Props> = ({
       ? Number(runtimeCompact).toFixed(1)
       : runtimeCompact;
     const displayValue = numericDisplay;
+
+    if (badgeId === 'title' || badgeId === 'year') {
+      return showTextVal ? (
+        <span
+          style={{
+            position: 'absolute',
+            left: 8 * displayScale,
+            right: 8 * displayScale,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: badgeId === 'title' ? fontSize * 0.85 : fontSize,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: badgeId === 'title' ? 700 : 'bold',
+            color: txtColor,
+            lineHeight: 1.1,
+            textAlign: 'left',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            pointerEvents: 'none',
+          }}
+        >
+          {displayValue}
+        </span>
+      ) : null;
+    }
 
     if (badgeId === 'age') {
       return (
@@ -508,12 +540,13 @@ const DraggableBadge: React.FC<Props> = ({
         e.stopPropagation();
         onContextMenu?.(badgeId, e);
       }}
-      className="badge-item absolute select-none cursor-move z-50"
+      className="badge-item absolute select-none cursor-move"
       style={{
         width: `${width}px`,
         height: `${height}px`,
         left: `${x}px`,
         top: `${y}px`,
+        zIndex: zIndex ?? 120,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
         background: finalBackground,

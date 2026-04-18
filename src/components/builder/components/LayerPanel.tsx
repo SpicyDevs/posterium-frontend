@@ -563,6 +563,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
   const isMinimalPreset = false;
   const badgesVisible = config.ratings.length > 0;
+  const titleBadgeEnabled = config.ratings.includes('title');
 
   useEffect(() => {
     if ((config.uiPreset ?? 'b') !== 'b') {
@@ -1318,23 +1319,23 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             disabled={['metahub', 'imdb'].includes(config.source)}
           />
 
-          {/* Display options */}
           <div className="pt-1 space-y-2">
-            <p
-              className="syne-font uppercase tracking-widest"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-            >
-              Display
-            </p>
-            <div className="h-8 rounded-lg text-[11px] font-medium syne-font border flex items-center justify-center bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]">
-              Badges
-            </div>
-            <div
-              className={clsx(
-                'flex items-center justify-between gap-3',
-                isMinimalPreset && 'opacity-60 pointer-events-none'
-              )}
-            >
+            <ToggleRow
+              label="Title Layer"
+              sub="Show title as draggable badge layer"
+              checked={titleBadgeEnabled}
+              onChange={(v) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  ratings: v
+                    ? prev.ratings.includes('title')
+                      ? prev.ratings
+                      : [...prev.ratings, 'title']
+                    : prev.ratings.filter((r) => r !== 'title'),
+                }))
+              }
+            />
+            <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p
                   className="body-font font-medium flex items-center gap-1.5"
@@ -1343,25 +1344,24 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   <Badge size={11} /> Badges
                 </p>
                 <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                  {isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
+                  Show/hide all layers with badge behavior
                 </p>
               </div>
               <Switch
-                checked={badgesVisible && !isMinimalPreset}
+                checked={badgesVisible}
                 onChange={(v) => {
-                  if (isMinimalPreset) return;
                   if (v) enableBadges();
                   else disableBadges({ persistPreference: true });
                 }}
                 className={clsx(
                   'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-                  badgesVisible && !isMinimalPreset ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                  badgesVisible ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
                 )}
               >
                 <span
                   className={clsx(
                     'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-                    badgesVisible && !isMinimalPreset ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                    badgesVisible ? 'translate-x-[18px]' : 'translate-x-[3px]'
                   )}
                 />
               </Switch>
@@ -1691,6 +1691,51 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </>
                 )}
               </DragDropContext>
+
+              <div
+                className="mt-5 p-3 rounded-xl space-y-3"
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p
+                      className="body-font font-medium flex items-center gap-1.5"
+                      style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+                    >
+                      <ImagePlay size={11} /> Logo Layer
+                    </p>
+                    <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                      Enable logo and control its layer depth
+                    </p>
+                  </div>
+                  <Switch
+                    checked={config.logo}
+                    onChange={(v) => updateConfig('logo', v)}
+                    className={clsx(
+                      'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none',
+                      config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+                        config.logo ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                      )}
+                    />
+                  </Switch>
+                </div>
+                <SliderRow
+                  label="Logo Z-Index"
+                  value={config.logoZ ?? 90}
+                  min={1}
+                  max={220}
+                  step={1}
+                  onChange={(v) => updateConfig('logoZ', Math.round(v))}
+                />
+              </div>
             </>
           )}
         </div>

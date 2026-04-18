@@ -42,21 +42,6 @@ interface Props {
   onResetView?: () => void;
 }
 
-type MinimalElementSelection =
-  | { kind: 'title' }
-  | { kind: 'year' }
-  | { kind: 'duration' }
-  | { kind: 'logo' }
-  | { kind: 'rating'; index: number }
-  | null;
-
-type MinimalContextState = {
-  visible: boolean;
-  x: number;
-  y: number;
-  target: MinimalElementSelection;
-};
-
 const PreviewCanvas: React.FC<Props> = ({
   config,
   setConfig,
@@ -107,16 +92,11 @@ const PreviewCanvas: React.FC<Props> = ({
   const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
-  const [minimalContext, setMinimalContext] = useState<MinimalContextState>({
-    visible: false,
-    x: 0,
-    y: 0,
-    target: null,
-  });
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
     return config.ratings.filter((id) => {
+      if (id === 'year' || id === 'title') return true;
       const v = liveRatings[id];
       return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
     });
@@ -677,17 +657,6 @@ const PreviewCanvas: React.FC<Props> = ({
     };
   }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
 
-  useEffect(() => {
-    if (!minimalContext.visible) return;
-    const close = () => setMinimalContext((prev) => ({ ...prev, visible: false }));
-    window.addEventListener('mousedown', close);
-    window.addEventListener('keydown', close);
-    return () => {
-      window.removeEventListener('mousedown', close);
-      window.removeEventListener('keydown', close);
-    };
-  }, [minimalContext.visible]);
-
   return (
     <div
       ref={containerRef}
@@ -699,7 +668,6 @@ const PreviewCanvas: React.FC<Props> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           clearSelection();
-          setMinimalContext((prev) => ({ ...prev, visible: false }));
         }
       }}
     >
@@ -715,7 +683,6 @@ const PreviewCanvas: React.FC<Props> = ({
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             clearSelection();
-            setMinimalContext((prev) => ({ ...prev, visible: false }));
           }
         }}
       >
@@ -816,8 +783,8 @@ const PreviewCanvas: React.FC<Props> = ({
                 const bW = BASE_BADGE_W * selScale;
                 const bH = BASE_BADGE_H * selScale;
                 // Preview clamp: at least 1px inside poster
-                let nextX = applySnapGrid(x + dragSession.dx);
-                let nextY = applySnapGrid(y + dragSession.dy);
+                let nextX = x + dragSession.dx;
+                let nextY = y + dragSession.dy;
                 if (viewOptions?.snapToGrid) {
                   const centerX = nextX + bW / 2;
                   const centerY = nextY + bH / 2;
@@ -838,7 +805,13 @@ const PreviewCanvas: React.FC<Props> = ({
                 key={id}
                 badgeId={id}
                 config={config}
-                value={liveRatings[id]}
+                value={
+                  id === 'year'
+                    ? liveYear
+                    : id === 'title'
+                      ? liveTitle
+                      : liveRatings[id]
+                }
                 x={x}
                 y={y}
                 canvasScale={currentScale}
@@ -849,6 +822,7 @@ const PreviewCanvas: React.FC<Props> = ({
                 onContextMenu={onContextMenu}
                 isObscuring={isObscuring}
                 onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+                zIndex={100 + index}
               />
             );
           })}
@@ -864,143 +838,7 @@ const PreviewCanvas: React.FC<Props> = ({
               handleLogoSelection(multi);
               handleMinimalSelection('minimal-logo', multi);
             }}
-            onContextMenu={(e) => {
-              handleMinimalSelection('minimal-logo', e.shiftKey || e.ctrlKey || e.metaKey);
-              setMinimalContext({
-                visible: true,
-                x: e.clientX,
-                y: e.clientY,
-                target: { kind: 'logo' },
-              });
-            }}
           />
-        )}
-
-        {(config.minimalRatingsEnabled ?? true) &&
-          minimalRatings.map((r, idx) => {
-            if (r.enabled === false) return null;
-            const isDragging = draggingMinimalRatingIndex === idx;
-            const iconMode = config.minimalRatingIconMode ?? r.iconMode;
-            const symbol = config.minimalRatingSymbol ?? r.symbol;
-            const iconText =
-              iconMode === 'symbol'
-                ? symbol || '★'
-                : iconMode === 'flat'
-                  ? '●'
-                  : iconMode === 'star'
-                    ? '★'
-                    : r.provider === 'imdb'
-                      ? 'IMDb'
-                      : r.provider === 'rt'
-                        ? '🍅'
-                        : r.provider === 'tmdb'
-                          ? 'TMDB'
-                          : r.provider === 'meta'
-                            ? 'M'
-                            : r.provider === 'letterboxd'
-                              ? 'L'
-                              : r.provider === 'rt_popcorn'
-                                ? '🍿'
-                                : r.provider.toUpperCase();
-            const ratingValue = (liveRatings[r.provider] ?? '').toString().trim() || '--';
-            return (
-              <div
-                key={`minimal-rating-${idx}`}
-                className="absolute z-40 select-none"
-                style={{
-                  left: r.x + (isDragging ? minimalRatingOffset.dx : 0),
-                  top: r.y + (isDragging ? minimalRatingOffset.dy : 0),
-                  padding: `${r.paddingY}px ${r.paddingX}px`,
-                  borderRadius: r.radius,
-                  border:
-                    r.borderW > 0
-                      ? `${r.borderW}px solid ${toRgba(r.borderColor, r.borderOpacity)}`
-                      : 'none',
-                  background: r.bgEnabled ? toRgba(r.bgColor, r.bgOpacity) : 'transparent',
-                  color: toRgba(r.color, r.opacity),
-                  fontSize: `${r.size}px`,
-                  lineHeight: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: isDragging ? 'grabbing' : 'grab',
-                  boxShadow: r.shadowEnabled
-                    ? `${r.shadowX}px ${r.shadowY}px ${r.shadowBlur}px ${r.shadowColor}`
-                    : 'none',
-                  outline:
-                    selectedMinimalElements.has(`minimal-rating-${idx}`)
-                      ? '1px dashed rgba(196,124,46,0.8)'
-                      : 'none',
-                }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  handleMinimalSelection(`minimal-rating-${idx}`, e.shiftKey || e.ctrlKey || e.metaKey);
-                  window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
-                  setDraggingMinimalRatingIndex(idx);
-                  minimalRatingStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleMinimalSelection(`minimal-rating-${idx}`, e.shiftKey || e.ctrlKey || e.metaKey);
-                  window.dispatchEvent(new CustomEvent('builder-select-minimal-rating', { detail: idx }));
-                  setMinimalContext({
-                    visible: true,
-                    x: e.clientX,
-                    y: e.clientY,
-                    target: { kind: 'rating', index: idx },
-                  });
-                }}
-                title="Drag minimal rating"
-              >
-                <span>{iconText}</span>
-                <span className="mono-font" style={{ fontSize: `${Math.max(11, r.size * 0.72)}px` }}>
-                  {ratingValue}
-                </span>
-              </div>
-            );
-          })}
-
-        {(config.minimalYearEnabled ?? true) && (
-          <div
-            className="absolute z-40 select-none"
-            style={{
-              left: (config.minimalMetaX ?? 26) + (draggingMinimalYear ? minimalMetaOffset.dx : 0),
-              top: (config.minimalMetaY ?? 672) + (draggingMinimalYear ? minimalMetaOffset.dy : 0),
-              fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
-              color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
-              fontWeight: config.minimalMetaWeight ?? 600,
-              letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
-              lineHeight: 1,
-              cursor: draggingMinimalYear ? 'grabbing' : 'grab',
-              outline:
-                selectedMinimalElements.has('minimal-year')
-                  ? '1px dashed rgba(196,124,46,0.8)'
-                  : 'none',
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleMinimalSelection('minimal-year', e.shiftKey || e.ctrlKey || e.metaKey);
-              setDraggingMinimalYear(true);
-              minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleMinimalSelection('minimal-year', e.shiftKey || e.ctrlKey || e.metaKey);
-              setMinimalContext({
-                visible: true,
-                x: e.clientX,
-                y: e.clientY,
-                target: { kind: 'year' },
-              });
-            }}
-            title="Drag year"
-          >
-            {liveYear || '2026'}
-          </div>
         )}
 
         {(config.minimalDurationEnabled ?? false) && (
@@ -1029,154 +867,10 @@ const PreviewCanvas: React.FC<Props> = ({
               setDraggingMinimalDuration(true);
               minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
             }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleMinimalSelection('minimal-duration', e.shiftKey || e.ctrlKey || e.metaKey);
-              setMinimalContext({
-                visible: true,
-                x: e.clientX,
-                y: e.clientY,
-                target: { kind: 'duration' },
-              });
-            }}
             title="Drag duration"
           >
             {(liveRatings.runtime ?? '').toString().trim() || '--'}
           </div>
-        )}
-
-        {(config.minimalTitleEnabled ?? true) && (
-          <div
-            className="absolute z-40 select-none"
-            style={{
-              left: config.minimalTextX + minimalTextOffset.dx,
-              top: config.minimalTextY + minimalTextOffset.dy,
-              width: Math.max(120, config.minimalTitleWidth ?? 420),
-              fontSize: `${config.minimalTextSize}px`,
-              textAlign: config.minimalTitleAlign ?? 'left',
-              lineHeight: config.minimalTitleLineHeight ?? 1.08,
-              color: toRgba(config.minimalTitleColor, config.minimalTitleOpacity ?? 0.95),
-              fontWeight: config.minimalTitleWeight ?? 700,
-              letterSpacing: `${config.minimalTitleLetterSpacing ?? 0.4}px`,
-              textShadow:
-                config.minimalTitleShadowEnabled ?? false
-                  ? `${config.minimalTitleShadowX ?? 0}px ${config.minimalTitleShadowY ?? 2}px ${
-                      config.minimalTitleShadowBlur ?? 8
-                    }px ${config.minimalTitleShadowColor ?? '#000000'}`
-                  : 'none',
-              border:
-                (config.minimalTitleBorderW ?? 0) > 0
-                  ? `${config.minimalTitleBorderW}px solid ${toRgba(
-                      config.minimalTitleBorderColor,
-                      config.minimalTitleBorderOpacity ?? 0.6
-                    )}`
-                  : 'none',
-              borderRadius: config.minimalTitleRadius ?? 8,
-              padding: `${config.minimalTitlePaddingY ?? 8}px ${config.minimalTitlePaddingX ?? 10}px`,
-              background:
-                config.minimalTitleBgEnabled ?? false
-                  ? toRgba(config.minimalTitleBgColor, config.minimalTitleBgOpacity ?? 0.24)
-                  : 'transparent',
-              cursor: isDraggingMinimalText ? 'grabbing' : 'grab',
-              transform: (config.minimalTitleFlow ?? 'up') === 'up' ? 'translateY(-100%)' : 'none',
-              outline:
-                selectedMinimalElements.has('minimal-title')
-                  ? '1px dashed rgba(196,124,46,0.8)'
-                  : 'none',
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleMinimalSelection('minimal-title', e.shiftKey || e.ctrlKey || e.metaKey);
-              setIsDraggingMinimalText(true);
-              minimalTextStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleMinimalSelection('minimal-title', e.shiftKey || e.ctrlKey || e.metaKey);
-              setMinimalContext({
-                visible: true,
-                x: e.clientX,
-                y: e.clientY,
-                target: { kind: 'title' },
-              });
-            }}
-            title="Drag minimal title"
-          >
-            {liveTitle || 'Title'}
-          </div>
-        )}
-
-        {minimalContext.visible && minimalContext.target && (
-          <menu
-            className="fixed z-[9001] min-w-[170px] rounded-lg p-1"
-            style={{
-              left: minimalContext.x,
-              top: minimalContext.y,
-              background: 'rgba(14,13,11,0.94)',
-              border: '1px solid rgba(196,124,46,0.2)',
-              boxShadow: '0 18px 40px rgba(0,0,0,0.6)',
-              listStyle: 'none',
-            }}
-          >
-            <button
-              className="w-full text-left px-2 py-1.5 text-[11px] rounded-md hover:bg-[rgba(196,124,46,0.14)]"
-              style={{ color: 'var(--film-cream)' }}
-              onClick={() => {
-                const target = minimalContext.target;
-                if (!target) return;
-                if (target.kind === 'title') {
-                  setConfig((prev) => ({ ...prev, minimalTitleEnabled: !(prev.minimalTitleEnabled ?? true) }));
-                } else if (target.kind === 'year') {
-                  setConfig((prev) => ({ ...prev, minimalYearEnabled: !(prev.minimalYearEnabled ?? true) }));
-                } else if (target.kind === 'duration') {
-                  setConfig((prev) => ({
-                    ...prev,
-                    minimalDurationEnabled: !(prev.minimalDurationEnabled ?? false),
-                  }));
-                } else if (target.kind === 'logo') {
-                  setConfig((prev) => ({ ...prev, logo: !prev.logo }));
-                } else if (target.kind === 'rating') {
-                  setConfig((prev) => {
-                    const list = [...(prev.minimalRatings ?? [])];
-                    if (!list[target.index]) return prev;
-                    list[target.index] = { ...list[target.index], enabled: !(list[target.index].enabled ?? true) };
-                    return { ...prev, minimalRatings: list };
-                  });
-                }
-                setMinimalContext((prev) => ({ ...prev, visible: false }));
-              }}
-            >
-              Toggle Visibility
-            </button>
-            <button
-              className="w-full text-left px-2 py-1.5 text-[11px] rounded-md hover:bg-[rgba(196,124,46,0.14)]"
-              style={{ color: 'var(--film-cream)' }}
-              onClick={() => {
-                const target = minimalContext.target;
-                if (!target) return;
-                setConfig((prev) => {
-                  if (target.kind === 'title') return { ...prev, minimalTextX: 26, minimalTextY: 556 };
-                  if (target.kind === 'year') return { ...prev, minimalMetaX: 26, minimalMetaY: 672 };
-                  if (target.kind === 'duration')
-                    return { ...prev, minimalDurationX: 90, minimalDurationY: 672 };
-                  if (target.kind === 'logo') return { ...prev, logoX: null, logoY: 630 };
-                  if (target.kind === 'rating') {
-                    const list = [...(prev.minimalRatings ?? [])];
-                    if (!list[target.index]) return prev;
-                    list[target.index] = { ...list[target.index], x: 140, y: 672 };
-                    return { ...prev, minimalRatings: list };
-                  }
-                  return prev;
-                });
-                setMinimalContext((prev) => ({ ...prev, visible: false }));
-              }}
-            >
-              Reset Position
-            </button>
-          </menu>
         )}
       </div>
 

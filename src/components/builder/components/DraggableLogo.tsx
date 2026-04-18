@@ -100,8 +100,8 @@ const DraggableLogo: React.FC<Props> = ({
     };
   }, [isDragging]);
   const snapVal = (val: number) => (viewOptions?.snapToGrid ? snapToGridSize(val) : val);
-  let renderX = snapVal(baseX + liveOffset.dx),
-    renderY = snapVal(baseY + liveOffset.dy);
+  let renderX = isDragging ? baseX + liveOffset.dx : snapVal(baseX + liveOffset.dx),
+    renderY = isDragging ? baseY + liveOffset.dy : snapVal(baseY + liveOffset.dy);
   const centreX = CANVAS_WIDTH / 2,
     centreY = CANVAS_HEIGHT / 2,
     snapTolerance = 8;
@@ -171,12 +171,13 @@ const DraggableLogo: React.FC<Props> = ({
           e.stopPropagation();
           onContextMenu?.(e);
         }}
-        className="absolute select-none cursor-move z-40"
+        className="absolute select-none cursor-move"
         style={{
           left: renderX,
           top: renderY,
           width: lw,
           height: lh,
+          zIndex: config.logoZ ?? 90,
           overflow: 'visible',
           opacity: config.logoOpacity,
           filter: dropShadow,

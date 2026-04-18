@@ -48,6 +48,8 @@ const BADGE_DISPLAY_NAMES: Record<string, string> = {
   anilist: 'AniList',
   age: 'Age Rating',
   runtime: 'Runtime',
+  year: 'Year',
+  title: 'Title',
 };
 
 const readSectionStates = (): Record<string, boolean> => {
@@ -1078,11 +1080,6 @@ const PropertyPanel: React.FC<Props> = ({
               icon={<Type size={10} />}
               sectionId="global-minimal-title"
             >
-              <ToggleRow
-                label="Show Title"
-                checked={config.minimalTitleEnabled ?? true}
-                onChange={(v) => updateConfig('minimalTitleEnabled', v)}
-              />
               <SliderRow
                 label="Font Size"
                 value={config.minimalTextSize}
@@ -1267,16 +1264,9 @@ const PropertyPanel: React.FC<Props> = ({
                   {Math.round(config.minimalTextX)}, {Math.round(config.minimalTextY)}
                 </span>
               </div>
-              <ToggleRow
-                label="Show Year"
-                checked={config.minimalYearEnabled ?? true}
-                onChange={(v) => updateConfig('minimalYearEnabled', v)}
-              />
-              <ToggleRow
-                label="Show Duration"
-                checked={config.minimalDurationEnabled ?? false}
-                onChange={(v) => updateConfig('minimalDurationEnabled', v)}
-              />
+              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                Title and year visibility are controlled from the Layers panel.
+              </p>
               <SliderRow
                 label="Meta Size"
                 value={config.minimalMetaSize ?? 50}
@@ -1325,7 +1315,8 @@ const PropertyPanel: React.FC<Props> = ({
               </div>
             </Section>
 
-            <Section title="Inline Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
+            {false && (
+              <Section title="Inline Ratings" icon={<Hash size={10} />} sectionId="global-minimal-ratings">
               <ToggleRow
                 label="Show Ratings"
                 checked={config.minimalRatingsEnabled ?? true}
@@ -1548,7 +1539,8 @@ const PropertyPanel: React.FC<Props> = ({
                   )}
                 </>
               )}
-            </Section>
+              </Section>
+            )}
           </>
         )}
 
@@ -1846,7 +1838,7 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedMinimalElements.size > 0 && (
         <>
-          {minimalRatingIndexes.length > 0 && selectedMinimalRatingRef && (
+          {false && minimalRatingIndexes.length > 0 && selectedMinimalRatingRef && (
             <Section title="Selected Ratings" sectionId="selection-minimal-ratings">
               <SliderRow
                 label="Size"
@@ -2177,12 +2169,75 @@ const PropertyPanel: React.FC<Props> = ({
             onChange={(v) => updateConfig('logoOpacity', v)}
           />
           <SliderRow
+            label="Z-Index"
+            value={config.logoZ ?? 90}
+            min={1}
+            max={220}
+            step={1}
+            onChange={(v) => updateConfig('logoZ', Math.round(v))}
+          />
+          <SliderRow
             label="Drop Shadow"
             value={config.logoShadow}
             min={0}
             max={30}
             onChange={(v) => updateConfig('logoShadow', v)}
           />
+          <ToggleRow
+            label="Background"
+            checked={config.logoBgEnabled}
+            onChange={(v) => updateConfig('logoBgEnabled', v)}
+          />
+          {config.logoBgEnabled && (
+            <>
+              <ColorRow
+                label="Background Color"
+                value={config.logoBgColor ?? '#000000'}
+                showOpacity
+                opacity={config.logoBgOpacity}
+                onChange={(v) => updateConfig('logoBgColor', v)}
+                onOpacityChange={(v) => updateConfig('logoBgOpacity', Number(v.toFixed(2)))}
+              />
+              <SliderRow
+                label="Padding"
+                value={config.logoBgPadding}
+                min={0}
+                max={48}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgPadding', v)}
+              />
+              <SliderRow
+                label="Corner Radius"
+                value={config.logoBgRadius}
+                min={0}
+                max={40}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgRadius', v)}
+              />
+              <SliderRow
+                label="Border Width"
+                value={config.logoBgBorderW}
+                min={0}
+                max={10}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgBorderW', Math.round(v))}
+              />
+              {config.logoBgBorderW > 0 && (
+                <ColorRow
+                  label="Border Color"
+                  value={config.logoBgBorderC ?? '#ffffff'}
+                  onChange={(v) => updateConfig('logoBgBorderC', v)}
+                />
+              )}
+              <SliderRow
+                label="Background Shadow"
+                value={config.logoBgShadow}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('logoBgShadow', v)}
+              />
+            </>
+          )}
         </Section>
       )}
 

@@ -67,7 +67,7 @@ export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
 // (api/modules/poster/config/parseConfig.js → PROVIDER_SHORT_MAP)
 
 /** Canonical rating key → V3 single-char badge code */
-const V3_KEY_TO_CODE: Record<RatingType, string> = {
+const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> = {
   imdb: 'i',
   rt: 'r',
   rt_popcorn: 'p',
@@ -85,8 +85,22 @@ const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
   Object.entries(V3_KEY_TO_CODE).map(([k, v]) => [v, k as RatingType])
 );
 
+const API_RATING_KEYS: RatingType[] = [
+  'imdb',
+  'rt',
+  'rt_popcorn',
+  'letterboxd',
+  'meta',
+  'tmdb',
+  'mal',
+  'anilist',
+  'age',
+  'runtime',
+];
+const isApiRatingKey = (k: RatingType): boolean => API_RATING_KEYS.includes(k);
+
 // Exported — used by v3Builder.ts, tests, and any consumer needing these maps
-export const PROVIDER_SHORT: Record<string, string> = V3_KEY_TO_CODE;
+export const PROVIDER_SHORT: Partial<Record<RatingType, string>> = V3_KEY_TO_CODE;
 export const SHORT_PROVIDER: Record<string, RatingType> = V3_CODE_TO_KEY;
 
 /**
@@ -259,13 +273,15 @@ export const generateApiUrl = (
   p.set('v', '3');
 
   // ── Ratings: single-char codes e.g. r=i,r,p ──────────────────────────
-  if (config.ratings.length > 0) {
-    p.set('r', config.ratings.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
+  const apiRatings = config.ratings.filter(isApiRatingKey);
+  if (apiRatings.length > 0) {
+    p.set('r', apiRatings.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Fallback pool: single-char codes e.g. fb=t,l ─────────────────────
-  if (config.fallbackEnabled && config.fallbackPool.length > 0) {
-    p.set('fb', config.fallbackPool.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
+  const apiFallbackPool = config.fallbackPool.filter(isApiRatingKey);
+  if (config.fallbackEnabled && apiFallbackPool.length > 0) {
+    p.set('fb', apiFallbackPool.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Source — CRITICAL: NO v3 alias. Backend reads only 'source' directly.
@@ -328,7 +344,7 @@ export const generateApiUrl = (
   if (config.labelColor) p.set('lc', config.labelColor);
 
   // ── Per-badge overrides — format: {1-char-code}_{v3-suffix} ──────────
-  config.ratings.forEach((key: RatingType, index: number) => {
+  config.ratings.filter(isApiRatingKey).forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
     if (!code) return;
