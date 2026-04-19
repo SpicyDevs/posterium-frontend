@@ -840,6 +840,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       : []),
     { id: 'random', label: 'Random' },
   ];
+  const logoSourceOptions = [
+    { id: 'auto', label: 'Auto' },
+    { id: 'fanart', label: 'Fanart' },
+    { id: 'tmdb', label: 'TMDB' },
+    { id: 'metahub', label: 'Hub' },
+  ];
 
   const renderBadgeRow = (
     badge: { id: RatingType; label: string },
@@ -1530,6 +1536,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   )}
                 />
               </Switch>
+            </div>
+            <div className="px-1">
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+              >
+                Logo Source
+              </p>
+              <SelectBox
+                value={String(config.logoSource ?? 'auto')}
+                onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : v)}
+                options={logoSourceOptions}
+              />
             </div>
             <div
               className="mt-5 mx-1"

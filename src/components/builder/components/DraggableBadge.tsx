@@ -77,7 +77,7 @@ const DraggableBadge: React.FC<Props> = ({
   const displayScale = itemScale * sizeScale;
 
   const baseWidth = BASE_BADGE_W * displayScale;
-  const height = BASE_BADGE_H * displayScale;
+  const baseHeight = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
@@ -256,7 +256,7 @@ const DraggableBadge: React.FC<Props> = ({
   const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
   const textAlign = itemConfig?.textAlign ?? 'left';
   const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
-  const textMaxLines = Math.max(1, Math.round(itemConfig?.textMaxLines ?? 3));
+  const textMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
   const textShadow =
     itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
       ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
@@ -283,6 +283,16 @@ const DraggableBadge: React.FC<Props> = ({
         )
       : baseWidth;
   const width = dynamicTextWidth;
+  const titleCharsPerLine = Math.max(
+    8,
+    Math.floor((Math.max(baseWidth, 1) - 16 * displayScale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+  );
+  const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(displayTextForSizing.length, 1) / titleCharsPerLine));
+  const titleLineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
+  const titleRenderedLines =
+    titleLineClamp > 0 ? Math.min(titleEstimatedLines, titleLineClamp) : titleEstimatedLines;
+  const titleContentHeight = Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale);
+  const height = badgeId === 'title' ? Math.max(baseHeight, titleContentHeight) : baseHeight;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const toRgba = (hex: string | undefined, alpha: number) => {
@@ -446,11 +456,11 @@ const DraggableBadge: React.FC<Props> = ({
             textShadow,
             whiteSpace: badgeId === 'title' ? 'normal' : 'nowrap',
             wordBreak: badgeId === 'title' ? 'break-word' : 'normal',
-            overflow: badgeId === 'title' || textMaxChars > 0 ? 'hidden' : 'visible',
-            textOverflow: badgeId === 'title' || textMaxChars > 0 ? 'ellipsis' : 'clip',
-            display: badgeId === 'title' ? '-webkit-box' : 'inline-block',
+            overflow: badgeId === 'title' ? 'hidden' : textMaxChars > 0 ? 'hidden' : 'visible',
+            textOverflow: badgeId === 'title' ? 'clip' : textMaxChars > 0 ? 'ellipsis' : 'clip',
+            display: badgeId === 'title' && titleLineClamp > 0 ? '-webkit-box' : 'inline-block',
             WebkitBoxOrient: badgeId === 'title' ? 'vertical' : undefined,
-            WebkitLineClamp: badgeId === 'title' ? textMaxLines : undefined,
+            WebkitLineClamp: badgeId === 'title' && titleLineClamp > 0 ? titleLineClamp : undefined,
             pointerEvents: 'none',
           }}
         >

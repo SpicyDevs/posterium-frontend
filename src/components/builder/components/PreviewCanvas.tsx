@@ -126,8 +126,9 @@ const PreviewCanvas: React.FC<Props> = ({
       const textSize = Math.max(8, itemCfg?.textSize ?? 28) * scale;
       const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
       const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
+      const textLineHeight = itemCfg?.textLineHeight ?? 1.1;
+      const textMaxLinesRaw = Math.round(itemCfg?.textMaxLines ?? 0);
       if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
-      if (id === 'title') return { w: BASE_BADGE_W * scale, h };
       const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
       const fallback = id === 'year' ? '2026' : 'Title';
       const measured = raw.length > 0 ? raw : fallback;
@@ -135,6 +136,18 @@ const PreviewCanvas: React.FC<Props> = ({
         id === 'title' && textMaxChars > 0 && measured.length > textMaxChars
           ? `${measured.slice(0, textMaxChars).trimEnd()}…`
           : measured;
+      if (id === 'title') {
+        const w = BASE_BADGE_W * scale;
+        const charsPerLine = Math.max(
+          8,
+          Math.floor((Math.max(w, 1) - 16 * scale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+        );
+        const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
+        const lineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
+        const renderedLines = lineClamp > 0 ? Math.min(estimatedLines, lineClamp) : estimatedLines;
+        const titleHeight = Math.max(h, Math.ceil(renderedLines * textSize * textLineHeight + 16 * scale));
+        return { w, h: titleHeight };
+      }
       const w = Math.max(
         BASE_BADGE_W * scale,
         Math.ceil(shown.length * (textSize * 0.62 + textLetterSpacing) + 28 * scale)

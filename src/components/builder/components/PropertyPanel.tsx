@@ -1,7 +1,7 @@
 // src/components/builder/components/PropertyPanel.tsx
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
-import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType } from '../types';
+import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
 import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
 import {
   Layers,
@@ -723,13 +723,6 @@ const PropertyPanel: React.FC<Props> = ({
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
-  const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
-    { id: null, label: 'Auto' },
-    { id: 'fanart', label: 'Fanart' },
-    { id: 'tmdb', label: 'TMDB' },
-    { id: 'metahub', label: 'Hub' },
-  ];
-
   useEffect(() => {
     const handler = () => {
       requestAnimationFrame(() => {
@@ -1052,20 +1045,6 @@ const PropertyPanel: React.FC<Props> = ({
               icon={<ImagePlay size={10} />}
               sectionId="global-logo-overlay"
             >
-            <SegmentedRow
-              label="Source"
-              options={LOGO_SOURCES.map((opt) => ({
-                id: String(opt.id ?? 'auto'),
-                label: opt.label,
-              }))}
-              value={String(config.logoSource ?? 'auto')}
-              onChange={(v) =>
-                updateConfig(
-                  'logoSource',
-                  (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource']
-                )
-              }
-            />
             <SliderRow
               label="Size"
               value={config.logoW}
@@ -1396,16 +1375,18 @@ const PropertyPanel: React.FC<Props> = ({
         <>
       {isTitleOrYearOnlySelection && (
         <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">
-          <SliderRow
-            label="Font Size"
-            value={commonTextSize}
-            min={10}
-            max={120}
-            step={1}
-            unit="px"
-            onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
-            onReset={() => updateSelectedBadges({ textSize: isOnlyYearSelected ? 42 : 36 })}
-          />
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Font Size"
+              value={commonTextSize}
+              min={10}
+              max={120}
+              step={1}
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textSize: 36 })}
+            />
+          )}
           <SliderRow
             label="Font Weight"
             value={commonTextWeight}
@@ -1460,13 +1441,13 @@ const PropertyPanel: React.FC<Props> = ({
           {isOnlyTitleSelected && (
             <SliderRow
               label="Wrap Lines"
-              value={Math.max(1, Math.round(getCommonValue('textMaxLines', 3) ?? 3))}
-              min={1}
+              value={Math.max(0, Math.round(getCommonValue('textMaxLines', 0) ?? 0))}
+              min={0}
               max={8}
               step={1}
-              unit="lines"
+              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} lines`)}
               onChange={(v) => updateSelectedBadges({ textMaxLines: Math.round(v) })}
-              onReset={() => updateSelectedBadges({ textMaxLines: 3 })}
+              onReset={() => updateSelectedBadges({ textMaxLines: 0 })}
             />
           )}
           <ToggleRow
@@ -1728,20 +1709,6 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedLogo && config.logo && (
         <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="selection-logo-overlay">
-          <SegmentedRow
-            label="Source"
-            options={LOGO_SOURCES.map((opt) => ({
-              id: String(opt.id ?? 'auto'),
-              label: opt.label,
-            }))}
-            value={String(config.logoSource ?? 'auto')}
-            onChange={(v) =>
-              updateConfig(
-                'logoSource',
-                (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource']
-              )
-            }
-          />
           <SliderRow
             label="Size"
             value={config.logoW}

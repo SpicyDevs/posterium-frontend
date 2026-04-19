@@ -97,7 +97,7 @@ export interface BadgeConfig {
   textLineHeight?: number; // unitless
   textAlign?: 'left' | 'center' | 'right';
   textMaxChars?: number; // 0 disables truncation
-  textMaxLines?: number; // title wrap line clamp
+  textMaxLines?: number; // title wrap line clamp (0 = no clamp)
   textShadowEnabled?: boolean;
   textShadowX?: number;
   textShadowY?: number;
@@ -400,7 +400,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
       textLineHeight: 1.1,
       textAlign: 'left',
       textMaxChars: 0,
-      textMaxLines: 3,
+      textMaxLines: 0,
     },
   },
 
