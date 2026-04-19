@@ -62,6 +62,10 @@ export interface BadgeConfig {
   radius?: number; // corner radius, px
   shadow?: number; // drop shadow size, px
   scale?: number; // uniform scale multiplier, e.g. 1.0 = 100 %
+  shadowX?: number; // drop shadow x offset, px
+  shadowY?: number; // drop shadow y offset, px
+  shadowColor?: string; // drop shadow color
+  shadowOpacity?: number; // drop shadow opacity, 0-1
 
   // Colors
   bg?: string; // background hex
@@ -93,6 +97,7 @@ export interface BadgeConfig {
   textLineHeight?: number; // unitless
   textAlign?: 'left' | 'center' | 'right';
   textMaxChars?: number; // 0 disables truncation
+  textMaxLines?: number; // title wrap line clamp
   textShadowEnabled?: boolean;
   textShadowX?: number;
   textShadowY?: number;
@@ -183,6 +188,10 @@ export interface PosterConfig {
   radius: number; // corner radius, px
   shadow: number; // drop shadow size, px
   scale?: number; // uniform scale multiplier (default 1.0)
+  shadowX?: number; // drop shadow x offset, px
+  shadowY?: number; // drop shadow y offset, px
+  shadowColor?: string; // drop shadow color
+  shadowOpacity?: number; // drop shadow opacity, 0-1
 
   // Colors
   bg?: string; // background hex (absent = theme default)
@@ -339,6 +348,10 @@ export const DEFAULT_CONFIG: PosterConfig = {
   radius: 12,
   shadow: 6,
   scale: 1.0,
+  shadowX: 0,
+  shadowY: 2,
+  shadowColor: '#000000',
+  shadowOpacity: 0.35,
 
   // Global badge colors (absent = theme default)
   borderW: 0,
@@ -381,13 +394,13 @@ export const DEFAULT_CONFIG: PosterConfig = {
       radius: 0,
       shadow: 0,
       borderW: 0,
-      scale: 1.45,
       textSize: 36,
       textWeight: 700,
       textLetterSpacing: 0.2,
       textLineHeight: 1.1,
       textAlign: 'left',
       textMaxChars: 0,
+      textMaxLines: 3,
     },
   },
 

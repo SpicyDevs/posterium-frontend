@@ -587,7 +587,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         const data = await res.json();
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
-        if (data.meta?.year) merged.year = String(data.meta.year);
+        if (data.meta?.year) merged.year = String(data.meta.year).replace(/\.0+$/, '');
         const VALID_RATING_KEYS = [
           'imdb',
           'rt',
@@ -704,12 +704,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           return { ...prev, ratings: [id, ...prev.ratings], items: nextItems };
         });
         setInactiveOrder((prev) => prev.filter((x) => x !== id));
+        onSelect(id, false);
+        setActiveTab('selection');
       } else {
         setConfig((prev) => ({ ...prev, ratings: prev.ratings.filter((r) => r !== id) }));
         setInactiveOrder((prev) => [id, ...prev.filter((x) => x !== id)]);
       }
     },
-    [setConfig]
+    [onSelect, setActiveTab, setConfig]
   );
 
   const allVisible = config.ratings.length === ALL_BADGES.length;
@@ -858,7 +860,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         onSelect(badge.id, true);
       } else {
         handleToggleVisibility(badge.id, true);
-        onSelect(badge.id, false);
       }
     };
 
@@ -964,7 +965,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           </span>
           {isActive && ratingVal && badge.id !== 'title' && (
             <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-              {ratingVal}
+              {badge.id === 'year' ? ratingVal.replace(/\.0+$/, '') : ratingVal}
             </span>
           )}
         </div>
@@ -998,20 +999,27 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     isActive = true,
     provided?: DraggableProvided,
     isDraggingItem?: boolean
-  ) => (
+  ) => {
+    const enableLogoAndFocus = () => {
+      updateConfig('logo', true);
+      handleLogoSelection(false);
+      setActiveTab('selection');
+    };
+    return (
     <div
       ref={provided?.innerRef}
       {...provided?.draggableProps}
       onClick={(e) => {
         if (isActive) handleLogoSelection(e.shiftKey || e.ctrlKey || e.metaKey);
+        else enableLogoAndFocus();
       }}
       className={clsx(
         'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
         selectedLogo && isActive
           ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
-          : isActive
-            ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
-            : 'opacity-60',
+            : isActive
+              ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
+              : 'opacity-50',
         isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
       )}
       style={
@@ -1032,7 +1040,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       ) : (
         <div className="w-5 shrink-0" />
       )}
-      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isActive) enableLogoAndFocus();
+          else handleLogoSelection(false);
+        }}
+      >
         <div
           className="w-4 h-4 rounded border flex items-center justify-center transition-all"
           style={{
@@ -1059,7 +1074,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       </div>
       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
         <button
-          onClick={() => updateConfig('logo', !config.logo)}
+          onClick={() => (config.logo ? updateConfig('logo', false) : enableLogoAndFocus())}
           className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
           style={{ color: config.logo ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
           title={config.logo ? 'Hide layer' : 'Show layer'}
@@ -1068,7 +1083,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         </button>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <SidebarLayout
@@ -1498,10 +1514,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                 onChange={(v) => {
                   updateConfig('logo', v);
                   if (v) {
-                    setActiveTab('badges');
-                    setTimeout(() => {
-                      window.dispatchEvent(new CustomEvent('builder-scroll-logo-settings'));
-                    }, 60);
+                    handleLogoSelection(false);
+                    setActiveTab('selection');
                   }
                 }}
                 className={clsx(

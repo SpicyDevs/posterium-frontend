@@ -193,11 +193,12 @@ export const calculateAutoPosition = (
   config: PosterConfig
 ): { x: number; y: number } => {
   const sizeScale = getScale(config.size);
+  const globalScale = config.scale ?? 1.0;
   const ratings = config.ratings.slice(0, totalBadges);
   const fallbackId = ratings[index] ?? ratingId;
   const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
   const dims = orderedIds.map((id) => {
-    const perBadgeScale = config.items[id]?.scale ?? 1.0;
+    const perBadgeScale = config.items[id]?.scale ?? globalScale;
     return {
       id,
       w: BASE_BADGE_W * sizeScale * perBadgeScale,

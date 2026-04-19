@@ -72,7 +72,7 @@ const DraggableBadge: React.FC<Props> = ({
   zIndex,
 }) => {
   const itemConfig = config.items[badgeId];
-  const itemScale = itemConfig?.scale ?? 1.0;
+  const itemScale = itemConfig?.scale ?? config.scale ?? 1.0;
   const sizeScale = getScale(config.size);
   const displayScale = itemScale * sizeScale;
 
@@ -256,6 +256,7 @@ const DraggableBadge: React.FC<Props> = ({
   const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
   const textAlign = itemConfig?.textAlign ?? 'left';
   const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
+  const textMaxLines = Math.max(1, Math.round(itemConfig?.textMaxLines ?? 3));
   const textShadow =
     itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
       ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
@@ -275,7 +276,7 @@ const DraggableBadge: React.FC<Props> = ({
       ? `${rawTextForSizing.slice(0, textMaxChars).trimEnd()}…`
       : rawTextForSizing;
   const dynamicTextWidth =
-    badgeId === 'title' || badgeId === 'year'
+    badgeId === 'year'
       ? Math.max(
           baseWidth,
           Math.ceil(displayTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
@@ -284,13 +285,32 @@ const DraggableBadge: React.FC<Props> = ({
   const width = dynamicTextWidth;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
+  const toRgba = (hex: string | undefined, alpha: number) => {
+    const c = (hex ?? '#000000').trim();
+    const fullHex = /^#[0-9a-fA-F]{3}$/.test(c)
+      ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
+      : c;
+    if (!/^#[0-9a-fA-F]{6}$/.test(fullHex)) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(fullHex.slice(1, 3), 16);
+    const g = parseInt(fullHex.slice(3, 5), 16);
+    const b = parseInt(fullHex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  };
+  const shadowX = itemConfig?.shadowX ?? config.shadowX ?? 0;
+  const shadowY = itemConfig?.shadowY ?? config.shadowY ?? 2;
+  const shadowColor = itemConfig?.shadowColor ?? config.shadowColor ?? '#000000';
+  const shadowOpacity =
+    itemConfig?.shadowOpacity ??
+    config.shadowOpacity ??
+    Math.min(0.65, shadowVal * 0.025 + 0.2);
   const dropShadowFilter =
     shadowVal > 0
       ? (() => {
-          const blurPx = (shadowVal * 0.5).toFixed(2);
-          const dyPx = (shadowVal * 0.25 + 1.0).toFixed(2);
-          const opacity = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
-          return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
+        const blurPx = (shadowVal * 0.5).toFixed(2);
+          return `drop-shadow(${shadowX}px ${shadowY}px ${blurPx}px ${toRgba(
+            shadowColor,
+            Number(Math.max(0, Math.min(1, shadowOpacity)).toFixed(3))
+          )})`;
         })()
       : '';
 
@@ -395,7 +415,9 @@ const DraggableBadge: React.FC<Props> = ({
       const mm = (m[2] ?? '0').padStart(2, '0');
       return `${hh}:${mm}`;
     })();
-    const numericDisplay = /^\d+(\.\d+)?$/.test(runtimeCompact)
+    const numericDisplay = badgeId === 'year'
+      ? runtimeCompact.replace(/\.0+$/, '')
+      : /^\d+(\.\d+)?$/.test(runtimeCompact)
       ? Number(runtimeCompact).toFixed(1)
       : runtimeCompact;
     const displayValue = numericDisplay;
@@ -411,8 +433,9 @@ const DraggableBadge: React.FC<Props> = ({
             position: 'absolute',
             left: 8 * displayScale,
             right: 8 * displayScale,
-            top: '50%',
-            transform: 'translateY(-50%)',
+            top: badgeId === 'title' ? 8 * displayScale : '50%',
+            bottom: badgeId === 'title' ? 8 * displayScale : 'auto',
+            transform: badgeId === 'title' ? 'none' : 'translateY(-50%)',
             fontSize: textSize,
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontWeight: textWeight,
@@ -421,9 +444,13 @@ const DraggableBadge: React.FC<Props> = ({
             letterSpacing: `${textLetterSpacing}px`,
             textAlign,
             textShadow,
-            whiteSpace: 'nowrap',
-            overflow: textMaxChars > 0 ? 'hidden' : 'visible',
-            textOverflow: textMaxChars > 0 ? 'ellipsis' : 'clip',
+            whiteSpace: badgeId === 'title' ? 'normal' : 'nowrap',
+            wordBreak: badgeId === 'title' ? 'break-word' : 'normal',
+            overflow: badgeId === 'title' || textMaxChars > 0 ? 'hidden' : 'visible',
+            textOverflow: badgeId === 'title' || textMaxChars > 0 ? 'ellipsis' : 'clip',
+            display: badgeId === 'title' ? '-webkit-box' : 'inline-block',
+            WebkitBoxOrient: badgeId === 'title' ? 'vertical' : undefined,
+            WebkitLineClamp: badgeId === 'title' ? textMaxLines : undefined,
             pointerEvents: 'none',
           }}
         >

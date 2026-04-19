@@ -873,6 +873,38 @@ const PropertyPanel: React.FC<Props> = ({
                     : undefined
                 }
               />
+              <SliderRow
+                label="Shadow X"
+                value={config.shadowX ?? 0}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('shadowX', Math.round(v))}
+              />
+              <SliderRow
+                label="Shadow Y"
+                value={config.shadowY ?? 2}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('shadowY', Math.round(v))}
+              />
+              <ColorRow
+                label="Shadow Color"
+                value={config.shadowColor ?? '#000000'}
+                onChange={(v) => updateConfig('shadowColor', v)}
+              />
+              <SliderRow
+                label="Shadow Opacity"
+                value={config.shadowOpacity ?? 0.35}
+                min={0}
+                max={1}
+                step={0.01}
+                formatValue={(v) => `${Math.round(v * 100)}%`}
+                onChange={(v) => updateConfig('shadowOpacity', Number(v.toFixed(2)))}
+              />
             </Section>
 
             <Section title="Badge Colors" sectionId="global-badge-colors">
@@ -1010,199 +1042,6 @@ const PropertyPanel: React.FC<Props> = ({
                 }
               />
             </Section>
-          </>
-        )}
-
-        {showLogoSettings && (
-          <>
-            <Section
-              title="Title & Year Typography"
-              icon={<Type size={10} />}
-              sectionId="global-title-year-typography"
-            >
-              <SliderRow
-                label="Title Font Size"
-                value={config.items.title?.textSize ?? 36}
-                min={10}
-                max={120}
-                step={1}
-                unit="px"
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textSize: Math.round(v) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textSize: 36 } },
-                  }))
-                }
-              />
-              <SliderRow
-                label="Title Font Weight"
-                value={config.items.title?.textWeight ?? 700}
-                min={300}
-                max={900}
-                step={100}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textWeight: Math.round(v) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textWeight: 700 } },
-                  }))
-                }
-              />
-              <SliderRow
-                label="Title Letter Spacing"
-                value={config.items.title?.textLetterSpacing ?? 0.2}
-                min={-2}
-                max={8}
-                step={0.1}
-                unit="px"
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textLetterSpacing: Number(v.toFixed(1)) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textLetterSpacing: 0.2 },
-                    },
-                  }))
-                }
-              />
-              <SliderRow
-                label="Title Ellipsis Cutoff"
-                value={config.items.title?.textMaxChars ?? 0}
-                min={0}
-                max={300}
-                step={1}
-                unit="ch"
-                formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textMaxChars: Math.round(v) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), textMaxChars: 0 } },
-                  }))
-                }
-              />
-              <SegmentedRow
-                label="Title Alignment"
-                options={[
-                  { id: 'left', label: 'Left' },
-                  { id: 'center', label: 'Center' },
-                  { id: 'right', label: 'Right' },
-                ]}
-                value={config.items.title?.textAlign ?? 'left'}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      title: { ...(prev.items.title ?? {}), textAlign: v as BadgeConfig['textAlign'] },
-                    },
-                  }))
-                }
-              />
-              <ColorRow
-                label="Title Text Color"
-                value={config.items.title?.txt ?? '#f5f5f5'}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, title: { ...(prev.items.title ?? {}), txt: v } },
-                  }))
-                }
-              />
-              <SliderRow
-                label="Year Font Size"
-                value={config.items.year?.textSize ?? 42}
-                min={10}
-                max={120}
-                step={1}
-                unit="px"
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      year: { ...(prev.items.year ?? {}), textSize: Math.round(v) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), textSize: 42 } },
-                  }))
-                }
-              />
-              <SliderRow
-                label="Year Font Weight"
-                value={config.items.year?.textWeight ?? 700}
-                min={300}
-                max={900}
-                step={100}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: {
-                      ...prev.items,
-                      year: { ...(prev.items.year ?? {}), textWeight: Math.round(v) },
-                    },
-                  }))
-                }
-                onReset={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), textWeight: 700 } },
-                  }))
-                }
-              />
-              <ColorRow
-                label="Year Text Color"
-                value={config.items.year?.txt ?? '#d6dde3'}
-                onChange={(v) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    items: { ...prev.items, year: { ...(prev.items.year ?? {}), txt: v } },
-                  }))
-                }
-              />
-              <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Visibility and drag position are managed in the Layers tab.
-              </p>
-            </Section>
-
           </>
         )}
 
@@ -1418,6 +1257,15 @@ const PropertyPanel: React.FC<Props> = ({
     (getCommonValue('shadow', 6) as number | boolean | null) ?? 6,
     6
   );
+  const commonShadowX = (getCommonValue('shadowX', config.shadowX ?? 0) ?? config.shadowX ?? 0) as number;
+  const commonShadowY = (getCommonValue('shadowY', config.shadowY ?? 2) ?? config.shadowY ?? 2) as number;
+  const commonShadowOpacity = (getCommonValue('shadowOpacity', config.shadowOpacity ?? 0.35) ??
+    config.shadowOpacity ??
+    0.35) as number;
+  const commonShadowColor = (() => {
+    const v = getCommonValue('shadowColor', config.shadowColor ?? '#000000');
+    return (v === null ? (config.shadowColor ?? '#000000') : v) as string;
+  })();
   const commonScale = (getCommonValue('scale', config.scale ?? 1.0) ??
     config.scale ??
     1.0) as number;
@@ -1609,6 +1457,18 @@ const PropertyPanel: React.FC<Props> = ({
               onReset={() => updateSelectedBadges({ textMaxChars: 0 })}
             />
           )}
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Wrap Lines"
+              value={Math.max(1, Math.round(getCommonValue('textMaxLines', 3) ?? 3))}
+              min={1}
+              max={8}
+              step={1}
+              unit="lines"
+              onChange={(v) => updateSelectedBadges({ textMaxLines: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textMaxLines: 3 })}
+            />
+          )}
           <ToggleRow
             label="Text Shadow"
             checked={commonTextShadowEnabled}
@@ -1692,6 +1552,38 @@ const PropertyPanel: React.FC<Props> = ({
           max={30}
           onChange={(v) => updateSelectedBadges({ shadow: v })}
           onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
+        />
+        <SliderRow
+          label="Shadow X"
+          value={commonShadowX}
+          min={-20}
+          max={20}
+          step={1}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
+        />
+        <SliderRow
+          label="Shadow Y"
+          value={commonShadowY}
+          min={-20}
+          max={20}
+          step={1}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
+        />
+        <ColorRow
+          label="Shadow Color"
+          value={commonShadowColor}
+          onChange={(v) => updateSelectedBadges({ shadowColor: v })}
+        />
+        <SliderRow
+          label="Shadow Opacity"
+          value={commonShadowOpacity}
+          min={0}
+          max={1}
+          step={0.01}
+          formatValue={(v) => `${Math.round(v * 100)}%`}
+          onChange={(v) => updateSelectedBadges({ shadowOpacity: Number(v.toFixed(2)) })}
         />
         <SliderRow
           label="Border Width"

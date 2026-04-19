@@ -121,12 +121,13 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const getBadgeSize = useCallback(
     (id: RatingType, itemCfg: PosterConfig['items'][RatingType], baseValue?: string) => {
-      const scale = getScale(config.size) * (itemCfg?.scale ?? 1.0);
+      const scale = getScale(config.size) * (itemCfg?.scale ?? config.scale ?? 1.0);
       const h = BASE_BADGE_H * scale;
       const textSize = Math.max(8, itemCfg?.textSize ?? 28) * scale;
       const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
       const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
       if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
+      if (id === 'title') return { w: BASE_BADGE_W * scale, h };
       const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
       const fallback = id === 'year' ? '2026' : 'Title';
       const measured = raw.length > 0 ? raw : fallback;
@@ -140,7 +141,7 @@ const PreviewCanvas: React.FC<Props> = ({
       );
       return { w, h };
     },
-    [config.size, liveTitle, liveYear]
+    [config.scale, config.size, liveTitle, liveYear]
   );
 
   const getBadgeRect = (id: RatingType, index: number) => {
@@ -829,7 +830,7 @@ const PreviewCanvas: React.FC<Props> = ({
                 config={config}
                 value={
                   id === 'year'
-                    ? liveYear
+                    ? liveYear.replace(/\.0+$/, '')
                     : id === 'title'
                       ? liveTitle
                       : liveRatings[id]

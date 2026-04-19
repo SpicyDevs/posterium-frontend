@@ -382,7 +382,7 @@ const StudioLayout: React.FC<{
             const auto = calculateAutoPosition(id, Math.max(0, idx), next.ratings.length, next);
             const currX = base.x ?? auto.x;
             const currY = base.y ?? auto.y;
-            const scale = getScale(next.size) * (base.scale ?? 1.0);
+            const scale = getScale(next.size) * (base.scale ?? next.scale ?? 1.0);
             const w = BASE_BADGE_W * scale;
             const h = BASE_BADGE_H * scale;
             next.items[id] = {
