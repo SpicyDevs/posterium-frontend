@@ -67,7 +67,7 @@ export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
 // (api/modules/poster/config/parseConfig.js → PROVIDER_SHORT_MAP)
 
 /** Canonical rating key → V3 single-char badge code */
-const V3_KEY_TO_CODE: Record<RatingType, string> = {
+const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> = {
   imdb: 'i',
   rt: 'r',
   rt_popcorn: 'p',
@@ -85,8 +85,22 @@ const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
   Object.entries(V3_KEY_TO_CODE).map(([k, v]) => [v, k as RatingType])
 );
 
+const API_RATING_KEYS: RatingType[] = [
+  'imdb',
+  'rt',
+  'rt_popcorn',
+  'letterboxd',
+  'meta',
+  'tmdb',
+  'mal',
+  'anilist',
+  'age',
+  'runtime',
+];
+const isApiRatingKey = (k: RatingType): boolean => API_RATING_KEYS.includes(k);
+
 // Exported — used by v3Builder.ts, tests, and any consumer needing these maps
-export const PROVIDER_SHORT: Record<string, string> = V3_KEY_TO_CODE;
+export const PROVIDER_SHORT: Partial<Record<RatingType, string>> = V3_KEY_TO_CODE;
 export const SHORT_PROVIDER: Record<string, RatingType> = V3_CODE_TO_KEY;
 
 /**
@@ -134,7 +148,36 @@ const DEFAULTS = {
   logoBgShadow: 6,
   iconType: 1,
   labelSize: 11,
+  minimalTextSize: 60,
+  minimalTextX: 26,
+  minimalTextY: 556,
 } as const;
+
+const createDefaultMinimalRating = () => ({
+  provider: 'imdb' as RatingType,
+  enabled: true,
+  x: 140,
+  y: 672,
+  size: 26,
+  color: '#facc15',
+  opacity: 1,
+  iconMode: 'star' as const,
+  symbol: '★',
+  bgEnabled: false,
+  bgColor: '#000000',
+  bgOpacity: 0,
+  borderW: 0,
+  borderColor: '#ffffff',
+  borderOpacity: 0.7,
+  radius: 0,
+  paddingX: 0,
+  paddingY: 0,
+  shadowEnabled: false,
+  shadowX: 0,
+  shadowY: 0,
+  shadowBlur: 0,
+  shadowColor: '#000000',
+});
 
 // ── Canvas layout helpers ─────────────────────────────────────────────────
 
@@ -144,18 +187,41 @@ export const snapToGridSize = (n: number, gridSize = SNAP_GRID_SIZE): number =>
   Math.round(n / gridSize) * gridSize;
 
 export const calculateAutoPosition = (
-  _ratingId: RatingType,
+  ratingId: RatingType,
   index: number,
   totalBadges: number,
   config: PosterConfig
 ): { x: number; y: number } => {
-  const scale = getScale(config.size);
-  const badgeW = BASE_BADGE_W * scale;
-  const badgeH = BASE_BADGE_H * scale;
+  const sizeScale = getScale(config.size);
+  const globalScale = config.scale ?? 1.0;
+  const ratings = config.ratings.slice(0, totalBadges);
+  const fallbackId = ratings[index] ?? ratingId;
+  const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
+  const dims = orderedIds.map((id) => {
+    const perBadgeScale = config.items[id]?.scale ?? globalScale;
+    return {
+      id,
+      w: BASE_BADGE_W * sizeScale * perBadgeScale,
+      h: BASE_BADGE_H * sizeScale * perBadgeScale,
+    };
+  });
+  if (dims.length === 0) {
+    const fallbackW = BASE_BADGE_W * sizeScale;
+    const fallbackH = BASE_BADGE_H * sizeScale;
+    return {
+      x: Math.round((CANVAS_WIDTH - fallbackW) / 2),
+      y: Math.round((CANVAS_HEIGHT - fallbackH) / 2),
+    };
+  }
+  const current = dims[index] ?? dims.find((d) => d.id === ratingId) ?? dims[0];
   const isRow = config.layout === 'row';
 
-  const groupW = isRow ? totalBadges * badgeW + (totalBadges - 1) * GAP : badgeW;
-  const groupH = isRow ? badgeH : totalBadges * badgeH + (totalBadges - 1) * GAP;
+  const groupW = isRow
+    ? dims.reduce((sum, d) => sum + d.w, 0) + Math.max(dims.length - 1, 0) * GAP
+    : Math.max(...dims.map((d) => d.w), current.w);
+  const groupH = isRow
+    ? Math.max(...dims.map((d) => d.h), current.h)
+    : dims.reduce((sum, d) => sum + d.h, 0) + Math.max(dims.length - 1, 0) * GAP;
 
   let presetX = 0,
     presetY = 0;
@@ -168,8 +234,12 @@ export const calculateAutoPosition = (
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
   else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
-  const x = isRow ? presetX + index * (badgeW + GAP) : presetX;
-  const y = isRow ? presetY : presetY + index * (badgeH + GAP);
+  const x = isRow
+    ? presetX + dims.slice(0, index).reduce((sum, d) => sum + d.w, 0) + index * GAP
+    : presetX + (groupW - current.w) / 2;
+  const y = isRow
+    ? presetY + (groupH - current.h) / 2
+    : presetY + dims.slice(0, index).reduce((sum, d) => sum + d.h, 0) + index * GAP;
 
   return { x: Math.round(x), y: Math.round(y) };
 };
@@ -204,13 +274,15 @@ export const generateApiUrl = (
   p.set('v', '3');
 
   // ── Ratings: single-char codes e.g. r=i,r,p ──────────────────────────
-  if (config.ratings.length > 0) {
-    p.set('r', config.ratings.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
+  const apiRatings = config.ratings.filter(isApiRatingKey);
+  if (apiRatings.length > 0) {
+    p.set('r', apiRatings.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Fallback pool: single-char codes e.g. fb=t,l ─────────────────────
-  if (config.fallbackEnabled && config.fallbackPool.length > 0) {
-    p.set('fb', config.fallbackPool.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
+  const apiFallbackPool = config.fallbackPool.filter(isApiRatingKey);
+  if (config.fallbackEnabled && apiFallbackPool.length > 0) {
+    p.set('fb', apiFallbackPool.map((r) => V3_KEY_TO_CODE[r] ?? r).join(','));
   }
 
   // ── Source — CRITICAL: NO v3 alias. Backend reads only 'source' directly.
@@ -243,6 +315,9 @@ export const generateApiUrl = (
   // Poster effects
   if (config.posterBlur > DEFAULTS.posterBlur) p.set('pb', config.posterBlur.toString());
   if (config.grayscale) p.set('gs', '1');
+  if (config.minimalTextSize !== DEFAULTS.minimalTextSize) p.set('mts', config.minimalTextSize.toString());
+  if (config.minimalTextX !== DEFAULTS.minimalTextX) p.set('mtx', config.minimalTextX.toString());
+  if (config.minimalTextY !== DEFAULTS.minimalTextY) p.set('mty', config.minimalTextY.toString());
 
   // Layout / preset
   if (config.layout !== 'custom') p.set('l', config.layout);
@@ -270,7 +345,7 @@ export const generateApiUrl = (
   if (config.labelColor) p.set('lc', config.labelColor);
 
   // ── Per-badge overrides — format: {1-char-code}_{v3-suffix} ──────────
-  config.ratings.forEach((key: RatingType, index: number) => {
+  config.ratings.filter(isApiRatingKey).forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
     if (!code) return;
@@ -541,6 +616,59 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
         posterBlur: getNum('pb', 'bg_blur', DEFAULTS.posterBlur),
         grayscale: p.get('gs') === '1' || p.get('bw') === '1',
+        minimalTextSize: p.has('mts')
+          ? parseInt(p.get('mts')!)
+          : p.has('minimal_text_size')
+            ? parseInt(p.get('minimal_text_size')!)
+            : DEFAULTS.minimalTextSize,
+        minimalTextX: p.has('mtx')
+          ? parseInt(p.get('mtx')!)
+          : p.has('minimal_text_x')
+            ? parseInt(p.get('minimal_text_x')!)
+            : DEFAULTS.minimalTextX,
+        minimalTextY: p.has('mty')
+          ? parseInt(p.get('mty')!)
+          : p.has('minimal_text_y')
+            ? parseInt(p.get('minimal_text_y')!)
+            : DEFAULTS.minimalTextY,
+        minimalTitleEnabled: true,
+        minimalTitleWidth: 420,
+        minimalTitleAlign: 'left',
+        minimalTitleFlow: 'up',
+        minimalTitleColor: '#f5f5f5',
+        minimalTitleOpacity: 1,
+        minimalTitleWeight: 700,
+        minimalTitleLetterSpacing: 0,
+        minimalTitleLineHeight: 1.02,
+        minimalTitleShadowEnabled: false,
+        minimalTitleShadowX: 0,
+        minimalTitleShadowY: 0,
+        minimalTitleShadowBlur: 0,
+        minimalTitleShadowColor: '#000000',
+        minimalTitleBorderW: 0,
+        minimalTitleBorderColor: '#d4a245',
+        minimalTitleBorderOpacity: 0.6,
+        minimalTitleBgEnabled: false,
+        minimalTitleBgColor: '#000000',
+        minimalTitleBgOpacity: 0,
+        minimalTitlePaddingX: 10,
+        minimalTitlePaddingY: 8,
+        minimalTitleRadius: 8,
+        minimalRatingsEnabled: true,
+        minimalRatingIconMode: 'star',
+        minimalRatingSymbol: '★',
+        minimalRatings: [createDefaultMinimalRating()],
+        minimalYearEnabled: true,
+        minimalDurationEnabled: false,
+        minimalMetaX: 26,
+        minimalMetaY: 672,
+        minimalDurationX: 90,
+        minimalDurationY: 672,
+        minimalMetaSize: 50,
+        minimalMetaColor: '#d6dde3',
+        minimalMetaOpacity: 0.92,
+        minimalMetaWeight: 600,
+        minimalMetaLetterSpacing: 0,
         scale: getFloat('sc', 'g_scale', DEFAULTS.scale),
         borderW: p.has('bw') && p.get('bw') !== '1' ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
         borderC: p.has('bc')
@@ -728,6 +856,59 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       radius: p.has('rad') ? parseInt(p.get('rad')!) : DEFAULTS.radius,
       posterBlur: p.has('bg_blur') ? parseInt(p.get('bg_blur')!) : DEFAULTS.posterBlur,
       grayscale,
+      minimalTextSize: p.has('minimal_text_size')
+        ? parseInt(p.get('minimal_text_size')!)
+        : p.has('mts')
+          ? parseInt(p.get('mts')!)
+          : DEFAULTS.minimalTextSize,
+      minimalTextX: p.has('minimal_text_x')
+        ? parseInt(p.get('minimal_text_x')!)
+        : p.has('mtx')
+          ? parseInt(p.get('mtx')!)
+          : DEFAULTS.minimalTextX,
+      minimalTextY: p.has('minimal_text_y')
+        ? parseInt(p.get('minimal_text_y')!)
+        : p.has('mty')
+          ? parseInt(p.get('mty')!)
+          : DEFAULTS.minimalTextY,
+      minimalTitleEnabled: true,
+      minimalTitleWidth: 420,
+      minimalTitleAlign: 'left',
+      minimalTitleFlow: 'up',
+      minimalTitleColor: '#f5f5f5',
+      minimalTitleOpacity: 1,
+      minimalTitleWeight: 700,
+      minimalTitleLetterSpacing: 0,
+      minimalTitleLineHeight: 1.02,
+      minimalTitleShadowEnabled: false,
+      minimalTitleShadowX: 0,
+      minimalTitleShadowY: 0,
+      minimalTitleShadowBlur: 0,
+      minimalTitleShadowColor: '#000000',
+      minimalTitleBorderW: 0,
+      minimalTitleBorderColor: '#d4a245',
+      minimalTitleBorderOpacity: 0.6,
+      minimalTitleBgEnabled: false,
+      minimalTitleBgColor: '#000000',
+      minimalTitleBgOpacity: 0,
+      minimalTitlePaddingX: 10,
+      minimalTitlePaddingY: 8,
+      minimalTitleRadius: 8,
+      minimalRatingsEnabled: true,
+      minimalRatingIconMode: 'star',
+      minimalRatingSymbol: '★',
+      minimalRatings: [createDefaultMinimalRating()],
+      minimalYearEnabled: true,
+      minimalDurationEnabled: false,
+      minimalMetaX: 26,
+      minimalMetaY: 672,
+      minimalDurationX: 90,
+      minimalDurationY: 672,
+      minimalMetaSize: 50,
+      minimalMetaColor: '#d6dde3',
+      minimalMetaOpacity: 0.92,
+      minimalMetaWeight: 600,
+      minimalMetaLetterSpacing: 0,
       scale: g_scale ? parseFloat(g_scale) : DEFAULTS.scale,
       borderW: g_bw ? parseInt(g_bw) : DEFAULTS.borderW,
       borderC: g_bc ? (g_bc.startsWith('#') ? g_bc : `#${g_bc}`) : undefined,

@@ -19,13 +19,21 @@ interface EditorContextType {
   mobileSheetMode: SheetMode;
   setMobileSheetMode: (mode: SheetMode) => void;
   selectedIds: Set<RatingType>;
+  selectedLogo: boolean;
+  selectedMinimalElements: Set<string>;
   handleSelection: (id: RatingType, multi: boolean) => void;
+  handleMinimalSelection: (id: string, multi: boolean) => void;
+  handleLogoSelection: (multi: boolean) => void;
   setBatchSelection: (ids: RatingType[]) => void;
   clearSelection: () => void;
   viewOptions: ViewOptions;
   toggleViewOption: (key: keyof ViewOptions) => void;
   liveRatings: LiveRatings;
   setLiveRatings: (r: LiveRatings) => void;
+  liveTitle: string;
+  setLiveTitle: (title: string) => void;
+  liveYear: string;
+  setLiveYear: (year: string) => void;
   resolvedLogoSource: string | null;
   setResolvedLogoSource: (src: string | null) => void;
   /** Direct poster image URL (TMDB/fanart/etc.) — set by LayerPanel when media loads.
@@ -42,12 +50,16 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('source');
   const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
+  const [selectedLogo, setSelectedLogo] = useState(false);
+  const [selectedMinimalElements, setSelectedMinimalElements] = useState<Set<string>>(new Set());
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
     showGrid: false,
-    snapToGrid: false,
+    snapToGrid: true,
   });
   const [liveRatings, setLiveRatings] = useState<LiveRatings>({});
+  const [liveTitle, setLiveTitle] = useState('');
+  const [liveYear, setLiveYear] = useState('');
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
@@ -64,6 +76,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const handleSelection = useCallback(
     (id: RatingType, multi: boolean) => {
       let nextSize = 0;
+      let logoSelected = false;
       setSelectedIds((prev) => {
         const next = new Set(multi ? prev : []);
         if (next.has(id)) {
@@ -73,11 +86,62 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         nextSize = next.size;
         return next;
       });
+      setSelectedLogo((prev) => {
+        logoSelected = multi ? prev : false;
+        return logoSelected;
+      });
+      if (!multi) setSelectedMinimalElements(new Set());
       // Use queueMicrotask so we read nextSize after the setter has run,
       // avoiding stale-closure issues in React 18 concurrent mode.
       queueMicrotask(() => {
-        if (nextSize > 0) setActiveTab('selection');
+        if (nextSize > 0 || logoSelected) setActiveTab('selection');
         else setActiveTab('badges');
+      });
+    },
+    [setActiveTab]
+  );
+
+  const handleMinimalSelection = useCallback(
+    (id: string, multi: boolean) => {
+      let nextSize = 0;
+      let logoSelected = false;
+      setSelectedMinimalElements((prev) => {
+        const next = new Set(multi ? prev : []);
+        if (next.has(id)) {
+          if (multi) next.delete(id);
+          else next.clear();
+        } else next.add(id);
+        nextSize = next.size;
+        return next;
+      });
+      setSelectedIds((prev) => (multi ? prev : new Set<RatingType>()));
+      setSelectedLogo((prev) => {
+        logoSelected = multi ? prev : false;
+        return logoSelected;
+      });
+      queueMicrotask(() => {
+        if (nextSize > 0 || logoSelected) setActiveTab('selection');
+        else setActiveTab('badges');
+      });
+    },
+    [setActiveTab]
+  );
+
+  const handleLogoSelection = useCallback(
+    (multi: boolean) => {
+      let badgeCount = 0;
+      setSelectedIds((prev) => {
+        badgeCount = multi ? prev.size : 0;
+        return multi ? prev : new Set<RatingType>();
+      });
+      if (!multi) setSelectedMinimalElements(new Set());
+      setSelectedLogo((prev) => {
+        const next = multi ? !prev : true;
+        queueMicrotask(() => {
+          if (next || badgeCount > 0) setActiveTab('selection');
+          else setActiveTab('badges');
+        });
+        return next;
       });
     },
     [setActiveTab]
@@ -86,6 +150,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setBatchSelection = useCallback(
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
+      setSelectedLogo(false);
+      setSelectedMinimalElements(new Set());
       if (ids.length > 0) setActiveTab('selection');
     },
     [setActiveTab]
@@ -93,6 +159,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
+    setSelectedLogo(false);
+    setSelectedMinimalElements(new Set());
     setActiveTab('badges');
   }, [setActiveTab]);
 
@@ -108,13 +176,21 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         mobileSheetMode,
         setMobileSheetMode,
         selectedIds,
+        selectedLogo,
+        selectedMinimalElements,
         handleSelection,
+        handleMinimalSelection,
+        handleLogoSelection,
         setBatchSelection,
         clearSelection,
         viewOptions,
         toggleViewOption,
         liveRatings,
         setLiveRatings,
+        liveTitle,
+        setLiveTitle,
+        liveYear,
+        setLiveYear,
         resolvedLogoSource,
         setResolvedLogoSource,
         livePosterUrl,

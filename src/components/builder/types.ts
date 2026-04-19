@@ -10,6 +10,8 @@ export type RatingType =
   | 'tmdb'
   | 'age'
   | 'runtime'
+  | 'year'
+  | 'title'
   | 'mal'
   | 'anilist';
 export type ThemeType = 'glass' | 'solid';
@@ -19,6 +21,33 @@ export type PresetType = 'tl' | 'tr' | 'bl' | 'br' | 'tc' | 'bc' | 'lc' | 'rc' |
 export type SourceType = 'tmdb' | 'fanart' | 'metahub' | 'mal' | 'anilist' | 'imdb';
 export type ExtensionType = 'svg' | 'jpg' | 'png' | 'webp';
 export type LogoSourceType = 'fanart' | 'tmdb' | 'metahub' | null;
+export type MinimalRatingIconMode = 'star' | 'original' | 'flat' | 'symbol';
+
+export interface MinimalRatingConfig {
+  provider: RatingType;
+  enabled: boolean;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  opacity: number;
+  iconMode: MinimalRatingIconMode;
+  symbol: string;
+  bgEnabled: boolean;
+  bgColor: string;
+  bgOpacity: number;
+  borderW: number;
+  borderColor: string;
+  borderOpacity: number;
+  radius: number;
+  paddingX: number;
+  paddingY: number;
+  shadowEnabled: boolean;
+  shadowX: number;
+  shadowY: number;
+  shadowBlur: number;
+  shadowColor: string;
+}
 
 // ── Per-badge overrides ───────────────────────────────────────────────────────
 // All fields are optional — absent means "inherit from global PosterConfig".
@@ -33,6 +62,10 @@ export interface BadgeConfig {
   radius?: number; // corner radius, px
   shadow?: number; // drop shadow size, px
   scale?: number; // uniform scale multiplier, e.g. 1.0 = 100 %
+  shadowX?: number; // drop shadow x offset, px
+  shadowY?: number; // drop shadow y offset, px
+  shadowColor?: string; // drop shadow color
+  shadowOpacity?: number; // drop shadow opacity, 0-1
 
   // Colors
   bg?: string; // background hex
@@ -45,7 +78,7 @@ export interface BadgeConfig {
   showText?: boolean; // show rating value text
 
   // Icon style
-  iconType?: number; // 1 = default, 2 = alternate (falls back to 1 if unavailable)
+  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome (invalid values are clamped)
 
   // Score display
   normalize?: boolean; // normalize score to a 0–10 scale
@@ -56,6 +89,20 @@ export interface BadgeConfig {
   labelText?: string; // custom label string (default: provider name)
   labelSize?: number; // label font size, 6–32 (default: 11)
   labelColor?: string; // label hex color override
+
+  // Text typography (primarily for title/year layers)
+  textSize?: number; // px
+  textWeight?: number; // 100-900
+  textLetterSpacing?: number; // px
+  textLineHeight?: number; // unitless
+  textAlign?: 'left' | 'center' | 'right';
+  textMaxChars?: number; // 0 disables truncation
+  textMaxLines?: number; // title wrap line clamp (0 = no clamp)
+  textShadowEnabled?: boolean;
+  textShadowX?: number;
+  textShadowY?: number;
+  textShadowBlur?: number;
+  textShadowColor?: string;
 }
 
 // ── API keys ──────────────────────────────────────────────────────────────────
@@ -87,6 +134,47 @@ export interface PosterConfig {
   extension: ExtensionType;
   posterBlur: number; // blur applied to the poster image, px
   grayscale: boolean; // desaturate the poster image
+  minimalTextSize: number; // minimal mode title font size
+  minimalTextX: number; // minimal mode title x position
+  minimalTextY: number; // minimal mode title y position
+  minimalTitleEnabled?: boolean;
+  minimalTitleWidth?: number;
+  minimalTitleAlign?: 'left' | 'center' | 'right';
+  minimalTitleFlow?: 'up' | 'down';
+  minimalTitleColor?: string;
+  minimalTitleOpacity?: number;
+  minimalTitleWeight?: number;
+  minimalTitleLetterSpacing?: number;
+  minimalTitleLineHeight?: number;
+  minimalTitleShadowEnabled?: boolean;
+  minimalTitleShadowX?: number;
+  minimalTitleShadowY?: number;
+  minimalTitleShadowBlur?: number;
+  minimalTitleShadowColor?: string;
+  minimalTitleBorderW?: number;
+  minimalTitleBorderColor?: string;
+  minimalTitleBorderOpacity?: number;
+  minimalTitleBgEnabled?: boolean;
+  minimalTitleBgColor?: string;
+  minimalTitleBgOpacity?: number;
+  minimalTitlePaddingX?: number;
+  minimalTitlePaddingY?: number;
+  minimalTitleRadius?: number;
+  minimalRatingsEnabled?: boolean;
+  minimalRatingIconMode?: MinimalRatingIconMode;
+  minimalRatingSymbol?: string;
+  minimalRatings?: MinimalRatingConfig[];
+  minimalYearEnabled?: boolean;
+  minimalDurationEnabled?: boolean;
+  minimalMetaX?: number;
+  minimalMetaY?: number;
+  minimalDurationX?: number;
+  minimalDurationY?: number;
+  minimalMetaSize?: number;
+  minimalMetaColor?: string;
+  minimalMetaOpacity?: number;
+  minimalMetaWeight?: number;
+  minimalMetaLetterSpacing?: number;
 
   // Badge layout
   layout: LayoutType;
@@ -100,6 +188,10 @@ export interface PosterConfig {
   radius: number; // corner radius, px
   shadow: number; // drop shadow size, px
   scale?: number; // uniform scale multiplier (default 1.0)
+  shadowX?: number; // drop shadow x offset, px
+  shadowY?: number; // drop shadow y offset, px
+  shadowColor?: string; // drop shadow color
+  shadowOpacity?: number; // drop shadow opacity, 0-1
 
   // Colors
   bg?: string; // background hex (absent = theme default)
@@ -112,7 +204,7 @@ export interface PosterConfig {
   showText?: boolean; // show rating value text (default true)
 
   // Icon style
-  iconType?: number; // 1 = default, 2 = alternate (default 1)
+  iconType?: number; // 1 = default, 2 = alternate, 3 = monochrome (default 1, invalid values are clamped)
 
   // Display preset
   uiPreset?: 'b' | 'm'; // 'b' = badge (default), 'm' = minimal
@@ -138,6 +230,7 @@ export interface PosterConfig {
   logoW: number;
   logoH: number;
   logoOpacity: number;
+  logoZ?: number;
   logoShadow: number;
   logoBgEnabled: boolean;
   logoBgColor?: string;
@@ -177,6 +270,73 @@ export const DEFAULT_CONFIG: PosterConfig = {
   extension: 'png',
   posterBlur: 0,
   grayscale: false,
+  minimalTextSize: 60,
+  minimalTextX: 26,
+  minimalTextY: 556,
+  minimalTitleEnabled: false,
+  minimalTitleWidth: 420,
+  minimalTitleAlign: 'left',
+  minimalTitleFlow: 'up',
+  minimalTitleColor: '#f5f5f5',
+  minimalTitleOpacity: 1,
+  minimalTitleWeight: 700,
+  minimalTitleLetterSpacing: 0,
+  minimalTitleLineHeight: 1.02,
+  minimalTitleShadowEnabled: false,
+  minimalTitleShadowX: 0,
+  minimalTitleShadowY: 0,
+  minimalTitleShadowBlur: 0,
+  minimalTitleShadowColor: '#000000',
+  minimalTitleBorderW: 0,
+  minimalTitleBorderColor: '#d4a245',
+  minimalTitleBorderOpacity: 0.6,
+  minimalTitleBgEnabled: false,
+  minimalTitleBgColor: '#000000',
+  minimalTitleBgOpacity: 0,
+  minimalTitlePaddingX: 10,
+  minimalTitlePaddingY: 8,
+  minimalTitleRadius: 8,
+  minimalRatingsEnabled: false,
+  minimalRatingIconMode: 'star',
+  minimalRatingSymbol: '★',
+  minimalRatings: [
+    {
+      provider: 'imdb',
+      enabled: true,
+      x: 140,
+      y: 672,
+      size: 26,
+      color: '#facc15',
+      opacity: 1,
+      iconMode: 'star',
+      symbol: '★',
+      bgEnabled: false,
+      bgColor: '#000000',
+      bgOpacity: 0,
+      borderW: 0,
+      borderColor: '#ffffff',
+      borderOpacity: 0.7,
+      radius: 0,
+      paddingX: 0,
+      paddingY: 0,
+      shadowEnabled: false,
+      shadowX: 0,
+      shadowY: 0,
+      shadowBlur: 0,
+      shadowColor: '#000000',
+    },
+  ],
+  minimalYearEnabled: false,
+  minimalDurationEnabled: false,
+  minimalMetaX: 26,
+  minimalMetaY: 672,
+  minimalDurationX: 90,
+  minimalDurationY: 672,
+  minimalMetaSize: 50,
+  minimalMetaColor: '#d6dde3',
+  minimalMetaOpacity: 0.92,
+  minimalMetaWeight: 600,
+  minimalMetaLetterSpacing: 0,
 
   // Badge layout
   layout: 'custom',
@@ -188,6 +348,10 @@ export const DEFAULT_CONFIG: PosterConfig = {
   radius: 12,
   shadow: 6,
   scale: 1.0,
+  shadowX: 0,
+  shadowY: 2,
+  shadowColor: '#000000',
+  shadowOpacity: 0.35,
 
   // Global badge colors (absent = theme default)
   borderW: 0,
@@ -210,6 +374,34 @@ export const DEFAULT_CONFIG: PosterConfig = {
     imdb: { x: 340, y: 20 },
     rt: { x: 340, y: 90 },
     age: { x: 8, y: 683 },
+    year: {
+      icon: false,
+      alpha: 0,
+      blur: 0,
+      radius: 0,
+      shadow: 0,
+      borderW: 0,
+      textSize: 42,
+      textWeight: 700,
+      textLetterSpacing: 0,
+      textLineHeight: 1.1,
+      textAlign: 'left',
+    },
+    title: {
+      icon: false,
+      alpha: 0,
+      blur: 0,
+      radius: 0,
+      shadow: 0,
+      borderW: 0,
+      textSize: 36,
+      textWeight: 700,
+      textLetterSpacing: 0.2,
+      textLineHeight: 1.1,
+      textAlign: 'left',
+      textMaxChars: 0,
+      textMaxLines: 0,
+    },
   },
 
   // Logo
@@ -220,6 +412,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   logoW: 380,
   logoH: 100,
   logoOpacity: 1.0,
+  logoZ: 90,
   logoShadow: 6,
   logoBgEnabled: false,
   logoBgColor: '#000000',
@@ -257,4 +450,6 @@ export const ALL_BADGES: { id: RatingType; label: string }[] = [
   { id: 'anilist', label: 'AniList' },
   { id: 'age', label: 'Age Rating' },
   { id: 'runtime', label: 'Runtime' },
+  { id: 'year', label: 'Year' },
+  { id: 'title', label: 'Title' },
 ];

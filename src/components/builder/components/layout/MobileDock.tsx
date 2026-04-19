@@ -1,18 +1,30 @@
 import React, { memo } from 'react';
-import { Film, Layers, Monitor, Sliders, ImagePlay, MousePointer2 } from 'lucide-react';
+import { Film, Layers, Monitor, Sliders, MousePointer2 } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
-type TabId = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
+type TabId = 'source' | 'layers' | 'poster' | 'badges' | 'selection';
 
-const MobileDock: React.FC<{ hasLogo: boolean; hasBadges: boolean; selectedCount: number }> = memo(
-  ({ hasLogo, hasBadges, selectedCount }) => {
+const MobileDock: React.FC<{
+  hasBadges: boolean;
+  hasLogo: boolean;
+  isMinimalPreset: boolean;
+  selectedCount: number;
+}> = memo(({ hasBadges, hasLogo, isMinimalPreset, selectedCount }) => {
     const { activeTab, setActiveTab, setMobileSheetMode, mobileSheetMode } = useEditor();
+    const badgesTabLabel = isMinimalPreset
+      ? hasLogo
+        ? 'Title/Logo'
+        : 'Title'
+      : hasBadges && hasLogo
+        ? 'Badges/Logo'
+        : hasLogo
+          ? 'Logo'
+          : 'Badges';
     const tabs: { id: TabId; Icon: React.ElementType; label: string; visible: boolean }[] = [
       { id: 'source', Icon: Film, label: 'Media', visible: true },
-      { id: 'layers', Icon: Layers, label: 'Layers', visible: true },
+      { id: 'layers', Icon: Layers, label: 'Layers', visible: !isMinimalPreset },
       { id: 'poster', Icon: Monitor, label: 'Canvas', visible: true },
-      { id: 'badges', Icon: Sliders, label: 'Badges', visible: hasBadges },
-      { id: 'logo', Icon: ImagePlay, label: 'Logo', visible: hasLogo },
+      { id: 'badges', Icon: Sliders, label: badgesTabLabel, visible: hasBadges || hasLogo || isMinimalPreset },
       {
         id: 'selection',
         Icon: MousePointer2,

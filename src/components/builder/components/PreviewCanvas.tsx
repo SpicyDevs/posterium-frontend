@@ -19,7 +19,6 @@ import DraggableLogo from './DraggableLogo';
 import {
   calculateAutoPosition,
   DEFAULT_API_BASE,
-  generateApiUrl,
   getScale,
   snapToGridSize,
 } from '../utils';
@@ -27,12 +26,15 @@ import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'luc
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
 
+const SNAP_CENTER_TOLERANCE = 8;
+
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
   onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  onLogoContextMenu?: (e: React.MouseEvent) => void;
   isFullscreen?: boolean;
   rightSidebarWidth?: number;
   toggleFullscreen?: () => void;
@@ -47,6 +49,7 @@ const PreviewCanvas: React.FC<Props> = ({
   selectedIds,
   onSelect,
   onContextMenu,
+  onLogoContextMenu,
   isFullscreen = false,
   rightSidebarWidth = 0,
   toggleFullscreen,
@@ -54,7 +57,18 @@ const PreviewCanvas: React.FC<Props> = ({
   onZoomOut,
   onResetView,
 }) => {
-  const { viewOptions, mobileSheetMode, clearSelection, liveRatings } = useEditor();
+  const {
+    viewOptions,
+    mobileSheetMode,
+    clearSelection,
+    liveRatings,
+    liveTitle,
+    liveYear,
+    selectedLogo,
+    selectedMinimalElements,
+    handleMinimalSelection,
+    handleLogoSelection,
+  } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [autoScale, setAutoScale] = useState(1);
@@ -68,6 +82,27 @@ const PreviewCanvas: React.FC<Props> = ({
   const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
     null
   );
+  const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
+  const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
+  const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
+  const [draggingMinimalYear, setDraggingMinimalYear] = useState(false);
+  const [draggingMinimalDuration, setDraggingMinimalDuration] = useState(false);
+  const [minimalRatingOffset, setMinimalRatingOffset] = useState({ dx: 0, dy: 0 });
+  const [minimalMetaOffset, setMinimalMetaOffset] = useState({ dx: 0, dy: 0 });
+  const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const minimalDragRafRef = useRef<number | null>(null);
+  const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
+  const hasLiveRatings = Object.keys(liveRatings).length > 0;
+  const previewRatings = useMemo(() => {
+    if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
+    return config.ratings.filter((id) => {
+      if (id === 'year' || id === 'title') return true;
+      const v = liveRatings[id];
+      return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
+    });
+  }, [config.ratings, config.fallbackEnabled, liveRatings, hasLiveRatings]);
   const applySnapGrid = useCallback(
     (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n),
     [viewOptions?.snapToGrid]
@@ -84,14 +119,55 @@ const PreviewCanvas: React.FC<Props> = ({
     []
   );
 
+  const getBadgeSize = useCallback(
+    (id: RatingType, itemCfg: PosterConfig['items'][RatingType], baseValue?: string) => {
+      const scale = getScale(config.size) * (itemCfg?.scale ?? config.scale ?? 1.0);
+      const h = BASE_BADGE_H * scale;
+      const textSize = Math.max(8, itemCfg?.textSize ?? 28) * scale;
+      const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
+      const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
+      const textLineHeight = itemCfg?.textLineHeight ?? 1.1;
+      const textMaxLinesRaw = Math.round(itemCfg?.textMaxLines ?? 0);
+      if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
+      const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
+      const fallback = id === 'year' ? '2026' : 'Title';
+      const measured = raw.length > 0 ? raw : fallback;
+      const shown =
+        id === 'title' && textMaxChars > 0 && measured.length > textMaxChars
+          ? `${measured.slice(0, textMaxChars).trimEnd()}…`
+          : measured;
+      if (id === 'title') {
+        const w = BASE_BADGE_W * scale;
+        const charsPerLine = Math.max(
+          8,
+          Math.floor((Math.max(w, 1) - 16 * scale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+        );
+        const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
+        const lineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
+        const renderedLines = lineClamp > 0 ? Math.min(estimatedLines, lineClamp) : estimatedLines;
+        const titleHeight = Math.max(h, Math.ceil(renderedLines * textSize * textLineHeight + 16 * scale));
+        return { w, h: titleHeight };
+      }
+      const w = Math.max(
+        BASE_BADGE_W * scale,
+        Math.ceil(shown.length * (textSize * 0.62 + textLetterSpacing) + 28 * scale)
+      );
+      return { w, h };
+    },
+    [config.scale, config.size, liveTitle, liveYear]
+  );
+
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
-    const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+    const auto = calculateAutoPosition(
+      id,
+      index,
+      previewRatings.length,
+      { ...config, ratings: previewRatings }
+    );
     const x = itemConfig?.x ?? auto.x;
     const y = itemConfig?.y ?? auto.y;
-    const scale = getScale(config.size) * (itemConfig?.scale ?? 1.0);
-    const w = BASE_BADGE_W * scale;
-    const h = BASE_BADGE_H * scale;
+    const { w, h } = getBadgeSize(id, itemConfig);
     return { x, y, w, h };
   };
 
@@ -129,16 +205,65 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const currentScale = autoScale * zoom;
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+  const toRgba = useCallback((hex: string | undefined, opacity: number) => {
+    const c = (hex || '#000000').replace('#', '');
+    const valid = c.length === 3 || c.length === 6;
+    if (!valid) return `rgba(0,0,0,${opacity})`;
+    const expanded = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c;
+    const r = parseInt(expanded.slice(0, 2), 16);
+    const g = parseInt(expanded.slice(2, 4), 16);
+    const b = parseInt(expanded.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }, []);
+  const minimalRatings = useMemo(() => {
+    const raw = config.minimalRatings?.slice(0, 3) ?? [];
+    if (raw.length > 0) return raw;
+    return [
+      {
+        provider: 'imdb' as RatingType,
+        enabled: true,
+        x: 140,
+        y: 672,
+        size: 26,
+        color: '#facc15',
+        opacity: 1,
+        iconMode: 'star' as const,
+        symbol: '★',
+        bgEnabled: false,
+        bgColor: '#000000',
+        bgOpacity: 0,
+        borderW: 0,
+        borderColor: '#ffffff',
+        borderOpacity: 0.7,
+        radius: 0,
+        paddingX: 0,
+        paddingY: 0,
+        shadowEnabled: false,
+        shadowX: 0,
+        shadowY: 0,
+        shadowBlur: 0,
+        shadowColor: '#000000',
+      },
+    ];
+  }, [config.minimalRatings]);
 
-  const clampPan = (newX: number, newY: number) => {
-    const limitX = CANVAS_WIDTH / 3;
-    const limitY = CANVAS_HEIGHT / 3;
-    return {
-      x: Math.max(-limitX, Math.min(limitX, newX)),
-      y: Math.max(-limitY, Math.min(limitY, newY)),
-    };
-  };
+  const clampPan = useCallback(
+    (newX: number, newY: number) => {
+      const container = containerRef.current;
+      if (!container) return { x: newX, y: newY };
+      const scaledW = CANVAS_WIDTH * currentScale;
+      const scaledH = CANVAS_HEIGHT * currentScale;
+      const extraX = Math.max(0, (scaledW - container.clientWidth) / 2) + 40;
+      const extraY = Math.max(0, (scaledH - container.clientHeight) / 2) + 40;
+      const limitX = Math.max(CANVAS_WIDTH / 3, extraX);
+      const limitY = Math.max(CANVAS_HEIGHT / 3, extraY);
+      return {
+        x: Math.max(-limitX, Math.min(limitX, newX)),
+        y: Math.max(-limitY, Math.min(limitY, newY)),
+      };
+    },
+    [currentScale]
+  );
 
   const handleWheel = (e: React.WheelEvent) => {
     const ZOOM_SENSITIVITY = 0.004;
@@ -236,34 +361,19 @@ const PreviewCanvas: React.FC<Props> = ({
     config.ptype,
   ]);
 
-  const minimalCompositeUrl = useMemo(() => {
-    if (!isMinimalPreset) return '';
-    try {
-      return generateApiUrl(config, DEFAULT_API_BASE);
-    } catch {
-      return '';
-    }
-  }, [config, isMinimalPreset]);
-
-  const hasMinimalUrlError = isMinimalPreset && !minimalCompositeUrl;
-  const previewImageUrl = isMinimalPreset ? minimalCompositeUrl : cleanPosterUrl;
+  const previewImageUrl = cleanPosterUrl;
 
   const posterCssFilter = useMemo(() => {
-    if (isMinimalPreset) return 'none';
     const parts: string[] = [];
     if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
     if (config.grayscale) parts.push('grayscale(1)');
     return parts.join(' ') || 'none';
-  }, [config.posterBlur, config.grayscale, isMinimalPreset]);
+  }, [config.posterBlur, config.grayscale]);
 
   useEffect(() => {
     setIsImageLoading(true);
     setImageError(false);
-    if (hasMinimalUrlError) {
-      setIsImageLoading(false);
-      setImageError(true);
-    }
-  }, [previewImageUrl, hasMinimalUrlError]);
+  }, [previewImageUrl]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const id = config.imdbId || config.tmdbId;
@@ -297,8 +407,14 @@ const PreviewCanvas: React.FC<Props> = ({
           ? prev.logoX
           : Math.round((CANVAS_WIDTH - prev.logoW) / 2);
       const currentY = prev.logoY;
-      const nextX = snap(currentX + dx);
-      const nextY = snap(currentY + dy);
+      let nextX = snap(currentX + dx);
+      let nextY = snap(currentY + dy);
+      const centerX = nextX + prev.logoW / 2;
+      const centerY = nextY + prev.logoH / 2;
+      const middleX = CANVAS_WIDTH / 2;
+      const middleY = CANVAS_HEIGHT / 2;
+      if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - prev.logoW / 2;
+      if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
       return {
         ...prev,
         logoX: Math.round(
@@ -310,6 +426,154 @@ const PreviewCanvas: React.FC<Props> = ({
       };
     });
   };
+
+  const handleMinimalTextDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const boxW = Math.max(120, prev.minimalTitleWidth ?? 420);
+        const boxH = Math.max(36, (prev.minimalTextSize ?? 42) * 1.5);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx)));
+        const flow = prev.minimalTitleFlow ?? 'up';
+        const nextY =
+          flow === 'up'
+            ? Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round(prev.minimalTextY + dy)))
+            : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(prev.minimalTextY + dy)));
+        return { ...prev, minimalTextX: nextX, minimalTextY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
+  const handleMinimalRatingDragEnd = useCallback(
+    (index: number, dx: number, dy: number) => {
+      setConfig((prev) => {
+        const items = [...(prev.minimalRatings ?? [])];
+        const item = items[index];
+        if (!item) return prev;
+        const boxW = 140;
+        const boxH = Math.max(32, item.size + item.paddingY * 2);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(item.x + dx)));
+        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(item.y + dy)));
+        items[index] = { ...item, x: nextX, y: nextY };
+        return { ...prev, minimalRatings: items };
+      });
+    },
+    [setConfig]
+  );
+
+  const handleMinimalYearDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalMetaX ?? 26) + dx)));
+        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalMetaY ?? 672) + dy)));
+        return { ...prev, minimalMetaX: nextX, minimalMetaY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
+  const handleMinimalDurationDragEnd = useCallback(
+    (dx: number, dy: number) => {
+      setConfig((prev) => {
+        const nextX = Math.max(
+          0,
+          Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalDurationX ?? 90) + dx))
+        );
+        const nextY = Math.max(
+          0,
+          Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalDurationY ?? 672) + dy))
+        );
+        return { ...prev, minimalDurationX: nextX, minimalDurationY: nextY };
+      });
+    },
+    [setConfig]
+  );
+
+  useEffect(() => {
+    if (
+      !isDraggingMinimalText &&
+      draggingMinimalRatingIndex === null &&
+      !draggingMinimalYear &&
+      !draggingMinimalDuration
+    )
+      return;
+    const onMM = (e: MouseEvent) => {
+      if (isDraggingMinimalText && minimalTextStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalTextStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalTextStartRef.current.mouseY) / currentScale,
+        };
+      } else if (draggingMinimalRatingIndex !== null && minimalRatingStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale,
+        };
+      } else if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
+        minimalPendingOffsetRef.current = {
+          dx: (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale,
+          dy: (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale,
+        };
+      }
+      if (minimalDragRafRef.current === null) {
+        minimalDragRafRef.current = requestAnimationFrame(() => {
+          minimalDragRafRef.current = null;
+          if (!minimalPendingOffsetRef.current) return;
+          if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
+          if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
+          if (draggingMinimalYear || draggingMinimalDuration)
+            setMinimalMetaOffset(minimalPendingOffsetRef.current);
+        });
+      }
+    };
+    const onMU = (e: MouseEvent) => {
+      if (isDraggingMinimalText && minimalTextStartRef.current) {
+        const dx = (e.clientX - minimalTextStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalTextStartRef.current.mouseY) / currentScale;
+        handleMinimalTextDragEnd(dx, dy);
+      }
+      if (draggingMinimalRatingIndex !== null && minimalRatingStartRef.current) {
+        const dx = (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale;
+        handleMinimalRatingDragEnd(draggingMinimalRatingIndex, dx, dy);
+      }
+      if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
+        const dx = (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale;
+        if (draggingMinimalYear) handleMinimalYearDragEnd(dx, dy);
+        if (draggingMinimalDuration) handleMinimalDurationDragEnd(dx, dy);
+      }
+      minimalTextStartRef.current = null;
+      minimalRatingStartRef.current = null;
+      minimalMetaStartRef.current = null;
+      setMinimalTextOffset({ dx: 0, dy: 0 });
+      setMinimalRatingOffset({ dx: 0, dy: 0 });
+      setMinimalMetaOffset({ dx: 0, dy: 0 });
+      setIsDraggingMinimalText(false);
+      setDraggingMinimalRatingIndex(null);
+      setDraggingMinimalYear(false);
+      setDraggingMinimalDuration(false);
+    };
+    window.addEventListener('mousemove', onMM);
+    window.addEventListener('mouseup', onMU);
+    return () => {
+      window.removeEventListener('mousemove', onMM);
+      window.removeEventListener('mouseup', onMU);
+      if (minimalDragRafRef.current !== null) {
+        cancelAnimationFrame(minimalDragRafRef.current);
+        minimalDragRafRef.current = null;
+      }
+    };
+  }, [
+    isDraggingMinimalText,
+    draggingMinimalRatingIndex,
+    draggingMinimalYear,
+    draggingMinimalDuration,
+    currentScale,
+    handleMinimalTextDragEnd,
+    handleMinimalRatingDragEnd,
+    handleMinimalYearDragEnd,
+    handleMinimalDurationDragEnd,
+  ]);
 
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
@@ -371,12 +635,22 @@ const PreviewCanvas: React.FC<Props> = ({
           startX = startX ?? auto.x;
           startY = startY ?? auto.y;
         }
-        const selScale = getScale(prev.size) * (newItems[targetId]?.scale ?? 1.0);
-        const selWidth = BASE_BADGE_W * selScale;
-        const selHeight = BASE_BADGE_H * selScale;
+        const { w: selWidth, h: selHeight } = getBadgeSize(
+          targetId,
+          newItems[targetId],
+          targetId === 'year' ? liveYear : targetId === 'title' ? liveTitle : undefined
+        );
         // Constrain so at least 1px of the badge remains inside the poster
-        const nextX = snap(startX + dx);
-        const nextY = snap(startY + dy);
+        let nextX = snap(startX + dx);
+        let nextY = snap(startY + dy);
+        if (viewOptions?.snapToGrid) {
+          const centerX = nextX + selWidth / 2;
+          const centerY = nextY + selHeight / 2;
+          const middleX = CANVAS_WIDTH / 2;
+          const middleY = CANVAS_HEIGHT / 2;
+          if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - selWidth / 2;
+          if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - selHeight / 2;
+        }
         newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
         newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
       };
@@ -389,36 +663,37 @@ const PreviewCanvas: React.FC<Props> = ({
   };
 
   const badgeSnapGuide = useMemo(() => {
-    if (!dragSession || !viewOptions?.snapToGrid || isMinimalPreset) return null;
+    if (!dragSession || !viewOptions?.snapToGrid) return null;
     const targetId = dragSession.id;
-    const index = config.ratings.indexOf(targetId);
+    const index = previewRatings.indexOf(targetId);
     if (index === -1) return null;
 
-    const auto = calculateAutoPosition(targetId, index, config.ratings.length, config);
+    const auto = calculateAutoPosition(
+      targetId,
+      index,
+      previewRatings.length,
+      { ...config, ratings: previewRatings }
+    );
     const iCfg = config.items[targetId];
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
     if (!isFinite(x)) x = auto.x;
     if (!isFinite(y)) y = auto.y;
 
-    const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
-    const bW = BASE_BADGE_W * selScale;
-    const bH = BASE_BADGE_H * selScale;
+    const { w: bW, h: bH } = getBadgeSize(targetId, iCfg);
     const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
     const centerX = nextX + bW / 2;
     const centerY = nextY + bH / 2;
     const middleX = CANVAS_WIDTH / 2;
     const middleY = CANVAS_HEIGHT / 2;
-    const snapTolerance = 8;
-
     return {
-      showVertical: Math.abs(centerX - middleX) < snapTolerance,
-      showHorizontal: Math.abs(centerY - middleY) < snapTolerance,
+      showVertical: Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE,
+      showHorizontal: Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE,
       middleX,
       middleY,
     };
-  }, [dragSession, viewOptions?.snapToGrid, isMinimalPreset, config, applySnapGrid]);
+  }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
 
   return (
     <div
@@ -429,7 +704,9 @@ const PreviewCanvas: React.FC<Props> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={(e) => {
-        if (e.target === e.currentTarget) clearSelection();
+        if (e.target === e.currentTarget) {
+          clearSelection();
+        }
       }}
     >
       {/* Poster Canvas */}
@@ -442,7 +719,9 @@ const PreviewCanvas: React.FC<Props> = ({
         }}
         className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform"
         onClick={(e) => {
-          if (e.target === e.currentTarget) clearSelection();
+          if (e.target === e.currentTarget) {
+            clearSelection();
+          }
         }}
       >
         {isImageLoading && !imageError && (
@@ -502,24 +781,26 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
-        {!hasMinimalUrlError && (
-          <img
-            key={previewImageUrl}
-            src={previewImageUrl}
-            alt="Poster"
-            className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
-              isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
-            }`}
-            style={{ filter: posterCssFilter }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        )}
+        <img
+          key={previewImageUrl}
+          src={previewImageUrl}
+          alt="Poster"
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700 ${
+            isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-[1.01]'
+          }`}
+          style={{ filter: posterCssFilter }}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
 
         {/* Badge overlays */}
-        {!isMinimalPreset &&
-          config.ratings.map((id: RatingType, index: number) => {
-            const auto = calculateAutoPosition(id, index, config.ratings.length, config);
+        {previewRatings.map((id: RatingType, index: number) => {
+            const auto = calculateAutoPosition(
+              id,
+              index,
+              previewRatings.length,
+              { ...config, ratings: previewRatings }
+            );
             const iCfg = config.items[id];
             let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
             let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
@@ -528,20 +809,30 @@ const PreviewCanvas: React.FC<Props> = ({
 
             let isObscuring = false;
             if (hoveredBadgeId && hoveredBadgeId !== id) {
-              const hoveredIdx = config.ratings.indexOf(hoveredBadgeId);
-              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
+              const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
+              if (hoveredIdx !== -1) isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
             }
 
             if (dragSession) {
               const isTarget = dragSession.id === id;
               const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
               if (isTarget || isGroup) {
-                const selScale = getScale(config.size) * (iCfg?.scale ?? 1.0);
-                const bW = BASE_BADGE_W * selScale;
-                const bH = BASE_BADGE_H * selScale;
+                const { w: bW, h: bH } = getBadgeSize(id, iCfg);
                 // Preview clamp: at least 1px inside poster
-                x = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
+                let nextX = x + dragSession.dx;
+                let nextY = y + dragSession.dy;
+                if (viewOptions?.snapToGrid) {
+                  const centerX = nextX + bW / 2;
+                  const centerY = nextY + bH / 2;
+                  const middleX = CANVAS_WIDTH / 2;
+                  const middleY = CANVAS_HEIGHT / 2;
+                  if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE)
+                    nextX = middleX - bW / 2;
+                  if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE)
+                    nextY = middleY - bH / 2;
+                }
+                x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
+                y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
               }
             }
 
@@ -550,7 +841,13 @@ const PreviewCanvas: React.FC<Props> = ({
                 key={id}
                 badgeId={id}
                 config={config}
-                value={liveRatings[id]}
+                value={
+                  id === 'year'
+                    ? liveYear.replace(/\.0+$/, '')
+                    : id === 'title'
+                      ? liveTitle
+                      : liveRatings[id]
+                }
                 x={x}
                 y={y}
                 canvasScale={currentScale}
@@ -561,6 +858,7 @@ const PreviewCanvas: React.FC<Props> = ({
                 onContextMenu={onContextMenu}
                 isObscuring={isObscuring}
                 onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+                zIndex={100 + index}
               />
             );
           })}
@@ -571,7 +869,42 @@ const PreviewCanvas: React.FC<Props> = ({
             logoUrl={logoPreviewUrl}
             canvasScale={currentScale}
             onDragEnd={handleLogoDragEnd}
+            isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
+            onSelect={(multi) => handleLogoSelection(multi)}
+            onContextMenu={onLogoContextMenu}
           />
+        )}
+
+        {(config.minimalDurationEnabled ?? false) && (
+          <div
+            className="absolute z-40 select-none"
+            style={{
+              left:
+                (config.minimalDurationX ?? 90) + (draggingMinimalDuration ? minimalMetaOffset.dx : 0),
+              top:
+                (config.minimalDurationY ?? 672) + (draggingMinimalDuration ? minimalMetaOffset.dy : 0),
+              fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
+              color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
+              fontWeight: config.minimalMetaWeight ?? 600,
+              letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
+              lineHeight: 1,
+              cursor: draggingMinimalDuration ? 'grabbing' : 'grab',
+              outline:
+                selectedMinimalElements.has('minimal-duration')
+                  ? '1px dashed rgba(196,124,46,0.8)'
+                  : 'none',
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleMinimalSelection('minimal-duration', e.shiftKey || e.ctrlKey || e.metaKey);
+              setDraggingMinimalDuration(true);
+              minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
+            }}
+            title="Drag duration"
+          >
+            {(liveRatings.runtime ?? '').toString().trim() || '--'}
+          </div>
         )}
       </div>
 

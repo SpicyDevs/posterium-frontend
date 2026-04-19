@@ -16,6 +16,7 @@ import {
   GripVertical,
   Film,
   Layers,
+  Badge,
   Tv,
   Clapperboard,
   Eye,
@@ -32,7 +33,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
-import type { PosterConfig, RatingType, LogoSourceType, ApiKeys } from '../types';
+import type { PosterConfig, RatingType, ApiKeys } from '../types';
 import { ALL_BADGES, DEFAULT_CONFIG } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
@@ -397,108 +398,6 @@ const Section: React.FC<{
   );
 };
 
-const LOGO_BASE_W = 320;
-const LOGO_BASE_H = 84;
-const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
-
-const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
-  { id: null, label: 'Auto' },
-  { id: 'fanart', label: 'Fanart' },
-  { id: 'tmdb', label: 'TMDB' },
-  { id: 'metahub', label: 'Hub' },
-];
-
-const LogoPanel: React.FC<{
-  config: PosterConfig;
-  setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
-}> = ({ config, setConfig }) => {
-  const update = useCallback(
-    <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) =>
-      setConfig((prev) => ({ ...prev, [key]: value })),
-    [setConfig]
-  );
-
-  const handleSizeChange = (newW: number) => {
-    const w = Math.round(newW);
-    const h = Math.round(w / LOGO_ASPECT);
-    setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
-  };
-
-  return (
-    <div className="space-y-4 pt-2">
-      <div className="space-y-1.5">
-        <span
-          className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-        >
-          Source
-        </span>
-        <div className="grid grid-cols-4 gap-1">
-          {LOGO_SOURCES.map((opt) => (
-            <button
-              key={String(opt.id)}
-              type="button"
-              onClick={() => update('logoSource', opt.id as PosterConfig['logoSource'])}
-              className="h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font"
-              style={{
-                background:
-                  (config.logoSource ?? null) === opt.id
-                    ? 'rgba(196,124,46,0.12)'
-                    : 'rgba(255,255,255,0.02)',
-                color:
-                  (config.logoSource ?? null) === opt.id
-                    ? 'var(--film-pale)'
-                    : 'var(--film-text-dim)',
-                border:
-                  (config.logoSource ?? null) === opt.id
-                    ? '1px solid rgba(196,124,46,0.25)'
-                    : '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-          Falls back automatically if source has no logo
-        </p>
-      </div>
-
-      <SliderRow
-        label="Size"
-        value={config.logoW}
-        min={100}
-        max={490}
-        unit="px"
-        onChange={handleSizeChange}
-      />
-      <SliderRow
-        label="Opacity"
-        value={config.logoOpacity}
-        min={0}
-        max={1}
-        step={0.05}
-        formatValue={(v) => `${Math.round(v * 100)}%`}
-        onChange={(v) => update('logoOpacity', v)}
-      />
-      <SliderRow
-        label="Drop Shadow"
-        value={config.logoShadow}
-        min={0}
-        max={30}
-        onChange={(v) => update('logoShadow', v)}
-      />
-
-      <p
-        className="body-font leading-relaxed"
-        style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-      >
-        ⟠ Drag the logo on the canvas to reposition. Snap guides appear near the centre.
-      </p>
-    </div>
-  );
-};
-
 // ── API Keys panel ────────────────────────────────────────────────────────────
 const ApiKeysPanel: React.FC<{
   config: PosterConfig;
@@ -602,7 +501,11 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setBatchSelection,
     activeTab,
     setActiveTab,
+    selectedLogo,
+    handleLogoSelection,
     setLiveRatings,
+    setLiveTitle,
+    setLiveYear,
     fallbackEnabled,
     setFallbackEnabled,
     viewOptions,
@@ -613,7 +516,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
-    if (activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster')
+    if (activeTab === 'source' || activeTab === 'poster' || activeTab === 'layers')
       setLocalMode(activeTab);
   }, [activeTab]);
 
@@ -660,9 +563,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
-  const minimalModeHandledRef = useRef(false);
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const badgesVisible = config.ratings.length > 0;
+  const titleBadgeEnabled = config.ratings.includes('title');
+
+  useEffect(() => {
+    if ((config.uiPreset ?? 'b') !== 'b') {
+      setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
+    }
+  }, [config.uiPreset, setConfig]);
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -679,7 +587,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         const data = await res.json();
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
-        if (data.meta?.year) merged.year = String(data.meta.year);
+        if (data.meta?.year) merged.year = String(data.meta.year).replace(/\.0+$/, '');
         const VALID_RATING_KEYS = [
           'imdb',
           'rt',
@@ -705,6 +613,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           });
         }
         setLiveRatings(liveRatingsFiltered);
+        setLiveTitle(merged.title ?? '');
+        setLiveYear(merged.year ?? '');
         if (data.ids?.imdb && data.ids.imdb !== config.imdbId) {
           setConfig((prev) => ({ ...prev, imdbId: data.ids.imdb }));
         }
@@ -713,7 +623,16 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       }
     })();
     return () => ctrl.abort();
-  }, [config.tmdbId, config.imdbId, config.mediaType, config.source, setLiveRatings, setConfig]);
+  }, [
+    config.tmdbId,
+    config.imdbId,
+    config.mediaType,
+    config.source,
+    setLiveRatings,
+    setLiveTitle,
+    setLiveYear,
+    setConfig,
+  ]);
 
   useEffect(() => {
     setFallbackEnabled(config.fallbackEnabled);
@@ -770,44 +689,29 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
   }, [setConfig]);
 
   useEffect(() => {
-    if (!isMinimalPreset) {
-      minimalModeHandledRef.current = false;
-      return;
-    }
-    if (minimalModeHandledRef.current) return;
-    if (config.ratings.length > 0) {
-      writeBadgesPreference(true);
-      disableBadges({ persistPreference: false });
-    }
-    minimalModeHandledRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMinimalPreset, config.ratings.length]);
-
-  useEffect(() => {
-    if (isMinimalPreset && !config.textless) {
-      setConfig((prev) => ({ ...prev, textless: true }));
-    }
-  }, [isMinimalPreset, config.textless, setConfig]);
-
-  useEffect(() => {
-    if (!isMinimalPreset) {
-      writeTextlessPreference(config.textless);
-    }
-  }, [isMinimalPreset, config.textless]);
+    writeTextlessPreference(config.textless);
+  }, [config.textless]);
 
   const handleToggleVisibility = useCallback(
     (id: RatingType, visible: boolean) => {
       if (visible) {
-        setConfig((prev) =>
-          prev.ratings.includes(id) ? prev : { ...prev, ratings: [id, ...prev.ratings] }
-        );
+        setConfig((prev) => {
+          if (prev.ratings.includes(id)) return prev;
+          if (id !== 'title' && id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
+          const nextItems = { ...prev.items, [id]: { ...(prev.items[id] ?? {}) } };
+          delete nextItems[id].x;
+          delete nextItems[id].y;
+          return { ...prev, ratings: [id, ...prev.ratings], items: nextItems };
+        });
         setInactiveOrder((prev) => prev.filter((x) => x !== id));
+        onSelect(id, false);
+        setActiveTab('selection');
       } else {
         setConfig((prev) => ({ ...prev, ratings: prev.ratings.filter((r) => r !== id) }));
         setInactiveOrder((prev) => [id, ...prev.filter((x) => x !== id)]);
       }
     },
-    [setConfig]
+    [onSelect, setActiveTab, setConfig]
   );
 
   const allVisible = config.ratings.length === ALL_BADGES.length;
@@ -840,9 +744,25 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
   const activeBadges = [...config.ratings]
     .filter((id) => ALL_BADGES.some((b) => b.id === id))
-    .reverse()
-    .map((id) => ALL_BADGES.find((b) => b.id === id))
-    .filter((b): b is { id: RatingType; label: string } => !!b);
+    .map((id, idx) => ({
+      kind: 'badge' as const,
+      id,
+      label: ALL_BADGES.find((b) => b.id === id)?.label ?? id.toUpperCase(),
+      z: 100 + idx,
+    }));
+  const activeLayers = [
+    ...activeBadges,
+    ...(config.logo
+      ? [
+          {
+            kind: 'logo' as const,
+            id: 'logo',
+            label: 'Logo',
+            z: config.logoZ ?? 90,
+          },
+        ]
+      : []),
+  ].sort((a, b) => b.z - a.z);
 
   const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
     const ia = inactiveOrder.indexOf(a.id),
@@ -858,10 +778,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       if (!result.destination) return;
       if (result.source.droppableId === 'active' && result.destination.droppableId === 'active') {
         if (result.source.index === result.destination.index) return;
-        const rev = [...config.ratings].reverse();
-        const [removed] = rev.splice(result.source.index, 1);
-        rev.splice(result.destination.index, 0, removed);
-        setConfig((prev) => ({ ...prev, ratings: rev.reverse() }));
+        const ordered = activeLayers.map((l) => l.id);
+        const [removed] = ordered.splice(result.source.index, 1);
+        ordered.splice(result.destination.index, 0, removed);
+        const logoIndex = ordered.indexOf('logo');
+        const badgeTopToBottom = ordered.filter((id): id is RatingType => id !== 'logo');
+        setConfig((prev) => ({
+          ...prev,
+          ratings: [...badgeTopToBottom].reverse(),
+          logoZ:
+            logoIndex === -1
+              ? prev.logoZ
+              : 100 + (ordered.length - logoIndex - 1),
+        }));
       } else if (
         result.source.droppableId === 'inactive' &&
         result.destination.droppableId === 'inactive' &&
@@ -875,7 +804,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setConfig((prev) => ({ ...prev, fallbackPool: nextOrder }));
       }
     },
-    [config.ratings, inactiveBadges, fallbackEnabled, setConfig]
+    [activeLayers, inactiveBadges, fallbackEnabled, setConfig]
   );
 
   const getIconKey = (id: string): BadgeIconKey =>
@@ -911,6 +840,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       : []),
     { id: 'random', label: 'Random' },
   ];
+  const logoSourceOptions = [
+    { id: 'auto', label: 'Auto' },
+    { id: 'fanart', label: 'Fanart' },
+    { id: 'tmdb', label: 'TMDB' },
+    { id: 'metahub', label: 'Hub' },
+  ];
 
   const renderBadgeRow = (
     badge: { id: RatingType; label: string },
@@ -931,7 +866,6 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         onSelect(badge.id, true);
       } else {
         handleToggleVisibility(badge.id, true);
-        onSelect(badge.id, false);
       }
     };
 
@@ -1035,9 +969,9 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           >
             {badge.label}
           </span>
-          {isActive && ratingVal && (
+          {isActive && ratingVal && badge.id !== 'title' && (
             <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-              {ratingVal}
+              {badge.id === 'year' ? ratingVal.replace(/\.0+$/, '') : ratingVal}
             </span>
           )}
         </div>
@@ -1064,6 +998,97 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           </button>
         </div>
       </div>
+    );
+  };
+
+  const renderLogoLayerRow = (
+    isActive = true,
+    provided?: DraggableProvided,
+    isDraggingItem?: boolean
+  ) => {
+    const enableLogoAndFocus = () => {
+      updateConfig('logo', true);
+      handleLogoSelection(false);
+      setActiveTab('selection');
+    };
+    return (
+    <div
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      onClick={(e) => {
+        if (isActive) handleLogoSelection(e.shiftKey || e.ctrlKey || e.metaKey);
+        else enableLogoAndFocus();
+      }}
+      className={clsx(
+        'flex items-center gap-2 px-2 py-2 rounded-lg transition-all select-none',
+        selectedLogo && isActive
+          ? 'bg-[rgba(196,124,46,0.08)] ring-1 ring-[rgba(196,124,46,0.2)]'
+            : isActive
+              ? 'hover:bg-[rgba(196,124,46,0.06)] cursor-pointer'
+              : 'opacity-50',
+        isDraggingItem && 'shadow-2xl rotate-[0.5deg]'
+      )}
+      style={
+        isDraggingItem
+          ? { background: 'var(--film-mid)', ...(provided?.draggableProps.style ?? {}) }
+          : (provided?.draggableProps.style ?? {})
+      }
+    >
+      {isActive ? (
+        <div
+          {...provided?.dragHandleProps}
+          onClick={(e) => e.stopPropagation()}
+          className="p-0.5 outline-none transition-colors shrink-0"
+          style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
+        >
+          <GripVertical size={13} />
+        </div>
+      ) : (
+        <div className="w-5 shrink-0" />
+      )}
+      <div
+        className="shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isActive) enableLogoAndFocus();
+          else handleLogoSelection(false);
+        }}
+      >
+        <div
+          className="w-4 h-4 rounded border flex items-center justify-center transition-all"
+          style={{
+            background: selectedLogo && isActive ? '#C47C2E' : 'var(--film-char)',
+            borderColor: selectedLogo && isActive ? '#D4A245' : 'rgba(255,255,255,0.15)',
+          }}
+        >
+          {selectedLogo && isActive && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
+        </div>
+      </div>
+      <div
+        className="w-7 h-7 shrink-0 rounded-md flex items-center justify-center"
+        style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
+        <ImagePlay size={12} style={{ color: 'var(--film-text-dim)' }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="block syne-font truncate" style={{ fontSize: 11, fontWeight: 600 }}>
+          Logo
+        </span>
+      </div>
+      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <button
+          onClick={() => (config.logo ? updateConfig('logo', false) : enableLogoAndFocus())}
+          className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+          style={{ color: config.logo ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+          title={config.logo ? 'Hide layer' : 'Show layer'}
+        >
+          {config.logo ? <Eye size={13} /> : <EyeOff size={13} />}
+        </button>
+      </div>
+    </div>
     );
   };
 
@@ -1413,72 +1438,62 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           {/* Textless toggle */}
           <ToggleRow
             label="Textless Poster"
-            sub={isMinimalPreset ? 'Forced on in Minimal mode' : 'Remove title text from image'}
-            checked={
-              isMinimalPreset
-                ? true
-                : ['metahub', 'imdb'].includes(config.source)
-                  ? false
-                  : config.textless
-            }
+            sub="Remove title text from image"
+            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
             onChange={(v) => updateConfig('textless', v)}
-            disabled={isMinimalPreset || ['metahub', 'imdb'].includes(config.source)}
+            disabled={['metahub', 'imdb'].includes(config.source)}
           />
 
-          {/* Display options */}
           <div className="pt-1 space-y-2">
-            <p
-              className="syne-font uppercase tracking-widest"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-            >
-              Display
-            </p>
-            <div className="grid grid-cols-2 gap-1">
-              {[
-                { id: 'b' as const, label: 'Badges' },
-                { id: 'm' as const, label: 'Minimal' },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    if (opt.id === 'm') {
-                      writeTextlessPreference(config.textless);
-                      setConfig((prev) => ({ ...prev, uiPreset: 'm', textless: true }));
-                      disableBadges({ persistPreference: false });
-                      return;
-                    }
-                    const shouldEnableBadges = readBadgesPreference(config.ratings.length > 0);
-                    const restoredTextless = readTextlessPreference(config.textless);
-                    setConfig((prev) => ({ ...prev, uiPreset: 'b', textless: restoredTextless }));
-                    if (shouldEnableBadges) enableBadges();
-                    else disableBadges({ persistPreference: true });
-                  }}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium transition-all active:scale-95 syne-font border',
-                    (config.uiPreset ?? 'b') === opt.id
-                      ? 'bg-[rgba(196,124,46,0.12)] text-[var(--film-pale)] border-[rgba(196,124,46,0.25)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
             <ToggleRow
-              label="Badges"
-              sub={isMinimalPreset ? 'Disabled in Minimal mode' : 'Show/hide all rating badges'}
-              checked={badgesVisible && !isMinimalPreset}
-              onChange={(v) => {
-                if (isMinimalPreset) return;
-                if (v) enableBadges();
-                else disableBadges({ persistPreference: true });
-              }}
-              disabled={isMinimalPreset}
+              label="Title Layer"
+              sub="Show title as draggable badge layer"
+              checked={titleBadgeEnabled}
+              onChange={(v) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  ratings: v
+                    ? prev.ratings.includes('title')
+                      ? prev.ratings
+                      : [...prev.ratings, 'title']
+                    : prev.ratings.filter((r) => r !== 'title'),
+                }))
+              }
             />
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p
+                  className="body-font font-medium flex items-center gap-1.5"
+                  style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+                >
+                  <Badge size={11} /> Badges
+                </p>
+                <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+                  Show/hide all layers with badge behavior
+                </p>
+              </div>
+              <Switch
+                checked={badgesVisible}
+                onChange={(v) => {
+                  if (v) enableBadges();
+                  else disableBadges({ persistPreference: true });
+                }}
+                className={clsx(
+                  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
+                  badgesVisible ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                )}
+              >
+                <span
+                  className={clsx(
+                    'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+                    badgesVisible ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  )}
+                />
+              </Switch>
+            </div>
           </div>
 
-          {/* Logo overlay — toggle only */}
+          {/* Logo overlay */}
           <div className="pt-5">
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
@@ -1495,14 +1510,20 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   </p>
                   <p className="body-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
                     {config.logo
-                      ? 'Enabled · Configure in right sidebar'
+                      ? 'Enabled · Customizable in the Badges/Logo tab'
                       : 'Transparent title art overlay'}
                   </p>
                 </div>
               </div>
               <Switch
                 checked={config.logo}
-                onChange={(v) => updateConfig('logo', v)}
+                onChange={(v) => {
+                  updateConfig('logo', v);
+                  if (v) {
+                    handleLogoSelection(false);
+                    setActiveTab('selection');
+                  }
+                }}
                 className={clsx(
                   'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
                   config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
@@ -1515,6 +1536,19 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                   )}
                 />
               </Switch>
+            </div>
+            <div className="px-1">
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+              >
+                Logo Source
+              </p>
+              <SelectBox
+                value={String(config.logoSource ?? 'auto')}
+                onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : v)}
+                options={logoSourceOptions}
+              />
             </div>
             <div
               className="mt-5 mx-1"
@@ -1548,24 +1582,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </p>
           </div>
 
-          {!isMinimalPreset && (
-            <Section title="Background" icon={<Monitor size={13} />} defaultOpen>
-              <SliderRow
-                label="Poster Blur"
-                value={config.posterBlur}
-                min={0}
-                max={20}
-                unit="px"
-                onChange={(v) => updateConfig('posterBlur', v)}
-              />
-              <ToggleRow
-                label="Grayscale"
-                sub="Desaturate poster image"
-                checked={config.grayscale}
-                onChange={(v) => updateConfig('grayscale', v)}
-              />
-            </Section>
-          )}
+          <Section title="Background" icon={<Monitor size={13} />} defaultOpen>
+            <SliderRow
+              label="Poster Blur"
+              value={config.posterBlur}
+              min={0}
+              max={20}
+              unit="px"
+              onChange={(v) => updateConfig('posterBlur', v)}
+            />
+            <ToggleRow
+              label="Grayscale"
+              sub="Desaturate poster image"
+              checked={config.grayscale}
+              onChange={(v) => updateConfig('grayscale', v)}
+            />
+          </Section>
 
           <Section title="Canvas Overlays" icon={<ShieldCheck size={13} />} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
@@ -1617,24 +1649,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
         <div className="px-1">
-          {isMinimalPreset && (
-            <div
-              className="mb-4 p-3 rounded-xl"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
-                Badge layers are hidden in Minimal mode.
-              </p>
-              <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-                Open the Source tab to switch display mode.
-              </p>
-            </div>
-          )}
-          {!isMinimalPreset && (
-            <>
+          <>
               <div className="flex items-center justify-between mb-3">
                 <span
                   className="syne-font uppercase tracking-widest"
@@ -1684,7 +1699,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </div>
 
               <DragDropContext onDragEnd={handleDragEnd}>
-                {activeBadges.length > 0 ? (
+                {activeLayers.length > 0 ? (
                   <Droppable droppableId="active">
                     {(provided) => (
                       <div
@@ -1692,9 +1707,22 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                         {...provided.droppableProps}
                         className="space-y-0.5"
                       >
-                        {activeBadges.map((badge, idx) => (
-                          <Draggable key={badge.id} draggableId={badge.id} index={idx}>
-                            {(prov, snap) => renderBadgeRow(badge, true, prov, snap.isDragging)}
+                        {activeLayers.map((layer, idx) => (
+                          <Draggable
+                            key={layer.id}
+                            draggableId={layer.id === 'logo' ? 'logo' : layer.id}
+                            index={idx}
+                          >
+                            {(prov, snap) =>
+                              layer.kind === 'logo'
+                                ? renderLogoLayerRow(true, prov, snap.isDragging)
+                                : renderBadgeRow(
+                                    { id: layer.id as RatingType, label: layer.label },
+                                    true,
+                                    prov,
+                                    snap.isDragging
+                                  )
+                            }
                           </Draggable>
                         ))}
                         {provided.placeholder}
@@ -1792,9 +1820,14 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
                     )}
                   </>
                 )}
+                {!config.logo && (
+                  <div className={clsx(inactiveBadges.length > 0 ? 'mt-2' : 'mt-5')}>
+                    {renderLogoLayerRow(false)}
+                  </div>
+                )}
               </DragDropContext>
-            </>
-          )}
+
+          </>
         </div>
       )}
     </SidebarLayout>

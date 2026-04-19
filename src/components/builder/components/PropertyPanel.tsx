@@ -1,7 +1,8 @@
 // src/components/builder/components/PropertyPanel.tsx
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import { Switch } from '@headlessui/react';
-import type { PosterConfig, RatingType, PresetType, BadgeConfig, LogoSourceType } from '../types';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
+import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
+import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
 import {
   Layers,
   Layout,
@@ -17,6 +18,7 @@ import {
   Hash,
   Sliders,
   ImagePlay,
+  Check,
 } from 'lucide-react';
 import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
@@ -26,6 +28,8 @@ interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
+  selectedLogo?: boolean;
+  selectedMinimalElements?: Set<string>;
   viewMode?: 'global' | 'selection';
   mode?: 'badges' | 'logo' | 'selection';
 }
@@ -33,6 +37,20 @@ interface Props {
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
 const INACTIVE_OPTION_HOVER_CLASSES =
   'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-label)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-cream)]';
+const BADGE_DISPLAY_NAMES: Record<string, string> = {
+  imdb: 'IMDb',
+  rt: 'Rotten Tomatoes',
+  rt_popcorn: 'Audience Score',
+  tmdb: 'TMDB',
+  letterboxd: 'Letterboxd',
+  meta: 'Metacritic',
+  mal: 'MyAnimeList',
+  anilist: 'AniList',
+  age: 'Age Rating',
+  runtime: 'Runtime',
+  year: 'Year',
+  title: 'Title',
+};
 
 const readSectionStates = (): Record<string, boolean> => {
   try {
@@ -113,12 +131,13 @@ const SliderRow: React.FC<{
   label: string;
   value: number;
   onChange: (v: number) => void;
+  onReset?: () => void;
   min: number;
   max: number;
   step?: number;
   unit?: string;
   formatValue?: (v: number) => string;
-}> = ({ label, value, onChange, min, max, step = 1, unit = '', formatValue }) => {
+}> = ({ label, value, onChange, onReset, min, max, step = 1, unit = '', formatValue }) => {
   const [localValue, setLocalValue] = useState(value);
   const [inputText, setInputText] = useState(() => (formatValue ? formatValue(value) : `${value}`));
   const lastUpdate = useRef(Date.now());
@@ -195,12 +214,31 @@ const SliderRow: React.FC<{
 
   return (
     <div className="space-y-1.5">
-      <span
-        className="body-font"
-        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-      >
-        {label}
-      </span>
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="body-font"
+          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
+        >
+          {label}
+        </span>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1 text-[9px] mono-font transition-colors"
+            style={{ color: 'var(--film-text-dim)' }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            }}
+          >
+            <RotateCcw size={10} />
+            Reset
+          </button>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -386,6 +424,67 @@ const TextInputRow: React.FC<{
   );
 };
 
+const SelectBox = memo(
+  ({
+    value,
+    onChange,
+    options,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { id: string; label: string }[];
+  }) => (
+    <Listbox value={value} onChange={onChange}>
+      <div className="relative">
+        <ListboxButton
+          className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'var(--film-pale)',
+          }}
+        >
+          <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
+          <ChevronDown size={10} style={{ color: 'var(--film-text-dim)', flexShrink: 0 }} />
+        </ListboxButton>
+        <ListboxOptions
+          transition
+          className="absolute z-50 mt-1 w-full py-1 rounded-xl shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
+          style={{
+            background: 'var(--film-mid)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          {options.map((opt) => (
+            <ListboxOption
+              key={opt.id}
+              value={opt.id}
+              className={({ active, selected }) =>
+                clsx(
+                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors syne-font',
+                  active && 'bg-[rgba(196,124,46,0.1)]',
+                  !active && selected && 'text-[var(--film-pale)]',
+                  !active && !selected && 'text-[var(--film-text-label)]'
+                )
+              }
+            >
+              {({ selected }) => (
+                <>
+                  <span className="flex-1 truncate">{opt.label}</span>
+                  {selected && (
+                    <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                  )}
+                </>
+              )}
+            </ListboxOption>
+          ))}
+        </ListboxOptions>
+      </div>
+    </Listbox>
+  )
+);
+SelectBox.displayName = 'SelectBox';
+
 // ── ColorRow — label + optional reset button above a ColorPicker ──────────────
 const ColorRow: React.FC<{
   label: string;
@@ -480,14 +579,87 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
   return v;
 }
 
+const makeDefaultMinimalRating = (provider: RatingType = 'imdb', x = 342, y = 688) => ({
+  provider,
+  enabled: true,
+  x,
+  y,
+  size: 26,
+  color: '#facc15',
+  opacity: 1,
+  iconMode: 'star' as const,
+  symbol: '★',
+  bgEnabled: false,
+  bgColor: '#000000',
+  bgOpacity: 0,
+  borderW: 0,
+  borderColor: '#ffffff',
+  borderOpacity: 0.7,
+  radius: 0,
+  paddingX: 0,
+  paddingY: 0,
+  shadowEnabled: false,
+  shadowX: 0,
+  shadowY: 0,
+  shadowBlur: 0,
+  shadowColor: '#000000',
+});
+
+const placeMinimalRatings = (
+  ratings: NonNullable<PosterConfig['minimalRatings']>,
+  preset: PosterConfig['preset'],
+  layout: PosterConfig['layout']
+) => {
+  const activePreset = preset === 'custom' ? 'bc' : preset;
+  const activeLayout = layout === 'custom' ? 'row' : layout;
+  const gap = 14;
+  const chipW = 120;
+  const chipH = 34;
+  const total = ratings.length;
+  if (total === 0) return ratings;
+  const groupW = activeLayout === 'row' ? total * chipW + (total - 1) * gap : chipW;
+  const groupH = activeLayout === 'col' ? total * chipH + (total - 1) * gap : chipH;
+  let startX = 0;
+  let startY = 0;
+  if (activePreset.includes('l')) startX = 20;
+  else if (activePreset.includes('r')) startX = CANVAS_WIDTH - groupW - 20;
+  else startX = Math.round((CANVAS_WIDTH - groupW) / 2);
+  if (activePreset.includes('t')) startY = 20;
+  else if (activePreset.includes('b')) startY = CANVAS_HEIGHT - groupH - 26;
+  else startY = Math.round((CANVAS_HEIGHT - groupH) / 2);
+  return ratings.map((item, index) => ({
+    ...item,
+    x: Math.round(startX + (activeLayout === 'row' ? index * (chipW + gap) : 0)),
+    y: Math.round(startY + (activeLayout === 'col' ? index * (chipH + gap) : 0)),
+  }));
+};
+
 // ── Main component ─────────────────────────────────────────────────────────────
-const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMode, mode }) => {
-  const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
+const PropertyPanel: React.FC<Props> = ({
+  config,
+  setConfig,
+  selectedIds,
+  selectedLogo = false,
+  selectedMinimalElements = new Set<string>(),
+  viewMode,
+  mode,
+}) => {
   const badgesEnabled = config.ratings.length > 0;
+  const logoSettingsRef = useRef<HTMLDivElement | null>(null);
 
   const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
     setConfig((prev) => {
       if (key === 'layout' || key === 'preset') {
+        if ((prev.uiPreset ?? 'b') === 'm') {
+          const nextPreset = (key === 'preset' ? value : prev.preset) as PosterConfig['preset'];
+          const nextLayout = (key === 'layout' ? value : prev.layout) as PosterConfig['layout'];
+          const placed = placeMinimalRatings(
+            [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3),
+            nextPreset,
+            nextLayout
+          );
+          return { ...prev, [key]: value, minimalRatings: placed };
+        }
         const newItems = { ...prev.items };
         (Object.keys(newItems) as RatingType[]).forEach((k) => {
           if (newItems[k]) {
@@ -546,16 +718,20 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
   const panelMode = mode ?? (viewMode === 'selection' ? 'selection' : 'badges');
   const showGlobal = panelMode !== 'selection';
   const showBadgeSettings = panelMode === 'badges';
-  const showLogoSettings = panelMode === 'logo';
+  const showLogoSettings = panelMode === 'badges';
+  const logoSectionTitle = 'Logo Overlay';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
   const LOGO_ASPECT = LOGO_BASE_W / LOGO_BASE_H;
-  const LOGO_SOURCES: { id: LogoSourceType; label: string }[] = [
-    { id: null, label: 'Auto' },
-    { id: 'fanart', label: 'Fanart' },
-    { id: 'tmdb', label: 'TMDB' },
-    { id: 'metahub', label: 'Hub' },
-  ];
+  useEffect(() => {
+    const handler = () => {
+      requestAnimationFrame(() => {
+        logoSettingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    };
+    window.addEventListener('builder-scroll-logo-settings', handler);
+    return () => window.removeEventListener('builder-scroll-logo-settings', handler);
+  }, []);
 
   // ── Global view ───────────────────────────────────────────────────────────────
   if (showGlobal)
@@ -616,7 +792,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           </Section>
         )}
 
-        {showBadgeSettings && !isMinimalPreset && badgesEnabled && (
+        {showBadgeSettings && badgesEnabled && (
           <>
             <Section
               title="Badge Appearance"
@@ -634,11 +810,15 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 checked={config.showText !== false}
                 onChange={(v) => updateConfig('showText', v)}
               />
-              <ToggleRow
-                label="Alt Icon Variant"
-                sub="Use secondary icon style where available"
-                checked={(config.iconType ?? 1) > 1}
-                onChange={(v) => updateConfig('iconType', v ? 2 : 1)}
+              <SegmentedRow
+                label="Icon Style"
+                options={[
+                  { id: '1', label: 'Default' },
+                  { id: '2', label: 'Alt' },
+                  { id: '3', label: 'Mono' },
+                ]}
+                value={String(config.iconType ?? 1)}
+                onChange={(v) => updateConfig('iconType', Math.max(1, Math.min(3, Number(v) || 1)))}
               />
             </Section>
 
@@ -655,6 +835,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 step={0.05}
                 formatValue={(v) => `${v.toFixed(2)}×`}
                 onChange={(v) => updateConfig('scale', v)}
+                onReset={config.scale !== 1 ? () => updateConfig('scale', 1.0) : undefined}
               />
               <SliderRow
                 label="Glass Blur"
@@ -663,6 +844,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 max={20}
                 unit="px"
                 onChange={(v) => updateConfig('blur', v)}
+                onReset={config.blur !== 0 ? () => updateConfig('blur', 0) : undefined}
               />
               <SliderRow
                 label="Corner Radius"
@@ -678,6 +860,43 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                 min={0}
                 max={30}
                 onChange={(v) => updateConfig('shadow', v)}
+                onReset={
+                  resolveShadow(config.shadow as number | boolean, 6) !== 6
+                    ? () => updateConfig('shadow', 6)
+                    : undefined
+                }
+              />
+              <SliderRow
+                label="Shadow X"
+                value={config.shadowX ?? 0}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('shadowX', Math.round(v))}
+              />
+              <SliderRow
+                label="Shadow Y"
+                value={config.shadowY ?? 2}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('shadowY', Math.round(v))}
+              />
+              <ColorRow
+                label="Shadow Color"
+                value={config.shadowColor ?? '#000000'}
+                onChange={(v) => updateConfig('shadowColor', v)}
+              />
+              <SliderRow
+                label="Shadow Opacity"
+                value={config.shadowOpacity ?? 0.35}
+                min={0}
+                max={1}
+                step={0.01}
+                formatValue={(v) => `${Math.round(v * 100)}%`}
+                onChange={(v) => updateConfig('shadowOpacity', Number(v.toFixed(2)))}
               />
             </Section>
 
@@ -781,9 +1000,15 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
                   { id: 'below', label: 'Below' },
                   { id: 'left', label: 'Left' },
                   { id: 'right', label: 'Right' },
+                  { id: 'none', label: 'Hide' },
                 ]}
-                value={config.labelPos ?? null}
-                onChange={(v) => updateConfig('labelPos', v as PosterConfig['labelPos'])}
+                value={config.labelPos ?? 'none'}
+                onChange={(v) =>
+                  updateConfig(
+                    'labelPos',
+                    (v === 'none' ? undefined : (v as PosterConfig['labelPos'])) as PosterConfig['labelPos']
+                  )
+                }
               />
               <TextInputRow
                 label="Label Text"
@@ -814,25 +1039,12 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         )}
 
         {showLogoSettings && config.logo && (
-          <Section
-            title="Logo Overlay"
-            icon={<ImagePlay size={10} />}
-            sectionId="global-logo-overlay"
-          >
-            <SegmentedRow
-              label="Source"
-              options={LOGO_SOURCES.map((opt) => ({
-                id: String(opt.id ?? 'auto'),
-                label: opt.label,
-              }))}
-              value={String(config.logoSource ?? 'auto')}
-              onChange={(v) =>
-                updateConfig(
-                  'logoSource',
-                  (v === 'auto' ? null : (v as LogoSourceType)) as PosterConfig['logoSource']
-                )
-              }
-            />
+          <div ref={logoSettingsRef}>
+            <Section
+              title={logoSectionTitle}
+              icon={<ImagePlay size={10} />}
+              sectionId="global-logo-overlay"
+            >
             <SliderRow
               label="Size"
               value={config.logoW}
@@ -948,13 +1160,19 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             >
               Drag the logo on the canvas to reposition it.
             </p>
-          </Section>
+            </Section>
+          </div>
         )}
       </SidebarLayout>
     );
 
   // ── No-selection placeholder ──────────────────────────────────────────────
-  if (panelMode === 'selection' && selectedIds.size === 0)
+  if (
+    panelMode === 'selection' &&
+    selectedIds.size === 0 &&
+    !selectedLogo &&
+    selectedMinimalElements.size === 0
+  )
     return (
       <SidebarLayout side="right">
         <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
@@ -976,10 +1194,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
               className="syne-font font-semibold"
               style={{ fontSize: 12, color: 'var(--film-text-dim)' }}
             >
-              No badge selected
+              Nothing selected
             </p>
             <p className="body-font mt-1" style={{ fontSize: 11, color: 'var(--film-text-dim)' }}>
-              Click a badge on the canvas to edit
+              Click a layer on the canvas to edit
             </p>
           </div>
         </div>
@@ -988,8 +1206,27 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
 
   // ── Per-badge / selection view ─────────────────────────────────────────────
 
+  const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isAgeSelected = selectedIds.has('age');
-  const multi = selectedIds.size > 1;
+  const isOnlyTitleSelected = selectedIds.size === 1 && selectedIds.has('title');
+  const isOnlyYearSelected = selectedIds.size === 1 && selectedIds.has('year');
+  const isTitleOrYearOnlySelection = isOnlyTitleSelected || isOnlyYearSelected;
+  const multi = selectionCount > 1;
+  const selectedBadgeLabel = (() => {
+    if (selectedLogo && selectedIds.size === 0 && selectedMinimalElements.size === 0) return 'Logo Overlay';
+    if (selectedMinimalElements.size > 0 && selectedIds.size === 0 && !selectedLogo) {
+      if (selectedMinimalElements.size > 1) return 'Minimal Selection';
+      const only = Array.from(selectedMinimalElements)[0];
+      if (only === 'minimal-title') return 'Title';
+      if (only === 'minimal-year') return 'Year';
+      if (only === 'minimal-duration') return 'Duration';
+      if (only === 'minimal-logo') return 'Logo Overlay';
+      if (only.startsWith('minimal-rating-')) return `Rating Slot ${Number(only.split('-').at(-1) ?? 0) + 1}`;
+    }
+    const first = Array.from(selectedIds)[0];
+    if (!first) return 'Selection';
+    return BADGE_DISPLAY_NAMES[first] ?? first.toUpperCase();
+  })();
 
   // Resolve common values across the selection (null = mixed)
   const commonBlur = getCommonValue('blur', config.blur) ?? config.blur;
@@ -999,6 +1236,15 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     (getCommonValue('shadow', 6) as number | boolean | null) ?? 6,
     6
   );
+  const commonShadowX = (getCommonValue('shadowX', config.shadowX ?? 0) ?? config.shadowX ?? 0) as number;
+  const commonShadowY = (getCommonValue('shadowY', config.shadowY ?? 2) ?? config.shadowY ?? 2) as number;
+  const commonShadowOpacity = (getCommonValue('shadowOpacity', config.shadowOpacity ?? 0.35) ??
+    config.shadowOpacity ??
+    0.35) as number;
+  const commonShadowColor = (() => {
+    const v = getCommonValue('shadowColor', config.shadowColor ?? '#000000');
+    return (v === null ? (config.shadowColor ?? '#000000') : v) as string;
+  })();
   const commonScale = (getCommonValue('scale', config.scale ?? 1.0) ??
     config.scale ??
     1.0) as number;
@@ -1037,6 +1283,24 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
     const v = getCommonValue('borderC', config.borderC ?? '#ffffff');
     return (v === null ? (config.borderC ?? '#ffffff') : v) as string;
   })();
+  const minimalTitleSelected = selectedMinimalElements.has('minimal-title');
+  const minimalYearSelected = selectedMinimalElements.has('minimal-year');
+  const minimalDurationSelected = selectedMinimalElements.has('minimal-duration');
+  const commonTextSize = (getCommonValue('textSize', isOnlyYearSelected ? 42 : 36) ??
+    (isOnlyYearSelected ? 42 : 36)) as number;
+  const commonTextWeight = (getCommonValue('textWeight', 700) ?? 700) as number;
+  const commonTextLetterSpacing = (getCommonValue('textLetterSpacing', 0) ?? 0) as number;
+  const commonTextLineHeight = (getCommonValue('textLineHeight', 1.1) ?? 1.1) as number;
+  const commonTextAlign = (getCommonValue('textAlign', 'left') ?? 'left') as
+    | 'left'
+    | 'center'
+    | 'right';
+  const commonTextMaxChars = (getCommonValue('textMaxChars', 0) ?? 0) as number;
+  const commonTextShadowEnabled = (getCommonValue('textShadowEnabled', false) ?? false) as boolean;
+  const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
+  const commonTextShadowY = (getCommonValue('textShadowY', 2) ?? 2) as number;
+  const commonTextShadowBlur = (getCommonValue('textShadowBlur', 8) ?? 8) as number;
+  const commonTextShadowColor = (getCommonValue('textShadowColor', '#000000') ?? '#000000') as string;
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1049,30 +1313,202 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
         }}
       >
         <p className="syne-font font-semibold" style={{ fontSize: 11, color: 'var(--film-pale)' }}>
-          {multi ? `${selectedIds.size} badges selected` : Array.from(selectedIds)[0]}
+          {multi ? `${selectionCount} items selected` : selectedBadgeLabel}
         </p>
         <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'rgba(212,162,69,0.45)' }}>
-          {multi
-            ? 'Changes apply to all selected badges'
-            : 'Per-badge overrides · inherits global defaults'}
+          {multi ? 'Changes apply to all selected layers' : 'Layer-specific configuration'}
         </p>
       </div>
 
+      {selectedMinimalElements.size > 0 && (
+        <>
+          {(minimalTitleSelected || minimalYearSelected || minimalDurationSelected) && (
+            <Section title="Selected Text" sectionId="selection-minimal-text">
+              {minimalTitleSelected && (
+                <>
+                  <SliderRow
+                    label="Title Size"
+                    value={config.minimalTextSize}
+                    min={14}
+                    max={120}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
+                  />
+                  <ColorRow
+                    label="Title Color"
+                    value={config.minimalTitleColor ?? '#f5f5f5'}
+                    onChange={(v) => updateConfig('minimalTitleColor', v)}
+                    showOpacity
+                    opacity={config.minimalTitleOpacity ?? 1}
+                    onOpacityChange={(v) => updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))}
+                  />
+                </>
+              )}
+              {(minimalYearSelected || minimalDurationSelected) && (
+                <>
+                  <SliderRow
+                    label="Meta Size"
+                    value={config.minimalMetaSize ?? 50}
+                    min={18}
+                    max={80}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('minimalMetaSize', Math.round(v))}
+                  />
+                  <ColorRow
+                    label="Meta Color"
+                    value={config.minimalMetaColor ?? '#d6dde3'}
+                    onChange={(v) => updateConfig('minimalMetaColor', v)}
+                    showOpacity
+                    opacity={config.minimalMetaOpacity ?? 0.92}
+                    onOpacityChange={(v) => updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))}
+                  />
+                </>
+              )}
+            </Section>
+          )}
+        </>
+      )}
+
+      {selectedIds.size > 0 && (
+        <>
+      {isTitleOrYearOnlySelection && (
+        <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Font Size"
+              value={commonTextSize}
+              min={10}
+              max={120}
+              step={1}
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textSize: 36 })}
+            />
+          )}
+          <SliderRow
+            label="Font Weight"
+            value={commonTextWeight}
+            min={100}
+            max={900}
+            step={100}
+            onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
+            onReset={() => updateSelectedBadges({ textWeight: 700 })}
+          />
+          <SliderRow
+            label="Line Height"
+            value={commonTextLineHeight}
+            min={0.8}
+            max={2}
+            step={0.02}
+            onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
+            onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
+          />
+          <SliderRow
+            label="Letter Spacing"
+            value={commonTextLetterSpacing}
+            min={-2}
+            max={8}
+            step={0.1}
+            unit="px"
+            onChange={(v) => updateSelectedBadges({ textLetterSpacing: Number(v.toFixed(1)) })}
+            onReset={() => updateSelectedBadges({ textLetterSpacing: isOnlyTitleSelected ? 0.2 : 0 })}
+          />
+          <SegmentedRow
+            label="Text Align"
+            options={[
+              { id: 'left', label: 'Left' },
+              { id: 'center', label: 'Center' },
+              { id: 'right', label: 'Right' },
+            ]}
+            value={commonTextAlign}
+            onChange={(v) => updateSelectedBadges({ textAlign: v as BadgeConfig['textAlign'] })}
+          />
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Ellipsis Cutoff"
+              value={commonTextMaxChars}
+              min={0}
+              max={300}
+              step={1}
+              unit="ch"
+              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
+              onChange={(v) => updateSelectedBadges({ textMaxChars: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textMaxChars: 0 })}
+            />
+          )}
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Wrap Lines"
+              value={Math.max(0, Math.round(getCommonValue('textMaxLines', 0) ?? 0))}
+              min={0}
+              max={8}
+              step={1}
+              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} lines`)}
+              onChange={(v) => updateSelectedBadges({ textMaxLines: Math.round(v) })}
+              onReset={() => updateSelectedBadges({ textMaxLines: 0 })}
+            />
+          )}
+          <ToggleRow
+            label="Text Shadow"
+            checked={commonTextShadowEnabled}
+            onChange={(v) => updateSelectedBadges({ textShadowEnabled: v })}
+          />
+          {commonTextShadowEnabled && (
+            <>
+              <SliderRow
+                label="Shadow X"
+                value={commonTextShadowX}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowX: Math.round(v) })}
+              />
+              <SliderRow
+                label="Shadow Y"
+                value={commonTextShadowY}
+                min={-20}
+                max={20}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowY: Math.round(v) })}
+              />
+              <SliderRow
+                label="Shadow Blur"
+                value={commonTextShadowBlur}
+                min={0}
+                max={40}
+                step={1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textShadowBlur: Math.round(v) })}
+              />
+              <ColorRow
+                label="Shadow Color"
+                value={commonTextShadowColor}
+                onChange={(v) => updateSelectedBadges({ textShadowColor: v })}
+              />
+            </>
+          )}
+        </Section>
+      )}
       {/* Transform ── scale */}
       <Section title="Transform" sectionId="badge-transform">
         <SliderRow
-          label="Scale"
+          label={isTitleOrYearOnlySelection ? 'Layer Width' : 'Scale'}
           value={commonScale}
           min={0.5}
           max={2.0}
           step={0.05}
           formatValue={(v) => `${v.toFixed(2)}×`}
           onChange={(v) => updateSelectedBadges({ scale: v })}
+          onReset={commonScale !== 1.0 ? () => updateSelectedBadges({ scale: 1.0 }) : undefined}
         />
       </Section>
 
       {/* Shape ── blur, radius, shadow, border */}
-      <Section title="Shape" sectionId="badge-shape">
+      <Section title={isTitleOrYearOnlySelection ? 'Container' : 'Shape'} sectionId="badge-shape">
         <SliderRow
           label="Glass Blur"
           value={commonBlur}
@@ -1080,6 +1516,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           max={20}
           unit="px"
           onChange={(v) => updateSelectedBadges({ blur: v })}
+          onReset={commonBlur !== 0 ? () => updateSelectedBadges({ blur: 0 }) : undefined}
         />
         <SliderRow
           label="Corner Radius"
@@ -1095,6 +1532,39 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           min={0}
           max={30}
           onChange={(v) => updateSelectedBadges({ shadow: v })}
+          onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
+        />
+        <SliderRow
+          label="Shadow X"
+          value={commonShadowX}
+          min={-20}
+          max={20}
+          step={1}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
+        />
+        <SliderRow
+          label="Shadow Y"
+          value={commonShadowY}
+          min={-20}
+          max={20}
+          step={1}
+          unit="px"
+          onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
+        />
+        <ColorRow
+          label="Shadow Color"
+          value={commonShadowColor}
+          onChange={(v) => updateSelectedBadges({ shadowColor: v })}
+        />
+        <SliderRow
+          label="Shadow Opacity"
+          value={commonShadowOpacity}
+          min={0}
+          max={1}
+          step={0.01}
+          formatValue={(v) => `${Math.round(v * 100)}%`}
+          onChange={(v) => updateSelectedBadges({ shadowOpacity: Number(v.toFixed(2)) })}
         />
         <SliderRow
           label="Border Width"
@@ -1115,7 +1585,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       </Section>
 
       {/* Colors ── fill + text */}
-      <Section title="Colors" sectionId="badge-colors">
+      <Section title={isTitleOrYearOnlySelection ? 'Text & Colors' : 'Colors'} sectionId="badge-colors">
         <ColorRow
           label="Background"
           value={commonBg}
@@ -1126,7 +1596,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
         />
         <ColorRow
-          label="Text & Icon Color"
+          label={isTitleOrYearOnlySelection ? 'Text Color' : 'Text & Icon Color'}
           value={commonTxt}
           onChange={(v) => updateSelectedBadges({ txt: v })}
           onReset={() => clearSelectedBadgeProp('txt')}
@@ -1134,6 +1604,7 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
       </Section>
 
       {/* Visibility ── icons, text, icon variant */}
+      {!isTitleOrYearOnlySelection && (
       <Section title="Visibility" icon={<Eye size={10} />} sectionId="badge-visibility">
         {!isAgeSelected && (
           <ToggleRow
@@ -1152,15 +1623,21 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           checked={commonShowText !== false}
           onChange={(v) => updateSelectedBadges({ showText: v })}
         />
-        <ToggleRow
-          label="Alt Icon Variant"
-          sub="Use secondary icon style where available"
-          checked={commonIconType > 1}
-          onChange={(v) => updateSelectedBadges({ iconType: v ? 2 : 1 })}
+        <SegmentedRow
+          label="Icon Style"
+          options={[
+            { id: '1', label: 'Default' },
+            { id: '2', label: 'Alt' },
+            { id: '3', label: 'Mono' },
+          ]}
+          value={String(Math.max(1, Math.min(3, commonIconType)))}
+          onChange={(v) => updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })}
         />
       </Section>
+      )}
 
       {/* Score ── normalize + denominator */}
+      {!isTitleOrYearOnlySelection && (
       <Section title="Score" icon={<Hash size={10} />} defaultOpen={false} sectionId="badge-score">
         <ToggleRow
           label="Normalize to /10"
@@ -1175,8 +1652,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
         />
       </Section>
+      )}
 
       {/* Labels ── position, custom text, size, color */}
+      {!isTitleOrYearOnlySelection && (
       <Section
         title="Labels"
         icon={<Type size={10} />}
@@ -1190,9 +1669,16 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             { id: 'below', label: 'Below' },
             { id: 'left', label: 'Left' },
             { id: 'right', label: 'Right' },
+            { id: 'none', label: 'Hide' },
           ]}
-          value={commonLabelPos ?? config.labelPos ?? 'below'}
-          onChange={(v) => updateSelectedBadges({ labelPos: v as BadgeConfig['labelPos'] })}
+          value={commonLabelPos ?? config.labelPos ?? 'none'}
+          onChange={(v) =>
+            updateSelectedBadges({
+              labelPos: (v === 'none' ? undefined : (v as BadgeConfig['labelPos'])) as
+                | BadgeConfig['labelPos']
+                | undefined,
+            })
+          }
         />
         <TextInputRow
           label="Label Text"
@@ -1217,8 +1703,100 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
           onReset={() => clearSelectedBadgeProp('labelColor')}
         />
       </Section>
+      )}
+      </>
+      )}
+
+      {selectedLogo && config.logo && (
+        <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="selection-logo-overlay">
+          <SliderRow
+            label="Size"
+            value={config.logoW}
+            min={100}
+            max={490}
+            unit="px"
+            onChange={(newW) => {
+              const w = Math.round(newW);
+              const h = Math.round(w / LOGO_ASPECT);
+              setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
+            }}
+          />
+          <SliderRow
+            label="Opacity"
+            value={config.logoOpacity}
+            min={0}
+            max={1}
+            step={0.05}
+            formatValue={(v) => `${Math.round(v * 100)}%`}
+            onChange={(v) => updateConfig('logoOpacity', v)}
+          />
+          <SliderRow
+            label="Drop Shadow"
+            value={config.logoShadow}
+            min={0}
+            max={30}
+            onChange={(v) => updateConfig('logoShadow', v)}
+          />
+          <ToggleRow
+            label="Background"
+            checked={config.logoBgEnabled}
+            onChange={(v) => updateConfig('logoBgEnabled', v)}
+          />
+          {config.logoBgEnabled && (
+            <>
+              <ColorRow
+                label="Background Color"
+                value={config.logoBgColor ?? '#000000'}
+                showOpacity
+                opacity={config.logoBgOpacity}
+                onChange={(v) => updateConfig('logoBgColor', v)}
+                onOpacityChange={(v) => updateConfig('logoBgOpacity', Number(v.toFixed(2)))}
+              />
+              <SliderRow
+                label="Padding"
+                value={config.logoBgPadding}
+                min={0}
+                max={48}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgPadding', v)}
+              />
+              <SliderRow
+                label="Corner Radius"
+                value={config.logoBgRadius}
+                min={0}
+                max={40}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgRadius', v)}
+              />
+              <SliderRow
+                label="Border Width"
+                value={config.logoBgBorderW}
+                min={0}
+                max={10}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgBorderW', Math.round(v))}
+              />
+              {config.logoBgBorderW > 0 && (
+                <ColorRow
+                  label="Border Color"
+                  value={config.logoBgBorderC ?? '#ffffff'}
+                  onChange={(v) => updateConfig('logoBgBorderC', v)}
+                />
+              )}
+              <SliderRow
+                label="Background Shadow"
+                value={config.logoBgShadow}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('logoBgShadow', v)}
+              />
+            </>
+          )}
+        </Section>
+      )}
 
       {/* Reset */}
+      {(selectedIds.size > 0 || selectedLogo) && (
       <div className="px-3 pt-3">
         <button
           type="button"
@@ -1226,7 +1804,26 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             setConfig((prev) => {
               const ni = { ...prev.items };
               selectedIds.forEach((id) => delete ni[id]);
-              return { ...prev, items: ni };
+              if (!selectedLogo) return { ...prev, items: ni };
+              return {
+                ...prev,
+                items: ni,
+                logoX: DEFAULT_CONFIG.logoX,
+                logoY: DEFAULT_CONFIG.logoY,
+                logoW: DEFAULT_CONFIG.logoW,
+                logoH: DEFAULT_CONFIG.logoH,
+                logoOpacity: DEFAULT_CONFIG.logoOpacity,
+                logoZ: DEFAULT_CONFIG.logoZ,
+                logoShadow: DEFAULT_CONFIG.logoShadow,
+                logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
+                logoBgColor: DEFAULT_CONFIG.logoBgColor,
+                logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
+                logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
+                logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
+                logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
+                logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
+                logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
+              };
             })
           }
           className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
@@ -1245,9 +1842,10 @@ const PropertyPanel: React.FC<Props> = ({ config, setConfig, selectedIds, viewMo
             (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.6)';
           }}
         >
-          <RotateCcw size={11} /> Reset to global defaults
+          <RotateCcw size={11} /> Reset selected to defaults
         </button>
       </div>
+      )}
     </SidebarLayout>
   );
 };

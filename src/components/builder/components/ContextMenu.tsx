@@ -16,12 +16,13 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { RatingType } from '../types';
+export type LayerTargetId = RatingType | 'logo';
 
 export interface ContextMenuState {
   visible: boolean;
   x: number;
   y: number;
-  badgeId: RatingType | null;
+  badgeId: LayerTargetId | null;
 }
 
 interface ContextMenuAction {
@@ -38,19 +39,19 @@ interface Props {
   state: ContextMenuState;
   onClose: () => void;
   isSelected: boolean;
-  onBringToFront: (id: RatingType) => void;
-  onBringForward: (id: RatingType) => void;
-  onSendBackward: (id: RatingType) => void;
-  onSendToBack: (id: RatingType) => void;
-  onHide: (id: RatingType) => void;
+  onBringToFront: (id: LayerTargetId) => void;
+  onBringForward: (id: LayerTargetId) => void;
+  onSendBackward: (id: LayerTargetId) => void;
+  onSendToBack: (id: LayerTargetId) => void;
+  onHide: (id: LayerTargetId) => void;
   onShowAll: () => void;
-  onSelect: (id: RatingType) => void;
-  onDeselect: (id: RatingType) => void;
+  onSelect: (id: LayerTargetId) => void;
+  onDeselect: (id: LayerTargetId) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onDuplicate?: (id: RatingType) => void;
-  onResetBadge: (id: RatingType) => void;
-  onDelete: (id: RatingType) => void;
+  onResetBadge: (id: LayerTargetId) => void;
+  onDelete: (id: LayerTargetId) => void;
 }
 
 const ContextMenu: React.FC<Props> = memo(
@@ -117,6 +118,7 @@ const ContextMenu: React.FC<Props> = memo(
     if (!state.visible || !state.badgeId) return null;
 
     const id = state.badgeId;
+    const isLogo = id === 'logo';
 
     interface Group {
       items: ContextMenuAction[];
@@ -143,11 +145,11 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          { id: 'hide', label: 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
+          { id: 'hide', label: isLogo ? 'Hide Layer' : 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
           { id: 'showall', label: 'Show All Badges', icon: <Eye size={12} /> },
           {
             id: 'select',
-            label: isSelected ? 'Deselect Badge' : 'Select Badge',
+            label: isSelected ? (isLogo ? 'Deselect Layer' : 'Deselect Badge') : isLogo ? 'Select Layer' : 'Select Badge',
             icon: isSelected ? <Square size={12} /> : <MousePointer2 size={12} />,
           },
           { id: 'selectall', label: 'Select All', icon: <CheckSquare size={12} /> },
@@ -161,9 +163,9 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          ...(onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
+          ...(!isLogo && onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
-          { id: 'delete', label: 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
+          { id: 'delete', label: isLogo ? 'Hide Logo Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
         ],
       },
     ];
@@ -269,7 +271,7 @@ const ContextMenu: React.FC<Props> = memo(
               textTransform: 'uppercase',
             }}
           >
-            {id}
+            {isLogo ? 'logo' : id}
           </span>
           {isSelected && (
             <span

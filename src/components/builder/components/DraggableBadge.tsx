@@ -34,6 +34,8 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   anilist: 'AniList',
   age: 'Age Rating',
   runtime: 'Runtime',
+  year: 'Year',
+  title: 'Title',
 };
 
 interface Props {
@@ -50,6 +52,7 @@ interface Props {
   isObscuring?: boolean;
   onHoverChange?: (isHovered: boolean) => void;
   value?: string;
+  zIndex?: number;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -66,14 +69,15 @@ const DraggableBadge: React.FC<Props> = ({
   isObscuring,
   onHoverChange,
   value,
+  zIndex,
 }) => {
   const itemConfig = config.items[badgeId];
-  const itemScale = itemConfig?.scale ?? 1.0;
+  const itemScale = itemConfig?.scale ?? config.scale ?? 1.0;
   const sizeScale = getScale(config.size);
   const displayScale = itemScale * sizeScale;
 
-  const width = BASE_BADGE_W * displayScale;
-  const height = BASE_BADGE_H * displayScale;
+  const baseWidth = BASE_BADGE_W * displayScale;
+  const baseHeight = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
@@ -246,15 +250,77 @@ const DraggableBadge: React.FC<Props> = ({
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
   const txtColor = itemConfig?.txt || config.txt || '#ffffff';
+  const textSize = Math.max(8, itemConfig?.textSize ?? 28) * displayScale;
+  const textWeight = Math.max(100, Math.min(900, itemConfig?.textWeight ?? 700));
+  const textLetterSpacing = (itemConfig?.textLetterSpacing ?? 0) * displayScale;
+  const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
+  const textAlign = itemConfig?.textAlign ?? 'left';
+  const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
+  const textMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
+  const textShadow =
+    itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
+      ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
+          itemConfig.textShadowBlur ?? 8
+        }px ${itemConfig.textShadowColor ?? '#000000'}`
+      : itemConfig?.textShadowEnabled
+        ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
+            itemConfig.textShadowBlur ?? 8
+          }px ${itemConfig.textShadowColor ?? '#000000'}`
+        : 'none';
+  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : ''))
+    .toString()
+    .trim() || (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : '')
+  ).trim();
+  const displayTextForSizing =
+    badgeId === 'title' && textMaxChars > 0 && rawTextForSizing.length > textMaxChars
+      ? `${rawTextForSizing.slice(0, textMaxChars).trimEnd()}…`
+      : rawTextForSizing;
+  const dynamicTextWidth =
+    badgeId === 'year'
+      ? Math.max(
+          baseWidth,
+          Math.ceil(displayTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
+        )
+      : baseWidth;
+  const width = dynamicTextWidth;
+  const titleCharsPerLine = Math.max(
+    8,
+    Math.floor((Math.max(baseWidth, 1) - 16 * displayScale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+  );
+  const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(displayTextForSizing.length, 1) / titleCharsPerLine));
+  const titleLineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
+  const titleRenderedLines =
+    titleLineClamp > 0 ? Math.min(titleEstimatedLines, titleLineClamp) : titleEstimatedLines;
+  const titleContentHeight = Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale);
+  const height = badgeId === 'title' ? Math.max(baseHeight, titleContentHeight) : baseHeight;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
+  const toRgba = (hex: string | undefined, alpha: number) => {
+    const c = (hex ?? '#000000').trim();
+    const fullHex = /^#[0-9a-fA-F]{3}$/.test(c)
+      ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
+      : c;
+    if (!/^#[0-9a-fA-F]{6}$/.test(fullHex)) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(fullHex.slice(1, 3), 16);
+    const g = parseInt(fullHex.slice(3, 5), 16);
+    const b = parseInt(fullHex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  };
+  const shadowX = itemConfig?.shadowX ?? config.shadowX ?? 0;
+  const shadowY = itemConfig?.shadowY ?? config.shadowY ?? 2;
+  const shadowColor = itemConfig?.shadowColor ?? config.shadowColor ?? '#000000';
+  const shadowOpacity =
+    itemConfig?.shadowOpacity ??
+    config.shadowOpacity ??
+    Math.min(0.65, shadowVal * 0.025 + 0.2);
   const dropShadowFilter =
     shadowVal > 0
       ? (() => {
-          const blurPx = (shadowVal * 0.5).toFixed(2);
-          const dyPx = (shadowVal * 0.25 + 1.0).toFixed(2);
-          const opacity = Math.min(0.65, shadowVal * 0.025 + 0.2).toFixed(3);
-          return `drop-shadow(0 ${dyPx}px ${blurPx}px rgba(0,0,0,${opacity}))`;
+        const blurPx = (shadowVal * 0.5).toFixed(2);
+          return `drop-shadow(${shadowX}px ${shadowY}px ${blurPx}px ${toRgba(
+            shadowColor,
+            Number(Math.max(0, Math.min(1, shadowOpacity)).toFixed(3))
+          )})`;
         })()
       : '';
 
@@ -280,6 +346,7 @@ const DraggableBadge: React.FC<Props> = ({
       fontFamily: "'DM Sans', sans-serif",
       fontWeight: 500,
       lineHeight: 1,
+      textShadow: '0 1px 2px rgba(0,0,0,0.45)',
     };
     switch (pos) {
       case 'above':
@@ -331,6 +398,8 @@ const DraggableBadge: React.FC<Props> = ({
       meta: '74',
       tmdb: '85%',
       runtime: '2h 15m',
+      year: '2026',
+      title: 'Title',
       mal: '8.5',
       anilist: '85%',
     };
@@ -348,10 +417,57 @@ const DraggableBadge: React.FC<Props> = ({
       if (num > 10) return `${(num / 10).toFixed(1).replace(/\.0$/, '')}`;
       return `${num.toFixed(1).replace(/\.0$/, '')}`;
     })();
-    const displayValue =
-      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(normalized)
-        ? `${normalized}/${outOfVal}`
-        : normalized;
+    const runtimeCompact = (() => {
+      if (badgeId !== 'runtime') return normalized;
+      const m = normalized.match(/^(\d+)\s*h(?:\s*(\d+)\s*m?)?$/i);
+      if (!m) return normalized;
+      const hh = m[1];
+      const mm = (m[2] ?? '0').padStart(2, '0');
+      return `${hh}:${mm}`;
+    })();
+    const numericDisplay = badgeId === 'year'
+      ? runtimeCompact.replace(/\.0+$/, '')
+      : /^\d+(\.\d+)?$/.test(runtimeCompact)
+      ? Number(runtimeCompact).toFixed(1)
+      : runtimeCompact;
+    const displayValue = numericDisplay;
+    const truncatedTitleValue =
+      badgeId === 'title' && textMaxChars > 0 && displayValue.length > textMaxChars
+        ? `${displayValue.slice(0, textMaxChars).trimEnd()}…`
+        : displayValue;
+
+    if (badgeId === 'title' || badgeId === 'year') {
+      return showTextVal ? (
+        <span
+          style={{
+            position: 'absolute',
+            left: 8 * displayScale,
+            right: 8 * displayScale,
+            top: badgeId === 'title' ? 8 * displayScale : '50%',
+            bottom: badgeId === 'title' ? 8 * displayScale : 'auto',
+            transform: badgeId === 'title' ? 'none' : 'translateY(-50%)',
+            fontSize: textSize,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: textWeight,
+            color: txtColor,
+            lineHeight: textLineHeight,
+            letterSpacing: `${textLetterSpacing}px`,
+            textAlign,
+            textShadow,
+            whiteSpace: badgeId === 'title' ? 'normal' : 'nowrap',
+            wordBreak: badgeId === 'title' ? 'break-word' : 'normal',
+            overflow: badgeId === 'title' ? 'hidden' : textMaxChars > 0 ? 'hidden' : 'visible',
+            textOverflow: badgeId === 'title' ? 'clip' : textMaxChars > 0 ? 'ellipsis' : 'clip',
+            display: badgeId === 'title' && titleLineClamp > 0 ? '-webkit-box' : 'inline-block',
+            WebkitBoxOrient: badgeId === 'title' ? 'vertical' : undefined,
+            WebkitLineClamp: badgeId === 'title' && titleLineClamp > 0 ? titleLineClamp : undefined,
+            pointerEvents: 'none',
+          }}
+        >
+          {badgeId === 'title' ? truncatedTitleValue : displayValue}
+        </span>
+      ) : null;
+    }
 
     if (badgeId === 'age') {
       return (
@@ -401,19 +517,60 @@ const DraggableBadge: React.FC<Props> = ({
       ) : null;
     }
 
+    const iconType = Math.max(1, Math.min(3, itemConfig?.iconType ?? config.iconType ?? 1));
     const iconKey =
-      badgeId === 'rt' ? 'rt_fresh' : badgeId === 'rt_popcorn' ? 'popcorn_fresh' : badgeId;
+      badgeId === 'rt'
+        ? iconType === 2
+          ? 'rt_rotten'
+          : 'rt_fresh'
+        : badgeId === 'rt_popcorn'
+          ? iconType === 2
+            ? 'popcorn_rotten'
+            : 'popcorn_fresh'
+          : badgeId;
     const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badgeId];
+    const isRtPercent = (badgeId === 'rt' || badgeId === 'rt_popcorn') && /%$/.test(displayValue);
+    const rtBase = isRtPercent ? displayValue.replace(/%$/, '') : displayValue;
+    const valueNode =
+      outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(displayValue) ? (
+        <span className="inline-flex items-end gap-[0.1em]">
+          <span>{displayValue}</span>
+          <span style={{ fontSize: '0.72em', opacity: 0.9, lineHeight: 1 }}>{`/${outOfVal}`}</span>
+        </span>
+      ) : isRtPercent ? (
+        <span className="inline-flex items-end gap-[0.08em]">
+          <span>{rtBase}</span>
+          <span style={{ fontSize: '0.7em', lineHeight: 1, opacity: 0.92 }}>%</span>
+        </span>
+      ) : (
+        displayValue
+      );
 
     return (
       <>
         {iconData && (
-          <div style={{ position: 'absolute', left: iconLeft, top: iconTop, lineHeight: 0 }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: iconLeft,
+              top: iconTop,
+              lineHeight: 0,
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <svg
               viewBox={iconData.vb}
               width={iconSize}
               height={iconSize}
-              style={{ display: 'block', color: txtColor }}
+              style={{
+                display: 'block',
+                color: txtColor,
+                pointerEvents: 'none',
+                filter: iconType === 3 ? 'grayscale(1) contrast(1.15)' : 'none',
+              }}
               dangerouslySetInnerHTML={{ __html: iconData.body }}
             />
           </div>
@@ -431,9 +588,12 @@ const DraggableBadge: React.FC<Props> = ({
               fontWeight: 'bold',
               color: txtColor,
               lineHeight: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              pointerEvents: 'none',
             }}
           >
-            {displayValue}
+            {valueNode}
           </span>
         )}
       </>
@@ -455,12 +615,13 @@ const DraggableBadge: React.FC<Props> = ({
         e.stopPropagation();
         onContextMenu?.(badgeId, e);
       }}
-      className="badge-item absolute select-none cursor-move z-50"
+      className="badge-item absolute select-none cursor-move"
       style={{
         width: `${width}px`,
         height: `${height}px`,
         left: `${x}px`,
         top: `${y}px`,
+        zIndex: zIndex ?? 120,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
         background: finalBackground,
@@ -482,6 +643,7 @@ const DraggableBadge: React.FC<Props> = ({
           inset: 0,
           borderRadius: `${radiusVal}px`,
           overflow: 'hidden',
+          pointerEvents: 'none',
         }}
       >
         {renderContent()}

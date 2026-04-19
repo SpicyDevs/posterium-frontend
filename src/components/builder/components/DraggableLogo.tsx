@@ -11,6 +11,9 @@ interface Props {
   logoUrl: string | null;
   canvasScale: number;
   onDragEnd: (dx: number, dy: number) => void;
+  isSelected?: boolean;
+  onSelect?: (multi: boolean) => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
   onLogoLoad?: (naturalW: number, naturalH: number) => void;
 }
 
@@ -19,6 +22,9 @@ const DraggableLogo: React.FC<Props> = ({
   logoUrl,
   canvasScale,
   onDragEnd,
+  isSelected = false,
+  onSelect,
+  onContextMenu,
   onLogoLoad,
 }) => {
   const { viewOptions } = useEditor();
@@ -41,6 +47,7 @@ const DraggableLogo: React.FC<Props> = ({
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
+  const hasDraggedRef = useRef(false);
   const canvasScaleRef = useRef(canvasScale);
   const onDragEndRef = useRef(onDragEnd);
   canvasScaleRef.current = canvasScale;
@@ -56,13 +63,20 @@ const DraggableLogo: React.FC<Props> = ({
     };
   };
   const handleMove = (clientX: number, clientY: number) =>
-    setLiveOffset(calcDelta(clientX, clientY));
+    setLiveOffset(() => {
+      const next = calcDelta(clientX, clientY);
+      if (Math.abs(next.dx) > 2 || Math.abs(next.dy) > 2) hasDraggedRef.current = true;
+      return next;
+    });
   const handleEnd = (clientX: number, clientY: number) => {
     setIsDragging(false);
     const { dx, dy } = calcDelta(clientX, clientY);
     onDragEndRef.current(dx, dy);
     setLiveOffset({ dx: 0, dy: 0 });
     dragStartRef.current = null;
+    setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 50);
   };
   useEffect(() => {
     if (!isDragging) return;
@@ -86,19 +100,24 @@ const DraggableLogo: React.FC<Props> = ({
     };
   }, [isDragging]);
   const snapVal = (val: number) => (viewOptions?.snapToGrid ? snapToGridSize(val) : val);
-  const renderX = snapVal(baseX + liveOffset.dx),
-    renderY = snapVal(baseY + liveOffset.dy);
+  let renderX = isDragging ? baseX + liveOffset.dx : snapVal(baseX + liveOffset.dx),
+    renderY = isDragging ? baseY + liveOffset.dy : snapVal(baseY + liveOffset.dy);
   const centreX = CANVAS_WIDTH / 2,
     centreY = CANVAS_HEIGHT / 2,
     snapTolerance = 8;
-  const nearCentreX = isDragging && Math.abs(renderX + lw / 2 - centreX) < snapTolerance;
-  const nearCentreY = isDragging && Math.abs(renderY + lh / 2 - centreY) < snapTolerance;
-  const dropShadow =
+  if (Math.abs(renderX + lw / 2 - centreX) <= snapTolerance) renderX = centreX - lw / 2;
+  if (Math.abs(renderY + lh / 2 - centreY) <= snapTolerance) renderY = centreY - lh / 2;
+  const nearCentreX = isDragging && Math.abs(renderX + lw / 2 - centreX) <= snapTolerance;
+  const nearCentreY = isDragging && Math.abs(renderY + lh / 2 - centreY) <= snapTolerance;
+  const userDropShadow =
     config.logoShadow > 0
       ? `drop-shadow(0 ${config.logoShadow * 0.5}px ${config.logoShadow}px rgba(0,0,0,0.65))`
-      : undefined;
+      : '';
+  const defaultReadabilityShadow = 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))';
+  const dropShadow = `${defaultReadabilityShadow}${userDropShadow ? ` ${userDropShadow}` : ''}`.trim();
   const startDrag = (mouseX: number, mouseY: number) => {
     setIsDragging(true);
+    hasDraggedRef.current = false;
     dragStartRef.current = { mouseX, mouseY };
   };
   const isVisible = isHovered || isDragging;
@@ -142,17 +161,30 @@ const DraggableLogo: React.FC<Props> = ({
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="absolute select-none cursor-move z-40"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (hasDraggedRef.current) return;
+          onSelect?.(e.shiftKey || e.ctrlKey || e.metaKey);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onContextMenu?.(e);
+        }}
+        className="absolute select-none cursor-move"
         style={{
           left: renderX,
           top: renderY,
           width: lw,
           height: lh,
+          zIndex: config.logoZ ?? 90,
           overflow: 'visible',
           opacity: config.logoOpacity,
           filter: dropShadow,
           touchAction: 'none',
-          outline: isDragging
+          outline: isSelected
+            ? '1.5px solid rgba(196,124,46,0.95)'
+            : isDragging
             ? '1.5px dashed rgba(196,124,46,0.9)'
             : isHovered
               ? '1.5px dashed rgba(255,255,255,0.35)'
