@@ -12,7 +12,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
-import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
+import { BASE_BADGE_W, BASE_BADGE_H, CANVAS_WIDTH } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
 
@@ -276,7 +276,9 @@ const DraggableBadge: React.FC<Props> = ({
       ? `${rawTextForSizing.slice(0, textMaxChars).trimEnd()}…`
       : rawTextForSizing;
   const dynamicTextWidth =
-    badgeId === 'year'
+    badgeId === 'title'
+      ? Math.max(120, Math.round(itemConfig?.textBoxWidth ?? CANVAS_WIDTH))
+      : badgeId === 'year'
       ? Math.max(
           baseWidth,
           Math.ceil(displayTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
@@ -285,14 +287,23 @@ const DraggableBadge: React.FC<Props> = ({
   const width = dynamicTextWidth;
   const titleCharsPerLine = Math.max(
     8,
-    Math.floor((Math.max(baseWidth, 1) - 16 * displayScale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+    Math.floor(
+      (Math.max(width, 1) - 16 * displayScale) /
+        Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1)
+    )
   );
   const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(displayTextForSizing.length, 1) / titleCharsPerLine));
   const titleLineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
   const titleRenderedLines =
     titleLineClamp > 0 ? Math.min(titleEstimatedLines, titleLineClamp) : titleEstimatedLines;
-  const titleContentHeight = Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale);
-  const height = badgeId === 'title' ? Math.max(baseHeight, titleContentHeight) : baseHeight;
+  const titleContentHeight = Math.max(
+    baseHeight,
+    Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale)
+  );
+  const height =
+    badgeId === 'title'
+      ? Math.max(32, Math.round(itemConfig?.textBoxHeight ?? Math.max(76, titleContentHeight)))
+      : baseHeight;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const toRgba = (hex: string | undefined, alpha: number) => {

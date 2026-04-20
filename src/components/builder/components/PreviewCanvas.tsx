@@ -137,15 +137,25 @@ const PreviewCanvas: React.FC<Props> = ({
           ? `${measured.slice(0, textMaxChars).trimEnd()}…`
           : measured;
       if (id === 'title') {
-        const w = BASE_BADGE_W * scale;
+        const w = Math.max(120, Math.round(itemCfg?.textBoxWidth ?? CANVAS_WIDTH));
         const charsPerLine = Math.max(
           8,
-          Math.floor((Math.max(w, 1) - 16 * scale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+          Math.floor(
+            (Math.max(w, 1) - 16 * scale) /
+              Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1)
+          )
         );
         const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
         const lineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
         const renderedLines = lineClamp > 0 ? Math.min(estimatedLines, lineClamp) : estimatedLines;
-        const titleHeight = Math.max(h, Math.ceil(renderedLines * textSize * textLineHeight + 16 * scale));
+        const contentHeight = Math.max(
+          h,
+          Math.ceil(renderedLines * textSize * textLineHeight + 16 * scale)
+        );
+        const titleHeight = Math.max(
+          32,
+          Math.round(itemCfg?.textBoxHeight ?? Math.max(76, contentHeight))
+        );
         return { w, h: titleHeight };
       }
       const w = Math.max(

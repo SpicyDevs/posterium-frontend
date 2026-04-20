@@ -199,10 +199,15 @@ export const calculateAutoPosition = (
   const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
   const dims = orderedIds.map((id) => {
     const perBadgeScale = config.items[id]?.scale ?? globalScale;
+    const isTitle = id === 'title';
     return {
       id,
-      w: BASE_BADGE_W * sizeScale * perBadgeScale,
-      h: BASE_BADGE_H * sizeScale * perBadgeScale,
+      w: isTitle
+        ? Math.max(120, config.items[id]?.textBoxWidth ?? CANVAS_WIDTH)
+        : BASE_BADGE_W * sizeScale * perBadgeScale,
+      h: isTitle
+        ? Math.max(32, config.items[id]?.textBoxHeight ?? Math.round(BASE_BADGE_H * sizeScale * perBadgeScale))
+        : BASE_BADGE_H * sizeScale * perBadgeScale,
     };
   });
   if (dims.length === 0) {
@@ -401,6 +406,10 @@ export const generateApiUrl = (
       p.set(`${code}_ls`, item.labelSize.toString());
     if (item.labelColor !== undefined && item.labelColor !== config.labelColor)
       p.set(`${code}_lc`, item.labelColor);
+    if (item.textBoxWidth !== undefined && key === 'title')
+      p.set(`${code}_tw`, Math.round(item.textBoxWidth).toString());
+    if (item.textBoxHeight !== undefined && key === 'title')
+      p.set(`${code}_th`, Math.round(item.textBoxHeight).toString());
   });
 
   // ── Logo overlay ──────────────────────────────────────────────────────
@@ -550,6 +559,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             break;
           case 'lc':
             items[badgeKey].labelColor = value;
+            break;
+          case 'tw':
+            items[badgeKey].textBoxWidth = parseInt(value);
+            break;
+          case 'th':
+            items[badgeKey].textBoxHeight = parseInt(value);
             break;
         }
       }
@@ -766,6 +781,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       const lt = p.get(`${key}_lt`) ?? p.get(`${key}_label_text`);
       const ls = p.get(`${key}_ls`) ?? p.get(`${key}_label_size`);
       const lc = p.get(`${key}_lc`) ?? p.get(`${key}_label_color`);
+      const tw = p.get(`${key}_tw`);
+      const th = p.get(`${key}_th`);
 
       if (
         x ||
@@ -781,7 +798,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         bw ||
         nt ||
         nm ||
-        lp
+        lp ||
+        tw ||
+        th
       ) {
         items[key] = {
           ...(x ? { x: parseInt(x) } : {}),
@@ -804,6 +823,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ...(lt ? { labelText: lt } : {}),
           ...(ls ? { labelSize: parseInt(ls) } : {}),
           ...(lc ? { labelColor: lc } : {}),
+          ...(tw ? { textBoxWidth: parseInt(tw) } : {}),
+          ...(th ? { textBoxHeight: parseInt(th) } : {}),
         };
       }
     });

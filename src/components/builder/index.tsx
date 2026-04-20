@@ -316,6 +316,7 @@ const StudioLayout: React.FC<{
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
@@ -1090,6 +1091,7 @@ const StudioLayout: React.FC<{
           isOpen={isImportOpen}
           onClose={() => setIsImportOpen(false)}
           onLoad={handleLoadConfig}
+          anchorRef={importBtnRef}
         />
         <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         <ContextMenu
@@ -1316,6 +1318,7 @@ const StudioLayout: React.FC<{
 
               {/* Import */}
               <button
+                ref={importBtnRef}
                 onClick={() => setIsImportOpen(true)}
                 className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
                 style={{ color: 'var(--film-text-dim)' }}
