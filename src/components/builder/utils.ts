@@ -186,6 +186,23 @@ export const SNAP_GRID_SIZE = 10;
 export const snapToGridSize = (n: number, gridSize = SNAP_GRID_SIZE): number =>
   Math.round(n / gridSize) * gridSize;
 
+const clampTitleCharWidth = (n: number) => Math.max(4, Math.min(80, Math.round(n)));
+const clampTitleCharHeight = (n: number) => Math.max(1, Math.min(12, Math.round(n)));
+const resolveTitleCharWidth = (item: BadgeConfig | undefined, sizeScale: number, perBadgeScale: number) => {
+  const textSize = Math.max(8, item?.textSize ?? 36) * sizeScale * perBadgeScale;
+  const letterSpacing = (item?.textLetterSpacing ?? 0) * sizeScale * perBadgeScale;
+  const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, letterSpacing));
+  const legacyPx = item?.textBoxWidth;
+  const fromLegacy =
+    legacyPx && legacyPx > 120 ? Math.max(4, Math.round((legacyPx - 16 * sizeScale * perBadgeScale) / approxCharPx)) : undefined;
+  return clampTitleCharWidth(item?.textCharWidth ?? fromLegacy ?? 24);
+};
+const resolveTitleCharHeight = (item: BadgeConfig | undefined) => {
+  const legacyPx = item?.textBoxHeight;
+  const fromLegacy = legacyPx && legacyPx > 16 ? Math.max(1, Math.round(legacyPx / 36)) : undefined;
+  return clampTitleCharHeight(item?.textCharHeight ?? fromLegacy ?? 1);
+};
+
 export const calculateAutoPosition = (
   ratingId: RatingType,
   index: number,
@@ -199,10 +216,29 @@ export const calculateAutoPosition = (
   const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
   const dims = orderedIds.map((id) => {
     const perBadgeScale = config.items[id]?.scale ?? globalScale;
+    const isTitle = id === 'title';
+    const item = config.items[id];
+    const titleCharsW = resolveTitleCharWidth(item, sizeScale, perBadgeScale);
+    const titleCharsH = resolveTitleCharHeight(item);
+    const titleTextSize = Math.max(8, item?.textSize ?? 36) * sizeScale * perBadgeScale;
+    const titleLetterSpacing = (item?.textLetterSpacing ?? 0) * sizeScale * perBadgeScale;
+    const titleLineHeight = item?.textLineHeight ?? 1.1;
+    const titleWidthPx = Math.max(
+      120,
+      Math.round(titleCharsW * (titleTextSize * 0.54 + Math.max(0, titleLetterSpacing)) + 16 * sizeScale * perBadgeScale)
+    );
+    const titleHeightPx = Math.max(
+      32,
+      Math.round(titleCharsH * titleTextSize * titleLineHeight + 16 * sizeScale * perBadgeScale)
+    );
     return {
       id,
-      w: BASE_BADGE_W * sizeScale * perBadgeScale,
-      h: BASE_BADGE_H * sizeScale * perBadgeScale,
+      w: isTitle
+        ? titleWidthPx
+        : BASE_BADGE_W * sizeScale * perBadgeScale,
+      h: isTitle
+        ? titleHeightPx
+        : BASE_BADGE_H * sizeScale * perBadgeScale,
     };
   });
   if (dims.length === 0) {
@@ -401,6 +437,12 @@ export const generateApiUrl = (
       p.set(`${code}_ls`, item.labelSize.toString());
     if (item.labelColor !== undefined && item.labelColor !== config.labelColor)
       p.set(`${code}_lc`, item.labelColor);
+    if (item.textCharWidth !== undefined && key === 'title')
+      p.set(`${code}_tw`, Math.round(item.textCharWidth).toString());
+    if (item.textCharHeight !== undefined && key === 'title')
+      p.set(`${code}_th`, Math.round(item.textCharHeight).toString());
+    if (item.textWrapEnabled !== undefined && key === 'title')
+      p.set(`${code}_wr`, item.textWrapEnabled ? '1' : '0');
   });
 
   // ── Logo overlay ──────────────────────────────────────────────────────
@@ -550,6 +592,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             break;
           case 'lc':
             items[badgeKey].labelColor = value;
+            break;
+          case 'tw':
+            items[badgeKey].textCharWidth = parseInt(value);
+            break;
+          case 'th':
+            items[badgeKey].textCharHeight = parseInt(value);
+            break;
+          case 'wr':
+            items[badgeKey].textWrapEnabled = value !== '0';
             break;
         }
       }
@@ -766,6 +817,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       const lt = p.get(`${key}_lt`) ?? p.get(`${key}_label_text`);
       const ls = p.get(`${key}_ls`) ?? p.get(`${key}_label_size`);
       const lc = p.get(`${key}_lc`) ?? p.get(`${key}_label_color`);
+      const tw = p.get(`${key}_tw`);
+      const th = p.get(`${key}_th`);
+      const wr = p.get(`${key}_wr`);
 
       if (
         x ||
@@ -781,7 +835,10 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         bw ||
         nt ||
         nm ||
-        lp
+        lp ||
+        tw ||
+        th ||
+        wr
       ) {
         items[key] = {
           ...(x ? { x: parseInt(x) } : {}),
@@ -804,6 +861,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ...(lt ? { labelText: lt } : {}),
           ...(ls ? { labelSize: parseInt(ls) } : {}),
           ...(lc ? { labelColor: lc } : {}),
+          ...(tw ? { textCharWidth: parseInt(tw) } : {}),
+          ...(th ? { textCharHeight: parseInt(th) } : {}),
+          ...(wr ? { textWrapEnabled: wr !== '0' } : {}),
         };
       }
     });

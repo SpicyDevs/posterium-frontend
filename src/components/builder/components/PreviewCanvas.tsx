@@ -127,7 +127,7 @@ const PreviewCanvas: React.FC<Props> = ({
       const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
       const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
       const textLineHeight = itemCfg?.textLineHeight ?? 1.1;
-      const textMaxLinesRaw = Math.round(itemCfg?.textMaxLines ?? 0);
+      const legacyMaxLinesRaw = Math.round(itemCfg?.textMaxLines ?? 0);
       if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
       const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
       const fallback = id === 'year' ? '2026' : 'Title';
@@ -137,15 +137,36 @@ const PreviewCanvas: React.FC<Props> = ({
           ? `${measured.slice(0, textMaxChars).trimEnd()}…`
           : measured;
       if (id === 'title') {
-        const w = BASE_BADGE_W * scale;
+        const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
+        const legacyWidthPx = itemCfg?.textBoxWidth;
+        const legacyFromPx =
+          legacyWidthPx && legacyWidthPx > 120
+            ? Math.max(4, Math.round((legacyWidthPx - 16 * scale) / approxCharPx))
+            : undefined;
+        const charWidth = Math.max(4, Math.min(80, Math.round(itemCfg?.textCharWidth ?? legacyFromPx ?? 24)));
+        const legacyHeightPx = itemCfg?.textBoxHeight;
+        const legacyHeightLines =
+          legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
+        const charHeight = Math.max(
+          1,
+          Math.min(
+            12,
+            Math.round(
+              itemCfg?.textCharHeight ??
+                legacyHeightLines ??
+                (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)
+            )
+          )
+        );
+        const wrapEnabled = itemCfg?.textWrapEnabled ?? true;
+        const w = Math.max(120, Math.round(charWidth * approxCharPx + 16 * scale));
         const charsPerLine = Math.max(
-          8,
-          Math.floor((Math.max(w, 1) - 16 * scale) / Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1))
+          1,
+          Math.floor((Math.max(w, 1) - 16 * scale) / approxCharPx)
         );
         const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
-        const lineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
-        const renderedLines = lineClamp > 0 ? Math.min(estimatedLines, lineClamp) : estimatedLines;
-        const titleHeight = Math.max(h, Math.ceil(renderedLines * textSize * textLineHeight + 16 * scale));
+        const renderedLines = wrapEnabled ? Math.min(estimatedLines, charHeight) : 1;
+        const titleHeight = Math.max(32, Math.round(charHeight * textSize * textLineHeight + 16 * scale));
         return { w, h: titleHeight };
       }
       const w = Math.max(

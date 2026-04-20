@@ -37,6 +37,7 @@ const DraggableLogo: React.FC<Props> = ({
       : undefined;
   const bgBorderColor = config.logoBgBorderC ?? '#ffffff';
   const hasStandaloneBorder = !config.logoBgEnabled && config.logoBgBorderW > 0;
+  const logoRadius = Math.max(0, config.logoBgRadius ?? 0);
   const baseX =
     config.logoX !== null && config.logoX !== undefined
       ? config.logoX
@@ -180,7 +181,6 @@ const DraggableLogo: React.FC<Props> = ({
           zIndex: config.logoZ ?? 90,
           overflow: 'visible',
           opacity: config.logoOpacity,
-          filter: dropShadow,
           touchAction: 'none',
           outline: isSelected
             ? '1.5px solid rgba(196,124,46,0.95)'
@@ -190,7 +190,7 @@ const DraggableLogo: React.FC<Props> = ({
               ? '1.5px dashed rgba(255,255,255,0.35)'
               : '1.5px dashed rgba(255,255,255,0.12)',
           outlineOffset: 3,
-          borderRadius: hasStandaloneBorder ? config.logoBgRadius : 2,
+          borderRadius: logoRadius,
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
       >
@@ -199,7 +199,7 @@ const DraggableLogo: React.FC<Props> = ({
             className="absolute pointer-events-none"
             style={{
               inset: `${-bgPadding}px`,
-              borderRadius: config.logoBgRadius,
+              borderRadius: logoRadius,
               background: config.logoBgColor ?? '#000000',
               opacity: config.logoBgOpacity,
               boxShadow: bgShadow,
@@ -216,7 +216,7 @@ const DraggableLogo: React.FC<Props> = ({
             className="absolute pointer-events-none"
             style={{
               inset: 0,
-              borderRadius: config.logoBgRadius,
+              borderRadius: logoRadius,
               outline: `${config.logoBgBorderW}px solid ${bgBorderColor}`,
               outlineOffset: 0,
             }}
@@ -233,7 +233,7 @@ const DraggableLogo: React.FC<Props> = ({
               onLogoLoad?.(img.naturalWidth, img.naturalHeight);
             }}
             className="w-full h-full object-contain pointer-events-none relative z-10"
-            style={{ userSelect: 'none' }}
+            style={{ userSelect: 'none', borderRadius: logoRadius, filter: dropShadow }}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded relative z-10">

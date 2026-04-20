@@ -353,6 +353,39 @@ const ToggleRow: React.FC<{
   </div>
 );
 
+const SegmentedRow: React.FC<{
+  label: string;
+  options: { id: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}> = ({ label, options, value, onChange }) => (
+  <div className="space-y-1.5">
+    <p
+      className="syne-font uppercase tracking-widest"
+      style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+    >
+      {label}
+    </p>
+    <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          onClick={() => onChange(opt.id)}
+          className={clsx(
+            'h-8 rounded-md text-[10px] font-medium transition-all border syne-font',
+            value === opt.id
+              ? 'bg-[rgba(196,124,46,0.15)] text-[var(--film-pale)] border-[rgba(196,124,46,0.3)]'
+              : 'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-label)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-cream)]'
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 // ── Section — flat collapsible matching PropertyPanel ─────────────────────────
 const Section: React.FC<{
   title: string;
@@ -1538,13 +1571,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               </Switch>
             </div>
             <div className="px-1">
-              <p
-                className="syne-font uppercase tracking-widest mb-1.5"
-                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-              >
-                Logo Source
-              </p>
-              <SelectBox
+              <SegmentedRow
+                label="Logo Source"
                 value={String(config.logoSource ?? 'auto')}
                 onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : v)}
                 options={logoSourceOptions}

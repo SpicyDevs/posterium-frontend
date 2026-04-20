@@ -703,6 +703,31 @@ const PropertyPanel: React.FC<Props> = ({
       return { ...prev, items: newItems };
     });
 
+  const updateTitleDefaults = (updates: Partial<BadgeConfig>) =>
+    setConfig((prev) => ({
+      ...prev,
+      items: {
+        ...prev.items,
+        title: {
+          ...(prev.items.title ?? {}),
+          ...updates,
+        },
+      },
+    }));
+
+  const clearTitleDefaultProp = (prop: keyof BadgeConfig) =>
+    setConfig((prev) => {
+      const nextTitle = { ...(prev.items.title ?? {}) };
+      delete nextTitle[prop];
+      return {
+        ...prev,
+        items: {
+          ...prev.items,
+          title: nextTitle,
+        },
+      };
+    });
+
   // Returns the shared value across all selected badges, or null if mixed.
   const getCommonValue = <K extends keyof BadgeConfig>(
     prop: K,
@@ -719,6 +744,7 @@ const PropertyPanel: React.FC<Props> = ({
   const showGlobal = panelMode !== 'selection';
   const showBadgeSettings = panelMode === 'badges';
   const showLogoSettings = panelMode === 'badges';
+  const showTitleDefaults = showBadgeSettings && config.ratings.includes('title');
   const logoSectionTitle = 'Logo Overlay';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
@@ -1038,6 +1064,66 @@ const PropertyPanel: React.FC<Props> = ({
           </>
         )}
 
+        {showTitleDefaults && (
+          <Section title="Title Layer" icon={<Type size={10} />} sectionId="global-title-layer">
+            <SliderRow
+              label="Container Width"
+              value={Math.max(4, Math.round(config.items.title?.textCharWidth ?? 24))}
+              min={4}
+              max={80}
+              step={1}
+              unit="ch"
+              onChange={(v) => updateTitleDefaults({ textCharWidth: Math.round(v) })}
+              onReset={() =>
+                updateTitleDefaults({
+                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
+                })
+              }
+            />
+            <SliderRow
+              label="Container Height"
+              value={Math.max(1, Math.round(config.items.title?.textCharHeight ?? 1))}
+              min={1}
+              max={12}
+              step={1}
+              unit="ln"
+              onChange={(v) => updateTitleDefaults({ textCharHeight: Math.round(v) })}
+              onReset={() =>
+                updateTitleDefaults({
+                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
+                })
+              }
+            />
+            <SegmentedRow
+              label="Text Align"
+              options={[
+                { id: 'left', label: 'Left' },
+                { id: 'center', label: 'Center' },
+                { id: 'right', label: 'Right' },
+              ]}
+              value={config.items.title?.textAlign ?? 'left'}
+              onChange={(v) => updateTitleDefaults({ textAlign: v as BadgeConfig['textAlign'] })}
+            />
+            <SliderRow
+              label="Ellipsis Cutoff"
+              value={Math.max(0, Math.round(config.items.title?.textMaxChars ?? 0))}
+              min={0}
+              max={300}
+              step={1}
+              unit="ch"
+              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
+              onChange={(v) => updateTitleDefaults({ textMaxChars: Math.round(v) })}
+              onReset={() => clearTitleDefaultProp('textMaxChars')}
+            />
+            <ToggleRow
+              label="Auto Wrap"
+              sub="Wrap based on character width/height"
+              checked={config.items.title?.textWrapEnabled ?? true}
+              onChange={(v) => updateTitleDefaults({ textWrapEnabled: v })}
+            />
+          </Section>
+        )}
+
         {showLogoSettings && config.logo && (
           <div ref={logoSettingsRef}>
             <Section
@@ -1113,14 +1199,6 @@ const PropertyPanel: React.FC<Props> = ({
                   onChange={(v) => updateConfig('logoBgPadding', v)}
                 />
                 <SliderRow
-                  label="Corner Radius"
-                  value={config.logoBgRadius}
-                  min={0}
-                  max={40}
-                  unit="px"
-                  onChange={(v) => updateConfig('logoBgRadius', v)}
-                />
-                <SliderRow
                   label="Background Shadow"
                   value={config.logoBgShadow}
                   min={0}
@@ -1154,6 +1232,14 @@ const PropertyPanel: React.FC<Props> = ({
                 </button>
               </>
             )}
+            <SliderRow
+              label="Border Radius"
+              value={config.logoBgRadius}
+              min={0}
+              max={40}
+              unit="px"
+              onChange={(v) => updateConfig('logoBgRadius', v)}
+            />
             <p
               className="body-font leading-relaxed"
               style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
@@ -1295,6 +1381,19 @@ const PropertyPanel: React.FC<Props> = ({
     | 'left'
     | 'center'
     | 'right';
+  const commonTextCharWidth = (getCommonValue(
+    'textCharWidth',
+    DEFAULT_CONFIG.items.title?.textCharWidth ?? 24
+  ) ??
+    DEFAULT_CONFIG.items.title?.textCharWidth ??
+    24) as number;
+  const commonTextCharHeight = (getCommonValue(
+    'textCharHeight',
+    DEFAULT_CONFIG.items.title?.textCharHeight ?? 1
+  ) ??
+    DEFAULT_CONFIG.items.title?.textCharHeight ??
+    1) as number;
+  const commonTextWrapEnabled = (getCommonValue('textWrapEnabled', true) ?? true) as boolean;
   const commonTextMaxChars = (getCommonValue('textMaxChars', 0) ?? 0) as number;
   const commonTextShadowEnabled = (getCommonValue('textShadowEnabled', false) ?? false) as boolean;
   const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
@@ -1387,6 +1486,38 @@ const PropertyPanel: React.FC<Props> = ({
               onReset={() => updateSelectedBadges({ textSize: 36 })}
             />
           )}
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Container Width"
+              value={Math.max(4, Math.round(commonTextCharWidth))}
+              min={4}
+              max={80}
+              step={1}
+              unit="ch"
+              onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
+              onReset={() =>
+                updateSelectedBadges({
+                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
+                })
+              }
+            />
+          )}
+          {isOnlyTitleSelected && (
+            <SliderRow
+              label="Container Height"
+              value={Math.max(1, Math.round(commonTextCharHeight))}
+              min={1}
+              max={12}
+              step={1}
+              unit="ln"
+              onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
+              onReset={() =>
+                updateSelectedBadges({
+                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
+                })
+              }
+            />
+          )}
           <SliderRow
             label="Font Weight"
             value={commonTextWeight}
@@ -1439,15 +1570,11 @@ const PropertyPanel: React.FC<Props> = ({
             />
           )}
           {isOnlyTitleSelected && (
-            <SliderRow
-              label="Wrap Lines"
-              value={Math.max(0, Math.round(getCommonValue('textMaxLines', 0) ?? 0))}
-              min={0}
-              max={8}
-              step={1}
-              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} lines`)}
-              onChange={(v) => updateSelectedBadges({ textMaxLines: Math.round(v) })}
-              onReset={() => updateSelectedBadges({ textMaxLines: 0 })}
+            <ToggleRow
+              label="Auto Wrap"
+              sub="Wrap based on character width/height"
+              checked={commonTextWrapEnabled}
+              onChange={(v) => updateSelectedBadges({ textWrapEnabled: v })}
             />
           )}
           <ToggleRow
@@ -1494,9 +1621,10 @@ const PropertyPanel: React.FC<Props> = ({
         </Section>
       )}
       {/* Transform ── scale */}
+      {!isOnlyTitleSelected && (
       <Section title="Transform" sectionId="badge-transform">
         <SliderRow
-          label={isTitleOrYearOnlySelection ? 'Layer Width' : 'Scale'}
+          label={isOnlyYearSelected ? 'Layer Width' : 'Scale'}
           value={commonScale}
           min={0.5}
           max={2.0}
@@ -1506,6 +1634,7 @@ const PropertyPanel: React.FC<Props> = ({
           onReset={commonScale !== 1.0 ? () => updateSelectedBadges({ scale: 1.0 }) : undefined}
         />
       </Section>
+      )}
 
       {/* Shape ── blur, radius, shadow, border */}
       <Section title={isTitleOrYearOnlySelection ? 'Container' : 'Shape'} sectionId="badge-shape">
@@ -1739,9 +1868,25 @@ const PropertyPanel: React.FC<Props> = ({
           />
           <ToggleRow
             label="Background"
+            sub="Add a styled panel behind the logo"
             checked={config.logoBgEnabled}
             onChange={(v) => updateConfig('logoBgEnabled', v)}
           />
+          <SliderRow
+            label="Border Width"
+            value={config.logoBgBorderW}
+            min={0}
+            max={10}
+            unit="px"
+            onChange={(v) => updateConfig('logoBgBorderW', Math.round(v))}
+          />
+          {config.logoBgBorderW > 0 && (
+            <ColorRow
+              label="Border Color"
+              value={config.logoBgBorderC ?? '#ffffff'}
+              onChange={(v) => updateConfig('logoBgBorderC', v)}
+            />
+          )}
           {config.logoBgEnabled && (
             <>
               <ColorRow
@@ -1761,37 +1906,47 @@ const PropertyPanel: React.FC<Props> = ({
                 onChange={(v) => updateConfig('logoBgPadding', v)}
               />
               <SliderRow
-                label="Corner Radius"
-                value={config.logoBgRadius}
-                min={0}
-                max={40}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgRadius', v)}
-              />
-              <SliderRow
-                label="Border Width"
-                value={config.logoBgBorderW}
-                min={0}
-                max={10}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgBorderW', Math.round(v))}
-              />
-              {config.logoBgBorderW > 0 && (
-                <ColorRow
-                  label="Border Color"
-                  value={config.logoBgBorderC ?? '#ffffff'}
-                  onChange={(v) => updateConfig('logoBgBorderC', v)}
-                />
-              )}
-              <SliderRow
                 label="Background Shadow"
                 value={config.logoBgShadow}
                 min={0}
                 max={30}
                 onChange={(v) => updateConfig('logoBgShadow', v)}
               />
+              <button
+                type="button"
+                onClick={() =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    logoBgEnabled: true,
+                    logoBgColor: prev.bg ?? '#000000',
+                    logoBgOpacity: prev.alpha,
+                    logoBgRadius: prev.radius,
+                    logoBgPadding: 10,
+                    logoBgBorderW: prev.borderW ?? 0,
+                    logoBgBorderC: prev.borderC ?? '#ffffff',
+                    logoBgShadow: resolveShadow(prev.shadow, 6),
+                  }))
+                }
+                className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
+                style={{
+                  border: '1px solid rgba(196,124,46,0.16)',
+                  background: 'rgba(196,124,46,0.08)',
+                  color: 'var(--film-pale)',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Apply Badge Style to Logo Background
+              </button>
             </>
           )}
+          <SliderRow
+            label="Border Radius"
+            value={config.logoBgRadius}
+            min={0}
+            max={40}
+            unit="px"
+            onChange={(v) => updateConfig('logoBgRadius', v)}
+          />
         </Section>
       )}
 
