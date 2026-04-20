@@ -21,6 +21,7 @@ const PRESET_DEFAULTS = {
   b: { blur: 0, alpha: 0.4, radius: 12, shadow: 6, icon: true },
   m: { blur: 0, alpha: 0.0, radius: 0, shadow: 0, icon: false },
 } as const;
+const TITLE_ACCENT_MIN_RADIUS = 6;
 
 // ── Provider display names for default label text ──────────────────────────
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
@@ -318,16 +319,14 @@ const DraggableBadge: React.FC<Props> = ({
     baseHeight,
     Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale)
   );
+  const hasExplicitTitleCharHeight =
+    itemConfig?.textCharHeight !== undefined || legacyHeightLines !== undefined;
+  const resolvedTitleHeight = hasExplicitTitleCharHeight
+    ? titleCharHeight * textSize * textLineHeight + 16 * displayScale
+    : titleContentHeight;
   const height =
     badgeId === 'title'
-      ? Math.max(
-          32,
-          Math.round(
-            itemConfig?.textCharHeight !== undefined || legacyHeightLines !== undefined
-              ? titleCharHeight * textSize * textLineHeight + 16 * displayScale
-              : titleContentHeight
-          )
-        )
+      ? Math.max(32, Math.round(resolvedTitleHeight))
       : baseHeight;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
@@ -710,7 +709,7 @@ const DraggableBadge: React.FC<Props> = ({
           className="absolute pointer-events-none"
           style={{
             inset: 0,
-            borderRadius: `${Math.max(radiusVal, 6)}px`,
+            borderRadius: `${Math.max(radiusVal, TITLE_ACCENT_MIN_RADIUS)}px`,
             border: '1px dotted rgba(196,124,46,0.4)',
           }}
         />
