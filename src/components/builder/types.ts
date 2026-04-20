@@ -403,7 +403,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
       textAlign: 'left',
       textMaxChars: 0,
       textMaxLines: 0,
-      textBoxWidth: CANVAS_WIDTH,
+      textBoxWidth: 500,
       textBoxHeight: 76,
     },
   },
