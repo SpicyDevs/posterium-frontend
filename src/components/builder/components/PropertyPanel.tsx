@@ -1068,29 +1068,29 @@ const PropertyPanel: React.FC<Props> = ({
           <Section title="Title Layer" icon={<Type size={10} />} sectionId="global-title-layer">
             <SliderRow
               label="Container Width"
-              value={Math.max(120, config.items.title?.textBoxWidth ?? CANVAS_WIDTH)}
-              min={120}
-              max={CANVAS_WIDTH}
+              value={Math.max(4, Math.round(config.items.title?.textCharWidth ?? 24))}
+              min={4}
+              max={80}
               step={1}
-              unit="px"
-              onChange={(v) => updateTitleDefaults({ textBoxWidth: Math.round(v) })}
+              unit="ch"
+              onChange={(v) => updateTitleDefaults({ textCharWidth: Math.round(v) })}
               onReset={() =>
                 updateTitleDefaults({
-                  textBoxWidth: DEFAULT_CONFIG.items.title?.textBoxWidth ?? CANVAS_WIDTH,
+                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
                 })
               }
             />
             <SliderRow
               label="Container Height"
-              value={Math.max(32, config.items.title?.textBoxHeight ?? 76)}
-              min={32}
-              max={240}
+              value={Math.max(1, Math.round(config.items.title?.textCharHeight ?? 1))}
+              min={1}
+              max={12}
               step={1}
-              unit="px"
-              onChange={(v) => updateTitleDefaults({ textBoxHeight: Math.round(v) })}
+              unit="ln"
+              onChange={(v) => updateTitleDefaults({ textCharHeight: Math.round(v) })}
               onReset={() =>
                 updateTitleDefaults({
-                  textBoxHeight: DEFAULT_CONFIG.items.title?.textBoxHeight ?? 76,
+                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
                 })
               }
             />
@@ -1115,15 +1115,11 @@ const PropertyPanel: React.FC<Props> = ({
               onChange={(v) => updateTitleDefaults({ textMaxChars: Math.round(v) })}
               onReset={() => clearTitleDefaultProp('textMaxChars')}
             />
-            <SliderRow
-              label="Wrap Lines"
-              value={Math.max(0, Math.round(config.items.title?.textMaxLines ?? 0))}
-              min={0}
-              max={8}
-              step={1}
-              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} lines`)}
-              onChange={(v) => updateTitleDefaults({ textMaxLines: Math.round(v) })}
-              onReset={() => clearTitleDefaultProp('textMaxLines')}
+            <ToggleRow
+              label="Auto Wrap"
+              sub="Wrap based on character width/height"
+              checked={config.items.title?.textWrapEnabled ?? true}
+              onChange={(v) => updateTitleDefaults({ textWrapEnabled: v })}
             />
           </Section>
         )}
@@ -1203,14 +1199,6 @@ const PropertyPanel: React.FC<Props> = ({
                   onChange={(v) => updateConfig('logoBgPadding', v)}
                 />
                 <SliderRow
-                  label="Corner Radius"
-                  value={config.logoBgRadius}
-                  min={0}
-                  max={40}
-                  unit="px"
-                  onChange={(v) => updateConfig('logoBgRadius', v)}
-                />
-                <SliderRow
                   label="Background Shadow"
                   value={config.logoBgShadow}
                   min={0}
@@ -1244,6 +1232,14 @@ const PropertyPanel: React.FC<Props> = ({
                 </button>
               </>
             )}
+            <SliderRow
+              label="Border Radius"
+              value={config.logoBgRadius}
+              min={0}
+              max={40}
+              unit="px"
+              onChange={(v) => updateConfig('logoBgRadius', v)}
+            />
             <p
               className="body-font leading-relaxed"
               style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
@@ -1385,18 +1381,19 @@ const PropertyPanel: React.FC<Props> = ({
     | 'left'
     | 'center'
     | 'right';
-  const commonTextBoxWidth = (getCommonValue(
-    'textBoxWidth',
-    DEFAULT_CONFIG.items.title?.textBoxWidth ?? CANVAS_WIDTH
+  const commonTextCharWidth = (getCommonValue(
+    'textCharWidth',
+    DEFAULT_CONFIG.items.title?.textCharWidth ?? 24
   ) ??
-    DEFAULT_CONFIG.items.title?.textBoxWidth ??
-    CANVAS_WIDTH) as number;
-  const commonTextBoxHeight = (getCommonValue(
-    'textBoxHeight',
-    DEFAULT_CONFIG.items.title?.textBoxHeight ?? 76
+    DEFAULT_CONFIG.items.title?.textCharWidth ??
+    24) as number;
+  const commonTextCharHeight = (getCommonValue(
+    'textCharHeight',
+    DEFAULT_CONFIG.items.title?.textCharHeight ?? 1
   ) ??
-    DEFAULT_CONFIG.items.title?.textBoxHeight ??
-    76) as number;
+    DEFAULT_CONFIG.items.title?.textCharHeight ??
+    1) as number;
+  const commonTextWrapEnabled = (getCommonValue('textWrapEnabled', true) ?? true) as boolean;
   const commonTextMaxChars = (getCommonValue('textMaxChars', 0) ?? 0) as number;
   const commonTextShadowEnabled = (getCommonValue('textShadowEnabled', false) ?? false) as boolean;
   const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
@@ -1492,15 +1489,15 @@ const PropertyPanel: React.FC<Props> = ({
           {isOnlyTitleSelected && (
             <SliderRow
               label="Container Width"
-              value={Math.max(120, Math.round(commonTextBoxWidth))}
-              min={120}
-              max={CANVAS_WIDTH}
+              value={Math.max(4, Math.round(commonTextCharWidth))}
+              min={4}
+              max={80}
               step={1}
-              unit="px"
-              onChange={(v) => updateSelectedBadges({ textBoxWidth: Math.round(v) })}
+              unit="ch"
+              onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
               onReset={() =>
                 updateSelectedBadges({
-                  textBoxWidth: DEFAULT_CONFIG.items.title?.textBoxWidth ?? CANVAS_WIDTH,
+                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
                 })
               }
             />
@@ -1508,15 +1505,15 @@ const PropertyPanel: React.FC<Props> = ({
           {isOnlyTitleSelected && (
             <SliderRow
               label="Container Height"
-              value={Math.max(32, Math.round(commonTextBoxHeight))}
-              min={32}
-              max={240}
+              value={Math.max(1, Math.round(commonTextCharHeight))}
+              min={1}
+              max={12}
               step={1}
-              unit="px"
-              onChange={(v) => updateSelectedBadges({ textBoxHeight: Math.round(v) })}
+              unit="ln"
+              onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
               onReset={() =>
                 updateSelectedBadges({
-                  textBoxHeight: DEFAULT_CONFIG.items.title?.textBoxHeight ?? 76,
+                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
                 })
               }
             />
@@ -1573,15 +1570,11 @@ const PropertyPanel: React.FC<Props> = ({
             />
           )}
           {isOnlyTitleSelected && (
-            <SliderRow
-              label="Wrap Lines"
-              value={Math.max(0, Math.round(getCommonValue('textMaxLines', 0) ?? 0))}
-              min={0}
-              max={8}
-              step={1}
-              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} lines`)}
-              onChange={(v) => updateSelectedBadges({ textMaxLines: Math.round(v) })}
-              onReset={() => updateSelectedBadges({ textMaxLines: 0 })}
+            <ToggleRow
+              label="Auto Wrap"
+              sub="Wrap based on character width/height"
+              checked={commonTextWrapEnabled}
+              onChange={(v) => updateSelectedBadges({ textWrapEnabled: v })}
             />
           )}
           <ToggleRow
@@ -1913,14 +1906,6 @@ const PropertyPanel: React.FC<Props> = ({
                 onChange={(v) => updateConfig('logoBgPadding', v)}
               />
               <SliderRow
-                label="Corner Radius"
-                value={config.logoBgRadius}
-                min={0}
-                max={40}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgRadius', v)}
-              />
-              <SliderRow
                 label="Background Shadow"
                 value={config.logoBgShadow}
                 min={0}
@@ -1954,6 +1939,14 @@ const PropertyPanel: React.FC<Props> = ({
               </button>
             </>
           )}
+          <SliderRow
+            label="Border Radius"
+            value={config.logoBgRadius}
+            min={0}
+            max={40}
+            unit="px"
+            onChange={(v) => updateConfig('logoBgRadius', v)}
+          />
         </Section>
       )}
 

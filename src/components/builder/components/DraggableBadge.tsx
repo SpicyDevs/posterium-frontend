@@ -12,7 +12,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
-import { BASE_BADGE_W, BASE_BADGE_H, CANVAS_WIDTH } from '../types';
+import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils';
 import { BADGE_ICONS } from '../constants';
 
@@ -130,7 +130,12 @@ const DraggableBadge: React.FC<Props> = ({
       }
     }
 
-    onDragEndRef.current(badgeId, dx, dy);
+    const moveThreshold = 2;
+    if (Math.abs(dx) < moveThreshold && Math.abs(dy) < moveThreshold) {
+      onDragEndRef.current(badgeId, 0, 0);
+    } else {
+      onDragEndRef.current(badgeId, dx, dy);
+    }
     dragStartRef.current = null;
     setTimeout(() => {
       hasDraggedRef.current = false;
@@ -256,7 +261,25 @@ const DraggableBadge: React.FC<Props> = ({
   const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
   const textAlign = itemConfig?.textAlign ?? 'left';
   const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
-  const textMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
+  const legacyMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
+  const wrapEnabled = itemConfig?.textWrapEnabled ?? true;
+  const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
+  const legacyWidthPx = itemConfig?.textBoxWidth;
+  const legacyFromPx =
+    legacyWidthPx && legacyWidthPx > 120
+      ? Math.max(4, Math.round((legacyWidthPx - 16 * displayScale) / approxCharPx))
+      : undefined;
+  const titleCharWidth = Math.max(
+    4,
+    Math.min(80, Math.round(itemConfig?.textCharWidth ?? legacyFromPx ?? 24))
+  );
+  const legacyHeightPx = itemConfig?.textBoxHeight;
+  const legacyHeightLines =
+    legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
+  const titleCharHeight = Math.max(
+    1,
+    Math.min(12, Math.round(itemConfig?.textCharHeight ?? legacyHeightLines ?? (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)))
+  );
   const textShadow =
     itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
       ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
@@ -277,7 +300,7 @@ const DraggableBadge: React.FC<Props> = ({
       : rawTextForSizing;
   const dynamicTextWidth =
     badgeId === 'title'
-      ? Math.max(120, Math.round(itemConfig?.textBoxWidth ?? CANVAS_WIDTH))
+      ? Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale))
       : badgeId === 'year'
       ? Math.max(
           baseWidth,
@@ -286,23 +309,25 @@ const DraggableBadge: React.FC<Props> = ({
       : baseWidth;
   const width = dynamicTextWidth;
   const titleCharsPerLine = Math.max(
-    8,
-    Math.floor(
-      (Math.max(width, 1) - 16 * displayScale) /
-        Math.max(textSize * 0.54 + Math.max(0, textLetterSpacing), 1)
-    )
+    1,
+    Math.floor((Math.max(width, 1) - 16 * displayScale) / approxCharPx)
   );
   const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(displayTextForSizing.length, 1) / titleCharsPerLine));
-  const titleLineClamp = textMaxLinesRaw <= 0 ? 0 : Math.max(1, textMaxLinesRaw);
-  const titleRenderedLines =
-    titleLineClamp > 0 ? Math.min(titleEstimatedLines, titleLineClamp) : titleEstimatedLines;
+  const titleRenderedLines = wrapEnabled ? Math.min(titleEstimatedLines, titleCharHeight) : 1;
   const titleContentHeight = Math.max(
     baseHeight,
     Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale)
   );
   const height =
     badgeId === 'title'
-      ? Math.max(32, Math.round(itemConfig?.textBoxHeight ?? Math.max(76, titleContentHeight)))
+      ? Math.max(
+          32,
+          Math.round(
+            itemConfig?.textCharHeight !== undefined || legacyHeightLines !== undefined
+              ? titleCharHeight * textSize * textLineHeight + 16 * displayScale
+              : titleContentHeight
+          )
+        )
       : baseHeight;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
@@ -469,9 +494,9 @@ const DraggableBadge: React.FC<Props> = ({
             wordBreak: badgeId === 'title' ? 'break-word' : 'normal',
             overflow: badgeId === 'title' ? 'hidden' : textMaxChars > 0 ? 'hidden' : 'visible',
             textOverflow: badgeId === 'title' ? 'clip' : textMaxChars > 0 ? 'ellipsis' : 'clip',
-            display: badgeId === 'title' && titleLineClamp > 0 ? '-webkit-box' : 'inline-block',
+            display: badgeId === 'title' && wrapEnabled ? '-webkit-box' : 'inline-block',
             WebkitBoxOrient: badgeId === 'title' ? 'vertical' : undefined,
-            WebkitLineClamp: badgeId === 'title' && titleLineClamp > 0 ? titleLineClamp : undefined,
+            WebkitLineClamp: badgeId === 'title' && wrapEnabled ? titleCharHeight : undefined,
             pointerEvents: 'none',
           }}
         >
@@ -635,12 +660,7 @@ const DraggableBadge: React.FC<Props> = ({
         zIndex: zIndex ?? 120,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
-        background: finalBackground,
-        borderRadius: `${radiusVal}px`,
         boxShadow: 'none',
-        filter: dropShadowFilter || 'none',
-        backdropFilter: `blur(${blurVal}px)`,
-        WebkitBackdropFilter: `blur(${blurVal}px)`,
         opacity: isObscuring ? 0.35 : 1,
         pointerEvents: isObscuring ? 'none' : 'auto',
         touchAction: 'none',
@@ -653,11 +673,25 @@ const DraggableBadge: React.FC<Props> = ({
           position: 'absolute',
           inset: 0,
           borderRadius: `${radiusVal}px`,
-          overflow: 'hidden',
+          background: finalBackground,
+          filter: dropShadowFilter || 'none',
+          backdropFilter: `blur(${blurVal}px)`,
+          WebkitBackdropFilter: `blur(${blurVal}px)`,
+          overflow: 'visible',
           pointerEvents: 'none',
         }}
       >
-        {renderContent()}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: `${radiusVal}px`,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+        }}
+        >
+          {renderContent()}
+        </div>
       </div>
 
       {borderWidth > 0 && (
@@ -668,6 +702,16 @@ const DraggableBadge: React.FC<Props> = ({
             borderRadius: `${radiusVal}px`,
             outline: `${borderWidth}px solid ${borderColor}`,
             outlineOffset: 0,
+          }}
+        />
+      )}
+      {badgeId === 'title' && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            inset: 0,
+            borderRadius: `${Math.max(radiusVal, 6)}px`,
+            border: '1px dotted rgba(196,124,46,0.4)',
           }}
         />
       )}
