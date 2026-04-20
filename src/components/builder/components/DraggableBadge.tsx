@@ -321,8 +321,12 @@ const DraggableBadge: React.FC<Props> = ({
   );
   const hasExplicitTitleCharHeight =
     itemConfig?.textCharHeight !== undefined || legacyHeightLines !== undefined;
+  const effectiveTitleHeightLines = hasExplicitTitleCharHeight ? titleCharHeight : titleRenderedLines;
   const resolvedTitleHeight = hasExplicitTitleCharHeight
-    ? titleCharHeight * textSize * textLineHeight + 16 * displayScale
+    ? Math.max(
+        baseHeight,
+        Math.ceil(effectiveTitleHeightLines * textSize * textLineHeight + 16 * displayScale)
+      )
     : titleContentHeight;
   const height =
     badgeId === 'title'
