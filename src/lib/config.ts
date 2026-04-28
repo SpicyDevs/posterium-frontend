@@ -152,7 +152,7 @@ const WEBSITE_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Posterium',
-  url: `${SITE_CONFIG.baseUrl}/`,
+  url: `${SITE_CONFIG.baseUrl}`,
   description:
     'Free movie and TV poster generator with live IMDb, Rotten Tomatoes, and Metacritic rating badges.',
   publisher: { '@type': 'Organization', name: 'Project Team', url: SITE_CONFIG.authorUrl },
@@ -233,10 +233,10 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       'movie poster generator, rating posters, posterium, rpdb, top poster api,IMDB badge, Rotten Tomatoes badge, ' +
       'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
       'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, rating poster database", movie rating overlay, poster with ratings, rating poster database alternative',
-    canonical: `${SITE_CONFIG.baseUrl}/`,
+    canonical: `${SITE_CONFIG.baseUrl}`,
     og: {
       type: 'website',
-      url: `${SITE_CONFIG.baseUrl}/`,
+      url: `${SITE_CONFIG.baseUrl}`,
       title: 'Posterium - Free Movie & TV Poster Generator with Live Ratings',
       description:
         'Generate custom posters with live rating badges from IMDb, RT, Metacritic, ' +
@@ -308,7 +308,7 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
             '@type': 'ListItem',
             position: 1,
             name: 'Posterium Home',
-            item: `${SITE_CONFIG.baseUrl}/`,
+            item: `${SITE_CONFIG.baseUrl}`,
           },
           {
             '@type': 'ListItem',
