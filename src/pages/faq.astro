@@ -5,7 +5,10 @@ import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
+import CategoryCards from '@/components/faq/CategoryCards';
 import { AmberTag } from '@/components/shared/primitives';
+import JsonLd from '@/components/shared/JsonLd.astro';
+import { buildFaqSchema } from '@/lib/jsonld';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -44,6 +47,22 @@ const searchItems = sortedFaqs.map((faq) => ({
 
 // With glob loader, rendered content is available via entry.rendered.html
 // No need to call render() - it's pre-rendered at build time
+
+// Build JSON-LD schema
+const faqSchemaData = buildFaqSchema(
+  sortedFaqs.map((f) => ({
+    question: f.data.question,
+    answer: (f.rendered?.html ?? f.body ?? '').replace(/<[^>]+>/g, '').slice(0, 400),
+  }))
+);
+
+// Build CategoryCards data
+const categoryCards = orderedCategories.map((cat) => ({
+  id: cat.toLowerCase().replace(/\s+/g, '-'),
+  label: cat,
+  icon: cat === 'Getting Started' ? '🚀' : cat === 'Builder' ? '🎨' : cat === 'API' ? '🔌' : '🔗',
+  count: faqsByCategory.get(cat)?.length,
+}));
 ---
 
 <BaseLayout
@@ -53,6 +72,7 @@ const searchItems = sortedFaqs.map((faq) => ({
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/faq" />
+  <JsonLd slot="head" data={faqSchemaData} />
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar
@@ -66,7 +86,7 @@ const searchItems = sortedFaqs.map((faq) => ({
       showMobileBuildCta
     />
 
-    <main class="docs-layout-main">
+    <main id="main-content" class="docs-layout-main" tabindex="-1">
       <aside class="docs-layout-sidebar">
         <div
           class="syne-font"
@@ -113,6 +133,9 @@ const searchItems = sortedFaqs.map((faq) => ({
 
         <!-- Search Input (React island for interactivity) -->
         <FaqSearch client:idle items={searchItems} />
+
+        <!-- Category quick-nav cards -->
+        <CategoryCards client:idle categories={categoryCards} anchorPrefix="#" />
 
         <!-- FAQ Sections (Static HTML) -->
         {orderedCategories.map((category) => {

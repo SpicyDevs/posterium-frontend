@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
+import { isPresetKey, PRESET_CONFIGS } from '@/lib/presets';
+import { toastSuccess, toastError } from '@/lib/useToast';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
@@ -44,6 +46,8 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import { ModeToggle } from './components/ModeToggle';
+import { LayerPanelSimple } from './components/LayerPanelSimple';
 
 const STORAGE_KEY = 'posterium_config_v2';
 const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
@@ -307,6 +311,7 @@ const StudioLayout: React.FC<{
     setBatchSelection,
     viewOptions,
     toggleViewOption,
+    builderMode,
   } = useEditor();
 
   const [isResetOpen, setIsResetOpen] = useState(false);
@@ -1217,6 +1222,10 @@ const StudioLayout: React.FC<{
               >
                 <Keyboard size={14} />
               </ToolbarBtn>
+              {/* Mode toggle — desktop only, between logo area and search */}
+              <div className="hidden lg:flex items-center" style={{ marginLeft: 4 }}>
+                <ModeToggle />
+              </div>
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
@@ -1395,7 +1404,83 @@ const StudioLayout: React.FC<{
 
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+          {/* Mobile interstitial — shown below 1024px */}
+          {!isDesktop && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 'var(--z-modal)' as unknown as number,
+                background: 'rgba(7,7,6,0.97)',
+                backdropFilter: 'blur(24px)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-6)',
+                padding: 'var(--space-8)',
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 48,
+                  lineHeight: 1,
+                  opacity: 0.5,
+                }}
+                aria-hidden="true"
+              >
+                🖥
+              </div>
+              <div>
+                <h2
+                  className="syne-font"
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: 'var(--film-cream)',
+                    letterSpacing: '0.04em',
+                    marginBottom: 'var(--space-3)',
+                  }}
+                >
+                  Desktop Required
+                </h2>
+                <p
+                  className="body-font"
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--film-text-label)',
+                    lineHeight: 1.6,
+                    maxWidth: 300,
+                  }}
+                >
+                  Posterium Builder requires a desktop browser for the best experience.
+                </p>
+              </div>
+              <a
+                href="/"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: 'var(--space-3) var(--space-6)',
+                  background: 'var(--film-amber)',
+                  color: '#070706',
+                  borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'Syne, sans-serif',
+                }}
+              >
+                Go Home
+              </a>
+            </div>
+          )}
+
           {/* Left sidebar */}
+
           {!isFullscreen && (
             <aside
               aria-label="Layer panel"
@@ -1408,12 +1493,21 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
+              {builderMode === 'simple' ? (
+                <LayerPanelSimple
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              ) : (
+                <LayerPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1497,7 +1591,7 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              <Inspector config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelectionOverride} />
             </aside>
           )}
 
@@ -1543,7 +1637,7 @@ const StudioLayout: React.FC<{
                   />
                 )}
                 {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} />
+                  <Inspector config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelectionOverride} />
                 )}
               </div>
             </div>
@@ -1637,15 +1731,46 @@ const BuilderApp: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // ?url= — load a full API URL into the builder
     const urlParam = params.get('url');
     if (urlParam) {
-      handleLoadConfig(urlParam);
+      try {
+        const decoded = decodeURIComponent(urlParam);
+        if (decoded.length > MAX_QUERY_CONFIG_LENGTH) {
+          toastError('URL too long to import');
+          return;
+        }
+        handleLoadConfig(decoded);
+        toastSuccess('Poster loaded from URL');
+      } catch {
+        toastError('Failed to load URL');
+      }
+      history.replaceState(null, '', window.location.pathname);
       return;
     }
 
+    // ?preset= — apply a named preset overlay
+    const presetParam = params.get('preset');
+    if (presetParam) {
+      if (isPresetKey(presetParam)) {
+        const overlay = PRESET_CONFIGS[presetParam];
+        setConfig((current) => ({ ...current, ...overlay }));
+        toastSuccess(`Preset "${presetParam}" loaded`);
+      } else {
+        toastError(`Unknown preset: ${presetParam}`);
+      }
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
+    // ?config= — base64-encoded JSON blob (legacy/share links)
     const configParam = params.get('config');
     if (!configParam) return;
-    if (configParam.length > MAX_QUERY_CONFIG_LENGTH) return;
+    if (configParam.length > MAX_QUERY_CONFIG_LENGTH) {
+      toastError('Config param too large');
+      return;
+    }
 
     try {
       const decoded = atob(decodeURIComponent(configParam));
@@ -1657,8 +1782,10 @@ const BuilderApp: React.FC = () => {
         ...parsed,
         items: parsed.items ?? {},
       } as PosterConfig);
+      toastSuccess('Configuration imported');
+      history.replaceState(null, '', window.location.pathname);
     } catch {
-      // ignore malformed config input
+      toastError('Failed to import configuration');
     }
   }, [handleLoadConfig, setConfig]);
 

@@ -34,14 +34,25 @@ export default defineConfig({
         item.lastmod = new Date().toISOString();
         item.changefreq = 'weekly';
 
-        // Updated conditions to match the new slash-free URLs
-        // Updated conditions to match the new slash-free URLs
         if (item.url === 'https://posters.spicydevs.xyz') {
           item.priority = 1.0;
           item.changefreq = 'weekly';
         } else if (item.url === 'https://posters.spicydevs.xyz/build') {
           item.priority = 0.9;
           item.changefreq = 'weekly';
+        } else if (
+          item.url === 'https://posters.spicydevs.xyz/faq' ||
+          item.url === 'https://posters.spicydevs.xyz/examples' ||
+          item.url === 'https://posters.spicydevs.xyz/installation'
+        ) {
+          item.priority = 0.8;
+          item.changefreq = 'monthly';
+        } else if (
+          item.url === 'https://posters.spicydevs.xyz/privacy' ||
+          item.url === 'https://posters.spicydevs.xyz/terms'
+        ) {
+          item.priority = 0.3;
+          item.changefreq = 'yearly';
         } else {
           item.priority = 0.7;
           item.changefreq = 'monthly';
@@ -141,9 +152,12 @@ export default defineConfig({
     build: {
       chunkSizeWarningLimit: 900,
       assetsInlineLimit: 4096,
+      cssCodeSplit: true,
       rollupOptions: {
+
         output: {
           manualChunks(id) {
+            // ── Vendor splits ───────────────────────────────────────────────
             if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
               return 'react-vendor';
             }
@@ -155,6 +169,39 @@ export default defineConfig({
             }
             if (id.includes('node_modules/@hello-pangea')) {
               return 'dnd';
+            }
+            if (id.includes('node_modules/recharts')) {
+              return 'recharts';
+            }
+
+            // ── Builder canvas (draggable layer, heavy render logic) ─────────
+            if (
+              id.includes('src/components/builder/components/PreviewCanvas') ||
+              id.includes('src/components/builder/components/DraggableBadge') ||
+              id.includes('src/components/builder/components/DraggableLogo') ||
+              id.includes('src/components/builder/components/BadgeContent') ||
+              id.includes('src/components/builder/utils/badgeDimensions')
+            ) {
+              return 'builder-canvas';
+            }
+
+            // ── Builder panels (right/left sidebar panels) ─────────────────
+            if (
+              id.includes('src/components/builder/panels/') ||
+              id.includes('src/components/builder/components/PropertyPanel') ||
+              id.includes('src/components/builder/components/LayerPanel') ||
+              id.includes('src/components/builder/components/LayerPanelSimple') ||
+              id.includes('src/components/builder/components/AdvancedPanelArea') ||
+              id.includes('src/components/builder/components/AdvancedIconNav') ||
+              id.includes('src/components/builder/components/layout/InspectorSimple') ||
+              id.includes('src/components/builder/components/layout/Inspector')
+            ) {
+              return 'builder-panels';
+            }
+
+            // ── Analytics dashboard ─────────────────────────────────────────
+            if (id.includes('src/components/admin/')) {
+              return 'analytics';
             }
           },
         },

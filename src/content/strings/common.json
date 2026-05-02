@@ -1,0 +1,20 @@
+{
+  "siteName": "Posterium",
+  "siteTagline": "Movie & TV Poster API",
+  "copyright": "© 2025 Posterium",
+  "loading": "Loading…",
+  "error": "Something went wrong",
+  "retry": "Try again",
+  "close": "Close",
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "reset": "Reset",
+  "apply": "Apply",
+  "done": "Done",
+  "next": "Next",
+  "prev": "Previous",
+  "learnMore": "Learn more",
+  "getStarted": "Get started"
+}

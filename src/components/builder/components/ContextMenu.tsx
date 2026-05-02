@@ -200,7 +200,7 @@ const ContextMenu: React.FC<Props> = memo(
           exec(() => onDeselectAll());
           break;
         case 'dup':
-          exec(() => onDuplicate?.(id));
+          if (!isLogo) exec(() => onDuplicate?.(id as RatingType));
           break;
         case 'reset':
           exec(() => onResetBadge(id));

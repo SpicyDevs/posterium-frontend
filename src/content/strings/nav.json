@@ -1,0 +1,16 @@
+{
+  "links": [
+    { "label": "Docs", "href": "/installation" },
+    { "label": "Examples", "href": "/examples" },
+    { "label": "FAQ", "href": "/faq" },
+    { "label": "Builder", "href": "/build" }
+  ],
+  "searchHint": {
+    "mac": "⌘K",
+    "win": "Ctrl+K"
+  },
+  "searchPlaceholder": "Search…",
+  "buildCta": "Open Builder",
+  "mobileMenuLabel": "Open navigation menu",
+  "mobileMenuCloseLabel": "Close navigation menu"
+}

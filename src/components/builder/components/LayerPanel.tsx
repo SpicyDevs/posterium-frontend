@@ -732,8 +732,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           if (prev.ratings.includes(id)) return prev;
           if (id !== 'title' && id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
           const nextItems = { ...prev.items, [id]: { ...(prev.items[id] ?? {}) } };
-          delete nextItems[id].x;
-          delete nextItems[id].y;
+          delete nextItems[id]!.x;
+          delete nextItems[id]!.y;
           return { ...prev, ratings: [id, ...prev.ratings], items: nextItems };
         });
         setInactiveOrder((prev) => prev.filter((x) => x !== id));
@@ -1574,7 +1574,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <SegmentedRow
                 label="Logo Source"
                 value={String(config.logoSource ?? 'auto')}
-                onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : v)}
+                onChange={(v) => updateConfig('logoSource', (v === 'auto' ? null : v) as PosterConfig['logoSource'])}
                 options={logoSourceOptions}
               />
             </div>

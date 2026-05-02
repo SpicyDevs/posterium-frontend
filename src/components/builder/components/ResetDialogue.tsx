@@ -2,6 +2,7 @@
 import React, { Fragment, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { AlertTriangle } from 'lucide-react';
+import { toastSuccess } from '@/lib/useToast';
 
 interface Props {
   isOpen: boolean;
@@ -81,6 +82,7 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                 onClick={() => {
                   onConfirm();
                   onClose();
+                  toastSuccess('Configuration reset to defaults');
                 }}
                 className="flex-1 h-9 rounded-lg bg-red-600/90 border border-red-500/30 text-xs font-semibold text-white hover:bg-red-500 transition-all active:scale-[0.97] cursor-pointer tracking-wide uppercase select-none syne-font"
               >

@@ -1,0 +1,17 @@
+{
+  "title": "Poster Builder",
+  "description": "Customise your poster in real-time",
+  "simpleModeLabel": "Simple",
+  "advancedModeLabel": "Advanced",
+  "modeToggleHint": "Switch mode",
+  "modeTooltipFirstSwitch": "You switched to Advanced Mode. More panels and options are now available.",
+  "searchPlaceholder": "Search commands…",
+  "exportLabel": "Export",
+  "importLabel": "Import",
+  "resetLabel": "Reset",
+  "undoLabel": "Undo",
+  "redoLabel": "Redo",
+  "desktopRequiredTitle": "Desktop Required",
+  "desktopRequiredBody": "Posterium Builder requires a desktop browser for the best experience.",
+  "desktopRequiredCta": "Go Home"
+}

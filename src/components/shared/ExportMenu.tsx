@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, X, Copy, Check, ArrowRight, ExternalLink } from 'lucide-react';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { generateApiUrl } from '@/components/builder/utils';
+import { toastSuccess, toastError } from '@/lib/useToast';
 
 interface ExportMenuProps {
   config: PosterConfig;
@@ -68,8 +69,9 @@ const ExportMenu = memo<ExportMenuProps>(
         await navigator.clipboard.writeText(displayUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        toastSuccess('URL copied to clipboard');
       } catch {
-        // ignore clipboard errors
+        toastError('Failed to copy — please copy manually');
       }
     };
 
@@ -80,8 +82,9 @@ const ExportMenu = memo<ExportMenuProps>(
         await navigator.clipboard.writeText(safeTemplateUrl);
         setAioCopied(true);
         setTimeout(() => setAioCopied(false), 2000);
+        toastSuccess('AIOMetadata URL copied');
       } catch {
-        // ignore clipboard errors
+        toastError('Failed to copy — please copy manually');
       }
     };
 

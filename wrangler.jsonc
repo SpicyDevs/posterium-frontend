@@ -2,36 +2,46 @@
   "name": "posterium-frontend",
   // Update compatibility date to the current date to get the latest V8 features
   "compatibility_date": "2026-04-02",
-
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   // Enable enhanced observability/logging in the Cloudflare Dashboard
   "observability": {
-    "enabled": true,
+    "enabled": true
   },
-
   "assets": {
     "directory": "./dist/",
     "not_found_handling": "404-page",
     // Normalize URLs for better SEO and to prevent duplicate content
-    "html_handling": "drop-trailing-slash",
+    "html_handling": "drop-trailing-slash"
   },
-
+  // Non-secret env vars (safe to commit)
+  // Secrets like VITE_ANALYTICS_PW must be set via:
+  //   wrangler secret put VITE_ANALYTICS_PW --env production
+  // IMPORTANT: VITE_ vars are baked at BUILD time — you must rebuild after changing secrets.
+  "vars": {
+    "ENVIRONMENT": "production"
+  },
   "env": {
     "production": {
       "workers_dev": false,
       "routes": [
         {
           "pattern": "posters.spicydevs.xyz",
-          "custom_domain": true,
+          "custom_domain": true
         },
         {
           "pattern": "poster.spicydevs.xyz",
-          "custom_domain": true,
+          "custom_domain": true
         },
         {
           "pattern": "posterium.spicydevs.xyz",
-          "custom_domain": true,
-        },
-      ],
+          "custom_domain": true
+        }
+      ]
     },
-  },
+    "staging": {
+      "workers_dev": true
+    }
+  }
 }

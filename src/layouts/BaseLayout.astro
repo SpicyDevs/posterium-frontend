@@ -1,32 +1,35 @@
 ---
+import { ToastContainer } from '@/components/shared/Toast';
+import { TopLoadingBar } from '@/components/shared/TopLoadingBar';
+
 interface Props {
-  title: string;
-  description: string;
-  canonical: string;
+  /** Fallback title used only for pages that don't use PageSEO */
+  title?: string;
+  description?: string;
+  canonical?: string;
   ogImage?: string;
   noindex?: boolean;
   bodyClass?: string;
 }
 
 const {
-  title,
-  description,
-  canonical,
-  ogImage = '/og-image.png',
-  noindex = false,
+  title = 'Posterium — Free Movie & TV Poster Generator',
   bodyClass,
 } = Astro.props;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="msapplication-TileColor" content="#0a0a0a" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    {/* Fallback title — overridden by PageSEO's <title> in the head slot */}
+    <title>{title}</title>
 
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -37,6 +40,12 @@ const {
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {/* Critical fonts — preload to reduce CLS */}
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap"
+    />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=block" />
     <link
       rel="stylesheet"
@@ -45,7 +54,38 @@ const {
 
     <slot name="head" />
   </head>
+
   <body class={bodyClass}>
+    <!-- Phase 11: Skip link for keyboard navigation -->
+    <a
+      href="#main-content"
+      style="position:fixed;top:-100%;left:0;z-index:9999;background:var(--film-amber);color:#070706;padding:8px 16px;font-weight:700;font-size:13px;text-decoration:none;border-radius:0 0 4px 0;transition:top 0.15s ease"
+      onfocus="this.style.top='0'"
+      onblur="this.style.top='-100%'"
+    >
+      Skip to main content
+    </a>
+
+    <!-- Offline banner (inline for zero-latency) -->
+    <div
+      id="offline-banner"
+      role="status"
+      aria-live="polite"
+      style="display:none;position:fixed;bottom:0;left:0;right:0;padding:8px 16px;background:rgba(14,13,11,0.96);border-top:1px solid rgba(196,124,46,0.3);color:var(--film-amber);font-size:12px;text-align:center;z-index:9998;font-family:Syne,sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"
+    >
+      You are offline — some features may be unavailable
+    </div>
+    <script is:inline>
+      (function () {
+        var banner = document.getElementById('offline-banner');
+        if (!banner) return;
+        function update() { banner.style.display = navigator.onLine ? 'none' : 'block'; }
+        update();
+        window.addEventListener('online', update);
+        window.addEventListener('offline', update);
+      })();
+    </script>
+
     <noscript>
       <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
@@ -53,6 +93,11 @@ const {
         <p>Visit <a href="#">posters.spicydevs.xyz/build</a> to open the visual editor.</p>
       </div>
     </noscript>
+
     <slot />
+
+    <!-- Quality systems: Toast notifications + loading bar -->
+    <TopLoadingBar loading={false} client:load />
+    <ToastContainer client:load />
   </body>
 </html>

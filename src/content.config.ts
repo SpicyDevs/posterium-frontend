@@ -8,6 +8,12 @@ const faq = defineCollection({
     category: z.string(),
     question: z.string(),
     order: z.number().optional().default(0),
+    /** Icon for CategoryCards */
+    icon: z.string().optional(),
+    /** Short description shown on category card */
+    description: z.string().optional(),
+    /** Tag array for additional filtering */
+    tags: z.array(z.string()).optional().default([]),
   }),
 });
 
@@ -17,6 +23,10 @@ const install = defineCollection({
   schema: z.object({
     name: z.string().optional(),
     order: z.number().optional().default(0),
+    /** Estimated read/follow time in minutes (used by StepProgress) */
+    estimatedTime: z.number().optional(),
+    /** Tags for filtering guides (e.g. 'jellyfin', 'plex') */
+    tags: z.array(z.string()).optional().default([]),
     showcaseImages: z
       .object({
         desktop: z.string(),
