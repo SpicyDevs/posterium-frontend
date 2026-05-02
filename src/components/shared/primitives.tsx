@@ -2,7 +2,6 @@
 // Shared cinematic UI primitives used by both the Dashboard and Builder.
 // Dashboard imports re-export these; Builder can import directly.
 import React, { memo, useMemo } from 'react';
-import { usePausedWhenOffscreen } from '@/lib/hooks/usePausedWhenOffscreen';
 
 // ─── Sprocket holes ───────────────────────────────────────────────────────────
 const HOLE_BASE: React.CSSProperties = {
@@ -149,17 +148,12 @@ interface MarqueeTickerProps {
 }
 export const MarqueeTicker = memo<MarqueeTickerProps>(({ items, speed = 28 }) => {
   const doubled = useMemo(() => [...items, ...items], [items]);
-  const { ref, isVisible } = usePausedWhenOffscreen({ rootMargin: '120px' });
   const innerStyle: React.CSSProperties = useMemo(
-    () => ({
-      ...MARQUEE_INNER_BASE,
-      animation: `marquee-scroll ${speed}s linear infinite`,
-      animationPlayState: isVisible ? 'running' : 'paused',
-    }),
-    [speed, isVisible]
+    () => ({ ...MARQUEE_INNER_BASE, animation: `marquee-scroll ${speed}s linear infinite` }),
+    [speed]
   );
   return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} aria-hidden="true" style={MARQUEE_OUTER}>
+    <div aria-hidden="true" style={MARQUEE_OUTER}>
       <div style={innerStyle}>
         {doubled.map((item, i) => (
           <span

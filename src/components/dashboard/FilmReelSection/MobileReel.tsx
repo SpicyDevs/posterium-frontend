@@ -1,19 +1,19 @@
 // src/components/dashboard/FilmReelSection/MobileReel.tsx
+// Import paths corrected: ../../constants → @/lib/dashboard/constants
 import { memo, useRef } from 'react';
 import { REEL_ITEMS, API } from '@/lib/dashboard/constants';
 import { SprocketStrip } from '../primitives';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
-import { usePausedWhenOffscreen } from '@/lib/hooks/usePausedWhenOffscreen';
 
 const POSTER_W = 148;
 const POSTER_H = 222;
 const BADGE_PARAMS = 'r=imdb&source=tmdb&blur=6&alpha=0.36&rad=8&imdb_x=8&imdb_y=10';
 
 const MobileReel = memo(() => {
-  const { ref, isVisible } = usePausedWhenOffscreen({ rootMargin: '100px' });
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} style={{ background: 'var(--film-dark)', overflow: 'hidden' }}>
+    <div ref={sectionRef} style={{ background: 'var(--film-dark)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '36px 22px 14px' }}>
         <div

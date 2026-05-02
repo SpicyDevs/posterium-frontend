@@ -125,7 +125,6 @@ const ShowcaseViewer = memo<ShowcaseViewerProps>(({ appName, images, placeholder
                 alt={`${appName} mobile screenshot ${idx + 1}`}
                 ratio="9 / 16"
                 mobileFrame
-                eager={idx === 0}
               />
             ))}
           </div>
@@ -135,7 +134,6 @@ const ShowcaseViewer = memo<ShowcaseViewerProps>(({ appName, images, placeholder
               src={activeDevice === 'tv' ? tvSrc : desktopSrc}
               alt={`${appName} ${activeDevice} screenshot`}
               ratio="16 / 9"
-              eager
             />
           </div>
         )}

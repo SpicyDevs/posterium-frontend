@@ -3,41 +3,6 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { RatingType } from '../types';
 
 type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
-
-/** All panel IDs available in Advanced mode. */
-export type AdvancedPanelId =
-  | 'source'
-  | 'poster'
-  | 'badges'
-  | 'logo'
-  | 'layout'
-  | 'selected'
-  | 'fallbacks'
-  | 'advanced'
-  | 'presets';
-
-const ADVANCED_PANEL_IDS: AdvancedPanelId[] = [
-  'source', 'poster', 'badges', 'logo', 'layout', 'selected', 'fallbacks', 'advanced', 'presets',
-];
-
-const MODE_STORAGE_KEY = 'posterium_mode_v1';
-const PANEL_STORAGE_KEY = 'posterium_advanced_panel_v1';
-
-function readMode(): 'simple' | 'advanced' {
-  try {
-    const v = localStorage.getItem(MODE_STORAGE_KEY);
-    if (v === 'simple' || v === 'advanced') return v;
-  } catch { /* ignore */ }
-  return 'simple';
-}
-
-function readPanel(): AdvancedPanelId {
-  try {
-    const v = localStorage.getItem(PANEL_STORAGE_KEY) as AdvancedPanelId | null;
-    if (v && ADVANCED_PANEL_IDS.includes(v)) return v;
-  } catch { /* ignore */ }
-  return 'source';
-}
 export type SheetMode = 'hidden' | 'half' | 'full';
 
 interface ViewOptions {
@@ -77,12 +42,6 @@ interface EditorContextType {
   setLivePosterUrl: (url: string | null) => void;
   fallbackEnabled: boolean;
   setFallbackEnabled: (v: boolean) => void;
-  /** Current builder mode — 'simple' for beginners, 'advanced' for power users. */
-  builderMode: 'simple' | 'advanced';
-  setBuilderMode: (mode: 'simple' | 'advanced') => void;
-  /** Active panel ID in advanced mode. */
-  advancedPanel: AdvancedPanelId;
-  setAdvancedPanel: (panel: AdvancedPanelId) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -104,8 +63,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
-  const [builderMode, setBuilderModeState] = useState<'simple' | 'advanced'>(readMode);
-  const [advancedPanel, setAdvancedPanelState] = useState<AdvancedPanelId>(readPanel);
 
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
@@ -211,16 +168,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setViewOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const setBuilderMode = useCallback((mode: 'simple' | 'advanced') => {
-    setBuilderModeState(mode);
-    try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* ignore */ }
-  }, []);
-
-  const setAdvancedPanel = useCallback((panel: AdvancedPanelId) => {
-    setAdvancedPanelState(panel);
-    try { localStorage.setItem(PANEL_STORAGE_KEY, panel); } catch { /* ignore */ }
-  }, []);
-
   return (
     <EditorContext.Provider
       value={{
@@ -250,10 +197,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setLivePosterUrl,
         fallbackEnabled,
         setFallbackEnabled,
-        builderMode,
-        setBuilderMode,
-        advancedPanel,
-        setAdvancedPanel,
       }}
     >
       {children}

@@ -12,10 +12,7 @@ export interface ReelItem {
   genre: string;
   director: string;
   tagline: string;
-  /** Allow extra string-keyed properties for masonryLayout compatibility */
-  [key: string]: unknown;
 }
-
 
 export const REEL_ITEMS: ReelItem[] = [
   {

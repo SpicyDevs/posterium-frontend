@@ -250,28 +250,6 @@ export interface PosterConfig {
   fallbackEnabled: boolean;
   fallbackPool: RatingType[];
 
-  // ── Phase 3 additions ───────────────────────────────────────────
-  /** Suppress <iframe> embed output in the exported SVG. */
-  noEmbed?: boolean;
-  /** Force all badges to the same width (uniform column layout). */
-  uniformWidth?: boolean;
-  /** Ordered list of poster sources to try (first wins). */
-  sourceOrder?: SourceType[];
-
-  // ── Phase 5 additions (Advanced params) ──────────────────────
-  /** Icon position relative to text: 'left' | 'right' | 'above' | 'below'. */
-  iconPosition?: 'left' | 'right' | 'above' | 'below';
-  /** Render label text inside the badge background instead of outside. */
-  labelInside?: boolean;
-  /** Decimal places for score display (0–2). */
-  decimalPlaces?: 0 | 1 | 2;
-  /** Always render decimal separator even for whole numbers. */
-  forceDecimal?: boolean;
-  /** MAL ID override for anime media (skips auto-resolve). */
-  malIdOverride?: string;
-  /** Font family override for badge text (system-font-safe name). */
-  fontOverride?: string;
-
   // API keys (optional, stored client-side only)
   keys?: ApiKeys;
 }

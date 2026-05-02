@@ -1,7 +1,6 @@
 // src/components/builder/components/ImportDialog.tsx
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
-import { toastSuccess } from '@/lib/useToast';
 
 interface Props {
   isOpen: boolean;
@@ -147,7 +146,6 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && val.trim()) {
                 onLoad(val.trim());
-                toastSuccess('Poster configuration loaded');
                 setVal('');
                 onClose();
               }
@@ -164,7 +162,6 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
           onClick={() => {
             if (!val.trim()) return;
             onLoad(val.trim());
-            toastSuccess('Poster configuration loaded');
             setVal('');
             onClose();
           }}

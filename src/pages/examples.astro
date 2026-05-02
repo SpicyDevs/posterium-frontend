@@ -36,8 +36,5 @@ const presets = exampleEntries
     The MainNavbar inside ExamplesPage uses client:load, but the gallery grid
     itself has no above-the-fold interactivity that justifies eager hydration.
   -->
-  <main id="main-content" tabindex="-1">
-    <ExamplesPage client:visible presets={presets} />
-  </main>
+  <ExamplesPage client:visible presets={presets} />
 </BaseLayout>
-

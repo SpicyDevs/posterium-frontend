@@ -1,4 +1,4 @@
-// src/components/builder/components/PreviewCanvas.tsx
+// src/builder/components/PreviewCanvas.tsx
 //
 // FEATURE: posterBlur and grayscale are now applied entirely on the frontend
 // via CSS `filter` on the poster <img> element. They are NOT sent to the
@@ -61,7 +61,6 @@ const PreviewCanvas: React.FC<Props> = ({
     viewOptions,
     mobileSheetMode,
     clearSelection,
-    setBatchSelection,
     liveRatings,
     liveTitle,
     liveYear,
@@ -95,17 +94,6 @@ const PreviewCanvas: React.FC<Props> = ({
   const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
-
-  // ── Lasso drag-select state ───────────────────────────────────────────────
-  const [lassoRect, setLassoRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const lassoStartRef = useRef<{ x: number; y: number } | null>(null);
-  const lassoRafRef = useRef<number | null>(null);
-  // Announced text for screen readers
-  const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
-
-  // ── Double-tap to reset zoom ──────────────────────────────────────────────
-  const doubleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const doubleTapCountRef = useRef(0);
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
@@ -739,18 +727,6 @@ const PreviewCanvas: React.FC<Props> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           clearSelection();
-          // Double-tap detection for zoom reset
-          doubleTapCountRef.current += 1;
-          if (doubleTapCountRef.current === 1) {
-            doubleTapTimerRef.current = setTimeout(() => {
-              doubleTapCountRef.current = 0;
-            }, 300);
-          } else if (doubleTapCountRef.current >= 2) {
-            if (doubleTapTimerRef.current) clearTimeout(doubleTapTimerRef.current);
-            doubleTapCountRef.current = 0;
-            onResetView?.();
-            window.dispatchEvent(new CustomEvent('reset-canvas-view'));
-          }
         }
       }}
     >
@@ -801,7 +777,6 @@ const PreviewCanvas: React.FC<Props> = ({
         {badgeSnapGuide?.showVertical && (
           <div
             className="absolute pointer-events-none z-30"
-            aria-hidden="true"
             style={{
               left: badgeSnapGuide.middleX,
               top: 0,
@@ -815,7 +790,6 @@ const PreviewCanvas: React.FC<Props> = ({
         {badgeSnapGuide?.showHorizontal && (
           <div
             className="absolute pointer-events-none z-30"
-            aria-hidden="true"
             style={{
               top: badgeSnapGuide.middleY,
               left: 0,
@@ -1039,43 +1013,6 @@ const PreviewCanvas: React.FC<Props> = ({
           </button>
         </div>
       )}
-
-      {/* Lasso drag-select rectangle */}
-      {lassoRect && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            pointerEvents: 'none',
-            border: '2px dashed rgba(196,124,46,0.8)',
-            background: 'rgba(196,124,46,0.06)',
-            left: lassoRect.x,
-            top: lassoRect.y,
-            width: Math.abs(lassoRect.w),
-            height: Math.abs(lassoRect.h),
-            transform: lassoRect.w < 0 ? `translateX(${lassoRect.w}px)` : undefined,
-            zIndex: 50,
-            borderRadius: 2,
-          }}
-        />
-      )}
-
-      {/* Screen reader live region for selection announcements */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: 'absolute',
-          width: 1,
-          height: 1,
-          overflow: 'hidden',
-          clip: 'rect(0,0,0,0)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {selectionAnnouncement}
-      </div>
     </div>
   );
 };

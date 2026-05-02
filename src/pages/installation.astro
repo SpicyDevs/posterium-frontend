@@ -21,8 +21,6 @@ import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
-import JsonLd from '@/components/shared/JsonLd.astro';
-import { buildHowToSchema } from '@/lib/jsonld';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -54,14 +52,6 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   id:       g.guide.id,
   headings: g.headings,
 }));
-
-// JSON-LD: use the first guide as the representative HowTo
-const firstGuide = preparedGuides[0];
-const installSchema = firstGuide ? buildHowToSchema({
-  name: `How to install Posterium with ${firstGuide.name}`,
-  description: 'Step-by-step guide for setting up Posterium movie poster rating badges.',
-  steps: firstGuide.headings.slice(0, 10).map((h) => ({ name: h.text, text: h.text })),
-}) : null;
 ---
 
 <BaseLayout
@@ -71,7 +61,6 @@ const installSchema = firstGuide ? buildHowToSchema({
   bodyClass="bg-[#070706]"
 >
   <PageSEO slot="head" routeKey="/installation" />
-  {installSchema && <JsonLd slot="head" data={installSchema} />}
 
   <div class="install-root">
     <MainNavbar
@@ -111,7 +100,7 @@ const installSchema = firstGuide ? buildHowToSchema({
       </aside>
 
       <!-- ── Main content ───────────────────────────────────────────────── -->
-      <main class="install-main" id="main-content" tabindex="-1">
+      <main class="install-main" id="install-main-content">
         <!-- Page header -->
         <header class="install-page-header">
           <div>

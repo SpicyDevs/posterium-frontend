@@ -1,8 +1,6 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
-import { usePausedWhenOffscreen } from '@/lib/hooks/usePausedWhenOffscreen';
-import { useAnimation } from '@/lib/hooks/useAnimation';
 
 interface HeroPoster {
   id: string;
@@ -117,17 +115,26 @@ const CyclingPoster = memo(() => {
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { ref: visRef, isVisible } = usePausedWhenOffscreen({ rootMargin: '80px' });
+  const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(true);
   const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
-
-  // Keep isVisibleRef in sync with offscreen hook for the setInterval callback
-  useEffect(() => { isVisibleRef.current = isVisible; }, [isVisible]);
 
   useEffect(() => {
     activeIdxRef.current = activeIdx;
   }, [activeIdx]);
 
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const clearTransitionTimers = useCallback(() => {
     if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
@@ -228,7 +235,7 @@ const CyclingPoster = memo(() => {
 
   return (
     <div
-      ref={visRef as React.RefObject<HTMLDivElement>}
+      ref={sectionRef}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
     >
       <div
@@ -396,7 +403,7 @@ const AMBIENT_STYLE: React.CSSProperties = {
   inset: 0,
   pointerEvents: 'none',
   background:
-    'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.07) 0%, transparent 65%), radial-gradient(ellipse 30% 40% at 78% 50%, rgba(196,124,46,0.04) 0%, transparent 70%)',
+    'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.055) 0%, transparent 70%)',
 };
 const DOT_GRID_STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -415,10 +422,8 @@ const AMBER_RULE_STYLE: React.CSSProperties = {
 };
 
 const HeroSection = memo(() => {
-  const { ref: heroRef } = useAnimation({ rootMargin: '0px', threshold: 0.08 });
-
   return (
-    <section ref={heroRef as React.RefObject<HTMLElement>} aria-label="Hero" style={HERO_SECTION_STYLE}>
+    <section aria-label="Hero" style={HERO_SECTION_STYLE}>
       <div aria-hidden="true" style={AMBIENT_STYLE} />
       <div aria-hidden="true" style={DOT_GRID_STYLE} />
 
@@ -430,10 +435,10 @@ const HeroSection = memo(() => {
           width: '100%',
           maxWidth: 1280,
           margin: '0 auto',
-          padding: 'clamp(64px,9vh,112px) clamp(24px,5vw,72px)',
+          padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)',
           display: 'grid',
-          gridTemplateColumns: 'clamp(1fr, 60%, 1fr) auto',
-          gap: 'clamp(32px,6vw,80px)',
+          gridTemplateColumns: '1fr auto',
+          gap: 'clamp(40px,6vw,80px)',
           alignItems: 'center',
         }}
       >
