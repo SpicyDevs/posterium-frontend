@@ -1,0 +1,15 @@
+---
+// src/pages/test.astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TestBenchmark from '../../components/admin/TestBenchmark';
+---
+
+<BaseLayout
+  title="Rasterizer Benchmark | Posterium"
+  description="Test all rasterizer nodes with live poster timing and health data."
+  canonical="https://posters.spicydevs.xyz/test"
+  noindex={true}
+>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <TestBenchmark client:only="react" />
+</BaseLayout>

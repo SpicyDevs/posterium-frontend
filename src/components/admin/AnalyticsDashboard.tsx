@@ -214,16 +214,8 @@ const PERIODS: Record<string, { label: string; short: string }> = {
 };
 
 const TABS = [
-  'overview',
-  'nodes',
-  'traffic',
-  'fallbacks',
-  'requests',
-  'devices',
-  'db',
-  'errors',
-  'breakdown',
-  'wall-time',
+  'overview', 'nodes', 'traffic', 'fallbacks',
+  'requests', 'devices', 'db', 'errors', 'breakdown', 'wall-time', 'svg', // ← add 'svg'
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -1045,6 +1037,54 @@ export default function AnalyticsDashboard() {
       })),
     [data]
   );
+
+  const svgSummary = useMemo(() => (data?.data?.svg_summary?.data ?? [])[0] ?? null, [data]);
+
+const svgTimeseries = useMemo(
+  () => (data?.data?.svg_timeseries?.data ?? []).map((r: any) => ({
+    bucket: mkBucket(r.bucket ?? ''),
+    requests: num(r.requests),
+    hits: num(r.hits),
+    misses: num(r.misses),
+  })),
+  [data, mkBucket]
+);
+
+const svgPresetRows = useMemo(
+  () => (data?.data?.svg_preset_breakdown?.data ?? []).map((r: any) => ({
+    preset: String(r.preset ?? ''),
+    requests: num(r.requests),
+    cache_hits: num(r.cache_hits),
+  })),
+  [data]
+);
+
+const svgTopIds = useMemo(
+  () => (data?.data?.svg_top_ids?.data ?? []).map((r: any) => ({
+    id: String(r.id ?? ''),
+    type: String(r.type ?? 'movie'),
+    hits: num(r.hits),
+    hit_rate_pct: num(r.hit_rate_pct),
+  })),
+  [data]
+);
+
+const svgRatingCombos = useMemo(
+  () => (data?.data?.svg_ratings_combos?.data ?? []).map((r: any) => ({
+    r_param: String(r.r_param ?? ''),
+    requests: num(r.requests),
+  })),
+  [data]
+);
+
+const svgVsRaster = useMemo(
+  () => (data?.data?.svg_vs_raster?.data ?? []).map((r: any) => ({
+    category: String(r.category ?? ''),
+    requests: num(r.requests),
+    cache_hits: num(r.cache_hits),
+  })),
+  [data]
+);
 
   const failRows = useMemo(
     () =>
@@ -3647,6 +3687,178 @@ export default function AnalyticsDashboard() {
             )}
           </div>
         )}
+
+        {/* ══ SVG ANALYTICS ═════════════════════════════════════════════════════ */}
+{tab === 'svg' && (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ padding: '6px 0' }}>
+      <AmberTag>SVG Request Analytics</AmberTag>
+      <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
+        SVG poster requests specifically — cache efficiency, preset distribution, and top requested titles as vector output.
+      </p>
+    </div>
+
+    {/* SVG summary cards */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+      {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
+        <>
+          <StatCard label="SVG Requests" value={fmtNum(num(svgSummary?.total_svg_requests))} sub={pLabel} color={CH.blue} />
+          <StatCard label="Cache Hits" value={fmtNum(num(svgSummary?.cache_hits))} sub="Edge cache" color={CH.green} />
+          <StatCard label="Hit Rate" value={svgSummary ? fmtPct(num(svgSummary.hit_rate_pct)) : '—'} sub="SVG cache efficiency" color={rateColor(num(svgSummary?.hit_rate_pct))} />
+          <StatCard label="Movies" value={fmtNum(num(svgSummary?.movie_svgs))} sub="SVG requests" color={CH.blue} />
+          <StatCard label="TV Shows" value={fmtNum(num(svgSummary?.tv_svgs))} sub="SVG requests" color={CH.green} />
+          <StatCard label="Anime" value={fmtNum(num(svgSummary?.anime_svgs))} sub="SVG requests" color={CH.purple} />
+        </>
+      )}
+    </div>
+
+    {/* SVG vs raster split */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <Card title="Format Distribution">
+        {loading ? <Skel h={180} /> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {svgVsRaster.map((r, i) => {
+              const total = svgVsRaster.reduce((s, x) => s + x.requests, 0) || 1;
+              const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
+              return (
+                <div key={r.category}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span className="syne-font" style={{ fontSize: 13, fontWeight: 700, color: CH.amber, letterSpacing: '0.06em' }}>
+                      {r.category}
+                    </span>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(hitPct) }}>
+                        {fmtPct(hitPct)} cache
+                      </span>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>
+                        {fmtNum(r.requests)}
+                      </span>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: PIE_COLORS[i % PIE_COLORS.length] }}>
+                        {fmtPct((r.requests / total) * 100)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                  </div>
+                </div>
+              );
+            })}
+            {svgVsRaster.length === 0 && (
+              <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>
+                No format data
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card title="SVG Preset Breakdown">
+        {loading ? <Skel h={180} /> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {svgPresetRows.map((r, i) => {
+              const total = svgPresetRows.reduce((s, x) => s + x.requests, 0) || 1;
+              const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
+              return (
+                <div key={r.preset}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>
+                      {r.preset || 'badge'}
+                    </span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(hitPct) }}>
+                        {fmtPct(hitPct)} cached
+                      </span>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>
+                        {fmtNum(r.requests)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                  </div>
+                </div>
+              );
+            })}
+            {svgPresetRows.length === 0 && (
+              <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>No preset data</div>
+            )}
+          </div>
+        )}
+      </Card>
+    </div>
+
+    {/* SVG requests over time */}
+    <Card title="SVG Requests Over Time" tag={pLabel}>
+      {loading ? <Skel h={200} /> : (
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart data={svgTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="gSvg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CH.blue} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={CH.blue} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+            <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+            <Tooltip content={<FilmTooltip />} />
+            <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
+            <Area type="monotone" dataKey="requests" name="SVG Requests" stroke={CH.blue} fill="url(#gSvg)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="hits" name="Cache Hits" stroke={CH.green} strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="misses" name="Cache Misses" stroke={CH.orange} strokeWidth={1.5} dot={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
+    </Card>
+
+    {/* Top SVG IDs */}
+    <Card title="Top Requested SVG Posters" tag={`top ${svgTopIds.length}`}>
+      {loading ? <Skel h={280} /> : svgTopIds.length === 0 ? (
+        <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>
+          No SVG request data — ensure blob3 = 'svg' is logged in REQUEST_ANALYTICS.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 12 }}>
+          {svgTopIds.map(row => (
+            <PosterThumb key={`${row.type}-${row.id}`} id={row.id} type={row.type} hits={row.hits} hitRate={row.hit_rate_pct} />
+          ))}
+        </div>
+      )}
+    </Card>
+
+    {/* Top SVG rating combos */}
+    <Card title="Top Rating Combos in SVG Requests">
+      {loading ? <Skel h={160} /> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {svgRatingCombos.slice(0, 10).map((r, i) => {
+            const max = svgRatingCombos[0]?.requests || 1;
+            return (
+              <div key={r.r_param}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                  <code style={{
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.amber,
+                    background: 'rgba(196,124,46,0.08)', border: '1px solid rgba(196,124,46,0.14)',
+                    borderRadius: 3, padding: '1px 5px',
+                  }}>{r.r_param}</code>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>
+                    {fmtNum(r.requests)}
+                  </span>
+                </div>
+                <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%` }} />
+                </div>
+              </div>
+            );
+          })}
+          {svgRatingCombos.length === 0 && (
+            <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>No data</div>
+          )}
+        </div>
+      )}
+    </Card>
+  </div>
+)}
 
         {/* Footer */}
         <div
