@@ -652,7 +652,6 @@ export default function TestBenchmark() {
             <SearchForm onRun={go} />
           </div>
         )}
-
         {mode === 'loading' && lastRun && <LoadingView type={lastRun.type} id={lastRun.id} step={step} />}
 
         {mode === 'results' && bench && (
