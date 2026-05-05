@@ -16,7 +16,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   AreaChart,
   Area,
+  BarChart,
   Bar,
+  LineChart,
   Line,
   PieChart,
   Pie,
@@ -28,6 +30,9 @@ import {
   Legend,
   ResponsiveContainer,
   ComposedChart,
+  ReferenceLine,
+  RadialBarChart,
+  RadialBar,
 } from 'recharts';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
@@ -641,7 +646,32 @@ const PosterThumb = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [nodeHealth, setNodeHealth] = useState<Record<string, any>>({});
+  const [healthLoading, setHealthLoading] = useState(false);
 
+  const fetchNodeHealth = useCallback(async () => {
+    setHealthLoading(true);
+    const results = await Promise.allSettled(
+      LIVE_HEALTH_NODES.map(async n => {
+        const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
+        return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
+      })
+    );
+    setNodeHealth(Object.fromEntries(
+      results.map((r, i) =>
+        r.status === 'fulfilled' ? r.value : [LIVE_HEALTH_NODES[i].id, { error: 'unreachable' }]
+      )
+    ));
+    setHealthLoading(false);
+  }, []);
+
+  // Fetch health on auth + every 30s when live mode is active
+  useEffect(() => { if (authed) fetchNodeHealth(); }, [authed]);
+  useEffect(() => {
+    if (!live) return;
+    const iv = setInterval(fetchNodeHealth, 30_000);
+    return () => clearInterval(iv);
+  }, [live, fetchNodeHealth]);
   const src = `${POSTER_API}/${type}/${id}.svg?source=tmdb`;
   return (
     <a
@@ -928,36 +958,6 @@ export default function AnalyticsDashboard() {
   const [live, setLive] = useState(false);
   const liveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [liveCount, setLiveCount] = useState(0); // ticks since live started (for indicator pulse)
-  const [nodeHealth, setNodeHealth] = useState<Record<string, any>>({});
-  const [healthLoading, setHealthLoading] = useState(false);
-
-  const fetchNodeHealth = useCallback(async () => {
-    setHealthLoading(true);
-    try {
-      const results = await Promise.allSettled(
-        LIVE_HEALTH_NODES.map(async n => {
-          const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
-          return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
-        })
-      );
-      setNodeHealth(Object.fromEntries(
-        results.map((r, i) =>
-          r.status === 'fulfilled' ? (r as any).value : [LIVE_HEALTH_NODES[i].id, { error: 'unreachable' }]
-        )
-      ));
-    } catch {}
-    setHealthLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (authed) fetchNodeHealth();
-  }, [authed, fetchNodeHealth]);
-
-  useEffect(() => {
-    if (!live || !authed) return;
-    const iv = setInterval(fetchNodeHealth, 30_000);
-    return () => clearInterval(iv);
-  }, [live, authed, fetchNodeHealth]);
 
   const updateCfg = (next: Partial<DashConfig>) => {
     const c = { ...cfg, ...next };
@@ -1035,13 +1035,13 @@ export default function AnalyticsDashboard() {
         success_rate_pct: num(raw.success_rate_pct),
         avg_ms: nullableNum(raw.avg_ms),
       };
-    const total = nodeRows.reduce((s: number, r: any) => s + r.total_attempts, 0);
-    const succ = nodeRows.reduce((s: number, r: any) => s + r.successes, 0);
+    const total = nodeRows.reduce((s, r) => s + r.total_attempts, 0);
+    const succ = nodeRows.reduce((s, r) => s + r.successes, 0);
     return {
       total_attempts: total,
       successes: succ,
-      failures: nodeRows.reduce((s: number, r: any) => s + r.failures, 0),
-      race_wins: nodeRows.reduce((s: number, r: any) => s + r.race_wins, 0),
+      failures: nodeRows.reduce((s, r) => s + r.failures, 0),
+      race_wins: nodeRows.reduce((s, r) => s + r.race_wins, 0),
       success_rate_pct: total > 0 ? (succ / total) * 100 : 0,
       avg_ms: null,
     };
@@ -1171,6 +1171,16 @@ const svgVsRaster = useMemo(
     [data, mkBucket]
   );
 
+  const winRows = useMemo(
+    () =>
+      (data?.data?.win_rate?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        wins: num(r.wins),
+        successes: num(r.successes),
+        win_rate_pct: num(r.win_rate_pct),
+      })),
+    [data]
+  );
 
   const formatRows = useMemo(
     () =>
@@ -1282,7 +1292,7 @@ const svgVsRaster = useMemo(
   const alertNodes = useMemo(
     () =>
       nodeRows.filter(
-        (r: any) =>
+        (r) =>
           r.total_attempts > 0 &&
           (r.success_rate_pct < cfg.alertRate || (r.avg_ms !== null && r.avg_ms > cfg.alertMs))
       ),
@@ -1292,7 +1302,7 @@ const svgVsRaster = useMemo(
   const pLabel = PERIODS[cfg.period]?.label ?? cfg.period;
 
   const totalDeviceReqs = useMemo(
-    () => deviceRows.reduce((s: number, r: any) => s + r.requests, 0),
+    () => deviceRows.reduce((s, r) => s + r.requests, 0),
     [deviceRows]
   );
 
@@ -1577,7 +1587,7 @@ const svgVsRaster = useMemo(
                 >
                   ⚠ ALERTS
                 </span>
-                {alertNodes.map((n: any) => (
+                {alertNodes.map((n) => (
                   <span
                     key={n.node}
                     style={{
@@ -1719,11 +1729,11 @@ const svgVsRaster = useMemo(
                 ? Array(4)
                     .fill(0)
                     .map((_, i) => <Skel key={i} h={120} />)
-                : nodeRows.map((row: any) => (
+                : nodeRows.map((row) => (
                     <NodeCard
                       key={row.node}
                       row={row}
-                      latRow={latencyRows.find((r: any) => r.node === row.node)}
+                      latRow={latencyRows.find((r) => r.node === row.node)}
                       alertRate={cfg.alertRate}
                       alertMs={cfg.alertMs}
                     />
@@ -1771,7 +1781,7 @@ const svgVsRaster = useMemo(
                       </tr>
                     </thead>
                     <tbody>
-                      {nodeRows.map((row: any, i: number) => {
+                      {nodeRows.map((row, i) => {
                         const pct = row.success_rate_pct;
                         const health =
                           pct >= cfg.alertRate ? 'healthy' : pct >= 10 ? 'degraded' : 'down';
@@ -2091,22 +2101,22 @@ const svgVsRaster = useMemo(
                     .map((_, i) => <Skel key={i} h={90} />)
                 : (() => {
                     const primary = fallbackTierRows.filter(
-                      (r: any) => r.lane === 'geo' || r.lane === 'binding'
+                      (r) => r.lane === 'geo' || r.lane === 'binding'
                     );
                     const t1fb = fallbackTierRows.filter(
-                      (r: any) => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback'
+                      (r) => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback'
                     );
-                    const t2fb = fallbackTierRows.filter((r: any) => r.lane === 'geo-t2');
+                    const t2fb = fallbackTierRows.filter((r) => r.lane === 'geo-t2');
                     const t3fb = fallbackTierRows.filter(
-                      (r: any) => r.lane === 'geo-t3' || r.lane === 'wsrv-t3'
+                      (r) => r.lane === 'geo-t3' || r.lane === 'wsrv-t3'
                     );
-                    const total = fallbackTierRows.reduce((s: number, r: any) => s + r.attempts, 0);
+                    const total = fallbackTierRows.reduce((s, r) => s + r.attempts, 0);
                     const pct = (n: number) =>
                       total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '—';
-                    const pN = primary.reduce((s: number, r: any) => s + r.attempts, 0);
-                    const t1N = t1fb.reduce((s: number, r: any) => s + r.attempts, 0);
-                    const t2N = t2fb.reduce((s: number, r: any) => s + r.attempts, 0);
-                    const t3N = t3fb.reduce((s: number, r: any) => s + r.attempts, 0);
+                    const pN = primary.reduce((s, r) => s + r.attempts, 0);
+                    const t1N = t1fb.reduce((s, r) => s + r.attempts, 0);
+                    const t2N = t2fb.reduce((s, r) => s + r.attempts, 0);
+                    const t3N = t3fb.reduce((s, r) => s + r.attempts, 0);
                     return (
                       <>
                         <StatCard
@@ -2156,9 +2166,9 @@ const svgVsRaster = useMemo(
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {fallbackTierRows.map((row: any) => {
+                  {fallbackTierRows.map((row) => {
                     const meta = LANE_META[row.lane] ?? { label: row.lane, color: CH.ghost };
-                    const total = fallbackTierRows.reduce((s: number, r: any) => s + r.attempts, 0) || 1;
+                    const total = fallbackTierRows.reduce((s, r) => s + r.attempts, 0) || 1;
                     return (
                       <div
                         key={row.lane}
@@ -2480,7 +2490,7 @@ const svgVsRaster = useMemo(
                     gap: 12,
                   }}
                 >
-                  {topIds.map((row: any) => (
+                  {topIds.map((row) => (
                     <PosterThumb
                       key={`${row.type}-${row.id}`}
                       id={row.id}
@@ -2500,7 +2510,7 @@ const svgVsRaster = useMemo(
                   <Skel h={200} />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {topRatings.slice(0, 10).map((r: any, i: number) => {
+                    {topRatings.slice(0, 10).map((r, i) => {
                       const max = topRatings[0]?.requests || 1;
                       return (
                         <div key={r.r_param}>
@@ -2573,8 +2583,8 @@ const svgVsRaster = useMemo(
                   <Skel h={200} />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {reqFormatRows.map((r: any, i: number) => {
-                      const total = reqFormatRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
+                    {reqFormatRows.map((r, i) => {
+                      const total = reqFormatRows.reduce((s, x) => s + x.requests, 0) || 1;
                       return (
                         <div key={r.format}>
                           <div
@@ -2664,7 +2674,7 @@ const svgVsRaster = useMemo(
                     gap: 6,
                   }}
                 >
-                  {countryRows.slice(0, 20).map((r: any, i: number) => {
+                  {countryRows.slice(0, 20).map((r, i) => {
                     const max = countryRows[0]?.requests || 1;
                     const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                     return (
@@ -2779,7 +2789,7 @@ const svgVsRaster = useMemo(
                     .fill(0)
                     .map((_, i) => <Skel key={i} h={90} />)
                 : ['desktop', 'mobile', 'tablet', 'tv'].map((dev) => {
-                    const row = deviceRows.find((r: any) => r.device === dev);
+                    const row = deviceRows.find((r) => r.device === dev);
                     const meta = DEVICE_META[dev];
                     const reqs = row?.requests ?? 0;
                     const pct = totalDeviceReqs > 0 ? (reqs / totalDeviceReqs) * 100 : 0;
@@ -2826,7 +2836,7 @@ const svgVsRaster = useMemo(
                           nameKey="device"
                           paddingAngle={2}
                         >
-                          {deviceRows.map((r: any, i: number) => (
+                          {deviceRows.map((r, i) => (
                             <Cell
                               key={r.device}
                               fill={
@@ -2839,9 +2849,9 @@ const svgVsRaster = useMemo(
                       </PieChart>
                     </ResponsiveContainer>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                       {deviceRows
-                        .sort((a: any, b: any) => b.requests - a.requests)
-                        .map((r: any) => {
+                      {deviceRows
+                        .sort((a, b) => b.requests - a.requests)
+                        .map((r) => {
                           const meta = DEVICE_META[r.device] ?? {
                             label: r.device,
                             icon: '?',
@@ -2938,7 +2948,7 @@ const svgVsRaster = useMemo(
                           nameKey="type"
                           paddingAngle={2}
                         >
-                          {reqTypeRows.map((r: any, i: number) => (
+                          {reqTypeRows.map((r, i) => (
                             <Cell key={r.type} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                           ))}
                         </Pie>
@@ -2946,8 +2956,8 @@ const svgVsRaster = useMemo(
                       </PieChart>
                     </ResponsiveContainer>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {reqTypeRows.map((r: any, i: number) => {
-                        const total = reqTypeRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
+                      {reqTypeRows.map((r, i) => {
+                        const total = reqTypeRows.reduce((s, x) => s + x.requests, 0) || 1;
                         return (
                           <div
                             key={r.type}
@@ -3364,7 +3374,7 @@ const svgVsRaster = useMemo(
                       </tr>
                     </thead>
                     <tbody>
-                      {failRows.slice(0, 100).map((r: any, i: number) => (
+                      {failRows.slice(0, 100).map((r, i) => (
                         <tr
                           key={i}
                           style={{
@@ -3460,8 +3470,8 @@ const svgVsRaster = useMemo(
                   <Skel h={180} />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {formatRows.map((r: any, i: number) => {
-                      const total = formatRows.reduce((s: number, x: any) => s + x.attempts, 0) || 1;
+                    {formatRows.map((r, i) => {
+                      const total = formatRows.reduce((s, x) => s + x.attempts, 0) || 1;
                       return (
                         <div key={r.format}>
                           <div
@@ -3531,9 +3541,9 @@ const svgVsRaster = useMemo(
                   <Skel h={180} />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {coloRows.map((r: any) => {
+                    {coloRows.map((r, i) => {
                       const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
-                      const maxA = Math.max(...coloRows.map((c: any) => c.attempts), 1);
+                      const maxA = Math.max(...coloRows.map((c) => c.attempts), 1);
                       return (
                         <div key={r.colo}>
                           <div
@@ -3794,8 +3804,8 @@ const svgVsRaster = useMemo(
       <Card title="Format Distribution">
         {loading ? <Skel h={180} /> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {svgVsRaster.map((r: any, i: number) => {
-              const total = svgVsRaster.reduce((s: number, x: any) => s + x.requests, 0) || 1;
+            {svgVsRaster.map((r, i) => {
+              const total = svgVsRaster.reduce((s, x) => s + x.requests, 0) || 1;
               const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
               return (
                 <div key={r.category}>
@@ -3833,8 +3843,8 @@ const svgVsRaster = useMemo(
       <Card title="SVG Preset Breakdown">
         {loading ? <Skel h={180} /> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {svgPresetRows.map((r: any, i: number) => {
-              const total = svgPresetRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
+            {svgPresetRows.map((r, i) => {
+              const total = svgPresetRows.reduce((s, x) => s + x.requests, 0) || 1;
               const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
               return (
                 <div key={r.preset}>
@@ -3897,7 +3907,7 @@ const svgVsRaster = useMemo(
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 12 }}>
-          {svgTopIds.map((row: any) => (
+          {svgTopIds.map(row => (
             <PosterThumb key={`${row.type}-${row.id}`} id={row.id} type={row.type} hits={row.hits} hitRate={row.hit_rate_pct} />
           ))}
         </div>
@@ -3908,7 +3918,7 @@ const svgVsRaster = useMemo(
     <Card title="Top Rating Combos in SVG Requests">
       {loading ? <Skel h={160} /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {svgRatingCombos.slice(0, 10).map((r: any, i: number) => {
+          {svgRatingCombos.slice(0, 10).map((r, i) => {
             const max = svgRatingCombos[0]?.requests || 1;
             return (
               <div key={r.r_param}>

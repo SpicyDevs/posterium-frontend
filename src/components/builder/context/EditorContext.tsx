@@ -1,6 +1,6 @@
 // src/components/builder/context/EditorContext.tsx
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { RatingType, BadgeConfig } from '../types';
+import type { RatingType } from '../types';
 
 type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
 export type SheetMode = 'hidden' | 'half' | 'full';
@@ -12,17 +12,6 @@ interface ViewOptions {
 }
 
 export type LiveRatings = Partial<Record<string, string>>;
-
-export type AdvancedPanelId =
-  | 'source'
-  | 'poster'
-  | 'badges'
-  | 'logo'
-  | 'layout'
-  | 'selected'
-  | 'fallbacks'
-  | 'advanced'
-  | 'presets';
 
 interface EditorContextType {
   activeTab: TabType;
@@ -53,14 +42,6 @@ interface EditorContextType {
   setLivePosterUrl: (url: string | null) => void;
   fallbackEnabled: boolean;
   setFallbackEnabled: (v: boolean) => void;
-  builderMode: 'simple' | 'advanced';
-  setBuilderMode: (mode: 'simple' | 'advanced') => void;
-  advancedPanel: AdvancedPanelId;
-  setAdvancedPanel: (panel: AdvancedPanelId) => void;
-  selectionEnabled: boolean;
-  setSelectionEnabled: (v: boolean) => void;
-  copiedStyle: Partial<BadgeConfig> | null;
-  setCopiedStyle: (style: Partial<BadgeConfig> | null) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -81,35 +62,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [liveYear, setLiveYear] = useState('');
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
   const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
-  const [builderMode, setBuilderModeState] = useState<'simple' | 'advanced'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('posterium_builder_mode');
-      if (saved === 'simple' || saved === 'advanced') return saved;
-    }
-    return 'simple';
-  });
-
-  const [advancedPanel, setAdvancedPanelState] = useState<AdvancedPanelId>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('posterium_advanced_panel') as AdvancedPanelId;
-      if (saved) return saved;
-    }
-    return 'source';
-  });
-
-  const setBuilderMode = useCallback((mode: 'simple' | 'advanced') => {
-    setBuilderModeState(mode);
-    localStorage.setItem('posterium_builder_mode', mode);
-  }, []);
-
-  const setAdvancedPanel = useCallback((panel: AdvancedPanelId) => {
-    setAdvancedPanelState(panel);
-    localStorage.setItem('posterium_advanced_panel', panel);
-  }, []);
-
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
-  const [selectionEnabled, setSelectionEnabled] = useState(true);
-  const [copiedStyle, setCopiedStyle] = useState<Partial<BadgeConfig> | null>(null);
 
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
@@ -244,14 +197,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setLivePosterUrl,
         fallbackEnabled,
         setFallbackEnabled,
-        builderMode,
-        setBuilderMode,
-        advancedPanel,
-        setAdvancedPanel,
-        selectionEnabled,
-        setSelectionEnabled,
-        copiedStyle,
-        setCopiedStyle,
       }}
     >
       {children}

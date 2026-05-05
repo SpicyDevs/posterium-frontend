@@ -2,7 +2,7 @@
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
+import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
 import {
   Layers,
   Layout,
@@ -32,9 +32,6 @@ interface Props {
   selectedMinimalElements?: Set<string>;
   viewMode?: 'global' | 'selection';
   mode?: 'badges' | 'logo' | 'selection';
-  hidePresets?: boolean;
-  hideLogo?: boolean;
-  panel?: 'poster' | 'badges' | 'layout' | 'fallbacks';
 }
 
 const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
@@ -646,9 +643,6 @@ const PropertyPanel: React.FC<Props> = ({
   selectedMinimalElements = new Set<string>(),
   viewMode,
   mode,
-  hidePresets,
-  hideLogo,
-  panel,
 }) => {
   const badgesEnabled = config.ratings.length > 0;
   const logoSettingsRef = useRef<HTMLDivElement | null>(null);
@@ -769,26 +763,7 @@ const PropertyPanel: React.FC<Props> = ({
   if (showGlobal)
     return (
       <SidebarLayout side="right" bodyClassName="pb-24">
-        {(!panel || panel === 'poster') && (
-          <Section title="Poster Effects" icon={<ImagePlay size={10} />} sectionId="poster-effects">
-            <SliderRow
-              label="Blur"
-              value={config.posterBlur}
-              min={0}
-              max={100}
-              unit="px"
-              onChange={(v) => updateConfig('posterBlur', v)}
-              onReset={config.posterBlur !== 0 ? () => updateConfig('posterBlur', 0) : undefined}
-            />
-            <ToggleRow
-              label="Grayscale"
-              checked={config.grayscale}
-              onChange={(v) => updateConfig('grayscale', v)}
-            />
-          </Section>
-        )}
-
-        {(!panel || panel === 'layout') && showBadgeSettings && !hidePresets && (
+        {showBadgeSettings && (
           <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
             <div className="flex items-start gap-4">
               <div>
@@ -843,7 +818,7 @@ const PropertyPanel: React.FC<Props> = ({
           </Section>
         )}
 
-        {(!panel || panel === 'badges') && showBadgeSettings && badgesEnabled && (
+        {showBadgeSettings && badgesEnabled && (
           <>
             <Section
               title="Badge Appearance"
@@ -1149,7 +1124,7 @@ const PropertyPanel: React.FC<Props> = ({
           </Section>
         )}
 
-        {(!panel || panel === 'badges') && showLogoSettings && !hideLogo && config.logo && (
+        {showLogoSettings && config.logo && (
           <div ref={logoSettingsRef}>
             <Section
               title={logoSectionTitle}
@@ -1274,20 +1249,6 @@ const PropertyPanel: React.FC<Props> = ({
             </Section>
           </div>
         )}
-
-        {(!panel || panel === 'fallbacks') && (
-          <Section title="Fallbacks" icon={<RotateCcw size={10} />} sectionId="global-fallbacks">
-            <ToggleRow
-              label="Enable Fallbacks"
-              sub="Use fallback ratings if data is missing"
-              checked={config.fallbackEnabled}
-              onChange={(v) => updateConfig('fallbackEnabled', v)}
-            />
-            <p className="body-font mt-4" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-              Fallback ratings are used in order when the primary rating for a provider is unavailable.
-            </p>
-          </Section>
-        )}
       </SidebarLayout>
     );
 
@@ -1346,10 +1307,7 @@ const PropertyPanel: React.FC<Props> = ({
       if (only === 'minimal-year') return 'Year';
       if (only === 'minimal-duration') return 'Duration';
       if (only === 'minimal-logo') return 'Logo Overlay';
-      if (only.startsWith('minimal-rating-')) {
-        const parts = only.split('-');
-        return `Rating Slot ${Number(parts[parts.length - 1] ?? 0) + 1}`;
-      }
+      if (only.startsWith('minimal-rating-')) return `Rating Slot ${Number(only.split('-').at(-1) ?? 0) + 1}`;
     }
     const first = Array.from(selectedIds)[0];
     if (!first) return 'Selection';

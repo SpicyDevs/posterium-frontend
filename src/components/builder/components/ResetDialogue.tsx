@@ -1,5 +1,5 @@
 // src/components/builder/components/ResetDialog.tsx
-import { Fragment, memo } from 'react';
+import React, { Fragment, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { AlertTriangle } from 'lucide-react';
 

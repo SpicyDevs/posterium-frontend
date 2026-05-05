@@ -1,7 +1,7 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
-import type { PosterConfig, ExtensionType, ApiKeys, RatingType, BadgeConfig } from './types';
+import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
@@ -14,16 +14,11 @@ import ImportDialog from './components/ImportDialogue';
 import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
-  ChevronDown,
-  Search,
-  MoreVertical,
-  Undo2 as UndoIcon,
-  Redo2 as RedoIcon,
   RotateCcw,
+  Undo2,
+  Redo2,
   PanelLeft,
   PanelRight,
-  Download,
-  Keyboard,
   Maximize2,
   Minimize2,
   ZoomIn,
@@ -35,17 +30,17 @@ import {
   Layers,
   CheckSquare,
   MousePointer2Off,
+  Download,
   Contrast,
   ArrowUpToLine,
   ArrowDownToLine,
   ScanLine,
+  Keyboard,
   Type,
+  ChevronDown,
+  Search,
+  Coffee,
 } from 'lucide-react';
-import { useIsDesktop } from '../../lib/breakpoints';
-import { ModeToggle } from './components/ModeToggle';
-import { Menu, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
-import { VerticalPanelNav } from './components/VerticalPanelNav';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
@@ -309,13 +304,9 @@ const StudioLayout: React.FC<{
     handleSelection,
     handleLogoSelection,
     clearSelection,
+    setBatchSelection,
     viewOptions,
     toggleViewOption,
-    copiedStyle,
-    setCopiedStyle,
-    setBatchSelection,
-    builderMode,
-    advancedPanel,
   } = useEditor();
 
   const [isResetOpen, setIsResetOpen] = useState(false);
@@ -329,7 +320,15 @@ const StudioLayout: React.FC<{
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
-  const isDesktop = useIsDesktop();
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= 1024
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handle = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handle);
+    return () => mq.removeEventListener('change', handle);
+  }, []);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
@@ -431,8 +430,7 @@ const StudioLayout: React.FC<{
           activeMinimal
             .filter((id) => id.startsWith('minimal-rating-'))
             .forEach((id) => {
-              const parts = id.split('-');
-              const idx = Number(parts[parts.length - 1] ?? -1);
+              const idx = Number(id.split('-').at(-1) ?? -1);
               if (!Number.isFinite(idx) || !list[idx]) return;
               list[idx] = {
                 ...list[idx],
@@ -568,33 +566,6 @@ const StudioLayout: React.FC<{
       deleteBadge(id);
     },
     [setConfig, clearSelection, deleteBadge]
-  );
-  const handleCopyStyle = useCallback(
-    (id: LayerTargetId) => {
-      if (id === 'logo') return;
-      const item = config.items[id as RatingType];
-      const style: Partial<BadgeConfig> = { ...item };
-      delete style.x;
-      delete style.y;
-      setCopiedStyle(style);
-    },
-    [config.items, setCopiedStyle]
-  );
-  const handlePasteStyle = useCallback(
-    (id: LayerTargetId) => {
-      if (!copiedStyle || id === 'logo') return;
-      const targetIds = selectedIds.has(id as RatingType)
-        ? Array.from(selectedIds)
-        : [id as RatingType];
-      setConfig((prev) => {
-        const nextItems = { ...prev.items };
-        targetIds.forEach((tid) => {
-          nextItems[tid] = { ...nextItems[tid], ...copiedStyle };
-        });
-        return { ...prev, items: nextItems };
-      });
-    },
-    [copiedStyle, selectedIds, setConfig]
   );
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
@@ -1061,7 +1032,7 @@ const StudioLayout: React.FC<{
       id: 'undo',
       label: 'Undo',
       category: 'File',
-      icon: <UndoIcon size={13} />,
+      icon: <Undo2 size={13} />,
       shortcut: '⌘Z',
       action: undo,
     },
@@ -1069,7 +1040,7 @@ const StudioLayout: React.FC<{
       id: 'redo',
       label: 'Redo',
       category: 'File',
-      icon: <RedoIcon size={13} />,
+      icon: <Redo2 size={13} />,
       shortcut: '⌘Y',
       action: redo,
     },
@@ -1109,22 +1080,6 @@ const StudioLayout: React.FC<{
           fontFamily: 'DM Sans, sans-serif',
         }}
       >
-        {/* Top Loading Bar */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] z-[9999] overflow-hidden">
-          <div className="h-full bg-[var(--film-amber)] w-full -translate-x-full animate-shimmer" />
-        </div>
-
-        {!isDesktop && (
-          <div className="fixed inset-0 z-[var(--z-top)] flex items-center justify-center p-8 text-center bg-[var(--film-black)]">
-            <div className="max-w-md space-y-6">
-              <h2 className="poster-font text-3xl text-[var(--film-cream)]">Posterium Builder</h2>
-              <p className="syne-font text-zinc-400">Posterium Builder requires a desktop browser.</p>
-              <a href="/" className="inline-block px-6 py-2 bg-[var(--film-amber)] text-[var(--film-black)] rounded-full font-bold uppercase tracking-widest text-xs">
-                Return Home
-              </a>
-            </div>
-          </div>
-        )}
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
         <ResetDialog
@@ -1157,9 +1112,6 @@ const StudioLayout: React.FC<{
           onDeselectAll={clearSelection}
           onResetBadge={resetLayer}
           onDelete={deleteLayer}
-          onCopyStyle={handleCopyStyle}
-          onPasteStyle={handlePasteStyle}
-          hasCopiedStyle={!!copiedStyle}
         />
         <CommandPalette
           isOpen={paletteOpen}
@@ -1180,109 +1132,263 @@ const StudioLayout: React.FC<{
 
         {/* ── HEADER ── */}
         {!isFullscreen && (
-          <header className="h-12 shrink-0 flex items-center px-4 gap-4 bg-[rgba(7,7,6,0.97)] border-b border-white/5 z-30">
-            {/* Left: Logo & ModeToggle */}
-            <div className="flex items-center gap-4 shrink-0">
-              <a href="/" className="poster-font text-[18px] text-[var(--film-cream)] tracking-widest leading-none">
-                POSTERIUM
-              </a>
-              <ModeToggle />
-            </div>
+          <header
+            className="h-12 shrink-0 flex items-center z-30 relative"
+            style={{
+              background: 'rgba(7,7,6,0.97)',
+              borderBottom: '1px solid rgba(196,124,46,0.08)',
+            }}
+          >
+            {/* Ambient gradient rule */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
+              }}
+              aria-hidden="true"
+            />
 
-            {/* Center: Command Palette Search */}
-            <div className="flex-1 flex justify-center px-4">
+            {/* Left Header Area */}
+            <div className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto">
+              {/* Wordmark */}
+              <a
+                href="/"
+                className="flex items-center"
+                style={{ textDecoration: 'none', flexShrink: 0 }}
+              >
+                <span
+                  className="poster-font select-none hidden sm:block"
+                  style={{
+                    fontSize: 18,
+                    color: 'var(--film-cream)',
+                    letterSpacing: '0.12em',
+                    lineHeight: 'normal',
+                  }}
+                >
+                  POSTERIUM
+                </span>
+                <span
+                  className="poster-font select-none sm:hidden"
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--film-amber)',
+                    letterSpacing: '0.12em',
+                    lineHeight: 'normal',
+                  }}
+                >
+                  P
+                </span>
+              </a>
+              <a
+                href="#"
+                aria-label="Support us by Buying us a Coffee"
+                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
+              >
+                <Coffee size={12} className="shrink-0 fill-current" />
+                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
+                  Support
+                </span>
+              </a>
               <button
                 onClick={() => setPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 h-8 w-full max-w-[480px] bg-white/5 border border-white/10 rounded-[var(--radius-sm)] text-zinc-500 hover:border-white/20 transition-all text-left"
+                title="Search commands (⌘K)"
+                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+                style={{
+                  color: 'var(--film-text-dim)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }}
               >
-                <Search size={13} />
-                <span className="text-[11px] syne-font flex-1 truncate">Search commands…</span>
-                <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/10 bg-white/5">⌘K</kbd>
+                <Search size={12} className="shrink-0" />
+                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+              </button>
+              <ToolbarBtn
+                onClick={() => setShortcutsOpen((v) => !v)}
+                label="Keyboard Shortcuts (⌘/)"
+                active={shortcutsOpen}
+                hideOnMobile
+              >
+                <Keyboard size={14} />
+              </ToolbarBtn>
+            </div>
+
+            {/* Central area: sidebar toggles flank the command palette search */}
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
+              {/* Left sidebar toggle - desktop only */}
+              <button
+                onClick={() => setLeftVisible(!leftVisible)}
+                title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
+                style={{
+                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
+                  border: '1px solid transparent',
+                  background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = leftVisible
+                    ? 'rgba(196,124,46,0.08)'
+                    : 'transparent';
+                }}
+              >
+                <PanelLeft size={14} />
+              </button>
+
+              {/* Full search bar - sm and above */}
+              <button
+                onClick={() => setPaletteOpen(true)}
+                className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'var(--film-text-dim)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                }}
+              >
+                <Search size={13} className="shrink-0" />
+                <span className="text-[11px] syne-font text-left flex-1 min-w-0 truncate">
+                  Search commands...
+                </span>
+                <kbd
+                  className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
+                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                >
+                  ⌘K
+                </kbd>
+              </button>
+
+              {/* Right sidebar toggle - desktop only */}
+              <button
+                onClick={() => setRightVisible(!rightVisible)}
+                title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
+                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
+                style={{
+                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
+                  border: '1px solid transparent',
+                  background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = rightVisible
+                    ? 'rgba(196,124,46,0.08)'
+                    : 'transparent';
+                }}
+              >
+                <PanelRight size={14} />
               </button>
             </div>
 
-            {/* Right: Toggles, Undo/Redo, Import/Export, Overflow */}
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Sidebar Toggles */}
-              <div className="flex items-center mr-2">
-                <ToolbarBtn onClick={() => setLeftVisible(!leftVisible)} active={leftVisible} label="Toggle Layers ([)">
-                  <PanelLeft size={14} />
-                </ToolbarBtn>
-                <ToolbarBtn onClick={() => setRightVisible(!rightVisible)} active={rightVisible} label="Toggle Inspector (])">
-                  <PanelRight size={14} />
-                </ToolbarBtn>
-              </div>
+            {/* Right Header Area */}
+            <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
 
-              {/* Undo/Redo */}
-              <div className="flex items-center mr-2">
-                <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                  <UndoIcon size={14} />
-                </ToolbarBtn>
-                <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                  <RedoIcon size={14} />
-                </ToolbarBtn>
-              </div>
+              {/* History */}
+              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
+                <Undo2 size={14} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
+                <Redo2 size={14} />
+              </ToolbarBtn>
 
-              {/* Import/Export */}
-              <div className="flex items-center gap-2 mr-2">
-                <button
-                  ref={importBtnRef}
-                  onClick={() => setIsImportOpen(true)}
-                  className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-[var(--film-cream)] transition-colors px-2 py-1"
-                >
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
+
+              {/* Import */}
+              <button
+                ref={importBtnRef}
+                onClick={() => setIsImportOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+                style={{ color: 'var(--film-text-dim)' }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                }}
+              >
+                <Download size={13} className="rotate-180" />
+                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
                   Import
-                </button>
-                <button
-                  ref={exportBtnRef}
-                  onClick={() => setExportOpen(!exportOpen)}
-                  className="bg-[var(--film-amber)] text-[var(--film-black)] px-4 py-1.5 rounded-[var(--radius-sm)] text-[11px] font-black uppercase tracking-wider flex items-center gap-2 hover:scale-105 transition-all shadow-[0_0_12px_rgba(196,124,46,0.2)]"
-                >
-                  <Download size={12} />
-                  Export
-                  <ChevronDown size={10} className={exportOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                </button>
-              </div>
+                </span>
+              </button>
 
-              {/* Overflow Menu */}
-              <Menu as="div" className="relative">
-                <Menu.Button className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-[var(--film-cream)] hover:bg-white/5 transition-all">
-                  <MoreVertical size={16} />
-                </Menu.Button>
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-[var(--film-dark)] border border-white/10 rounded-lg shadow-xl focus:outline-none z-50 p-1">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          onClick={() => setIsResetOpen(true)}
-                          className={`${active ? 'bg-red-500/10 text-red-400' : 'text-red-400/80'} group flex w-full items-center rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors`}
-                        >
-                          <RotateCcw size={13} className="mr-3" />
-                          Reset All
-                        </button>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          onClick={() => setShortcutsOpen(true)}
-                          className={`${active ? 'bg-white/5 text-[var(--film-cream)]' : 'text-zinc-400'} group flex w-full items-center rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors`}
-                        >
-                          <Keyboard size={13} className="mr-3" />
-                          Shortcuts
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
+              {/* Export CTA */}
+              <button
+                ref={exportBtnRef}
+                onClick={() => setExportOpen((v) => !v)}
+                className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
+                style={{
+                  background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
+                  color: '#070706',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
+                }}
+                onMouseLeave={(e) => {
+                  if (!exportOpen)
+                    (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+                }}
+              >
+                <Download size={12} />
+                <span className="max-[1300px]:hidden">Export</span>
+                <ChevronDown
+                  className="max-[1300px]:hidden"
+                  size={10}
+                  style={{
+                    transform: exportOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.15s',
+                  }}
+                />
+              </button>
+
+              <div
+                className="w-px h-4 mx-1 hidden lg:block"
+                style={{ background: 'rgba(196,124,46,0.12)' }}
+                aria-hidden="true"
+              />
+
+              {/* Reset - permanently placed at top right */}
+              <button
+                onClick={() => setIsResetOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <RotateCcw size={13} />
+                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
+                  Reset
+                </span>
+              </button>
             </div>
           </header>
         )}
@@ -1292,34 +1398,28 @@ const StudioLayout: React.FC<{
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
-              aria-label="Navigation"
+              aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
-                width: leftVisible ? (builderMode === 'advanced' ? 140 : leftW) : 0,
+                width: leftVisible ? leftW : 0,
                 background: 'var(--film-dark)',
                 borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
                 overflow: 'hidden',
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              {builderMode === 'advanced' ? (
-                <VerticalPanelNav />
-              ) : (
-                <LayerPanel
-                  config={config}
-                  setConfig={setConfig}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelectionOverride}
-                />
-              )}
-              {builderMode !== 'advanced' && (
-                <div
-                  onMouseDown={startResizeLeft}
-                  className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
-                >
-                  <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
-                </div>
-              )}
+              <LayerPanel
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+              />
+              <div
+                onMouseDown={startResizeLeft}
+                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
+              >
+                <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
+              </div>
             </aside>
           )}
 
@@ -1397,20 +1497,7 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              
-              {builderMode === 'advanced' ? (
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  {advancedPanel === 'source' && (
-                     <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelectionOverride} hideBadgesSection />
-                  )}
-                  {advancedPanel === 'poster' && <Inspector config={config} setConfig={setConfig} panel="poster" />}
-                  {advancedPanel === 'badges' && <Inspector config={config} setConfig={setConfig} hidePresets hideLogo panel="badges" />}
-                  {advancedPanel === 'layout' && <Inspector config={config} setConfig={setConfig} panel="layout" />}
-                  {advancedPanel === 'fallbacks' && <Inspector config={config} setConfig={setConfig} panel="fallbacks" />}
-                </div>
-              ) : (
-                <Inspector config={config} setConfig={setConfig} />
-              )}
+              <Inspector config={config} setConfig={setConfig} />
             </aside>
           )}
 

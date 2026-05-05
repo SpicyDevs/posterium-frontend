@@ -117,92 +117,42 @@
     appearance: none;
   }
 
-@import './typography.css';
-
-:root {
-  /* Colors */
-  --film-black: #070706;
-  --film-dark: #0e0d0b;
-  --film-mid: #181612;
-  --film-char: #222018;
-  --film-amber: #c47c2e;
-  --film-gold: #d4a245;
-  --film-pale: #e8d8a8;
-  --film-cream: #f0e6cc;
-  --film-white: #faf6ec;
-  --film-silver: #b0a898;
-  --film-dust: #453f37;
-  --film-red: #a82018;
-  --film-border: rgba(196, 124, 46, 0.16);
-  --film-glow: rgba(196, 124, 46, 0.07);
-  --film-text-body: rgba(230, 218, 196, 0.92);
-  --film-text-label: rgba(212, 198, 172, 0.82);
-  --film-text-dim: rgba(180, 168, 148, 0.62);
-  --film-text-ghost: rgba(140, 130, 112, 0.38);
-
-  /* Spacing Scale (4px increments) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-7: 28px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-14: 56px;
-  --space-16: 64px;
-
-  /* Border Radius */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.72);
-  --shadow-xl: 0 32px 80px rgba(0, 0, 0, 0.85);
-
-  /* Z-index */
-  --z-base: 1;
-  --z-above: 10;
-  --z-sidebar: 20;
-  --z-header: 30;
-  --z-overlay: 40;
-  --z-modal: 50;
-  --z-toast: 60;
-  --z-top: 9999;
-
-  /* Transitions */
-  --transition-fast: 0.12s ease;
-  --transition-base: 0.2s ease;
-  --transition-slow: 0.35s ease;
-  --transition-spring: 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ── Global Utilities ── */
-*:focus-visible {
-  outline: 2px solid var(--film-amber);
-  outline-offset: 2px;
-}
-
-.motion-safe {
-  animation: none;
-  transition: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .motion-safe {
-    animation: revert;
-    transition: revert;
+  /* ── CSS custom properties — SINGLE SOURCE OF TRUTH ──────────────────── */
+  :root {
+    --film-black: #070706;
+    --film-dark: #0e0d0b;
+    --film-mid: #181612;
+    --film-char: #222018;
+    --film-amber: #c47c2e;
+    --film-gold: #d4a245;
+    --film-pale: #e8d8a8;
+    --film-cream: #f0e6cc;
+    --film-white: #faf6ec;
+    --film-silver: #b0a898;
+    --film-dust: #453f37;
+    --film-red: #a82018;
+    --film-border: rgba(196, 124, 46, 0.16);
+    --film-glow: rgba(196, 124, 46, 0.07);
+    --film-text-body: rgba(230, 218, 196, 0.92);
+    --film-text-label: rgba(212, 198, 172, 0.82);
+    --film-text-dim: rgba(180, 168, 148, 0.62);
+    --film-text-ghost: rgba(140, 130, 112, 0.38);
   }
-}
+
+  /* ── Typography (was duplicated in dashboard.css) ─────────────────────── */
+  .poster-font {
+    font-family: 'Bebas Neue', cursive;
+    letter-spacing: 0.04em;
+  }
+  .syne-font {
+    font-family: 'Syne', sans-serif;
+  }
+  .body-font {
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mono-font {
+    font-family: 'JetBrains Mono', monospace;
+  }
 
   /* ── Film overlays ────────────────────────────────────────────────────── */
   .grain-layer {

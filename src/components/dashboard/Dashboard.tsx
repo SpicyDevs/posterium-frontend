@@ -14,7 +14,24 @@ import {
   ComparisonSection,
 } from './sections/index';
 
-
+// ─────────────────────────────────────────────────────────────────────
+// ContentSection — content-visibility:auto for below-fold sections
+// ─────────────────────────────────────────────────────────────────────
+const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number }> = ({
+  children,
+  intrinsicH = 600,
+}) => (
+  <div
+    style={
+      {
+        contentVisibility: 'auto',
+        containIntrinsicSize: `0 ${intrinsicH}px`,
+      } as React.CSSProperties
+    }
+  >
+    {children}
+  </div>
+);
 
 // ─────────────────────────────────────────────────────────────────────
 // Dashboard

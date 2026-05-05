@@ -156,15 +156,6 @@ export default defineConfig({
             if (id.includes('node_modules/@hello-pangea')) {
               return 'dnd';
             }
-            if (id.includes('src/components/builder/components/PreviewCanvas')) {
-              return 'builder-canvas';
-            }
-            if (id.includes('src/components/builder/panels/')) {
-              return 'builder-panels';
-            }
-            if (id.includes('analytics')) {
-              return 'analytics';
-            }
           },
         },
       },
