@@ -70,6 +70,15 @@ const PIE_COLORS = [
   CH.red,
   CH.pink,
 ];
+// HTTPS-only nodes we can poll from the browser
+const LIVE_HEALTH_NODES = [
+  { id:'washington', label:'US East', url:'https://us-r-vercel.vercel.app' },
+  { id:'london',     label:'London',  url:'https://uk-r-vercel.vercel.app' },
+  { id:'tokyo',      label:'Tokyo',   url:'https://jp-r-vercel.vercel.app' },
+  { id:'mumbai',     label:'Mumbai',  url:'https://rasterize-node.vercel.app' },
+  { id:'ohio',       label:'Ohio',    url:'https://r-netlify.netlify.app' },
+  { id:'render_eu',  label:'EUC',     url:'https://euc-r-render.onrender.com' },
+];
 
 function nodeColor(n: string) {
   const MAP: Record<string, string> = {
@@ -637,6 +646,32 @@ const PosterThumb = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [nodeHealth, setNodeHealth] = useState<Record<string, any>>({});
+  const [healthLoading, setHealthLoading] = useState(false);
+
+  const fetchNodeHealth = useCallback(async () => {
+    setHealthLoading(true);
+    const results = await Promise.allSettled(
+      LIVE_HEALTH_NODES.map(async n => {
+        const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
+        return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
+      })
+    );
+    setNodeHealth(Object.fromEntries(
+      results.map((r, i) =>
+        r.status === 'fulfilled' ? r.value : [LIVE_HEALTH_NODES[i].id, { error: 'unreachable' }]
+      )
+    ));
+    setHealthLoading(false);
+  }, []);
+
+  // Fetch health on auth + every 30s when live mode is active
+  useEffect(() => { if (authed) fetchNodeHealth(); }, [authed]);
+  useEffect(() => {
+    if (!live) return;
+    const iv = setInterval(fetchNodeHealth, 30_000);
+    return () => clearInterval(iv);
+  }, [live, fetchNodeHealth]);
   const src = `${POSTER_API}/${type}/${id}.svg?source=tmdb`;
   return (
     <a
@@ -1706,7 +1741,7 @@ const svgVsRaster = useMemo(
             </div>
           </div>
         )}
-
+        
         {/* ══ NODES ══════════════════════════════════════════════════════════ */}
         {tab === 'nodes' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1857,6 +1892,58 @@ const svgVsRaster = useMemo(
                 )}
               </div>
             </Card>
+            {/* Live Node Health — add after the existing NodePerformance Card */}
+        <Card title="Live Node Health" tag={healthLoading ? 'refreshing…' : `${Object.keys(nodeHealth).length} nodes · 30s`}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10 }}>
+            {LIVE_HEALTH_NODES.map(n => {
+              const h = nodeHealth[n.id];
+              if (!h) return (
+                <div key={n.id} style={{ padding: '12px 14px', background: 'var(--film-char)', border: '1px solid var(--film-border)', borderRadius: 8, opacity: 0.4 }}>
+                  <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: CH.ghost }}>{n.label}</div>
+                  <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginTop: 4 }}>not yet fetched</div>
+                </div>
+              );
+              const isErr = !!h.error;
+              const statusC = isErr ? CH.red : h.status === 'ok' ? CH.green : CH.yellow;
+              return (
+                <div key={n.id} style={{
+                  padding: '12px 14px', background: 'var(--film-char)',
+                  border: `1px solid ${isErr ? 'rgba(248,113,113,0.2)' : 'var(--film-border)'}`,
+                  borderLeft: `3px solid ${statusC}`, borderRadius: 8,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, fontWeight: 700, color: 'var(--film-cream)' }}>{n.label}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: statusC, textTransform: 'uppercase' as const }}>
+                      {isErr ? 'down' : h.status}
+                    </span>
+                  </div>
+                  {isErr ? (
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.red }}>{h.error}</div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+                      {[
+                        { l: 'Active', v: h.activeJobs ?? '—', c: num(h.activeJobs) > 0 ? CH.yellow : CH.ghost },
+                        { l: 'Queue',  v: h.queuedJobs ?? '—', c: num(h.queuedJobs) > 0 ? CH.orange : CH.ghost },
+                        { l: 'Workers',v: h.workerCount ?? '—', c: CH.blue },
+                        { l: 'Uptime', v: h.uptime ? `${Math.floor(h.uptime / 3600)}h` : '—', c: CH.teal },
+                        { l: 'Icons',  v: h.iconCache?.loaded ? `✓${h.iconCache.iconCount}` : '✗', c: h.iconCache?.loaded ? CH.green : CH.red },
+                        { l: 'Font',   v: h.fontDefault ? 'loaded' : '—', c: h.fontDefault ? CH.green : CH.ghost },
+                      ].map(({ l, v, c }) => (
+                        <div key={l}>
+                          <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, marginBottom: 1 }}>{l}</div>
+                          <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: c, fontWeight: 700 }}>{String(v)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 10, fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
+            Spaceify (HTTP) nodes excluded — browser cannot reach HTTP from HTTPS. Check analytics for their raster metrics.
+          </div>
+        </Card>
           </div>
         )}
 
