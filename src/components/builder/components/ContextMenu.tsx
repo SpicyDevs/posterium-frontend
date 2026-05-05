@@ -52,6 +52,9 @@ interface Props {
   onDuplicate?: (id: RatingType) => void;
   onResetBadge: (id: LayerTargetId) => void;
   onDelete: (id: LayerTargetId) => void;
+  onCopyStyle: (id: LayerTargetId) => void;
+  onPasteStyle: (id: LayerTargetId) => void;
+  hasCopiedStyle: boolean;
 }
 
 const ContextMenu: React.FC<Props> = memo(
@@ -72,6 +75,9 @@ const ContextMenu: React.FC<Props> = memo(
     onDuplicate,
     onResetBadge,
     onDelete,
+    onCopyStyle,
+    onPasteStyle,
+    hasCopiedStyle,
   }) => {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -164,6 +170,8 @@ const ContextMenu: React.FC<Props> = memo(
       {
         items: [
           ...(!isLogo && onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
+          { id: 'copy-style', label: 'Copy Style', icon: <Copy size={12} /> },
+          { id: 'paste-style', label: 'Paste Style', icon: <Copy size={12} />, disabled: !hasCopiedStyle },
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
           { id: 'delete', label: isLogo ? 'Hide Logo Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
         ],
@@ -200,13 +208,19 @@ const ContextMenu: React.FC<Props> = memo(
           exec(() => onDeselectAll());
           break;
         case 'dup':
-          exec(() => onDuplicate?.(id));
+          exec(() => onDuplicate?.(id as any));
           break;
         case 'reset':
           exec(() => onResetBadge(id));
           break;
         case 'delete':
           exec(() => onDelete(id));
+          break;
+        case 'copy-style':
+          exec(() => onCopyStyle(id));
+          break;
+        case 'paste-style':
+          exec(() => onPasteStyle(id));
           break;
       }
     };

@@ -1,0 +1,25 @@
+/* src/styles/typography.css */
+
+.text-xs { font-size: clamp(10px, 1.8vw, 10px); }
+.text-sm { font-size: clamp(12px, 2.2vw, 13px); }
+.text-base { font-size: clamp(14px, 2.5vw, 16px); }
+.text-lg { font-size: clamp(16px, 3vw, 20px); }
+.text-xl { font-size: clamp(20px, 4vw, 32px); }
+.text-2xl { font-size: clamp(28px, 5vw, 48px); }
+
+.syne-font {
+  font-family: 'Syne', sans-serif;
+}
+
+.mono-font {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.poster-font {
+  font-family: 'Bebas Neue', cursive;
+  letter-spacing: 0.04em;
+}
+
+.body-font {
+  font-family: 'DM Sans', sans-serif;
+}

@@ -81,6 +81,7 @@ const DraggableBadge: React.FC<Props> = ({
   const baseHeight = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const hasDraggedRef = useRef(false);
 
@@ -647,8 +648,14 @@ const DraggableBadge: React.FC<Props> = ({
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
+      onMouseEnter={() => {
+        setHovered(true);
+        onHoverChange?.(true);
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        onHoverChange?.(false);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -668,6 +675,16 @@ const DraggableBadge: React.FC<Props> = ({
         pointerEvents: isObscuring ? 'none' : 'auto',
         touchAction: 'none',
         transform: 'translateZ(0)',
+        outline: isSelected
+          ? '1.5px solid rgba(196,124,46,0.95)'
+          : isDragging
+          ? '1.5px dashed rgba(196,124,46,0.9)'
+          : hovered
+            ? '1.5px dashed rgba(255,255,255,0.35)'
+            : 'none',
+        outlineOffset: 3,
+        borderRadius: radiusVal,
+        transition: isDragging ? 'none' : 'outline-color 0.15s',
       }}
     >
       {/* Clip inner content to badge bounds (prevents icon/text from overflowing) */}

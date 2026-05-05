@@ -68,6 +68,8 @@ const PreviewCanvas: React.FC<Props> = ({
     selectedMinimalElements,
     handleMinimalSelection,
     handleLogoSelection,
+    selectionEnabled,
+    setBatchSelection,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -83,17 +85,19 @@ const PreviewCanvas: React.FC<Props> = ({
     null
   );
   const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
-  const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
   const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
   const [draggingMinimalYear, setDraggingMinimalYear] = useState(false);
   const [draggingMinimalDuration, setDraggingMinimalDuration] = useState(false);
-  const [minimalRatingOffset, setMinimalRatingOffset] = useState({ dx: 0, dy: 0 });
   const [minimalMetaOffset, setMinimalMetaOffset] = useState({ dx: 0, dy: 0 });
   const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
+
+  // Lasso selection state
+  const [lassoRect, setLassoRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const lassoStartRef = useRef<{ x: number; y: number } | null>(null);
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
   const previewRatings = useMemo(() => {
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
@@ -158,14 +162,8 @@ const PreviewCanvas: React.FC<Props> = ({
             )
           )
         );
-        const wrapEnabled = itemCfg?.textWrapEnabled ?? true;
         const w = Math.max(120, Math.round(charWidth * approxCharPx + 16 * scale));
-        const charsPerLine = Math.max(
-          1,
-          Math.floor((Math.max(w, 1) - 16 * scale) / approxCharPx)
-        );
-        const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
-        const renderedLines = wrapEnabled ? Math.min(estimatedLines, charHeight) : 1;
+
         const titleHeight = Math.max(32, Math.round(charHeight * textSize * textLineHeight + 16 * scale));
         return { w, h: titleHeight };
       }
@@ -236,37 +234,6 @@ const PreviewCanvas: React.FC<Props> = ({
     const b = parseInt(expanded.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }, []);
-  const minimalRatings = useMemo(() => {
-    const raw = config.minimalRatings?.slice(0, 3) ?? [];
-    if (raw.length > 0) return raw;
-    return [
-      {
-        provider: 'imdb' as RatingType,
-        enabled: true,
-        x: 140,
-        y: 672,
-        size: 26,
-        color: '#facc15',
-        opacity: 1,
-        iconMode: 'star' as const,
-        symbol: '★',
-        bgEnabled: false,
-        bgColor: '#000000',
-        bgOpacity: 0,
-        borderW: 0,
-        borderColor: '#ffffff',
-        borderOpacity: 0.7,
-        radius: 0,
-        paddingX: 0,
-        paddingY: 0,
-        shadowEnabled: false,
-        shadowX: 0,
-        shadowY: 0,
-        shadowBlur: 0,
-        shadowColor: '#000000',
-      },
-    ];
-  }, [config.minimalRatings]);
 
   const clampPan = useCallback(
     (newX: number, newY: number) => {
@@ -341,6 +308,121 @@ const PreviewCanvas: React.FC<Props> = ({
     lastDist.current = null;
     lastPan.current = null;
     setIsPanning(false);
+  };
+
+  // ── Lasso Logic ──────────────────────────────────────────────────────────
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!selectionEnabled) return;
+    if (e.button !== 0) return; // Only left click
+    if (e.target !== e.currentTarget) return; // Only if clicking canvas background
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    lassoStartRef.current = { x: e.clientX, y: e.clientY };
+    setLassoRect({ x: e.clientX, y: e.clientY, w: 0, h: 0 });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!lassoStartRef.current) return;
+
+    const start = lassoStartRef.current;
+    const x = Math.min(e.clientX, start.x);
+    const y = Math.min(e.clientY, start.y);
+    const w = Math.abs(e.clientX - start.x);
+    const h = Math.abs(e.clientY - start.y);
+
+    setLassoRect({ x, y, w, h });
+  };
+
+  const handleMouseUp = (_: React.MouseEvent) => {
+    if (!lassoStartRef.current || !lassoRect) {
+      lassoStartRef.current = null;
+      setLassoRect(null);
+      return;
+    }
+
+    // Calculate which items are inside the lasso
+    const selected: RatingType[] = [];
+    const canvasRect = containerRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+
+    // Convert lassoRect (screen space) to canvas space
+    // Actually, it's easier to check if badge rects (screen space) overlap with lassoRect (screen space)
+    
+    // We'll use a helper to get screen-space rect of a badge
+    const getBadgeScreenRect = (id: RatingType, index: number) => {
+      const badgeRect = getBadgeRect(id, index);
+      // badgeRect is in 1000x1500 space
+      // Convert to screen space
+      const centerX = canvasRect.left + canvasRect.width / 2 + pan.x;
+      const centerY = canvasRect.top + canvasRect.height / 2 + pan.y;
+      
+      const screenX = centerX + (badgeRect.x - CANVAS_WIDTH / 2) * currentScale;
+      const screenY = centerY + (badgeRect.y - CANVAS_HEIGHT / 2) * currentScale;
+      const screenW = badgeRect.w * currentScale;
+      const screenH = badgeRect.h * currentScale;
+      
+      return { x: screenX, y: screenY, w: screenW, h: screenH };
+    };
+
+    let logoSelectedInLasso = false;
+    const logoRect = {
+      x: config.logoX !== null && config.logoX !== undefined ? config.logoX : (CANVAS_WIDTH - config.logoW) / 2,
+      y: config.logoY,
+      w: config.logoW,
+      h: config.logoH,
+    };
+    
+    const getLogoScreenRect = () => {
+      const centerX = canvasRect.left + canvasRect.width / 2 + pan.x;
+      const centerY = canvasRect.top + canvasRect.height / 2 + pan.y;
+      
+      const screenX = centerX + (logoRect.x - CANVAS_WIDTH / 2) * currentScale;
+      const screenY = centerY + (logoRect.y - CANVAS_HEIGHT / 2) * currentScale;
+      const screenW = logoRect.w * currentScale;
+      const screenH = logoRect.h * currentScale;
+      
+      return { x: screenX, y: screenY, w: screenW, h: screenH };
+    };
+
+    if (config.logo) {
+      const r = getLogoScreenRect();
+      if (
+        r.x < lassoRect.x + lassoRect.w &&
+        r.x + r.w > lassoRect.x &&
+        r.y < lassoRect.y + lassoRect.h &&
+        r.y + r.h > lassoRect.y
+      ) {
+        logoSelectedInLasso = true;
+      }
+    }
+
+    previewRatings.forEach((id, idx) => {
+      const r = getBadgeScreenRect(id, idx);
+      if (
+        r.x < lassoRect.x + lassoRect.w &&
+        r.x + r.w > lassoRect.x &&
+        r.y < lassoRect.y + lassoRect.h &&
+        r.y + r.h > lassoRect.y
+      ) {
+        selected.push(id);
+      }
+    });
+
+    if (selected.length > 0 || logoSelectedInLasso) {
+      if (selected.length > 0) {
+        setBatchSelection(selected);
+        if (logoSelectedInLasso) handleLogoSelection(true);
+      } else if (logoSelectedInLasso) {
+        handleLogoSelection(false);
+      }
+    } else {
+      clearSelection();
+    }
+
+    lassoStartRef.current = null;
+    setLassoRect(null);
   };
 
   const resetView = () => {
@@ -539,8 +621,6 @@ const PreviewCanvas: React.FC<Props> = ({
         minimalDragRafRef.current = requestAnimationFrame(() => {
           minimalDragRafRef.current = null;
           if (!minimalPendingOffsetRef.current) return;
-          if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
-          if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
           if (draggingMinimalYear || draggingMinimalDuration)
             setMinimalMetaOffset(minimalPendingOffsetRef.current);
         });
@@ -566,8 +646,6 @@ const PreviewCanvas: React.FC<Props> = ({
       minimalTextStartRef.current = null;
       minimalRatingStartRef.current = null;
       minimalMetaStartRef.current = null;
-      setMinimalTextOffset({ dx: 0, dy: 0 });
-      setMinimalRatingOffset({ dx: 0, dy: 0 });
       setMinimalMetaOffset({ dx: 0, dy: 0 });
       setIsDraggingMinimalText(false);
       setDraggingMinimalRatingIndex(null);
@@ -689,30 +767,32 @@ const PreviewCanvas: React.FC<Props> = ({
     const index = previewRatings.indexOf(targetId);
     if (index === -1) return null;
 
-    const auto = calculateAutoPosition(
-      targetId,
-      index,
-      previewRatings.length,
-      { ...config, ratings: previewRatings }
-    );
     const iCfg = config.items[targetId];
+    const auto = calculateAutoPosition(targetId, index, previewRatings.length, { ...config, ratings: previewRatings });
+    const { w: bW, h: bH } = getBadgeSize(targetId, iCfg);
+    
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
-    if (!isFinite(x)) x = auto.x;
-    if (!isFinite(y)) y = auto.y;
-
-    const { w: bW, h: bH } = getBadgeSize(targetId, iCfg);
     const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
-    const centerX = nextX + bW / 2;
-    const centerY = nextY + bH / 2;
-    const middleX = CANVAS_WIDTH / 2;
-    const middleY = CANVAS_HEIGHT / 2;
+
+    const vLines: number[] = [CANVAS_WIDTH / 2];
+    const hLines: number[] = [CANVAS_HEIGHT / 2];
+
+    // Add other badges' edges and centers
+    previewRatings.forEach((id, idx) => {
+      if (id === targetId) return;
+      const r = getBadgeRect(id, idx);
+      vLines.push(r.x, r.x + r.w / 2, r.x + r.w);
+      hLines.push(r.y, r.y + r.h / 2, r.y + r.h);
+    });
+
+    const activeV = vLines.filter(line => Math.abs((nextX + bW/2) - line) <= SNAP_CENTER_TOLERANCE || Math.abs(nextX - line) <= SNAP_CENTER_TOLERANCE || Math.abs((nextX + bW) - line) <= SNAP_CENTER_TOLERANCE);
+    const activeH = hLines.filter(line => Math.abs((nextY + bH/2) - line) <= SNAP_CENTER_TOLERANCE || Math.abs(nextY - line) <= SNAP_CENTER_TOLERANCE || Math.abs((nextY + bH) - line) <= SNAP_CENTER_TOLERANCE);
+
     return {
-      showVertical: Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE,
-      showHorizontal: Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE,
-      middleX,
-      middleY,
+      vLines: activeV,
+      hLines: activeH,
     };
   }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
 
@@ -724,12 +804,27 @@ const PreviewCanvas: React.FC<Props> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && !lassoRect) {
           clearSelection();
         }
       }}
     >
+      {/* Lasso rectangle */}
+      {lassoRect && (
+        <div
+          className="fixed pointer-events-none z-[100] border border-[var(--film-amber)] bg-[rgba(196,124,46,0.1)] rounded-sm"
+          style={{
+            left: lassoRect.x,
+            top: lassoRect.y,
+            width: lassoRect.w,
+            height: lassoRect.h,
+          }}
+        />
+      )}
       {/* Poster Canvas */}
       <div
         style={{
@@ -774,32 +869,36 @@ const PreviewCanvas: React.FC<Props> = ({
             </div>
           </div>
         )}
-        {badgeSnapGuide?.showVertical && (
+        {badgeSnapGuide?.vLines.map((line, i) => (
           <div
+            key={`v-${i}`}
             className="absolute pointer-events-none z-30"
             style={{
-              left: badgeSnapGuide.middleX,
+              left: line,
               top: 0,
               bottom: 0,
               width: 1,
-              background: 'rgba(196,124,46,0.8)',
+              background: 'rgba(196,124,46,0.6)',
+              boxShadow: '0 0 4px rgba(196,124,46,0.4)',
               transform: 'translateX(-50%)',
             }}
           />
-        )}
-        {badgeSnapGuide?.showHorizontal && (
+        ))}
+        {badgeSnapGuide?.hLines.map((line, i) => (
           <div
+            key={`h-${i}`}
             className="absolute pointer-events-none z-30"
             style={{
-              top: badgeSnapGuide.middleY,
+              top: line,
               left: 0,
               right: 0,
               height: 1,
-              background: 'rgba(196,124,46,0.8)',
+              background: 'rgba(196,124,46,0.6)',
+              boxShadow: '0 0 4px rgba(196,124,46,0.4)',
               transform: 'translateY(-50%)',
             }}
           />
-        )}
+        ))}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
         <img
@@ -857,43 +956,109 @@ const PreviewCanvas: React.FC<Props> = ({
               }
             }
 
+            const isSelected = selectedIds.has(id);
+            const isDragging = dragSession?.id === id || (selectedIds.has(id) && !!dragSession?.id && selectedIds.has(dragSession.id));
+            
+            // The logic above already updated x and y to the 'drag position' if dragging.
+            // We want the ghost at the ORIGINAL position.
+            const ghostX = iCfg?.x !== undefined ? iCfg.x : auto.x;
+            const ghostY = iCfg?.y !== undefined ? iCfg.y : auto.y;
+
             return (
-              <DraggableBadge
-                key={id}
-                badgeId={id}
-                config={config}
-                value={
-                  id === 'year'
-                    ? liveYear.replace(/\.0+$/, '')
-                    : id === 'title'
-                      ? liveTitle
-                      : liveRatings[id]
-                }
-                x={x}
-                y={y}
-                canvasScale={currentScale}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
-                isSelected={selectedIds.has(id)}
-                onSelect={onSelect}
-                onContextMenu={onContextMenu}
-                isObscuring={isObscuring}
-                onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
-                zIndex={100 + index}
-              />
+              <React.Fragment key={id}>
+                {/* Drag Ghost */}
+                {isDragging && (
+                  <div
+                    className="absolute pointer-events-none opacity-20 grayscale scale-[0.98]"
+                    style={{
+                      left: ghostX,
+                      top: ghostY,
+                    }}
+                  >
+                    <DraggableBadge
+                      badgeId={id}
+                      config={config}
+                      value={
+                        id === 'year'
+                          ? liveYear.replace(/\.0+$/, '')
+                          : id === 'title'
+                            ? liveTitle
+                            : liveRatings[id]
+                      }
+                      x={0}
+                      y={0}
+                      canvasScale={currentScale}
+                      onDragMove={() => {}}
+                      onDragEnd={() => {}}
+                      isSelected={false}
+                      onSelect={() => {}}
+                    />
+                  </div>
+                )}
+                <DraggableBadge
+                  badgeId={id}
+                  config={config}
+                  value={
+                    id === 'year'
+                      ? liveYear.replace(/\.0+$/, '')
+                      : id === 'title'
+                        ? liveTitle
+                        : liveRatings[id]
+                  }
+                  x={x}
+                  y={y}
+                  canvasScale={currentScale}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
+                  isSelected={isSelected}
+                  onSelect={onSelect}
+                  onContextMenu={onContextMenu}
+                  isObscuring={isObscuring}
+                  onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+                  zIndex={isDragging ? 1000 : 120 + index}
+                />
+              </React.Fragment>
             );
           })}
 
         {config.logo && (
-          <DraggableLogo
-            config={config}
-            logoUrl={logoPreviewUrl}
-            canvasScale={currentScale}
-            onDragEnd={handleLogoDragEnd}
-            isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
-            onSelect={(multi) => handleLogoSelection(multi)}
-            onContextMenu={onLogoContextMenu}
-          />
+          <>
+            {/* Logo Drag Ghost */}
+            {selectedLogo && (
+               <div
+                className="absolute pointer-events-none opacity-10 grayscale"
+                style={{
+                  left: config.logoX !== null && config.logoX !== undefined ? config.logoX : (CANVAS_WIDTH - config.logoW) / 2,
+                  top: config.logoY,
+                }}
+              >
+                <DraggableLogo
+                  config={config}
+                  logoUrl={logoPreviewUrl}
+                  canvasScale={currentScale}
+                  onDragEnd={() => {}}
+                />
+              </div>
+            )}
+            <DraggableLogo
+              config={config}
+              logoUrl={logoPreviewUrl}
+              canvasScale={currentScale}
+              onDragEnd={handleLogoDragEnd}
+              isSelected={selectedLogo || selectedMinimalElements.has('minimal-logo')}
+              onSelect={(multi) => handleLogoSelection(multi)}
+              onContextMenu={onLogoContextMenu}
+              onLogoLoad={(nw, nh) => {
+                if (!config.logoW || !config.logoH) {
+                  setConfig((prev) => ({
+                    ...prev,
+                    logoW: nw > 400 ? 400 : nw,
+                    logoH: Math.round(((nw > 400 ? 400 : nw) / nw) * nh),
+                  }));
+                }
+              }}
+            />
+          </>
         )}
 
         {(config.minimalDurationEnabled ?? false) && (

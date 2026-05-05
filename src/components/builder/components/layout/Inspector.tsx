@@ -9,6 +9,9 @@ import SidebarLayout from '../SidebarLayout';
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+  hidePresets?: boolean;
+  hideLogo?: boolean;
+  panel?: 'poster' | 'badges' | 'layout' | 'fallbacks';
 }
 
 type InspectorTab = 'badges' | 'selection';
@@ -16,7 +19,7 @@ const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film
 const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
-const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
+const Inspector: React.FC<Props> = memo(({ config, setConfig, hidePresets, hideLogo, panel }) => {
   const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedMinimalElements } = useEditor();
   const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
@@ -89,6 +92,9 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         selectedLogo={selectedLogo}
         selectedMinimalElements={selectedMinimalElements}
         mode={currentTab}
+        hidePresets={hidePresets}
+        hideLogo={hideLogo}
+        panel={panel}
       />
     </SidebarLayout>
   );

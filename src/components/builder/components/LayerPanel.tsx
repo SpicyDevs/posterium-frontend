@@ -1,5 +1,5 @@
 // src/components/builder/components/LayerPanel.tsx
-import React, { useState, useEffect, Fragment, memo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import {
   Combobox,
   Listbox,
@@ -7,7 +7,6 @@ import {
   ListboxOptions,
   ListboxOption,
   Switch,
-  Transition,
 } from '@headlessui/react';
 import {
   Check,
@@ -47,6 +46,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
+  hideBadgesSection?: boolean;
 }
 
 interface SearchResult {
@@ -62,28 +62,10 @@ interface SearchResult {
 const BADGES_PREF_STORAGE_KEY = 'posterium_badges_toggle_pref_v1';
 const TEXTLESS_PREF_STORAGE_KEY = 'posterium_textless_toggle_pref_v1';
 
-const readBadgesPreference = (fallback: boolean): boolean => {
-  try {
-    const raw = localStorage.getItem(BADGES_PREF_STORAGE_KEY);
-    if (raw === '1') return true;
-    if (raw === '0') return false;
-  } catch {}
-  return fallback;
-};
-
 const writeBadgesPreference = (enabled: boolean) => {
   try {
     localStorage.setItem(BADGES_PREF_STORAGE_KEY, enabled ? '1' : '0');
   } catch {}
-};
-
-const readTextlessPreference = (fallback: boolean): boolean => {
-  try {
-    const raw = localStorage.getItem(TEXTLESS_PREF_STORAGE_KEY);
-    if (raw === '1') return true;
-    if (raw === '0') return false;
-  } catch {}
-  return fallback;
 };
 
 const writeTextlessPreference = (enabled: boolean) => {
@@ -539,6 +521,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     setLiveRatings,
     setLiveTitle,
     setLiveYear,
+    liveTitle,
+    liveYear,
     fallbackEnabled,
     setFallbackEnabled,
     viewOptions,
@@ -731,9 +715,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
         setConfig((prev) => {
           if (prev.ratings.includes(id)) return prev;
           if (id !== 'title' && id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
-          const nextItems = { ...prev.items, [id]: { ...(prev.items[id] ?? {}) } };
-          delete nextItems[id].x;
-          delete nextItems[id].y;
+          const item = { ...(prev.items[id] ?? {}) };
+          delete (item as any).x;
+          delete (item as any).y;
+          const nextItems = { ...prev.items, [id]: item };
           return { ...prev, ratings: [id, ...prev.ratings], items: nextItems };
         });
         setInactiveOrder((prev) => prev.filter((x) => x !== id));
@@ -1436,6 +1421,53 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </div>
           </div>
 
+          {/* Current Metadata Card */}
+          {(liveTitle || liveYear) && (
+            <div 
+              className="p-3.5 rounded-xl border transition-all duration-300"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                borderColor: 'rgba(196,124,46,0.12)',
+              }}
+            >
+              <div className="flex items-start gap-3">
+                 <div 
+                  className="w-10 h-14 rounded overflow-hidden shrink-0 border border-white/5"
+                  style={{ background: 'var(--film-char)' }}
+                >
+                  <img 
+                    src={`${DEFAULT_API_BASE}/poster/${config.imdbId || config.tmdbId}.svg?source=${config.source}&_t=${config.imdbId || config.tmdbId}`}
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                   <p className="syne-font font-bold truncate leading-tight" style={{ fontSize: 13, color: 'var(--film-cream)' }}>
+                    {liveTitle || 'Unknown Title'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="mono-font" style={{ fontSize: 10, color: 'var(--film-text-dim)' }}>
+                      {liveYear || '----'}
+                    </span>
+                    <span 
+                      className="syne-font px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: config.mediaType === 'tv' ? 'rgba(59,130,246,0.1)' : 'rgba(196,124,46,0.1)',
+                        color: config.mediaType === 'tv' ? '#60a5fa' : 'var(--film-amber)',
+                      }}
+                    >
+                      {config.mediaType}
+                    </span>
+                  </div>
+                   <p className="mono-font mt-2 truncate opacity-40" style={{ fontSize: 8, color: 'var(--film-text-dim)' }}>
+                    {config.imdbId || config.tmdbId}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Source + ptype */}
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -1574,7 +1606,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
               <SegmentedRow
                 label="Logo Source"
                 value={String(config.logoSource ?? 'auto')}
-                onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : v)}
+                onChange={(v) => updateConfig('logoSource', v === 'auto' ? null : (v as any))}
                 options={logoSourceOptions}
               />
             </div>

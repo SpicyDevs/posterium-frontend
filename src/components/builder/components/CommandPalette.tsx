@@ -2,30 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
   Search,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Minimize2,
-  Grid3x3,
-  ShieldCheck,
-  RotateCcw,
-  Eye,
-  EyeOff,
-  Layers,
-  CheckSquare,
-  MousePointer2Off,
-  Download,
-  Image,
-  ScanLine,
-  Droplet,
-  Contrast,
-  Layout,
-  PanelLeft,
-  PanelRight,
-  ArrowUpToLine,
-  ArrowDownToLine,
   Command,
-  X,
 } from 'lucide-react';
 
 export interface PaletteCommand {

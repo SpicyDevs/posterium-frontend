@@ -1,5 +1,5 @@
 import { memo, useMemo, useRef, useState } from 'react';
-import { Check, Copy, ExternalLink, Search, X } from 'lucide-react';
+import { Check, Copy, ExternalLink } from 'lucide-react';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ExportMenu from '@/components/shared/ExportMenu';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
