@@ -662,7 +662,7 @@ export default function TestBenchmark() {
         </span>
         {mode === 'results' && (
           
-           <a href={`https://api.spicydevs.xyz/admin/test/${benchType}/${benchId}.png${benchParams ? '?' + benchParams : ''}`}
+           <a href={`https://api.spicydevs.xyz/test/${benchType}/${benchId}.png${benchParams ? '?' + benchParams : ''}`}
             target="_blank" rel="noreferrer"
             style={{
               marginLeft: 'auto', fontSize: 9, color: CH.amber, textDecoration: 'none',
