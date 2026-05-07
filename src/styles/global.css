@@ -39,6 +39,26 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    z-index: 9999;
+    background: var(--film-amber);
+    color: #070706;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+  }
+
+  .skip-link:focus {
+    left: 8px;
+  }
+
   button,
   [type='button'],
   [type='submit'],
@@ -278,6 +298,25 @@
     50% {
       transform: translateY(-10px) rotate(0.4deg);
     }
+  }
+
+  @keyframes reduced-motion-pulse {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  [data-reduced-motion='true'] .motion-pulse {
+    animation: reduced-motion-pulse 1.4s ease-in-out infinite !important;
+  }
+
+  [data-reduced-motion='true'] .motion-no-shimmer {
+    animation: none !important;
+    background-position: 50% 0 !important;
   }
 
   @media (prefers-reduced-motion: reduce) {

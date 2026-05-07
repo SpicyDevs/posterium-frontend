@@ -6,6 +6,7 @@ import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
 import { AmberTag } from '@/components/shared/primitives';
+import { buildFaqPageSchema } from '@/lib/structured-data';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -42,6 +43,13 @@ const searchItems = sortedFaqs.map((faq) => ({
   contentText: faq.body ?? '',
 }));
 
+const faqSchema = buildFaqPageSchema(
+  sortedFaqs.map((faq) => ({
+    question: faq.data.question,
+    answer: faq.body ?? '',
+  }))
+);
+
 // With glob loader, rendered content is available via entry.rendered.html
 // No need to call render() - it's pre-rendered at build time
 ---
@@ -52,7 +60,7 @@ const searchItems = sortedFaqs.map((faq) => ({
   canonical="https://posters.spicydevs.xyz/faq"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/faq" />
+  <PageSEO slot="head" routeKey="/faq" schemas={[faqSchema]} />
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar
@@ -66,7 +74,7 @@ const searchItems = sortedFaqs.map((faq) => ({
       showMobileBuildCta
     />
 
-    <main class="docs-layout-main">
+    <main id="main-content" class="docs-layout-main">
       <aside class="docs-layout-sidebar">
         <div
           class="syne-font"

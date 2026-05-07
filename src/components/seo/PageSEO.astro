@@ -16,9 +16,10 @@ import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
 
 interface Props {
   routeKey: '/' | '/build' | '/faq' | '/examples' | '/installation';
+  schemas?: object[];
 }
 
-const { routeKey } = Astro.props;
+const { routeKey, schemas = [] } = Astro.props;
 
 const routeMeta  = ROUTE_SEO[routeKey];
 const title      = routeMeta?.title       ?? SEO_DEFAULTS.title;
@@ -131,7 +132,7 @@ if (routeKey === '/examples') {
 }
 
 // Merge route-level custom schemas (FAQ etc.)
-const customSchemas = routeMeta?.jsonLd ?? [];
+const customSchemas = [...(routeMeta?.jsonLd ?? []), ...schemas];
 const finalSchemas  = [enterpriseSchema, ...customSchemas];
 
 // Safe serialisation — prevents build-time errors on circular refs / bad data

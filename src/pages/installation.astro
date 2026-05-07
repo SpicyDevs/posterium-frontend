@@ -21,6 +21,7 @@ import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
+import { buildInstallationHowToSchemas } from '@/lib/structured-data';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -37,7 +38,8 @@ const preparedGuides = sortedGuides.map((guide) => {
   const name           = guide.data.name ?? guide.id.charAt(0).toUpperCase() + guide.id.slice(1);
   const showcaseImages = guide.data.showcaseImages ?? placeholderImages;
   const html           = guide.rendered?.html ?? '';
-  return { guide, headings, name, showcaseImages, html };
+  const body           = guide.body ?? '';
+  return { guide, headings, name, showcaseImages, html, body };
 });
 
 const sidebarLinks = preparedGuides.map((g) => ({
@@ -52,6 +54,14 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   id:       g.guide.id,
   headings: g.headings,
 }));
+
+const howToSchemas = buildInstallationHowToSchemas(
+  preparedGuides.map((g) => ({
+    id: g.guide.id,
+    name: g.name,
+    body: g.body,
+  }))
+);
 ---
 
 <BaseLayout
@@ -60,7 +70,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   canonical="https://posters.spicydevs.xyz/installation"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/installation" />
+  <PageSEO slot="head" routeKey="/installation" schemas={howToSchemas} />
 
   <div class="install-root">
     <MainNavbar
@@ -100,7 +110,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
       </aside>
 
       <!-- ── Main content ───────────────────────────────────────────────── -->
-      <main class="install-main" id="install-main-content">
+      <main class="install-main" id="main-content">
         <!-- Page header -->
         <header class="install-page-header">
           <div>

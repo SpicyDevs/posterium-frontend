@@ -44,8 +44,17 @@ const {
     />
 
     <slot name="head" />
+    <script is:inline>
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const applyMotionPreference = () => {
+        document.documentElement.dataset.reducedMotion = mq.matches ? 'true' : 'false';
+      };
+      applyMotionPreference();
+      mq.addEventListener('change', applyMotionPreference);
+    </script>
   </head>
   <body class={bodyClass}>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <noscript>
       <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
