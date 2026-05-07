@@ -1,4 +1,6 @@
 ---
+import GlobalClientShell from '@/components/shared/GlobalClientShell';
+
 interface Props {
   title: string;
   description: string;
@@ -54,5 +56,6 @@ const {
       </div>
     </noscript>
     <slot />
+    <GlobalClientShell client:load />
   </body>
 </html>
