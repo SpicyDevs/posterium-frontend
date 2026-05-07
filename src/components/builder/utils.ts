@@ -326,6 +326,22 @@ export const generateApiUrl = (
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
 
+  // Source priority order (fallback chain for poster images)
+  if (config.sourceOrder && config.sourceOrder.length > 1)
+    p.set('so', config.sourceOrder.join(','));
+
+  // No-embed mode
+  if (config.noEmbed) p.set('ne', '1');
+
+  // Uniform badge width
+  if (config.uniformW) p.set('uw', '1');
+
+  // MAL ID override for anime
+  if (config.malId) p.set('mal_id', config.malId);
+
+  // Font family override
+  if (config.fontFamily) p.set('ff', config.fontFamily);
+
   // User API key overrides
   if (config.keys?.tmdb) p.set('tmdb_key', config.keys.tmdb);
   if (config.keys?.fanart) p.set('fanart_key', config.keys.fanart);
@@ -368,6 +384,8 @@ export const generateApiUrl = (
   // ── Score display ─────────────────────────────────────────────────────
   if (config.normalize) p.set('nm', '1');
   if (config.outOf !== undefined && config.outOf > 0) p.set('of', config.outOf.toString());
+  if (config.decimalPlaces !== undefined && config.decimalPlaces > 0)
+    p.set('dp', config.decimalPlaces.toString());
 
   // ── Icon type alt variant (it=1 default → omit) ───────────────────────
   if ((config.iconType ?? DEFAULTS.iconType) > DEFAULTS.iconType)
@@ -739,6 +757,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         uiPreset: (p.get('p') === 'm' ? 'm' : 'b') as 'b' | 'm',
         normalize: p.get('nm') === '1' || p.get('normalize') === '1',
         outOf: parseOutOf(),
+        decimalPlaces: p.has('dp') ? Math.max(0, Math.min(3, parseInt(p.get('dp')!))) : undefined,
         iconType: getNum('it', 'icon_type', DEFAULTS.iconType),
         labelPos: (p.get('lp') || p.get('label_pos') || undefined) as PosterConfig['labelPos'],
         labelText: p.get('lt') || p.get('label_text') || undefined,
@@ -748,6 +767,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             ? parseInt(p.get('label_size')!)
             : undefined,
         labelColor: p.get('lc') || p.get('label_color') || undefined,
+        // ── Extended params ───────────────────────────────────────────────
+        sourceOrder: p.has('so')
+          ? (p.get('so')!.split(',').filter(Boolean) as import('./types').SourceType[])
+          : undefined,
+        noEmbed: p.get('ne') === '1',
+        uniformW: p.get('uw') === '1',
+        malId: p.get('mal_id') || undefined,
+        fontFamily: p.get('ff') || undefined,
         // ────────────────────────────────────────────────────────────────
         keys,
         items,

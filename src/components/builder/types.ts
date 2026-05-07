@@ -85,7 +85,7 @@ export interface BadgeConfig {
   outOf?: number; // append "/<n>" denominator after value (0 = off)
 
   // Label
-  labelPos?: 'above' | 'below' | 'left' | 'right'; // position relative to value
+  labelPos?: 'above' | 'below' | 'left' | 'right' | 'inside'; // position relative to value
   labelText?: string; // custom label string (default: provider name)
   labelSize?: number; // label font size, 6–32 (default: 11)
   labelColor?: string; // label hex color override
@@ -219,10 +219,28 @@ export interface PosterConfig {
   outOf?: number; // append "/<n>" denominator (0 / absent = off)
 
   // Label
-  labelPos?: 'above' | 'below' | 'left' | 'right'; // (default: 'below')
+  labelPos?: 'above' | 'below' | 'left' | 'right' | 'inside'; // (default: 'below')
   labelText?: string; // custom label (default: provider name)
   labelSize?: number; // label font size, 6–32 (default: 11)
   labelColor?: string; // label hex color override
+
+  // Source priority order (fallback chain for poster images)
+  sourceOrder?: SourceType[];
+
+  // No-embed mode (adds ne=1 to URL; tells media servers not to embed)
+  noEmbed?: boolean;
+
+  // Uniform badge width (all badges share the widest badge's width)
+  uniformW?: boolean;
+
+  // Decimal places enforcement (0 = off, 1-3 = force N decimals)
+  decimalPlaces?: number;
+
+  // Anime MAL ID override (explicit MyAnimeList ID for anime lookup)
+  malId?: string;
+
+  // Font family override (custom font name/URL for badge text)
+  fontFamily?: string;
 
   // Per-badge item overrides (keyed by RatingType)
   items: Partial<Record<RatingType, BadgeConfig>>;

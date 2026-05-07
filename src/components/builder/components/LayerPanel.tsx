@@ -29,11 +29,14 @@ import {
   ShieldCheck,
   Grid3x3,
   Magnet,
+  Link2Off,
+  ListOrdered,
+  Hash,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
-import type { PosterConfig, RatingType, ApiKeys } from '../types';
+import type { PosterConfig, RatingType, ApiKeys, SourceType } from '../types';
 import { ALL_BADGES, DEFAULT_CONFIG } from '../types';
 import { BADGE_ICONS } from '../constants';
 import { DEFAULT_API_BASE } from '../utils';
@@ -524,6 +527,138 @@ const ApiKeysPanel: React.FC<{
           </div>
         </div>
       ))}
+    </div>
+  );
+};
+
+// ── Source Priority drag list ─────────────────────────────────────────────────
+
+const SOURCE_META: Record<SourceType, { label: string; emoji: string }> = {
+  tmdb: { label: 'TMDB', emoji: '🎬' },
+  fanart: { label: 'Fanart.tv', emoji: '🎨' },
+  metahub: { label: 'Metahub', emoji: '🗄️' },
+  imdb: { label: 'IMDb', emoji: '⭐' },
+  mal: { label: 'MyAnimeList', emoji: '🎌' },
+  anilist: { label: 'AniList', emoji: '🌸' },
+};
+
+const DEFAULT_SOURCE_ORDER: SourceType[] = ['tmdb', 'fanart', 'metahub', 'imdb'];
+const ANIME_SOURCE_ORDER: SourceType[] = ['tmdb', 'fanart', 'metahub', 'imdb', 'mal', 'anilist'];
+
+const SourcePriorityList: React.FC<{
+  config: PosterConfig;
+  setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+}> = ({ config, setConfig }) => {
+  const baseOrder = config.mediaType === 'anime' ? ANIME_SOURCE_ORDER : DEFAULT_SOURCE_ORDER;
+  const order: SourceType[] = config.sourceOrder?.length
+    ? config.sourceOrder
+    : baseOrder;
+
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      if (!result.destination || result.source.index === result.destination.index) return;
+      const next = [...order];
+      const [moved] = next.splice(result.source.index, 1);
+      next.splice(result.destination.index, 0, moved);
+      setConfig((prev) => ({
+        ...prev,
+        sourceOrder: next,
+        source: next[0],
+      }));
+    },
+    [order, setConfig]
+  );
+
+  return (
+    <div>
+      <p
+        className="syne-font uppercase tracking-widest mb-1.5"
+        style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+      >
+        Source Priority
+      </p>
+      <p className="body-font mb-2" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+        Drag to set poster source fallback order. The first source is primary.
+      </p>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="source-order">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
+              {order.map((src, idx) => {
+                const meta = SOURCE_META[src];
+                const isPrimary = idx === 0;
+                return (
+                  <Draggable key={src} draggableId={src} index={idx}>
+                    {(prov, snap) => (
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className={clsx(
+                          'flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all',
+                          snap.isDragging && 'shadow-2xl rotate-[0.5deg]'
+                        )}
+                        style={{
+                          background: snap.isDragging
+                            ? 'var(--film-mid)'
+                            : isPrimary
+                              ? 'rgba(196,124,46,0.07)'
+                              : 'rgba(255,255,255,0.02)',
+                          border: isPrimary
+                            ? '1px solid rgba(196,124,46,0.2)'
+                            : '1px solid rgba(255,255,255,0.05)',
+                          ...(prov.draggableProps.style ?? {}),
+                        }}
+                      >
+                        <div
+                          {...prov.dragHandleProps}
+                          className="p-0.5 outline-none transition-colors shrink-0"
+                          style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                          }}
+                        >
+                          <GripVertical size={12} />
+                        </div>
+                        <span style={{ fontSize: 13, lineHeight: 1 }}>{meta.emoji}</span>
+                        <span
+                          className="flex-1 syne-font font-medium"
+                          style={{
+                            fontSize: 11,
+                            color: isPrimary ? 'var(--film-cream)' : 'var(--film-text-label)',
+                          }}
+                        >
+                          {meta.label}
+                        </span>
+                        {isPrimary && (
+                          <span
+                            className="syne-font"
+                            style={{
+                              fontSize: 8,
+                              fontWeight: 700,
+                              letterSpacing: '0.08em',
+                              textTransform: 'uppercase',
+                              color: 'var(--film-amber)',
+                              padding: '1px 5px',
+                              borderRadius: 3,
+                              background: 'rgba(196,124,46,0.12)',
+                            }}
+                          >
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };
