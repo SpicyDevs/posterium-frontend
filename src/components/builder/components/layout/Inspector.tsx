@@ -6,17 +6,20 @@ import { Badge, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';
 
+type InspectorTab = 'badges' | 'selection';
+
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+  forcedPanel?: InspectorTab;
+  hideTabBar?: boolean;
 }
 
-type InspectorTab = 'badges' | 'selection';
 const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
 const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
-const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
+const Inspector: React.FC<Props> = memo(({ config, setConfig, forcedPanel, hideTabBar = false }) => {
   const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedMinimalElements } = useEditor();
   const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
@@ -43,7 +46,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   ];
 
   const visibleTabs = tabs.filter((tab) => tab.visible);
-  const activeInspectorTab = isInspectorTab(activeTab) ? activeTab : undefined;
+  const activeInspectorTab = forcedPanel ?? (isInspectorTab(activeTab) ? activeTab : undefined);
   const currentTab = visibleTabs.some((tab) => tab.id === activeInspectorTab)
     ? activeInspectorTab
     : visibleTabs[0]?.id;
@@ -53,6 +56,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   return (
     <SidebarLayout
       header={
+        hideTabBar ? null : (
         <div
           className="flex rounded-lg p-0.5 gap-0.5"
           style={{
@@ -80,6 +84,7 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
             </button>
           ))}
         </div>
+        )
       }
     >
       <PropertyPanel

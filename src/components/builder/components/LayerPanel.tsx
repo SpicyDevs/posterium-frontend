@@ -47,6 +47,8 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
+  forcedPanel?: 'source' | 'layers' | 'poster';
+  hideTabBar?: boolean;
 }
 
 interface SearchResult {
@@ -529,7 +531,7 @@ const ApiKeysPanel: React.FC<{
 };
 
 // ── Main LayerPanel component ─────────────────────────────────────────────────
-const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect }) => {
+const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect, forcedPanel, hideTabBar = false }) => {
   const {
     setBatchSelection,
     activeTab,
@@ -545,13 +547,17 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     toggleViewOption,
   } = useEditor();
 
-  const [localMode, setLocalMode] = useState<'source' | 'layers' | 'poster'>('source');
+  const [localMode, setLocalMode] = useState<'source' | 'layers' | 'poster'>(forcedPanel ?? 'source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
+    if (forcedPanel) {
+      setLocalMode(forcedPanel);
+      return;
+    }
     if (activeTab === 'source' || activeTab === 'poster' || activeTab === 'layers')
       setLocalMode(activeTab);
-  }, [activeTab]);
+  }, [activeTab, forcedPanel]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -1130,6 +1136,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       side="left"
       bodyClassName="px-2 pt-2 pb-8"
       header={
+        hideTabBar ? null : (
         <div
           className="flex rounded-lg p-0.5"
           style={{
@@ -1161,6 +1168,7 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
             </button>
           ))}
         </div>
+        )
       }
     >
       {/* ── Source Tab ──────────────────────────────────────────────────────── */}
