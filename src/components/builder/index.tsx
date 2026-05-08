@@ -1,13 +1,37 @@
 // src/components/builder/index.tsx
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
-import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
+import {
+  DEFAULT_CONFIG,
+  ALL_BADGES,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BASE_BADGE_W,
+  BASE_BADGE_H,
+} from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
+import {
+  BUILDER_STORAGE_KEY,
+  MAX_QUERY_CONFIG_LENGTH,
+  loadKeysFromCookie,
+  saveKeysToCookie,
+} from './systems/storage/builderStorage';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
+import AdvancedPanelNav, { type BuilderPanelId } from './components/navigation/AdvancedPanelNav';
+import ModeToggle, { type BuilderMode } from './components/navigation/ModeToggle';
+import {
+  SourcePanel,
+  LayersPanel,
+  PosterPanel,
+  BadgesPanel,
+  SelectionPanel,
+} from './components/panels';
 import MobileDock from './components/layout/MobileDock';
+import ToolbarBtn from './components/toolbar/ToolbarButton';
+import ZoomOverlay from './components/canvas/ZoomOverlay';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ResetDialog from './components/ResetDialogue';
 import ImportDialog from './components/ImportDialogue';
@@ -39,238 +63,10 @@ import {
   Type,
   ChevronDown,
   Search,
-  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
-
-const STORAGE_KEY = 'posterium_config_v2';
-const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
-
-// ── Cookie helpers ────────────────────────────────────────────────────────────
-const COOKIE_KEY = 'posterium_apikeys_v1';
-const saveKeysToCookie = (keys: ApiKeys) => {
-  try {
-    const val = encodeURIComponent(JSON.stringify(keys));
-    const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-    document.cookie = `${COOKIE_KEY}=${val}; expires=${exp}; path=/; SameSite=Strict`;
-  } catch {
-    /* ignore */
-  }
-};
-const loadKeysFromCookie = (): ApiKeys => {
-  try {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_KEY}=([^;]*)`));
-    if (!match) return {};
-    return JSON.parse(decodeURIComponent(match[1])) || {};
-  } catch {
-    return {};
-  }
-};
-
-// ── Toolbar button ──────────────────────────────────────────────────────────
-interface ToolbarBtnProps {
-  onClick?: () => void;
-  disabled?: boolean;
-  label: string;
-  danger?: boolean;
-  href?: string;
-  active?: boolean;
-  children: React.ReactNode;
-  hideOnMobile?: boolean;
-}
-const ToolbarBtn = memo<ToolbarBtnProps>(
-  ({ onClick, disabled, label, danger, href, active, children, hideOnMobile = false }) => {
-    const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
-    const cls = `${base} ${
-      disabled
-        ? 'cursor-not-allowed pointer-events-none'
-        : active
-          ? 'cursor-pointer'
-          : 'active:scale-95 cursor-pointer'
-    }`;
-
-    const activeStyle = active
-      ? {
-          color: 'var(--film-amber)',
-          background: 'rgba(196,124,46,0.1)',
-          border: '1px solid rgba(196,124,46,0.2)',
-        }
-      : disabled
-        ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
-        : danger
-          ? { color: 'var(--film-text-dim)', border: '1px solid transparent' }
-          : { color: 'var(--film-text-dim)', border: '1px solid transparent' };
-
-    const tooltip = !disabled && (
-      <span
-        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-[200] shadow-lg syne-font"
-        style={{
-          background: 'var(--film-mid)',
-          color: 'var(--film-cream)',
-          borderColor: 'rgba(255,255,255,0.08)',
-        }}
-      >
-        {label}
-      </span>
-    );
-
-    const hoverEvents =
-      !disabled && !active
-        ? {
-            onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-              const el = e.currentTarget as HTMLElement;
-              if (danger) {
-                el.style.color = 'rgba(248,113,113,0.8)';
-                el.style.background = 'rgba(248,113,113,0.08)';
-              } else {
-                el.style.color = 'var(--film-text-label)';
-                el.style.background = 'rgba(196,124,46,0.07)';
-              }
-            },
-            onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.color = 'var(--film-text-dim)';
-              el.style.background = 'transparent';
-            },
-          }
-        : {};
-
-    if (href)
-      return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer noopener"
-          className={cls}
-          aria-label={label}
-          style={activeStyle}
-          {...hoverEvents}
-        >
-          {children}
-          {tooltip}
-        </a>
-      );
-    return (
-      <button
-        onClick={onClick}
-        disabled={!!disabled}
-        className={cls}
-        aria-label={label}
-        aria-disabled={disabled}
-        style={activeStyle}
-        {...hoverEvents}
-      >
-        {children}
-        {tooltip}
-      </button>
-    );
-  }
-);
-ToolbarBtn.displayName = 'ToolbarBtn';
-
-// ── Zoom/Fullscreen Overlay ───────────────────────────────────────────────────
-const ZoomOverlay = memo<{
-  isFullscreen: boolean;
-  rightSidebarWidth: number;
-  onToggleFullscreen: () => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetView: () => void;
-  isMobile: boolean;
-}>(
-  ({
-    isFullscreen,
-    rightSidebarWidth,
-    onToggleFullscreen,
-    onZoomIn,
-    onZoomOut,
-    onResetView,
-    isMobile,
-  }) => (
-    <div
-      className={`fixed z-40 flex items-center gap-1 rounded-xl select-none ${isMobile ? 'flex-row' : 'flex-col'}`}
-      style={{
-        ...(isMobile
-          ? { bottom: 76, right: 12 }
-          : {
-              top: '50%',
-              transform: 'translateY(-50%)',
-              right: isFullscreen ? 20 : rightSidebarWidth + 20,
-              transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1)',
-            }),
-        background: 'rgba(14,13,11,0.92)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(196,124,46,0.18)',
-        padding: '6px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      {[
-        { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
-        { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-        { icon: <Maximize2 size={14} />, label: 'Reset View', action: onResetView },
-      ].map(({ icon, label, action }) => (
-        <button
-          key={label}
-          onClick={action}
-          title={label}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-          style={{
-            color: 'var(--film-text-dim)',
-            cursor: 'pointer',
-            background: 'transparent',
-            border: 'none',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            (e.currentTarget as HTMLElement).style.background = 'transparent';
-          }}
-        >
-          {icon}
-        </button>
-      ))}
-      {/* Divider — hidden on mobile */}
-      {!isMobile && (
-        <div
-          style={{ width: 20, height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }}
-        />
-      )}
-      {/* Fullscreen toggle — desktop only */}
-      {!isMobile && (
-        <button
-          onClick={onToggleFullscreen}
-          title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-          style={{
-            color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
-            cursor: 'pointer',
-            background: 'transparent',
-            border: 'none',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-amber)';
-            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = isFullscreen
-              ? 'rgba(196,124,46,0.7)'
-              : 'var(--film-text-dim)';
-            (e.currentTarget as HTMLElement).style.background = 'transparent';
-          }}
-        >
-          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-        </button>
-      )}
-    </div>
-  )
-);
-ZoomOverlay.displayName = 'ZoomOverlay';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -283,6 +79,7 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  initialMode?: BuilderMode;
 }> = ({
   config,
   setConfig,
@@ -293,9 +90,11 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
+  initialMode = 'simple',
 }) => {
   const {
     activeTab,
+    setActiveTab,
     mobileSheetMode,
     setMobileSheetMode,
     selectedIds,
@@ -309,6 +108,8 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
+  const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMode);
+  const [advancedPanel, setAdvancedPanel] = useState<BuilderPanelId>('source');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [leftVisible, setLeftVisible] = useState(true);
@@ -319,6 +120,20 @@ const StudioLayout: React.FC<{
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
+
+  useEffect(() => {
+    if (['source', 'layers', 'poster', 'badges', 'selection'].includes(activeTab)) {
+      setAdvancedPanel(activeTab as BuilderPanelId);
+    }
+  }, [activeTab]);
+
+  const switchAdvancedPanel = useCallback(
+    (panel: BuilderPanelId) => {
+      setAdvancedPanel(panel);
+      setActiveTab(panel);
+    },
+    [setActiveTab]
+  );
 
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 1024
@@ -397,7 +212,9 @@ const StudioLayout: React.FC<{
         }
         if (hasLogo) {
           const currentX =
-            next.logoX !== null && next.logoX !== undefined ? next.logoX : Math.round((CANVAS_WIDTH - next.logoW) / 2);
+            next.logoX !== null && next.logoX !== undefined
+              ? next.logoX
+              : Math.round((CANVAS_WIDTH - next.logoW) / 2);
           next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
@@ -412,8 +229,14 @@ const StudioLayout: React.FC<{
               : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
         }
         if (activeMinimal.includes('minimal-year')) {
-          next.minimalMetaX = Math.max(0, Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx));
-          next.minimalMetaY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy));
+          next.minimalMetaX = Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx)
+          );
+          next.minimalMetaY = Math.max(
+            0,
+            Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy)
+          );
         }
         if (activeMinimal.includes('minimal-duration')) {
           next.minimalDurationX = Math.max(
@@ -430,7 +253,7 @@ const StudioLayout: React.FC<{
           activeMinimal
             .filter((id) => id.startsWith('minimal-rating-'))
             .forEach((id) => {
-              const idx = Number(id.split('-').at(-1) ?? -1);
+              const idx = Number(id.split('-').pop() ?? -1);
               if (!Number.isFinite(idx) || !list[idx]) return;
               list[idx] = {
                 ...list[idx],
@@ -610,7 +433,10 @@ const StudioLayout: React.FC<{
       }
       if (inInput) return;
       if (
-        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight') &&
         (selectedIdsRef.current.size > 0 ||
           selectedLogoRef.current ||
           selectedMinimalElementsRef.current.size > 0)
@@ -1052,6 +878,39 @@ const StudioLayout: React.FC<{
       : selectedIds.has(ctxMenu.badgeId)
     : false;
 
+  const advancedDetailLevel = builderMode === 'advanced' ? 'advanced' : 'simple';
+  const sharedPanelProps = {
+    config,
+    setConfig,
+    selectedIds,
+    onSelect: handleSelectionOverride,
+    detailLevel: advancedDetailLevel as 'simple' | 'advanced',
+  };
+  const sharedInspectorProps = {
+    config,
+    setConfig,
+    selectedIds,
+    selectedLogo,
+    selectedMinimalElements,
+    detailLevel: advancedDetailLevel as 'simple' | 'advanced',
+  };
+  const renderAdvancedPanel = () => {
+    switch (advancedPanel) {
+      case 'source':
+        return <SourcePanel {...sharedPanelProps} chrome={false} />;
+      case 'layers':
+        return <LayersPanel {...sharedPanelProps} chrome={false} />;
+      case 'poster':
+        return <PosterPanel {...sharedPanelProps} chrome={false} />;
+      case 'badges':
+        return <BadgesPanel {...sharedInspectorProps} />;
+      case 'selection':
+        return <SelectionPanel {...sharedInspectorProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <a
@@ -1106,7 +965,9 @@ const StudioLayout: React.FC<{
           onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
           onHide={hideLayer}
           onShowAll={showAllBadges}
-          onSelect={(id) => (id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false))}
+          onSelect={(id) =>
+            id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+          }
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
@@ -1180,16 +1041,7 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <a
-                href="#"
-                aria-label="Support us by Buying us a Coffee"
-                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
-              >
-                <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Support
-                </span>
-              </a>
+              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
@@ -1408,12 +1260,17 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
+              {builderMode === 'advanced' ? (
+                <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
+              ) : (
+                <LayerPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  detailLevel="simple"
+                />
+              )}
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1497,7 +1354,11 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              {builderMode === 'advanced' ? (
+                renderAdvancedPanel()
+              ) : (
+                <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+              )}
             </aside>
           )}
 
@@ -1540,10 +1401,11 @@ const StudioLayout: React.FC<{
                     setConfig={setConfig}
                     selectedIds={selectedIds}
                     onSelect={handleSelectionOverride}
+                    detailLevel="simple"
                   />
                 )}
                 {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} />
+                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
                 )}
               </div>
             </div>
@@ -1567,6 +1429,8 @@ const StudioLayout: React.FC<{
           onZoomOut={() => dispatchZoom(-0.25)}
           onResetView={dispatchResetView}
           isMobile={!isDesktop}
+          viewOptions={viewOptions}
+          onToggleViewOption={toggleViewOption}
         />
       </div>
     </>
@@ -1574,7 +1438,7 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC = () => {
+const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
   const {
     state: config,
     setState: setConfig,
@@ -1584,7 +1448,7 @@ const BuilderApp: React.FC = () => {
     canRedo,
   } = usePosterHistory(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(BUILDER_STORAGE_KEY);
       const cfg = saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
       const cookieKeys = loadKeysFromCookie();
       if (cookieKeys && Object.keys(cookieKeys).some((k) => cookieKeys[k as keyof ApiKeys])) {
@@ -1599,7 +1463,7 @@ const BuilderApp: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
   useEffect(() => {
@@ -1674,6 +1538,7 @@ const BuilderApp: React.FC = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        initialMode={initialMode}
       />
     </EditorProvider>
   );
