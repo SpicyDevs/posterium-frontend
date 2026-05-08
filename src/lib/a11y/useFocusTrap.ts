@@ -76,4 +76,3 @@ export const useFocusTrap = ({ containerRef, isActive, onEscape }: UseFocusTrapO
     };
   }, [containerRef, isActive, onEscape]);
 };
-

@@ -50,6 +50,9 @@ const estimateMinutesFromText = (text: string, wordsPerMinute: number): number =
   return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 };
 
+/**
+ * Builds FAQPage schema from FAQ content entries.
+ */
 export const generateFaqPageSchema = (entries: FaqEntryLike[], pageUrl: string) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -64,6 +67,9 @@ export const generateFaqPageSchema = (entries: FaqEntryLike[], pageUrl: string) 
   })),
 });
 
+/**
+ * Builds one HowTo schema object per installation guide, with dynamic step/time estimates.
+ */
 export const generateHowToSchemas = (
   guides: InstallGuideLike[],
   opts: { baseUrl: string; pageUrl: string }
@@ -102,7 +108,7 @@ export const generateHowToSchemas = (
         name: text,
         text,
         url: `${guideUrl}-step-${stepIndex + 1}`,
-        estimatedDuration: toIsoDurationMinutes(stepDurations[stepIndex]),
+        estimatedDuration: toIsoDurationMinutes(stepDurations[stepIndex] ?? 1),
       })),
       position: index + 1,
       isPartOf: {
@@ -111,6 +117,9 @@ export const generateHowToSchemas = (
     };
   });
 
+/**
+ * Builds ItemList schema for examples/preset showcase pages.
+ */
 export const generatePresetItemListSchema = (
   presets: PresetLike[],
   opts: { baseUrl: string; pageUrl: string }

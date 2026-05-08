@@ -311,7 +311,7 @@ const DesktopReel = memo(() => {
                 width: shouldAnimate ? '0%' : '100%',
                 borderRadius: 99,
                 background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
-                transition: shouldAnimate ? 'none' : 'opacity 0.5s ease-in-out',
+                transition: 'width 0.05s linear',
                 animation: shouldAnimate ? 'none' : 'film-pulse 1.4s ease-in-out infinite',
               }}
             />

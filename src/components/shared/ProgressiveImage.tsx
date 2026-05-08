@@ -74,12 +74,12 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
               skeletonStyle
                 ? {
                     ...DEFAULT_SKELETON_STYLE,
-                    ...(shouldAnimate ? null : { animation: 'none', background: '#151310' }),
+                    ...(shouldAnimate ? {} : { animation: 'none', background: '#151310' }),
                     ...skeletonStyle,
                   }
                 : {
                     ...DEFAULT_SKELETON_STYLE,
-                    ...(shouldAnimate ? null : { animation: 'none', background: '#151310' }),
+                    ...(shouldAnimate ? {} : { animation: 'none', background: '#151310' }),
                   }
             }
           />
