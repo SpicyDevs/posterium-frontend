@@ -1,45 +1,52 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
-import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
-import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
+import type { PosterConfig, ExtensionType, ApiKeys, RatingType, BuilderMode } from './types';
+import {
+  DEFAULT_CONFIG,
+  ALL_BADGES,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BASE_BADGE_W,
+  BASE_BADGE_H,
+} from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
+import LeftBuilderPanel from './components/panels/LeftBuilderPanel';
+import RightInspectorPanel from './components/panels/RightInspectorPanel';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import MobileDock from './components/layout/MobileDock';
+import TopToolbar from './components/layout/TopToolbar';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ResetDialog from './components/ResetDialogue';
 import ImportDialog from './components/ImportDialogue';
 import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
-  RotateCcw,
-  Undo2,
-  Redo2,
+  ArrowDownToLine,
+  ArrowUpToLine,
+  CheckSquare,
+  Contrast,
+  Download,
+  Eye,
+  EyeOff,
+  Grid3x3,
+  Keyboard,
+  Layers,
   PanelLeft,
   PanelRight,
   Maximize2,
   Minimize2,
+  MousePointer2Off,
+  RotateCcw,
+  ScanLine,
+  ShieldCheck,
+  Type,
+  Undo2,
+  Redo2,
   ZoomIn,
   ZoomOut,
-  Grid3x3,
-  ShieldCheck,
-  Eye,
-  EyeOff,
-  Layers,
-  CheckSquare,
-  MousePointer2Off,
-  Download,
-  Contrast,
-  ArrowUpToLine,
-  ArrowDownToLine,
-  ScanLine,
-  Keyboard,
-  Type,
-  ChevronDown,
-  Search,
-  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
@@ -68,107 +75,6 @@ const loadKeysFromCookie = (): ApiKeys => {
     return {};
   }
 };
-
-// ── Toolbar button ──────────────────────────────────────────────────────────
-interface ToolbarBtnProps {
-  onClick?: () => void;
-  disabled?: boolean;
-  label: string;
-  danger?: boolean;
-  href?: string;
-  active?: boolean;
-  children: React.ReactNode;
-  hideOnMobile?: boolean;
-}
-const ToolbarBtn = memo<ToolbarBtnProps>(
-  ({ onClick, disabled, label, danger, href, active, children, hideOnMobile = false }) => {
-    const base = `relative group w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] ${hideOnMobile ? 'hidden lg:flex' : ''}`;
-    const cls = `${base} ${
-      disabled
-        ? 'cursor-not-allowed pointer-events-none'
-        : active
-          ? 'cursor-pointer'
-          : 'active:scale-95 cursor-pointer'
-    }`;
-
-    const activeStyle = active
-      ? {
-          color: 'var(--film-amber)',
-          background: 'rgba(196,124,46,0.1)',
-          border: '1px solid rgba(196,124,46,0.2)',
-        }
-      : disabled
-        ? { color: 'rgba(255,255,255,0.15)', border: '1px solid transparent', opacity: 0.5 }
-        : danger
-          ? { color: 'var(--film-text-dim)', border: '1px solid transparent' }
-          : { color: 'var(--film-text-dim)', border: '1px solid transparent' };
-
-    const tooltip = !disabled && (
-      <span
-        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none z-[200] shadow-lg syne-font"
-        style={{
-          background: 'var(--film-mid)',
-          color: 'var(--film-cream)',
-          borderColor: 'rgba(255,255,255,0.08)',
-        }}
-      >
-        {label}
-      </span>
-    );
-
-    const hoverEvents =
-      !disabled && !active
-        ? {
-            onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-              const el = e.currentTarget as HTMLElement;
-              if (danger) {
-                el.style.color = 'rgba(248,113,113,0.8)';
-                el.style.background = 'rgba(248,113,113,0.08)';
-              } else {
-                el.style.color = 'var(--film-text-label)';
-                el.style.background = 'rgba(196,124,46,0.07)';
-              }
-            },
-            onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.color = 'var(--film-text-dim)';
-              el.style.background = 'transparent';
-            },
-          }
-        : {};
-
-    if (href)
-      return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer noopener"
-          className={cls}
-          aria-label={label}
-          style={activeStyle}
-          {...hoverEvents}
-        >
-          {children}
-          {tooltip}
-        </a>
-      );
-    return (
-      <button
-        onClick={onClick}
-        disabled={!!disabled}
-        className={cls}
-        aria-label={label}
-        aria-disabled={disabled}
-        style={activeStyle}
-        {...hoverEvents}
-      >
-        {children}
-        {tooltip}
-      </button>
-    );
-  }
-);
-ToolbarBtn.displayName = 'ToolbarBtn';
 
 // ── Zoom/Fullscreen Overlay ───────────────────────────────────────────────────
 const ZoomOverlay = memo<{
@@ -283,6 +189,7 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  initialMode?: BuilderMode;
 }> = ({
   config,
   setConfig,
@@ -293,6 +200,7 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
+  initialMode = 'advanced',
 }) => {
   const {
     activeTab,
@@ -313,6 +221,25 @@ const StudioLayout: React.FC<{
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
+  const [builderMode, setBuilderModeState] = useState<BuilderMode>(() => {
+    try {
+      return (
+        (localStorage.getItem('posterium_builder_mode_v1') as BuilderMode | null) ?? initialMode
+      );
+    } catch {
+      return initialMode;
+    }
+  });
+  const setBuilderMode = useCallback((mode: BuilderMode) => {
+    setBuilderModeState(mode);
+    setLeftVisible(mode === 'advanced');
+    setRightVisible(true);
+    try {
+      localStorage.setItem('posterium_builder_mode_v1', mode);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -397,7 +324,9 @@ const StudioLayout: React.FC<{
         }
         if (hasLogo) {
           const currentX =
-            next.logoX !== null && next.logoX !== undefined ? next.logoX : Math.round((CANVAS_WIDTH - next.logoW) / 2);
+            next.logoX !== null && next.logoX !== undefined
+              ? next.logoX
+              : Math.round((CANVAS_WIDTH - next.logoW) / 2);
           next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
@@ -412,8 +341,14 @@ const StudioLayout: React.FC<{
               : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
         }
         if (activeMinimal.includes('minimal-year')) {
-          next.minimalMetaX = Math.max(0, Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx));
-          next.minimalMetaY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy));
+          next.minimalMetaX = Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx)
+          );
+          next.minimalMetaY = Math.max(
+            0,
+            Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy)
+          );
         }
         if (activeMinimal.includes('minimal-duration')) {
           next.minimalDurationX = Math.max(
@@ -430,7 +365,10 @@ const StudioLayout: React.FC<{
           activeMinimal
             .filter((id) => id.startsWith('minimal-rating-'))
             .forEach((id) => {
-              const idx = Number(id.split('-').at(-1) ?? -1);
+              const idx = (() => {
+                const parts = id.split('-');
+                return Number(parts[parts.length - 1] ?? -1);
+              })();
               if (!Number.isFinite(idx) || !list[idx]) return;
               list[idx] = {
                 ...list[idx],
@@ -610,7 +548,10 @@ const StudioLayout: React.FC<{
       }
       if (inInput) return;
       if (
-        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight') &&
         (selectedIdsRef.current.size > 0 ||
           selectedLogoRef.current ||
           selectedMinimalElementsRef.current.size > 0)
@@ -1106,7 +1047,9 @@ const StudioLayout: React.FC<{
           onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
           onHide={hideLayer}
           onShowAll={showAllBadges}
-          onSelect={(id) => (id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false))}
+          onSelect={(id) =>
+            id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+          }
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
@@ -1132,295 +1075,42 @@ const StudioLayout: React.FC<{
 
         {/* ── HEADER ── */}
         {!isFullscreen && (
-          <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
-            style={{
-              background: 'rgba(7,7,6,0.97)',
-              borderBottom: '1px solid rgba(196,124,46,0.08)',
-            }}
-          >
-            {/* Ambient gradient rule */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-              style={{
-                background:
-                  'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
-              }}
-              aria-hidden="true"
-            />
-
-            {/* Left Header Area */}
-            <div className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto">
-              {/* Wordmark */}
-              <a
-                href="/"
-                className="flex items-center"
-                style={{ textDecoration: 'none', flexShrink: 0 }}
-              >
-                <span
-                  className="poster-font select-none hidden sm:block"
-                  style={{
-                    fontSize: 18,
-                    color: 'var(--film-cream)',
-                    letterSpacing: '0.12em',
-                    lineHeight: 'normal',
-                  }}
-                >
-                  POSTERIUM
-                </span>
-                <span
-                  className="poster-font select-none sm:hidden"
-                  style={{
-                    fontSize: 14,
-                    color: 'var(--film-amber)',
-                    letterSpacing: '0.12em',
-                    lineHeight: 'normal',
-                  }}
-                >
-                  P
-                </span>
-              </a>
-              <a
-                href="#"
-                aria-label="Support us by Buying us a Coffee"
-                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
-              >
-                <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Support
-                </span>
-              </a>
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={12} className="shrink-0" />
-                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
-              </button>
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
-            </div>
-
-            {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
-              {/* Left sidebar toggle - desktop only */}
-              <button
-                onClick={() => setLeftVisible(!leftVisible)}
-                title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-                style={{
-                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                  border: '1px solid transparent',
-                  background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = leftVisible
-                    ? 'rgba(196,124,46,0.08)'
-                    : 'transparent';
-                }}
-              >
-                <PanelLeft size={14} />
-              </button>
-
-              {/* Full search bar - sm and above */}
-              <button
-                onClick={() => setPaletteOpen(true)}
-                className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'var(--film-text-dim)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={13} className="shrink-0" />
-                <span className="text-[11px] syne-font text-left flex-1 min-w-0 truncate">
-                  Search commands...
-                </span>
-                <kbd
-                  className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                >
-                  ⌘K
-                </kbd>
-              </button>
-
-              {/* Right sidebar toggle - desktop only */}
-              <button
-                onClick={() => setRightVisible(!rightVisible)}
-                title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-                style={{
-                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                  border: '1px solid transparent',
-                  background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = rightVisible
-                    ? 'rgba(196,124,46,0.08)'
-                    : 'transparent';
-                }}
-              >
-                <PanelRight size={14} />
-              </button>
-            </div>
-
-            {/* Right Header Area */}
-            <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
-
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* Import */}
-              <button
-                ref={importBtnRef}
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
-                style={{ color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
-                  Import
-                </span>
-              </button>
-
-              {/* Export CTA */}
-              <button
-                ref={exportBtnRef}
-                onClick={() => setExportOpen((v) => !v)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
-                style={{
-                  background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
-                  color: '#070706',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
-                }}
-                onMouseLeave={(e) => {
-                  if (!exportOpen)
-                    (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
-                }}
-              >
-                <Download size={12} />
-                <span className="max-[1300px]:hidden">Export</span>
-                <ChevronDown
-                  className="max-[1300px]:hidden"
-                  size={10}
-                  style={{
-                    transform: exportOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s',
-                  }}
-                />
-              </button>
-
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* Reset - permanently placed at top right */}
-              <button
-                onClick={() => setIsResetOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
-                  Reset
-                </span>
-              </button>
-            </div>
-          </header>
+          <TopToolbar
+            builderMode={builderMode}
+            onBuilderModeChange={setBuilderMode}
+            leftVisible={leftVisible}
+            rightVisible={rightVisible}
+            shortcutsOpen={shortcutsOpen}
+            exportOpen={exportOpen}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            importBtnRef={importBtnRef}
+            exportBtnRef={exportBtnRef}
+            onToggleLeft={() => setLeftVisible((v) => !v)}
+            onToggleRight={() => setRightVisible((v) => !v)}
+            onOpenPalette={() => setPaletteOpen(true)}
+            onToggleShortcuts={() => setShortcutsOpen((v) => !v)}
+            onUndo={undo}
+            onRedo={redo}
+            onOpenImport={() => setIsImportOpen(true)}
+            onToggleExport={() => setExportOpen((v) => !v)}
+            onOpenReset={() => setIsResetOpen(true)}
+          />
         )}
 
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
-          {!isFullscreen && (
-            <aside
-              aria-label="Layer panel"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
-              style={{
-                width: leftVisible ? leftW : 0,
-                background: 'var(--film-dark)',
-                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
-                overflow: 'hidden',
-                opacity: leftVisible ? 1 : 0,
-              }}
-            >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
-              <div
-                onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
-              >
-                <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
-              </div>
-            </aside>
+          {!isFullscreen && builderMode === 'advanced' && (
+            <LeftBuilderPanel
+              config={config}
+              setConfig={setConfig}
+              selectedIds={selectedIds}
+              onSelect={handleSelectionOverride}
+              onResizeStart={startResizeLeft}
+              visible={leftVisible}
+              width={leftW}
+            />
           )}
 
           {/* Canvas */}
@@ -1480,25 +1170,13 @@ const StudioLayout: React.FC<{
 
           {/* Right sidebar */}
           {!isFullscreen && (
-            <aside
-              aria-label="Inspector"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
-              style={{
-                width: rightVisible ? rightW : 0,
-                background: 'var(--film-dark)',
-                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
-                overflow: 'hidden',
-                opacity: rightVisible ? 1 : 0,
-              }}
-            >
-              <div
-                onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50"
-              >
-                <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
-              </div>
-              <Inspector config={config} setConfig={setConfig} />
-            </aside>
+            <RightInspectorPanel
+              config={config}
+              setConfig={setConfig}
+              onResizeStart={startResizeRight}
+              visible={rightVisible}
+              width={rightW}
+            />
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
@@ -1574,7 +1252,7 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC = () => {
+const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'advanced' }) => {
   const {
     state: config,
     setState: setConfig,
@@ -1674,6 +1352,7 @@ const BuilderApp: React.FC = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        initialMode={initialMode}
       />
     </EditorProvider>
   );

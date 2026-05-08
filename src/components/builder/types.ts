@@ -1,3 +1,4 @@
+export type BuilderMode = 'simple' | 'advanced';
 // src/components/builder/types.ts
 
 export type MediaType = 'movie' | 'tv' | 'anime';
