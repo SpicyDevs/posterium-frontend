@@ -7,6 +7,10 @@ import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } f
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
+import AdvancedPanelList from './components/panels/AdvancedPanelList';
+import BuilderPanelHost from './components/panels/BuilderPanelHost';
+import BuilderModeToggle from './components/chrome/BuilderModeToggle';
+import type { BuilderMode } from './components/panels/panelTypes';
 import MobileDock from './components/layout/MobileDock';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ResetDialog from './components/ResetDialogue';
@@ -39,7 +43,6 @@ import {
   Type,
   ChevronDown,
   Search,
-  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
@@ -283,6 +286,8 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  mode: BuilderMode;
+  onModeChange: (mode: BuilderMode) => void;
 }> = ({
   config,
   setConfig,
@@ -293,6 +298,8 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
+  mode,
+  onModeChange,
 }) => {
   const {
     activeTab,
@@ -1180,16 +1187,7 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <a
-                href="#"
-                aria-label="Support us by Buying us a Coffee"
-                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
-              >
-                <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Support
-                </span>
-              </a>
+              <BuilderModeToggle value={mode} onChange={onModeChange} />
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
@@ -1408,12 +1406,16 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
+              {mode === 'advanced' ? (
+                <AdvancedPanelList config={config} />
+              ) : (
+                <LayerPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1497,7 +1499,18 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              {mode === 'advanced' ? (
+                <BuilderPanelHost
+                  panelId={activeTab}
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  advanced
+                />
+              ) : (
+                <Inspector config={config} setConfig={setConfig} />
+              )}
             </aside>
           )}
 
@@ -1574,7 +1587,13 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC = () => {
+const BUILDER_MODE_STORAGE_KEY = 'posterium_builder_mode_v1';
+
+interface BuilderAppProps {
+  initialMode?: BuilderMode;
+}
+
+const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple' }) => {
   const {
     state: config,
     setState: setConfig,
@@ -1597,10 +1616,26 @@ const BuilderApp: React.FC = () => {
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+  const [mode, setMode] = useState<BuilderMode>(() => {
+    try {
+      const saved = localStorage.getItem(BUILDER_MODE_STORAGE_KEY) as BuilderMode | null;
+      return saved === 'simple' || saved === 'advanced' ? saved : initialMode;
+    } catch {
+      return initialMode;
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUILDER_MODE_STORAGE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (config.keys) {
@@ -1674,6 +1709,8 @@ const BuilderApp: React.FC = () => {
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        mode={mode}
+        onModeChange={setMode}
       />
     </EditorProvider>
   );
