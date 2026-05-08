@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useId, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface AccordionProps {
@@ -9,6 +9,8 @@ interface AccordionProps {
 
 const Accordion = memo<AccordionProps>(({ title, children, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = useId();
+  const triggerId = useId();
 
   return (
     <article
@@ -23,6 +25,8 @@ const Accordion = memo<AccordionProps>(({ title, children, defaultOpen = false }
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={contentId}
+        id={triggerId}
         style={{
           width: '100%',
           border: 'none',
@@ -54,6 +58,9 @@ const Accordion = memo<AccordionProps>(({ title, children, defaultOpen = false }
 
       {open ? (
         <div
+          id={contentId}
+          role="region"
+          aria-labelledby={triggerId}
           style={{
             borderTop: '1px solid rgba(196,124,46,0.12)',
             padding: '14px 16px',

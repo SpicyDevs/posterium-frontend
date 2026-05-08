@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
+import { useAnimation } from '@/hooks/useAnimation';
 
 interface HeroPoster {
   id: string;
@@ -101,6 +102,7 @@ const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
 });
 
 const CyclingPoster = memo(() => {
+  const animationsAllowed = useAnimation();
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
@@ -159,6 +161,11 @@ const CyclingPoster = memo(() => {
   const doTransition = useCallback(
     (next: number) => {
       if (next === activeIdxRef.current || transitioningRef.current || !isPosterReady(next)) return;
+      if (!animationsAllowed) {
+        setActiveIdx(next);
+        finishTransition();
+        return;
+      }
       clearTransitionTimers();
       transitioningRef.current = true;
       setTransitioning(true);
@@ -170,7 +177,7 @@ const CyclingPoster = memo(() => {
       }, 50);
       guardTimerRef.current = setTimeout(finishTransition, 1400);
     },
-    [clearTransitionTimers, finishTransition, isPosterReady]
+    [animationsAllowed, clearTransitionTimers, finishTransition, isPosterReady]
   );
 
   const goTo = useCallback(
@@ -181,12 +188,13 @@ const CyclingPoster = memo(() => {
   );
 
   const restartInterval = useCallback(() => {
+    if (!animationsAllowed) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       if (!isVisibleRef.current || transitioningRef.current) return;
       goTo((activeIdxRef.current + 1) % TOTAL);
     }, 4500);
-  }, [goTo]);
+  }, [animationsAllowed, goTo]);
 
   useEffect(() => {
     if (!loaded[0]) return;
@@ -278,7 +286,7 @@ const CyclingPoster = memo(() => {
                 display: 'block',
                 opacity: i === activeIdx ? 1 : 0,
                 willChange: transitioning ? 'opacity' : 'auto',
-                transition: 'opacity 0.35s ease',
+                transition: animationsAllowed ? 'opacity 0.35s ease' : 'none',
                 pointerEvents: 'none',
               }}
             />
@@ -293,9 +301,9 @@ const CyclingPoster = memo(() => {
               zIndex: 1,
               background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
               backgroundSize: '200% 100%',
-              animation: 'shimmer 1.6s linear infinite',
-            }}
-          />
+                animation: animationsAllowed ? 'shimmer 1.6s linear infinite' : 'none',
+              }}
+            />
         )}
         {failed[activeIdx] && (
           <div
@@ -367,9 +375,9 @@ const CyclingPoster = memo(() => {
                 width: i === activeIdx ? 20 : 6,
                 height: 6,
                 borderRadius: 3,
-                transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
-                flexShrink: 0,
-              }}
+                 transition: animationsAllowed ? 'all 0.3s cubic-bezier(0.16,1,0.3,1)' : 'none',
+                 flexShrink: 0,
+               }}
             />
           ))}
         </div>

@@ -1,0 +1,17 @@
+---
+interface Props {
+  schema: unknown;
+}
+
+const { schema } = Astro.props;
+
+const safeStringify = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '{}';
+  }
+};
+---
+
+<script type="application/ld+json" set:html={safeStringify(schema)} />

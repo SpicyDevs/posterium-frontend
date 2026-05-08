@@ -13,12 +13,14 @@
 //    for pages that do NOT use BaseLayout, removed duplicates.
 
 import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
+import JsonLd from './JsonLd.astro';
 
 interface Props {
   routeKey: '/' | '/build' | '/faq' | '/examples' | '/installation';
+  jsonLd?: object[];
 }
 
-const { routeKey } = Astro.props;
+const { routeKey, jsonLd = [] } = Astro.props;
 
 const routeMeta  = ROUTE_SEO[routeKey];
 const title      = routeMeta?.title       ?? SEO_DEFAULTS.title;
@@ -130,15 +132,13 @@ if (routeKey === '/examples') {
   } as any);
 }
 
-// Merge route-level custom schemas (FAQ etc.)
-const customSchemas = routeMeta?.jsonLd ?? [];
-const finalSchemas  = [enterpriseSchema, ...customSchemas];
-
-// Safe serialisation — prevents build-time errors on circular refs / bad data
-function safeStringify(obj: unknown): string {
-  try { return JSON.stringify(obj); }
-  catch { return '{}'; }
-}
+// Merge route-level and page-level custom schemas (FAQ/HowTo/ItemList etc.)
+const customSchemas = [...(routeMeta?.jsonLd ?? []), ...jsonLd];
+const finalSchemas = [enterpriseSchema, ...customSchemas];
+const dedupedSchemas = finalSchemas.filter((schema, index, schemas) => {
+  const value = JSON.stringify(schema);
+  return schemas.findIndex((candidate) => JSON.stringify(candidate) === value) === index;
+});
 ---
 
 <title>{title}</title>
@@ -186,6 +186,6 @@ function safeStringify(obj: unknown): string {
 <meta name="format-detection"                  content="telephone=no, date=no, email=no, address=no" />
 
 <!-- Structured data -->
-{finalSchemas.map((schema) => (
-  <script type="application/ld+json" set:html={safeStringify(schema)} />
+{dedupedSchemas.map((schema) => (
+  <JsonLd schema={schema} />
 ))}

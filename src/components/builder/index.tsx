@@ -44,6 +44,7 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import { LiveRegionProvider, useLiveRegion } from '@/components/a11y/LiveRegion';
 
 const STORAGE_KEY = 'posterium_config_v2';
 const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
@@ -308,6 +309,7 @@ const StudioLayout: React.FC<{
     viewOptions,
     toggleViewOption,
   } = useEditor();
+  const announce = useLiveRegion();
 
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -359,6 +361,13 @@ const StudioLayout: React.FC<{
   useEffect(() => {
     configRatingsRef.current = config.ratings;
   });
+  const prevSelectionCountRef = useRef(0);
+  useEffect(() => {
+    const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+    if (selectedCount === prevSelectionCountRef.current) return;
+    prevSelectionCountRef.current = selectedCount;
+    announce(selectedCount > 0 ? `${selectedCount} badges selected` : 'Selection cleared');
+  }, [announce, selectedIds, selectedLogo, selectedMinimalElements]);
 
   const dispatchZoom = useCallback(
     (delta: number) => window.dispatchEvent(new CustomEvent('canvas-zoom', { detail: delta })),
@@ -1504,6 +1513,10 @@ const StudioLayout: React.FC<{
           {/* Mobile Panel (In-flow flex item) */}
           {!isFullscreen && (
             <div
+              id="builder-mobile-sheet"
+              role="dialog"
+              aria-modal="false"
+              aria-label="Builder controls panel"
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
                 mobileSheetMode !== 'hidden'
@@ -1663,19 +1676,21 @@ const BuilderApp: React.FC = () => {
   }, [handleLoadConfig, setConfig]);
 
   return (
-    <EditorProvider>
-      <StudioLayout
-        config={config}
-        setConfig={setConfig}
-        handleReset={handleReset}
-        baseUrl={baseUrl}
-        handleLoadConfig={handleLoadConfig}
-        undo={undo}
-        redo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-      />
-    </EditorProvider>
+    <LiveRegionProvider>
+      <EditorProvider>
+        <StudioLayout
+          config={config}
+          setConfig={setConfig}
+          handleReset={handleReset}
+          baseUrl={baseUrl}
+          handleLoadConfig={handleLoadConfig}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+        />
+      </EditorProvider>
+    </LiveRegionProvider>
   );
 };
 

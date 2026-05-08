@@ -58,7 +58,9 @@ const MobileDock: React.FC<{
             <button
               key={id}
               role="tab"
+              id={`mobile-dock-tab-${id}`}
               aria-selected={isActive}
+              aria-controls="builder-mobile-sheet"
               onClick={() => handleTab(id)}
               className={`min-w-0 basis-0 flex-1 flex flex-col items-center justify-center gap-1 mx-0.5 my-1.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-[rgba(196,124,46,0.1)]' : 'hover:bg-[rgba(196,124,46,0.07)] active:scale-95'}`}
             >

@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useAnimation } from '@/hooks/useAnimation';
 
 interface ProgressiveImageProps {
   src?: string;
@@ -40,6 +41,7 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
     const [loaded, setLoaded] = useState(false);
     const [errored, setErrored] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
+    const animationsAllowed = useAnimation();
 
     const handleLoad = useCallback(() => {
       setLoaded(true);
@@ -68,12 +70,19 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
       <div style={{ position: 'relative', overflow: 'hidden', ...containerStyle }}>
         {!loaded && !errored && src && (
           <div
-            style={
-              skeletonStyle
-                ? { ...DEFAULT_SKELETON_STYLE, ...skeletonStyle }
-                : DEFAULT_SKELETON_STYLE
-            }
-          />
+              style={
+                skeletonStyle
+                ? {
+                    ...DEFAULT_SKELETON_STYLE,
+                    animation: animationsAllowed ? DEFAULT_SKELETON_STYLE.animation : 'none',
+                    ...skeletonStyle,
+                  }
+                : {
+                    ...DEFAULT_SKELETON_STYLE,
+                    animation: animationsAllowed ? DEFAULT_SKELETON_STYLE.animation : 'none',
+                  }
+              }
+            />
         )}
         {errored && fallback}
         {src && (
@@ -92,7 +101,7 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
               objectFit: 'cover',
               display: 'block',
               opacity: loaded ? 1 : 0,
-              transition: 'opacity 0.35s ease',
+              transition: animationsAllowed ? 'opacity 0.35s ease' : 'none',
               ...imageStyle,
             }}
           />
