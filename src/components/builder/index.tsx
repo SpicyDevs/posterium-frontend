@@ -1,8 +1,15 @@
 // src/components/builder/index.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
-import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
-import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
+import type { BuilderMode, PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
+import {
+  DEFAULT_CONFIG,
+  ALL_BADGES,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BASE_BADGE_W,
+  BASE_BADGE_H,
+} from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
@@ -39,11 +46,13 @@ import {
   Type,
   ChevronDown,
   Search,
-  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import BuilderModeToggle from './components/navigation/BuilderModeToggle';
+import AdvancedPanelList from './panels/AdvancedPanelList';
+import AdvancedPanelRenderer from './panels/AdvancedPanelRenderer';
 
 const STORAGE_KEY = 'posterium_config_v2';
 const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
@@ -314,6 +323,20 @@ const StudioLayout: React.FC<{
   const [leftVisible, setLeftVisible] = useState(true);
   const [rightVisible, setRightVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [builderMode, setBuilderModeState] = useState<BuilderMode>(() => {
+    if (typeof window === 'undefined') return 'simple';
+    const stored = window.localStorage.getItem('posterium_builder_mode_v1') as BuilderMode | null;
+    if (stored === 'simple' || stored === 'advanced') return stored;
+    return window.location.pathname.includes('abuild') ? 'advanced' : 'simple';
+  });
+  const setBuilderMode = useCallback((mode: BuilderMode) => {
+    setBuilderModeState(mode);
+    try {
+      window.localStorage.setItem('posterium_builder_mode_v1', mode);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
@@ -397,7 +420,9 @@ const StudioLayout: React.FC<{
         }
         if (hasLogo) {
           const currentX =
-            next.logoX !== null && next.logoX !== undefined ? next.logoX : Math.round((CANVAS_WIDTH - next.logoW) / 2);
+            next.logoX !== null && next.logoX !== undefined
+              ? next.logoX
+              : Math.round((CANVAS_WIDTH - next.logoW) / 2);
           next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
@@ -412,8 +437,14 @@ const StudioLayout: React.FC<{
               : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
         }
         if (activeMinimal.includes('minimal-year')) {
-          next.minimalMetaX = Math.max(0, Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx));
-          next.minimalMetaY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy));
+          next.minimalMetaX = Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx)
+          );
+          next.minimalMetaY = Math.max(
+            0,
+            Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy)
+          );
         }
         if (activeMinimal.includes('minimal-duration')) {
           next.minimalDurationX = Math.max(
@@ -610,7 +641,10 @@ const StudioLayout: React.FC<{
       }
       if (inInput) return;
       if (
-        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight') &&
         (selectedIdsRef.current.size > 0 ||
           selectedLogoRef.current ||
           selectedMinimalElementsRef.current.size > 0)
@@ -1106,7 +1140,9 @@ const StudioLayout: React.FC<{
           onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
           onHide={hideLayer}
           onShowAll={showAllBadges}
-          onSelect={(id) => (id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false))}
+          onSelect={(id) =>
+            id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+          }
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
@@ -1180,16 +1216,7 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <a
-                href="#"
-                aria-label="Support us by Buying us a Coffee"
-                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
-              >
-                <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Support
-                </span>
-              </a>
+              <BuilderModeToggle mode={builderMode} onChange={setBuilderMode} />
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
@@ -1408,12 +1435,21 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
+              {builderMode === 'advanced' ? (
+                <AdvancedPanelList
+                  config={config}
+                  selectedCount={
+                    selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size
+                  }
+                />
+              ) : (
+                <LayerPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1497,7 +1533,16 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              {builderMode === 'advanced' ? (
+                <AdvancedPanelRenderer
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              ) : (
+                <Inspector config={config} setConfig={setConfig} />
+              )}
             </aside>
           )}
 

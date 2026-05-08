@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { RatingType } from '../types';
 
-type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
+export type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
 export type SheetMode = 'hidden' | 'half' | 'full';
 
 interface ViewOptions {
