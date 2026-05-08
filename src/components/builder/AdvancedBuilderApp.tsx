@@ -736,7 +736,7 @@ const AdvancedStudioLayout: React.FC<{
           {!isFullscreen && (
             <aside
               aria-label="Panel navigation"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 adv-sidebar-transition"
+              className="hidden lg:flex flex-col min-h-0 z-20 relative shrink-0 adv-sidebar-transition"
               style={{
                 width: navVisible ? 220 : 0,
                 borderRight: navVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
@@ -824,7 +824,7 @@ const AdvancedStudioLayout: React.FC<{
           {!isFullscreen && (
             <aside
               aria-label="Panel content"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 adv-sidebar-transition"
+              className="hidden lg:flex flex-col min-h-0 z-20 relative shrink-0 adv-sidebar-transition"
               style={{
                 width: rightVisible ? rightW : 0,
                 background: 'var(--film-dark)',

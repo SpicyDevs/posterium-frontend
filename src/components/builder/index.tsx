@@ -1430,7 +1430,7 @@ const StudioLayout: React.FC<{
           {!isFullscreen && (
             <aside
               aria-label="Layer panel"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
+              className="hidden lg:flex flex-col min-h-0 z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: leftVisible ? leftW : 0,
                 background: 'var(--film-dark)',
@@ -1513,7 +1513,7 @@ const StudioLayout: React.FC<{
           {!isFullscreen && (
             <aside
               aria-label="Inspector"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
+              className="hidden lg:flex flex-col min-h-0 z-20 relative shrink-0 sidebar-transition"
               style={{
                 width: rightVisible ? rightW : 0,
                 background: 'var(--film-dark)',
