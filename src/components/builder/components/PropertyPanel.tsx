@@ -1,14 +1,11 @@
 // src/components/builder/components/PropertyPanel.tsx
-import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Switch } from '@headlessui/react';
+import React, { memo, useRef, useEffect } from 'react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
-import { ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
 import {
   Layers,
   Layout,
   Palette,
-  ChevronDown,
-  ChevronRight,
   Eye,
   EyeOff,
   RotateCcw,
@@ -18,11 +15,10 @@ import {
   Hash,
   Sliders,
   ImagePlay,
-  Check,
 } from 'lucide-react';
-import ColorPicker from './ColorPicker';
 import clsx from 'clsx';
 import SidebarLayout from './SidebarLayout';
+import { ColorRow, Section, SegmentedRow, SliderRow, TextInputRow, ToggleRow } from './ui';
 
 interface Props {
   config: PosterConfig;
@@ -34,7 +30,6 @@ interface Props {
   mode?: 'badges' | 'logo' | 'selection';
 }
 
-const SECTION_STORAGE_KEY = 'posterium_section_states_v2';
 const INACTIVE_OPTION_HOVER_CLASSES =
   'bg-[rgba(255,255,255,0.03)] text-[var(--film-text-label)] border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(196,124,46,0.24)] hover:text-[var(--film-cream)]';
 const BADGE_DISPLAY_NAMES: Record<string, string> = {
@@ -51,484 +46,6 @@ const BADGE_DISPLAY_NAMES: Record<string, string> = {
   year: 'Year',
   title: 'Title',
 };
-
-const readSectionStates = (): Record<string, boolean> => {
-  try {
-    return JSON.parse(localStorage.getItem(SECTION_STORAGE_KEY) || '{}');
-  } catch {
-    return {};
-  }
-};
-
-const writeSectionState = (id: string, open: boolean) => {
-  try {
-    const s = readSectionStates();
-    localStorage.setItem(SECTION_STORAGE_KEY, JSON.stringify({ ...s, [id]: open }));
-  } catch {}
-};
-
-// ── Section ──────────────────────────────────────────────────────────────────
-const Section: React.FC<{
-  title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  sectionId?: string;
-}> = ({ title, icon, children, defaultOpen = true, sectionId }) => {
-  const [open, setOpen] = useState(() => {
-    if (!sectionId) return defaultOpen;
-    const states = readSectionStates();
-    return sectionId in states ? states[sectionId] : defaultOpen;
-  });
-
-  const toggle = useCallback(() => {
-    setOpen((v) => {
-      const next = !v;
-      if (sectionId) writeSectionState(sectionId, next);
-      return next;
-    });
-  }, [sectionId]);
-
-  return (
-    <div className="pt-5 first:pt-3">
-      <button
-        type="button"
-        onClick={toggle}
-        className="w-full flex items-center justify-between px-3 mb-3 focus:outline-none group"
-      >
-        <span
-          className="flex items-center gap-1.5 syne-font uppercase tracking-widest"
-          style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-        >
-          {icon && (
-            <span style={{ color: 'var(--film-text-dim)', opacity: 1, lineHeight: 0 }}>{icon}</span>
-          )}
-          {title}
-        </span>
-        <span
-          style={{
-            color: 'var(--film-text-dim)',
-            opacity: open ? 0.6 : 0.3,
-            transition: 'opacity 0.15s',
-            lineHeight: 0,
-          }}
-        >
-          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        </span>
-      </button>
-      {open && <div className="px-3 pb-1 space-y-3.5">{children}</div>}
-      <div
-        className="mt-5 mx-3"
-        style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
-        aria-hidden="true"
-      />
-    </div>
-  );
-};
-
-// ── SliderRow ─────────────────────────────────────────────────────────────────
-const SliderRow: React.FC<{
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  onReset?: () => void;
-  min: number;
-  max: number;
-  step?: number;
-  unit?: string;
-  formatValue?: (v: number) => string;
-}> = ({ label, value, onChange, onReset, min, max, step = 1, unit = '', formatValue }) => {
-  const [localValue, setLocalValue] = useState(value);
-  const [inputText, setInputText] = useState(() => (formatValue ? formatValue(value) : `${value}`));
-  const lastUpdate = useRef(Date.now());
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isFocused = useRef(false);
-
-  useEffect(() => {
-    setLocalValue(value);
-    if (!isFocused.current) {
-      setInputText(formatValue ? formatValue(value) : `${value}`);
-    }
-  }, [value, formatValue]);
-
-  const commitInput = useCallback(
-    (text: string) => {
-      const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');
-      const n = parseFloat(raw);
-      if (!isNaN(n)) {
-        const clamped = Math.max(min, Math.min(max, n));
-        setLocalValue(clamped);
-        setInputText(formatValue ? formatValue(clamped) : `${clamped}`);
-        onChange(clamped);
-      } else {
-        setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
-      }
-    },
-    [min, max, onChange, unit, formatValue, localValue]
-  );
-
-  const handleRangeChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = parseFloat(e.target.value);
-      setLocalValue(val);
-      if (!isFocused.current) {
-        setInputText(formatValue ? formatValue(val) : `${val}`);
-      }
-      const now = Date.now();
-      if (now - lastUpdate.current > 33) {
-        onChange(val);
-        lastUpdate.current = now;
-      } else {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          onChange(val);
-          lastUpdate.current = Date.now();
-        }, 33);
-      }
-    },
-    [onChange, formatValue]
-  );
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      commitInput(inputText);
-      inputRef.current?.blur();
-    } else if (e.key === 'Escape') {
-      setInputText(formatValue ? formatValue(localValue) : `${localValue}`);
-      inputRef.current?.blur();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const newVal = Math.max(min, Math.min(max, localValue + step));
-      setLocalValue(newVal);
-      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
-      onChange(newVal);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const newVal = Math.max(min, Math.min(max, localValue - step));
-      setLocalValue(newVal);
-      setInputText(formatValue ? formatValue(newVal) : `${newVal}`);
-      onChange(newVal);
-    }
-  };
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <span
-          className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-        >
-          {label}
-        </span>
-        {onReset && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex items-center gap-1 text-[9px] mono-font transition-colors"
-            style={{ color: 'var(--film-text-dim)' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            }}
-          >
-            <RotateCcw size={10} />
-            Reset
-          </button>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          inputMode="decimal"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onFocus={() => {
-            isFocused.current = true;
-          }}
-          onBlur={() => {
-            isFocused.current = false;
-            commitInput(inputText);
-          }}
-          onKeyDown={handleInputKeyDown}
-          className="mono-font tabular-nums focus:outline-none shrink-0"
-          style={{
-            width: 48,
-            height: 22,
-            paddingInline: 5,
-            borderRadius: 4,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            fontSize: 10,
-            color: 'var(--film-pale)',
-            textAlign: 'center',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(196,124,46,0.4)';
-          }}
-          onMouseLeave={(e) => {
-            if (!isFocused.current)
-              (e.currentTarget as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)';
-          }}
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={localValue}
-          onChange={handleRangeChange}
-          className="flex-1 min-w-0"
-        />
-      </div>
-    </div>
-  );
-};
-
-// ── ToggleRow ─────────────────────────────────────────────────────────────────
-const ToggleRow: React.FC<{
-  label: string;
-  sub?: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  small?: boolean;
-}> = ({ label, sub, checked, onChange, small }) => (
-  <div className="flex items-center justify-between gap-3">
-    <div className="min-w-0">
-      <p
-        className="body-font font-medium"
-        style={{ fontSize: small ? 10 : 11, color: 'var(--film-text-label)' }}
-      >
-        {label}
-      </p>
-      {sub && (
-        <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-          {sub}
-        </p>
-      )}
-    </div>
-    <Switch
-      checked={checked}
-      onChange={onChange}
-      className={clsx(
-        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-        checked ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
-      )}
-    >
-      <span
-        className={clsx(
-          'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-          checked ? 'translate-x-[18px]' : 'translate-x-[3px]'
-        )}
-      />
-    </Switch>
-  </div>
-);
-
-// ── SegmentedRow — compact button group ───────────────────────────────────────
-const SegmentedRow: React.FC<{
-  label: string;
-  options: { id: string; label: string }[];
-  value: string | null;
-  onChange: (v: string) => void;
-}> = ({ label, options, value, onChange }) => (
-  <div className="space-y-1.5">
-    <span
-      className="body-font"
-      style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-    >
-      {label}
-    </span>
-    <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
-      {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          onClick={() => onChange(opt.id)}
-          className={clsx(
-            'h-7 rounded-md text-[10px] font-medium transition-all border syne-font',
-            value === opt.id
-              ? 'bg-[rgba(196,124,46,0.15)] text-[var(--film-pale)] border-[rgba(196,124,46,0.3)]'
-              : INACTIVE_OPTION_HOVER_CLASSES
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  </div>
-);
-
-// ── TextInputRow ──────────────────────────────────────────────────────────────
-const TextInputRow: React.FC<{
-  label: string;
-  value: string;
-  placeholder?: string;
-  onChange: (v: string) => void;
-  onClear?: () => void;
-}> = ({ label, value, placeholder, onChange, onClear }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [focused, setFocused] = useState(false);
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span
-          className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-        >
-          {label}
-        </span>
-        {onClear && value && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="mono-font transition-colors"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-            }}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        className="w-full focus:outline-none body-font hover:border-[rgba(196,124,46,0.28)]"
-        style={{
-          height: 28,
-          paddingInline: 8,
-          borderRadius: 6,
-          background: 'rgba(255,255,255,0.04)',
-          border: `1px solid ${focused ? 'rgba(196,124,46,0.4)' : 'rgba(255,255,255,0.1)'}`,
-          fontSize: 11,
-          color: 'var(--film-pale)',
-          transition: 'border-color 0.15s',
-        }}
-      />
-    </div>
-  );
-};
-
-const SelectBox = memo(
-  ({
-    value,
-    onChange,
-    options,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    options: { id: string; label: string }[];
-  }) => (
-    <Listbox value={value} onChange={onChange}>
-      <div className="relative">
-        <ListboxButton
-          className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'var(--film-pale)',
-          }}
-        >
-          <span className="truncate">{options.find((o) => o.id === value)?.label ?? value}</span>
-          <ChevronDown size={10} style={{ color: 'var(--film-text-dim)', flexShrink: 0 }} />
-        </ListboxButton>
-        <ListboxOptions
-          transition
-          className="absolute z-50 mt-1 w-full py-1 rounded-xl shadow-2xl shadow-black/50 text-[11px] overflow-auto max-h-52 focus:outline-none transition duration-75 ease-in data-[closed]:scale-95 data-[closed]:opacity-0"
-          style={{
-            background: 'var(--film-mid)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          {options.map((opt) => (
-            <ListboxOption
-              key={opt.id}
-              value={opt.id}
-              className={({ active, selected }) =>
-                clsx(
-                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors syne-font',
-                  active && 'bg-[rgba(196,124,46,0.1)]',
-                  !active && selected && 'text-[var(--film-pale)]',
-                  !active && !selected && 'text-[var(--film-text-label)]'
-                )
-              }
-            >
-              {({ selected }) => (
-                <>
-                  <span className="flex-1 truncate">{opt.label}</span>
-                  {selected && (
-                    <Check size={10} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
-                  )}
-                </>
-              )}
-            </ListboxOption>
-          ))}
-        </ListboxOptions>
-      </div>
-    </Listbox>
-  )
-);
-SelectBox.displayName = 'SelectBox';
-
-// ── ColorRow — label + optional reset button above a ColorPicker ──────────────
-const ColorRow: React.FC<{
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  onReset?: () => void;
-  showOpacity?: boolean;
-  opacity?: number;
-  onOpacityChange?: (v: number) => void;
-}> = ({ label, value, onChange, onReset, showOpacity, opacity, onOpacityChange }) => (
-  <div className="space-y-1.5">
-    <div className="flex items-center justify-between">
-      <span
-        className="body-font"
-        style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
-      >
-        {label}
-      </span>
-      {onReset && (
-        <button
-          type="button"
-          onClick={onReset}
-          className="mono-font transition-colors"
-          style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-          }}
-        >
-          Reset
-        </button>
-      )}
-    </div>
-    <ColorPicker
-      value={value}
-      onChange={onChange}
-      showOpacity={showOpacity}
-      opacity={opacity}
-      onOpacityChange={onOpacityChange}
-    />
-  </div>
-);
 
 // ── Alignment grid ─────────────────────────────────────────────────────────────
 const GRID_POSITIONS: { id: PresetType; label: string }[] = [
@@ -1032,7 +549,9 @@ const PropertyPanel: React.FC<Props> = ({
                 onChange={(v) =>
                   updateConfig(
                     'labelPos',
-                    (v === 'none' ? undefined : (v as PosterConfig['labelPos'])) as PosterConfig['labelPos']
+                    (v === 'none'
+                      ? undefined
+                      : (v as PosterConfig['labelPos'])) as PosterConfig['labelPos']
                   )
                 }
               />
@@ -1131,121 +650,121 @@ const PropertyPanel: React.FC<Props> = ({
               icon={<ImagePlay size={10} />}
               sectionId="global-logo-overlay"
             >
-            <SliderRow
-              label="Size"
-              value={config.logoW}
-              min={100}
-              max={490}
-              unit="px"
-              onChange={(newW) => {
-                const w = Math.round(newW);
-                const h = Math.round(w / LOGO_ASPECT);
-                setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
-              }}
-            />
-            <SliderRow
-              label="Opacity"
-              value={config.logoOpacity}
-              min={0}
-              max={1}
-              step={0.05}
-              formatValue={(v) => `${Math.round(v * 100)}%`}
-              onChange={(v) => updateConfig('logoOpacity', v)}
-            />
-            <SliderRow
-              label="Drop Shadow"
-              value={config.logoShadow}
-              min={0}
-              max={30}
-              onChange={(v) => updateConfig('logoShadow', v)}
-            />
-            <ToggleRow
-              label="Background"
-              sub="Add a styled panel behind the logo"
-              checked={config.logoBgEnabled}
-              onChange={(v) => updateConfig('logoBgEnabled', v)}
-            />
-            <SliderRow
-              label="Border Width"
-              value={config.logoBgBorderW}
-              min={0}
-              max={10}
-              unit="px"
-              onChange={(v) => updateConfig('logoBgBorderW', v)}
-            />
-            {config.logoBgBorderW > 0 && (
-              <ColorRow
-                label="Border Color"
-                value={config.logoBgBorderC ?? '#ffffff'}
-                onChange={(v) => updateConfig('logoBgBorderC', v)}
+              <SliderRow
+                label="Size"
+                value={config.logoW}
+                min={100}
+                max={490}
+                unit="px"
+                onChange={(newW) => {
+                  const w = Math.round(newW);
+                  const h = Math.round(w / LOGO_ASPECT);
+                  setConfig((prev) => ({ ...prev, logoW: w, logoH: h }));
+                }}
               />
-            )}
-            {config.logoBgEnabled && (
-              <>
+              <SliderRow
+                label="Opacity"
+                value={config.logoOpacity}
+                min={0}
+                max={1}
+                step={0.05}
+                formatValue={(v) => `${Math.round(v * 100)}%`}
+                onChange={(v) => updateConfig('logoOpacity', v)}
+              />
+              <SliderRow
+                label="Drop Shadow"
+                value={config.logoShadow}
+                min={0}
+                max={30}
+                onChange={(v) => updateConfig('logoShadow', v)}
+              />
+              <ToggleRow
+                label="Background"
+                sub="Add a styled panel behind the logo"
+                checked={config.logoBgEnabled}
+                onChange={(v) => updateConfig('logoBgEnabled', v)}
+              />
+              <SliderRow
+                label="Border Width"
+                value={config.logoBgBorderW}
+                min={0}
+                max={10}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgBorderW', v)}
+              />
+              {config.logoBgBorderW > 0 && (
                 <ColorRow
-                  label="Background Color"
-                  value={config.logoBgColor ?? '#000000'}
-                  onChange={(v) => updateConfig('logoBgColor', v)}
-                  showOpacity
-                  opacity={config.logoBgOpacity}
-                  onOpacityChange={(v) => updateConfig('logoBgOpacity', v)}
+                  label="Border Color"
+                  value={config.logoBgBorderC ?? '#ffffff'}
+                  onChange={(v) => updateConfig('logoBgBorderC', v)}
                 />
-                <SliderRow
-                  label="Padding"
-                  value={config.logoBgPadding}
-                  min={0}
-                  max={48}
-                  unit="px"
-                  onChange={(v) => updateConfig('logoBgPadding', v)}
-                />
-                <SliderRow
-                  label="Background Shadow"
-                  value={config.logoBgShadow}
-                  min={0}
-                  max={30}
-                  onChange={(v) => updateConfig('logoBgShadow', v)}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      logoBgEnabled: true,
-                      logoBgColor: prev.bg ?? '#000000',
-                      logoBgOpacity: prev.alpha,
-                      logoBgRadius: prev.radius,
-                      logoBgPadding: 10,
-                      logoBgBorderW: prev.borderW ?? 0,
-                      logoBgBorderC: prev.borderC ?? '#ffffff',
-                      logoBgShadow: resolveShadow(prev.shadow, 6),
-                    }))
-                  }
-                  className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
-                  style={{
-                    border: '1px solid rgba(196,124,46,0.16)',
-                    background: 'rgba(196,124,46,0.08)',
-                    color: 'var(--film-pale)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  Apply Badge Style to Logo Background
-                </button>
-              </>
-            )}
-            <SliderRow
-              label="Border Radius"
-              value={config.logoBgRadius}
-              min={0}
-              max={40}
-              unit="px"
-              onChange={(v) => updateConfig('logoBgRadius', v)}
-            />
-            <p
-              className="body-font leading-relaxed"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            >
-              Drag the logo on the canvas to reposition it.
-            </p>
+              )}
+              {config.logoBgEnabled && (
+                <>
+                  <ColorRow
+                    label="Background Color"
+                    value={config.logoBgColor ?? '#000000'}
+                    onChange={(v) => updateConfig('logoBgColor', v)}
+                    showOpacity
+                    opacity={config.logoBgOpacity}
+                    onOpacityChange={(v) => updateConfig('logoBgOpacity', v)}
+                  />
+                  <SliderRow
+                    label="Padding"
+                    value={config.logoBgPadding}
+                    min={0}
+                    max={48}
+                    unit="px"
+                    onChange={(v) => updateConfig('logoBgPadding', v)}
+                  />
+                  <SliderRow
+                    label="Background Shadow"
+                    value={config.logoBgShadow}
+                    min={0}
+                    max={30}
+                    onChange={(v) => updateConfig('logoBgShadow', v)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        logoBgEnabled: true,
+                        logoBgColor: prev.bg ?? '#000000',
+                        logoBgOpacity: prev.alpha,
+                        logoBgRadius: prev.radius,
+                        logoBgPadding: 10,
+                        logoBgBorderW: prev.borderW ?? 0,
+                        logoBgBorderC: prev.borderC ?? '#ffffff',
+                        logoBgShadow: resolveShadow(prev.shadow, 6),
+                      }))
+                    }
+                    className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
+                    style={{
+                      border: '1px solid rgba(196,124,46,0.16)',
+                      background: 'rgba(196,124,46,0.08)',
+                      color: 'var(--film-pale)',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    Apply Badge Style to Logo Background
+                  </button>
+                </>
+              )}
+              <SliderRow
+                label="Border Radius"
+                value={config.logoBgRadius}
+                min={0}
+                max={40}
+                unit="px"
+                onChange={(v) => updateConfig('logoBgRadius', v)}
+              />
+              <p
+                className="body-font leading-relaxed"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+              >
+                Drag the logo on the canvas to reposition it.
+              </p>
             </Section>
           </div>
         )}
@@ -1299,7 +818,8 @@ const PropertyPanel: React.FC<Props> = ({
   const isTitleOrYearOnlySelection = isOnlyTitleSelected || isOnlyYearSelected;
   const multi = selectionCount > 1;
   const selectedBadgeLabel = (() => {
-    if (selectedLogo && selectedIds.size === 0 && selectedMinimalElements.size === 0) return 'Logo Overlay';
+    if (selectedLogo && selectedIds.size === 0 && selectedMinimalElements.size === 0)
+      return 'Logo Overlay';
     if (selectedMinimalElements.size > 0 && selectedIds.size === 0 && !selectedLogo) {
       if (selectedMinimalElements.size > 1) return 'Minimal Selection';
       const only = Array.from(selectedMinimalElements)[0];
@@ -1307,7 +827,8 @@ const PropertyPanel: React.FC<Props> = ({
       if (only === 'minimal-year') return 'Year';
       if (only === 'minimal-duration') return 'Duration';
       if (only === 'minimal-logo') return 'Logo Overlay';
-      if (only.startsWith('minimal-rating-')) return `Rating Slot ${Number(only.split('-').at(-1) ?? 0) + 1}`;
+      if (only.startsWith('minimal-rating-'))
+        return `Rating Slot ${Number(only.split('-').pop() ?? 0) + 1}`;
     }
     const first = Array.from(selectedIds)[0];
     if (!first) return 'Selection';
@@ -1322,8 +843,12 @@ const PropertyPanel: React.FC<Props> = ({
     (getCommonValue('shadow', 6) as number | boolean | null) ?? 6,
     6
   );
-  const commonShadowX = (getCommonValue('shadowX', config.shadowX ?? 0) ?? config.shadowX ?? 0) as number;
-  const commonShadowY = (getCommonValue('shadowY', config.shadowY ?? 2) ?? config.shadowY ?? 2) as number;
+  const commonShadowX = (getCommonValue('shadowX', config.shadowX ?? 0) ??
+    config.shadowX ??
+    0) as number;
+  const commonShadowY = (getCommonValue('shadowY', config.shadowY ?? 2) ??
+    config.shadowY ??
+    2) as number;
   const commonShadowOpacity = (getCommonValue('shadowOpacity', config.shadowOpacity ?? 0.35) ??
     config.shadowOpacity ??
     0.35) as number;
@@ -1399,7 +924,8 @@ const PropertyPanel: React.FC<Props> = ({
   const commonTextShadowX = (getCommonValue('textShadowX', 0) ?? 0) as number;
   const commonTextShadowY = (getCommonValue('textShadowY', 2) ?? 2) as number;
   const commonTextShadowBlur = (getCommonValue('textShadowBlur', 8) ?? 8) as number;
-  const commonTextShadowColor = (getCommonValue('textShadowColor', '#000000') ?? '#000000') as string;
+  const commonTextShadowColor = (getCommonValue('textShadowColor', '#000000') ??
+    '#000000') as string;
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1440,7 +966,9 @@ const PropertyPanel: React.FC<Props> = ({
                     onChange={(v) => updateConfig('minimalTitleColor', v)}
                     showOpacity
                     opacity={config.minimalTitleOpacity ?? 1}
-                    onOpacityChange={(v) => updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))}
+                    onOpacityChange={(v) =>
+                      updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))
+                    }
                   />
                 </>
               )}
@@ -1461,7 +989,9 @@ const PropertyPanel: React.FC<Props> = ({
                     onChange={(v) => updateConfig('minimalMetaColor', v)}
                     showOpacity
                     opacity={config.minimalMetaOpacity ?? 0.92}
-                    onOpacityChange={(v) => updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))}
+                    onOpacityChange={(v) =>
+                      updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))
+                    }
                   />
                 </>
               )}
@@ -1472,372 +1002,393 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedIds.size > 0 && (
         <>
-      {isTitleOrYearOnlySelection && (
-        <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">
-          {isOnlyTitleSelected && (
+          {isTitleOrYearOnlySelection && (
+            <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">
+              {isOnlyTitleSelected && (
+                <SliderRow
+                  label="Font Size"
+                  value={commonTextSize}
+                  min={10}
+                  max={120}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
+                  onReset={() => updateSelectedBadges({ textSize: 36 })}
+                />
+              )}
+              {isOnlyTitleSelected && (
+                <SliderRow
+                  label="Container Width"
+                  value={Math.max(4, Math.round(commonTextCharWidth))}
+                  min={4}
+                  max={80}
+                  step={1}
+                  unit="ch"
+                  onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
+                  onReset={() =>
+                    updateSelectedBadges({
+                      textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
+                    })
+                  }
+                />
+              )}
+              {isOnlyTitleSelected && (
+                <SliderRow
+                  label="Container Height"
+                  value={Math.max(1, Math.round(commonTextCharHeight))}
+                  min={1}
+                  max={12}
+                  step={1}
+                  unit="ln"
+                  onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
+                  onReset={() =>
+                    updateSelectedBadges({
+                      textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
+                    })
+                  }
+                />
+              )}
+              <SliderRow
+                label="Font Weight"
+                value={commonTextWeight}
+                min={100}
+                max={900}
+                step={100}
+                onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
+                onReset={() => updateSelectedBadges({ textWeight: 700 })}
+              />
+              <SliderRow
+                label="Line Height"
+                value={commonTextLineHeight}
+                min={0.8}
+                max={2}
+                step={0.02}
+                onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
+                onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
+              />
+              <SliderRow
+                label="Letter Spacing"
+                value={commonTextLetterSpacing}
+                min={-2}
+                max={8}
+                step={0.1}
+                unit="px"
+                onChange={(v) => updateSelectedBadges({ textLetterSpacing: Number(v.toFixed(1)) })}
+                onReset={() =>
+                  updateSelectedBadges({ textLetterSpacing: isOnlyTitleSelected ? 0.2 : 0 })
+                }
+              />
+              <SegmentedRow
+                label="Text Align"
+                options={[
+                  { id: 'left', label: 'Left' },
+                  { id: 'center', label: 'Center' },
+                  { id: 'right', label: 'Right' },
+                ]}
+                value={commonTextAlign}
+                onChange={(v) => updateSelectedBadges({ textAlign: v as BadgeConfig['textAlign'] })}
+              />
+              {isOnlyTitleSelected && (
+                <SliderRow
+                  label="Ellipsis Cutoff"
+                  value={commonTextMaxChars}
+                  min={0}
+                  max={300}
+                  step={1}
+                  unit="ch"
+                  formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
+                  onChange={(v) => updateSelectedBadges({ textMaxChars: Math.round(v) })}
+                  onReset={() => updateSelectedBadges({ textMaxChars: 0 })}
+                />
+              )}
+              {isOnlyTitleSelected && (
+                <ToggleRow
+                  label="Auto Wrap"
+                  sub="Wrap based on character width/height"
+                  checked={commonTextWrapEnabled}
+                  onChange={(v) => updateSelectedBadges({ textWrapEnabled: v })}
+                />
+              )}
+              <ToggleRow
+                label="Text Shadow"
+                checked={commonTextShadowEnabled}
+                onChange={(v) => updateSelectedBadges({ textShadowEnabled: v })}
+              />
+              {commonTextShadowEnabled && (
+                <>
+                  <SliderRow
+                    label="Shadow X"
+                    value={commonTextShadowX}
+                    min={-20}
+                    max={20}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateSelectedBadges({ textShadowX: Math.round(v) })}
+                  />
+                  <SliderRow
+                    label="Shadow Y"
+                    value={commonTextShadowY}
+                    min={-20}
+                    max={20}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateSelectedBadges({ textShadowY: Math.round(v) })}
+                  />
+                  <SliderRow
+                    label="Shadow Blur"
+                    value={commonTextShadowBlur}
+                    min={0}
+                    max={40}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateSelectedBadges({ textShadowBlur: Math.round(v) })}
+                  />
+                  <ColorRow
+                    label="Shadow Color"
+                    value={commonTextShadowColor}
+                    onChange={(v) => updateSelectedBadges({ textShadowColor: v })}
+                  />
+                </>
+              )}
+            </Section>
+          )}
+          {/* Transform ── scale */}
+          {!isOnlyTitleSelected && (
+            <Section title="Transform" sectionId="badge-transform">
+              <SliderRow
+                label={isOnlyYearSelected ? 'Layer Width' : 'Scale'}
+                value={commonScale}
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                formatValue={(v) => `${v.toFixed(2)}×`}
+                onChange={(v) => updateSelectedBadges({ scale: v })}
+                onReset={
+                  commonScale !== 1.0 ? () => updateSelectedBadges({ scale: 1.0 }) : undefined
+                }
+              />
+            </Section>
+          )}
+
+          {/* Shape ── blur, radius, shadow, border */}
+          <Section
+            title={isTitleOrYearOnlySelection ? 'Container' : 'Shape'}
+            sectionId="badge-shape"
+          >
             <SliderRow
-              label="Font Size"
-              value={commonTextSize}
-              min={10}
-              max={120}
+              label="Glass Blur"
+              value={commonBlur}
+              min={0}
+              max={20}
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ blur: v })}
+              onReset={commonBlur !== 0 ? () => updateSelectedBadges({ blur: 0 }) : undefined}
+            />
+            <SliderRow
+              label="Corner Radius"
+              value={commonRadius}
+              min={0}
+              max={30}
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ radius: v })}
+            />
+            <SliderRow
+              label="Drop Shadow"
+              value={commonShadow}
+              min={0}
+              max={30}
+              onChange={(v) => updateSelectedBadges({ shadow: v })}
+              onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
+            />
+            <SliderRow
+              label="Shadow X"
+              value={commonShadowX}
+              min={-20}
+              max={20}
               step={1}
               unit="px"
-              onChange={(v) => updateSelectedBadges({ textSize: Math.round(v) })}
-              onReset={() => updateSelectedBadges({ textSize: 36 })}
+              onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
             />
-          )}
-          {isOnlyTitleSelected && (
             <SliderRow
-              label="Container Width"
-              value={Math.max(4, Math.round(commonTextCharWidth))}
-              min={4}
-              max={80}
+              label="Shadow Y"
+              value={commonShadowY}
+              min={-20}
+              max={20}
               step={1}
-              unit="ch"
-              onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
-              onReset={() =>
-                updateSelectedBadges({
-                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
-                })
-              }
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
             />
-          )}
-          {isOnlyTitleSelected && (
-            <SliderRow
-              label="Container Height"
-              value={Math.max(1, Math.round(commonTextCharHeight))}
-              min={1}
-              max={12}
-              step={1}
-              unit="ln"
-              onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
-              onReset={() =>
-                updateSelectedBadges({
-                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
-                })
-              }
+            <ColorRow
+              label="Shadow Color"
+              value={commonShadowColor}
+              onChange={(v) => updateSelectedBadges({ shadowColor: v })}
             />
-          )}
-          <SliderRow
-            label="Font Weight"
-            value={commonTextWeight}
-            min={100}
-            max={900}
-            step={100}
-            onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
-            onReset={() => updateSelectedBadges({ textWeight: 700 })}
-          />
-          <SliderRow
-            label="Line Height"
-            value={commonTextLineHeight}
-            min={0.8}
-            max={2}
-            step={0.02}
-            onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
-            onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
-          />
-          <SliderRow
-            label="Letter Spacing"
-            value={commonTextLetterSpacing}
-            min={-2}
-            max={8}
-            step={0.1}
-            unit="px"
-            onChange={(v) => updateSelectedBadges({ textLetterSpacing: Number(v.toFixed(1)) })}
-            onReset={() => updateSelectedBadges({ textLetterSpacing: isOnlyTitleSelected ? 0.2 : 0 })}
-          />
-          <SegmentedRow
-            label="Text Align"
-            options={[
-              { id: 'left', label: 'Left' },
-              { id: 'center', label: 'Center' },
-              { id: 'right', label: 'Right' },
-            ]}
-            value={commonTextAlign}
-            onChange={(v) => updateSelectedBadges({ textAlign: v as BadgeConfig['textAlign'] })}
-          />
-          {isOnlyTitleSelected && (
             <SliderRow
-              label="Ellipsis Cutoff"
-              value={commonTextMaxChars}
+              label="Shadow Opacity"
+              value={commonShadowOpacity}
               min={0}
-              max={300}
-              step={1}
-              unit="ch"
-              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
-              onChange={(v) => updateSelectedBadges({ textMaxChars: Math.round(v) })}
-              onReset={() => updateSelectedBadges({ textMaxChars: 0 })}
+              max={1}
+              step={0.01}
+              formatValue={(v) => `${Math.round(v * 100)}%`}
+              onChange={(v) => updateSelectedBadges({ shadowOpacity: Number(v.toFixed(2)) })}
             />
-          )}
-          {isOnlyTitleSelected && (
-            <ToggleRow
-              label="Auto Wrap"
-              sub="Wrap based on character width/height"
-              checked={commonTextWrapEnabled}
-              onChange={(v) => updateSelectedBadges({ textWrapEnabled: v })}
+            <SliderRow
+              label="Border Width"
+              value={commonBorderW}
+              min={0}
+              max={10}
+              unit="px"
+              onChange={(v) => updateSelectedBadges({ borderW: v })}
             />
+            {commonBorderW > 0 && (
+              <ColorRow
+                label="Border Color"
+                value={commonBorderC}
+                onChange={(v) => updateSelectedBadges({ borderC: v })}
+                onReset={() => clearSelectedBadgeProp('borderC')}
+              />
+            )}
+          </Section>
+
+          {/* Colors ── fill + text */}
+          <Section
+            title={isTitleOrYearOnlySelection ? 'Text & Colors' : 'Colors'}
+            sectionId="badge-colors"
+          >
+            <ColorRow
+              label="Background"
+              value={commonBg}
+              onChange={(v) => updateSelectedBadges({ bg: v })}
+              onReset={() => clearSelectedBadgeProp('bg')}
+              showOpacity
+              opacity={commonAlpha}
+              onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
+            />
+            <ColorRow
+              label={isTitleOrYearOnlySelection ? 'Text Color' : 'Text & Icon Color'}
+              value={commonTxt}
+              onChange={(v) => updateSelectedBadges({ txt: v })}
+              onReset={() => clearSelectedBadgeProp('txt')}
+            />
+          </Section>
+
+          {/* Visibility ── icons, text, icon variant */}
+          {!isTitleOrYearOnlySelection && (
+            <Section title="Visibility" icon={<Eye size={10} />} sectionId="badge-visibility">
+              {!isAgeSelected && (
+                <ToggleRow
+                  label="Show Icon"
+                  checked={
+                    ((getCommonValue('icon', config.icon ?? true) as boolean | null) ??
+                      config.icon ??
+                      true) as boolean
+                  }
+                  onChange={(v) => updateSelectedBadges({ icon: v })}
+                />
+              )}
+              <ToggleRow
+                label="Show Rating Text"
+                sub="Hide number, show icon only"
+                checked={commonShowText !== false}
+                onChange={(v) => updateSelectedBadges({ showText: v })}
+              />
+              <SegmentedRow
+                label="Icon Style"
+                options={[
+                  { id: '1', label: 'Default' },
+                  { id: '2', label: 'Alt' },
+                  { id: '3', label: 'Mono' },
+                ]}
+                value={String(Math.max(1, Math.min(3, commonIconType)))}
+                onChange={(v) =>
+                  updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })
+                }
+              />
+            </Section>
           )}
-          <ToggleRow
-            label="Text Shadow"
-            checked={commonTextShadowEnabled}
-            onChange={(v) => updateSelectedBadges({ textShadowEnabled: v })}
-          />
-          {commonTextShadowEnabled && (
-            <>
-              <SliderRow
-                label="Shadow X"
-                value={commonTextShadowX}
-                min={-20}
-                max={20}
-                step={1}
-                unit="px"
-                onChange={(v) => updateSelectedBadges({ textShadowX: Math.round(v) })}
+
+          {/* Score ── normalize + denominator */}
+          {!isTitleOrYearOnlySelection && (
+            <Section
+              title="Score"
+              icon={<Hash size={10} />}
+              defaultOpen={false}
+              sectionId="badge-score"
+            >
+              <ToggleRow
+                label="Normalize to /10"
+                sub="Convert score to a 0–10 scale"
+                checked={commonNorm}
+                onChange={(v) => updateSelectedBadges({ normalize: v })}
+              />
+              <ToggleRow
+                label="Show Denominator"
+                sub="Append /10 to ratings"
+                checked={(commonOutOf ?? 0) > 0}
+                onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
+              />
+            </Section>
+          )}
+
+          {/* Labels ── position, custom text, size, color */}
+          {!isTitleOrYearOnlySelection && (
+            <Section
+              title="Labels"
+              icon={<Type size={10} />}
+              defaultOpen={false}
+              sectionId="badge-labels"
+            >
+              <SegmentedRow
+                label="Label Position"
+                options={[
+                  { id: 'above', label: 'Above' },
+                  { id: 'below', label: 'Below' },
+                  { id: 'left', label: 'Left' },
+                  { id: 'right', label: 'Right' },
+                  { id: 'none', label: 'Hide' },
+                ]}
+                value={commonLabelPos ?? config.labelPos ?? 'none'}
+                onChange={(v) =>
+                  updateSelectedBadges({
+                    labelPos: (v === 'none' ? undefined : (v as BadgeConfig['labelPos'])) as
+                      | BadgeConfig['labelPos']
+                      | undefined,
+                  })
+                }
+              />
+              <TextInputRow
+                label="Label Text"
+                value={commonLabelTxt ?? ''}
+                placeholder={multi ? '(mixed)' : 'Default (provider name)'}
+                onChange={(v) => updateSelectedBadges({ labelText: v || undefined })}
+                onClear={() => clearSelectedBadgeProp('labelText')}
               />
               <SliderRow
-                label="Shadow Y"
-                value={commonTextShadowY}
-                min={-20}
-                max={20}
+                label="Label Size"
+                value={commonLabelSz}
+                min={6}
+                max={32}
                 step={1}
                 unit="px"
-                onChange={(v) => updateSelectedBadges({ textShadowY: Math.round(v) })}
-              />
-              <SliderRow
-                label="Shadow Blur"
-                value={commonTextShadowBlur}
-                min={0}
-                max={40}
-                step={1}
-                unit="px"
-                onChange={(v) => updateSelectedBadges({ textShadowBlur: Math.round(v) })}
+                onChange={(v) => updateSelectedBadges({ labelSize: v })}
               />
               <ColorRow
-                label="Shadow Color"
-                value={commonTextShadowColor}
-                onChange={(v) => updateSelectedBadges({ textShadowColor: v })}
+                label="Label Color"
+                value={commonLabelColor}
+                onChange={(v) => updateSelectedBadges({ labelColor: v })}
+                onReset={() => clearSelectedBadgeProp('labelColor')}
               />
-            </>
+            </Section>
           )}
-        </Section>
-      )}
-      {/* Transform ── scale */}
-      {!isOnlyTitleSelected && (
-      <Section title="Transform" sectionId="badge-transform">
-        <SliderRow
-          label={isOnlyYearSelected ? 'Layer Width' : 'Scale'}
-          value={commonScale}
-          min={0.5}
-          max={2.0}
-          step={0.05}
-          formatValue={(v) => `${v.toFixed(2)}×`}
-          onChange={(v) => updateSelectedBadges({ scale: v })}
-          onReset={commonScale !== 1.0 ? () => updateSelectedBadges({ scale: 1.0 }) : undefined}
-        />
-      </Section>
-      )}
-
-      {/* Shape ── blur, radius, shadow, border */}
-      <Section title={isTitleOrYearOnlySelection ? 'Container' : 'Shape'} sectionId="badge-shape">
-        <SliderRow
-          label="Glass Blur"
-          value={commonBlur}
-          min={0}
-          max={20}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ blur: v })}
-          onReset={commonBlur !== 0 ? () => updateSelectedBadges({ blur: 0 }) : undefined}
-        />
-        <SliderRow
-          label="Corner Radius"
-          value={commonRadius}
-          min={0}
-          max={30}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ radius: v })}
-        />
-        <SliderRow
-          label="Drop Shadow"
-          value={commonShadow}
-          min={0}
-          max={30}
-          onChange={(v) => updateSelectedBadges({ shadow: v })}
-          onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
-        />
-        <SliderRow
-          label="Shadow X"
-          value={commonShadowX}
-          min={-20}
-          max={20}
-          step={1}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
-        />
-        <SliderRow
-          label="Shadow Y"
-          value={commonShadowY}
-          min={-20}
-          max={20}
-          step={1}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
-        />
-        <ColorRow
-          label="Shadow Color"
-          value={commonShadowColor}
-          onChange={(v) => updateSelectedBadges({ shadowColor: v })}
-        />
-        <SliderRow
-          label="Shadow Opacity"
-          value={commonShadowOpacity}
-          min={0}
-          max={1}
-          step={0.01}
-          formatValue={(v) => `${Math.round(v * 100)}%`}
-          onChange={(v) => updateSelectedBadges({ shadowOpacity: Number(v.toFixed(2)) })}
-        />
-        <SliderRow
-          label="Border Width"
-          value={commonBorderW}
-          min={0}
-          max={10}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ borderW: v })}
-        />
-        {commonBorderW > 0 && (
-          <ColorRow
-            label="Border Color"
-            value={commonBorderC}
-            onChange={(v) => updateSelectedBadges({ borderC: v })}
-            onReset={() => clearSelectedBadgeProp('borderC')}
-          />
-        )}
-      </Section>
-
-      {/* Colors ── fill + text */}
-      <Section title={isTitleOrYearOnlySelection ? 'Text & Colors' : 'Colors'} sectionId="badge-colors">
-        <ColorRow
-          label="Background"
-          value={commonBg}
-          onChange={(v) => updateSelectedBadges({ bg: v })}
-          onReset={() => clearSelectedBadgeProp('bg')}
-          showOpacity
-          opacity={commonAlpha}
-          onOpacityChange={(v) => updateSelectedBadges({ alpha: v })}
-        />
-        <ColorRow
-          label={isTitleOrYearOnlySelection ? 'Text Color' : 'Text & Icon Color'}
-          value={commonTxt}
-          onChange={(v) => updateSelectedBadges({ txt: v })}
-          onReset={() => clearSelectedBadgeProp('txt')}
-        />
-      </Section>
-
-      {/* Visibility ── icons, text, icon variant */}
-      {!isTitleOrYearOnlySelection && (
-      <Section title="Visibility" icon={<Eye size={10} />} sectionId="badge-visibility">
-        {!isAgeSelected && (
-          <ToggleRow
-            label="Show Icon"
-            checked={
-              ((getCommonValue('icon', config.icon ?? true) as boolean | null) ??
-                config.icon ??
-                true) as boolean
-            }
-            onChange={(v) => updateSelectedBadges({ icon: v })}
-          />
-        )}
-        <ToggleRow
-          label="Show Rating Text"
-          sub="Hide number, show icon only"
-          checked={commonShowText !== false}
-          onChange={(v) => updateSelectedBadges({ showText: v })}
-        />
-        <SegmentedRow
-          label="Icon Style"
-          options={[
-            { id: '1', label: 'Default' },
-            { id: '2', label: 'Alt' },
-            { id: '3', label: 'Mono' },
-          ]}
-          value={String(Math.max(1, Math.min(3, commonIconType)))}
-          onChange={(v) => updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })}
-        />
-      </Section>
-      )}
-
-      {/* Score ── normalize + denominator */}
-      {!isTitleOrYearOnlySelection && (
-      <Section title="Score" icon={<Hash size={10} />} defaultOpen={false} sectionId="badge-score">
-        <ToggleRow
-          label="Normalize to /10"
-          sub="Convert score to a 0–10 scale"
-          checked={commonNorm}
-          onChange={(v) => updateSelectedBadges({ normalize: v })}
-        />
-        <ToggleRow
-          label="Show Denominator"
-          sub="Append /10 to ratings"
-          checked={(commonOutOf ?? 0) > 0}
-          onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
-        />
-      </Section>
-      )}
-
-      {/* Labels ── position, custom text, size, color */}
-      {!isTitleOrYearOnlySelection && (
-      <Section
-        title="Labels"
-        icon={<Type size={10} />}
-        defaultOpen={false}
-        sectionId="badge-labels"
-      >
-        <SegmentedRow
-          label="Label Position"
-          options={[
-            { id: 'above', label: 'Above' },
-            { id: 'below', label: 'Below' },
-            { id: 'left', label: 'Left' },
-            { id: 'right', label: 'Right' },
-            { id: 'none', label: 'Hide' },
-          ]}
-          value={commonLabelPos ?? config.labelPos ?? 'none'}
-          onChange={(v) =>
-            updateSelectedBadges({
-              labelPos: (v === 'none' ? undefined : (v as BadgeConfig['labelPos'])) as
-                | BadgeConfig['labelPos']
-                | undefined,
-            })
-          }
-        />
-        <TextInputRow
-          label="Label Text"
-          value={commonLabelTxt ?? ''}
-          placeholder={multi ? '(mixed)' : 'Default (provider name)'}
-          onChange={(v) => updateSelectedBadges({ labelText: v || undefined })}
-          onClear={() => clearSelectedBadgeProp('labelText')}
-        />
-        <SliderRow
-          label="Label Size"
-          value={commonLabelSz}
-          min={6}
-          max={32}
-          step={1}
-          unit="px"
-          onChange={(v) => updateSelectedBadges({ labelSize: v })}
-        />
-        <ColorRow
-          label="Label Color"
-          value={commonLabelColor}
-          onChange={(v) => updateSelectedBadges({ labelColor: v })}
-          onReset={() => clearSelectedBadgeProp('labelColor')}
-        />
-      </Section>
-      )}
-      </>
+        </>
       )}
 
       {selectedLogo && config.logo && (
-        <Section title="Logo Overlay" icon={<ImagePlay size={10} />} sectionId="selection-logo-overlay">
+        <Section
+          title="Logo Overlay"
+          icon={<ImagePlay size={10} />}
+          sectionId="selection-logo-overlay"
+        >
           <SliderRow
             label="Size"
             value={config.logoW}
@@ -1952,54 +1503,54 @@ const PropertyPanel: React.FC<Props> = ({
 
       {/* Reset */}
       {(selectedIds.size > 0 || selectedLogo) && (
-      <div className="px-3 pt-3">
-        <button
-          type="button"
-          onClick={() =>
-            setConfig((prev) => {
-              const ni = { ...prev.items };
-              selectedIds.forEach((id) => delete ni[id]);
-              if (!selectedLogo) return { ...prev, items: ni };
-              return {
-                ...prev,
-                items: ni,
-                logoX: DEFAULT_CONFIG.logoX,
-                logoY: DEFAULT_CONFIG.logoY,
-                logoW: DEFAULT_CONFIG.logoW,
-                logoH: DEFAULT_CONFIG.logoH,
-                logoOpacity: DEFAULT_CONFIG.logoOpacity,
-                logoZ: DEFAULT_CONFIG.logoZ,
-                logoShadow: DEFAULT_CONFIG.logoShadow,
-                logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
-                logoBgColor: DEFAULT_CONFIG.logoBgColor,
-                logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
-                logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
-                logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
-                logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
-                logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
-                logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
-              };
-            })
-          }
-          className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
-          style={{
-            border: '1px solid rgba(248,113,113,0.12)',
-            background: 'rgba(248,113,113,0.04)',
-            color: 'rgba(248,113,113,0.6)',
-            letterSpacing: '0.04em',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.08)';
-            (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.85)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.04)';
-            (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.6)';
-          }}
-        >
-          <RotateCcw size={11} /> Reset selected to defaults
-        </button>
-      </div>
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            onClick={() =>
+              setConfig((prev) => {
+                const ni = { ...prev.items };
+                selectedIds.forEach((id) => delete ni[id]);
+                if (!selectedLogo) return { ...prev, items: ni };
+                return {
+                  ...prev,
+                  items: ni,
+                  logoX: DEFAULT_CONFIG.logoX,
+                  logoY: DEFAULT_CONFIG.logoY,
+                  logoW: DEFAULT_CONFIG.logoW,
+                  logoH: DEFAULT_CONFIG.logoH,
+                  logoOpacity: DEFAULT_CONFIG.logoOpacity,
+                  logoZ: DEFAULT_CONFIG.logoZ,
+                  logoShadow: DEFAULT_CONFIG.logoShadow,
+                  logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
+                  logoBgColor: DEFAULT_CONFIG.logoBgColor,
+                  logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
+                  logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
+                  logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
+                  logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
+                  logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
+                  logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
+                };
+              })
+            }
+            className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
+            style={{
+              border: '1px solid rgba(248,113,113,0.12)',
+              background: 'rgba(248,113,113,0.04)',
+              color: 'rgba(248,113,113,0.6)',
+              letterSpacing: '0.04em',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.08)';
+              (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.85)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.04)';
+              (e.currentTarget as HTMLElement).style.color = 'rgba(248,113,113,0.6)';
+            }}
+          >
+            <RotateCcw size={11} /> Reset selected to defaults
+          </button>
+        </div>
       )}
     </SidebarLayout>
   );
