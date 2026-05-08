@@ -1,23 +1,24 @@
 import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
-import PropertyPanel from '../PropertyPanel';
+import { BadgesPanel, SelectionPanel } from '../panels';
 import type { PosterConfig } from '../../types';
 import { Badge, MousePointer2 } from 'lucide-react';
-import clsx from 'clsx';
 import SidebarLayout from '../SidebarLayout';
+import PanelTabs from '../navigation/PanelTabs';
 
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
+  detailLevel?: 'simple' | 'advanced';
 }
 
 type InspectorTab = 'badges' | 'selection';
-const INACTIVE_TAB_HOVER_CLASSES = 'hover:bg-white/[0.05] hover:text-[var(--film-text-dim)]';
 const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
-const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
-  const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedMinimalElements } = useEditor();
+const Inspector: React.FC<Props> = memo(({ config, setConfig, detailLevel = 'advanced' }) => {
+  const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedMinimalElements } =
+    useEditor();
   const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const hasBadges = config.ratings.length > 0;
@@ -33,7 +34,12 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         : 'Badges';
 
   const tabs: { id: InspectorTab; label: string; Icon: React.ElementType; visible: boolean }[] = [
-    { id: 'badges', label: primaryTabLabel, Icon: Badge, visible: hasBadges || hasLogo || isMinimalPreset },
+    {
+      id: 'badges',
+      label: primaryTabLabel,
+      Icon: Badge,
+      visible: hasBadges || hasLogo || isMinimalPreset,
+    },
     {
       id: 'selection',
       label: selectedCount > 0 ? `${selectedCount} selected` : 'Selection',
@@ -53,43 +59,37 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
   return (
     <SidebarLayout
       header={
-        <div
-          className="flex rounded-lg p-0.5 gap-0.5"
-          style={{
-            background: 'var(--film-char)',
-            border: '1px solid rgba(255,255,255,0.05)',
-          }}
-        >
-          {visibleTabs.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              aria-pressed={currentTab === id}
-              className={clsx(
-                'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
-                currentTab !== id && INACTIVE_TAB_HOVER_CLASSES
-              )}
-              style={{
-                background: currentTab === id ? 'var(--film-mid)' : 'transparent',
-                color: currentTab === id ? 'var(--film-cream)' : 'var(--film-text-dim)',
-                boxShadow: currentTab === id ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-              }}
-            >
-              <Icon size={11} strokeWidth={2} />
-              {label}
-            </button>
-          ))}
-        </div>
+        <PanelTabs
+          ariaLabel="Inspector panels"
+          activeId={currentTab}
+          onChange={(id) => setActiveTab(id)}
+          tabs={visibleTabs.map(({ id, label, Icon }) => ({
+            id,
+            label,
+            icon: <Icon size={11} strokeWidth={2} />,
+          }))}
+        />
       }
     >
-      <PropertyPanel
-        config={config}
-        setConfig={setConfig}
-        selectedIds={selectedIds}
-        selectedLogo={selectedLogo}
-        selectedMinimalElements={selectedMinimalElements}
-        mode={currentTab}
-      />
+      {currentTab === 'badges' ? (
+        <BadgesPanel
+          config={config}
+          setConfig={setConfig}
+          selectedIds={selectedIds}
+          selectedLogo={selectedLogo}
+          selectedMinimalElements={selectedMinimalElements}
+          detailLevel={detailLevel}
+        />
+      ) : (
+        <SelectionPanel
+          config={config}
+          setConfig={setConfig}
+          selectedIds={selectedIds}
+          selectedLogo={selectedLogo}
+          selectedMinimalElements={selectedMinimalElements}
+          detailLevel={detailLevel}
+        />
+      )}
     </SidebarLayout>
   );
 });
