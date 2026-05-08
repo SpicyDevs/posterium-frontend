@@ -16,9 +16,10 @@ import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
 
 interface Props {
   routeKey: '/' | '/build' | '/faq' | '/examples' | '/installation';
+  customJsonLd?: object[];
 }
 
-const { routeKey } = Astro.props;
+const { routeKey, customJsonLd = [] } = Astro.props;
 
 const routeMeta  = ROUTE_SEO[routeKey];
 const title      = routeMeta?.title       ?? SEO_DEFAULTS.title;
@@ -132,7 +133,7 @@ if (routeKey === '/examples') {
 
 // Merge route-level custom schemas (FAQ etc.)
 const customSchemas = routeMeta?.jsonLd ?? [];
-const finalSchemas  = [enterpriseSchema, ...customSchemas];
+const finalSchemas  = [enterpriseSchema, ...customSchemas, ...customJsonLd];
 
 // Safe serialisation — prevents build-time errors on circular refs / bad data
 function safeStringify(obj: unknown): string {

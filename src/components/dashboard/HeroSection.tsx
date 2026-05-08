@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { API } from '@/lib/dashboard/constants';
+import { useAnimation } from '@/lib/a11y/useAnimation';
 
 interface HeroPoster {
   id: string;
@@ -101,6 +102,7 @@ const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
 });
 
 const CyclingPoster = memo(() => {
+  const { shouldAnimate } = useAnimation();
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
@@ -278,7 +280,7 @@ const CyclingPoster = memo(() => {
                 display: 'block',
                 opacity: i === activeIdx ? 1 : 0,
                 willChange: transitioning ? 'opacity' : 'auto',
-                transition: 'opacity 0.35s ease',
+                transition: shouldAnimate ? 'opacity 0.35s ease' : 'none',
                 pointerEvents: 'none',
               }}
             />
@@ -291,11 +293,11 @@ const CyclingPoster = memo(() => {
               position: 'absolute',
               inset: 0,
               zIndex: 1,
-              background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 1.6s linear infinite',
-            }}
-          />
+                background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
+                backgroundSize: '200% 100%',
+                animation: shouldAnimate ? 'shimmer 1.6s linear infinite' : 'none',
+              }}
+            />
         )}
         {failed[activeIdx] && (
           <div
@@ -323,10 +325,10 @@ const CyclingPoster = memo(() => {
             zIndex: 2,
             padding: '28px 12px 12px',
             background: 'linear-gradient(to top, rgba(7,7,6,0.9) 0%, transparent 100%)',
-            opacity: transitioning ? 0 : 1,
-            transition: 'opacity 0.25s ease',
-          }}
-        >
+             opacity: transitioning ? 0 : 1,
+             transition: shouldAnimate ? 'opacity 0.25s ease' : 'none',
+           }}
+         >
           <span
             className="mono-font"
             style={{

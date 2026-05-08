@@ -39,6 +39,31 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 10000;
+    padding: 10px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font: 700 12px/1 'Syne', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #070706;
+    background: var(--film-amber);
+    border: 1px solid rgba(196, 124, 46, 0.55);
+    transform: translateY(-150%);
+    transition: transform 0.2s ease;
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--film-cream);
+    outline-offset: 2px;
+  }
+
   button,
   [type='button'],
   [type='submit'],

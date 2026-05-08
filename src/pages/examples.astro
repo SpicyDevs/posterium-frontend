@@ -9,6 +9,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import ExamplesPage from '@/components/examples/ExamplesPage';
+import { generatePresetItemListSchema } from '@/lib/structured-data';
 import '@/styles/global.css';
 
 const exampleEntries = await getCollection('examples');
@@ -21,6 +22,11 @@ const presets = exampleEntries
     description: entry.data.description,
     query:       entry.data.query,
   }));
+
+const presetItemListSchema = generatePresetItemListSchema(presets, {
+  baseUrl: 'https://posters.spicydevs.xyz',
+  pageUrl: 'https://posters.spicydevs.xyz/examples',
+});
 ---
 
 <BaseLayout
@@ -29,7 +35,7 @@ const presets = exampleEntries
   canonical="https://posters.spicydevs.xyz/examples"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/examples" />
+  <PageSEO slot="head" routeKey="/examples" customJsonLd={[presetItemListSchema]} />
 
   <!--
     client:visible — only hydrate once the component scrolls into the viewport.

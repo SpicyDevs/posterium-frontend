@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useAnimation } from '@/lib/a11y/useAnimation';
 
 interface ProgressiveImageProps {
   src?: string;
@@ -37,6 +38,7 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
     onLoad,
     onError,
   }) => {
+    const { shouldAnimate } = useAnimation();
     const [loaded, setLoaded] = useState(false);
     const [errored, setErrored] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
@@ -70,8 +72,15 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
           <div
             style={
               skeletonStyle
-                ? { ...DEFAULT_SKELETON_STYLE, ...skeletonStyle }
-                : DEFAULT_SKELETON_STYLE
+                ? {
+                    ...DEFAULT_SKELETON_STYLE,
+                    ...(shouldAnimate ? {} : { animation: 'none', background: '#151310' }),
+                    ...skeletonStyle,
+                  }
+                : {
+                    ...DEFAULT_SKELETON_STYLE,
+                    ...(shouldAnimate ? {} : { animation: 'none', background: '#151310' }),
+                  }
             }
           />
         )}
@@ -92,7 +101,7 @@ export const ProgressiveImage = memo<ProgressiveImageProps>(
               objectFit: 'cover',
               display: 'block',
               opacity: loaded ? 1 : 0,
-              transition: 'opacity 0.35s ease',
+              transition: shouldAnimate ? 'opacity 0.35s ease' : 'none',
               ...imageStyle,
             }}
           />

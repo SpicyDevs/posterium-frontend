@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
+import { useAnimation } from '@/lib/a11y/useAnimation';
 
 interface LayoutCache {
   top: number;
@@ -12,6 +13,7 @@ export const useScrollReel = (
   trackRef: RefObject<HTMLDivElement | null>,
   progressFillRef?: RefObject<HTMLDivElement | null>
 ) => {
+  const { shouldAnimate } = useAnimation();
   const rafId = useRef<number | null>(null);
   const layout = useRef<LayoutCache>({ top: 0, scrollable: 0, maxShift: 0 });
 
@@ -32,10 +34,15 @@ export const useScrollReel = (
     const { top, scrollable, maxShift } = layout.current;
     const track = trackRef.current;
     if (!track || scrollable <= 0) return;
+    if (!shouldAnimate) {
+      track.style.transform = 'translate3d(0,0,0)';
+      if (progressFillRef?.current) progressFillRef.current.style.width = '100%';
+      return;
+    }
     const progress = Math.max(0, Math.min(1, (window.scrollY - top) / scrollable));
     track.style.transform = `translate3d(${-progress * maxShift}px,0,0)`;
     if (progressFillRef?.current) progressFillRef.current.style.width = `${progress * 100}%`;
-  }, [trackRef, progressFillRef]);
+  }, [trackRef, progressFillRef, shouldAnimate]);
 
   useEffect(() => {
     measure();

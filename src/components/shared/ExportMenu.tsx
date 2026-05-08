@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, X, Copy, Check, ArrowRight, ExternalLink } from 'lucide-react';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { generateApiUrl } from '@/components/builder/utils';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 interface ExportMenuProps {
   config: PosterConfig;
@@ -14,6 +15,7 @@ interface ExportMenuProps {
   containerStyle?: React.CSSProperties;
   urlOverride?: string;
   openInBuilderHref?: string;
+  panelId?: string;
 }
 
 const ExportMenu = memo<ExportMenuProps>(
@@ -28,6 +30,7 @@ const ExportMenu = memo<ExportMenuProps>(
     containerStyle,
     urlOverride,
     openInBuilderHref,
+    panelId,
   }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
     const [popupCoords, setPopupCoords] = useState<{
@@ -40,6 +43,7 @@ const ExportMenu = memo<ExportMenuProps>(
     const [builderCopied, setBuilderCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [editedUrl, setEditedUrl] = useState<string | null>(null);
+    useFocusTrap({ containerRef: popoverRef, isActive: isOpen, onEscape: onClose });
 
     const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
       { id: 'svg', label: 'SVG' },
@@ -170,7 +174,12 @@ const ExportMenu = memo<ExportMenuProps>(
 
     return (
       <div
+        id={panelId}
         ref={popoverRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export options"
+        tabIndex={-1}
         className="z-50"
         style={{
           position: 'fixed',
@@ -209,6 +218,7 @@ const ExportMenu = memo<ExportMenuProps>(
           </div>
           <button
             onClick={onClose}
+            aria-label="Close export menu"
             className="w-6 h-6 rounded flex items-center justify-center transition-colors"
             style={{ color: 'var(--film-text-dim)' }}
             onMouseEnter={(e) => {
@@ -281,6 +291,7 @@ const ExportMenu = memo<ExportMenuProps>(
             {onLoadConfig && editedUrl !== null && editedUrl !== currentUrl ? (
               <button
                 onClick={handleLoad}
+                aria-label="Load URL"
                 className="w-6 h-6 shrink-0 flex items-center justify-center rounded transition-colors hover:bg-white/10"
                 style={{ color: 'var(--film-amber)' }}
                 title="Load URL"

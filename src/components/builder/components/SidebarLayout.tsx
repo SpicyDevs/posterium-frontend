@@ -24,7 +24,7 @@ const SidebarLayout: React.FC<Props> = ({
   const content = (
     <div
       className={clsx(
-        'flex flex-col h-full w-full bg-[var(--film-dark)] relative',
+        'flex flex-col h-full min-h-0 w-full bg-[var(--film-dark)] relative',
         isLeft && 'cyber-path-left',
         isRight && 'cyber-path-right'
       )}
@@ -64,14 +64,14 @@ const SidebarLayout: React.FC<Props> = ({
 
   // If no side specified, return standard orthogonal layout
   if (side === 'none') {
-    return <div className={clsx('flex flex-col h-full', className)}>{content}</div>;
+    return <div className={clsx('flex flex-col h-full min-h-0', className)}>{content}</div>;
   }
 
   // Cyberpunk layered multi-line border wrapping
   return (
     <div
       className={clsx(
-        'flex flex-col h-full',
+        'flex flex-col h-full min-h-0',
         isLeft
           ? 'cyber-path-left cyber-border-outer-left'
           : 'cyber-path-right cyber-border-outer-right',
@@ -80,7 +80,7 @@ const SidebarLayout: React.FC<Props> = ({
     >
       <div
         className={clsx(
-          'flex flex-col h-full w-full',
+          'flex flex-col h-full min-h-0 w-full',
           isLeft
             ? 'cyber-path-left cyber-border-gap-left'
             : 'cyber-path-right cyber-border-gap-right'

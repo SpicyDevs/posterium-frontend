@@ -1,5 +1,5 @@
 // src/components/builder/components/CommandPalette.tsx
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useId, useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
   Search,
   ZoomIn,
@@ -27,6 +27,7 @@ import {
   Command,
   X,
 } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 export interface PaletteCommand {
   id: string;
@@ -60,6 +61,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useFocusTrap({ containerRef: panelRef, isActive: isOpen, onEscape: onClose });
 
   // FIX: Push state to history to intercept mobile back button
   useEffect(() => {
@@ -213,6 +217,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
       style={{
         position: 'fixed',
         inset: 0,
@@ -235,6 +242,8 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
       `}</style>
 
       <div
+        ref={panelRef}
+        tabIndex={-1}
         style={{
           width: '100%',
           maxWidth: 560,
@@ -251,6 +260,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
       >
         {/* Header / search */}
         <div
+          id={titleId}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -286,6 +296,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           />
           <button
             onClick={onClose}
+            aria-label="Close command palette"
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.08)',

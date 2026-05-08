@@ -1,21 +1,24 @@
 // src/components/builder/components/ImportDialog.tsx
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onLoad: (url: string) => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
+  panelId?: string;
 }
 
-const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
+const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef, panelId }) => {
   const [val, setVal] = useState('');
   const popoverRef = useRef<HTMLDivElement>(null);
   const [popupCoords, setPopupCoords] = useState<{
     top: number;
     left: number;
   } | null>(null);
+  useFocusTrap({ containerRef: popoverRef, isActive: isOpen, onEscape: onClose });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -69,7 +72,12 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
 
   return (
     <div
+      id={panelId}
       ref={popoverRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Import poster URL"
+      tabIndex={-1}
       className="z-50"
       style={{
         position: 'fixed',
@@ -107,6 +115,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         </div>
         <button
           onClick={onClose}
+          aria-label="Close import menu"
           className="w-6 h-6 rounded flex items-center justify-center transition-colors"
           style={{ color: 'var(--film-text-dim)' }}
           onMouseEnter={(e) => {

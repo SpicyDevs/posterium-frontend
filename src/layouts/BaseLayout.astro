@@ -46,6 +46,7 @@ const {
     <slot name="head" />
   </head>
   <body class={bodyClass}>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <noscript>
       <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>
@@ -54,5 +55,18 @@ const {
       </div>
     </noscript>
     <slot />
+    <script is:inline>
+      (() => {
+        const assignMainId = () => {
+          const main = document.querySelector('main');
+          if (main && !main.id) main.id = 'main-content';
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', assignMainId, { once: true });
+          return;
+        }
+        assignMainId();
+      })();
+    </script>
   </body>
 </html>

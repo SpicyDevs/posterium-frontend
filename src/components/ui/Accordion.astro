@@ -6,6 +6,12 @@ interface Props {
 }
 
 const { title, id, defaultOpen = false } = Astro.props;
+const baseId = (id ?? title)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)/g, '');
+const summaryId = `accordion-summary-${baseId}`;
+const panelId = `accordion-panel-${baseId}`;
 ---
 
 <details
@@ -15,6 +21,10 @@ const { title, id, defaultOpen = false } = Astro.props;
   style="border: 1px solid rgba(196,124,46,0.14); background: rgba(24,22,18,0.6); border-radius: 10px; overflow: hidden;"
 >
   <summary
+    id={summaryId}
+    role="button"
+    aria-controls={panelId}
+    aria-expanded={defaultOpen ? 'true' : 'false'}
     style="width: 100%; cursor: pointer; background: rgba(255,255,255,0.01); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; color: var(--film-cream); list-style: none;"
   >
     <span
@@ -39,6 +49,9 @@ const { title, id, defaultOpen = false } = Astro.props;
     </svg>
   </summary>
   <div
+    id={panelId}
+    role="region"
+    aria-labelledby={summaryId}
     style="border-top: 1px solid rgba(196,124,46,0.12); padding: 14px 16px; color: var(--film-text-body); font-size: 14px; line-height: 1.7;"
   >
     <div class="prose prose-compact">
