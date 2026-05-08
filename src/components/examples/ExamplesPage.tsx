@@ -120,7 +120,7 @@ const ExamplesPage = memo<ExamplesPageProps>(({ presets = [] }) => {
         showMobileBuildCta
       />
 
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '84px 20px 40px' }}>
+      <main id="main-content" style={{ maxWidth: 1280, margin: '0 auto', padding: '84px 20px 40px' }}>
         <header style={{ marginBottom: 18 }}>
           <PageHeader
             title="EXAMPLES"

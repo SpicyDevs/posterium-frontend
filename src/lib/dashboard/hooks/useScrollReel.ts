@@ -10,7 +10,8 @@ interface LayoutCache {
 export const useScrollReel = (
   containerRef: RefObject<HTMLDivElement | null>,
   trackRef: RefObject<HTMLDivElement | null>,
-  progressFillRef?: RefObject<HTMLDivElement | null>
+  progressFillRef?: RefObject<HTMLDivElement | null>,
+  animationsAllowed = true
 ) => {
   const rafId = useRef<number | null>(null);
   const layout = useRef<LayoutCache>({ top: 0, scrollable: 0, maxShift: 0 });
@@ -32,10 +33,15 @@ export const useScrollReel = (
     const { top, scrollable, maxShift } = layout.current;
     const track = trackRef.current;
     if (!track || scrollable <= 0) return;
+    if (!animationsAllowed) {
+      track.style.transform = 'translate3d(0,0,0)';
+      if (progressFillRef?.current) progressFillRef.current.style.width = '100%';
+      return;
+    }
     const progress = Math.max(0, Math.min(1, (window.scrollY - top) / scrollable));
     track.style.transform = `translate3d(${-progress * maxShift}px,0,0)`;
     if (progressFillRef?.current) progressFillRef.current.style.width = `${progress * 100}%`;
-  }, [trackRef, progressFillRef]);
+  }, [animationsAllowed, trackRef, progressFillRef]);
 
   useEffect(() => {
     measure();
@@ -64,7 +70,7 @@ export const useScrollReel = (
         rafId.current = null;
       }
     };
-  }, [compute, measure, containerRef, trackRef]);
+  }, [animationsAllowed, compute, measure, containerRef, trackRef]);
 };
 
 export const useReelHeight = (

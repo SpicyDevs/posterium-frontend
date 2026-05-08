@@ -27,6 +27,7 @@ import {
   Command,
   X,
 } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export interface PaletteCommand {
   id: string;
@@ -60,6 +61,8 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen, panelRef, onClose);
 
   // FIX: Push state to history to intercept mobile back button
   useEffect(() => {
@@ -235,6 +238,11 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
       `}</style>
 
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        tabIndex={-1}
         style={{
           width: '100%',
           maxWidth: 560,

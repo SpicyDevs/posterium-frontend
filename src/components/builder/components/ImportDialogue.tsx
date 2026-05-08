@@ -1,6 +1,7 @@
 // src/components/builder/components/ImportDialog.tsx
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Props {
   isOpen: boolean;
@@ -16,6 +17,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
     top: number;
     left: number;
   } | null>(null);
+  useFocusTrap(isOpen, popoverRef, onClose);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -70,6 +72,10 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
   return (
     <div
       ref={popoverRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Import poster from URL"
+      tabIndex={-1}
       className="z-50"
       style={{
         position: 'fixed',

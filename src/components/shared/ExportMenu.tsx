@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, X, Copy, Check, ArrowRight, ExternalLink } from 'lucide-react';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { generateApiUrl } from '@/components/builder/utils';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface ExportMenuProps {
   config: PosterConfig;
@@ -40,6 +41,7 @@ const ExportMenu = memo<ExportMenuProps>(
     const [builderCopied, setBuilderCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [editedUrl, setEditedUrl] = useState<string | null>(null);
+    useFocusTrap(isOpen, popoverRef, onClose);
 
     const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
       { id: 'svg', label: 'SVG' },
@@ -171,6 +173,10 @@ const ExportMenu = memo<ExportMenuProps>(
     return (
       <div
         ref={popoverRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export options"
+        tabIndex={-1}
         className="z-50"
         style={{
           position: 'fixed',

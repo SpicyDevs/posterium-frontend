@@ -4,6 +4,7 @@ import { useScrollReel } from '@/lib/dashboard/hooks/index';
 import { SprocketStrip } from '../primitives';
 import { API } from '@/lib/dashboard/constants';
 import { ProgressiveImage } from '@/components/shared/ProgressiveImage';
+import { useAnimation } from '@/hooks/useAnimation';
 
 const ROW_CONFIGS = [
   { height: 234, count: 24 },
@@ -70,6 +71,7 @@ const CollagePoster = memo<{
 CollagePoster.displayName = 'CollagePoster';
 
 const DesktopReel = memo(() => {
+  const animationsAllowed = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ const DesktopReel = memo(() => {
     };
   }, []);
 
-  useScrollReel(containerRef, trackRef, progressFillRef);
+  useScrollReel(containerRef, trackRef, progressFillRef, animationsAllowed);
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -164,7 +166,7 @@ const DesktopReel = memo(() => {
                 marginTop: 2,
               }}
             >
-              Scroll to advance
+              {animationsAllowed ? 'Scroll to advance' : 'Static preview'}
             </div>
           </div>
           <span
@@ -306,10 +308,11 @@ const DesktopReel = memo(() => {
               ref={progressFillRef}
               style={{
                 height: '100%',
-                width: '0%',
+                width: animationsAllowed ? '0%' : '100%',
                 borderRadius: 99,
                 background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
                 transition: 'none',
+                animation: animationsAllowed ? 'none' : 'pulse-dot 1.4s ease-in-out infinite',
               }}
             />
           </div>

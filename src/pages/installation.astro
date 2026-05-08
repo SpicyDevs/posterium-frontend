@@ -21,6 +21,7 @@ import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
+import { buildHowToGraphSchema } from '@/lib/seo/schema';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -52,6 +53,17 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   id:       g.guide.id,
   headings: g.headings,
 }));
+
+const installationPageUrl = 'https://posters.spicydevs.xyz/installation';
+const installationSchema = buildHowToGraphSchema(
+  preparedGuides.map(({ guide, name }) => ({
+    id: guide.id,
+    name,
+    description: `Step-by-step guide for configuring Posterium with ${name}.`,
+    markdown: guide.body ?? '',
+  })),
+  installationPageUrl
+);
 ---
 
 <BaseLayout
@@ -60,7 +72,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   canonical="https://posters.spicydevs.xyz/installation"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/installation" />
+  <PageSEO slot="head" routeKey="/installation" jsonLd={[installationSchema]} />
 
   <div class="install-root">
     <MainNavbar
@@ -100,7 +112,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
       </aside>
 
       <!-- ── Main content ───────────────────────────────────────────────── -->
-      <main class="install-main" id="install-main-content">
+      <main class="install-main" id="main-content">
         <!-- Page header -->
         <header class="install-page-header">
           <div>
