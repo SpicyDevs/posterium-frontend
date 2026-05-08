@@ -2,22 +2,22 @@
 // src/pages/abuild.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
-import AdvancedBuilderApp from '@/components/builder/AdvancedBuilderApp.tsx';
+import BuilderApp from '@/components/builder/index.tsx';
 import '@/styles/global.css';
 ---
 
 <BaseLayout
-  title="Advanced Poster Builder | Posterium"
-  description="Advanced poster editor with vertical panel navigation. Drag-and-drop badge positioning with panel-based layout for power users."
-  canonical="https://posters.spicydevs.xyz/abuild"
+  title="Poster Builder - Advanced Mode | Posterium"
+  description="Posterium's unified poster editor with simple and advanced panel modes for creating custom movie and TV posters with live rating badges."
+  canonical="https://posters.spicydevs.xyz/build"
   bodyClass="overflow-hidden"
 >
   <PageSEO slot="head" routeKey="/build" />
 
   <div class="sr-only">
-    <h2>Posterium Advanced Builder</h2>
-    <p>Advanced visual editor with vertical panel navigation for creating custom movie and TV posters with live rating badges.</p>
+    <h2>Posterium Unified Builder</h2>
+    <p>Use the simple or advanced visual editor to search posters, organize layers, style badges, and export a complete design.</p>
   </div>
 
-  <AdvancedBuilderApp client:only="react" />
+  <BuilderApp client:only="react" />
 </BaseLayout>

@@ -438,6 +438,8 @@ export const DEFAULT_CONFIG: PosterConfig = {
   keys: {},
 };
 
+export type BuilderMode = 'simple' | 'advanced';
+
 // ── Canvas geometry constants ─────────────────────────────────────────────────
 export const CANVAS_WIDTH = 500;
 export const CANVAS_HEIGHT = 750;
