@@ -2,11 +2,21 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
-import { DEFAULT_CONFIG, ALL_BADGES, CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from './types';
+import {
+  DEFAULT_CONFIG,
+  ALL_BADGES,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  BASE_BADGE_W,
+  BASE_BADGE_H,
+} from './types';
 import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } from './utils';
 import PreviewCanvas from './components/PreviewCanvas';
-import LayerPanel from './components/LayerPanel';
-import Inspector from './components/layout/Inspector';
+import SourcePanel from './components/panels/left/SourcePanel';
+import LayersPanel from './components/panels/left/LayersPanel';
+import PosterPanel from './components/panels/left/PosterPanel';
+import BadgesPanel from './components/panels/right/BadgesPanel';
+import SelectionPanel from './components/panels/right/SelectionPanel';
 import MobileDock from './components/layout/MobileDock';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ResetDialog from './components/ResetDialogue';
@@ -39,11 +49,11 @@ import {
   Type,
   ChevronDown,
   Search,
-  Coffee,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import BuilderModeToggle from './components/layout/BuilderModeToggle';
 
 const STORAGE_KEY = 'posterium_config_v2';
 const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
@@ -397,7 +407,9 @@ const StudioLayout: React.FC<{
         }
         if (hasLogo) {
           const currentX =
-            next.logoX !== null && next.logoX !== undefined ? next.logoX : Math.round((CANVAS_WIDTH - next.logoW) / 2);
+            next.logoX !== null && next.logoX !== undefined
+              ? next.logoX
+              : Math.round((CANVAS_WIDTH - next.logoW) / 2);
           next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
@@ -412,8 +424,14 @@ const StudioLayout: React.FC<{
               : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
         }
         if (activeMinimal.includes('minimal-year')) {
-          next.minimalMetaX = Math.max(0, Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx));
-          next.minimalMetaY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy));
+          next.minimalMetaX = Math.max(
+            0,
+            Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx)
+          );
+          next.minimalMetaY = Math.max(
+            0,
+            Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy)
+          );
         }
         if (activeMinimal.includes('minimal-duration')) {
           next.minimalDurationX = Math.max(
@@ -430,7 +448,7 @@ const StudioLayout: React.FC<{
           activeMinimal
             .filter((id) => id.startsWith('minimal-rating-'))
             .forEach((id) => {
-              const idx = Number(id.split('-').at(-1) ?? -1);
+              const idx = Number(id.split('-').slice(-1)[0] ?? -1);
               if (!Number.isFinite(idx) || !list[idx]) return;
               list[idx] = {
                 ...list[idx],
@@ -610,7 +628,10 @@ const StudioLayout: React.FC<{
       }
       if (inInput) return;
       if (
-        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight') &&
         (selectedIdsRef.current.size > 0 ||
           selectedLogoRef.current ||
           selectedMinimalElementsRef.current.size > 0)
@@ -1106,7 +1127,9 @@ const StudioLayout: React.FC<{
           onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
           onHide={hideLayer}
           onShowAll={showAllBadges}
-          onSelect={(id) => (id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false))}
+          onSelect={(id) =>
+            id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+          }
           onDeselect={() => clearSelection()}
           onSelectAll={() => setBatchSelection(config.ratings)}
           onDeselectAll={clearSelection}
@@ -1180,16 +1203,7 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <a
-                href="#"
-                aria-label="Support us by Buying us a Coffee"
-                className="flex items-center gap-1 h-7 px-2 sm:px-2.5 rounded-md transition-all active:scale-95 bg-[rgba(196,124,46,0.16)] border border-[rgba(196,124,46,0.28)] text-[var(--film-cream)] hover:bg-[rgba(196,124,46,0.24)] hover:border-[rgba(196,124,46,0.42)]"
-              >
-                <Coffee size={12} className="shrink-0 fill-current" />
-                <span className="hidden min-[901px]:inline text-[10px] syne-font font-bold uppercase tracking-wider">
-                  Support
-                </span>
-              </a>
+              <BuilderModeToggle mode="simple" className="hidden sm:inline-flex" />
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
@@ -1408,12 +1422,30 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              <LayerPanel
-                config={config}
-                setConfig={setConfig}
-                selectedIds={selectedIds}
-                onSelect={handleSelectionOverride}
-              />
+              {activeTab === 'source' && (
+                <SourcePanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
+              {activeTab === 'layers' && (
+                <LayersPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
+              {activeTab === 'poster' && (
+                <PosterPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                />
+              )}
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1497,7 +1529,11 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              <Inspector config={config} setConfig={setConfig} />
+              {activeTab === 'selection' ? (
+                <SelectionPanel config={config} setConfig={setConfig} />
+              ) : (
+                <BadgesPanel config={config} setConfig={setConfig} />
+              )}
             </aside>
           )}
 
@@ -1534,17 +1570,34 @@ const StudioLayout: React.FC<{
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
+                {activeTab === 'source' && (
+                  <SourcePanel
                     config={config}
                     setConfig={setConfig}
                     selectedIds={selectedIds}
                     onSelect={handleSelectionOverride}
                   />
                 )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} />
+                {activeTab === 'layers' && (
+                  <LayersPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                  />
                 )}
+                {activeTab === 'poster' && (
+                  <PosterPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                  />
+                )}
+                {activeTab === 'selection' && (
+                  <SelectionPanel config={config} setConfig={setConfig} />
+                )}
+                {activeTab === 'badges' && <BadgesPanel config={config} setConfig={setConfig} />}
               </div>
             </div>
           )}
