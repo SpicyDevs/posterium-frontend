@@ -6,6 +6,7 @@ import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
 import { AmberTag } from '@/components/shared/primitives';
+import { generateFaqPageSchema } from '@/lib/structured-data';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -44,6 +45,7 @@ const searchItems = sortedFaqs.map((faq) => ({
 
 // With glob loader, rendered content is available via entry.rendered.html
 // No need to call render() - it's pre-rendered at build time
+const faqSchema = generateFaqPageSchema(sortedFaqs, 'https://posters.spicydevs.xyz/faq');
 ---
 
 <BaseLayout
@@ -52,7 +54,7 @@ const searchItems = sortedFaqs.map((faq) => ({
   canonical="https://posters.spicydevs.xyz/faq"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/faq" />
+  <PageSEO slot="head" routeKey="/faq" customJsonLd={[faqSchema]} />
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar
@@ -66,7 +68,7 @@ const searchItems = sortedFaqs.map((faq) => ({
       showMobileBuildCta
     />
 
-    <main class="docs-layout-main">
+    <main id="main-content" class="docs-layout-main">
       <aside class="docs-layout-sidebar">
         <div
           class="syne-font"
@@ -202,4 +204,14 @@ const searchItems = sortedFaqs.map((faq) => ({
       if (firstId) setActive(firstId);
     }
   }
+
+  const accordions = document.querySelectorAll<HTMLDetailsElement>('.faq-accordion');
+  accordions.forEach((accordion) => {
+    const summary = accordion.querySelector('summary');
+    if (!summary) return;
+    const syncExpanded = () =>
+      summary.setAttribute('aria-expanded', accordion.open ? 'true' : 'false');
+    syncExpanded();
+    accordion.addEventListener('toggle', syncExpanded);
+  });
 </script>

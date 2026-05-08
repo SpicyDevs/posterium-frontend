@@ -10,10 +10,11 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
+  panelId?: string;
 }
 
 const ExportPopover = memo<Props>(
-  ({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef }) => (
+  ({ config, onLoadConfig, baseUrl, onExtensionChange, isOpen, onClose, anchorRef, panelId }) => (
     <ExportMenu
       config={config}
       onLoadConfig={onLoadConfig}
@@ -22,6 +23,7 @@ const ExportPopover = memo<Props>(
       isOpen={isOpen}
       onClose={onClose}
       anchorRef={anchorRef}
+      panelId={panelId}
     />
   )
 );

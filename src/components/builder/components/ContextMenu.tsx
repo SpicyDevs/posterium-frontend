@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { RatingType } from '../types';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 export type LayerTargetId = RatingType | 'logo';
 
 export interface ContextMenuState {
@@ -74,6 +75,7 @@ const ContextMenu: React.FC<Props> = memo(
     onDelete,
   }) => {
     const menuRef = useRef<HTMLDivElement>(null);
+    useFocusTrap({ containerRef: menuRef, isActive: state.visible, onEscape: onClose });
 
     // Clamp position to viewport
     const [pos, setPos] = React.useState({ x: state.x, y: state.y });
@@ -216,6 +218,7 @@ const ContextMenu: React.FC<Props> = memo(
         ref={menuRef}
         role="menu"
         aria-label="Badge context menu"
+        tabIndex={-1}
         style={{
           position: 'fixed',
           top: pos.y,
@@ -297,6 +300,7 @@ const ContextMenu: React.FC<Props> = memo(
               <button
                 key={item.id}
                 role="menuitem"
+                aria-disabled={item.disabled ? 'true' : 'false'}
                 onClick={() => handleAction(item.id)}
                 disabled={item.disabled}
                 style={{

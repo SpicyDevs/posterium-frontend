@@ -54,6 +54,8 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
     <SidebarLayout
       header={
         <div
+          role="tablist"
+          aria-label="Inspector tabs"
           className="flex rounded-lg p-0.5 gap-0.5"
           style={{
             background: 'var(--film-char)',
@@ -63,8 +65,11 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
           {visibleTabs.map(({ id, label, Icon }) => (
             <button
               key={id}
+              id={`inspector-tab-${id}`}
+              role="tab"
               onClick={() => setActiveTab(id)}
-              aria-pressed={currentTab === id}
+              aria-selected={currentTab === id}
+              aria-controls="inspector-panel"
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none syne-font',
                 currentTab !== id && INACTIVE_TAB_HOVER_CLASSES
@@ -82,14 +87,16 @@ const Inspector: React.FC<Props> = memo(({ config, setConfig }) => {
         </div>
       }
     >
-      <PropertyPanel
-        config={config}
-        setConfig={setConfig}
-        selectedIds={selectedIds}
-        selectedLogo={selectedLogo}
-        selectedMinimalElements={selectedMinimalElements}
-        mode={currentTab}
-      />
+      <div id="inspector-panel" role="tabpanel" aria-labelledby={`inspector-tab-${currentTab}`}>
+        <PropertyPanel
+          config={config}
+          setConfig={setConfig}
+          selectedIds={selectedIds}
+          selectedLogo={selectedLogo}
+          selectedMinimalElements={selectedMinimalElements}
+          mode={currentTab}
+        />
+      </div>
     </SidebarLayout>
   );
 });

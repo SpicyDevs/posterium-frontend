@@ -1131,6 +1131,8 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
       bodyClassName="px-2 pt-2 pb-8"
       header={
         <div
+          role="tablist"
+          aria-label="Builder sidebar tabs"
           className="flex rounded-lg p-0.5"
           style={{
             background: 'var(--film-char)',
@@ -1144,6 +1146,10 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
           ] as const).map((tab) => (
             <button
               key={tab.id}
+              id={`builder-sidebar-tab-${tab.id}`}
+              role="tab"
+              aria-selected={localMode === tab.id}
+              aria-controls={`builder-sidebar-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
@@ -1165,7 +1171,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
     >
       {/* ── Source Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'source' && (
-        <div className="space-y-4 px-1">
+        <div
+          id="builder-sidebar-panel-source"
+          role="tabpanel"
+          aria-labelledby="builder-sidebar-tab-source"
+          className="space-y-4 px-1"
+        >
           {/* Media info card */}
           {(fetchedData.title || config.tmdbId) && (
             <div
@@ -1594,7 +1605,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
       {/* ── Poster/Canvas Tab ─────────────────────────────────────────────── */}
       {localMode === 'poster' && (
-        <div className="space-y-4 px-1">
+        <div
+          id="builder-sidebar-panel-poster"
+          role="tabpanel"
+          aria-labelledby="builder-sidebar-tab-poster"
+          className="space-y-4 px-1"
+        >
           <div
             className="p-2.5 rounded-xl"
             style={{
@@ -1676,7 +1692,12 @@ const LayerPanel: React.FC<Props> = ({ config, setConfig, selectedIds, onSelect 
 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
       {localMode === 'layers' && (
-        <div className="px-1">
+        <div
+          id="builder-sidebar-panel-layers"
+          role="tabpanel"
+          aria-labelledby="builder-sidebar-tab-layers"
+          className="px-1"
+        >
           <>
               <div className="flex items-center justify-between mb-3">
                 <span

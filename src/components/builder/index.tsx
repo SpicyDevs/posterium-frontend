@@ -44,6 +44,7 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 const STORAGE_KEY = 'posterium_config_v2';
 const MAX_QUERY_CONFIG_LENGTH = 12000; // Guard against oversized URL payloads/memory abuse in base64 config loading.
@@ -316,9 +317,16 @@ const StudioLayout: React.FC<{
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('No badges selected');
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
+  useFocusTrap({
+    containerRef: mobilePanelRef,
+    isActive: !isFullscreen && mobileSheetMode !== 'hidden',
+    onEscape: () => setMobileSheetMode('hidden'),
+  });
 
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 1024
@@ -453,6 +461,18 @@ const StudioLayout: React.FC<{
     },
     [handleSelection]
   );
+
+  const selectedBadgeCount = selectedIds.size;
+  const selectedCount = selectedBadgeCount + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+  useEffect(() => {
+    if (selectedBadgeCount === 0) {
+      setLiveAnnouncement('No badges selected');
+      return;
+    }
+    setLiveAnnouncement(
+      `${selectedBadgeCount} badge${selectedBadgeCount === 1 ? '' : 's'} selected`
+    );
+  }, [selectedBadgeCount]);
 
   const moveLayer = useCallback(
     (id: RatingType, direction: 'front' | 'forward' | 'back' | 'toback') => {
@@ -1092,6 +1112,7 @@ const StudioLayout: React.FC<{
           onClose={() => setIsImportOpen(false)}
           onLoad={handleLoadConfig}
           anchorRef={importBtnRef}
+          panelId="builder-import-dialog"
         />
         <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         <ContextMenu
@@ -1128,7 +1149,11 @@ const StudioLayout: React.FC<{
           isOpen={exportOpen}
           onClose={() => setExportOpen(false)}
           anchorRef={exportBtnRef}
+          panelId="builder-export-dialog"
         />
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {liveAnnouncement}
+        </div>
 
         {/* ── HEADER ── */}
         {!isFullscreen && (
@@ -1320,6 +1345,9 @@ const StudioLayout: React.FC<{
               <button
                 ref={importBtnRef}
                 onClick={() => setIsImportOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={isImportOpen}
+                aria-controls="builder-import-dialog"
                 className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
                 style={{ color: 'var(--film-text-dim)' }}
                 onMouseEnter={(e) => {
@@ -1341,6 +1369,9 @@ const StudioLayout: React.FC<{
               <button
                 ref={exportBtnRef}
                 onClick={() => setExportOpen((v) => !v)}
+                aria-haspopup="dialog"
+                aria-expanded={exportOpen}
+                aria-controls="builder-export-dialog"
                 className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
                 style={{
                   background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
@@ -1504,6 +1535,10 @@ const StudioLayout: React.FC<{
           {/* Mobile Panel (In-flow flex item) */}
           {!isFullscreen && (
             <div
+              id="builder-mobile-panel"
+              ref={mobilePanelRef}
+              role="tabpanel"
+              aria-label={`${activeTab} panel`}
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
                 mobileSheetMode !== 'hidden'
@@ -1555,7 +1590,7 @@ const StudioLayout: React.FC<{
           hasBadges={config.ratings.length > 0}
           hasLogo={config.logo}
           isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+          selectedCount={selectedCount}
         />
 
         {/* Zoom + fullscreen overlay — always visible */}
