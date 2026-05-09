@@ -1,5 +1,10 @@
-export { default as SourcePanel } from './SourcePanel';
-export { default as LayersPanel } from './LayersPanel';
-export { default as PosterPanel } from './PosterPanel';
-export { default as BadgesPanel } from './BadgesPanel';
-export { default as SelectionPanel } from './SelectionPanel';
+// These are thin wrappers - the actual components are now in layer-panel/ and property-panel/
+export { default as PropertyPanel } from '../PropertyPanel';
+export { default as LayerPanel } from '../LayerPanel';
+
+// For backwards compatibility with old API:
+export const BadgesPanel = PropertyPanel;
+export const SelectionPanel = PropertyPanel;
+export const SourcePanel = LayerPanel;
+export const LayersPanel = LayerPanel;
+export const PosterPanel = LayerPanel;
