@@ -5,7 +5,7 @@ import type { RatingType } from '../types';
 type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
 export type SheetMode = 'hidden' | 'half' | 'full';
 
-interface ViewOptions {
+export interface ViewOptions {
   showSafeArea: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
