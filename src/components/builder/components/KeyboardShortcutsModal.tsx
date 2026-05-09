@@ -75,16 +75,15 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: 22,
-      height: 20,
-      padding: '0 5px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderBottom: '2px solid rgba(0,0,0,0.3)',
-      borderRadius: 4,
-      fontSize: 9,
+      minWidth: 20,
+      height: 18,
+      padding: '0 4px',
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(196,124,46,0.12)',
+      borderRadius: 3,
+      fontSize: 8,
       fontFamily: 'JetBrains Mono, monospace',
-      color: 'rgba(196,124,46,0.8)',
+      color: 'rgba(196,124,46,0.6)',
       userSelect: 'none',
     }}
   >
@@ -93,16 +92,13 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
-  // FIX: Push state to history to intercept mobile back button
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: 'keyboard-shortcuts' }, '');
-
       const handlePopState = (e: PopStateEvent) => {
         e.preventDefault();
         onClose();
       };
-
       window.addEventListener('popstate', handlePopState);
       return () => {
         window.removeEventListener('popstate', handlePopState);
@@ -135,60 +131,95 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
           leaveTo="opacity-0"
         >
           <div
-            className="fixed inset-0"
-            style={{ background: 'rgba(7,7,6,0.85)', backdropFilter: 'blur(4px)' }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(7,7,6,0.8)',
+              backdropFilter: 'blur(8px)',
+            }}
           />
         </TransitionChild>
 
-        <div className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            overflow: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
           <TransitionChild
             as={Fragment}
             enter="ease-out duration-200"
-            enterFrom="opacity-0 scale-95 translate-y-2"
+            enterFrom="opacity-0 scale-95 translate-y-4"
             enterTo="opacity-100 scale-100 translate-y-0"
             leave="ease-in duration-150"
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
             <DialogPanel
-              className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
               style={{
-                background: 'rgba(14,13,11,0.97)',
-                border: '1px solid rgba(196,124,46,0.18)',
-                boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(196,124,46,0.06)',
+                width: '100%',
+                maxWidth: 800,
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.02)',
+                background: 'rgba(14,13,11,0.96)',
+                border: '1px solid rgba(196,124,46,0.16)',
               }}
             >
               {/* Header */}
               <div
-                className="flex items-center justify-between px-5 py-4"
                 style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  background: 'rgba(196,124,46,0.02)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid rgba(196,124,46,0.08)',
+                  background: 'rgba(0,0,0,0.2)',
                 }}
               >
-                <DialogTitle as="div" className="flex items-center gap-3">
+                <DialogTitle
+                  as="div"
+                  style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+                >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{
-                      background: 'rgba(196,124,46,0.12)',
-                      border: '1px solid rgba(196,124,46,0.2)',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(196,124,46,0.08)',
+                      border: '1px solid rgba(196,124,46,0.16)',
                     }}
                   >
                     <Keyboard size={14} style={{ color: 'var(--film-amber)' }} />
                   </div>
                   <div>
                     <p
-                      className="text-[13px] font-semibold"
-                      style={{ color: 'var(--film-cream)', fontFamily: 'Syne, sans-serif' }}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--film-cream)',
+                        fontFamily: 'Syne, sans-serif',
+                        margin: 0,
+                      }}
                     >
                       Keyboard Shortcuts
                     </p>
                     <p
-                      className="text-[9px]"
                       style={{
-                        color: 'rgba(140,130,112,0.68)',
+                        fontSize: 8,
+                        color: 'rgba(140,130,112,0.5)',
                         fontFamily: 'JetBrains Mono, monospace',
-                        letterSpacing: '0.1em',
+                        letterSpacing: '0.08em',
+                        marginTop: 3,
+                        margin: 0,
                       }}
                     >
                       POSTERIUM · ALL SHORTCUTS
@@ -197,107 +228,151 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 </DialogTitle>
                 <button
                   onClick={onClose}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(140,130,112,0.72)',
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(196,124,46,0.12)',
+                    color: 'rgba(140,130,112,0.6)',
                     cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = 'var(--film-cream)';
-                    e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
+                    e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'rgba(140,130,112,0.72)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
+                    e.currentTarget.style.borderColor = 'rgba(196,124,46,0.12)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
                   }}
                 >
-                  <X size={13} />
+                  <X size={14} />
                 </button>
               </div>
 
               {/* Content */}
               <div
-                className="grid grid-cols-2 gap-0 max-h-[70vh] overflow-y-auto"
                 style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 0,
+                  maxHeight: '70vh',
+                  overflowY: 'auto',
                   scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(196,124,46,0.2) transparent',
+                  scrollbarColor: 'rgba(196,124,46,0.12) transparent',
                 }}
               >
-                {SHORTCUT_GROUPS.map((group, gi) => (
-                  <div
-                    key={group.title}
-                    className="p-4"
-                    style={{
-                      borderBottom:
-                        gi < SHORTCUT_GROUPS.length - 2
-                          ? '1px solid rgba(255,255,255,0.04)'
-                          : 'none',
-                      borderRight: gi % 2 === 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    }}
-                  >
-                    <p
-                      className="text-[9px] font-bold uppercase tracking-widest mb-3"
-                      style={{ color: 'rgba(196,124,46,0.55)', fontFamily: 'Syne, sans-serif' }}
+                {SHORTCUT_GROUPS.map((group, gi) => {
+                  const isLastRow = gi >= SHORTCUT_GROUPS.length - 2;
+                  const isLeftCol = gi % 2 === 0;
+                  return (
+                    <div
+                      key={group.title}
+                      style={{
+                        padding: 16,
+                        borderBottom: !isLastRow ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                        borderRight: isLeftCol ? '1px solid rgba(196,124,46,0.08)' : 'none',
+                      }}
                     >
-                      {group.title}
-                    </p>
-                    <div className="space-y-2.5">
-                      {group.shortcuts.map(({ keys, label }) => (
-                        <div key={label} className="flex items-center justify-between gap-3">
-                          <span
-                            className="text-[11px]"
+                      <p
+                        style={{
+                          fontSize: 8,
+                          fontWeight: 700,
+                          letterSpacing: '0.12em',
+                          marginBottom: 12,
+                          color: 'rgba(196,124,46,0.5)',
+                          fontFamily: 'Syne, sans-serif',
+                          textTransform: 'uppercase',
+                          margin: 0,
+                        }}
+                      >
+                        {group.title}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {group.shortcuts.map(({ keys, label }) => (
+                          <div
+                            key={label}
                             style={{
-                              color: 'rgba(240,230,204,0.82)',
-                              fontFamily: 'DM Sans, sans-serif',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 12,
                             }}
                           >
-                            {label}
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {keys.map((k, i) => (
-                              <React.Fragment key={k}>
-                                {i > 0 && (
-                                  <span style={{ fontSize: 9, color: 'rgba(122,117,110,0.55)' }}>
-                                    +
-                                  </span>
-                                )}
-                                <Kbd>{k}</Kbd>
-                              </React.Fragment>
-                            ))}
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: 'rgba(240,230,204,0.75)',
+                                fontFamily: 'DM Sans, sans-serif',
+                              }}
+                            >
+                              {label}
+                            </span>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {keys.map((k, i) => (
+                                <Fragment key={k}>
+                                  {i > 0 && (
+                                    <span
+                                      style={{
+                                        fontSize: 8,
+                                        color: 'rgba(122,117,110,0.4)',
+                                      }}
+                                    >
+                                      +
+                                    </span>
+                                  )}
+                                  <Kbd>{k}</Kbd>
+                                </Fragment>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Footer */}
               <div
-                className="flex items-center justify-between px-5 py-3"
                 style={{
-                  borderTop: '1px solid rgba(255,255,255,0.04)',
-                  background: 'rgba(255,255,255,0.01)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 20px',
+                  borderTop: '1px solid rgba(196,124,46,0.08)',
+                  background: 'rgba(0,0,0,0.1)',
                 }}
               >
                 <span
                   style={{
-                    fontSize: 9,
+                    fontSize: 8,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.62)',
-                    letterSpacing: '0.1em',
+                    color: 'rgba(140,130,112,0.5)',
+                    letterSpacing: '0.08em',
                   }}
                 >
                   Press <Kbd>Esc</Kbd> or <Kbd>⌘/</Kbd> to close
                 </span>
                 <span
                   style={{
-                    fontSize: 9,
+                    fontSize: 8,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.5)',
-                    letterSpacing: '0.08em',
+                    color: 'rgba(140,130,112,0.4)',
+                    letterSpacing: '0.06em',
                   }}
                 >
                   {SHORTCUT_GROUPS.reduce((acc, g) => acc + g.shortcuts.length, 0)} shortcuts

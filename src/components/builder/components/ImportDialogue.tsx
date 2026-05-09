@@ -1,4 +1,4 @@
-// src/components/builder/components/ImportDialog.tsx
+// src/components/builder/components/ImportDialogue.tsx
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 
@@ -27,7 +27,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
       }
       const rect = anchorRef.current.getBoundingClientRect();
       const width = 320;
-      const panelHeight = popoverRef.current?.offsetHeight ?? 220;
+      const panelHeight = popoverRef.current?.offsetHeight ?? 200;
       const margin = 12;
       const left = Math.min(
         Math.max(margin, rect.right - width),
@@ -67,20 +67,28 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
 
   if (!isOpen) return null;
 
+  const handleLoad = () => {
+    if (val.trim()) {
+      onLoad(val.trim());
+      setVal('');
+      onClose();
+    }
+  };
+
   return (
     <div
       ref={popoverRef}
-      className="z-50"
       style={{
         position: 'fixed',
         top: popupCoords?.top ?? 52,
         right: popupCoords ? 'auto' : 12,
         left: popupCoords?.left,
         width: 320,
-        background: 'rgba(18,17,14,0.98)',
-        border: '1px solid rgba(196,124,46,0.18)',
-        borderRadius: 14,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
+        zIndex: 50,
+        background: 'rgba(18,17,14,0.96)',
+        border: '1px solid rgba(196,124,46,0.16)',
+        borderRadius: 12,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.02)',
         overflow: 'hidden',
         animation: 'import-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
       }}
@@ -92,91 +100,187 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         }
       `}</style>
 
+      {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          borderBottom: '1px solid rgba(196,124,46,0.08)',
+          background: 'rgba(0,0,0,0.2)',
+        }}
       >
-        <div className="flex items-center gap-2">
-          <Download size={13} style={{ color: 'var(--film-amber)' }} className="rotate-180" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Download
+            size={13}
+            style={{ color: 'var(--film-amber)', transform: 'rotate(180deg)' }}
+          />
           <span
-            className="syne-font font-bold uppercase tracking-widest"
-            style={{ fontSize: 10, color: 'var(--film-cream)' }}
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--film-cream)',
+              fontFamily: 'Syne, sans-serif',
+            }}
           >
             Import
           </span>
         </div>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-          style={{ color: 'var(--film-text-dim)' }}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--film-text-dim)',
+            cursor: 'pointer',
+          }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+            e.currentTarget.style.color = 'var(--film-text-label)';
+            e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+            e.currentTarget.style.color = 'var(--film-text-dim)';
+            e.currentTarget.style.background = 'transparent';
           }}
         >
           <X size={12} />
         </button>
       </div>
 
-      <div className="px-4 pt-3 pb-2">
+      {/* Content */}
+      <div style={{ padding: '12px 16px 8px' }}>
         <p
-          className="syne-font uppercase tracking-widest mb-1.5"
-          style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
+          style={{
+            fontSize: 8,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'rgba(196,124,46,0.5)',
+            fontFamily: 'Syne, sans-serif',
+            marginBottom: 8,
+            margin: 0,
+          }}
         >
           API URL
         </p>
         <div
-          className="flex items-center gap-2 px-2 py-1.5 rounded-lg focus-within:ring-1 focus-within:ring-[#C47C2E] transition-all"
           style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 10px',
+            borderRadius: 8,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(196,124,46,0.12)',
+            transition: 'all 0.2s',
           }}
+          onFocus={() => {}}
         >
           <input
             type="url"
             value={val}
             onChange={(e) => setVal(e.target.value)}
-            placeholder="Paste Posterium API URL here..."
-            className="flex-1 min-w-0 bg-transparent border-none outline-none mono-font"
-            style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
-            autoFocus
-            spellCheck={false}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && val.trim()) {
-                onLoad(val.trim());
-                setVal('');
-                onClose();
+                handleLoad();
               }
+            }}
+            placeholder="Paste API URL…"
+            autoFocus
+            spellCheck={false}
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              fontSize: 10,
+              fontFamily: 'JetBrains Mono, monospace',
+              color: 'var(--film-text-dim)',
             }}
           />
         </div>
       </div>
 
+      {/* Footer */}
       <div
-        className="flex flex-col gap-2 px-4 pb-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 12 }}
+        style={{
+          display: 'flex',
+          gap: 8,
+          padding: '12px 16px',
+          borderTop: '1px solid rgba(196,124,46,0.08)',
+        }}
       >
         <button
           onClick={() => {
-            if (!val.trim()) return;
-            onLoad(val.trim());
-            setVal('');
             onClose();
+            setVal('');
           }}
-          className="w-full h-9 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] syne-font"
           style={{
-            background: 'var(--film-amber)',
-            color: '#070706',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            boxShadow: '0 0 20px rgba(196,124,46,0.25)',
-            border: 'none',
+            flex: 1,
+            height: 32,
+            borderRadius: 8,
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            fontFamily: 'Syne, sans-serif',
+            transition: 'all 0.2s',
+            border: '1px solid rgba(196,124,46,0.16)',
+            background: 'rgba(196,124,46,0.04)',
+            color: 'var(--film-text-dim)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(196,124,46,0.1)';
+            e.currentTarget.style.color = 'var(--film-text-label)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(196,124,46,0.04)';
+            e.currentTarget.style.color = 'var(--film-text-dim)';
           }}
         >
-          Load Poster
+          Cancel
+        </button>
+        <button
+          onClick={handleLoad}
+          disabled={!val.trim()}
+          style={{
+            flex: 1,
+            height: 32,
+            borderRadius: 8,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            fontFamily: 'Syne, sans-serif',
+            transition: 'all 0.2s',
+            background: val.trim() ? 'var(--film-amber)' : 'rgba(196,124,46,0.2)',
+            border: '1px solid ' + (val.trim() ? 'var(--film-amber)' : 'rgba(196,124,46,0.2)'),
+            color: val.trim() ? 'var(--film-dark)' : 'rgba(196,124,46,0.4)',
+            cursor: val.trim() ? 'pointer' : 'not-allowed',
+          }}
+          onMouseEnter={(e) => {
+            if (val.trim()) {
+              e.currentTarget.style.background = 'rgba(196,124,46,0.9)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (val.trim()) {
+              e.currentTarget.style.background = 'var(--film-amber)';
+            }
+          }}
+        >
+          Load
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 // src/components/builder/components/CommandPalette.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Command, Search } from 'lucide-react';
+import { Command, Search, X } from 'lucide-react';
 
 export interface PaletteCommand {
   id: string;
@@ -35,20 +35,16 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // FIX: Push state to history to intercept mobile back button
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: 'command-palette' }, '');
-
       const handlePopState = (e: PopStateEvent) => {
         e.preventDefault();
         onClose();
       };
-
       window.addEventListener('popstate', handlePopState);
       return () => {
         window.removeEventListener('popstate', handlePopState);
-        // If the component unmounts or closes normally, we need to pop the state if it's still there
         if (window.history.state?.modal === 'command-palette') {
           window.history.back();
         }
@@ -56,7 +52,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     }
   }, [isOpen, onClose]);
 
-  // Reset on open
   useEffect(() => {
     if (isOpen) {
       setQuery('');
@@ -65,7 +60,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     }
   }, [isOpen]);
 
-  // Load recent from sessionStorage
   useEffect(() => {
     try {
       const r = JSON.parse(sessionStorage.getItem('posterium_recent_cmds') || '[]');
@@ -87,11 +81,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     });
   }, []);
 
-  // Filter commands
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      // Show recent first, then all
       const recentCmds = recentIds
         .map((id) => commands.find((c) => c.id === id))
         .filter(Boolean) as PaletteCommand[];
@@ -112,7 +104,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     return [...filtered.recent, ...filtered.all];
   }, [filtered]);
 
-  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -145,13 +136,11 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, flatList, activeIdx, onClose, recordRecent]);
 
-  // Auto-scroll active item into view
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-idx="${activeIdx}"]`) as HTMLElement;
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
-  // Reset active on query change
   useEffect(() => {
     setActiveIdx(0);
   }, [query]);
@@ -165,7 +154,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     [recordRecent, onClose]
   );
 
-  // Group by category when no query
   const groups = React.useMemo(() => {
     if (filtered.query) return null;
     const map: Map<string, PaletteCommand[]> = new Map();
@@ -174,7 +162,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
       const items = filtered.all.filter((c) => c.category === cat);
       if (items.length) map.set(cat, items);
     }
-    // Catch any uncategorized
     const categorized = new Set(CATEGORY_ORDER);
     const other = filtered.all.filter((c) => !categorized.has(c.category));
     if (other.length) map.set('Other', other);
@@ -191,13 +178,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(7,7,6,0.75)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(7,7,6,0.8)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
         paddingTop: '12vh',
-        animation: 'cp-backdrop 0.15s ease',
       }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -205,7 +191,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     >
       <style>{`
         @keyframes cp-backdrop { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes cp-panel { from { opacity: 0; transform: translateY(-12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes cp-panel { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       <div
@@ -213,30 +199,28 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           width: '100%',
           maxWidth: 560,
           margin: '0 16px',
-          background: 'rgba(14,13,11,0.97)',
-          border: '1px solid rgba(196,124,46,0.22)',
-          borderRadius: 14,
-          boxShadow:
-            '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.06)',
+          background: 'rgba(14,13,11,0.96)',
+          border: '1px solid rgba(196,124,46,0.16)',
+          borderRadius: 12,
+          boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.02)',
           overflow: 'hidden',
-          animation: 'cp-panel 0.18s cubic-bezier(0.16,1,0.3,1)',
+          animation: 'cp-panel 0.2s cubic-bezier(0.2,0.6,0.2,1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header / search */}
+        {/* Header */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             padding: '12px 14px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(196,124,46,0.02)',
+            borderBottom: '1px solid rgba(196,124,46,0.08)',
+            background: 'rgba(0,0,0,0.2)',
           }}
         >
-          <Search size={15} style={{ color: 'rgba(196,124,46,0.55)', flexShrink: 0 }} />
+          <Search size={14} style={{ color: 'rgba(196,124,46,0.5)', flexShrink: 0 }} />
           <input
-            className="min-w-0 max-[900px]:max-w-[220px]"
             ref={inputRef}
             type="text"
             value={query}
@@ -244,43 +228,48 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             placeholder="Search commands…"
             autoComplete="off"
             spellCheck={false}
-            style={
-              {
-                flex: 1,
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 13,
-                color: 'var(--film-cream)',
-                fontFamily: 'Syne, sans-serif',
-                fontWeight: 500,
-                '::placeholder': { color: 'rgba(140,130,112,0.62)' },
-              } as React.CSSProperties
-            }
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              fontSize: 13,
+              color: 'var(--film-cream)',
+              fontFamily: 'Syne, sans-serif',
+              fontWeight: 500,
+            }}
           />
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'transparent',
+              border: '1px solid rgba(196,124,46,0.12)',
               borderRadius: 5,
-              color: 'rgba(140,130,112,0.72)',
+              color: 'rgba(140,130,112,0.6)',
               cursor: 'pointer',
-              padding: '3px 7px',
+              padding: '4px 8px',
               fontSize: 10,
               fontFamily: 'JetBrains Mono, monospace',
-              transition: 'border-color 0.15s, color 0.15s',
+              transition: 'all 0.2s',
               flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--film-cream)';
-              e.currentTarget.style.borderColor = 'rgba(196,124,46,0.3)';
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = 'rgba(196,124,46,0.8)';
+              el.style.borderColor = 'rgba(196,124,46,0.24)';
+              el.style.background = 'rgba(196,124,46,0.06)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'rgba(140,130,112,0.72)';
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = 'rgba(140,130,112,0.6)';
+              el.style.borderColor = 'rgba(196,124,46,0.12)';
+              el.style.background = 'transparent';
             }}
           >
+            <X size={12} />
             ESC
           </button>
         </div>
@@ -292,7 +281,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             maxHeight: 380,
             overflowY: 'auto',
             scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(196,124,46,0.2) transparent',
+            scrollbarColor: 'rgba(196,124,46,0.15) transparent',
           }}
         >
           {flatList.length === 0 && (
@@ -300,7 +289,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               style={{
                 padding: '40px 20px',
                 textAlign: 'center',
-                color: 'rgba(140,130,112,0.62)',
+                color: 'rgba(140,130,112,0.5)',
                 fontSize: 12,
                 fontFamily: 'Syne, sans-serif',
               }}
@@ -310,7 +299,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           )}
 
           {filtered.query ? (
-            // Flat filtered list
             <div style={{ padding: '4px' }}>
               {flatList.map((cmd, i) => (
                 <CommandItem
@@ -324,7 +312,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               ))}
             </div>
           ) : (
-            // Grouped list
             <div style={{ padding: '4px' }}>
               {groups &&
                 Array.from(groups.entries()).map(([cat, items]) => (
@@ -332,11 +319,10 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                     <div
                       style={{
                         padding: '8px 12px 4px',
-                        fontSize: 9,
+                        fontSize: 8,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
-                        color:
-                          cat === 'Recent' ? 'rgba(196,124,46,0.72)' : 'rgba(140,130,112,0.62)',
+                        color: cat === 'Recent' ? 'rgba(196,124,46,0.6)' : 'rgba(140,130,112,0.5)',
                         fontFamily: 'Syne, sans-serif',
                         textTransform: 'uppercase',
                       }}
@@ -367,10 +353,10 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
+            gap: 12,
             padding: '8px 14px',
-            borderTop: '1px solid rgba(255,255,255,0.04)',
-            background: 'rgba(255,255,255,0.01)',
+            borderTop: '1px solid rgba(196,124,46,0.08)',
+            background: 'rgba(0,0,0,0.1)',
           }}
         >
           {[
@@ -378,24 +364,24 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             ['↵', 'Execute'],
             ['Esc', 'Close'],
           ].map(([key, label]) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <kbd
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 4,
-                  padding: '2px 6px',
-                  fontSize: 9,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(196,124,46,0.12)',
+                  borderRadius: 3,
+                  padding: '2px 5px',
+                  fontSize: 8,
                   fontFamily: 'JetBrains Mono, monospace',
-                  color: 'rgba(196,124,46,0.6)',
+                  color: 'rgba(196,124,46,0.5)',
                 }}
               >
                 {key}
               </kbd>
               <span
                 style={{
-                  fontSize: 9,
-                  color: 'rgba(140,130,112,0.62)',
+                  fontSize: 8,
+                  color: 'rgba(140,130,112,0.5)',
                   fontFamily: 'Syne, sans-serif',
                 }}
               >
@@ -403,14 +389,14 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               </span>
             </div>
           ))}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Command size={9} style={{ color: 'rgba(140,130,112,0.6)' }} />
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Command size={8} style={{ color: 'rgba(140,130,112,0.5)' }} />
             <span
               style={{
-                fontSize: 9,
-                color: 'rgba(140,130,112,0.6)',
+                fontSize: 8,
+                color: 'rgba(140,130,112,0.5)',
                 fontFamily: 'JetBrains Mono, monospace',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.08em',
               }}
             >
               POSTERIUM
@@ -421,7 +407,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     </div>
   );
 });
-// ── Single command row ────────────────────────────────────────────────────────
+
 const CommandItem = memo<{
   cmd: PaletteCommand;
   idx: number;
@@ -441,27 +427,27 @@ const CommandItem = memo<{
       gap: 10,
       width: '100%',
       padding: '8px 10px',
-      background: isActive ? 'rgba(196,124,46,0.12)' : 'transparent',
+      background: isActive ? 'rgba(196,124,46,0.08)' : 'transparent',
       border: 'none',
-      borderRadius: 7,
+      borderRadius: 6,
       cursor: 'pointer',
       textAlign: 'left',
-      transition: 'background 0.08s',
+      transition: 'background 0.1s',
     }}
   >
     <span
       style={{
         width: 28,
         height: 28,
-        background: isActive ? 'rgba(196,124,46,0.15)' : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${isActive ? 'rgba(196,124,46,0.3)' : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 7,
+        background: isActive ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${isActive ? 'rgba(196,124,46,0.24)' : 'rgba(196,124,46,0.08)'}`,
+        borderRadius: 6,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.68)',
+        color: isActive ? 'var(--film-amber)' : 'rgba(140,130,112,0.6)',
         flexShrink: 0,
-        transition: 'background 0.08s, border-color 0.08s, color 0.08s',
+        transition: 'all 0.1s',
         lineHeight: 0,
       }}
     >
@@ -471,11 +457,11 @@ const CommandItem = memo<{
       <span
         style={{
           display: 'block',
-          fontSize: 12,
-          color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.7)',
+          fontSize: 11,
+          color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.65)',
           fontFamily: 'Syne, sans-serif',
           fontWeight: 600,
-          transition: 'color 0.08s',
+          transition: 'color 0.1s',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -487,9 +473,9 @@ const CommandItem = memo<{
         <span
           style={{
             display: 'block',
-            fontSize: 10,
-            marginTop: 1,
-            color: 'rgba(140,130,112,0.62)',
+            fontSize: 9,
+            marginTop: 2,
+            color: 'rgba(140,130,112,0.5)',
             fontFamily: 'DM Sans, sans-serif',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -502,10 +488,10 @@ const CommandItem = memo<{
     </span>
     <span
       style={{
-        fontSize: 9,
-        color: 'rgba(140,130,112,0.58)',
+        fontSize: 8,
+        color: 'rgba(140,130,112,0.5)',
         fontFamily: 'JetBrains Mono, monospace',
-        letterSpacing: '0.1em',
+        letterSpacing: '0.08em',
         flexShrink: 0,
       }}
     >
@@ -514,15 +500,15 @@ const CommandItem = memo<{
     {cmd.shortcut && (
       <kbd
         style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 4,
-          padding: '1px 5px',
-          fontSize: 9,
+          background: 'rgba(255,255,255,0.03)',
+          border: `1px solid ${isActive ? 'rgba(196,124,46,0.2)' : 'rgba(196,124,46,0.08)'}`,
+          borderRadius: 3,
+          padding: '1px 4px',
+          fontSize: 8,
           fontFamily: 'JetBrains Mono, monospace',
-          color: isActive ? 'rgba(196,124,46,0.8)' : 'rgba(140,130,112,0.58)',
+          color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.5)',
           flexShrink: 0,
-          transition: 'color 0.08s',
+          transition: 'all 0.1s',
         }}
       >
         {cmd.shortcut}

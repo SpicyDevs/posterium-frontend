@@ -1,4 +1,4 @@
-// src/components/builder/components/ResetDialog.tsx
+// src/components/builder/components/ResetDialogue.tsx
 import { Fragment, memo } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import { AlertTriangle, X } from 'lucide-react';
@@ -21,74 +21,154 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <div className="fixed inset-0 bg-[rgba(7,7,6,0.78)] backdrop-blur-md" />
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(7,7,6,0.85)',
+            backdropFilter: 'blur(8px)',
+          }}
+        />
       </TransitionChild>
-      <div className="fixed inset-0 flex items-center justify-center p-4">
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}
+      >
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-200"
-          enterFrom="opacity-0 translate-y-2 scale-95"
+          enterFrom="opacity-0 translate-y-4 scale-95"
           enterTo="opacity-100 translate-y-0 scale-100"
           leave="ease-in duration-150"
           leaveFrom="opacity-100 translate-y-0 scale-100"
-          leaveTo="opacity-0 translate-y-2 scale-95"
+          leaveTo="opacity-0 translate-y-4 scale-95"
         >
           <DialogPanel
-            className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
             style={{
-              background: 'rgba(18,17,14,0.98)',
-              border: '1px solid rgba(196,124,46,0.18)',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.82), 0 0 0 1px rgba(196,124,46,0.06)',
+              width: '100%',
+              maxWidth: 420,
+              borderRadius: 12,
+              overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.02)',
+              background: 'rgba(18,17,14,0.96)',
+              border: '1px solid rgba(196,124,46,0.22)',
             }}
           >
             <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 16px',
+                borderBottom: '1px solid rgba(196,124,46,0.08)',
+                background: 'rgba(0,0,0,0.2)',
+              }}
             >
-              <DialogTitle as="div" className="flex items-center gap-2">
+              <DialogTitle as="div" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                   style={{
-                    background: 'rgba(248,113,113,0.12)',
-                    border: '1px solid rgba(248,113,113,0.2)',
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(196,124,46,0.12)',
+                    border: '1px solid rgba(196,124,46,0.2)',
                   }}
                 >
-                  <AlertTriangle size={13} className="text-red-400" />
+                  <AlertTriangle size={13} style={{ color: 'var(--film-amber)' }} />
                 </span>
                 <span
-                  className="syne-font font-bold uppercase tracking-widest"
-                  style={{ fontSize: 10, color: 'var(--film-cream)' }}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: 'var(--film-cream)',
+                    fontFamily: 'Syne, sans-serif',
+                  }}
                 >
                   Reset Configuration
                 </span>
               </DialogTitle>
               <button
                 onClick={onClose}
-                className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-                style={{ color: 'var(--film-text-dim)' }}
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--film-text-dim)',
+                  cursor: 'pointer',
+                }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+                  e.currentTarget.style.color = 'var(--film-text-label)';
+                  e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                  e.currentTarget.style.color = 'var(--film-text-dim)';
+                  e.currentTarget.style.background = 'transparent';
                 }}
               >
                 <X size={12} />
               </button>
             </div>
-            <div className="px-4 py-4">
-              <p className="text-xs leading-5 body-font" style={{ color: 'var(--film-text-dim)' }}>
+            <div style={{ padding: '16px 16px' }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  fontFamily: 'DM Sans, sans-serif',
+                  color: 'var(--film-text-dim)',
+                  margin: 0,
+                }}
+              >
                 Badge and layout settings will be restored to defaults. Your current poster source,
                 media IDs, and saved API keys will be kept.
               </p>
-              <div className="mt-5 flex gap-2">
+              <div
+                style={{
+                  marginTop: 16,
+                  display: 'flex',
+                  gap: 8,
+                }}
+              >
                 <button
                   onClick={onClose}
-                  className="flex-1 h-9 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] tracking-wide uppercase select-none syne-font"
                   style={{
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(255,255,255,0.03)',
+                    flex: 1,
+                    height: 36,
+                    borderRadius: 8,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    fontFamily: 'Syne, sans-serif',
+                    transition: 'all 0.2s',
+                    border: '1px solid rgba(196,124,46,0.16)',
+                    background: 'rgba(196,124,46,0.04)',
                     color: 'var(--film-text-dim)',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(196,124,46,0.1)';
+                    e.currentTarget.style.color = 'var(--film-text-label)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(196,124,46,0.04)';
+                    e.currentTarget.style.color = 'var(--film-text-dim)';
                   }}
                 >
                   Cancel
@@ -98,10 +178,26 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                     onConfirm();
                     onClose();
                   }}
-                  className="flex-1 h-9 rounded-lg text-xs font-semibold text-white transition-all active:scale-[0.97] tracking-wide uppercase select-none syne-font"
                   style={{
-                    background: 'rgba(220,38,38,0.82)',
-                    border: '1px solid rgba(248,113,113,0.32)',
+                    flex: 1,
+                    height: 36,
+                    borderRadius: 8,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    fontFamily: 'Syne, sans-serif',
+                    transition: 'all 0.2s',
+                    background: 'rgba(196,124,46,0.82)',
+                    border: '1px solid rgba(196,124,46,0.4)',
+                    color: 'var(--film-dark)',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--film-amber)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(196,124,46,0.82)';
                   }}
                 >
                   Reset All
