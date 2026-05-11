@@ -1,6 +1,7 @@
 ---
 // src/pages/privacy.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
 import '@/styles/global.css';
@@ -15,6 +16,7 @@ const CONTACT      = '#';
   description="Privacy Policy for Posterium — the free movie and TV poster generator with live rating badges."
   canonical={`${SITE_URL}/privacy`}
 >
+  <PageSEO slot="head" routeKey="/privacy" />
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar client:load keepSearchOnMobile showMobileBuildCta />
@@ -34,7 +36,7 @@ const CONTACT      = '#';
     </header>
 
     <!-- ── Content ────────────────────────────────────────────────────── -->
-    <main class="legal-main">
+    <main class="legal-main" id="main-content">
       <div class="legal-grid">
 
         <!-- Sticky TOC -->

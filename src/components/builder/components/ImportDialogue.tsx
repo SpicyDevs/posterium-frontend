@@ -1,6 +1,7 @@
 // src/components/builder/components/ImportDialogue.tsx
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState, useId } from 'react';
 import { Download, X } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 interface Props {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface Props {
 const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
   const [val, setVal] = useState('');
   const popoverRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const headingId = useId();
   const [popupCoords, setPopupCoords] = useState<{
     top: number;
     left: number;
@@ -65,6 +68,8 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
     };
   }, [isOpen, onClose, anchorRef]);
 
+  useFocusTrap(popoverRef, isOpen, { initialFocusRef: inputRef });
+
   if (!isOpen) return null;
 
   const handleLoad = () => {
@@ -78,6 +83,10 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
   return (
     <div
       ref={popoverRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={headingId}
+      tabIndex={-1}
       style={{
         position: 'fixed',
         top: popupCoords?.top ?? 52,
@@ -117,6 +126,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             style={{ color: 'var(--film-amber)', transform: 'rotate(180deg)' }}
           />
           <span
+            id={headingId}
             style={{
               fontSize: 10,
               fontWeight: 700,
@@ -188,6 +198,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         >
           <input
             type="url"
+            ref={inputRef}
             value={val}
             onChange={(e) => setVal(e.target.value)}
             onKeyDown={(e) => {

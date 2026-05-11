@@ -39,33 +39,6 @@ const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number 
 const Dashboard: React.FC = () => {
   return (
     <>
-      <a
-        href="#main-content"
-        style={{
-          position: 'absolute',
-          left: -9999,
-          top: 8,
-          zIndex: 9999,
-          background: 'var(--film-amber)',
-          color: '#070706',
-          padding: '8px 14px',
-          borderRadius: 4,
-          fontFamily: 'Syne, sans-serif',
-          fontWeight: 700,
-          fontSize: 11,
-          textDecoration: 'none',
-          letterSpacing: '0.06em',
-        }}
-        onFocus={(e) => {
-          (e.currentTarget as HTMLElement).style.left = '8px';
-        }}
-        onBlur={(e) => {
-          (e.currentTarget as HTMLElement).style.left = '-9999px';
-        }}
-      >
-        Skip to main content
-      </a>
-
       <div
         style={{
           minHeight: '100dvh',

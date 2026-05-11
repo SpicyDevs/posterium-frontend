@@ -1,5 +1,6 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Github, Menu, X } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 const NAV_LINKS = [
   { label: 'Reel', href: '#reel' },
@@ -33,7 +34,11 @@ const Nav = memo(() => {
   const [visible, setVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuId = 'dashboard-mobile-menu';
+
+  useFocusTrap(menuRef, menuOpen && visible);
 
   useEffect(() => {
     const update = () => {
@@ -144,6 +149,8 @@ const Nav = memo(() => {
             className="nav-mobile-toggle"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
+            aria-controls={menuId}
+            aria-haspopup="dialog"
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             style={{
               background: 'none',
@@ -164,9 +171,12 @@ const Nav = memo(() => {
 
       {menuOpen && visible && (
         <div
+          ref={menuRef}
+          id={menuId}
           role="dialog"
           aria-modal
           aria-label="Navigation menu"
+          tabIndex={-1}
           style={{
             position: 'fixed',
             top: 56,

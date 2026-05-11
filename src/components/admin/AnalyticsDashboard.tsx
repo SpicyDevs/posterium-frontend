@@ -1560,7 +1560,7 @@ const svgVsRaster = useMemo(
         </div>
       )}
 
-      <main style={{ padding: 16, maxWidth: 1400, margin: '0 auto' }}>
+      <main id="main-content" style={{ padding: 16, maxWidth: 1400, margin: '0 auto' }}>
         {/* ══ OVERVIEW ══════════════════════════════════════════════════════ */}
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

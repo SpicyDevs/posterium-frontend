@@ -1,15 +1,16 @@
 ---
 // src/pages/test.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
 import TestBenchmark from '../../components/admin/TestBenchmark';
 ---
 
 <BaseLayout
-  title="Rasterizer Benchmark | Posterium"
-  description="Test all rasterizer nodes with live poster timing and health data."
-  canonical="https://posters.spicydevs.xyz/test"
+  title="Diagnostics | Posterium Admin"
+  description="Posterium admin diagnostics and benchmarking tools."
+  canonical="https://posters.spicydevs.xyz/admin/test"
   noindex={true}
 >
-  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <PageSEO slot="head" routeKey="/admin/test" />
   <TestBenchmark client:only="react" />
 </BaseLayout>

@@ -1,6 +1,7 @@
 ---
 // src/pages/admin/analytics.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageSEO from '@/components/seo/PageSEO.astro';
 import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
 ---
 
@@ -10,6 +11,6 @@ import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
   canonical="https://posters.spicydevs.xyz/admin/analytics"
   noindex={true}
 >
-  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <PageSEO slot="head" routeKey="/admin/analytics" />
   <AnalyticsDashboard client:only="react" />
 </BaseLayout>

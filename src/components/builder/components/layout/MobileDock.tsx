@@ -46,6 +46,7 @@ const MobileDock: React.FC<{
     return (
       <nav
         role="tablist"
+        aria-label="Builder panel navigation"
         className="lg:hidden shrink-0 h-16 flex items-stretch border-t shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-50 px-1 pb-[env(safe-area-inset-bottom,0px)] relative overflow-hidden"
         style={{
           background: '#0a0908',
@@ -54,12 +55,15 @@ const MobileDock: React.FC<{
       >
         {visibleTabs.map(({ id, Icon, label }) => {
           const isActive = activeTab === id && mobileSheetMode !== 'hidden';
-          return (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => handleTab(id)}
+            return (
+              <button
+                key={id}
+                id={`mobile-tab-${id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls="mobile-panel"
+                aria-expanded={isActive}
+                onClick={() => handleTab(id)}
               className={`min-w-0 basis-0 flex-1 flex flex-col items-center justify-center gap-1 mx-0.5 my-1.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-[rgba(196,124,46,0.1)]' : 'hover:bg-[rgba(196,124,46,0.07)] active:scale-95'}`}
             >
               <Icon

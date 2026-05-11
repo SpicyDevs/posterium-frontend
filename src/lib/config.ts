@@ -379,4 +379,89 @@ export const ROUTE_SEO: Record<string, RouteSEOMeta> = {
       description: 'Step-by-step setup guides for Posterium integrations.',
     },
   },
+  '/privacy': {
+    title: 'Privacy Policy | Posterium',
+    description: 'Privacy policy for Posterium, the free movie and TV poster generator.',
+    keywords:
+      'posterium privacy, poster api privacy policy, movie poster generator privacy, data usage posterium',
+    canonical: `${SITE_CONFIG.baseUrl}/privacy`,
+    og: {
+      type: 'article',
+      url: `${SITE_CONFIG.baseUrl}/privacy`,
+      title: 'Privacy Policy | Posterium',
+      description: 'Privacy policy for Posterium and how data is handled.',
+    },
+    twitter: {
+      title: 'Privacy Policy | Posterium',
+      description: 'Privacy policy for Posterium.',
+    },
+  },
+  '/terms': {
+    title: 'Terms of Service | Posterium',
+    description: 'Terms of service for Posterium, the free movie and TV poster generator.',
+    keywords:
+      'posterium terms, poster api terms of service, movie poster generator terms, posterium usage rules',
+    canonical: `${SITE_CONFIG.baseUrl}/terms`,
+    og: {
+      type: 'article',
+      url: `${SITE_CONFIG.baseUrl}/terms`,
+      title: 'Terms of Service | Posterium',
+      description: 'Terms of service for using Posterium.',
+    },
+    twitter: {
+      title: 'Terms of Service | Posterium',
+      description: 'Terms of service for using Posterium.',
+    },
+  },
+  '/404': {
+    title: 'Page Not Found | Posterium',
+    description: 'The page you are looking for does not exist.',
+    keywords: 'posterium 404, page not found',
+    canonical: `${SITE_CONFIG.baseUrl}/404`,
+    noindex: true,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/404`,
+      title: 'Page Not Found | Posterium',
+      description: 'The page you are looking for does not exist.',
+    },
+    twitter: {
+      title: 'Page Not Found | Posterium',
+      description: 'The page you are looking for does not exist.',
+    },
+  },
+  '/admin/analytics': {
+    title: 'Analytics | Posterium Admin',
+    description: 'Posterium admin analytics dashboard.',
+    keywords: 'posterium admin analytics',
+    canonical: `${SITE_CONFIG.baseUrl}/admin/analytics`,
+    noindex: true,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/admin/analytics`,
+      title: 'Analytics | Posterium Admin',
+      description: 'Posterium admin analytics dashboard.',
+    },
+    twitter: {
+      title: 'Analytics | Posterium Admin',
+      description: 'Posterium admin analytics dashboard.',
+    },
+  },
+  '/admin/test': {
+    title: 'Diagnostics | Posterium Admin',
+    description: 'Posterium admin diagnostics and benchmarking tools.',
+    keywords: 'posterium admin diagnostics',
+    canonical: `${SITE_CONFIG.baseUrl}/admin/test`,
+    noindex: true,
+    og: {
+      type: 'website',
+      url: `${SITE_CONFIG.baseUrl}/admin/test`,
+      title: 'Diagnostics | Posterium Admin',
+      description: 'Posterium admin diagnostics and benchmarking tools.',
+    },
+    twitter: {
+      title: 'Diagnostics | Posterium Admin',
+      description: 'Posterium admin diagnostics and benchmarking tools.',
+    },
+  },
 };

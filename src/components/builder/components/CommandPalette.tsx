@@ -1,6 +1,7 @@
 // src/components/builder/components/CommandPalette.tsx
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useId } from 'react';
 import { Command, Search, X } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 export interface PaletteCommand {
   id: string;
@@ -34,6 +35,8 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
 
   useEffect(() => {
     if (isOpen) {
@@ -145,6 +148,8 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
     setActiveIdx(0);
   }, [query]);
 
+  useFocusTrap(panelRef, isOpen, { initialFocusRef: inputRef });
+
   const handleExecute = useCallback(
     (cmd: PaletteCommand) => {
       recordRecent(cmd.id);
@@ -171,6 +176,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   if (!isOpen) return null;
 
   let globalIdx = 0;
+  const activeDescendant = flatList[activeIdx]?.id ? `cmd-${flatList[activeIdx].id}` : undefined;
 
   return (
     <div
@@ -195,6 +201,11 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
       `}</style>
 
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        tabIndex={-1}
         style={{
           width: '100%',
           maxWidth: 560,
@@ -220,6 +231,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           }}
         >
           <Search size={14} style={{ color: 'rgba(196,124,46,0.5)', flexShrink: 0 }} />
+          <span id={headingId} className="sr-only">
+            Command palette
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -277,6 +291,9 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
         {/* Results */}
         <div
           ref={listRef}
+          role="listbox"
+          aria-activedescendant={activeDescendant}
+          aria-label="Command results"
           style={{
             maxHeight: 380,
             overflowY: 'auto',
@@ -416,6 +433,7 @@ const CommandItem = memo<{
   onExecute: (cmd: PaletteCommand) => void;
 }>(({ cmd, idx, isActive, onHover, onExecute }) => (
   <button
+    id={`cmd-${cmd.id}`}
     data-idx={idx}
     role="option"
     aria-selected={isActive}

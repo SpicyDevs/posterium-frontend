@@ -1,7 +1,8 @@
-import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState, useId } from 'react';
 import { Download, X, Copy, Check, ArrowRight, ExternalLink } from 'lucide-react';
 import type { ExtensionType, PosterConfig } from '@/components/builder/types';
 import { generateApiUrl } from '@/components/builder/utils';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 interface ExportMenuProps {
   config: PosterConfig;
@@ -30,6 +31,8 @@ const ExportMenu = memo<ExportMenuProps>(
     openInBuilderHref,
   }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const headingId = useId();
     const [popupCoords, setPopupCoords] = useState<{
       top: number;
       left: number;
@@ -166,12 +169,18 @@ const ExportMenu = memo<ExportMenuProps>(
       };
     }, [isOpen, onClose, anchorRef]);
 
+    useFocusTrap(popoverRef, isOpen, { initialFocusRef: inputRef });
+
     if (!isOpen) return null;
 
     return (
       <div
         ref={popoverRef}
         className="z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        tabIndex={-1}
         style={{
           position: 'fixed',
           top: popupCoords?.top ?? 52,
@@ -201,6 +210,7 @@ const ExportMenu = memo<ExportMenuProps>(
           <div className="flex items-center gap-2">
             <Download size={13} style={{ color: 'var(--film-amber)' }} />
             <span
+              id={headingId}
               className="syne-font font-bold uppercase tracking-widest"
               style={{ fontSize: 10, color: 'var(--film-cream)' }}
             >
@@ -229,11 +239,13 @@ const ExportMenu = memo<ExportMenuProps>(
           >
             Format
           </p>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Export format">
             {EXT_OPTIONS.map((ext) => (
               <button
                 key={ext.id}
                 onClick={() => onExtensionChange(ext.id)}
+                role="radio"
+                aria-checked={config.extension === ext.id}
                 className="flex flex-col items-center gap-1 py-2 rounded-lg transition-all active:scale-95 syne-font"
                 style={{
                   background:
@@ -269,6 +281,7 @@ const ExportMenu = memo<ExportMenuProps>(
           >
             <input
               type="url"
+              ref={inputRef}
               value={displayUrl}
               onChange={(e) => setEditedUrl(e.target.value)}
               onKeyDown={(e) => {

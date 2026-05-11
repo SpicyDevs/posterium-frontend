@@ -21,7 +21,7 @@ const {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0a" />
@@ -43,9 +43,26 @@ const {
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
     />
 
+    <script is:inline>
+      (() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const set = () => {
+          document.documentElement.dataset.reducedMotion = media.matches ? 'true' : 'false';
+        };
+        set();
+        if (media.addEventListener) {
+          media.addEventListener('change', set);
+        } else {
+          media.addListener(set);
+        }
+      })();
+    </script>
+
     <slot name="head" />
   </head>
   <body class={bodyClass}>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <noscript>
       <div style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px;">
         <h1>Posterium - Free Movie &amp; TV Poster Generator with Rating Badges</h1>

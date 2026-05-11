@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Coffee, Github, Menu, Search, X } from 'lucide-react';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 export interface NavbarLink {
   label: string;
@@ -49,6 +50,7 @@ const MainNavbar = memo<MainNavbarProps>(
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       if (!revealOnScroll) {
@@ -69,6 +71,9 @@ const MainNavbar = memo<MainNavbarProps>(
 
     const links = useMemo(() => [...sectionLinks, ...APP_LINKS], [sectionLinks]);
     const closeMenu = useCallback(() => setMenuOpen(false), []);
+    const menuId = 'main-nav-mobile-menu';
+
+    useFocusTrap(menuRef, menuOpen && visible);
 
     useEffect(() => {
       if (!search) return;
@@ -268,6 +273,8 @@ const MainNavbar = memo<MainNavbarProps>(
               className="main-nav-mobile-toggle"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
+              aria-controls={menuId}
+              aria-haspopup="dialog"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               style={{
                 background: 'none',
@@ -314,9 +321,12 @@ const MainNavbar = memo<MainNavbarProps>(
 
         {menuOpen && visible && (
           <div
+            ref={menuRef}
+            id={menuId}
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
+            tabIndex={-1}
             style={{
               position: fixed ? 'fixed' : 'absolute',
               top: 56,

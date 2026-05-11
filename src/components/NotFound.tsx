@@ -38,7 +38,8 @@ const NotFound: React.FC = () => {
   }, [remaining]);
 
   return (
-    <div
+    <main
+      id="main-content"
       style={{
         background: '#09090b',
         color: '#e4e4e7',
@@ -308,7 +309,7 @@ const NotFound: React.FC = () => {
           </a>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

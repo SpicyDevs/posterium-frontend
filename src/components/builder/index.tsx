@@ -67,6 +67,7 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -119,6 +120,9 @@ const StudioLayout: React.FC<{
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
+  const hasAnnouncedRef = useRef(false);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   useEffect(() => {
@@ -144,6 +148,23 @@ const StudioLayout: React.FC<{
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
   }, []);
+
+  useFocusTrap(mobilePanelRef, mobileSheetMode !== 'hidden');
+
+  const selectionCount =
+    selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+
+  useEffect(() => {
+    if (!hasAnnouncedRef.current) {
+      hasAnnouncedRef.current = true;
+      return;
+    }
+    const message =
+      selectionCount === 0
+        ? 'Selection cleared'
+        : `${selectionCount} item${selectionCount === 1 ? '' : 's'} selected`;
+    setSelectionAnnouncement(message);
+  }, [selectionCount]);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
@@ -913,14 +934,6 @@ const StudioLayout: React.FC<{
 
   return (
     <>
-      <a
-        href="#main-canvas"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium select-none"
-        style={{ background: 'var(--film-amber)', color: '#070706' }}
-      >
-        Skip to canvas
-      </a>
-
       <style>{`
         .builder-ui, .builder-ui * { user-select: none; -webkit-user-select: none; }
         .builder-ui input, .builder-ui textarea, .builder-ui [contenteditable] {
@@ -940,6 +953,9 @@ const StudioLayout: React.FC<{
         }}
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
+        <div className="sr-only" role="status" aria-live="polite">
+          {selectionAnnouncement}
+        </div>
 
         <ResetDialog
           isOpen={isResetOpen}
@@ -1074,11 +1090,14 @@ const StudioLayout: React.FC<{
             {/* Central area: sidebar toggles flank the command palette search */}
             <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
               {/* Left sidebar toggle - desktop only */}
-              <button
-                onClick={() => setLeftVisible(!leftVisible)}
-                title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-                style={{
+                <button
+                  onClick={() => setLeftVisible(!leftVisible)}
+                  title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
+                  aria-label={`${leftVisible ? 'Hide' : 'Show'} layer panel`}
+                  aria-pressed={leftVisible}
+                  aria-controls="builder-left-panel"
+                  className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
+                  style={{
                   color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
                   border: '1px solid transparent',
                   background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
@@ -1127,6 +1146,9 @@ const StudioLayout: React.FC<{
               <button
                 onClick={() => setRightVisible(!rightVisible)}
                 title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
+                aria-label={`${rightVisible ? 'Hide' : 'Show'} inspector panel`}
+                aria-pressed={rightVisible}
+                aria-controls="builder-right-panel"
                 className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
                   color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
@@ -1250,6 +1272,7 @@ const StudioLayout: React.FC<{
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
+              id="builder-left-panel"
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
@@ -1282,7 +1305,7 @@ const StudioLayout: React.FC<{
 
           {/* Canvas */}
           <main
-            id="main-canvas"
+            id="main-content"
             role="main"
             aria-label="Poster canvas"
             className="flex-1 relative overflow-hidden min-h-0"
@@ -1338,6 +1361,7 @@ const StudioLayout: React.FC<{
           {/* Right sidebar */}
           {!isFullscreen && (
             <aside
+              id="builder-right-panel"
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
@@ -1363,11 +1387,17 @@ const StudioLayout: React.FC<{
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
-            <div
-              className={clsx(
-                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
-                mobileSheetMode !== 'hidden'
+            {!isFullscreen && (
+              <div
+                ref={mobilePanelRef}
+                id="mobile-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Builder tools panel"
+                tabIndex={-1}
+                className={clsx(
+                  'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
+                  mobileSheetMode !== 'hidden'
                   ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
                   : 'h-0 border-t-0'
               )}

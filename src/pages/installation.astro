@@ -21,6 +21,8 @@ import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
+import { SITE_CONFIG } from '@/lib/config';
+import { cleanText, createHowToSchema } from '@/lib/seo/schemas';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -52,6 +54,34 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   id:       g.guide.id,
   headings: g.headings,
 }));
+
+const toAbsoluteUrl = (value: string) => (value.startsWith('http') ? value : `${SITE_CONFIG.baseUrl}${value}`);
+
+const howToSchemas = preparedGuides.map((guide) => {
+  const steps = guide.headings.map((heading) => ({
+    name: heading.text,
+    text: heading.text,
+  }));
+  const fallbackText = cleanText(guide.html || guide.guide.body || '');
+  const resolvedSteps =
+    steps.length > 0
+      ? steps
+      : fallbackText
+          .split('. ')
+          .map((sentence) => sentence.trim())
+          .filter(Boolean)
+          .slice(0, 6)
+          .map((sentence) => ({ name: sentence, text: sentence }));
+  const totalMinutes = Math.max(3, resolvedSteps.length * 2);
+  return createHowToSchema({
+    name: `${guide.name} installation`,
+    description: `Install Posterium in ${guide.name} with step-by-step setup guidance.`,
+    url: `${SITE_CONFIG.baseUrl}/installation#${guide.guide.id}`,
+    image: toAbsoluteUrl(guide.showcaseImages.desktop),
+    steps: resolvedSteps,
+    totalMinutes,
+  });
+});
 ---
 
 <BaseLayout
@@ -60,7 +90,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   canonical="https://posters.spicydevs.xyz/installation"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/installation" />
+  <PageSEO slot="head" routeKey="/installation" additionalSchemas={howToSchemas} />
 
   <div class="install-root">
     <MainNavbar
@@ -100,7 +130,7 @@ const allGuideHeadings = preparedGuides.map((g) => ({
       </aside>
 
       <!-- ── Main content ───────────────────────────────────────────────── -->
-      <main class="install-main" id="install-main-content">
+      <main class="install-main" id="main-content">
         <!-- Page header -->
         <header class="install-page-header">
           <div>

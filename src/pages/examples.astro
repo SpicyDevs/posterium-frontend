@@ -9,6 +9,8 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageSEO from '@/components/seo/PageSEO.astro';
 import ExamplesPage from '@/components/examples/ExamplesPage';
+import { SITE_CONFIG } from '@/lib/config';
+import { createItemListSchema } from '@/lib/seo/schemas';
 import '@/styles/global.css';
 
 const exampleEntries = await getCollection('examples');
@@ -21,6 +23,16 @@ const presets = exampleEntries
     description: entry.data.description,
     query:       entry.data.query,
   }));
+
+const presetSchema = createItemListSchema(
+  'Posterium preset showcase',
+  presets.map((preset) => ({
+    name: preset.title,
+    description: preset.description,
+    url: `${SITE_CONFIG.baseUrl}/examples#${preset.id}`,
+  })),
+  'Examples of ready-made Posterium poster configurations.'
+);
 ---
 
 <BaseLayout
@@ -29,7 +41,7 @@ const presets = exampleEntries
   canonical="https://posters.spicydevs.xyz/examples"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/examples" />
+  <PageSEO slot="head" routeKey="/examples" additionalSchemas={[presetSchema]} />
 
   <!--
     client:visible — only hydrate once the component scrolls into the viewport.
