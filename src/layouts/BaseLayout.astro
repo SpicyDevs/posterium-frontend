@@ -1,10 +1,14 @@
 ---
+import PageSEO from '@/components/seo/PageSEO.astro';
+
 interface Props {
   title: string;
   description: string;
   canonical: string;
   ogImage?: string;
   noindex?: boolean;
+  robots?: string;
+  routeKey?: string;
   bodyClass?: string;
 }
 
@@ -14,6 +18,8 @@ const {
   canonical,
   ogImage = '/og-image.png',
   noindex = false,
+  robots,
+  routeKey,
   bodyClass,
 } = Astro.props;
 ---
@@ -23,17 +29,17 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0a0a0a" />
-    <meta name="msapplication-TileColor" content="#0a0a0a" />
-    <meta name="msapplication-config" content="/browserconfig.xml" />
-
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
+    <PageSEO
+      routeKey={routeKey}
+      metadata={{ title, description, canonical, ogImage, noindex, robots }}
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
