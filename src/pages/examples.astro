@@ -8,25 +8,40 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ExamplesPage from '@/components/examples/ExamplesPage';
+import { SITE_CONFIG } from '@/lib/config';
+import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 const exampleEntries = await getCollection('examples');
 
-const presets = exampleEntries
-  .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
-  .map((entry) => ({
-    id:          entry.id,
-    title:       entry.data.title,
-    description: entry.data.description,
-    query:       entry.data.query,
-  }));
+const sortedExamples = exampleEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+const presets = sortedExamples.map((entry) => ({
+  id:          entry.id,
+  title:       entry.data.title,
+  description: entry.data.description,
+  query:       entry.data.query,
+}));
+
+const canonical = `${SITE_CONFIG.baseUrl}/examples`;
+
+const seo: PageSEOMetadata = {
+  title: 'Examples - Posterium',
+  description: 'Explore stylish poster examples and open any configuration directly in the Posterium builder.',
+  keywords: 'posterium examples, poster showcase, movie poster examples, export poster api urls, open in builder',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium example movie poster layouts with rating badges',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Examples', url: canonical },
+  ],
+  jsonLd: sortedExamples.map((entry) => buildArticleOrTechArticleSchema({ ...entry, slug: `examples/${entry.id}` })),
+};
 ---
 
 <BaseLayout
-  title="Examples - Posterium"
-  description="Explore stylish poster examples and open any configuration directly in the Posterium builder."
-  canonical="https://posterium.xyz/examples"
-  routeKey="/examples"
+  seo={seo}
   bodyClass="bg-[#070706]"
 >
 

@@ -2,17 +2,46 @@
 // src/pages/build.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BuilderApp from '@/components/builder/index.tsx';
+import { SITE_CONFIG } from '@/lib/config';
+import { buildWebApplicationSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
+
+const canonical = `${SITE_CONFIG.baseUrl}/build`;
+
+const seo: PageSEOMetadata = {
+  title: 'Poster Builder - Drag & Drop Editor | Posterium',
+  description:
+    'Drag-and-drop poster editor with real-time preview. Position rating badges pixel-perfectly on any movie or TV poster. Supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, or WebP.',
+  keywords:
+    'poster editor, drag drop poster builder, movie poster editor online, IMDb badge position, rating badge editor, custom poster builder, free poster editor, movie poster designer, TV poster creator, export poster SVG PNG, Plex poster builder, Jellyfin poster editor',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium drag-and-drop poster builder with rating badge controls',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Poster Builder', url: canonical },
+  ],
+  jsonLd: [
+    buildWebApplicationSchema({
+      name: 'Posterium Poster Builder',
+      url: canonical,
+      description: 'Visual drag-and-drop editor for building custom movie and TV posters with live rating badge overlays. Real-time preview with instant API URL export.',
+      featureList: [
+        'Drag-and-drop badge positioning',
+        'Real-time poster preview',
+        'Per-badge styling controls',
+        'Undo/redo history',
+        'Keyboard shortcuts',
+        'API URL generation',
+        'Multiple export formats',
+      ],
+    }),
+  ],
+};
 ---
 
-<BaseLayout
-  title="Poster Builder - Drag & Drop Editor | Posterium"
-  description="Drag-and-drop poster editor with real-time preview. Position rating badges pixel-perfectly on any movie or TV poster. Supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, or WebP."
-  canonical="https://posterium.xyz/build"
-  bodyClass="overflow-hidden"
-  routeKey="/build"
->
-  
+<BaseLayout seo={seo} bodyClass="overflow-hidden">
   {/* ADDED: SSR-rendered structural context for Googlebot before React hydrates */}
   <div class="sr-only">
     <h2>Posterium Interactive Builder</h2>

@@ -3,13 +3,25 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import NotFound from '@/components/NotFound.tsx';
 import '@/styles/global.css';
+import { SITE_CONFIG } from '@/lib/config';
+import type { PageSEOMetadata } from '@/lib/seo';
+
+const canonical = `${SITE_CONFIG.baseUrl}/404`;
+const seo: PageSEOMetadata = {
+  title: 'Page Not Found | Posterium',
+  description: 'The page you are looking for does not exist.',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium page not found',
+  robots: 'noindex, nofollow',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: '404', url: canonical },
+  ],
+  jsonLd: [],
+};
 ---
 
-<BaseLayout
-  title="Page Not Found | Posterium"
-  description="The page you are looking for does not exist."
-  canonical="https://posterium.xyz/404"
-  noindex={true}
->
+<BaseLayout seo={seo}>
   <NotFound client:only="react" />
 </BaseLayout>

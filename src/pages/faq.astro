@@ -5,6 +5,8 @@ import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
 import { AmberTag } from '@/components/shared/primitives';
+import { SITE_CONFIG } from '@/lib/config';
+import { buildFAQPageSchema, toFAQEntries, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -41,15 +43,28 @@ const searchItems = sortedFaqs.map((faq) => ({
   contentText: faq.body ?? '',
 }));
 
+const canonical = `${SITE_CONFIG.baseUrl}/faq`;
+const seo: PageSEOMetadata = {
+  title: 'FAQ - Posterium',
+  description: "Frequently asked questions about Posterium's builder, API, exports, and integrations.",
+  keywords: 'posterium faq, poster api faq, movie poster api help, builder help, export formats, aiometadata, plex jellyfin poster',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium FAQ page for builder, API, and integration help',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'FAQ', url: canonical },
+  ],
+  jsonLd: [buildFAQPageSchema(toFAQEntries(sortedFaqs))],
+};
+
 // With glob loader, rendered content is available via entry.rendered.html
 // No need to call render() - it's pre-rendered at build time
 ---
 
 <BaseLayout
-  title="FAQ - Posterium"
-  description="Frequently asked questions about Posterium's builder, API, exports, and integrations."
-  canonical="https://posterium.xyz/faq"
-  routeKey="/faq"
+  seo={seo}
   bodyClass="bg-[#070706]"
 >
 
