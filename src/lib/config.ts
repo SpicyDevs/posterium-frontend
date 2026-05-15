@@ -8,13 +8,13 @@ export const SITE_CONFIG = {
   apiBase: 'https://api.spicydevs.xyz',
   themeColor: '#0a0a0a',
   locale: 'en_US',
-  twitterHandle: '@project',
-  github: '#',
+  twitterHandle: '',
+  github: 'https://github.com/SpicyDevs',
   ogImageUrl: 'https://posterium.xyz/og-image.png',
   ogImageWidth: 1200,
   ogImageHeight: 630,
-  author: 'Project Team',
-  authorUrl: '#',
+  author: 'SpicyDevs',
+  authorUrl: 'https://spicydevs.js.org',
 } as const;
 
 export interface OGMeta {

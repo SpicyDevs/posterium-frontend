@@ -3,13 +3,14 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
+import { SITE_CONFIG } from '@/lib/config';
 import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 const LAST_UPDATED = 'April 6, 2026';
-const SITE_URL     = 'https://posterium.xyz';
-const CONTACT      = '#';
-const REPO         = '#';
+const SITE_URL     = SITE_CONFIG.baseUrl;
+const CONTACT      = SITE_CONFIG.authorUrl;
+const REPO         = SITE_CONFIG.github;
 const canonical = `${SITE_URL}/terms`;
 const seo: PageSEOMetadata = {
   title: 'Terms of Service | Posterium',
@@ -351,7 +352,7 @@ const seo: PageSEOMetadata = {
               <p>
                 The Service infrastructure runs on <strong>Cloudflare Workers</strong>.
                 Use of the Service is also subject to
-                <a href="#" target="_blank" rel="noreferrer">Cloudflare's Terms of Service</a>.
+                <a href="https://www.cloudflare.com/website-terms/" target="_blank" rel="noreferrer">Cloudflare's Terms of Service</a>.
               </p>
             </div>
           </section>
@@ -369,8 +370,8 @@ const seo: PageSEOMetadata = {
                 available in the repository:
               </p>
               <p>
-                <a href={`${REPO}/blob/main/LICENSE`} target="_blank" rel="noreferrer" class="legal-cta-link syne-font">
-                  Project repository license →
+                <a href={REPO} target="_blank" rel="noreferrer" class="legal-cta-link syne-font">
+                  Project source on GitHub →
                 </a>
               </p>
               <p>
@@ -440,7 +441,7 @@ const seo: PageSEOMetadata = {
                 We may update these Terms at any time. Material changes will be
                 reflected in the "Last updated" date at the top of this page and
                 noted in the
-                <a href="#" target="_blank" rel="noreferrer">repository commit history</a>.
+                <a href={REPO} target="_blank" rel="noreferrer">repository commit history</a>.
                 Continued use of the Service after changes constitutes acceptance of
                 the revised Terms.
               </p>

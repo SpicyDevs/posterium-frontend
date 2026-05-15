@@ -151,7 +151,30 @@ export function buildOrganizationSchema(): SchemaObject {
       '@type': 'ImageObject',
       url: absoluteUrl('/icon-512.png'),
     },
-    sameAs: [SITE_CONFIG.github].filter((url) => url && url !== '#'),
+    sameAs: [SITE_CONFIG.github, SITE_CONFIG.authorUrl].filter(Boolean),
+  };
+}
+
+const siteNavigationItems: BreadcrumbItem[] = [
+  { name: 'Home', url: SITE_CONFIG.baseUrl },
+  { name: 'Builder', url: `${SITE_CONFIG.baseUrl}/build` },
+  { name: 'Examples', url: `${SITE_CONFIG.baseUrl}/examples` },
+  { name: 'Installation', url: `${SITE_CONFIG.baseUrl}/installation` },
+  { name: 'FAQ', url: `${SITE_CONFIG.baseUrl}/faq` },
+];
+
+export function buildSiteNavigationSchema(): SchemaObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${SITE_CONFIG.baseUrl}/#site-navigation`,
+    name: `${SITE_CONFIG.name} site navigation`,
+    itemListElement: siteNavigationItems.map((item, index) => ({
+      '@type': 'SiteNavigationElement',
+      position: index + 1,
+      name: item.name,
+      url: item.url,
+    })),
   };
 }
 
@@ -164,14 +187,6 @@ export function buildWebsiteSchema(): SchemaObject {
     url: SITE_CONFIG.baseUrl,
     description: SEO_DEFAULTS.description,
     publisher: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${SITE_CONFIG.baseUrl}/build?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
   };
 }
 
@@ -222,6 +237,26 @@ export function buildWebApplicationSchema(meta: WebApplicationSchemaMeta): Schem
     operatingSystem: meta.operatingSystem ?? 'Web Browser',
     browserRequirements: 'Requires JavaScript. Requires a modern browser.',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    potentialAction: [
+      {
+        '@type': 'UseAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: meta.url,
+        },
+      },
+      {
+        '@type': 'CreateAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: meta.url,
+        },
+        result: {
+          '@type': 'CreativeWork',
+          name: 'Custom rating poster',
+        },
+      },
+    ],
     author: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
     screenshot: meta.screenshot ? absoluteUrl(meta.screenshot) : undefined,
     isAccessibleForFree: true,
@@ -268,11 +303,19 @@ export function buildArticleOrTechArticleSchema(contentEntry: ArticleContentEntr
 }
 
 export function buildCoreSchemas(meta: PageSEOMetadata): SchemaObject[] {
+  const breadcrumbs = meta.breadcrumbs?.length
+    ? meta.breadcrumbs
+    : [
+        { name: 'Home', url: SITE_CONFIG.baseUrl },
+        ...(meta.canonical === SITE_CONFIG.baseUrl ? [] : [{ name: meta.title, url: meta.canonical }]),
+      ];
+
   return [
     buildOrganizationSchema(),
     buildWebsiteSchema(),
+    buildSiteNavigationSchema(),
     buildWebPageSchema(meta),
-    ...(meta.breadcrumbs?.length ? [buildBreadcrumbSchema(meta.breadcrumbs)] : []),
+    buildBreadcrumbSchema(breadcrumbs),
     ...meta.jsonLd,
   ];
 }

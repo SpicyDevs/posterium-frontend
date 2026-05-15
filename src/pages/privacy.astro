@@ -3,12 +3,13 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
+import { SITE_CONFIG } from '@/lib/config';
 import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 const LAST_UPDATED = 'April 6, 2026';
-const SITE_URL     = 'https://posterium.xyz';
-const CONTACT      = '#';
+const SITE_URL     = SITE_CONFIG.baseUrl;
+const CONTACT      = SITE_CONFIG.authorUrl;
 const canonical = `${SITE_URL}/privacy`;
 const seo: PageSEOMetadata = {
   title: 'Privacy Policy | Posterium',
