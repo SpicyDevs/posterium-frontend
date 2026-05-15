@@ -1,27 +1,22 @@
 ---
 import PageSEO from '@/components/seo/PageSEO.astro';
+import { SEO_DEFAULTS } from '@/lib/config';
+import type { PageSEOMetadata } from '@/lib/seo';
 
 interface Props {
-  title: string;
-  description: string;
-  canonical: string;
-  ogImage?: string;
-  noindex?: boolean;
-  robots?: string;
-  routeKey?: string;
+  seo: PageSEOMetadata;
   bodyClass?: string;
 }
 
 const {
-  title,
-  description,
-  canonical,
-  ogImage = '/og-image.png',
-  noindex = false,
-  robots,
-  routeKey,
+  seo,
   bodyClass,
 } = Astro.props;
+
+const pageSeo = {
+  ...seo,
+  robots: seo.robots || SEO_DEFAULTS.robots,
+};
 ---
 <!doctype html>
 <html lang="en">
@@ -36,10 +31,7 @@ const {
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-    <PageSEO
-      routeKey={routeKey}
-      metadata={{ title, description, canonical, ogImage, noindex, robots }}
-    />
+    <PageSEO meta={pageSeo} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

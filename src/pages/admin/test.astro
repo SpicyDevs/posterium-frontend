@@ -2,13 +2,25 @@
 // src/pages/test.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TestBenchmark from '../../components/admin/TestBenchmark';
+import { SITE_CONFIG } from '@/lib/config';
+import type { PageSEOMetadata } from '@/lib/seo';
+
+const canonical = `${SITE_CONFIG.baseUrl}/admin/test`;
+const seo: PageSEOMetadata = {
+  title: 'Rasterizer Benchmark | Posterium',
+  description: 'Test all rasterizer nodes with live poster timing and health data.',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium rasterizer benchmark dashboard',
+  robots: 'noindex, nofollow',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Rasterizer Benchmark', url: canonical },
+  ],
+  jsonLd: [],
+};
 ---
 
-<BaseLayout
-  title="Rasterizer Benchmark | Posterium"
-  description="Test all rasterizer nodes with live poster timing and health data."
-  canonical="https://posterium.xyz/admin/test"
-  noindex={true}
->
+<BaseLayout seo={seo}>
   <TestBenchmark client:only="react" />
 </BaseLayout>

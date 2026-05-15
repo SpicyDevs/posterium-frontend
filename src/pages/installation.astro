@@ -20,6 +20,8 @@ import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
+import { SITE_CONFIG } from '@/lib/config';
+import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -51,13 +53,37 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   id:       g.guide.id,
   headings: g.headings,
 }));
+
+const canonical = `${SITE_CONFIG.baseUrl}/installation`;
+const seo: PageSEOMetadata = {
+  title: 'Installation - Posterium',
+  description: 'Installation guides for using Posterium with Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps.',
+  keywords: 'posterium installation, plex posterium, emby posterium, jellyfin posterium, stremio posterium, kodi posterium, poster guide',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium installation guides for Plex, Jellyfin, Emby, Stremio, and Kodi',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Installation', url: canonical },
+  ],
+  jsonLd: preparedGuides.map((entry) =>
+    buildArticleOrTechArticleSchema({
+      ...entry.guide,
+      slug: `installation#${entry.guide.id}`,
+      data: {
+        ...entry.guide.data,
+        title: `${entry.name} Posterium installation guide`,
+        description: `Install and configure Posterium with ${entry.name}.`,
+        category: 'Integrations',
+      },
+    }),
+  ),
+};
 ---
 
 <BaseLayout
-  title="Installation - Posterium"
-  description="Installation guides for using Posterium with Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps."
-  canonical="https://posterium.xyz/installation"
-  routeKey="/installation"
+  seo={seo}
   bodyClass="bg-[#070706]"
 >
 

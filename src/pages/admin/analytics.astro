@@ -2,13 +2,25 @@
 // src/pages/admin/analytics.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
+import { SITE_CONFIG } from '@/lib/config';
+import type { PageSEOMetadata } from '@/lib/seo';
+
+const canonical = `${SITE_CONFIG.baseUrl}/admin/analytics`;
+const seo: PageSEOMetadata = {
+  title: 'Analytics | Posterium Admin',
+  description: 'Rasterizer node performance, traffic analysis, and failure diagnostics.',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium admin analytics dashboard',
+  robots: 'noindex, nofollow',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Admin Analytics', url: canonical },
+  ],
+  jsonLd: [],
+};
 ---
 
-<BaseLayout
-  title="Analytics | Posterium Admin"
-  description="Rasterizer node performance, traffic analysis, and failure diagnostics."
-  canonical="https://posterium.xyz/admin/analytics"
-  noindex={true}
->
+<BaseLayout seo={seo}>
   <AnalyticsDashboard client:only="react" />
 </BaseLayout>

@@ -3,18 +3,40 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
+import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 const LAST_UPDATED = 'April 6, 2026';
 const SITE_URL     = 'https://posterium.xyz';
 const CONTACT      = '#';
+const canonical = `${SITE_URL}/privacy`;
+const seo: PageSEOMetadata = {
+  title: 'Privacy Policy | Posterium',
+  description: 'Privacy Policy for Posterium — the free movie and TV poster generator with live rating badges.',
+  canonical,
+  ogImage: `${SITE_URL}/og-image.png`,
+  ogImageAlt: 'Privacy Policy for Posterium',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_URL },
+    { name: 'Privacy Policy', url: canonical },
+  ],
+  jsonLd: [
+    buildArticleOrTechArticleSchema({
+      slug: canonical,
+      data: {
+        title: 'Privacy Policy | Posterium',
+        description: 'Privacy Policy for Posterium — the free movie and TV poster generator with live rating badges.',
+        updatedDate: LAST_UPDATED,
+      },
+    }),
+  ],
+};
+
 ---
 
 <BaseLayout
-  title="Privacy Policy | Posterium"
-  description="Privacy Policy for Posterium — the free movie and TV poster generator with live rating badges."
-  canonical={`${SITE_URL}/privacy`}
-  noindex={false}
+  seo={seo}
 >
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">

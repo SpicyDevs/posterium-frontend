@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
+import type { PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 export interface SidebarLink {
@@ -10,20 +11,14 @@ export interface SidebarLink {
 }
 
 interface Props {
-  title: string;
-  description: string;
-  canonical: string;
-  routeKey: string;
+  seo: PageSEOMetadata;
   sidebarTitle?: string;
   sidebarLinks?: SidebarLink[];
   searchPlaceholder?: string;
 }
 
 const {
-  title,
-  description,
-  canonical,
-  routeKey,
+  seo,
   sidebarTitle = 'Table of Contents',
   sidebarLinks = [],
   searchPlaceholder = 'Search...',
@@ -31,10 +26,7 @@ const {
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
-  canonical={canonical}
-  routeKey={routeKey}
+  seo={seo}
   bodyClass="bg-[#070706]"
 >
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">

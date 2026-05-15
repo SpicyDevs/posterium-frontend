@@ -1,146 +1,50 @@
 ---
 // src/components/seo/PageSEO.astro
-import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG, type RouteSEOMeta } from '@/lib/config';
-
-type SchemaObject = Record<string, unknown>;
-
-export interface PageSEOMetadata {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  canonical?: string;
-  ogImage?: string;
-  noindex?: boolean;
-  robots?: string;
-  og?: Partial<RouteSEOMeta['og']>;
-  twitter?: Partial<RouteSEOMeta['twitter']>;
-  jsonLd?: SchemaObject[];
-}
+import { SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
+import { absoluteUrl, buildCoreSchemas, type PageSEOMetadata } from '@/lib/seo';
 
 interface Props {
-  routeKey?: string;
-  metadata?: PageSEOMetadata;
+  meta: PageSEOMetadata;
 }
 
-const { routeKey, metadata = {} } = Astro.props;
-const routeMeta = routeKey ? ROUTE_SEO[routeKey] : undefined;
+const { meta } = Astro.props;
 
-const currentUrl = new URL(Astro.request.url);
-const requestCanonical = currentUrl.pathname === '/'
-  ? currentUrl.origin
-  : `${currentUrl.origin}${currentUrl.pathname.replace(/\/$/, '')}`;
-
-const title = metadata.title ?? routeMeta?.title ?? SEO_DEFAULTS.title;
-const description = metadata.description ?? routeMeta?.description ?? SEO_DEFAULTS.description;
-const keywords = metadata.keywords ?? routeMeta?.keywords ?? SEO_DEFAULTS.keywords;
-const noindex = metadata.noindex ?? routeMeta?.noindex ?? false;
-const cleanCanonical = metadata.canonical ?? routeMeta?.canonical ?? requestCanonical;
-const toAbsoluteUrl = (url: string) => {
-  if (/^https?:\/\//i.test(url)) return url;
-  return new URL(url, SITE_CONFIG.baseUrl).toString();
-};
-const robots = metadata.robots ?? (noindex
-  ? 'noindex, nofollow'
-  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
-const ogImage = toAbsoluteUrl(metadata.ogImage ?? routeMeta?.og?.image ?? SEO_DEFAULTS.og.image);
+const title = meta.title || SEO_DEFAULTS.title;
+const description = meta.description || SEO_DEFAULTS.description;
+const keywords = meta.keywords ?? SEO_DEFAULTS.keywords;
+const cleanCanonical = meta.canonical || SEO_DEFAULTS.canonical;
+const robots = meta.robots || SEO_DEFAULTS.robots;
+const ogImage = absoluteUrl(meta.ogImage || SEO_DEFAULTS.og.image);
+const ogImageAlt = meta.ogImageAlt || SEO_DEFAULTS.og.imageAlt;
 
 const og = {
   ...SEO_DEFAULTS.og,
-  ...routeMeta?.og,
-  ...metadata.og,
-  title: metadata.og?.title ?? metadata.title ?? routeMeta?.og?.title ?? routeMeta?.title ?? title,
-  description: metadata.og?.description ?? metadata.description ?? routeMeta?.og?.description ?? routeMeta?.description ?? description,
-  url: metadata.og?.url ?? cleanCanonical,
-  image: metadata.og?.image ?? ogImage,
+  ...meta.og,
+  title: meta.og?.title ?? title,
+  description: meta.og?.description ?? description,
+  url: meta.og?.url ?? cleanCanonical,
+  image: meta.og?.image ? absoluteUrl(meta.og.image) : ogImage,
+  imageAlt: meta.og?.imageAlt ?? ogImageAlt,
 };
 
 const twitter = {
   ...SEO_DEFAULTS.twitter,
-  ...routeMeta?.twitter,
-  ...metadata.twitter,
-  title: metadata.twitter?.title ?? metadata.title ?? routeMeta?.twitter?.title ?? routeMeta?.title ?? title,
-  description: metadata.twitter?.description ?? metadata.description ?? routeMeta?.twitter?.description ?? routeMeta?.description ?? description,
-  image: metadata.twitter?.image ?? og.image,
+  ...meta.twitter,
+  title: meta.twitter?.title ?? title,
+  description: meta.twitter?.description ?? description,
+  image: meta.twitter?.image ? absoluteUrl(meta.twitter.image) : og.image,
+  imageAlt: meta.twitter?.imageAlt ?? og.imageAlt,
 };
 
-const baseGraph = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'Organization',
-      '@id': `${SITE_CONFIG.baseUrl}/#organization`,
-      name: SITE_CONFIG.name,
-      url: SITE_CONFIG.baseUrl,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${SITE_CONFIG.baseUrl}/icon-512.png`,
-      },
-    },
-    {
-      '@type': 'WebSite',
-      '@id': `${SITE_CONFIG.baseUrl}/#website`,
-      url: SITE_CONFIG.baseUrl,
-      name: SITE_CONFIG.name,
-      description: SEO_DEFAULTS.description,
-      publisher: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
-    },
-    {
-      '@type': 'WebPage',
-      '@id': `${cleanCanonical}#webpage`,
-      url: cleanCanonical,
-      name: title,
-      description,
-      inLanguage: SITE_CONFIG.locale ?? 'en_US',
-      isPartOf: { '@id': `${SITE_CONFIG.baseUrl}/#website` },
-      about: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
-      primaryImageOfPage: {
-        '@type': 'ImageObject',
-        url: og.image,
-      },
-    },
-  ],
-};
-
-if (routeKey === '/build') {
-  baseGraph['@graph'].push(
-    {
-      '@type': 'WebApplication',
-      '@id': `${cleanCanonical}#application`,
-      name: 'Posterium Poster Builder',
-      description: 'Generate custom movie and TV posters with live rating badges.',
-      applicationCategory: 'DesignApplication',
-      operatingSystem: 'Any',
-      url: cleanCanonical,
-      developer: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
-      offers: { '@type': 'Offer', price: '0.00', priceCurrency: 'USD' },
-    },
-    {
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_CONFIG.baseUrl },
-        { '@type': 'ListItem', position: 2, name: 'Poster Builder', item: cleanCanonical },
-      ],
-    },
-  );
-}
-
-if (routeKey === '/installation' || routeKey === '/examples') {
-  baseGraph['@graph'].push({
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_CONFIG.baseUrl },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: routeKey === '/installation' ? 'Installation' : 'Examples',
-        item: cleanCanonical,
-      },
-    ],
-  });
-}
-
-const customSchemas = [...(routeMeta?.jsonLd ?? []), ...(metadata.jsonLd ?? [])];
-const finalSchemas = [baseGraph, ...customSchemas];
+const finalSchemas = buildCoreSchemas({
+  ...meta,
+  title,
+  description,
+  canonical: cleanCanonical,
+  ogImage: og.image,
+  ogImageAlt: og.imageAlt,
+  robots,
+});
 
 function safeStringify(obj: unknown): string {
   try {
