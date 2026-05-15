@@ -9,7 +9,6 @@
 // Animations are CSS-only and require no JavaScript.
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PageSEO from '@/components/seo/PageSEO.astro';
 import Dashboard from '@/components/dashboard/Dashboard.tsx';
 import '@/styles/global.css';
 ---
@@ -19,7 +18,7 @@ import '@/styles/global.css';
   description="Generate custom movie and TV show posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and MAL rating badges. Free API - no account required. Perfect for Plex, Jellyfin, Discord bots, Notion, and more."
   canonical="https://posterium.xyz"
   bodyClass="bg-[#070706] hero-anims-active"
+  routeKey="/"
 >
-  <PageSEO slot="head" routeKey="/" />
   <Dashboard client:load />
 </BaseLayout>

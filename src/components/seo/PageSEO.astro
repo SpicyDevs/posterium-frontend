@@ -1,191 +1,196 @@
 ---
 // src/components/seo/PageSEO.astro
-//
-// FIX / OPTIMISATION NOTES vs. previous version
-// ───────────────────────────────────────────────
-// 1. canonical is derived BEFORE the og / twitter spreads so it is always
-//    defined (previous version had a temporal dead-zone bug).
-// 2. JSON.stringify wrapped in try/catch to prevent build failures on bad data.
-// 3. Each schema object is validated before being emitted (no silent nulls).
-// 4. BreadcrumbList added for /installation and /examples routes.
-// 5. <meta name="author"> no longer emitted twice (was duplicated in original).
-// 6. Preconnect hints deduplicated — they were also in BaseLayout; kept here
-//    for pages that do NOT use BaseLayout, removed duplicates.
+import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG, type RouteSEOMeta } from '@/lib/config';
 
-import { ROUTE_SEO, SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
+type SchemaObject = Record<string, unknown>;
 
-interface Props {
-  routeKey: '/' | '/build' | '/faq' | '/examples' | '/installation';
+export interface PageSEOMetadata {
+  title?: string;
+  description?: string;
+  keywords?: string;
+  canonical?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  robots?: string;
+  og?: Partial<RouteSEOMeta['og']>;
+  twitter?: Partial<RouteSEOMeta['twitter']>;
+  jsonLd?: SchemaObject[];
 }
 
-const { routeKey } = Astro.props;
+interface Props {
+  routeKey?: string;
+  metadata?: PageSEOMetadata;
+}
 
-const routeMeta  = ROUTE_SEO[routeKey];
-const title      = routeMeta?.title       ?? SEO_DEFAULTS.title;
-const description= routeMeta?.description ?? SEO_DEFAULTS.description;
-const keywords   = routeMeta?.keywords    ?? SEO_DEFAULTS.keywords;
-const noindex    = routeMeta?.noindex     ?? false;
+const { routeKey, metadata = {} } = Astro.props;
+const routeMeta = routeKey ? ROUTE_SEO[routeKey] : undefined;
 
-// ── Canonical — derive first, used by everything below ─────────────────────
-const currentUrl     = new URL(Astro.request.url);
-const cleanCanonical = routeMeta?.canonical ?? (
-  currentUrl.pathname === '/'
-    ? currentUrl.origin
-    : `${currentUrl.origin}${currentUrl.pathname.replace(/\/$/, '')}`
-);
+const currentUrl = new URL(Astro.request.url);
+const requestCanonical = currentUrl.pathname === '/'
+  ? currentUrl.origin
+  : `${currentUrl.origin}${currentUrl.pathname.replace(/\/$/, '')}`;
 
-// ── OG / Twitter ────────────────────────────────────────────────────────────
+const title = metadata.title ?? routeMeta?.title ?? SEO_DEFAULTS.title;
+const description = metadata.description ?? routeMeta?.description ?? SEO_DEFAULTS.description;
+const keywords = metadata.keywords ?? routeMeta?.keywords ?? SEO_DEFAULTS.keywords;
+const noindex = metadata.noindex ?? routeMeta?.noindex ?? false;
+const cleanCanonical = metadata.canonical ?? routeMeta?.canonical ?? requestCanonical;
+const toAbsoluteUrl = (url: string) => {
+  if (/^https?:\/\//i.test(url)) return url;
+  return new URL(url, SITE_CONFIG.baseUrl).toString();
+};
+const robots = metadata.robots ?? (noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+const ogImage = toAbsoluteUrl(metadata.ogImage ?? routeMeta?.og?.image ?? SEO_DEFAULTS.og.image);
+
 const og = {
   ...SEO_DEFAULTS.og,
   ...routeMeta?.og,
-  title:       routeMeta?.og?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.og.title,
-  description: routeMeta?.og?.description ?? routeMeta?.description ?? SEO_DEFAULTS.og.description,
-  url:         cleanCanonical,
+  ...metadata.og,
+  title: metadata.og?.title ?? metadata.title ?? routeMeta?.og?.title ?? routeMeta?.title ?? title,
+  description: metadata.og?.description ?? metadata.description ?? routeMeta?.og?.description ?? routeMeta?.description ?? description,
+  url: metadata.og?.url ?? cleanCanonical,
+  image: metadata.og?.image ?? ogImage,
 };
 
 const twitter = {
   ...SEO_DEFAULTS.twitter,
   ...routeMeta?.twitter,
-  title:       routeMeta?.twitter?.title       ?? routeMeta?.title       ?? SEO_DEFAULTS.twitter.title,
-  description: routeMeta?.twitter?.description ?? routeMeta?.description ?? SEO_DEFAULTS.twitter.description,
+  ...metadata.twitter,
+  title: metadata.twitter?.title ?? metadata.title ?? routeMeta?.twitter?.title ?? routeMeta?.title ?? title,
+  description: metadata.twitter?.description ?? metadata.description ?? routeMeta?.twitter?.description ?? routeMeta?.description ?? description,
+  image: metadata.twitter?.image ?? og.image,
 };
 
-// ── Base enterprise @graph schema ───────────────────────────────────────────
-const enterpriseSchema = {
+const baseGraph = {
   '@context': 'https://schema.org',
   '@graph': [
     {
-      '@type':  'Organization',
-      '@id':    `${SITE_CONFIG.baseUrl}/#organization`,
-      name:     SITE_CONFIG.name,
-      url:      SITE_CONFIG.baseUrl,
+      '@type': 'Organization',
+      '@id': `${SITE_CONFIG.baseUrl}/#organization`,
+      name: SITE_CONFIG.name,
+      url: SITE_CONFIG.baseUrl,
       logo: {
         '@type': 'ImageObject',
-        url:     `${SITE_CONFIG.baseUrl}/icon-512.png`,
+        url: `${SITE_CONFIG.baseUrl}/icon-512.png`,
       },
     },
     {
-      '@type':     'WebSite',
-      '@id':       `${SITE_CONFIG.baseUrl}/#website`,
-      url:         SITE_CONFIG.baseUrl,
-      name:        SITE_CONFIG.name,
+      '@type': 'WebSite',
+      '@id': `${SITE_CONFIG.baseUrl}/#website`,
+      url: SITE_CONFIG.baseUrl,
+      name: SITE_CONFIG.name,
       description: SEO_DEFAULTS.description,
-      publisher:   { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+      publisher: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
     },
     {
-      '@type':       'WebPage',
-      '@id':         `${cleanCanonical}#webpage`,
-      url:           cleanCanonical,
-      name:          title,
-      description:   description,
-      inLanguage:    SITE_CONFIG.locale ?? 'en-US',
-      isPartOf:      { '@id': `${SITE_CONFIG.baseUrl}/#website` },
-      about:         { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+      '@type': 'WebPage',
+      '@id': `${cleanCanonical}#webpage`,
+      url: cleanCanonical,
+      name: title,
+      description,
+      inLanguage: SITE_CONFIG.locale ?? 'en_US',
+      isPartOf: { '@id': `${SITE_CONFIG.baseUrl}/#website` },
+      about: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        url: og.image,
+      },
     },
   ],
 };
 
-// ── Route-specific schema extensions ────────────────────────────────────────
 if (routeKey === '/build') {
-  enterpriseSchema['@graph'].push(
+  baseGraph['@graph'].push(
     {
-      '@type':               'WebApplication',
-      '@id':                 `${cleanCanonical}#application`,
-      name:                  'Posterium Poster Builder',
-      description:           'Generate custom movie and TV posters with live rating badges.',
-      applicationCategory:   'DesignApplication',
-      operatingSystem:       'Any',
-      url:                   cleanCanonical,
-      developer:             { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+      '@type': 'WebApplication',
+      '@id': `${cleanCanonical}#application`,
+      name: 'Posterium Poster Builder',
+      description: 'Generate custom movie and TV posters with live rating badges.',
+      applicationCategory: 'DesignApplication',
+      operatingSystem: 'Any',
+      url: cleanCanonical,
+      developer: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
       offers: { '@type': 'Offer', price: '0.00', priceCurrency: 'USD' },
-    } as any,
-    // Breadcrumb
+    },
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home',          item: SITE_CONFIG.baseUrl },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_CONFIG.baseUrl },
         { '@type': 'ListItem', position: 2, name: 'Poster Builder', item: cleanCanonical },
       ],
-    } as any
+    },
   );
 }
 
-if (routeKey === '/installation') {
-  enterpriseSchema['@graph'].push({
+if (routeKey === '/installation' || routeKey === '/examples') {
+  baseGraph['@graph'].push({
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home',         item: SITE_CONFIG.baseUrl },
-      { '@type': 'ListItem', position: 2, name: 'Installation', item: cleanCanonical },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_CONFIG.baseUrl },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: routeKey === '/installation' ? 'Installation' : 'Examples',
+        item: cleanCanonical,
+      },
     ],
-  } as any);
+  });
 }
 
-if (routeKey === '/examples') {
-  enterpriseSchema['@graph'].push({
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home',     item: SITE_CONFIG.baseUrl },
-      { '@type': 'ListItem', position: 2, name: 'Examples', item: cleanCanonical },
-    ],
-  } as any);
-}
+const customSchemas = [...(routeMeta?.jsonLd ?? []), ...(metadata.jsonLd ?? [])];
+const finalSchemas = [baseGraph, ...customSchemas];
 
-// Merge route-level custom schemas (FAQ etc.)
-const customSchemas = routeMeta?.jsonLd ?? [];
-const finalSchemas  = [enterpriseSchema, ...customSchemas];
-
-// Safe serialisation — prevents build-time errors on circular refs / bad data
 function safeStringify(obj: unknown): string {
-  try { return JSON.stringify(obj); }
-  catch { return '{}'; }
+  try {
+    return JSON.stringify(obj);
+  } catch {
+    return '{}';
+  }
 }
 ---
 
 <title>{title}</title>
 <meta name="description" content={description} />
-<meta name="keywords"    content={keywords} />
-<meta name="author"      content={SITE_CONFIG.author} />
-
+<meta name="keywords" content={keywords} />
+<meta name="author" content={SITE_CONFIG.author} />
+<meta name="robots" content={robots} />
 <link rel="canonical" href={cleanCanonical} />
 
-{noindex
-  ? <meta name="robots" content="noindex, nofollow" />
-  : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-}
-
 <!-- Open Graph -->
-<meta property="og:site_name"   content={SITE_CONFIG.name} />
-<meta property="og:locale"      content={SITE_CONFIG.locale} />
-<meta property="og:type"        content={og.type} />
-<meta property="og:url"         content={og.url} />
-<meta property="og:title"       content={og.title} />
+<meta property="og:site_name" content={SITE_CONFIG.name} />
+<meta property="og:locale" content={SITE_CONFIG.locale} />
+<meta property="og:type" content={og.type} />
+<meta property="og:url" content={og.url} />
+<meta property="og:title" content={og.title} />
 <meta property="og:description" content={og.description} />
-<meta property="og:image"       content={og.image} />
-<meta property="og:image:width"  content={String(og.imageWidth)} />
+<meta property="og:image" content={og.image} />
+<meta property="og:image:width" content={String(og.imageWidth)} />
 <meta property="og:image:height" content={String(og.imageHeight)} />
-<meta property="og:image:alt"   content={og.imageAlt} />
-<meta property="og:image:type"  content="image/jpeg" />
+<meta property="og:image:alt" content={og.imageAlt} />
+<meta property="og:image:type" content="image/png" />
 
 <!-- Twitter / X cards -->
-<meta name="twitter:card"        content={twitter.card} />
-<meta name="twitter:site"        content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:creator"     content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:title"       content={twitter.title} />
+<meta name="twitter:card" content={twitter.card} />
+<meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />
+<meta name="twitter:creator" content={twitter.creator ?? SITE_CONFIG.twitterHandle} />
+<meta name="twitter:title" content={twitter.title} />
 <meta name="twitter:description" content={twitter.description} />
-<meta name="twitter:image"       content={twitter.image} />
-<meta name="twitter:image:alt"   content={twitter.imageAlt} />
+<meta name="twitter:image" content={twitter.image} />
+<meta name="twitter:image:alt" content={twitter.imageAlt} />
 
 <!-- PWA / mobile -->
-<meta name="theme-color"                       content="#0a0a0a" />
-<meta name="color-scheme"                      content="dark" />
-<meta name="mobile-web-app-capable"            content="yes" />
-<meta name="apple-mobile-web-app-capable"      content="yes" />
+<meta name="theme-color" content={SITE_CONFIG.themeColor} />
+<meta name="color-scheme" content="dark" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title"        content={SITE_CONFIG.name} />
-<meta name="application-name"                  content={SITE_CONFIG.name} />
-<meta name="format-detection"                  content="telephone=no, date=no, email=no, address=no" />
+<meta name="apple-mobile-web-app-title" content={SITE_CONFIG.name} />
+<meta name="application-name" content={SITE_CONFIG.name} />
+<meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+<meta name="msapplication-TileColor" content={SITE_CONFIG.themeColor} />
+<meta name="msapplication-config" content="/browserconfig.xml" />
 
 <!-- Structured data -->
-{finalSchemas.map((schema) => (
-  <script type="application/ld+json" set:html={safeStringify(schema)} />
-))}
+{finalSchemas.map((schema) => <script type="application/ld+json" set:html={safeStringify(schema)} />)}

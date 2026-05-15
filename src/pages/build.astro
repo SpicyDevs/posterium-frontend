@@ -1,7 +1,6 @@
 ---
 // src/pages/build.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PageSEO from '@/components/seo/PageSEO.astro';
 import BuilderApp from '@/components/builder/index.tsx';
 import '@/styles/global.css';
 ---
@@ -11,8 +10,8 @@ import '@/styles/global.css';
   description="Drag-and-drop poster editor with real-time preview. Position rating badges pixel-perfectly on any movie or TV poster. Supports IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, AniList, and more. Export as SVG, PNG, JPG, or WebP."
   canonical="https://posterium.xyz/build"
   bodyClass="overflow-hidden"
+  routeKey="/build"
 >
-  <PageSEO slot="head" routeKey="/build" />
   
   {/* ADDED: SSR-rendered structural context for Googlebot before React hydrates */}
   <div class="sr-only">

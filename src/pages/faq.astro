@@ -1,7 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
@@ -50,9 +49,9 @@ const searchItems = sortedFaqs.map((faq) => ({
   title="FAQ - Posterium"
   description="Frequently asked questions about Posterium's builder, API, exports, and integrations."
   canonical="https://posterium.xyz/faq"
+  routeKey="/faq"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/faq" />
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar

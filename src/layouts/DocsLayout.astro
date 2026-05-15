@@ -1,6 +1,5 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import '@/styles/global.css';
 
@@ -35,10 +34,9 @@ const {
   title={title}
   description={description}
   canonical={canonical}
+  routeKey={routeKey}
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey={routeKey} />
-
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
     <MainNavbar
       client:load

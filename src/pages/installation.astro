@@ -15,7 +15,6 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PageSEO from '@/components/seo/PageSEO.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
 import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
@@ -58,9 +57,9 @@ const allGuideHeadings = preparedGuides.map((g) => ({
   title="Installation - Posterium"
   description="Installation guides for using Posterium with Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps."
   canonical="https://posterium.xyz/installation"
+  routeKey="/installation"
   bodyClass="bg-[#070706]"
 >
-  <PageSEO slot="head" routeKey="/installation" />
 
   <div class="install-root">
     <MainNavbar
