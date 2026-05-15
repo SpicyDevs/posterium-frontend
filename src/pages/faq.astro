@@ -6,7 +6,7 @@ import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
 import { AmberTag } from '@/components/shared/primitives';
 import { SITE_CONFIG } from '@/lib/config';
-import { buildFAQPageSchema, toFAQEntries, type PageSEOMetadata } from '@/lib/seo';
+import { buildFAQPageSchema, contentToPlainText, type PageSEOMetadata } from '@/lib/seo';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -27,6 +27,13 @@ for (const faq of sortedFaqs) {
 // Define category order
 const categoryOrder = ['Getting Started', 'Builder', 'API', 'Integrations'];
 const orderedCategories = categoryOrder.filter((cat) => faqsByCategory.has(cat));
+
+const visibleFaqs = orderedCategories.flatMap((category) => faqsByCategory.get(category) ?? []);
+
+const faqSchemaEntries = visibleFaqs.map((faq) => ({
+  question: faq.data.question,
+  answer: contentToPlainText({ html: faq.rendered?.html, markdown: faq.body }),
+}));
 
 // Build sidebar links
 const sidebarLinks = orderedCategories.map((category) => ({
@@ -56,7 +63,7 @@ const seo: PageSEOMetadata = {
     { name: 'Home', url: SITE_CONFIG.baseUrl },
     { name: 'FAQ', url: canonical },
   ],
-  jsonLd: [buildFAQPageSchema(toFAQEntries(sortedFaqs))],
+  jsonLd: [buildFAQPageSchema(faqSchemaEntries)],
 };
 
 // With glob loader, rendered content is available via entry.rendered.html
