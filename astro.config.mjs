@@ -67,6 +67,29 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
         ],
+        shortcuts: [
+          {
+            name: 'Try Builder',
+            short_name: 'Builder',
+            description: 'Open the Posterium drag-and-drop poster builder.',
+            url: '/build',
+            icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Examples',
+            short_name: 'Examples',
+            description: 'Browse Posterium poster examples and presets.',
+            url: '/examples',
+            icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'FAQ',
+            short_name: 'FAQ',
+            description: 'Read frequently asked questions about Posterium.',
+            url: '/faq',
+            icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],

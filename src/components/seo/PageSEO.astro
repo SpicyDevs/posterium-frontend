@@ -12,7 +12,7 @@ const { meta } = Astro.props;
 const title = meta.title || SEO_DEFAULTS.title;
 const description = meta.description || SEO_DEFAULTS.description;
 const keywords = meta.keywords ?? SEO_DEFAULTS.keywords;
-const cleanCanonical = meta.canonical || SEO_DEFAULTS.canonical;
+const cleanCanonical = absoluteUrl(meta.canonical || SEO_DEFAULTS.canonical);
 const robots = meta.robots || SEO_DEFAULTS.robots;
 const ogImage = absoluteUrl(meta.ogImage || SEO_DEFAULTS.og.image);
 const ogImageAlt = meta.ogImageAlt || SEO_DEFAULTS.og.imageAlt;
@@ -22,7 +22,7 @@ const og = {
   ...meta.og,
   title: meta.og?.title ?? title,
   description: meta.og?.description ?? description,
-  url: meta.og?.url ?? cleanCanonical,
+  url: meta.og?.url ? absoluteUrl(meta.og.url) : cleanCanonical,
   image: meta.og?.image ? absoluteUrl(meta.og.image) : ogImage,
   imageAlt: meta.og?.imageAlt ?? ogImageAlt,
 };
@@ -77,8 +77,10 @@ function safeStringify(obj: unknown): string {
 
 <!-- Twitter / X cards -->
 <meta name="twitter:card" content={twitter.card} />
-<meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />
-<meta name="twitter:creator" content={twitter.creator ?? SITE_CONFIG.twitterHandle} />
+{SITE_CONFIG.twitterHandle && <meta name="twitter:site" content={SITE_CONFIG.twitterHandle} />}
+{(twitter.creator || SITE_CONFIG.twitterHandle) && (
+  <meta name="twitter:creator" content={twitter.creator || SITE_CONFIG.twitterHandle} />
+)}
 <meta name="twitter:title" content={twitter.title} />
 <meta name="twitter:description" content={twitter.description} />
 <meta name="twitter:image" content={twitter.image} />
