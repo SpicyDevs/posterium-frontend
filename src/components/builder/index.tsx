@@ -67,6 +67,7 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import CinematicTutorialBuilder from './simple/CinematicTutorialBuilder';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -894,6 +895,19 @@ const StudioLayout: React.FC<{
     selectedMinimalElements,
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
+  const renderSimpleBuilder = () => (
+    <CinematicTutorialBuilder
+      config={config}
+      setConfig={setConfig}
+      baseUrl={baseUrl}
+      onExport={() => setExportOpen(true)}
+      onSwitchAdvanced={() => {
+        setBuilderMode('advanced');
+        switchAdvancedPanel('source');
+      }}
+    />
+  );
+
   const renderAdvancedPanel = () => {
     switch (advancedPanel) {
       case 'source':
@@ -1248,7 +1262,7 @@ const StudioLayout: React.FC<{
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && builderMode === 'advanced' && (
             <aside
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1260,17 +1274,7 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              {builderMode === 'advanced' ? (
-                <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
-              ) : (
-                <LayerPanel
-                  config={config}
-                  setConfig={setConfig}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelectionOverride}
-                  detailLevel="simple"
-                />
-              )}
+              <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
               <div
                 onMouseDown={startResizeLeft}
                 className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
@@ -1333,10 +1337,11 @@ const StudioLayout: React.FC<{
                 }}
               />
             ))}
+            {!isFullscreen && builderMode === 'simple' && renderSimpleBuilder()}
           </main>
 
           {/* Right sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && builderMode === 'advanced' && (
             <aside
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1354,16 +1359,12 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              {builderMode === 'advanced' ? (
-                renderAdvancedPanel()
-              ) : (
-                <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-              )}
+              {renderAdvancedPanel()}
             </aside>
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
+          {!isFullscreen && builderMode === 'advanced' && (
             <div
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
@@ -1413,17 +1414,21 @@ const StudioLayout: React.FC<{
         </div>
 
         {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-        />
+        {builderMode === 'advanced' && (
+          <MobileDock
+            hasBadges={config.ratings.length > 0}
+            hasLogo={config.logo}
+            isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
+            selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+          />
+        )}
 
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
           isFullscreen={isFullscreen}
-          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+          rightSidebarWidth={
+            isDesktop && builderMode === 'advanced' && rightVisible && !isFullscreen ? rightW : 0
+          }
           onToggleFullscreen={toggleFullscreen}
           onZoomIn={() => dispatchZoom(0.25)}
           onZoomOut={() => dispatchZoom(-0.25)}
