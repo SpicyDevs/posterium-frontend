@@ -10,7 +10,7 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  site: 'https://posters.spicydevs.xyz',
+  site: 'https://posterium.xyz',
   output: 'static',
   trailingSlash: 'never', // Enforce no trailing slashes
   build: {
@@ -36,10 +36,10 @@ export default defineConfig({
 
         // Updated conditions to match the new slash-free URLs
         // Updated conditions to match the new slash-free URLs
-        if (item.url === 'https://posters.spicydevs.xyz') {
+        if (item.url === 'https://posterium.xyz') {
           item.priority = 1.0;
           item.changefreq = 'weekly';
-        } else if (item.url === 'https://posters.spicydevs.xyz/build') {
+        } else if (item.url === 'https://posterium.xyz/build') {
           item.priority = 0.9;
           item.changefreq = 'weekly';
         } else {

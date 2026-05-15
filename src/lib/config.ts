@@ -7,13 +7,13 @@
 // ── App-wide constants ────────────────────────────────────────────────────────
 export const SITE_CONFIG = {
   name: 'Posterium',
-  baseUrl: 'https://posters.spicydevs.xyz',
+  baseUrl: 'https://posterium.xyz',
   apiBase: 'https://api.spicydevs.xyz',
   themeColor: '#0a0a0a',
   locale: 'en_US',
   twitterHandle: '@project',
   github: '#',
-  ogImageUrl: 'https://posters.spicydevs.xyz/og-image.png',
+  ogImageUrl: 'https://posterium.xyz/og-image.png',
   ogImageWidth: 1200,
   ogImageHeight: 630,
   author: 'Project Team',
