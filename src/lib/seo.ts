@@ -142,7 +142,6 @@ export const toFAQEntries = (entries: ArticleContentEntry[]): FAQEntry[] =>
 
 export function buildOrganizationSchema(): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'Organization',
     '@id': `${SITE_CONFIG.baseUrl}/#organization`,
     name: SITE_CONFIG.name,
@@ -165,7 +164,6 @@ const siteNavigationItems: BreadcrumbItem[] = [
 
 export function buildSiteNavigationSchema(): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'ItemList',
     '@id': `${SITE_CONFIG.baseUrl}/#site-navigation`,
     name: `${SITE_CONFIG.name} site navigation`,
@@ -180,7 +178,6 @@ export function buildSiteNavigationSchema(): SchemaObject {
 
 export function buildWebsiteSchema(): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': `${SITE_CONFIG.baseUrl}/#website`,
     name: SITE_CONFIG.name,
@@ -194,7 +191,6 @@ export function buildWebPageSchema(
   meta: Pick<PageSEOMetadata, 'title' | 'description' | 'canonical' | 'ogImage' | 'ogImageAlt'>
 ): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'WebPage',
     '@id': `${meta.canonical}#webpage`,
     url: meta.canonical,
@@ -211,10 +207,12 @@ export function buildWebPageSchema(
   };
 }
 
-export function buildBreadcrumbSchema(items: BreadcrumbItem[]): SchemaObject {
+export function buildBreadcrumbSchema(items: BreadcrumbItem[], canonical?: string): SchemaObject {
+  const breadcrumbUrl = canonical ?? items[items.length - 1]?.url ?? SITE_CONFIG.baseUrl;
+
   return {
-    '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
+    '@id': `${breadcrumbUrl}#breadcrumb`,
     itemListElement: items.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
@@ -226,7 +224,6 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]): SchemaObject {
 
 export function buildWebApplicationSchema(meta: WebApplicationSchemaMeta): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'WebApplication',
     '@id': `${meta.url}#application`,
     name: meta.name ?? SITE_CONFIG.name,
@@ -266,7 +263,6 @@ export function buildWebApplicationSchema(meta: WebApplicationSchemaMeta): Schem
 
 export function buildFAQPageSchema(faqEntries: FAQEntry[]): SchemaObject {
   return {
-    '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: faqEntries.map((entry) => ({
       '@type': 'Question',
@@ -288,7 +284,6 @@ export function buildArticleOrTechArticleSchema(contentEntry: ArticleContentEntr
     : `${SITE_CONFIG.baseUrl}/${canonicalPath.replace(/^\/+/, '')}`;
 
   return {
-    '@context': 'https://schema.org',
     '@type': data.category === 'API' || data.category === 'Builder' ? 'TechArticle' : 'Article',
     headline: title,
     name: title,
@@ -302,20 +297,63 @@ export function buildArticleOrTechArticleSchema(contentEntry: ArticleContentEntr
   };
 }
 
+const withoutSchemaContext = (schema: SchemaObject): SchemaObject => {
+  const { '@context': _context, ...node } = schema;
+  return node;
+};
+
+const schemaNodeKey = (schema: SchemaObject): string | undefined => {
+  const id = schema['@id'];
+  if (typeof id === 'string') return id;
+
+  const type = schema['@type'];
+  if (typeof type === 'string') {
+    const url = schema.url;
+    return typeof url === 'string' ? `${type}:${url}` : undefined;
+  }
+
+  return undefined;
+};
+
+const dedupeSchemaNodes = (schemas: SchemaObject[]): SchemaObject[] => {
+  const seen = new Set<string>();
+  const nodes: SchemaObject[] = [];
+
+  for (const schema of schemas.map(withoutSchemaContext)) {
+    const key = schemaNodeKey(schema);
+    if (key) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+
+    nodes.push(schema);
+  }
+
+  return nodes;
+};
+
 export function buildCoreSchemas(meta: PageSEOMetadata): SchemaObject[] {
   const breadcrumbs = meta.breadcrumbs?.length
     ? meta.breadcrumbs
     : [
         { name: 'Home', url: SITE_CONFIG.baseUrl },
-        ...(meta.canonical === SITE_CONFIG.baseUrl ? [] : [{ name: meta.title, url: meta.canonical }]),
+        ...(meta.canonical === SITE_CONFIG.baseUrl
+          ? []
+          : [{ name: meta.title, url: meta.canonical }]),
       ];
 
-  return [
+  return dedupeSchemaNodes([
     buildOrganizationSchema(),
     buildWebsiteSchema(),
-    buildSiteNavigationSchema(),
     buildWebPageSchema(meta),
-    buildBreadcrumbSchema(breadcrumbs),
+    buildBreadcrumbSchema(breadcrumbs, meta.canonical),
     ...meta.jsonLd,
-  ];
+  ]);
+}
+
+export function buildSchemaGraph(meta: PageSEOMetadata): SchemaObject {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': buildCoreSchemas(meta),
+  };
 }
