@@ -67,6 +67,7 @@ import {
 import { usePosterHistory } from './hooks/usePosterHistory';
 import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
 import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import CinematicTutorialBuilder from './simple/CinematicTutorialBuilder';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -894,6 +895,19 @@ const StudioLayout: React.FC<{
     selectedMinimalElements,
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
+  const renderSimpleBuilder = () => (
+    <CinematicTutorialBuilder
+      config={config}
+      setConfig={setConfig}
+      baseUrl={baseUrl}
+      onExport={() => setExportOpen(true)}
+      onSwitchAdvanced={() => {
+        setBuilderMode('advanced');
+        switchAdvancedPanel('source');
+      }}
+    />
+  );
+
   const renderAdvancedPanel = () => {
     switch (advancedPanel) {
       case 'source':
@@ -1253,7 +1267,7 @@ const StudioLayout: React.FC<{
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
               style={{
-                width: leftVisible ? leftW : 0,
+                width: leftVisible ? (builderMode === 'simple' ? Math.max(leftW, 360) : leftW) : 0,
                 background: 'var(--film-dark)',
                 borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
                 overflow: 'hidden',
@@ -1263,13 +1277,7 @@ const StudioLayout: React.FC<{
               {builderMode === 'advanced' ? (
                 <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
               ) : (
-                <LayerPanel
-                  config={config}
-                  setConfig={setConfig}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelectionOverride}
-                  detailLevel="simple"
-                />
+                renderSimpleBuilder()
               )}
               <div
                 onMouseDown={startResizeLeft}
@@ -1336,7 +1344,7 @@ const StudioLayout: React.FC<{
           </main>
 
           {/* Right sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && builderMode === 'advanced' && (
             <aside
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1354,11 +1362,7 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              {builderMode === 'advanced' ? (
-                renderAdvancedPanel()
-              ) : (
-                <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-              )}
+              {renderAdvancedPanel()}
             </aside>
           )}
 
@@ -1395,17 +1399,25 @@ const StudioLayout: React.FC<{
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
-                )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+                {builderMode === 'advanced' ? (
+                  <>
+                    {(activeTab === 'source' ||
+                      activeTab === 'layers' ||
+                      activeTab === 'poster') && (
+                      <LayerPanel
+                        config={config}
+                        setConfig={setConfig}
+                        selectedIds={selectedIds}
+                        onSelect={handleSelectionOverride}
+                        detailLevel="simple"
+                      />
+                    )}
+                    {(activeTab === 'badges' || activeTab === 'selection') && (
+                      <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+                    )}
+                  </>
+                ) : (
+                  renderSimpleBuilder()
                 )}
               </div>
             </div>
@@ -1423,7 +1435,9 @@ const StudioLayout: React.FC<{
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
           isFullscreen={isFullscreen}
-          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+          rightSidebarWidth={
+            isDesktop && builderMode === 'advanced' && rightVisible && !isFullscreen ? rightW : 0
+          }
           onToggleFullscreen={toggleFullscreen}
           onZoomIn={() => dispatchZoom(0.25)}
           onZoomOut={() => dispatchZoom(-0.25)}
