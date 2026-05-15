@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildFAQPageSchema, contentToPlainText, toFAQEntries, type SchemaObject } from './seo';
+import {
+  buildFAQPageSchema,
+  buildSchemaGraph,
+  buildWebApplicationSchema,
+  contentToPlainText,
+  toFAQEntries,
+  type SchemaObject,
+} from './seo';
 
 const getFAQQuestions = (schema: SchemaObject) =>
   (schema.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>).map(
@@ -44,7 +51,7 @@ describe('FAQ structured data helpers', () => {
 
     const schema = buildFAQPageSchema(toFAQEntries(visibleAccordionEntries));
 
-    expect(schema).toMatchObject({ '@context': 'https://schema.org', '@type': 'FAQPage' });
+    expect(schema).toMatchObject({ '@type': 'FAQPage' });
     expect(getFAQQuestions(schema)).toEqual([
       {
         name: 'What is Posterium?',
@@ -54,6 +61,66 @@ describe('FAQ structured data helpers', () => {
         name: 'Can I open an existing poster setup in the builder?',
         text: 'Use the Open in Builder action.',
       },
+    ]);
+  });
+});
+
+describe('schema graph builder', () => {
+  it('emits a single Schema.org context with one graph of stable page nodes', () => {
+    const canonical = 'https://posterium.xyz/build';
+    const graph = buildSchemaGraph({
+      title: 'Poster Builder - Drag & Drop Editor | Posterium',
+      description: 'Drag-and-drop poster editor with real-time preview.',
+      canonical,
+      ogImage: 'https://posterium.xyz/og-image.png',
+      ogImageAlt: 'Posterium poster builder',
+      robots: 'index, follow',
+      breadcrumbs: [
+        { name: 'Home', url: 'https://posterium.xyz' },
+        { name: 'Poster Builder', url: canonical },
+      ],
+      jsonLd: [
+        buildWebApplicationSchema({
+          name: 'Posterium Poster Builder',
+          url: canonical,
+          description: 'Visual drag-and-drop editor for custom posters.',
+        }),
+      ],
+    }) as { '@context': string; '@graph': SchemaObject[] };
+
+    expect(graph['@context']).toBe('https://schema.org');
+    expect(graph['@graph']).toHaveLength(5);
+    expect(graph['@graph'].map((node) => node['@id'])).toEqual([
+      'https://posterium.xyz/#organization',
+      'https://posterium.xyz/#website',
+      `${canonical}#webpage`,
+      `${canonical}#breadcrumb`,
+      `${canonical}#application`,
+    ]);
+    expect(graph['@graph'].every((node) => node['@context'] === undefined)).toBe(true);
+  });
+
+  it('does not include application nodes on pages without application schema', () => {
+    const canonical = 'https://posterium.xyz/privacy';
+    const graph = buildSchemaGraph({
+      title: 'Privacy Policy | Posterium',
+      description: 'Privacy Policy for Posterium.',
+      canonical,
+      ogImage: 'https://posterium.xyz/og-image.png',
+      ogImageAlt: 'Privacy Policy for Posterium',
+      robots: 'index, follow',
+      breadcrumbs: [
+        { name: 'Home', url: 'https://posterium.xyz' },
+        { name: 'Privacy Policy', url: canonical },
+      ],
+      jsonLd: [],
+    }) as { '@graph': SchemaObject[] };
+
+    expect(graph['@graph'].map((node) => node['@type'])).toEqual([
+      'Organization',
+      'WebSite',
+      'WebPage',
+      'BreadcrumbList',
     ]);
   });
 });

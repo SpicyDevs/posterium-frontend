@@ -1,7 +1,7 @@
 ---
 // src/components/seo/PageSEO.astro
 import { SEO_DEFAULTS, SITE_CONFIG } from '@/lib/config';
-import { absoluteUrl, buildCoreSchemas, type PageSEOMetadata } from '@/lib/seo';
+import { absoluteUrl, buildSchemaGraph, type PageSEOMetadata } from '@/lib/seo';
 
 interface Props {
   meta: PageSEOMetadata;
@@ -36,7 +36,7 @@ const twitter = {
   imageAlt: meta.twitter?.imageAlt ?? og.imageAlt,
 };
 
-const finalSchemas = buildCoreSchemas({
+const schemaGraph = buildSchemaGraph({
   ...meta,
   title,
   description,
@@ -99,4 +99,4 @@ function safeStringify(obj: unknown): string {
 <meta name="msapplication-config" content="/browserconfig.xml" />
 
 <!-- Structured data -->
-{finalSchemas.map((schema) => <script type="application/ld+json" set:html={safeStringify(schema)} />)}
+<script type="application/ld+json" set:html={safeStringify(schemaGraph)} />
