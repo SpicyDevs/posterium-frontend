@@ -113,7 +113,7 @@ const MainNavbar = memo<MainNavbarProps>(
       };
       window.addEventListener('keydown', handleEscape);
       return () => window.removeEventListener('keydown', handleEscape);
-    }, [menuOpen]);
+    }, [menuOpen, setMenuOpen]);
 
     useEffect(() => {
       if (wasMenuOpenRef.current && !menuOpen) {

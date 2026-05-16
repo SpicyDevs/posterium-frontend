@@ -187,7 +187,7 @@ const Nav = memo(() => {
       {menuOpen && visible && (
         <div
           role="dialog"
-          aria-modal="true"
+          aria-modal={true}
           aria-label="Navigation menu"
           style={{
             position: 'fixed',
