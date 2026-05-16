@@ -34,8 +34,6 @@ export default defineConfig({
         item.lastmod = new Date().toISOString();
         item.changefreq = 'weekly';
 
-        // Updated conditions to match the new slash-free URLs
-        // Updated conditions to match the new slash-free URLs
         if (item.url === 'https://posterium.xyz') {
           item.priority = 1.0;
           item.changefreq = 'weekly';
@@ -54,7 +52,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        name: 'Posterium - Posters with Ratings!',
+        name: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
         short_name: 'Posterium',
         description:
           'Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.',

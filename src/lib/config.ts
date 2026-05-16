@@ -11,8 +11,8 @@ export const SITE_CONFIG = {
   twitterHandle: '',
   github: 'https://github.com/SpicyDevs',
   ogImageUrl: 'https://posterium.xyz/og-image.png',
-  ogImageWidth: 1200,
-  ogImageHeight: 630,
+  ogImageWidth: 1366,
+  ogImageHeight: 438,
   author: 'SpicyDevs',
   authorUrl: 'https://spicydevs.js.org',
 } as const;
@@ -46,14 +46,12 @@ export const SEO_DEFAULTS: {
   og: OGMeta;
   twitter: TwitterMeta;
 } = {
-  title: 'Posterium - Posters with Ratings!',
+  title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
   description:
-    'Generate custom movie and TV show posters with rating badges ' +
-    'from IMDb, Rotten Tomatoes, Metacritic and more! All from a single ' +
-    'API URL. Free, open source, no account required.',
+    'Generate movie and TV posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd + 20 More ratings. Add genre tags, cast information, and visual overlays. Integrates seamlessly with Plex, Jellyfin, Kodi, Discord.',
   keywords:
-    'movie poster generator, rating posters, posterium, rpdb, top poster api, IMDB badge, Rotten Tomatoes badge, ' +
-    'Metacritic badge, TMDB poster, free poster API, Plex custom poster, ' +
+    'movie poster generator, rating posters, posterium, rpdb, top poster api, IMDB ratings, Rotten Tomatoes ratings, ' +
+    'Metacritic ratings, TMDB poster, free poster API, Plex custom poster, Stremio custom poster,' +
     'ratings, posters, plex, emby, stremio, kodi, jellyfin, imdb, rotten tomatoes, metacritic, letterboxd, rating poster db, movie rating overlay, poster with ratings',
   canonical: SITE_CONFIG.baseUrl,
   robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
@@ -61,7 +59,7 @@ export const SEO_DEFAULTS: {
   og: {
     type: 'website',
     url: SITE_CONFIG.baseUrl,
-    title: 'Posterium - Posters with Ratings!',
+    title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
     description:
       'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
       'and more! Free API, no account needed.',
@@ -74,7 +72,7 @@ export const SEO_DEFAULTS: {
   twitter: {
     card: 'summary_large_image',
     creator: SITE_CONFIG.twitterHandle,
-    title: 'Posterium - Posters with Ratings!',
+    title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
     description:
       'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
       'and more! Free API, no account needed.',
