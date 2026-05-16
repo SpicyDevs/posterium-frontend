@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Github, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -34,6 +34,8 @@ const Nav = memo(() => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const wasMenuOpenRef = useRef(false);
 
   useEffect(() => {
     const update = () => {
@@ -45,6 +47,24 @@ const Nav = memo(() => {
     window.addEventListener('scroll', update, { passive: true });
     return () => window.removeEventListener('scroll', update);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeMenu();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [closeMenu, menuOpen]);
+
+  useEffect(() => {
+    if (wasMenuOpenRef.current && !menuOpen) {
+      menuToggleRef.current?.focus();
+    }
+    wasMenuOpenRef.current = menuOpen;
+  }, [menuOpen]);
 
   return (
     <>
@@ -141,10 +161,12 @@ const Nav = memo(() => {
           </a>
 
           <button
+            ref={menuToggleRef}
             className="nav-mobile-toggle"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-haspopup="dialog"
             style={{
               background: 'none',
               border: '1px solid rgba(196,124,46,0.2)',
@@ -165,7 +187,7 @@ const Nav = memo(() => {
       {menuOpen && visible && (
         <div
           role="dialog"
-          aria-modal
+          aria-modal={true}
           aria-label="Navigation menu"
           style={{
             position: 'fixed',

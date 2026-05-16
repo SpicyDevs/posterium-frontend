@@ -98,12 +98,12 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
           onFocus={() => setIsActive(true)}
           onBlur={() => setIsActive(false)}
           placeholder="Search FAQs..."
-          className="syne-font"
+          aria-label="Search FAQs"
+          className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
           style={{
             flex: 1,
             background: 'transparent',
             border: 'none',
-            outline: 'none',
             color: 'var(--film-cream)',
             fontSize: 12,
             letterSpacing: '0.02em',

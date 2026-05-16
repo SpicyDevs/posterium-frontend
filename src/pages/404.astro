@@ -23,5 +23,7 @@ const seo: PageSEOMetadata = {
 ---
 
 <BaseLayout seo={seo}>
-  <NotFound client:only="react" />
+  <main id="main-content">
+    <NotFound client:only="react" />
+  </main>
 </BaseLayout>

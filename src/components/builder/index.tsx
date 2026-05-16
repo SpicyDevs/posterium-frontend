@@ -1,5 +1,5 @@
 // src/components/builder/index.tsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
 import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
@@ -32,10 +32,6 @@ import {
 import MobileDock from './components/layout/MobileDock';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
-import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
-import ResetDialog from './components/ResetDialogue';
-import ImportDialog from './components/ImportDialogue';
-import ExportPopover from './components/ExportPopover';
 import { EditorProvider, useEditor } from './context/EditorContext';
 import {
   RotateCcw,
@@ -65,8 +61,15 @@ import {
   Search,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
-import ContextMenu, { type ContextMenuState, type LayerTargetId } from './components/ContextMenu';
-import CommandPalette, { type PaletteCommand } from './components/CommandPalette';
+import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
+import type { PaletteCommand } from './components/CommandPalette';
+
+const KeyboardShortcutsModal = lazy(() => import('./components/KeyboardShortcutsModal'));
+const ResetDialog = lazy(() => import('./components/ResetDialogue'));
+const ImportDialog = lazy(() => import('./components/ImportDialogue'));
+const ExportPopover = lazy(() => import('./components/ExportPopover'));
+const ContextMenu = lazy(() => import('./components/ContextMenu'));
+const CommandPalette = lazy(() => import('./components/CommandPalette'));
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -941,55 +944,79 @@ const StudioLayout: React.FC<{
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        <ResetDialog
-          isOpen={isResetOpen}
-          onClose={() => setIsResetOpen(false)}
-          onConfirm={handleReset}
-        />
-        <ImportDialog
-          isOpen={isImportOpen}
-          onClose={() => setIsImportOpen(false)}
-          onLoad={handleLoadConfig}
-          anchorRef={importBtnRef}
-        />
-        <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-        <ContextMenu
-          state={ctxMenu}
-          onClose={closeCtxMenu}
-          isSelected={ctxBadgeSelected}
-          onBringToFront={(id) => (id === 'logo' ? moveLogoLayer('front') : moveLayer(id, 'front'))}
-          onBringForward={(id) =>
-            id === 'logo' ? moveLogoLayer('forward') : moveLayer(id, 'forward')
-          }
-          onSendBackward={(id) => (id === 'logo' ? moveLogoLayer('back') : moveLayer(id, 'back'))}
-          onSendToBack={(id) => (id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback'))}
-          onHide={hideLayer}
-          onShowAll={showAllBadges}
-          onSelect={(id) =>
-            id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
-          }
-          onDeselect={() => clearSelection()}
-          onSelectAll={() => setBatchSelection(config.ratings)}
-          onDeselectAll={clearSelection}
-          onResetBadge={resetLayer}
-          onDelete={deleteLayer}
-        />
-        <CommandPalette
-          isOpen={paletteOpen}
-          onClose={() => setPaletteOpen(false)}
-          commands={paletteCommands}
-        />
+        {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
+          <Suspense fallback={null}>
+            {isResetOpen && (
+              <ResetDialog
+                isOpen={isResetOpen}
+                onClose={() => setIsResetOpen(false)}
+                onConfirm={handleReset}
+              />
+            )}
+            {isImportOpen && (
+              <ImportDialog
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+                onLoad={handleLoadConfig}
+                anchorRef={importBtnRef}
+              />
+            )}
+            {shortcutsOpen && (
+              <KeyboardShortcutsModal
+                isOpen={shortcutsOpen}
+                onClose={() => setShortcutsOpen(false)}
+              />
+            )}
+            {ctxMenu.visible && (
+              <ContextMenu
+                state={ctxMenu}
+                onClose={closeCtxMenu}
+                isSelected={ctxBadgeSelected}
+                onBringToFront={(id) =>
+                  id === 'logo' ? moveLogoLayer('front') : moveLayer(id, 'front')
+                }
+                onBringForward={(id) =>
+                  id === 'logo' ? moveLogoLayer('forward') : moveLayer(id, 'forward')
+                }
+                onSendBackward={(id) =>
+                  id === 'logo' ? moveLogoLayer('back') : moveLayer(id, 'back')
+                }
+                onSendToBack={(id) =>
+                  id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback')
+                }
+                onHide={hideLayer}
+                onShowAll={showAllBadges}
+                onSelect={(id) =>
+                  id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+                }
+                onDeselect={() => clearSelection()}
+                onSelectAll={() => setBatchSelection(config.ratings)}
+                onDeselectAll={clearSelection}
+                onResetBadge={resetLayer}
+                onDelete={deleteLayer}
+              />
+            )}
+            {paletteOpen && (
+              <CommandPalette
+                isOpen={paletteOpen}
+                onClose={() => setPaletteOpen(false)}
+                commands={paletteCommands}
+              />
+            )}
 
-        {/* Export popover */}
-        <ExportPopover
-          config={config}
-          onLoadConfig={handleLoadConfig}
-          baseUrl={baseUrl}
-          onExtensionChange={handleExtensionChange}
-          isOpen={exportOpen}
-          onClose={() => setExportOpen(false)}
-          anchorRef={exportBtnRef}
-        />
+            {exportOpen && (
+              <ExportPopover
+                config={config}
+                onLoadConfig={handleLoadConfig}
+                baseUrl={baseUrl}
+                onExtensionChange={handleExtensionChange}
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                anchorRef={exportBtnRef}
+              />
+            )}
+          </Suspense>
+        )}
 
         {/* ── HEADER ── */}
         {!isFullscreen && (

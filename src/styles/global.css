@@ -135,8 +135,8 @@
     --film-glow: rgba(196, 124, 46, 0.07);
     --film-text-body: rgba(230, 218, 196, 0.92);
     --film-text-label: rgba(212, 198, 172, 0.82);
-    --film-text-dim: rgba(180, 168, 148, 0.62);
-    --film-text-ghost: rgba(140, 130, 112, 0.38);
+    --film-text-dim: rgba(206, 193, 170, 0.82);
+    --film-text-ghost: rgba(178, 166, 146, 0.58);
   }
 
   /* ── Typography (was duplicated in dashboard.css) ─────────────────────── */

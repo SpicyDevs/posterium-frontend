@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 
 interface SliderRowProps {
@@ -30,6 +30,7 @@ const SliderRow: React.FC<SliderRowProps> = ({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isFocused = useRef(false);
+  const numberInputId = useId();
 
   useEffect(() => {
     setLocalValue(value);
@@ -92,12 +93,13 @@ const SliderRow: React.FC<SliderRowProps> = ({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span
+        <label
+          htmlFor={numberInputId}
           className="body-font"
           style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
         >
           {label}
-        </span>
+        </label>
         {onReset && (
           <button
             type="button"
@@ -119,6 +121,7 @@ const SliderRow: React.FC<SliderRowProps> = ({
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
+          id={numberInputId}
           type="text"
           inputMode="decimal"
           value={inputText}
@@ -160,6 +163,7 @@ const SliderRow: React.FC<SliderRowProps> = ({
           value={localValue}
           onChange={handleRangeChange}
           className="flex-1 min-w-0"
+          aria-label={`${label} slider`}
         />
       </div>
     </div>

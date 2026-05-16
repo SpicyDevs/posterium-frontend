@@ -17,8 +17,8 @@ export default defineConfig({
     format: 'file', // Generates about.html instead of about/index.html to prevent host-level redirects
   },
   prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport',
+    prefetchAll: false,
+    defaultStrategy: 'hover',
   },
   markdown: {
     remarkPlugins: [remarkGfm],
