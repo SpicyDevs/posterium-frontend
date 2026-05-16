@@ -228,11 +228,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             placeholder="Search commands…"
             autoComplete="off"
             spellCheck={false}
+            aria-label="Search commands"
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
-              outline: 'none',
               fontSize: 13,
               color: 'var(--film-cream)',
               fontFamily: 'Syne, sans-serif',

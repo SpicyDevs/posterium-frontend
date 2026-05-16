@@ -109,7 +109,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               <span
                 style={{
                   fontSize: 14,
-                  color: isActive ? 'var(--film-amber)' : 'rgba(122,117,110,0.38)',
+                  color: isActive ? 'var(--film-amber)' : 'rgba(196,185,165,0.72)',
                   transition: 'color 0.18s',
                   flexShrink: 0,
                   fontFamily: 'monospace',
@@ -139,7 +139,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                     fontSize: 7,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: isActive ? 'rgba(196,124,46,0.55)' : 'rgba(122,117,110,0.28)',
+                    color: isActive ? 'rgba(214,156,84,0.82)' : 'rgba(196,185,165,0.74)',
                     transition: 'color 0.18s',
                     marginTop: 1,
                   }}
@@ -195,7 +195,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                   fontSize: 7,
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
-                  color: 'rgba(196,124,46,0.5)',
+                  color: 'rgba(214,156,84,0.82)',
                   background: 'rgba(196,124,46,0.06)',
                   border: '1px solid rgba(196,124,46,0.14)',
                   borderRadius: 2,
@@ -259,7 +259,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               className="mono-font"
               style={{
                 fontSize: 8,
-                color: 'rgba(240,230,204,0.5)',
+                color: 'rgba(240,230,204,0.82)',
                 letterSpacing: '0.04em',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -370,7 +370,7 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
                 fontWeight: 700,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: 'rgba(110,104,96,0.45)',
+                color: 'rgba(196,185,165,0.72)',
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.045)',
                 padding: '2px 6px',
@@ -442,7 +442,7 @@ export const CombinedSection = memo(() => {
                       background: active ? 'rgba(196,124,46,0.14)' : 'transparent',
                       border: active ? '1px solid rgba(196,124,46,0.3)' : '1px solid transparent',
                       borderRadius: 3,
-                      color: active ? 'var(--film-amber)' : 'rgba(110,104,96,0.55)',
+                      color: active ? 'var(--film-amber)' : 'rgba(196,185,165,0.74)',
                       cursor: 'pointer',
                       padding: '7px 18px',
                       fontSize: 9,
@@ -477,7 +477,7 @@ export const CombinedSection = memo(() => {
           className="mono-font"
           style={{
             fontSize: 7,
-            color: 'rgba(122,117,110,0.28)',
+            color: 'rgba(196,185,165,0.74)',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
           }}
@@ -488,7 +488,7 @@ export const CombinedSection = memo(() => {
         </span>
         <span
           className="mono-font"
-          style={{ fontSize: 7, color: 'rgba(122,117,110,0.18)', letterSpacing: '0.1em' }}
+          style={{ fontSize: 7, color: 'rgba(196,185,165,0.72)', letterSpacing: '0.1em' }}
         >
           © SPICYDEVS
         </span>

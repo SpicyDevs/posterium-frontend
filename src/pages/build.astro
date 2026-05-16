@@ -42,11 +42,13 @@ const seo: PageSEOMetadata = {
 ---
 
 <BaseLayout seo={seo} bodyClass="overflow-hidden">
-  {/* ADDED: SSR-rendered structural context for Googlebot before React hydrates */}
-  <div class="sr-only">
-    <h2>Posterium Interactive Builder</h2>
-    <p>Use our visual editor to search for TMDB, Fanart, or IMDb posters. Drag and drop glassmorphism rating badges onto the canvas. Adjust scale, corner radius, blur, and opacity. Export your final design instantly via a shareable API URL or download it as PNG, WebP, JPG, or SVG.</p>
-  </div>
+  <main id="main-content">
+    {/* ADDED: SSR-rendered structural context for Googlebot before React hydrates */}
+    <div class="sr-only">
+      <h2>Posterium Interactive Builder</h2>
+      <p>Use our visual editor to search for TMDB, Fanart, or IMDb posters. Drag and drop glassmorphism rating badges onto the canvas. Adjust scale, corner radius, blur, and opacity. Export your final design instantly via a shareable API URL or download it as PNG, WebP, JPG, or SVG.</p>
+    </div>
 
-  <BuilderApp client:only="react" />
+    <BuilderApp client:only="react" />
+  </main>
 </BaseLayout>

@@ -29,12 +29,12 @@ const SearchInput = memo(
             ref={ref}
             type="text"
             onFocus={() => onActivate?.()}
-            className="syne-font"
+            aria-label={props.placeholder ?? 'Search'}
+            className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
-              outline: 'none',
               color: 'var(--film-cream)',
               fontSize: 11,
               letterSpacing: '0.02em',

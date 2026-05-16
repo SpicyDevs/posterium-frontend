@@ -131,6 +131,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         </div>
         <button
           onClick={onClose}
+          aria-label="Close import dialog"
           style={{
             width: 24,
             height: 24,
@@ -198,11 +199,12 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             placeholder="Paste API URL…"
             autoFocus
             spellCheck={false}
+            aria-label="Paste API URL"
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
-              outline: 'none',
               fontSize: 10,
               fontFamily: 'JetBrains Mono, monospace',
               color: 'var(--film-text-dim)',

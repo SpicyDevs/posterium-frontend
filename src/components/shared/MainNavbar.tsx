@@ -49,6 +49,8 @@ const MainNavbar = memo<MainNavbarProps>(
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const mobileToggleRef = useRef<HTMLButtonElement>(null);
+    const wasMenuOpenRef = useRef(false);
 
     useEffect(() => {
       if (!revealOnScroll) {
@@ -101,6 +103,24 @@ const MainNavbar = memo<MainNavbarProps>(
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }, [search]);
+
+    useEffect(() => {
+      if (!menuOpen) return;
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        setMenuOpen(false);
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }, [menuOpen]);
+
+    useEffect(() => {
+      if (wasMenuOpenRef.current && !menuOpen) {
+        mobileToggleRef.current?.focus();
+      }
+      wasMenuOpenRef.current = menuOpen;
+    }, [menuOpen]);
 
     const navStyle: React.CSSProperties = {
       position: fixed ? 'fixed' : 'relative',
@@ -200,12 +220,12 @@ const MainNavbar = memo<MainNavbarProps>(
                 onFocus={() => search?.onActivate?.()}
                 readOnly={search?.readOnly || !search?.onChange}
                 placeholder={search?.placeholder ?? 'Search…'}
-                className="syne-font"
+                aria-label={search?.placeholder ?? 'Search'}
+                className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
                 style={{
                   flex: 1,
                   background: 'transparent',
                   border: 'none',
-                  outline: 'none',
                   color: 'var(--film-cream)',
                   fontSize: 11,
                   letterSpacing: '0.02em',
@@ -265,10 +285,12 @@ const MainNavbar = memo<MainNavbarProps>(
             {rightActions}
 
             <button
+              ref={mobileToggleRef}
               className="main-nav-mobile-toggle"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-haspopup="dialog"
               style={{
                 background: 'none',
                 border: '1px solid rgba(196,124,46,0.2)',
@@ -340,11 +362,12 @@ const MainNavbar = memo<MainNavbarProps>(
                   onChange={(e) => search?.onChange?.(e.target.value)}
                   readOnly={search?.readOnly || !search?.onChange}
                   placeholder={search?.placeholder ?? 'Search…'}
+                  aria-label={search?.placeholder ?? 'Search'}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
                   style={{
                     flex: 1,
                     background: 'transparent',
                     border: 'none',
-                    outline: 'none',
                     color: 'var(--film-cream)',
                     fontSize: 12,
                   }}

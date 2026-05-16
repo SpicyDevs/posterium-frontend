@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 
 interface TextInputRowProps {
   label: string;
@@ -17,16 +17,18 @@ const TextInputRow: React.FC<TextInputRowProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
+  const inputId = useId();
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span
+        <label
+          htmlFor={inputId}
           className="body-font"
           style={{ fontSize: 11, color: 'var(--film-text-label)', fontWeight: 500 }}
         >
           {label}
-        </span>
+        </label>
         {onClear && value && (
           <button
             type="button"
@@ -46,6 +48,7 @@ const TextInputRow: React.FC<TextInputRowProps> = ({
       </div>
       <input
         ref={inputRef}
+        id={inputId}
         type="text"
         value={value}
         placeholder={placeholder}

@@ -209,6 +209,7 @@ const ExportMenu = memo<ExportMenuProps>(
           </div>
           <button
             onClick={onClose}
+            aria-label="Close export menu"
             className="w-6 h-6 rounded flex items-center justify-center transition-colors"
             style={{ color: 'var(--film-text-dim)' }}
             onMouseEnter={(e) => {
@@ -274,6 +275,7 @@ const ExportMenu = memo<ExportMenuProps>(
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleLoad();
               }}
+              aria-label="API URL"
               className="flex-1 min-w-0 bg-transparent border-none outline-none mono-font"
               style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
               spellCheck={false}
