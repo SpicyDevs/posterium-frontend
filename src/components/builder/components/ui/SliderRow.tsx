@@ -31,7 +31,6 @@ const SliderRow: React.FC<SliderRowProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const isFocused = useRef(false);
   const numberInputId = useId();
-  const rangeInputId = useId();
 
   useEffect(() => {
     setLocalValue(value);
@@ -157,7 +156,6 @@ const SliderRow: React.FC<SliderRowProps> = ({
           }}
         />
         <input
-          id={rangeInputId}
           type="range"
           min={min}
           max={max}
