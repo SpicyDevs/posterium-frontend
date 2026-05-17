@@ -11,9 +11,12 @@
 
   "assets": {
     "directory": "./dist/",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
     // Normalize URLs for better SEO and to prevent duplicate content
-    "html_handling": "drop-trailing-slash"
+    "html_handling": "drop-trailing-slash",
+    // Ensure requests pass through the Worker to support content negotiation.
+    "run_worker_first": true
   },
 
   "env": {
