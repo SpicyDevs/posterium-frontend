@@ -31,29 +31,7 @@ const removeTagBlock = (input: string, tagName: string): string => {
   return result;
 };
 
-const stripHtmlTags = (input: string): string => {
-  let output = '';
-  let inTag = false;
-
-  for (const char of input) {
-    if (char === '<') {
-      inTag = true;
-      continue;
-    }
-
-    if (char === '>') {
-      inTag = false;
-      output += '\n';
-      continue;
-    }
-
-    if (!inTag) {
-      output += char;
-    }
-  }
-
-  return output;
-};
+const stripHtmlTags = (input: string): string => input.replace(/<[^>]*>/g, '\n');
 
 const normalizeWhitespace = (input: string): string => input
   .replace(/\r/g, '')
@@ -66,7 +44,7 @@ const getMarkdownTokenEstimate = (input: string): number => {
     return 0;
   }
 
-  return input.split(/\s+/).filter(Boolean).length;
+  return Math.ceil(input.length / 4);
 };
 
 const htmlToMarkdown = (html: string): string => {
