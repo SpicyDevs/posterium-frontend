@@ -3,12 +3,13 @@ import { defineMiddleware } from 'astro:middleware';
 const removeTagBlock = (input: string, tagName: string): string => {
   const openTag = `<${tagName}`;
   const closeTag = `</${tagName}>`;
+  const lowerInput = input.toLowerCase();
 
   let cursor = 0;
   let result = '';
 
   while (cursor < input.length) {
-    const start = input.toLowerCase().indexOf(openTag, cursor);
+    const start = lowerInput.indexOf(openTag, cursor);
 
     if (start === -1) {
       result += input.slice(cursor);
@@ -17,7 +18,7 @@ const removeTagBlock = (input: string, tagName: string): string => {
 
     result += input.slice(cursor, start);
 
-    const end = input.toLowerCase().indexOf(closeTag, start);
+    const end = lowerInput.indexOf(closeTag, start);
     if (end === -1) {
       break;
     }
@@ -57,6 +58,14 @@ const normalizeWhitespace = (input: string): string => input
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{3,}/g, '\n\n')
   .trim();
+
+const getMarkdownTokenEstimate = (input: string): number => {
+  if (!input) {
+    return 0;
+  }
+
+  return input.split(/\s+/).filter(Boolean).length;
+};
 
 const htmlToMarkdown = (html: string): string => {
   const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -101,6 +110,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const headers = new Headers(response.headers);
   headers.set('Content-Type', 'text/markdown; charset=utf-8');
+  headers.set('x-markdown-tokens', String(getMarkdownTokenEstimate(markdown)));
   headers.delete('Content-Length');
 
   return new Response(markdown, {

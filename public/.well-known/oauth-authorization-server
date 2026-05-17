@@ -20,7 +20,8 @@
     "openid",
     "profile",
     "posterium:read",
-    "posterium:write"
+    "posterium:write",
+    "posterium:generate"
   ],
   "code_challenge_methods_supported": [
     "S256"
