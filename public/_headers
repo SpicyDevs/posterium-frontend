@@ -9,11 +9,19 @@
   X-XSS-Protection: 1; mode=block
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
+# Homepage discovery headers (agent-ready discoverability)
+/
+  Link: </.well-known/api-catalog>; rel="api-catalog"
+  Link: </faq>; rel="service-doc"; type="text/html"
+  Link: </sitemap-index.xml>; rel="sitemap"; type="application/xml"
+
 # HTML entry — never cache stale
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
   Link: <https://api.spicydevs.xyz>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </.well-known/api-catalog>; rel="api-catalog"
+  Link: </faq>; rel="service-doc"; type="text/html"
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com data:; connect-src 'self' https://api.spicydevs.xyz https://api.themoviedb.org https://image.tmdb.org
 
 /404.html
@@ -33,6 +41,22 @@
 /robots.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600, must-revalidate
+
+# Well-known discovery resources
+/.well-known/api-catalog
+  Content-Type: application/linkset+json; charset=utf-8
+
+/.well-known/oauth-authorization-server
+  Content-Type: application/json; charset=utf-8
+
+/.well-known/oauth-protected-resource
+  Content-Type: application/json; charset=utf-8
+
+/.well-known/mcp/server-card.json
+  Content-Type: application/json; charset=utf-8
+
+/.well-known/agent-skills/index.json
+  Content-Type: application/json; charset=utf-8
 
 # Static images
 /og-image.png

@@ -1,0 +1,15 @@
+{
+  "resource": "https://posterium.xyz",
+  "authorization_servers": [
+    "https://posterium.xyz"
+  ],
+  "jwks_uri": "https://posterium.xyz/.well-known/jwks.json",
+  "scopes_supported": [
+    "posterium:read",
+    "posterium:write"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "resource_documentation": "https://posterium.xyz/faq"
+}
