@@ -44,10 +44,11 @@ const estimateTokensFromCharCount = (input: string): number => {
     return 0;
   }
 
+  // Fast heuristic used for response metadata only; model-specific tokenizers may differ.
   return Math.ceil(input.length / 4);
 };
 
-const htmlToMarkdown = (html: string): string => {
+const extractTextMarkdownFromHtml = (html: string): string => {
   const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
   const title = titleMatch?.[1]?.trim();
 
@@ -82,7 +83,7 @@ const appendVaryAccept = (headers: Headers): void => {
 };
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const response = await env.ASSETS.fetch(request);
     const accept = request.headers.get('accept')?.toLowerCase() ?? '';
 
@@ -96,7 +97,7 @@ export default {
     }
 
     const html = await response.text();
-    const markdown = htmlToMarkdown(html);
+    const markdown = extractTextMarkdownFromHtml(html);
 
     const headers = new Headers(response.headers);
     headers.set('Content-Type', 'text/markdown; charset=utf-8');
