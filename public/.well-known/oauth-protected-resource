@@ -1,9 +1,8 @@
 {
-  "resource": "https://api.spicydevs.xyz",
+  "resource": "https://api.spicydevs.xyz/",
   "authorization_servers": [
     "https://posterium.xyz"
   ],
-  "jwks_uri": "https://posterium.xyz/.well-known/jwks.json",
   "scopes_supported": [
     "posterium:read",
     "posterium:write",
