@@ -88,6 +88,10 @@ const htmlToMarkdown = (html: string): string => {
 };
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  if (context.isPrerendered) {
+    return next();
+  }
+
   const accept = context.request.headers.get('accept')?.toLowerCase() ?? '';
 
   if (!accept.includes('text/markdown')) {
@@ -97,7 +101,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const response = await next();
   const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
 
-  if (!contentType.includes('text/html')) {
+  // Some edge/CDN paths omit Content-Type for HTML; in that case we still attempt markdown conversion.
+  if (contentType && !contentType.includes('text/html')) {
     return response;
   }
 
