@@ -31,7 +31,7 @@ const removeTagBlock = (input: string, tagName: string): string => {
   return result;
 };
 
-const stripHtmlTags = (input: string): string => input.replace(/<[^>]*>/g, '\n');
+const stripHtmlTags = (input: string): string => input.replace(/<[^>]*>/g, ' ');
 
 const normalizeWhitespace = (input: string): string => input
   .replace(/\r/g, '')
@@ -39,7 +39,7 @@ const normalizeWhitespace = (input: string): string => input
   .replace(/\n{3,}/g, '\n\n')
   .trim();
 
-const getMarkdownTokenEstimate = (input: string): number => {
+const estimateTokensFromCharCount = (input: string): number => {
   if (!input) {
     return 0;
   }
@@ -74,7 +74,7 @@ const appendVaryAccept = (headers: Headers): void => {
     return;
   }
 
-  if (vary.toLowerCase().split(',').map((part) => part.trim()).includes('accept')) {
+  if (vary.toLowerCase().split(',').map((varyValue) => varyValue.trim()).includes('accept')) {
     return;
   }
 
@@ -100,7 +100,7 @@ export default {
 
     const headers = new Headers(response.headers);
     headers.set('Content-Type', 'text/markdown; charset=utf-8');
-    headers.set('x-markdown-tokens', String(getMarkdownTokenEstimate(markdown)));
+    headers.set('x-markdown-tokens', String(estimateTokensFromCharCount(markdown)));
     headers.delete('Content-Length');
     appendVaryAccept(headers);
 
