@@ -1,5 +1,6 @@
 {
   "name": "posterium-frontend",
+  "main": "./worker/index.ts",
   // Update compatibility date to the current date to get the latest V8 features
   "compatibility_date": "2026-05-15",
 
