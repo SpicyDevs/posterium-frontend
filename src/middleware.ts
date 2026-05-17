@@ -1,12 +1,56 @@
 import { defineMiddleware } from 'astro:middleware';
 
-const decodeHtmlEntities = (input: string): string => input
-  .replace(/&nbsp;/g, ' ')
-  .replace(/&amp;/g, '&')
-  .replace(/&lt;/g, '<')
-  .replace(/&gt;/g, '>')
-  .replace(/&quot;/g, '"')
-  .replace(/&#39;/g, "'");
+const removeTagBlock = (input: string, tagName: string): string => {
+  const openTag = `<${tagName}`;
+  const closeTag = `</${tagName}>`;
+
+  let cursor = 0;
+  let result = '';
+
+  while (cursor < input.length) {
+    const start = input.toLowerCase().indexOf(openTag, cursor);
+
+    if (start === -1) {
+      result += input.slice(cursor);
+      break;
+    }
+
+    result += input.slice(cursor, start);
+
+    const end = input.toLowerCase().indexOf(closeTag, start);
+    if (end === -1) {
+      break;
+    }
+
+    cursor = end + closeTag.length;
+  }
+
+  return result;
+};
+
+const stripHtmlTags = (input: string): string => {
+  let output = '';
+  let inTag = false;
+
+  for (const char of input) {
+    if (char === '<') {
+      inTag = true;
+      continue;
+    }
+
+    if (char === '>') {
+      inTag = false;
+      output += '\n';
+      continue;
+    }
+
+    if (!inTag) {
+      output += char;
+    }
+  }
+
+  return output;
+};
 
 const normalizeWhitespace = (input: string): string => input
   .replace(/\r/g, '')
@@ -18,23 +62,14 @@ const htmlToMarkdown = (html: string): string => {
   const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
   const title = titleMatch?.[1]?.trim();
 
-  let markdown = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
-    .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
-    .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '\n### $1\n')
-    .replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, '\n#### $1\n')
-    .replace(/<h5[^>]*>([\s\S]*?)<\/h5>/gi, '\n##### $1\n')
-    .replace(/<h6[^>]*>([\s\S]*?)<\/h6>/gi, '\n###### $1\n')
-    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '- $1\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|section|article|main|header|footer|ul|ol|blockquote)>/gi, '\n\n')
-    .replace(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
-    .replace(/<[^>]+>/g, '');
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const body = bodyMatch ? bodyMatch[1] : html;
 
-  markdown = decodeHtmlEntities(markdown);
-  markdown = normalizeWhitespace(markdown);
+  const withoutScripts = removeTagBlock(body, 'script');
+  const withoutStyles = removeTagBlock(withoutScripts, 'style');
+  const textOnly = stripHtmlTags(withoutStyles);
+
+  let markdown = normalizeWhitespace(textOnly);
 
   if (title && !markdown.startsWith('# ')) {
     markdown = `# ${title}\n\n${markdown}`;

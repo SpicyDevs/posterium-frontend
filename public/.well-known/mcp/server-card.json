@@ -22,7 +22,7 @@
       }
     },
     {
-      "name": "search_examples",
+      "name": "open_examples",
       "description": "Open the examples page and optionally search by query.",
       "inputSchema": {
         "type": "object",
