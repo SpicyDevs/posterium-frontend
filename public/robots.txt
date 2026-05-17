@@ -1,6 +1,31 @@
 User-agent: *
 Disallow: /admin/
 Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: OAI-SearchBot
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: ChatGPT-User
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: GPTBot
+Disallow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: Claude-Web
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: ClaudeBot
+Disallow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+User-agent: PerplexityBot
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=no
 
 Sitemap: https://posterium.xyz/sitemap-index.xml
 Sitemap: https://posterium.xyz/sitemap-0.xml

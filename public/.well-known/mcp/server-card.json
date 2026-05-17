@@ -1,0 +1,38 @@
+{
+  "name": "Posterium Web MCP",
+  "description": "Browser-exposed MCP context for Posterium poster generation actions.",
+  "url": "https://posterium.xyz",
+  "version": "1.0.0",
+  "protocolVersion": "2025-03-26",
+  "capabilities": {
+    "tools": true
+  },
+  "tools": [
+    {
+      "name": "open_builder",
+      "description": "Open the Posterium builder with optional query presets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional movie or TV title to prefill."
+          }
+        }
+      }
+    },
+    {
+      "name": "open_examples",
+      "description": "Open the examples page and optionally search by query.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Example query string."
+          }
+        }
+      }
+    }
+  ]
+}

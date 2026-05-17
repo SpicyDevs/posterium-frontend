@@ -1,0 +1,34 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://posterium.xyz/",
+      "item": [
+        {
+          "href": "https://posterium.xyz/.well-known/oauth-authorization-server",
+          "rel": "authorization_server",
+          "type": "application/json"
+        },
+        {
+          "href": "https://posterium.xyz/.well-known/oauth-protected-resource",
+          "rel": "oauth-protected-resource",
+          "type": "application/json"
+        },
+        {
+          "href": "https://posterium.xyz/.well-known/mcp/server-card.json",
+          "rel": "service-desc",
+          "type": "application/json"
+        },
+        {
+          "href": "https://posterium.xyz/.well-known/agent-skills/index.json",
+          "rel": "service-doc",
+          "type": "application/json"
+        },
+        {
+          "href": "https://posterium.xyz/faq",
+          "rel": "service-doc",
+          "type": "text/html"
+        }
+      ]
+    }
+  ]
+}
