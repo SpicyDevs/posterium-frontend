@@ -158,7 +158,6 @@ export const MarqueeTicker = memo<MarqueeTickerProps>(({ items, speed = 28 }) =>
         {doubled.map((item, i) => (
           <span
             key={i}
-            suppressHydrationWarning
             className="poster-font"
             style={{
               fontSize: 13,
