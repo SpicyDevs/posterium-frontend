@@ -88,10 +88,6 @@ const htmlToMarkdown = (html: string): string => {
 };
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  if (context.isPrerendered) {
-    return next();
-  }
-
   const accept = context.request.headers.get('accept')?.toLowerCase() ?? '';
 
   if (!accept.includes('text/markdown')) {
