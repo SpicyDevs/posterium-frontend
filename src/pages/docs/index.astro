@@ -12,24 +12,17 @@ import {
 import { getRelatedContentLinks } from '@/lib/internal-links';
 import '@/styles/global.css';
 
-export async function getStaticPaths() {
-  const docs = await getCollection('docs');
-  return docs
-    .filter((entry) => entry.id !== 'index')
-    .map((entry) => ({
-      params: { slug: entry.id },
-      props: { entry },
-    }));
-}
-
-const { entry } = Astro.props;
 const docsEntries = await getCollection('docs');
 const sortedDocs = docsEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
-const currentSlug = entry.id;
-const canonical = `${SITE_CONFIG.baseUrl}/docs/${currentSlug}`;
+const entry = sortedDocs.find((doc) => doc.id === 'index');
+
+if (!entry) {
+  throw new Error('Missing docs index markdown entry in src/content/docs/index.md');
+}
+
+const canonical = `${SITE_CONFIG.baseUrl}/docs`;
 const breadcrumbs = buildCollectionBreadcrumbs({
   title: entry.data.title,
-  slug: currentSlug,
   sectionName: 'Docs',
   sectionPath: '/docs',
 });
@@ -54,7 +47,7 @@ const seo: PageSEOMetadata = {
   jsonLd: [
     buildArticleOrTechArticleSchema({
       ...entry,
-      slug: `docs/${currentSlug}`,
+      slug: 'docs',
       data: {
         ...entry.data,
         category: 'Documentation',

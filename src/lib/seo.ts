@@ -358,12 +358,20 @@ const youtubeVideoId = (value: string): string | undefined => {
 
 const extractVideoUrls = (text: string): string[] => {
   const found = new Set<string>();
-  const regex =
-    /(https?:\/\/[^\s)]+(?:youtube\.com\/watch\?[^\s)]*v=[a-zA-Z0-9_-]{6,}|youtu\.be\/[a-zA-Z0-9_-]{6,}|vimeo\.com\/\d+|[^\s)]+\.(?:mp4|webm|mov)))/gi;
+  const urlRegex = /(https?:\/\/[^\s)]+)/gi;
 
-  for (const match of text.matchAll(regex)) {
+  for (const match of text.matchAll(urlRegex)) {
     const url = match[1]?.trim();
-    if (url) found.add(url);
+    if (!url) continue;
+
+    if (
+      /youtube\.com\/watch\?/.test(url) ||
+      /youtu\.be\/[a-zA-Z0-9_-]{6,}/.test(url) ||
+      /vimeo\.com\/\d+/.test(url) ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(url)
+    ) {
+      found.add(url);
+    }
   }
 
   return [...found];

@@ -91,6 +91,47 @@ const buildCollectionData = () => {
 
 const collectionSitemapData = buildCollectionData();
 
+const escapeXml = (value) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+const imageSitemapEnhancer = () => ({
+  name: 'posterium-image-sitemap-enhancer',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const sitemapPath = new URL('sitemap-0.xml', dir);
+      if (!fs.existsSync(sitemapPath)) return;
+
+      const xml = fs.readFileSync(sitemapPath, 'utf-8');
+      const updated = xml.replace(/<url>([\s\S]*?)<\/url>/g, (fullBlock, block) => {
+        const locMatch = block.match(/<loc>([^<]+)<\/loc>/);
+        if (!locMatch?.[1]) return fullBlock;
+
+        const pathname = new URL(locMatch[1]).pathname || '/';
+        const collectionEntry = Object.values(collectionSitemapData).find(
+          (entry) => entry.route === pathname
+        );
+        const images = new Set(['/og-image.png', ...(collectionEntry?.images ?? [])]);
+        const imageNodes = [...images]
+          .filter(Boolean)
+          .map((imagePath) =>
+            imagePath.startsWith('http') ? imagePath : `https://posterium.xyz${imagePath}`
+          )
+          .map((url) => `<image:image><image:loc>${escapeXml(url)}</image:loc></image:image>`)
+          .join('');
+
+        return imageNodes ? fullBlock.replace('</url>', `${imageNodes}</url>`) : fullBlock;
+      });
+
+      fs.writeFileSync(sitemapPath, updated, 'utf-8');
+    },
+  },
+});
+
 export default defineConfig({
   site: 'https://posterium.xyz',
   output: 'static',
@@ -127,9 +168,6 @@ export default defineConfig({
         } else if (collectionEntry && collectionEntry.count > 0) {
           item.priority = collectionEntry.priority;
           item.changefreq = collectionEntry.route === '/faq' ? 'monthly' : 'weekly';
-          item.images = collectionEntry.images.map((image) => ({
-            url: image.startsWith('http') ? image : `https://posterium.xyz${image}`,
-          }));
         } else {
           item.priority = 0.55;
           item.changefreq = 'monthly';
@@ -243,6 +281,7 @@ export default defineConfig({
       SVG: false,
       Image: false,
     }),
+    imageSitemapEnhancer(),
   ],
   vite: {
     esbuild: {
