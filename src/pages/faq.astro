@@ -5,8 +5,10 @@ import MainNavbar from '@/components/shared/MainNavbar';
 import Accordion from '@/components/ui/Accordion.astro';
 import FaqSearch from '@/components/faq/FaqSearch';
 import { AmberTag } from '@/components/shared/primitives';
+import RelatedContent from '@/components/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/lib/config';
 import { buildFAQPageSchema, contentToPlainText, type PageSEOMetadata } from '@/lib/seo';
+import { getRelatedContentLinks } from '@/lib/internal-links';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
@@ -51,6 +53,14 @@ const searchItems = sortedFaqs.map((faq) => ({
 }));
 
 const canonical = `${SITE_CONFIG.baseUrl}/faq`;
+const relatedLinks = await getRelatedContentLinks({
+  collection: 'faq',
+  id: 'faq',
+  title: 'Posterium FAQ',
+  text: sortedFaqs.map((faq) => `${faq.data.question} ${faq.body ?? ''}`).join(' '),
+  keywords: ['integrations', 'builder', 'api', 'pricing', 'plex', 'jellyfin'],
+});
+
 const seo: PageSEOMetadata = {
   title: 'FAQ - Posterium',
   description: "Frequently asked questions about Posterium's builder, API, exports, and integrations.",
@@ -178,6 +188,7 @@ const seo: PageSEOMetadata = {
       </section>
     </main>
   </div>
+  <RelatedContent slot="related" links={relatedLinks} />
 </BaseLayout>
 
 <script>

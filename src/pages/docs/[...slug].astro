@@ -1,0 +1,109 @@
+---
+import { getCollection } from 'astro:content';
+import DocsLayout from '@/layouts/DocsLayout.astro';
+import RelatedContent from '@/components/seo/RelatedContent.astro';
+import { SITE_CONFIG } from '@/lib/config';
+import {
+  buildArticleOrTechArticleSchema,
+  buildCollectionBreadcrumbs,
+  extractVideoObjectSchemas,
+  type PageSEOMetadata,
+} from '@/lib/seo';
+import { getRelatedContentLinks } from '@/lib/internal-links';
+import '@/styles/global.css';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((entry) => ({
+    params: entry.id === 'index' ? {} : { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const docsEntries = await getCollection('docs');
+const sortedDocs = docsEntries.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+const currentSlug = entry.id === 'index' ? '' : entry.id;
+const canonical = currentSlug ? `${SITE_CONFIG.baseUrl}/docs/${currentSlug}` : `${SITE_CONFIG.baseUrl}/docs`;
+const breadcrumbs = buildCollectionBreadcrumbs({
+  title: entry.data.title,
+  slug: currentSlug,
+  sectionName: 'Docs',
+  sectionPath: '/docs',
+});
+
+const relatedLinks = await getRelatedContentLinks({
+  collection: 'docs',
+  id: entry.id,
+  title: entry.data.title,
+  text: `${entry.data.description ?? ''} ${entry.body ?? ''}`,
+  keywords: ['documentation', 'api', 'migration', 'builder'],
+});
+
+const seo: PageSEOMetadata = {
+  title: `${entry.data.title} - Posterium Docs`,
+  description: entry.data.description ?? `Documentation for ${entry.data.title}.`,
+  keywords: 'posterium docs, migration guide, posterium api documentation',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: `${entry.data.title} documentation page`,
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs,
+  jsonLd: [
+    buildArticleOrTechArticleSchema({
+      ...entry,
+      slug: currentSlug ? `docs/${currentSlug}` : 'docs',
+      data: {
+        ...entry.data,
+        category: 'Documentation',
+      },
+    }),
+    ...extractVideoObjectSchemas({
+      title: entry.data.title,
+      description: entry.data.description ?? `Documentation for ${entry.data.title}.`,
+      canonical,
+      markdown: entry.body,
+    }),
+  ],
+};
+
+const sidebarLinks = sortedDocs.map((doc) => ({
+  id: doc.id,
+  label: doc.data.title,
+  href: doc.id === 'index' ? '/docs' : `/docs/${doc.id}`,
+}));
+---
+
+<DocsLayout seo={seo} sidebarTitle="Documentation" sidebarLinks={sidebarLinks}>
+  <nav aria-label="Breadcrumb" style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px;">
+    {breadcrumbs.map((crumb, index) => (
+      <span style="display: inline-flex; align-items: center; gap: 8px;">
+        <a
+          href={crumb.url}
+          class="syne-font hover-cream"
+          style="text-decoration: none; color: var(--film-text-label);"
+        >
+          {crumb.name}
+        </a>
+        {index < breadcrumbs.length - 1 && <span style="opacity: 0.55;">/</span>}
+      </span>
+    ))}
+  </nav>
+
+  <header>
+    <h1
+      class="poster-font"
+      style="margin: 0; font-size: clamp(34px,6vw,52px); letter-spacing: 0.08em; line-height: 0.9;"
+    >
+      {entry.data.title}
+    </h1>
+    {entry.data.description && (
+      <p class="body-font" style="margin: 10px 0 0; color: var(--film-text-dim); font-size: 14px;">
+        {entry.data.description}
+      </p>
+    )}
+  </header>
+
+  <article class="prose prose-compact" set:html={entry.rendered?.html ?? ''} />
+  <RelatedContent slot="related" links={relatedLinks} />
+</DocsLayout>

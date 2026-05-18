@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCollectionBreadcrumbs,
   buildFAQPageSchema,
+  buildHowToSchema,
   buildSchemaGraph,
   buildWebApplicationSchema,
   contentToPlainText,
+  extractVideoObjectSchemas,
   toFAQEntries,
   type SchemaObject,
 } from './seo';
@@ -122,5 +125,56 @@ describe('schema graph builder', () => {
       'WebPage',
       'BreadcrumbList',
     ]);
+  });
+});
+
+describe('advanced schema helpers', () => {
+  it('builds nested collection breadcrumbs for deep docs slugs', () => {
+    const breadcrumbs = buildCollectionBreadcrumbs({
+      title: 'Migration v3',
+      slug: 'guides/migration-v3',
+      sectionName: 'Docs',
+      sectionPath: '/docs',
+    });
+
+    expect(breadcrumbs).toEqual([
+      { name: 'Home', url: 'https://posterium.xyz' },
+      { name: 'Docs', url: 'https://posterium.xyz/docs' },
+      { name: 'Guides', url: 'https://posterium.xyz/docs/guides' },
+      { name: 'Migration v3', url: 'https://posterium.xyz/docs/guides/migration-v3' },
+    ]);
+  });
+
+  it('builds HowTo schema with HowToStep entries and images', () => {
+    const schema = buildHowToSchema({
+      name: 'Install Posterium with Plex',
+      description: 'Step-by-step Plex setup.',
+      url: 'https://posterium.xyz/installation#plex',
+      steps: ['Open Posterium', 'Copy URL', 'Paste URL in Plex'],
+      images: ['/placeholders/install-desktop.svg'],
+    });
+
+    expect(schema).toMatchObject({
+      '@type': 'HowTo',
+      '@id': 'https://posterium.xyz/installation#plex-howto',
+      name: 'Install Posterium with Plex',
+    });
+    expect((schema.step as Array<{ '@type': string }>).length).toBe(3);
+  });
+
+  it('extracts VideoObject schema nodes from markdown video links', () => {
+    const videos = extractVideoObjectSchemas({
+      title: 'Plex setup',
+      description: 'Video walkthrough',
+      canonical: 'https://posterium.xyz/installation#plex',
+      markdown: 'Watch demo: https://youtu.be/dQw4w9WgXcQ',
+    });
+
+    expect(videos).toHaveLength(1);
+    expect(videos[0]).toMatchObject({
+      '@type': 'VideoObject',
+      contentUrl: 'https://youtu.be/dQw4w9WgXcQ',
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    });
   });
 });

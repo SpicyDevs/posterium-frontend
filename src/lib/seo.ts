@@ -35,6 +35,27 @@ export interface WebApplicationSchemaMeta {
   operatingSystem?: string;
   featureList?: string[];
   screenshot?: string;
+  aggregateRating?: {
+    ratingValue: number;
+    ratingCount: number;
+    bestRating?: number;
+    worstRating?: number;
+  };
+}
+
+export interface HowToSchemaMeta {
+  name: string;
+  description: string;
+  url: string;
+  steps: string[];
+  images?: string[];
+}
+
+export interface CollectionBreadcrumbMeta {
+  title: string;
+  slug?: string;
+  sectionName: string;
+  sectionPath: string;
 }
 
 export interface ArticleContentEntry {
@@ -160,6 +181,7 @@ const siteNavigationItems: BreadcrumbItem[] = [
   { name: 'Examples', url: `${SITE_CONFIG.baseUrl}/examples` },
   { name: 'Installation', url: `${SITE_CONFIG.baseUrl}/installation` },
   { name: 'FAQ', url: `${SITE_CONFIG.baseUrl}/faq` },
+  { name: 'Docs', url: `${SITE_CONFIG.baseUrl}/docs` },
 ];
 
 export function buildSiteNavigationSchema(): SchemaObject {
@@ -222,6 +244,39 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[], canonical?: strin
   };
 }
 
+const titleCaseSegment = (segment: string): string =>
+  segment
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+
+export function buildCollectionBreadcrumbs(meta: CollectionBreadcrumbMeta): BreadcrumbItem[] {
+  const sectionUrl = `${SITE_CONFIG.baseUrl}${meta.sectionPath.startsWith('/') ? meta.sectionPath : `/${meta.sectionPath}`}`;
+  const slug = (meta.slug ?? '').replace(/^\/+|\/+$/g, '');
+
+  const breadcrumbs: BreadcrumbItem[] = [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: meta.sectionName, url: sectionUrl },
+  ];
+
+  if (!slug) return breadcrumbs;
+
+  const segments = slug.split('/').filter(Boolean);
+  const parents = segments.slice(0, -1);
+  const leaf = segments[segments.length - 1];
+
+  parents.forEach((segment, index) => {
+    const parentPath = `${sectionUrl}/${segments.slice(0, index + 1).join('/')}`;
+    breadcrumbs.push({ name: titleCaseSegment(segment), url: parentPath });
+  });
+
+  breadcrumbs.push({ name: meta.title, url: `${sectionUrl}/${segments.join('/')}` });
+  if (leaf === 'index') breadcrumbs[breadcrumbs.length - 1] = { name: meta.title, url: sectionUrl };
+
+  return breadcrumbs;
+}
+
 export function buildWebApplicationSchema(meta: WebApplicationSchemaMeta): SchemaObject {
   return {
     '@type': 'WebApplication',
@@ -258,7 +313,91 @@ export function buildWebApplicationSchema(meta: WebApplicationSchemaMeta): Schem
     screenshot: meta.screenshot ? absoluteUrl(meta.screenshot) : undefined,
     isAccessibleForFree: true,
     featureList: meta.featureList,
+    aggregateRating: meta.aggregateRating
+      ? {
+          '@type': 'AggregateRating',
+          ratingValue: meta.aggregateRating.ratingValue,
+          ratingCount: meta.aggregateRating.ratingCount,
+          bestRating: meta.aggregateRating.bestRating ?? 5,
+          worstRating: meta.aggregateRating.worstRating ?? 1,
+        }
+      : undefined,
   };
+}
+
+export function buildHowToSchema(meta: HowToSchemaMeta): SchemaObject {
+  const images = (meta.images ?? []).filter(Boolean).map((image) => absoluteUrl(image));
+  const schemaId = meta.url.includes('#') ? `${meta.url}-howto` : `${meta.url}#howto`;
+
+  return {
+    '@type': 'HowTo',
+    '@id': schemaId,
+    name: meta.name,
+    description: meta.description,
+    url: meta.url,
+    image: images,
+    step: meta.steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step,
+      image: images[index] ?? images[0],
+    })),
+    totalTime: `PT${Math.max(1, meta.steps.length * 2)}M`,
+  };
+}
+
+const youtubeVideoId = (value: string): string | undefined => {
+  const url = value.trim();
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
+  if (shortMatch) return shortMatch[1];
+
+  const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+  if (watchMatch) return watchMatch[1];
+  return undefined;
+};
+
+const extractVideoUrls = (text: string): string[] => {
+  const found = new Set<string>();
+  const regex =
+    /(https?:\/\/[^\s)]+(?:youtube\.com\/watch\?[^\s)]*v=[a-zA-Z0-9_-]{6,}|youtu\.be\/[a-zA-Z0-9_-]{6,}|vimeo\.com\/\d+|[^\s)]+\.(?:mp4|webm|mov)))/gi;
+
+  for (const match of text.matchAll(regex)) {
+    const url = match[1]?.trim();
+    if (url) found.add(url);
+  }
+
+  return [...found];
+};
+
+export function extractVideoObjectSchemas(meta: {
+  title: string;
+  description: string;
+  canonical: string;
+  markdown?: string;
+}): SchemaObject[] {
+  const urls = extractVideoUrls(meta.markdown ?? '');
+
+  return urls.map((url, index) => {
+    const videoId = youtubeVideoId(url);
+    const embedUrl = videoId
+      ? `https://www.youtube.com/embed/${videoId}`
+      : url.includes('vimeo.com/')
+        ? `https://player.vimeo.com/video/${url.split('/').pop()}`
+        : undefined;
+    const thumbnail = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : undefined;
+
+    return {
+      '@type': 'VideoObject',
+      '@id': `${meta.canonical}#video-${index + 1}`,
+      name: `${meta.title} video demo ${index + 1}`,
+      description: meta.description,
+      thumbnailUrl: thumbnail,
+      contentUrl: url,
+      embedUrl,
+      uploadDate: new Date().toISOString(),
+      isFamilyFriendly: true,
+    };
+  });
 }
 
 export function buildFAQPageSchema(faqEntries: FAQEntry[]): SchemaObject {
