@@ -5,6 +5,8 @@ interface ShowcaseMediaFrameProps {
   alt: string;
   ratio?: '9 / 16' | '16 / 9';
   mobileFrame?: boolean;
+  loading?: 'lazy' | 'eager';
+  fetchPriority?: 'auto' | 'high' | 'low';
 }
 
 const DEFAULT_DESKTOP_RATIO = '16 / 9';
@@ -18,7 +20,7 @@ const baseFrameStyle: CSSProperties = {
 };
 
 const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(
-  ({ src, alt, ratio, mobileFrame = false }) => {
+  ({ src, alt, ratio, mobileFrame = false, loading = 'lazy', fetchPriority = 'auto' }) => {
     const finalRatio = mobileFrame ? MOBILE_FRAME_RATIO : (ratio ?? DEFAULT_DESKTOP_RATIO);
 
     if (!mobileFrame) {
@@ -35,7 +37,8 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(
             src={src}
             alt={alt}
             style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
-            loading="lazy"
+            loading={loading}
+            fetchPriority={fetchPriority}
           />
         </div>
       );
@@ -82,7 +85,8 @@ const ShowcaseMediaFrame = memo<ShowcaseMediaFrameProps>(
               objectFit: 'cover',
               objectPosition: MOBILE_IMAGE_OBJECT_POSITION,
             }}
-            loading="lazy"
+            loading={loading}
+            fetchPriority={fetchPriority}
           />
         </div>
       </div>

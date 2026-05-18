@@ -19,9 +19,16 @@ import MainNavbar from '@/components/shared/MainNavbar';
 import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
 import TableOfContentsClient from '@/components/TableOfContentsClient';
 import { AmberTag } from '@/components/shared/primitives';
+import RelatedContent from '@/components/seo/RelatedContent.astro';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
 import { SITE_CONFIG } from '@/lib/config';
-import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
+import {
+  buildArticleOrTechArticleSchema,
+  buildHowToSchema,
+  extractVideoObjectSchemas,
+  type PageSEOMetadata,
+} from '@/lib/seo';
+import { getRelatedContentLinks } from '@/lib/internal-links';
 import '@/styles/global.css';
 
 const placeholderImages = {
@@ -55,6 +62,14 @@ const allGuideHeadings = preparedGuides.map((g) => ({
 }));
 
 const canonical = `${SITE_CONFIG.baseUrl}/installation`;
+const relatedLinks = await getRelatedContentLinks({
+  collection: 'install',
+  id: 'installation',
+  title: 'Posterium installation guides',
+  text: preparedGuides.map((guide) => `${guide.name} ${guide.guide.body ?? ''}`).join(' '),
+  keywords: ['plex', 'jellyfin', 'emby', 'stremio', 'kodi', 'integrations'],
+});
+
 const seo: PageSEOMetadata = {
   title: 'Installation - Posterium',
   description: 'Installation guides for using Posterium with Plex, Emby, Jellyfin, Stremio, Kodi, and other media apps.',
@@ -67,8 +82,15 @@ const seo: PageSEOMetadata = {
     { name: 'Home', url: SITE_CONFIG.baseUrl },
     { name: 'Installation', url: canonical },
   ],
-  jsonLd: preparedGuides.map((entry) =>
-    buildArticleOrTechArticleSchema({
+  jsonLd: preparedGuides.flatMap((entry) => {
+    const steps = entry.headings.map((heading) => heading.text);
+    const stepImages = [
+      entry.showcaseImages.desktop,
+      entry.showcaseImages.tv,
+      ...entry.showcaseImages.mobile,
+    ];
+    const guideCanonical = `${canonical}#${entry.guide.id}`;
+    const articleSchema = buildArticleOrTechArticleSchema({
       ...entry.guide,
       slug: `installation#${entry.guide.id}`,
       data: {
@@ -77,8 +99,23 @@ const seo: PageSEOMetadata = {
         description: `Install and configure Posterium with ${entry.name}.`,
         category: 'Integrations',
       },
-    }),
-  ),
+    });
+    const howToSchema = buildHowToSchema({
+      name: `${entry.name} setup with Posterium`,
+      description: `Step-by-step setup guide for using Posterium with ${entry.name}.`,
+      url: guideCanonical,
+      steps: steps.length > 0 ? steps : ['Open Posterium', 'Copy poster URL', `Apply URL in ${entry.name}`],
+      images: stepImages,
+    });
+    const videos = extractVideoObjectSchemas({
+      title: `${entry.name} installation`,
+      description: `Video setup walkthrough for ${entry.name} and Posterium.`,
+      canonical: guideCanonical,
+      markdown: entry.guide.body,
+    });
+
+    return [articleSchema, howToSchema, ...videos];
+  }),
 };
 ---
 
@@ -168,6 +205,7 @@ const seo: PageSEOMetadata = {
       </main>
     </div>
   </div>
+  <RelatedContent slot="related" links={relatedLinks} />
 </BaseLayout>
 
 <!-- ─── Styles ────────────────────────────────────────────────────────────── -->

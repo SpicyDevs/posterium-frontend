@@ -4,6 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import BuilderApp from '@/components/builder/index.tsx';
 import { SITE_CONFIG } from '@/lib/config';
 import { buildWebApplicationSchema, type PageSEOMetadata } from '@/lib/seo';
+import { APPLICATION_AGGREGATE_RATING, SOFTWARE_APPLICATION_FEATURES } from '@/lib/seo-features';
 import '@/styles/global.css';
 
 const canonical = `${SITE_CONFIG.baseUrl}/build`;
@@ -27,15 +28,8 @@ const seo: PageSEOMetadata = {
       name: 'Posterium Poster Builder',
       url: canonical,
       description: 'Visual drag-and-drop editor for building custom movie and TV posters with live rating badge overlays. Real-time preview with instant API URL export.',
-      featureList: [
-        'Drag-and-drop badge positioning',
-        'Real-time poster preview',
-        'Per-badge styling controls',
-        'Undo/redo history',
-        'Keyboard shortcuts',
-        'API URL generation',
-        'Multiple export formats',
-      ],
+      featureList: SOFTWARE_APPLICATION_FEATURES,
+      aggregateRating: APPLICATION_AGGREGATE_RATING,
     }),
   ],
 };

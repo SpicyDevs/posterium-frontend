@@ -12,6 +12,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Dashboard from '@/components/dashboard/Dashboard.tsx';
 import { SITE_CONFIG } from '@/lib/config';
 import { buildFAQPageSchema, buildWebApplicationSchema, type PageSEOMetadata } from '@/lib/seo';
+import { APPLICATION_AGGREGATE_RATING, SOFTWARE_APPLICATION_FEATURES } from '@/lib/seo-features';
 import '@/styles/global.css';
 
 const homeFaqEntries = [
@@ -53,13 +54,8 @@ const seo: PageSEOMetadata = {
       applicationCategory: 'MultimediaApplication',
       applicationSubCategory: 'Photo Editing',
       screenshot: SITE_CONFIG.ogImageUrl,
-      featureList: [
-        'Live IMDb rating badges',
-        'Rotten Tomatoes score overlays',
-        'Metacritic score badges',
-        'Drag-and-drop poster editor',
-        'SVG, PNG, JPG, WebP export',
-      ],
+      featureList: SOFTWARE_APPLICATION_FEATURES,
+      aggregateRating: APPLICATION_AGGREGATE_RATING,
     }),
     buildFAQPageSchema(homeFaqEntries),
   ],

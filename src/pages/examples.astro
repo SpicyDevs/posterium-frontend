@@ -8,8 +8,14 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ExamplesPage from '@/components/examples/ExamplesPage';
+import RelatedContent from '@/components/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/lib/config';
-import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
+import {
+  buildArticleOrTechArticleSchema,
+  extractVideoObjectSchemas,
+  type PageSEOMetadata,
+} from '@/lib/seo';
+import { getRelatedContentLinks } from '@/lib/internal-links';
 import '@/styles/global.css';
 
 const exampleEntries = await getCollection('examples');
@@ -23,6 +29,15 @@ const presets = sortedExamples.map((entry) => ({
 }));
 
 const canonical = `${SITE_CONFIG.baseUrl}/examples`;
+const relatedLinks = await getRelatedContentLinks({
+  collection: 'examples',
+  id: 'examples',
+  title: 'Posterium examples gallery',
+  text: sortedExamples
+    .map((entry) => `${entry.data.title} ${entry.data.description} ${entry.body ?? ''}`)
+    .join(' '),
+  keywords: ['builder', 'presets', 'open in builder', 'poster examples'],
+});
 
 const seo: PageSEOMetadata = {
   title: 'Examples - Posterium',
@@ -36,7 +51,16 @@ const seo: PageSEOMetadata = {
     { name: 'Home', url: SITE_CONFIG.baseUrl },
     { name: 'Examples', url: canonical },
   ],
-  jsonLd: sortedExamples.map((entry) => buildArticleOrTechArticleSchema({ ...entry, slug: `examples/${entry.id}` })),
+  jsonLd: sortedExamples.flatMap((entry) => {
+    const article = buildArticleOrTechArticleSchema({ ...entry, slug: `examples/${entry.id}` });
+    const videos = extractVideoObjectSchemas({
+      title: `${entry.data.title} example`,
+      description: entry.data.description,
+      canonical: `${canonical}#${entry.id}`,
+      markdown: entry.body,
+    });
+    return [article, ...videos];
+  }),
 };
 ---
 
@@ -51,4 +75,5 @@ const seo: PageSEOMetadata = {
     itself has no above-the-fold interactivity that justifies eager hydration.
   -->
   <ExamplesPage client:visible presets={presets} />
+  <RelatedContent slot="related" links={relatedLinks} />
 </BaseLayout>

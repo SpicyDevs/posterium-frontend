@@ -30,6 +30,7 @@ interface MainNavbarProps {
 const APP_LINKS: NavbarLink[] = [
   { label: 'Build', href: '/build' },
   { label: 'Installation', href: '/installation' },
+  { label: 'Docs', href: '/docs' },
   { label: 'FAQ', href: '/faq' },
   { label: 'Examples', href: '/examples' },
 ];
