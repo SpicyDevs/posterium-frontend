@@ -66,16 +66,12 @@ const buildCollectionData = () => {
     const collectionDir = path.join(CONTENT_DIR, collection);
     const files = walkMarkdownFiles(collectionDir);
     const images = new Set(['/og-image.png']);
-    let latestMtime = 0;
 
     files.forEach((filePath) => {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const { frontmatter, body } = extractFrontmatterAndBody(raw);
       extractImagePaths(frontmatter).forEach((image) => images.add(image));
       extractImagePaths(body).forEach((image) => images.add(image));
-
-      const stat = fs.statSync(filePath);
-      latestMtime = Math.max(latestMtime, stat.mtimeMs);
     });
 
     acc[collection] = {
@@ -83,7 +79,7 @@ const buildCollectionData = () => {
       priority: COLLECTION_PRIORITY_MAP[collection],
       count: files.length,
       images: [...images],
-      lastmod: latestMtime ? new Date(latestMtime).toISOString() : undefined,
+      lastmod: undefined,
     };
     return acc;
   }, {});
@@ -100,7 +96,7 @@ const escapeXml = (value) =>
     .replace(/'/g, '&apos;');
 
 const imageSitemapEnhancer = () => ({
-  name: 'posterium-image-sitemap-enhancer',
+  name: 'image-sitemap',
   hooks: {
     'astro:build:done': async ({ dir }) => {
       const sitemapPath = new URL('sitemap-0.xml', dir);

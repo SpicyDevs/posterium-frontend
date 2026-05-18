@@ -48,6 +48,7 @@ const STOPWORDS = new Set([
   'your',
   'you',
 ]);
+const CROSS_COLLECTION_BONUS_SCORE = 2;
 
 const toAbsolutePath = (path: string): string => new URL(path, SITE_CONFIG.baseUrl).toString();
 
@@ -93,14 +94,22 @@ const nodeFromEntry = (
   collection: SupportedCollection,
   entry: CollectionEntry<SupportedCollection>
 ): ContentNode => {
-  const extra =
-    collection === 'faq'
-      ? `${entry.data.category} ${entry.data.question}`
-      : collection === 'install'
-        ? `${entry.data.name ?? ''}`
-        : collection === 'examples'
-          ? `${entry.data.title} ${entry.data.description}`
-          : `${entry.data.title ?? ''} ${entry.data.description ?? ''}`;
+  let extra = '';
+
+  switch (collection) {
+    case 'faq':
+      extra = `${entry.data.category} ${entry.data.question}`;
+      break;
+    case 'install':
+      extra = `${entry.data.name ?? ''}`;
+      break;
+    case 'examples':
+      extra = `${entry.data.title} ${entry.data.description}`;
+      break;
+    case 'docs':
+      extra = `${entry.data.title ?? ''} ${entry.data.description ?? ''}`;
+      break;
+  }
 
   return {
     collection,
@@ -123,7 +132,8 @@ const toCandidateLinks = (
     .map((node) => {
       const nodeTokens = toTokenSet(`${node.title} ${node.searchableText}`);
       const tokenScore = intersectionScore(contextTokens, nodeTokens);
-      const crossCollectionBonus = node.collection === context.collection ? 0 : 2;
+      const crossCollectionBonus =
+        node.collection === context.collection ? 0 : CROSS_COLLECTION_BONUS_SCORE;
 
       return {
         title: node.title,

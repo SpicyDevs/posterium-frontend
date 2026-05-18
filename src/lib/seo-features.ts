@@ -15,9 +15,22 @@ export const SOFTWARE_APPLICATION_FEATURES: string[] = [
   'Shareable API URL generation',
 ];
 
-export const DEFAULT_APPLICATION_RATING: AggregateRatingConfig = {
-  ratingValue: 4.9,
-  ratingCount: 1200,
-  bestRating: 5,
-  worstRating: 1,
+const parseNumber = (value: string | undefined): number | undefined => {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
+
+export const APPLICATION_AGGREGATE_RATING: AggregateRatingConfig | undefined = (() => {
+  const ratingValue = parseNumber(import.meta.env.PUBLIC_APP_RATING_VALUE);
+  const ratingCount = parseNumber(import.meta.env.PUBLIC_APP_RATING_COUNT);
+
+  if (!ratingValue || !ratingCount || ratingValue <= 0 || ratingCount <= 0) return undefined;
+
+  return {
+    ratingValue,
+    ratingCount,
+    bestRating: 5,
+    worstRating: 1,
+  };
+})();
