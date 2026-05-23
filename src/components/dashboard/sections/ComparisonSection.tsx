@@ -31,85 +31,99 @@ const toRow = ([feature, sub, ours, theirs, ourStatus, theirStatus]: readonly [
 
 const ROWS: Row[] = (
   [
-    ['Price', 'Cost to generate posters', 'Free forever', 'Paid tiers or credits', 'win', 'loss'],
     [
-      'Account required',
-      'Do you need to register?',
-      'No account, ever',
-      'Registration required',
-      'win',
-      'loss',
-    ],
-    ['Rate limits', 'API call caps', 'Unlimited', 'Daily / monthly cap', 'win', 'loss'],
-    [
-      'Source code',
-      'Can you inspect or fork it?',
-      'MIT — fully open source',
-      'Proprietary / closed',
-      'win',
-      'loss',
-    ],
-    [
-      'Export formats',
-      'Supported output types',
-      'SVG · PNG · JPG · WebP',
-      'PNG only',
-      'win',
-      'loss',
-    ],
-    [
-      'Rating sources',
-      'Supported scoring platforms',
-      'IMDb · RT · Meta · TMDB · Letterboxd · MAL · AniList · more',
-      '1–3 sources',
+      'Rating Sources',
+      'Supported platforms',
+      '12 live sources (Letterboxd, RT Audience, MAL, AniList, etc.)',
+      'Limited to 1–3 basic sources (IMDb/TMDB)',
       'win',
       'partial',
     ],
     [
-      'Delivery model',
-      'How the poster reaches you',
-      'Single URL — works in any img tag',
-      'File download or API key call',
-      'win',
-      'partial',
-    ],
-    [
-      'Score freshness',
-      'Are ratings live or cached?',
-      'Real-time — fetched on request',
-      'Cached — hours to days old',
-      'win',
-      'partial',
-    ],
-    [
-      'Textless posters',
-      'Strip title text from artwork',
-      'Supported via ?textless=1',
-      'Not available',
+      'Delivery Engine',
+      'How you embed the poster',
+      'Compressed v3 Edge URL — auto-updates everywhere',
+      'Static image downloads (ratings get outdated)',
       'win',
       'loss',
     ],
     [
-      'Self-hosting',
-      'Run on your own infra',
-      'Yes — Docker / Node.js',
-      'Not supported',
+      'Score Normalization',
+      'Unifying different scales',
+      'Live math engine (e.g., auto-converts 86% to 8.6/10)',
+      'Not available; requires manual edits',
       'win',
       'loss',
     ],
     [
-      'Visual editor',
-      'No-code badge positioning',
-      'Drag-and-drop with live preview',
-      'None or basic form',
+      'Textless & Logos',
+      'Clean artwork support',
+      'Auto-strip text + inject clean TV/Movie logos',
+      'Requires Photoshop or static uploads',
+      'win',
+      'loss',
+    ],
+    [
+      'Typography Engine',
+      'Custom text rendering',
+      'Full control (kerning, line-height, wrapping, flow)',
+      'Basic fixed-size fonts or none at all',
+      'win',
+      'loss',
+    ],
+    [
+      'Visual Editor',
+      'Customizing layouts',
+      'Drag-and-drop glassmorphism with live preview',
+      'Clunky forms or code-only setups',
       'win',
       'partial',
     ],
     [
-      'Anime support',
-      'MAL / AniList IDs',
-      'MAL and AniList badge sources',
-      'Movies/TV only',
+      'Fallback Sources',
+      'When TMDB fails...',
+      'Native cascade (Fanart → Metahub → IMDb)',
+      'Poster breaks or shows blank',
+      'win',
+      'loss',
+    ],
+    [
+      'Export Formats',
+      'Vector and raster support',
+      'Dynamic SVG, WebP, PNG, JPG',
+      'Standard PNG/JPG only',
+      'win',
+      'partial',
+    ],
+    [
+      'Infrastructure',
+      'API Keys & Hosting',
+      'Full BYOK (OMDB, MDBList, TMDB) + Docker self-hosting',
+      'Locked to their platform and servers',
+      'win',
+      'loss',
+    ],
+    [
+      'Pricing Model',
+      'Cost to generate',
+      '100% Free forever (MIT Open Source)',
+      'Paid tiers, subscriptions, or credit systems',
+      'win',
+      'loss',
+    ],
+    [
+      'Rate Limits',
+      'API request caps',
+      'Unlimited (Cloudflare Edge delivery)',
+      'Strict daily/monthly request limits',
+      'win',
+      'loss',
+    ],
+    [
+      'Account Access',
+      'Registration requirements',
+      'No account needed, ever',
+      'Mandatory sign-ups & data collection',
       'win',
       'loss',
     ],
@@ -247,7 +261,7 @@ export const ComparisonSection = memo(() => {
     >
       <div style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.6s ease' }}>
         <SectionHeader
-          tag="Why Posterium"
+          tag="Head-to-head"
           title={
             <>
               THE SPEC
@@ -255,7 +269,7 @@ export const ComparisonSection = memo(() => {
               <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
             </>
           }
-          description="Every feature, side by side. No marketing copy — just what each tool actually does."
+          description="Every feature, side by side. No marketing fluff — just the technical realities of what the API actually supports."
           padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0"
         />
       </div>
@@ -397,7 +411,7 @@ export const ComparisonSection = memo(() => {
           className="mono-font"
           style={{ fontSize: 7, color: 'rgba(122,117,110,0.25)', letterSpacing: '0.1em' }}
         >
-          {ROWS.length} comparisons · api.spicydevs.xyz
+          {ROWS.length} technical comparisons · api.spicydevs.xyz
         </span>
       </div>
     </section>
