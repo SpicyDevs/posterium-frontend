@@ -1,3 +1,4 @@
+// src/components/dashboard/Nav.tsx
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Github, Menu, X } from 'lucide-react';
 
@@ -30,7 +31,6 @@ const GITHUB_BASE: React.CSSProperties = {
 };
 
 const Nav = memo(() => {
-  const [visible, setVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -40,7 +40,6 @@ const Nav = memo(() => {
   useEffect(() => {
     const update = () => {
       const heroH = window.innerHeight * 0.72;
-      setVisible(window.scrollY > heroH);
       setScrolled(window.scrollY > heroH + 20);
     };
     update();
@@ -85,16 +84,20 @@ const Nav = memo(() => {
           borderBottom: scrolled ? '1px solid rgba(196,124,46,0.1)' : '1px solid transparent',
           justifyContent: 'space-between',
           gap: 24,
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-          pointerEvents: visible ? 'all' : 'none',
-          transition:
-            'opacity 0.45s cubic-bezier(0.16,1,0.3,1), ' +
-            'transform 0.45s cubic-bezier(0.16,1,0.3,1), ' +
-            'background 0.35s ease, border-color 0.35s ease',
+          transition: 'background 0.35s ease, border-color 0.35s ease',
         }}
       >
-        <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+        <a 
+          href="/" 
+          style={{ 
+            textDecoration: 'none', 
+            flexShrink: 0,
+            opacity: scrolled ? 1 : 0,
+            pointerEvents: scrolled ? 'auto' : 'none',
+            transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
+            transition: 'opacity 0.35s ease, transform 0.35s ease'
+          }}
+        >
           <span
             className="poster-font"
             style={{
@@ -131,7 +134,13 @@ const Nav = memo(() => {
             href="#"
             aria-label="Repository"
             className="nav-links-desktop hover-cream"
-            style={GITHUB_BASE}
+            style={{
+              ...GITHUB_BASE,
+              opacity: scrolled ? 1 : 0,
+              pointerEvents: scrolled ? 'auto' : 'none',
+              transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
+              transition: 'opacity 0.35s ease, transform 0.35s ease'
+            }}
           >
             <Github size={15} />
           </a>
@@ -154,7 +163,10 @@ const Nav = memo(() => {
               borderRadius: 3,
               flexShrink: 0,
               boxShadow: '0 0 18px rgba(196,124,46,0.22)',
-              transition: 'box-shadow 0.2s, background 0.2s',
+              opacity: scrolled ? 1 : 0,
+              pointerEvents: scrolled ? 'auto' : 'none',
+              transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
+              transition: 'opacity 0.35s ease, transform 0.35s ease, box-shadow 0.2s, background 0.2s',
             }}
           >
             Build
@@ -184,7 +196,7 @@ const Nav = memo(() => {
         </div>
       </nav>
 
-      {menuOpen && visible && (
+      {menuOpen && (
         <div
           role="dialog"
           aria-modal={true}
