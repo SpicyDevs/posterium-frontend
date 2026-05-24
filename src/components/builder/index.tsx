@@ -22,6 +22,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/navigation/AdvancedPanelNav';
 import ModeToggle, { type BuilderMode } from './components/navigation/ModeToggle';
+import WalkthroughLayout from './components/walkthrough/WalkthroughLayout';
 import {
   SourcePanel,
   LayersPanel,
@@ -82,7 +83,8 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  initialMode?: BuilderMode;
+  builderMode: BuilderMode;
+  setBuilderMode: (mode: BuilderMode) => void;
 }> = ({
   config,
   setConfig,
@@ -93,7 +95,8 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
-  initialMode = 'simple',
+  builderMode,
+  setBuilderMode,
 }) => {
   const {
     activeTab,
@@ -111,7 +114,6 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
-  const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMode);
   const [advancedPanel, setAdvancedPanel] = useState<BuilderPanelId>('source');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -1465,7 +1467,10 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
+const BuilderApp: React.FC<{ initialMode?: BuilderMode; legacyMode?: boolean }> = ({
+  initialMode = 'walkthrough',
+  legacyMode = false,
+}) => {
   const {
     state: config,
     setState: setConfig,
@@ -1499,6 +1504,14 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
       if (hasAnyKey) saveKeysToCookie(config.keys);
     }
   }, [config.keys]);
+
+  const [builderMode, setBuilderMode] = useState<BuilderMode>(
+    legacyMode ? 'legacy' : initialMode
+  );
+
+  useEffect(() => {
+    if (legacyMode) setBuilderMode('legacy');
+  }, [legacyMode]);
 
   const handleLoadConfig = useCallback(
     (url: string) => {
@@ -1555,18 +1568,28 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
 
   return (
     <EditorProvider>
-      <StudioLayout
-        config={config}
-        setConfig={setConfig}
-        handleReset={handleReset}
-        baseUrl={baseUrl}
-        handleLoadConfig={handleLoadConfig}
-        undo={undo}
-        redo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        initialMode={initialMode}
-      />
+      {builderMode === 'walkthrough' ? (
+        <WalkthroughLayout
+          config={config}
+          setConfig={setConfig}
+          baseUrl={baseUrl}
+          onModeChange={setBuilderMode}
+        />
+      ) : (
+        <StudioLayout
+          config={config}
+          setConfig={setConfig}
+          handleReset={handleReset}
+          baseUrl={baseUrl}
+          handleLoadConfig={handleLoadConfig}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          builderMode={builderMode}
+          setBuilderMode={setBuilderMode}
+        />
+      )}
     </EditorProvider>
   );
 };

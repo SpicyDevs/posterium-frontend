@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 
-export type BuilderMode = 'simple' | 'advanced';
+export type BuilderMode = 'walkthrough' | 'advanced' | 'legacy';
 
 interface Props {
   mode: BuilderMode;
@@ -13,7 +13,7 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => (
     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(196,124,46,0.16)' }}
     aria-label="Builder mode"
   >
-    {(['simple', 'advanced'] as const).map((item) => {
+    {(['walkthrough', 'advanced', 'legacy'] as const).map((item) => {
       const active = mode === item;
       return (
         <button
