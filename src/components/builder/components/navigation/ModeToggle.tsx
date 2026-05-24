@@ -35,7 +35,15 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => {
       </button>
       <button
         type="button"
-        onClick={() => onChange(mode === 'simple' ? lastAdvancedRef.current : mode)}
+        onClick={() =>
+          onChange(
+            isAdvanced
+              ? mode === 'advanced_v1'
+                ? 'advanced_v2'
+                : 'advanced_v1'
+              : lastAdvancedRef.current
+          )
+        }
         aria-pressed={isAdvanced}
         className="h-7 px-2.5 rounded-md syne-font text-[10px] font-bold uppercase tracking-wider transition-all"
         style={{

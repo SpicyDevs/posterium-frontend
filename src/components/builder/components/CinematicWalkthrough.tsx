@@ -216,7 +216,10 @@ const CinematicWalkthrough: React.FC<Props> = ({
                               }}
                             />
                           ) : (
-                            <span className="absolute inset-0 flex items-center justify-center text-white/50 text-lg">
+                            <span
+                              className="absolute inset-0 flex items-center justify-center text-white/50 text-lg"
+                              aria-hidden="true"
+                            >
                               ✦
                             </span>
                           )}
@@ -236,7 +239,10 @@ const CinematicWalkthrough: React.FC<Props> = ({
 
             {step === 3 && (
               <div className="text-center space-y-6">
-                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-[rgba(196,124,46,0.2)] text-[var(--film-amber)] text-2xl">
+                <div
+                  className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-[rgba(196,124,46,0.2)] text-[var(--film-amber)] text-2xl"
+                  aria-hidden="true"
+                >
                   ✓
                 </div>
                 <div>
