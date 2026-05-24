@@ -43,6 +43,7 @@ const RATING_OPTIONS: { id: RatingType; label: string; sub: string }[] = [
   { id: 'letterboxd', label: 'Letterboxd', sub: 'Community buzz' },
   { id: 'tmdb', label: 'TMDB', sub: 'Trending picks' },
 ];
+const RATING_OPTION_IDS = new Set(RATING_OPTIONS.map((opt) => opt.id));
 
 const PRESET_OPTIONS: { id: PresetType; label: string; dot?: { x: number; y: number } }[] = [
   { id: 'tl', label: 'Top Left', dot: { x: 18, y: 18 } },
@@ -57,7 +58,7 @@ const PRESET_OPTIONS: { id: PresetType; label: string; dot?: { x: number; y: num
   { id: 'custom', label: 'Custom' },
 ];
 
-const STEP_LABELS = ['Theme', 'Ratings', 'Layout', 'Finish'];
+const WALKTHROUGH_STEP_LABELS = ['Theme', 'Ratings', 'Layout', 'Finish'];
 
 const CinematicWalkthrough: React.FC<Props> = ({
   config,
@@ -67,7 +68,7 @@ const CinematicWalkthrough: React.FC<Props> = ({
 }) => {
   const [step, setStep] = useState(0);
   const selectedRatings = useMemo(
-    () => new Set(config.ratings.filter((id) => RATING_OPTIONS.some((opt) => opt.id === id))),
+    () => new Set(config.ratings.filter((id) => RATING_OPTION_IDS.has(id))),
     [config.ratings]
   );
 
@@ -76,7 +77,8 @@ const CinematicWalkthrough: React.FC<Props> = ({
     setConfig((prev) => {
       const exists = prev.ratings.includes(id);
       const next = exists ? prev.ratings.filter((r) => r !== id) : [...prev.ratings, id];
-      const ordered = RATING_OPTIONS.map((opt) => opt.id).filter((opt) => next.includes(opt));
+      const nextSet = new Set(next);
+      const ordered = RATING_OPTIONS.map((opt) => opt.id).filter((opt) => nextSet.has(opt));
       return { ...prev, ratings: ordered };
     });
   const setPreset = (preset: PresetType) => setConfig((prev) => ({ ...prev, preset }));
@@ -104,14 +106,14 @@ const CinematicWalkthrough: React.FC<Props> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.35em] text-[var(--film-text-dim)]">
-                  Step {step + 1} of {STEP_LABELS.length}
+                  Step {step + 1} of {WALKTHROUGH_STEP_LABELS.length}
                 </p>
                 <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--film-cream)]">
-                  {STEP_LABELS[step]}
+                  {WALKTHROUGH_STEP_LABELS[step]}
                 </h2>
               </div>
               <div className="hidden sm:flex items-center gap-2">
-                {STEP_LABELS.map((label, idx) => (
+                {WALKTHROUGH_STEP_LABELS.map((label, idx) => (
                   <div
                     key={label}
                     className={clsx(
@@ -285,10 +287,12 @@ const CinematicWalkthrough: React.FC<Props> = ({
             >
               Back
             </button>
-            {step < STEP_LABELS.length - 1 && (
+            {step < WALKTHROUGH_STEP_LABELS.length - 1 && (
               <button
                 type="button"
-                onClick={() => setStep((s) => Math.min(STEP_LABELS.length - 1, s + 1))}
+                onClick={() =>
+                  setStep((s) => Math.min(WALKTHROUGH_STEP_LABELS.length - 1, s + 1))
+                }
                 className="px-5 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.22em] bg-white/10 text-white hover:bg-[rgba(196,124,46,0.2)] hover:text-white transition-all"
               >
                 Next

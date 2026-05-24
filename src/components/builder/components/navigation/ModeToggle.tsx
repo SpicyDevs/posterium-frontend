@@ -9,10 +9,10 @@ interface Props {
 
 const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => {
   const isAdvanced = mode !== 'simple';
-  const lastAdvancedRef = useRef<BuilderMode>('advanced_v2');
+  const lastAdvancedModeRef = useRef<BuilderMode>('advanced_v2');
 
   useEffect(() => {
-    if (mode !== 'simple') lastAdvancedRef.current = mode;
+    if (mode !== 'simple') lastAdvancedModeRef.current = mode;
   }, [mode]);
 
   return (
@@ -41,7 +41,7 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => {
               ? mode === 'advanced_v1'
                 ? 'advanced_v2'
                 : 'advanced_v1'
-              : lastAdvancedRef.current
+              : lastAdvancedModeRef.current
           )
         }
         aria-pressed={isAdvanced}
