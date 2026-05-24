@@ -1,31 +1,28 @@
 // src/components/dashboard/FilmReelSection/index.tsx
 //
-// Displays the pre-generated reel-mosaic.webp/.jpg as a scroll-driven
-// horizontal parallax strip.
+// Displays the pre-generated chunked reel-mosaic.webp/.jpg as a scroll-driven
+// horizontal parallax strip. The 20,000px composite is chunked to bypass WebP limits.
 //
-// Desktop: the image is pinned sticky while the user scrolls vertically;
+// Desktop: the images are pinned sticky while the user scrolls vertically;
 //          scroll progress is converted to a horizontal translateX pan.
 //
-// Mobile:  the image sits in a native overflow-x: scroll strip with
+// Mobile:  the flex container sits in a native overflow-x: scroll strip with
 //          a fixed display height.
-//
-// Run `node scripts/reel.mjs` once before pushing to generate the files.
-// DesktopReel.tsx / MobileReel.tsx are superseded and can be deleted.
 
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { SprocketStrip } from '../primitives';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 
-// Matches CONFIG.canvasWidth in scripts/reel.mjs — used as a pre-load
-// estimate so the container height can be set before the image loads.
-const MOSAIC_NATURAL_WIDTH = 4000;
+const REEL_CHUNKS = 5;
+const CHUNK_WIDTH = 4000;
+const MOSAIC_NATURAL_WIDTH = REEL_CHUNKS * CHUNK_WIDTH;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Desktop — sticky scroll → horizontal pan
 // ─────────────────────────────────────────────────────────────────────────────
 const DesktopStaticReel = memo(() => {
   const containerRef    = useRef<HTMLDivElement>(null);
-  const imgRef          = useRef<HTMLImageElement>(null);
+  const imgRef          = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
   // Cache the container's document-top to avoid repeated getBoundingClientRect
   // calls inside the hot scroll path.
@@ -58,7 +55,8 @@ const DesktopStaticReel = memo(() => {
     recalc();
 
     const img = imgRef.current;
-    img?.addEventListener('load', recalc);
+    const images = img?.querySelectorAll('img') || [];
+    images.forEach(i => i.addEventListener('load', recalc));
     window.addEventListener('resize', recalc, { passive: true });
 
     // Re-measure after fonts / layout settle
@@ -66,7 +64,7 @@ const DesktopStaticReel = memo(() => {
     const t2 = setTimeout(recalc, 1000);
 
     return () => {
-      img?.removeEventListener('load', recalc);
+      images.forEach(i => i.removeEventListener('load', recalc));
       window.removeEventListener('resize', recalc);
       clearTimeout(t1);
       clearTimeout(t2);
@@ -229,33 +227,41 @@ const DesktopStaticReel = memo(() => {
             }}
           />
 
-          {/*
-           * picture + img: the <source> serves webp to supporting browsers;
-           * <img> is the fallback and also carries the ref for measurement.
-           * display: contents on <picture> makes <img> a direct flex child
-           * so height: 100% resolves against the flex-1 container.
+          {/* 
+           * Wrap multiple image chunks in a flex container 
+           * to seamlessly stitch them into one massive horizontal strip
            */}
-          <picture style={{ display: 'contents' }}>
-            <source srcSet="/reel-mosaic.webp" type="image/webp" />
-            <img
-              ref={imgRef}
-              src="/reel-mosaic.jpg"
-              alt="Collage of movie and TV show posters with IMDb rating badges"
-              style={{
-                display: 'block',
-                height: '100%',    // fills the flex-1 area; width scales proportionally
-                width: 'auto',
-                maxWidth: 'none',  // must exceed overflow hidden boundary to pan
-                flexShrink: 0,
-                willChange: 'transform',
-                filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
-              }}
-              loading="eager"
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              fetchPriority={'high' as any}
-              decoding="async"
-            />
-          </picture>
+          <div
+            ref={imgRef as any}
+            style={{
+              display: 'flex',
+              height: '100%',
+              width: 'max-content',
+              flexShrink: 0,
+              willChange: 'transform',
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
+            }}
+          >
+            {Array.from({ length: REEL_CHUNKS }).map((_, i) => (
+              <picture key={i} style={{ display: 'block', height: '100%' }}>
+                <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
+                <img
+                  src={`/reel-mosaic-${i + 1}.jpg`}
+                  alt={i === 0 ? "Collage of movie and TV show posters with IMDb rating badges" : ""}
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: 'none',
+                  }}
+                  loading={i < 2 ? "eager" : "lazy"}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  fetchPriority={i === 0 ? ('high' as any) : 'auto'}
+                  decoding="async"
+                />
+              </picture>
+            ))}
+          </div>
         </div>
 
         {/* ── Bottom sprocket ─────────────────────────────────────────── */}
@@ -385,23 +391,25 @@ const MobileStaticReel = memo(() => (
         msOverflowStyle: 'none' as any,
       }}
     >
-      <picture>
-        <source srcSet="/reel-mosaic.webp" type="image/webp" />
-        <img
-          src="/reel-mosaic.jpg"
-          alt="Collage of movie and TV show posters with IMDb rating badges"
-          style={{
-            // Fixed height so the strip has a consistent display size on mobile
-            height: 280,
-            width: 'auto',
-            maxWidth: 'none',
-            display: 'block',
-            filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
-          }}
-          loading="lazy"
-          decoding="async"
-        />
-      </picture>
+      <div style={{ display: 'flex', height: 280, width: 'max-content', filter: 'sepia(0.18) saturate(0.72) brightness(0.9)' }}>
+        {Array.from({ length: REEL_CHUNKS }).map((_, i) => (
+          <picture key={i} style={{ display: 'block', height: '100%' }}>
+            <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
+            <img
+              src={`/reel-mosaic-${i + 1}.jpg`}
+              alt={i === 0 ? "Collage of movie and TV show posters with IMDb rating badges" : ""}
+              style={{
+                height: '100%',
+                width: 'auto',
+                maxWidth: 'none',
+                display: 'block',
+              }}
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
+        ))}
+      </div>
     </div>
 
     {/* Bottom sprocket */}
