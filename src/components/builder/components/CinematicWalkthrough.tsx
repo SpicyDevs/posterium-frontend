@@ -59,6 +59,7 @@ const PRESET_OPTIONS: { id: PresetType; label: string; dot?: { x: number; y: num
 ];
 
 const WALKTHROUGH_STEP_LABELS = ['Theme', 'Ratings', 'Layout', 'Finish'];
+const DEFAULT_EXPORT_EXTENSION: PosterConfig['extension'] = 'png';
 
 const CinematicWalkthrough: React.FC<Props> = ({
   config,
@@ -84,7 +85,7 @@ const CinematicWalkthrough: React.FC<Props> = ({
   const setPreset = (preset: PresetType) => setConfig((prev) => ({ ...prev, preset }));
 
   const handleExport = () => {
-    setConfig((prev) => ({ ...prev, extension: 'png' }));
+    setConfig((prev) => ({ ...prev, extension: DEFAULT_EXPORT_EXTENSION }));
     onRequestExport?.();
   };
 
