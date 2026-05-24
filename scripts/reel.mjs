@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
- * scripts/generate-reel-mosaic.mjs
+ * scripts/reel.mjs
  *
  * Generates a static masonry poster collage image for the Posterium homepage.
  * All posters maintain a strict 2:3 aspect ratio; scale varies per column span.
+ *
+ * The output is intentionally WIDE (horizontal) so the dashboard can pan it
+ * horizontally as the user scrolls vertically — a scroll-driven parallax reel.
  *
  * Outputs:
  *   public/reel-mosaic.webp   ← primary (use this in <picture>)
@@ -11,18 +14,18 @@
  *   public/reel-mosaic.json   ← metadata (dimensions, seed, poster list)
  *
  * Usage:
- *   node scripts/generate-reel-mosaic.mjs
- *   MOSAIC_SEED=99 node scripts/generate-reel-mosaic.mjs
+ *   node scripts/reel.mjs
+ *   MOSAIC_SEED=99 node scripts/reel.mjs
  *
  * One-time dep install:
  *   npm install --save-dev sharp
  *
- * To add/remove posters: edit the POSTERS array below.
- * To change the layout:  tweak the CONFIG section below.
+ * To add/remove posters:        edit the POSTERS array below.
+ * To add/remove filler posters: edit the FILLER_POSTERS array below.
+ * To change the layout:         tweak the CONFIG section below.
  */
 
 import { mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -35,31 +38,43 @@ const ROOT      = path.resolve(__dirname, '..');
 // ─────────────────────────────────────────────────────────────────────────────
 const CONFIG = {
   /** Integer seed. Change → different poster order / span assignments. */
-  seed: Number(process.env.MOSAIC_SEED ?? 42),
+  seed: Number(process.env.MOSAIC_SEED ?? 67),
 
-  /** Total pixel width of the output image. */
-  canvasWidth: 2560,
+  /**
+   * Total pixel width of the output image.
+   * Intentionally wider than any viewport — the UI pans it horizontally.
+   * At 4000px, a 1920px-wide screen gets ~2080px of pan range.
+   */
+  canvasWidth: 4000,
 
   /**
    * Number of base columns in the masonry grid.
-   * Posters that span 2 columns will be exactly 2× a base column wide.
+   * More columns → smaller individual posters, denser layout.
    */
-  numCols: 8,
+  numCols: 12,
 
   /** Gap (px) between every poster, and between posters and the canvas edge. */
   gap: 10,
 
   /**
-   * The script tiles the poster list until canvasHeight ≥ this value.
-   * Increase for a taller image (more rows).
+   * Minimum canvas height (px). The script tiles posters until this is met.
+   * 1200px ensures good coverage across most viewport heights.
    */
-  minHeight: 1800,
+  minHeight: 1200,
 
   /**
    * 0–1 probability that a given poster spans 2 columns instead of 1.
-   * Higher → more "featured" wide posters, fewer total rows.
+   * Lower → more uniform density, better for a wide panoramic strip.
    */
-  doubleColChance: 0.28,
+  doubleColChance: 0.22,
+
+  /**
+   * Gap-fill: how close (in px) a column's bottom must be to the tallest
+   * column before we consider it "filled enough" and stop inserting extras.
+   * Smaller → tighter fill, more filler posters used.
+   * Larger → allows more variance, fewer inserts.
+   */
+  gapFillThreshold: 80,
 
   /**
    * Whether to include rating badges on each poster.
@@ -94,7 +109,7 @@ const CONFIG = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POSTERS — add / remove / reorder as needed
+// POSTERS — main pool, shuffled and tiled to fill the canvas
 // ─────────────────────────────────────────────────────────────────────────────
 /** @type {Array<{ id: string; type: 'movie' | 'tv'; title: string }>} */
 const POSTERS = [
@@ -123,6 +138,36 @@ const POSTERS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FILLER POSTERS — used exclusively by the gap-fill pass.
+//
+// These are drawn round-robin (not randomly) to patch columns that finish
+// significantly below the tallest column after the main layout.  They are
+// always placed as single-span (width-1) posters so they slot cleanly into
+// a single short column without disturbing the rest of the grid.
+//
+// Tip: keep this list at least as long as `numCols` (12) so the round-robin
+// never has to repeat the same poster twice in the same gap-fill run.
+// ─────────────────────────────────────────────────────────────────────────────
+/** @type {Array<{ id: string; type: 'movie' | 'tv'; title: string }>} */
+const FILLER_POSTERS = [
+  { id: '299534', type: 'movie', title: 'Avengers: Endgame' },
+  { id: '496243', type: 'movie', title: 'Parasite' },
+  { id: '244786', type: 'movie', title: 'Whiplash' },
+  { id: '264644', type: 'movie', title: 'Room' },
+  { id: '205596', type: 'movie', title: 'The Imitation Game' },
+  { id: '329865', type: 'movie', title: 'Arrival' },
+  { id: '438631', type: 'movie', title: 'Dune' },
+  { id: '361743', type: 'movie', title: 'Top Gun: Maverick' },
+  { id: '505642', type: 'movie', title: 'Black Panther: Wakanda Forever' },
+  { id: '76492',  type: 'tv',    title: 'The Last of Us' },
+  { id: '60574',  type: 'tv',    title: 'Peaky Blinders' },
+  { id: '1418',   type: 'tv',    title: 'The Big Bang Theory' },
+  { id: '84958',  type: 'tv',    title: 'Loki' },
+  { id: '88396',  type: 'tv',    title: 'The Falcon and the Winter Soldier' },
+  { id: '67178',  type: 'tv',    title: 'Westworld' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SEEDED RNG  (Mulberry32 — fast, good quality, seedable)
 // ─────────────────────────────────────────────────────────────────────────────
 /**
@@ -132,7 +177,7 @@ const POSTERS = [
  * @returns {() => number}
  */
 function createRng(seed) {
-  let s = seed >>> 0; // force unsigned 32-bit
+  let s = seed >>> 0;
   return function rng() {
     s = (s + 0x6d2b79f5) | 0;
     let t = Math.imul(s ^ (s >>> 15), 1 | s);
@@ -172,36 +217,33 @@ function shuffle(arr, rng) {
  *   1. Each poster is randomly assigned a column span (1 or 2).
  *   2. We maintain an array of per-column pixel heights (initially = GAP).
  *   3. For each poster we find the starting column that minimises the maximum
- *      height across the required span — i.e., greedy "shortest-column" masonry.
+ *      height across the required span — greedy "shortest-column" masonry.
  *   4. The poster is placed at (x, maxHeight) and the affected column heights
  *      are updated to maxHeight + posterH + GAP.
  *
  * @param {object[]}  items   Poster descriptors (poster, span pre-assigned)
  * @param {object}    cfg     CONFIG object
- * @param {() => number} rng  Seeded RNG
- * @returns {{ placements: Placement[]; canvasHeight: number }}
+ * @param {number[]}  [colHeightsIn]  Optional pre-seeded column heights
+ * @returns {{ placements: Placement[]; colHeights: number[]; canvasHeight: number }}
  */
-function computeLayout(items, cfg, rng) {
+function computeLayout(items, cfg, colHeightsIn) {
   const { numCols, gap, canvasWidth } = cfg;
   const colWidth = Math.floor((canvasWidth - gap * (numCols + 1)) / numCols);
 
-  // Current pixel height of each column (starts at `gap` for top padding)
-  const colHeights = Array(numCols).fill(gap);
+  const colHeights = colHeightsIn
+    ? [...colHeightsIn]
+    : Array(numCols).fill(gap);
 
   /** @type {Placement[]} */
   const placements = [];
 
   for (const item of items) {
     const { poster, span } = item;
-
-    // Clamp span so it never exceeds available columns
     const effectiveSpan = Math.min(span, numCols);
 
-    // Width = span × colWidth + (span-1) × gap (inter-column gaps within span)
     const w = colWidth * effectiveSpan + gap * (effectiveSpan - 1);
     const h = Math.round(w * 1.5); // strict 2:3 ratio
 
-    // Find the starting column index that minimises the max height across span
     let bestCol  = 0;
     let bestMaxH = Infinity;
 
@@ -222,33 +264,90 @@ function computeLayout(items, cfg, rng) {
 
     placements.push({ poster, x, y, w, h, span: effectiveSpan });
 
-    // Update heights for all columns covered by this poster
     const newBottom = y + h + gap;
     for (let s = 0; s < effectiveSpan; s++) {
       colHeights[bestCol + s] = newBottom;
     }
   }
 
-  const canvasHeight = Math.max(...colHeights) + gap; // bottom padding = gap
-  return { placements, canvasHeight };
+  const canvasHeight = Math.max(...colHeights) + gap;
+  return { placements, colHeights, canvasHeight };
+}
+
+/**
+ * Gap-fill pass — runs after the main layout is stable.
+ *
+ * Any column whose bottom edge is more than `cfg.gapFillThreshold` px below
+ * the tallest column receives single-span filler posters (drawn round-robin
+ * from FILLER_POSTERS) until it falls within the threshold.
+ *
+ * Returns the additional placements only; callers concatenate them with the
+ * main placements.
+ *
+ * @param {number[]}  colHeights   Live column-height array from the main layout
+ * @param {object}    cfg
+ * @param {object[]}  fillers      FILLER_POSTERS array
+ * @returns {{ extraPlacements: Placement[]; finalColHeights: number[]; fillerCount: number }}
+ */
+function fillGaps(colHeights, cfg, fillers) {
+  const { numCols, gap, canvasWidth, gapFillThreshold } = cfg;
+  const colWidth = Math.floor((canvasWidth - gap * (numCols + 1)) / numCols);
+
+  const heights      = [...colHeights];
+  const extraItems   = [];
+  let   fillerIdx    = 0;
+
+  // Keep iterating until every column is within threshold of the tallest.
+  // Cap iterations to prevent infinite loops on degenerate configs.
+  const MAX_ITER = numCols * 10;
+  let   iter     = 0;
+
+  while (iter++ < MAX_ITER) {
+    const maxH   = Math.max(...heights);
+    const shortCols = heights
+      .map((h, i) => ({ col: i, h }))
+      .filter(({ h }) => maxH - h > gapFillThreshold);
+
+    if (shortCols.length === 0) break;
+
+    // Insert one filler poster into the shortest column.
+    const { col } = shortCols.sort((a, b) => a.h - b.h)[0];
+
+    const poster = fillers[fillerIdx % fillers.length];
+    fillerIdx++;
+
+    const w = colWidth; // always span 1
+    const h = Math.round(w * 1.5);
+    const x = gap + col * (colWidth + gap);
+    const y = heights[col];
+
+    extraItems.push({ poster, x, y, w, h, span: 1 });
+    heights[col] = y + h + gap;
+  }
+
+  return {
+    extraPlacements : extraItems,
+    finalColHeights : heights,
+    fillerCount     : fillerIdx,
+  };
 }
 
 /**
  * Builds the full ordered item list, tiling the poster list until the
- * projected canvas height meets `cfg.minHeight`.
- * Span assignments are deterministic (seeded RNG), so the same SEED always
- * produces the same layout regardless of how many passes are needed.
+ * projected canvas height meets `cfg.minHeight`, then gap-fills short columns.
  *
  * @param {object[]}     posters
+ * @param {object[]}     fillerPosters
  * @param {object}       cfg
  * @param {() => number} rng
  * @returns {{ placements: Placement[]; canvasHeight: number }}
  */
-function buildLayout(posters, cfg, rng) {
+function buildLayout(posters, fillerPosters, cfg, rng) {
   const items = [];
   let pass    = 0;
 
-  // Keep adding shuffled passes until minHeight is satisfied
+  // ── Phase 1: tile main posters until minHeight is reached ─────────────
+  let result;
   while (true) {
     const shuffled = shuffle(posters, rng);
     for (const poster of shuffled) {
@@ -256,67 +355,64 @@ function buildLayout(posters, cfg, rng) {
       items.push({ poster, span });
     }
 
-    const { placements, canvasHeight } = computeLayout(items, cfg, rng);
+    result = computeLayout(items, cfg);
     pass++;
 
-    if (canvasHeight >= cfg.minHeight) {
-      console.log(`  Layout converged in ${pass} pass(es). Canvas height: ${canvasHeight}px`);
-      return { placements, canvasHeight };
+    if (result.canvasHeight >= cfg.minHeight) {
+      console.log(`  Layout converged in ${pass} pass(es). Canvas height: ${result.canvasHeight}px`);
+      break;
     }
 
     if (pass > 20) {
-      // Safety valve — shouldn't happen with reasonable config
       console.warn('  Warning: minHeight not reached after 20 passes. Proceeding anyway.');
-      return computeLayout(items, cfg, rng);
+      break;
     }
   }
+
+  // ── Phase 2: gap-fill short columns with filler posters ───────────────
+  const { extraPlacements, finalColHeights, fillerCount } =
+    fillGaps(result.colHeights, cfg, fillerPosters);
+
+  if (fillerCount > 0) {
+    console.log(`  Gap-fill: inserted ${fillerCount} filler poster(s) to patch short columns.`);
+  } else {
+    console.log('  Gap-fill: all columns within threshold — no fillers needed.');
+  }
+
+  const allPlacements = [...result.placements, ...extraPlacements];
+  const canvasHeight  = Math.max(...finalColHeights) + cfg.gap;
+
+  return { placements: allPlacements, canvasHeight };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NETWORK
 // ─────────────────────────────────────────────────────────────────────────────
-/**
- * Builds the fetch URL for a given poster.
- * @param {{ id: string; type: string }} poster
- * @param {object} cfg
- * @returns {string}
- */
 function posterUrl(poster, cfg) {
-  const ext    = 'jpg'; // JPG from API → best sharp compatibility
-  const base   = `${cfg.apiBase}/${poster.type}/${poster.id}.${ext}`;
+  const base   = `${cfg.apiBase}/${poster.type}/${poster.id}.jpg`;
   const params = cfg.showBadges ? `?${cfg.badgeParams}` : '';
   return `${base}${params}`;
 }
 
-/**
- * Downloads a URL and returns its body as a Buffer.
- * @param {string} url
- * @param {number} [retries=2]
- * @returns {Promise<Buffer>}
- */
-async function fetchBuffer(url, retries = 2) {
+function posterFallbackUrl(poster, cfg) {
+  return `${cfg.apiBase}/${poster.type}/${poster.id}.jpg`;
+}
+
+async function fetchBuffer(url, retries = 3) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(25_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Buffer.from(await res.arrayBuffer());
     } catch (err) {
       if (attempt === retries) throw err;
-      const wait = (attempt + 1) * 800;
-      console.warn(`    Retry ${attempt + 1}/${retries} after ${wait}ms (${err.message})`);
+      const wait = Math.min(1000 * Math.pow(2, attempt), 8000);
+      console.warn(`    Retry ${attempt + 1}/${retries} in ${wait}ms (${err.message})`);
       await new Promise(r => setTimeout(r, wait));
     }
   }
 }
 
-/**
- * Processes placements in batches of `cfg.concurrency`, fetching and resizing
- * each poster image.
- *
- * @param {Placement[]} placements
- * @param {object}      cfg
- * @returns {Promise<Array<{ input: Buffer; left: number; top: number }>>}
- */
 async function fetchAndResize(placements, cfg) {
   const results = [];
   const total   = placements.length;
@@ -327,12 +423,28 @@ async function fetchAndResize(placements, cfg) {
 
     const batchResults = await Promise.all(
       batch.map(async ({ poster, x, y, w, h }) => {
-        const url = posterUrl(poster, cfg);
+        const url         = posterUrl(poster, cfg);
+        const fallbackUrl = posterFallbackUrl(poster, cfg);
+
+        let raw;
+
         try {
-          const raw     = await fetchBuffer(url);
+          raw = await fetchBuffer(url);
+        } catch (primaryErr) {
+          process.stdout.write(`\n  ↩  "${poster.title}" badge fetch failed, trying plain poster...`);
+          try {
+            raw = await fetchBuffer(fallbackUrl, 2);
+          } catch {
+            done++;
+            console.warn(`\n  ✗  Skipped "${poster.title}" entirely: ${primaryErr.message}`);
+            return null;
+          }
+        }
+
+        try {
           const resized = await sharp(raw)
             .resize(w, h, { fit: 'cover', position: 'centre' })
-            .jpeg({ quality: 90 })  // intermediate quality; final encode is separate
+            .jpeg({ quality: 90 })
             .toBuffer();
 
           done++;
@@ -342,10 +454,10 @@ async function fetchAndResize(placements, cfg) {
           );
 
           return { input: resized, left: x, top: y };
-        } catch (err) {
+        } catch (sharpErr) {
           done++;
-          console.warn(`\n  ⚠  Skipped "${poster.title}": ${err.message}`);
-          return null; // skip this poster; gap remains dark
+          console.warn(`\n  ⚠  Sharp error for "${poster.title}": ${sharpErr.message}`);
+          return null;
         }
       })
     );
@@ -365,18 +477,19 @@ async function main() {
   console.log('│  Posterium — Reel Mosaic Generator       │');
   console.log('└─────────────────────────────────────────┘');
   console.log(`  Seed        : ${CONFIG.seed}`);
-  console.log(`  Canvas width: ${CONFIG.canvasWidth}px`);
+  console.log(`  Canvas      : ${CONFIG.canvasWidth}px wide × ≥${CONFIG.minHeight}px tall`);
   console.log(`  Columns     : ${CONFIG.numCols}`);
-  console.log(`  Min height  : ${CONFIG.minHeight}px`);
+  console.log(`  Double-col  : ${Math.round(CONFIG.doubleColChance * 100)}% chance`);
+  console.log(`  Gap fill    : ≤${CONFIG.gapFillThreshold}px threshold`);
   console.log(`  Badges      : ${CONFIG.showBadges ? 'yes' : 'no'}`);
-  console.log(`  Posters     : ${POSTERS.length} unique`);
+  console.log(`  Posters     : ${POSTERS.length} main + ${FILLER_POSTERS.length} fillers`);
   console.log('');
 
   // ── 1. Compute layout ──────────────────────────────────────────────────
   console.log('Step 1/4  Computing layout...');
-  const rng                    = createRng(CONFIG.seed);
-  const { placements, canvasHeight } = buildLayout(POSTERS, CONFIG, rng);
-  console.log(`  Total placements: ${placements.length}  (${canvasHeight}px tall)`);
+  const rng                          = createRng(CONFIG.seed);
+  const { placements, canvasHeight } = buildLayout(POSTERS, FILLER_POSTERS, CONFIG, rng);
+  console.log(`  Total placements: ${placements.length}  (${CONFIG.canvasWidth}×${canvasHeight}px)`);
   console.log('');
 
   // ── 2. Download & resize ────────────────────────────────────────────────
@@ -402,11 +515,11 @@ async function main() {
     },
   })
     .composite(compositeInputs)
-    .raw()          // keep in memory as raw RGB for dual encode
+    .raw()
     .toBuffer({ resolveWithObject: true });
 
   const { data: rawPixels, info } = rawComposite;
-  console.log(`  Composited ${info.width}×${info.height} px  (${info.channels} channels)`);
+  console.log(`  Composited ${info.width}×${info.height}px  (${info.channels} channels)`);
   console.log('');
 
   // ── 4. Encode & write ──────────────────────────────────────────────────
@@ -420,7 +533,6 @@ async function main() {
   const jpgPath  = `${basePath}.jpg`;
   const jsonPath = `${basePath}.json`;
 
-  // Shared sharp instance from raw pixels
   const fromRaw = () =>
     sharp(rawPixels, {
       raw: { width: info.width, height: info.height, channels: info.channels },
@@ -436,7 +548,6 @@ async function main() {
       .toFile(jpgPath),
   ]);
 
-  // Metadata sidecar — useful for <img width height> attributes
   const meta = {
     generatedAt : new Date().toISOString(),
     seed        : CONFIG.seed,
@@ -445,6 +556,7 @@ async function main() {
     numCols     : CONFIG.numCols,
     gap         : CONFIG.gap,
     showBadges  : CONFIG.showBadges,
+    gapFillThreshold: CONFIG.gapFillThreshold,
     placements  : placements.map(({ poster, x, y, w, h, span }) => ({
       id   : poster.id,
       type : poster.type,
@@ -462,7 +574,7 @@ async function main() {
   console.log('  ✓  ' + jsonPath);
   console.log('');
   console.log(`Done!  ${info.width}×${info.height}px · ${placements.length} placements`);
-  console.log(`To regenerate with a different layout: MOSAIC_SEED=<n> node scripts/generate-reel-mosaic.mjs`);
+  console.log(`Tip: regenerate with a different seed:  MOSAIC_SEED=<n> node scripts/reel.mjs`);
 }
 
 main().catch(err => {
