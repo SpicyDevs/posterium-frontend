@@ -22,6 +22,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/navigation/AdvancedPanelNav';
 import ModeToggle, { type BuilderMode } from './components/navigation/ModeToggle';
+import CinematicWalkthrough from './components/CinematicWalkthrough';
 import {
   SourcePanel,
   LayersPanel,
@@ -123,6 +124,8 @@ const StudioLayout: React.FC<{
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
+  const isSimpleMode = builderMode === 'simple';
+  const isAdvancedV2 = builderMode === 'advanced_v2';
 
   useEffect(() => {
     if (['source', 'layers', 'poster', 'badges', 'selection'].includes(activeTab)) {
@@ -396,6 +399,7 @@ const StudioLayout: React.FC<{
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
   useEffect(() => {
+    if (builderMode === 'simple') return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
@@ -572,6 +576,7 @@ const StudioLayout: React.FC<{
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
+    builderMode,
     undo,
     redo,
     setConfig,
@@ -881,7 +886,7 @@ const StudioLayout: React.FC<{
       : selectedIds.has(ctxMenu.badgeId)
     : false;
 
-  const advancedDetailLevel = builderMode === 'advanced' ? 'advanced' : 'simple';
+  const advancedDetailLevel = isAdvancedV2 ? 'advanced' : 'simple';
   const sharedPanelProps = {
     config,
     setConfig,
@@ -1069,37 +1074,42 @@ const StudioLayout: React.FC<{
                 </span>
               </a>
               <ModeToggle mode={builderMode} onChange={setBuilderMode} />
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={12} className="shrink-0" />
-                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
-              </button>
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
+              {!isSimpleMode && (
+                <>
+                  <button
+                    onClick={() => setPaletteOpen(true)}
+                    title="Search commands (⌘K)"
+                    className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+                    style={{
+                      color: 'var(--film-text-dim)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                    }}
+                  >
+                    <Search size={12} className="shrink-0" />
+                    <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+                  </button>
+                  <ToolbarBtn
+                    onClick={() => setShortcutsOpen((v) => !v)}
+                    label="Keyboard Shortcuts (⌘/)"
+                    active={shortcutsOpen}
+                    hideOnMobile
+                  >
+                    <Keyboard size={14} />
+                  </ToolbarBtn>
+                </>
+              )}
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
+            {!isSimpleMode && (
+              <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
               {/* Left sidebar toggle - desktop only */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
@@ -1171,50 +1181,57 @@ const StudioLayout: React.FC<{
               >
                 <PanelRight size={14} />
               </button>
-            </div>
+              </div>
+            )}
 
             {/* Right Header Area */}
             <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+              {!isSimpleMode && (
+                <div
+                  className="w-px h-4 mx-1 hidden lg:block"
+                  style={{ background: 'rgba(196,124,46,0.12)' }}
+                  aria-hidden="true"
+                />
+              )}
 
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
+              {!isSimpleMode && (
+                <>
+                  {/* History */}
+                  <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
+                    <Undo2 size={14} />
+                  </ToolbarBtn>
+                  <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
+                    <Redo2 size={14} />
+                  </ToolbarBtn>
 
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
 
-              {/* Import */}
-              <button
-                ref={importBtnRef}
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
-                style={{ color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
-                  Import
-                </span>
-              </button>
+                  {/* Import */}
+                  <button
+                    ref={importBtnRef}
+                    onClick={() => setIsImportOpen(true)}
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+                    style={{ color: 'var(--film-text-dim)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                    }}
+                  >
+                    <Download size={13} className="rotate-180" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
+                      Import
+                    </span>
+                  </button>
+                </>
+              )}
 
               {/* Export CTA */}
               <button
@@ -1275,7 +1292,7 @@ const StudioLayout: React.FC<{
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && !isSimpleMode && (
             <aside
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1287,7 +1304,7 @@ const StudioLayout: React.FC<{
                 opacity: leftVisible ? 1 : 0,
               }}
             >
-              {builderMode === 'advanced' ? (
+              {isAdvancedV2 ? (
                 <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
               ) : (
                 <LayerPanel
@@ -1339,6 +1356,14 @@ const StudioLayout: React.FC<{
               onContextMenu={openCtxMenu}
               onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
+            {isSimpleMode && (
+              <CinematicWalkthrough
+                config={config}
+                setConfig={setConfig}
+                onRequestAdvancedMode={() => setBuilderMode('advanced_v2')}
+                onRequestExport={() => setExportOpen(true)}
+              />
+            )}
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
               <div
@@ -1363,7 +1388,7 @@ const StudioLayout: React.FC<{
           </main>
 
           {/* Right sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && !isSimpleMode && (
             <aside
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1381,7 +1406,7 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              {builderMode === 'advanced' ? (
+              {isAdvancedV2 ? (
                 renderAdvancedPanel()
               ) : (
                 <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
@@ -1390,7 +1415,7 @@ const StudioLayout: React.FC<{
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
+          {!isFullscreen && !isSimpleMode && (
             <div
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
@@ -1440,17 +1465,19 @@ const StudioLayout: React.FC<{
         </div>
 
         {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-        />
+        {!isSimpleMode && (
+          <MobileDock
+            hasBadges={config.ratings.length > 0}
+            hasLogo={config.logo}
+            isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
+            selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+          />
+        )}
 
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
           isFullscreen={isFullscreen}
-          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen && !isSimpleMode ? rightW : 0}
           onToggleFullscreen={toggleFullscreen}
           onZoomIn={() => dispatchZoom(0.25)}
           onZoomOut={() => dispatchZoom(-0.25)}
