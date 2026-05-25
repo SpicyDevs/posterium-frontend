@@ -1,0 +1,50 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BuilderApp from '@/components/builder/index.tsx';
+import { SITE_CONFIG } from '@/lib/config';
+import { buildWebApplicationSchema, type PageSEOMetadata } from '@/lib/seo';
+import { APPLICATION_AGGREGATE_RATING, SOFTWARE_APPLICATION_FEATURES } from '@/lib/seo-features';
+import '@/styles/global.css';
+
+const canonical = `${SITE_CONFIG.baseUrl}/builder/legacy`;
+
+const seo: PageSEOMetadata = {
+  title: 'Poster Builder Legacy - Classic Studio | Posterium',
+  description:
+    'Legacy Posterium studio interface. Access the classic simple/advanced builder workflow with drag-and-drop badge editing and export options.',
+  keywords:
+    'poster builder legacy, classic poster editor, posterium old builder, movie poster editor online, rating badge editor',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium legacy builder interface',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Legacy Builder', url: canonical },
+  ],
+  jsonLd: [
+    buildWebApplicationSchema({
+      name: 'Posterium Legacy Poster Builder',
+      url: canonical,
+      description:
+        'Legacy drag-and-drop editor for building custom movie and TV posters with rating badge overlays.',
+      featureList: SOFTWARE_APPLICATION_FEATURES,
+      aggregateRating: APPLICATION_AGGREGATE_RATING,
+    }),
+  ],
+};
+---
+
+<BaseLayout seo={seo} bodyClass="overflow-hidden">
+  <main id="main-content">
+    <div class="sr-only">
+      <h2>Posterium Legacy Interactive Builder</h2>
+      <p>
+        Use the legacy visual editor to search posters, drag rating badges, customize styles, and
+        export as PNG, WebP, JPG, or SVG.
+      </p>
+    </div>
+
+    <BuilderApp initialMode="simple" legacySimple={true} client:only="react" />
+  </main>
+</BaseLayout>

@@ -33,6 +33,7 @@ import MobileDock from './components/layout/MobileDock';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
+import WalkthroughLayout from './components/walkthrough/WalkthroughLayout';
 import {
   RotateCcw,
   Undo2,
@@ -82,7 +83,9 @@ const StudioLayout: React.FC<{
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  initialMode?: BuilderMode;
+  builderMode: Exclude<BuilderMode, 'walkthrough'>;
+  onBuilderModeChange: (mode: BuilderMode) => void;
+  legacySimple?: boolean;
 }> = ({
   config,
   setConfig,
@@ -93,7 +96,9 @@ const StudioLayout: React.FC<{
   redo,
   canUndo,
   canRedo,
-  initialMode = 'simple',
+  builderMode,
+  onBuilderModeChange,
+  legacySimple = false,
 }) => {
   const {
     activeTab,
@@ -111,7 +116,6 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
-  const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMode);
   const [advancedPanel, setAdvancedPanel] = useState<BuilderPanelId>('source');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -160,6 +164,7 @@ const StudioLayout: React.FC<{
   }, []);
   const closeCtxMenu = useCallback(() => setCtxMenu((s) => ({ ...s, visible: false })), []);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const isStrippedSimple = builderMode === 'simple' && !legacySimple;
 
   const selectedIdsRef = useRef(selectedIds);
   const selectedLogoRef = useRef(selectedLogo);
@@ -1068,38 +1073,43 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={12} className="shrink-0" />
-                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
-              </button>
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
+              <ModeToggle mode={builderMode} onChange={onBuilderModeChange} />
+              {!isStrippedSimple && (
+                <>
+                  <button
+                    onClick={() => setPaletteOpen(true)}
+                    title="Search commands (⌘K)"
+                    className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+                    style={{
+                      color: 'var(--film-text-dim)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                    }}
+                  >
+                    <Search size={12} className="shrink-0" />
+                    <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+                  </button>
+                  <ToolbarBtn
+                    onClick={() => setShortcutsOpen((v) => !v)}
+                    label="Keyboard Shortcuts (⌘/)"
+                    active={shortcutsOpen}
+                    hideOnMobile
+                  >
+                    <Keyboard size={14} />
+                  </ToolbarBtn>
+                </>
+              )}
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
+            {!isStrippedSimple && (
+              <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
               {/* Left sidebar toggle - desktop only */}
               <button
                 onClick={() => setLeftVisible(!leftVisible)}
@@ -1171,50 +1181,55 @@ const StudioLayout: React.FC<{
               >
                 <PanelRight size={14} />
               </button>
-            </div>
+              </div>
+            )}
 
             {/* Right Header Area */}
             <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+              {!isStrippedSimple && (
+                <>
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
 
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
+                  {/* History */}
+                  <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
+                    <Undo2 size={14} />
+                  </ToolbarBtn>
+                  <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
+                    <Redo2 size={14} />
+                  </ToolbarBtn>
 
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
 
-              {/* Import */}
-              <button
-                ref={importBtnRef}
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
-                style={{ color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
-                  Import
-                </span>
-              </button>
+                  {/* Import */}
+                  <button
+                    ref={importBtnRef}
+                    onClick={() => setIsImportOpen(true)}
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+                    style={{ color: 'var(--film-text-dim)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                    }}
+                  >
+                    <Download size={13} className="rotate-180" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
+                      Import
+                    </span>
+                  </button>
+                </>
+              )}
 
               {/* Export CTA */}
               <button
@@ -1252,11 +1267,13 @@ const StudioLayout: React.FC<{
                 />
               </button>
 
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+              {!isStrippedSimple && (
+                <div
+                  className="w-px h-4 mx-1 hidden lg:block"
+                  style={{ background: 'rgba(196,124,46,0.12)' }}
+                  aria-hidden="true"
+                />
+              )}
 
               {/* Reset - permanently placed at top right */}
               <button
@@ -1275,7 +1292,7 @@ const StudioLayout: React.FC<{
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && !isStrippedSimple && (
             <aside
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1363,7 +1380,7 @@ const StudioLayout: React.FC<{
           </main>
 
           {/* Right sidebar */}
-          {!isFullscreen && (
+          {!isFullscreen && !isStrippedSimple && (
             <aside
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1390,7 +1407,7 @@ const StudioLayout: React.FC<{
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
+          {!isFullscreen && !isStrippedSimple && (
             <div
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
@@ -1448,24 +1465,29 @@ const StudioLayout: React.FC<{
         />
 
         {/* Zoom + fullscreen overlay — always visible */}
-        <ZoomOverlay
-          isFullscreen={isFullscreen}
-          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
-          onToggleFullscreen={toggleFullscreen}
-          onZoomIn={() => dispatchZoom(0.25)}
-          onZoomOut={() => dispatchZoom(-0.25)}
-          onResetView={dispatchResetView}
-          isMobile={!isDesktop}
-          viewOptions={viewOptions}
-          onToggleViewOption={toggleViewOption}
-        />
+        {!isStrippedSimple && (
+          <ZoomOverlay
+            isFullscreen={isFullscreen}
+            rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+            onToggleFullscreen={toggleFullscreen}
+            onZoomIn={() => dispatchZoom(0.25)}
+            onZoomOut={() => dispatchZoom(-0.25)}
+            onResetView={dispatchResetView}
+            isMobile={!isDesktop}
+            viewOptions={viewOptions}
+            onToggleViewOption={toggleViewOption}
+          />
+        )}
       </div>
     </>
   );
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
+const BuilderApp: React.FC<{ initialMode?: BuilderMode; legacySimple?: boolean }> = ({
+  initialMode = 'walkthrough',
+  legacySimple = false,
+}) => {
   const {
     state: config,
     setState: setConfig,
@@ -1488,6 +1510,14 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+  const [builderMode, setBuilderMode] = useState<BuilderMode>(
+    legacySimple ? 'simple' : initialMode
+  );
+
+  useEffect(() => {
+    if (legacySimple) return;
+    setBuilderMode(initialMode);
+  }, [initialMode, legacySimple]);
 
   useEffect(() => {
     localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));
@@ -1555,18 +1585,31 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
 
   return (
     <EditorProvider>
-      <StudioLayout
-        config={config}
-        setConfig={setConfig}
-        handleReset={handleReset}
-        baseUrl={baseUrl}
-        handleLoadConfig={handleLoadConfig}
-        undo={undo}
-        redo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        initialMode={initialMode}
-      />
+      {builderMode === 'walkthrough' && !legacySimple ? (
+        <WalkthroughLayout
+          config={config}
+          setConfig={setConfig}
+          baseUrl={baseUrl}
+          handleLoadConfig={handleLoadConfig}
+          mode={builderMode}
+          onModeChange={setBuilderMode}
+        />
+      ) : (
+        <StudioLayout
+          config={config}
+          setConfig={setConfig}
+          handleReset={handleReset}
+          baseUrl={baseUrl}
+          handleLoadConfig={handleLoadConfig}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          builderMode={builderMode === 'walkthrough' ? 'simple' : builderMode}
+          onBuilderModeChange={setBuilderMode}
+          legacySimple={legacySimple}
+        />
+      )}
     </EditorProvider>
   );
 };
