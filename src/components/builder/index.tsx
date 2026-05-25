@@ -72,7 +72,7 @@ const ImportDialog = lazy(() => import('./components/ImportDialogue'));
 const ExportPopover = lazy(() => import('./components/ExportPopover'));
 const ContextMenu = lazy(() => import('./components/ContextMenu'));
 const CommandPalette = lazy(() => import('./components/CommandPalette'));
-const WALKTHROUGH_COMPLETED_KEY = 'posterium_builder_walkthrough_completed_v1';
+const WALKTHROUGH_SEEN_KEY = 'posterium_builder_walkthrough_seen_v1';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -130,7 +130,7 @@ const StudioLayout: React.FC<{
     setBuilderMode(mode);
     if (mode !== 'walkthrough') {
       try {
-        localStorage.setItem(WALKTHROUGH_COMPLETED_KEY, '1');
+        localStorage.setItem(WALKTHROUGH_SEEN_KEY, '1');
       } catch {
         // ignore
       }
@@ -140,7 +140,7 @@ const StudioLayout: React.FC<{
   useEffect(() => {
     if (initialMode !== 'simple') return;
     try {
-      const seen = localStorage.getItem(WALKTHROUGH_COMPLETED_KEY);
+      const seen = localStorage.getItem(WALKTHROUGH_SEEN_KEY);
       if (!seen) setBuilderMode('walkthrough');
     } catch {
       // ignore

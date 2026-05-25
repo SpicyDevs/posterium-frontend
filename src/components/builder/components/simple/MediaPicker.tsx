@@ -24,16 +24,19 @@ const MediaPicker: React.FC<Props> = ({ config, setConfig, title = 'Media select
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTitle, setSelectedTitle] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       if (query.trim().length < 2) {
         setResults([]);
+        setError('');
         return;
       }
 
       setLoading(true);
+      setError('');
       try {
         const response = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(query)}`, {
           signal: ctrl.signal,
@@ -48,6 +51,7 @@ const MediaPicker: React.FC<Props> = ({ config, setConfig, title = 'Media select
         setResults(next);
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return;
+        setError('Search failed. Check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -86,6 +90,7 @@ const MediaPicker: React.FC<Props> = ({ config, setConfig, title = 'Media select
           {loading ? <Loader2 size={12} className="animate-spin" /> : <Search size={12} />}
         </span>
         <input
+          aria-label="Search media"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search a movie or show"
@@ -125,6 +130,12 @@ const MediaPicker: React.FC<Props> = ({ config, setConfig, title = 'Media select
       {(selectedTitle || config.tmdbId) && (
         <p className="body-font" style={{ fontSize: 10, color: 'var(--film-text-dim)' }}>
           Selected: {selectedTitle || `TMDB #${config.tmdbId}`}
+        </p>
+      )}
+
+      {error && (
+        <p className="body-font" style={{ fontSize: 10, color: '#fca5a5' }}>
+          {error}
         </p>
       )}
     </div>

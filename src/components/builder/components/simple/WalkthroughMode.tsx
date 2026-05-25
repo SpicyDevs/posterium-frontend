@@ -7,6 +7,7 @@ import { Button, Card } from '@/components/ui';
 import ExportMenu from '@/components/shared/ExportMenu';
 import MediaPicker from './MediaPicker';
 import type { BuilderMode } from '../navigation/ModeToggle';
+import { SIMPLE_BADGE_OPTIONS } from './constants';
 
 type WalkthroughStyle = 'glass' | 'solid' | 'minimal';
 
@@ -19,7 +20,6 @@ interface Props {
   onExit: (mode: BuilderMode) => void;
 }
 
-const BADGE_OPTIONS: RatingType[] = ['imdb', 'rt', 'rt_popcorn', 'meta', 'tmdb', 'age', 'runtime', 'year'];
 const PRESET_OPTIONS: { id: PresetType; label: string }[] = [
   { id: 'bl', label: 'Bottom Left' },
   { id: 'br', label: 'Bottom Right' },
@@ -44,8 +44,6 @@ const WalkthroughMode: React.FC<Props> = ({
     return config.theme;
   }, [config.theme, config.uiPreset]);
 
-  const selectedSet = useMemo(() => new Set<RatingType>(), []);
-
   const applyStyle = (next: WalkthroughStyle) => {
     setConfig((prev) => {
       if (next === 'minimal') {
@@ -62,6 +60,8 @@ const WalkthroughMode: React.FC<Props> = ({
       return prev;
     });
   };
+
+  const canAdvance = step === 1 ? !!config.tmdbId || !!config.imdbId : step < 4;
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-8" style={{ background: 'var(--film-black)' }}>
@@ -151,7 +151,7 @@ const WalkthroughMode: React.FC<Props> = ({
               Step 3 · Choose badges
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {BADGE_OPTIONS.map((id) => {
+              {SIMPLE_BADGE_OPTIONS.filter((id) => id !== 'title').map((id) => {
                 const label = ALL_BADGES.find((badge) => badge.id === id)?.label ?? id;
                 const active = config.ratings.includes(id);
                 return (
@@ -184,7 +184,7 @@ const WalkthroughMode: React.FC<Props> = ({
                 <PreviewCanvas
                   config={config}
                   setConfig={setConfig}
-                  selectedIds={selectedSet}
+                  selectedIds={new Set<RatingType>()}
                   onSelect={() => undefined}
                   onContextMenu={() => undefined}
                   onLogoContextMenu={() => undefined}
@@ -245,7 +245,7 @@ const WalkthroughMode: React.FC<Props> = ({
             size="sm"
             rightIcon={<ArrowRight size={12} />}
             onClick={() => setStep((value) => Math.min(4, value + 1))}
-            disabled={(step === 1 && !config.tmdbId) || step === 4}
+            disabled={!canAdvance}
           >
             Next
           </Button>

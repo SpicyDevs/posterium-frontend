@@ -4,25 +4,15 @@ import { ALL_BADGES } from '../../types';
 import SidebarLayout from '../SidebarLayout';
 import { Section, SelectBox, ToggleRow } from '../ui';
 import MediaPicker from './MediaPicker';
+import { SIMPLE_BADGE_OPTIONS } from './constants';
 
 interface Props {
   config: PosterConfig;
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
 }
 
-const SIMPLE_BADGE_IDS: RatingType[] = [
-  'imdb',
-  'rt',
-  'rt_popcorn',
-  'meta',
-  'tmdb',
-  'age',
-  'runtime',
-  'year',
-  'title',
-];
-
 const PRESET_OPTIONS: { id: PresetType; label: string }[] = [
+  { id: 'custom', label: 'Custom (Keep current)' },
   { id: 'bl', label: 'Bottom Left' },
   { id: 'br', label: 'Bottom Right' },
   { id: 'tl', label: 'Top Left' },
@@ -67,17 +57,18 @@ const SimpleModePanel: React.FC<Props> = ({ config, setConfig }) => {
 
       <Section title="Layout Preset" sectionId="simple-preset" inset="compact">
         <SelectBox
-          value={config.preset === 'custom' ? 'bl' : config.preset}
+          value={config.preset}
           onChange={(value) => {
-            update('preset', value as PresetType);
-            update('layout', 'row');
+            const nextPreset = value as PresetType;
+            update('preset', nextPreset);
+            if (nextPreset !== 'custom') update('layout', 'row');
           }}
           options={PRESET_OPTIONS}
         />
       </Section>
 
       <Section title="Badges" sectionId="simple-badges" inset="compact">
-        {SIMPLE_BADGE_IDS.map((id) => {
+        {SIMPLE_BADGE_OPTIONS.map((id) => {
           const label = ALL_BADGES.find((badge) => badge.id === id)?.label ?? id;
           return (
             <ToggleRow
