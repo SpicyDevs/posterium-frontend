@@ -3,8 +3,8 @@ import { ArrowLeft, ArrowRight, Sparkles, Download } from 'lucide-react';
 import type { ExtensionType, PosterConfig, PresetType, RatingType } from '../../types';
 import { ALL_BADGES } from '../../types';
 import PreviewCanvas from '../PreviewCanvas';
-import ExportPopover from '../ExportPopover';
 import { Button, Card } from '@/components/ui';
+import ExportMenu from '@/components/shared/ExportMenu';
 import MediaPicker from './MediaPicker';
 import type { BuilderMode } from '../navigation/ModeToggle';
 
@@ -207,7 +207,7 @@ const WalkthroughMode: React.FC<Props> = ({
                 Export Options
               </Button>
               {exportOpen && (
-                <ExportPopover
+                <ExportMenu
                   config={config}
                   onLoadConfig={onLoadConfig}
                   baseUrl={baseUrl}
