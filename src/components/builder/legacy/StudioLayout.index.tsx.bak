@@ -22,8 +22,6 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/layout/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/navigation/AdvancedPanelNav';
 import ModeToggle, { type BuilderMode } from './components/navigation/ModeToggle';
-import SimpleModePanel from './components/simple/SimpleModePanel';
-import WalkthroughMode from './components/simple/WalkthroughMode';
 import {
   SourcePanel,
   LayersPanel,
@@ -72,7 +70,6 @@ const ImportDialog = lazy(() => import('./components/ImportDialogue'));
 const ExportPopover = lazy(() => import('./components/ExportPopover'));
 const ContextMenu = lazy(() => import('./components/ContextMenu'));
 const CommandPalette = lazy(() => import('./components/CommandPalette'));
-const WALKTHROUGH_COMPLETED_KEY = 'posterium_builder_walkthrough_completed_v1';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -126,26 +123,6 @@ const StudioLayout: React.FC<{
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
-  const handleModeChange = useCallback((mode: BuilderMode) => {
-    setBuilderMode(mode);
-    if (mode !== 'walkthrough') {
-      try {
-        localStorage.setItem(WALKTHROUGH_COMPLETED_KEY, '1');
-      } catch {
-        // ignore
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (initialMode !== 'simple') return;
-    try {
-      const seen = localStorage.getItem(WALKTHROUGH_COMPLETED_KEY);
-      if (!seen) setBuilderMode('walkthrough');
-    } catch {
-      // ignore
-    }
-  }, [initialMode]);
 
   useEffect(() => {
     if (['source', 'layers', 'poster', 'badges', 'selection'].includes(activeTab)) {
@@ -420,7 +397,6 @@ const StudioLayout: React.FC<{
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (builderMode === 'walkthrough') return;
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
       const mod = e.ctrlKey || e.metaKey;
@@ -615,7 +591,6 @@ const StudioLayout: React.FC<{
     selectedLogo,
     selectedMinimalElements,
     isDesktop,
-    builderMode,
   ]);
 
   // ── Panel widths ──────────────────────────────────────────────────────────
@@ -1044,7 +1019,7 @@ const StudioLayout: React.FC<{
         )}
 
         {/* ── HEADER ── */}
-        {!isFullscreen && builderMode !== 'walkthrough' && (
+        {!isFullscreen && (
           <header
             className="h-12 shrink-0 flex items-center z-30 relative"
             style={{
@@ -1093,7 +1068,7 @@ const StudioLayout: React.FC<{
                   P
                 </span>
               </a>
-              <ModeToggle mode={builderMode} onChange={handleModeChange} />
+              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
               <button
                 onClick={() => setPaletteOpen(true)}
                 title="Search commands (⌘K)"
@@ -1300,7 +1275,7 @@ const StudioLayout: React.FC<{
         {/* ── BODY ── */}
         <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
           {/* Left sidebar */}
-          {!isFullscreen && builderMode !== 'walkthrough' && (
+          {!isFullscreen && (
             <aside
               aria-label="Layer panel"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1315,7 +1290,13 @@ const StudioLayout: React.FC<{
               {builderMode === 'advanced' ? (
                 <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
               ) : (
-                <SimpleModePanel config={config} setConfig={setConfig} />
+                <LayerPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  detailLevel="simple"
+                />
               )}
               <div
                 onMouseDown={startResizeLeft}
@@ -1334,69 +1315,55 @@ const StudioLayout: React.FC<{
             className="flex-1 relative overflow-hidden min-h-0"
             style={{ background: '#111113' }}
             onClick={(e) => {
-              if (builderMode === 'walkthrough') return;
               if (e.target === e.currentTarget) clearSelection();
               if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
             }}
           >
-            {builderMode === 'walkthrough' ? (
-              <WalkthroughMode
-                config={config}
-                setConfig={setConfig}
-                baseUrl={baseUrl}
-                onLoadConfig={handleLoadConfig}
-                onExtensionChange={handleExtensionChange}
-                onExit={handleModeChange}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                backgroundSize: '20px 20px',
+              }}
+            />
+
+            {/* Sidebar Canvas Toggles removed — now in navbar */}
+
+            <PreviewCanvas
+              config={config}
+              setConfig={setConfig}
+              selectedIds={selectedIds}
+              onSelect={handleSelectionOverride}
+              onContextMenu={openCtxMenu}
+              onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+            />
+            {/* Film corner accents */}
+            {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
+              <div
+                key={c}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: c.startsWith('t') ? 8 : 'auto',
+                  bottom: c.startsWith('b') ? 8 : 'auto',
+                  left: c.endsWith('l') ? 8 : 'auto',
+                  right: c.endsWith('r') ? 8 : 'auto',
+                  width: 12,
+                  height: 12,
+                  pointerEvents: 'none',
+                  borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                }}
               />
-            ) : (
-              <>
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    backgroundImage:
-                      'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                  }}
-                />
-
-                {/* Sidebar Canvas Toggles removed — now in navbar */}
-
-                <PreviewCanvas
-                  config={config}
-                  setConfig={setConfig}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelectionOverride}
-                  onContextMenu={openCtxMenu}
-                  onLogoContextMenu={(e) => openCtxMenu('logo', e)}
-                />
-                {/* Film corner accents */}
-                {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
-                  <div
-                    key={c}
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: c.startsWith('t') ? 8 : 'auto',
-                      bottom: c.startsWith('b') ? 8 : 'auto',
-                      left: c.endsWith('l') ? 8 : 'auto',
-                      right: c.endsWith('r') ? 8 : 'auto',
-                      width: 12,
-                      height: 12,
-                      pointerEvents: 'none',
-                      borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                      borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                      borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                      borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                    }}
-                  />
-                ))}
-              </>
-            )}
+            ))}
           </main>
 
           {/* Right sidebar */}
-          {!isFullscreen && builderMode === 'advanced' && (
+          {!isFullscreen && (
             <aside
               aria-label="Inspector"
               className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
@@ -1414,12 +1381,16 @@ const StudioLayout: React.FC<{
               >
                 <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
               </div>
-              {renderAdvancedPanel()}
+              {builderMode === 'advanced' ? (
+                renderAdvancedPanel()
+              ) : (
+                <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+              )}
             </aside>
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && builderMode !== 'walkthrough' && (
+          {!isFullscreen && (
             <div
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
@@ -1451,23 +1422,17 @@ const StudioLayout: React.FC<{
               </div>
 
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {builderMode === 'advanced' ? (
-                  <>
-                    {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                      <LayerPanel
-                        config={config}
-                        setConfig={setConfig}
-                        selectedIds={selectedIds}
-                        onSelect={handleSelectionOverride}
-                        detailLevel="simple"
-                      />
-                    )}
-                    {(activeTab === 'badges' || activeTab === 'selection') && (
-                      <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-                    )}
-                  </>
-                ) : (
-                  <SimpleModePanel config={config} setConfig={setConfig} />
+                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
+                  <LayerPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    detailLevel="simple"
+                  />
+                )}
+                {(activeTab === 'badges' || activeTab === 'selection') && (
+                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
                 )}
               </div>
             </div>
@@ -1475,29 +1440,25 @@ const StudioLayout: React.FC<{
         </div>
 
         {/* Mobile dock */}
-        {builderMode === 'advanced' && (
-          <MobileDock
-            hasBadges={config.ratings.length > 0}
-            hasLogo={config.logo}
-            isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-            selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-          />
-        )}
+        <MobileDock
+          hasBadges={config.ratings.length > 0}
+          hasLogo={config.logo}
+          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
+          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+        />
 
         {/* Zoom + fullscreen overlay — always visible */}
-        {builderMode !== 'walkthrough' && (
-          <ZoomOverlay
-            isFullscreen={isFullscreen}
-            rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
-            onToggleFullscreen={toggleFullscreen}
-            onZoomIn={() => dispatchZoom(0.25)}
-            onZoomOut={() => dispatchZoom(-0.25)}
-            onResetView={dispatchResetView}
-            isMobile={!isDesktop}
-            viewOptions={viewOptions}
-            onToggleViewOption={toggleViewOption}
-          />
-        )}
+        <ZoomOverlay
+          isFullscreen={isFullscreen}
+          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+          onToggleFullscreen={toggleFullscreen}
+          onZoomIn={() => dispatchZoom(0.25)}
+          onZoomOut={() => dispatchZoom(-0.25)}
+          onResetView={dispatchResetView}
+          isMobile={!isDesktop}
+          viewOptions={viewOptions}
+          onToggleViewOption={toggleViewOption}
+        />
       </div>
     </>
   );

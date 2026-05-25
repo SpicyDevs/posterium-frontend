@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 
-export type BuilderMode = 'simple' | 'advanced';
+export type BuilderMode = 'simple' | 'advanced' | 'walkthrough';
 
 interface Props {
   mode: BuilderMode;
