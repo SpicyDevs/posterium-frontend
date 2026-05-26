@@ -1,13 +1,34 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { PosterConfig } from '../types';
+import {
+  loadBuilderHistory,
+  saveBuilderHistory,
+  type PosterHistorySnapshot,
+} from '../systems/storage/builderStorage';
 
-export const usePosterHistory = (initialState: PosterConfig | (() => PosterConfig)) => {
+interface Options {
+  persist?: boolean;
+}
+
+export const usePosterHistory = (
+  initialState: PosterConfig | (() => PosterConfig),
+  { persist = false }: Options = {}
+) => {
   const [stateObj, setStateObj] = useState(() => {
+    if (persist) {
+      const stored = loadBuilderHistory();
+      if (stored) return stored;
+    }
     const state = typeof initialState === 'function' ? initialState() : initialState;
-    return { history: [state], currentIndex: 0 };
+    return { history: [state], currentIndex: 0 } satisfies PosterHistorySnapshot;
   });
 
   const state = stateObj.history[stateObj.currentIndex];
+
+  useEffect(() => {
+    if (!persist) return;
+    saveBuilderHistory(stateObj);
+  }, [persist, stateObj]);
 
   const setState = useCallback((action: React.SetStateAction<PosterConfig>) => {
     setStateObj((prev) => {
@@ -35,6 +56,7 @@ export const usePosterHistory = (initialState: PosterConfig | (() => PosterConfi
 
   return {
     state,
+    historyState: stateObj,
     setState,
     undo,
     redo,

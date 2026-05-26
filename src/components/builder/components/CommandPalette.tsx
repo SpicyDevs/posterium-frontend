@@ -1,6 +1,10 @@
 // src/components/builder/components/CommandPalette.tsx
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Command, Search, X } from 'lucide-react';
+import {
+  loadRecentCommandIds,
+  saveRecentCommandIds,
+} from '../systems/storage/builderStorage';
 
 export interface PaletteCommand {
   id: string;
@@ -61,22 +65,13 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
   }, [isOpen]);
 
   useEffect(() => {
-    try {
-      const r = JSON.parse(sessionStorage.getItem('posterium_recent_cmds') || '[]');
-      setRecentIds(r);
-    } catch {
-      /* ignore */
-    }
+    setRecentIds(loadRecentCommandIds());
   }, []);
 
   const recordRecent = useCallback((id: string) => {
     setRecentIds((prev) => {
       const next = [id, ...prev.filter((x) => x !== id)].slice(0, 5);
-      try {
-        sessionStorage.setItem('posterium_recent_cmds', JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      saveRecentCommandIds(next);
       return next;
     });
   }, []);

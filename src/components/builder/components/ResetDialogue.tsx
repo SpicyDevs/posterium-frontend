@@ -136,7 +136,7 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                 }}
               >
                 Badge and layout settings will be restored to defaults. Your current poster source,
-                media IDs, and saved API keys will be kept.
+                media IDs, and saved API keys in local storage will be kept.
               </p>
               <div
                 style={{
