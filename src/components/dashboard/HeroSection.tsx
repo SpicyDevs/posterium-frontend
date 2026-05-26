@@ -481,11 +481,13 @@ const HeroSection = memo(() => {
               marginBottom: 36,
             }}
           >
-            Movie &amp; TV poster images with glassmorphism rating badges from{' '}
-            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
+            <span>Movie &amp; TV poster images with glassmorphism rating badges from </span>
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>
+            <span>, </span>
             <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>
-            , <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>,
-            and more — all from a single URL.
+            <span>, </span>
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
+            <span>, and more — all from a single URL.</span>
           </p>
 
           <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

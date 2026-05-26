@@ -1,25 +1,16 @@
 // src/components/dashboard/Dashboard.tsx
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import './dashboard.css';
 import { MARQUEE_TITLES } from '@/lib/dashboard/constants';
 import Nav from './Nav';
 import HeroSection from './HeroSection';
 import FilmReelSection from './FilmReelSection/index';
 import { MarqueeTicker } from './primitives';
-
-const StatsBar = lazy(() => import('./sections/StatsBar').then((m) => ({ default: m.StatsBar })));
-const CombinedSection = lazy(() =>
-  import('./sections/CombinedSection').then((m) => ({ default: m.CombinedSection }))
-);
-const ComparisonSection = lazy(() =>
-  import('./sections/ComparisonSection').then((m) => ({ default: m.ComparisonSection }))
-);
-const CTASection = lazy(() =>
-  import('./sections/CTASection').then((m) => ({ default: m.CTASection }))
-);
-const FooterSection = lazy(() =>
-  import('./sections/FooterSection').then((m) => ({ default: m.FooterSection }))
-);
+import { StatsBar } from './sections/StatsBar';
+import { CombinedSection } from './sections/CombinedSection';
+import { ComparisonSection } from './sections/ComparisonSection';
+import { CTASection } from './sections/CTASection';
+import { FooterSection } from './sections/FooterSection';
 
 // ─────────────────────────────────────────────────────────────────────
 // ContentSection — content-visibility:auto for below-fold sections
@@ -93,33 +84,23 @@ const Dashboard: React.FC = () => {
           <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
           <ContentSection intrinsicH={260}>
-            <Suspense fallback={null}>
-              <StatsBar />
-            </Suspense>
+            <StatsBar />
           </ContentSection>
 
           <ContentSection intrinsicH={1200}>
-            <Suspense fallback={null}>
-              <CombinedSection />
-            </Suspense>
+            <CombinedSection />
           </ContentSection>
 
           <ContentSection intrinsicH={900}>
-            <Suspense fallback={null}>
-              <ComparisonSection />
-            </Suspense>
+            <ComparisonSection />
           </ContentSection>
 
           <ContentSection intrinsicH={380}>
-            <Suspense fallback={null}>
-              <CTASection />
-            </Suspense>
+            <CTASection />
           </ContentSection>
         </main>
         <ContentSection intrinsicH={260}>
-          <Suspense fallback={null}>
-            <FooterSection />
-          </Suspense>
+          <FooterSection />
         </ContentSection>
       </div>
     </>

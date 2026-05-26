@@ -192,7 +192,7 @@ export const CTASection = memo(() => {
               background: 'rgba(255,255,255,0.025)',
             }}
           >
-            <Github size={13} /> Star Project{' '}
+            <Github size={13} /> Star Project
             <Star size={10} color="var(--film-amber)" fill="var(--film-amber)" />
           </a>
         </div>
