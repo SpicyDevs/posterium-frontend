@@ -14,8 +14,13 @@ import { parseUrlToConfig, DEFAULT_API_BASE, calculateAutoPosition, getScale } f
 import {
   BUILDER_STORAGE_KEY,
   MAX_QUERY_CONFIG_LENGTH,
-  loadKeysFromCookie,
-  saveKeysToCookie,
+  hasVisitedBuilder,
+  loadKeysFromStorage,
+  loadLastMode,
+  markBuilderVisited,
+  saveKeysToStorage,
+  saveLastMode,
+  writeStoredJson,
 } from './systems/storage/builderStorage';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
@@ -72,7 +77,6 @@ const ImportDialog = lazy(() => import('./components/ImportDialogue'));
 const ExportPopover = lazy(() => import('./components/ExportPopover'));
 const ContextMenu = lazy(() => import('./components/ContextMenu'));
 const CommandPalette = lazy(() => import('./components/CommandPalette'));
-const WALKTHROUGH_SEEN_KEY = 'posterium_builder_walkthrough_seen_v1';
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -86,6 +90,8 @@ const StudioLayout: React.FC<{
   canUndo: boolean;
   canRedo: boolean;
   initialMode?: BuilderMode;
+  persistMode?: boolean;
+  showLegacyBanner?: boolean;
 }> = ({
   config,
   setConfig,
@@ -97,6 +103,8 @@ const StudioLayout: React.FC<{
   canUndo,
   canRedo,
   initialMode = 'simple',
+  persistMode = true,
+  showLegacyBanner = false,
 }) => {
   const {
     activeTab,
@@ -114,7 +122,11 @@ const StudioLayout: React.FC<{
     toggleViewOption,
   } = useEditor();
 
-  const [builderMode, setBuilderMode] = useState<BuilderMode>(initialMode);
+  const [builderMode, setBuilderMode] = useState<BuilderMode>(() => {
+    if (!persistMode || typeof window === 'undefined') return initialMode;
+    if (!hasVisitedBuilder()) return 'walkthrough';
+    return loadLastMode() ?? initialMode;
+  });
   const [advancedPanel, setAdvancedPanel] = useState<BuilderPanelId>('source');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -128,24 +140,13 @@ const StudioLayout: React.FC<{
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
   const handleModeChange = useCallback((mode: BuilderMode) => {
     setBuilderMode(mode);
-    if (mode !== 'walkthrough') {
-      try {
-        localStorage.setItem(WALKTHROUGH_SEEN_KEY, '1');
-      } catch {
-        // ignore
-      }
-    }
   }, []);
 
   useEffect(() => {
-    if (initialMode !== 'simple') return;
-    try {
-      const seen = localStorage.getItem(WALKTHROUGH_SEEN_KEY);
-      if (!seen) setBuilderMode('walkthrough');
-    } catch {
-      // ignore
-    }
-  }, [initialMode]);
+    if (!persistMode) return;
+    markBuilderVisited();
+    saveLastMode(builderMode);
+  }, [builderMode, persistMode]);
 
   useEffect(() => {
     if (['source', 'layers', 'poster', 'badges', 'selection'].includes(activeTab)) {
@@ -183,6 +184,17 @@ const StudioLayout: React.FC<{
   }, []);
   const closeCtxMenu = useCallback(() => setCtxMenu((s) => ({ ...s, visible: false })), []);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    if (builderMode !== 'walkthrough') return;
+    setPaletteOpen(false);
+    setShortcutsOpen(false);
+    setExportOpen(false);
+    setIsImportOpen(false);
+    closeCtxMenu();
+    clearSelection();
+    setMobileSheetMode('hidden');
+  }, [builderMode, clearSelection, closeCtxMenu, setMobileSheetMode]);
 
   const selectedIdsRef = useRef(selectedIds);
   const selectedLogoRef = useRef(selectedLogo);
@@ -419,8 +431,8 @@ const StudioLayout: React.FC<{
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
   useEffect(() => {
+    if (builderMode === 'walkthrough') return;
     const onKey = (e: KeyboardEvent) => {
-      if (builderMode === 'walkthrough') return;
       const t = e.target as HTMLElement;
       const inInput = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
       const mod = e.ctrlKey || e.metaKey;
@@ -1044,7 +1056,7 @@ const StudioLayout: React.FC<{
         )}
 
         {/* ── HEADER ── */}
-        {!isFullscreen && builderMode !== 'walkthrough' && (
+        {!isFullscreen && (
           <header
             className="h-12 shrink-0 flex items-center z-30 relative"
             style={{
@@ -1094,40 +1106,56 @@ const StudioLayout: React.FC<{
                 </span>
               </a>
               <ModeToggle mode={builderMode} onChange={handleModeChange} />
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={12} className="shrink-0" />
-                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
-              </button>
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
+                {builderMode !== 'walkthrough' ? (
+                  <>
+                    <button
+                      onClick={() => setPaletteOpen(true)}
+                      title="Search commands (⌘K)"
+                      className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+                      style={{
+                        color: 'var(--film-text-dim)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.03)',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                      }}
+                    >
+                      <Search size={12} className="shrink-0" />
+                      <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
+                    </button>
+                    <ToolbarBtn
+                      onClick={() => setShortcutsOpen((v) => !v)}
+                      label="Keyboard Shortcuts (⌘/)"
+                      active={shortcutsOpen}
+                      hideOnMobile
+                    >
+                      <Keyboard size={14} />
+                    </ToolbarBtn>
+                  </>
+                ) : (
+                  <span
+                    className="hidden md:inline-flex items-center h-8 px-3 rounded-full syne-font text-[10px] uppercase tracking-[0.22em]"
+                    style={{
+                      color: 'var(--film-amber)',
+                      border: '1px solid rgba(196,124,46,0.2)',
+                      background: 'rgba(196,124,46,0.08)',
+                    }}
+                  >
+                    Guided build
+                  </span>
+                )}
             </div>
 
             {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
-              {/* Left sidebar toggle - desktop only */}
-              <button
-                onClick={() => setLeftVisible(!leftVisible)}
+            {builderMode !== 'walkthrough' && (
+                <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
+                {/* Left sidebar toggle - desktop only */}
+                <button
+                  onClick={() => setLeftVisible(!leftVisible)}
                 title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
                 className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
                 style={{
@@ -1196,105 +1224,130 @@ const StudioLayout: React.FC<{
               >
                 <PanelRight size={14} />
               </button>
-            </div>
+              </div>
+            )}
 
             {/* Right Header Area */}
             <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+              {builderMode !== 'walkthrough' ? (
+                <>
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
 
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
+                  <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
+                    <Undo2 size={14} />
+                  </ToolbarBtn>
+                  <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
+                    <Redo2 size={14} />
+                  </ToolbarBtn>
 
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
 
-              {/* Import */}
-              <button
-                ref={importBtnRef}
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
-                style={{ color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
-                  Import
-                </span>
-              </button>
+                  <button
+                    ref={importBtnRef}
+                    onClick={() => setIsImportOpen(true)}
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+                    style={{ color: 'var(--film-text-dim)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+                    }}
+                  >
+                    <Download size={13} className="rotate-180" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
+                      Import
+                    </span>
+                  </button>
 
-              {/* Export CTA */}
-              <button
-                ref={exportBtnRef}
-                onClick={() => setExportOpen((v) => !v)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
-                style={{
-                  background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
-                  color: '#070706',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
-                }}
-                onMouseLeave={(e) => {
-                  if (!exportOpen)
-                    (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
-                }}
-              >
-                <Download size={12} />
-                <span className="max-[1300px]:hidden">Export</span>
-                <ChevronDown
-                  className="max-[1300px]:hidden"
-                  size={10}
+                  <button
+                    ref={exportBtnRef}
+                    onClick={() => setExportOpen((v) => !v)}
+                    className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
+                    style={{
+                      background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
+                      color: '#070706',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!exportOpen)
+                        (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
+                    }}
+                  >
+                    <Download size={12} />
+                    <span className="max-[1300px]:hidden">Export</span>
+                    <ChevronDown
+                      className="max-[1300px]:hidden"
+                      size={10}
+                      style={{
+                        transform: exportOpen ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.15s',
+                      }}
+                    />
+                  </button>
+
+                  <div
+                    className="w-px h-4 mx-1 hidden lg:block"
+                    style={{ background: 'rgba(196,124,46,0.12)' }}
+                    aria-hidden="true"
+                  />
+
+                  <button
+                    onClick={() => setIsResetOpen(true)}
+                    className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <RotateCcw size={13} />
+                    <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
+                      Reset
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <div
+                  className="hidden sm:flex items-center h-8 px-3 rounded-full syne-font text-[10px] uppercase tracking-[0.2em]"
                   style={{
-                    transform: exportOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s',
+                    color: 'var(--film-text-label)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)',
                   }}
-                />
-              </button>
-
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* Reset - permanently placed at top right */}
-              <button
-                onClick={() => setIsResetOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
-                  Reset
-                </span>
-              </button>
+                >
+                  Live preview stays in sync
+                </div>
+              )}
             </div>
           </header>
+        )}
+
+        {showLegacyBanner && (
+          <div
+            className="shrink-0 px-4 py-2 body-font text-[11px]"
+            style={{
+              color: 'var(--film-text-label)',
+              background: 'rgba(196,124,46,0.08)',
+              borderBottom: '1px solid rgba(196,124,46,0.12)',
+            }}
+          >
+            Legacy builder route: direct access to the classic simple editor entry point.
+          </div>
         )}
 
         {/* ── BODY ── */}
@@ -1504,7 +1557,11 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
+const BuilderApp: React.FC<{
+  initialMode?: BuilderMode;
+  persistMode?: boolean;
+  showLegacyBanner?: boolean;
+}> = ({ initialMode = 'simple', persistMode = true, showLegacyBanner = false }) => {
   const {
     state: config,
     setState: setConfig,
@@ -1516,26 +1573,25 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
     try {
       const saved = localStorage.getItem(BUILDER_STORAGE_KEY);
       const cfg = saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
-      const cookieKeys = loadKeysFromCookie();
-      if (cookieKeys && Object.keys(cookieKeys).some((k) => cookieKeys[k as keyof ApiKeys])) {
-        return { ...cfg, keys: { ...cookieKeys, ...cfg.keys } };
+      const storedKeys = loadKeysFromStorage();
+      if (storedKeys && Object.keys(storedKeys).some((k) => storedKeys[k as keyof ApiKeys])) {
+        return { ...cfg, keys: { ...storedKeys, ...cfg.keys } };
       }
       return cfg;
     } catch {
       return DEFAULT_CONFIG;
     }
-  });
+  }, { persist: true });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
 
   useEffect(() => {
-    localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));
+    writeStoredJson(BUILDER_STORAGE_KEY, config);
   }, [config]);
 
   useEffect(() => {
     if (config.keys) {
-      const hasAnyKey = Object.values(config.keys).some((v) => v && v.trim());
-      if (hasAnyKey) saveKeysToCookie(config.keys);
+      saveKeysToStorage(config.keys);
     }
   }, [config.keys]);
 
@@ -1605,6 +1661,8 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
         canUndo={canUndo}
         canRedo={canRedo}
         initialMode={initialMode}
+        persistMode={persistMode}
+        showLegacyBanner={showLegacyBanner}
       />
     </EditorProvider>
   );

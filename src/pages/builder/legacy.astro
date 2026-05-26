@@ -1,0 +1,18 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BuilderApp from '@/components/builder/index.tsx';
+import '@/styles/global.css';
+---
+
+<BaseLayout
+  seo={{
+    title: 'Legacy Builder Entry | Posterium',
+    description:
+      'Direct entry to Posterium’s legacy simple builder route for users who want the classic editor starting point.',
+  }}
+  bodyClass="overflow-hidden"
+>
+  <main id="main-content">
+    <BuilderApp client:only="react" initialMode="simple" persistMode={false} showLegacyBanner />
+  </main>
+</BaseLayout>

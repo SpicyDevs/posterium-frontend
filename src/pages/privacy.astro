@@ -68,7 +68,7 @@ const seo: PageSEOMetadata = {
             <li><a href="#overview" class="legal-toc-link hover-cream">Overview</a></li>
             <li><a href="#data-we-collect" class="legal-toc-link hover-cream">Data We Collect</a></li>
             <li><a href="#how-we-use-data" class="legal-toc-link hover-cream">How We Use Data</a></li>
-            <li><a href="#cookies" class="legal-toc-link hover-cream">Cookies &amp; Local Storage</a></li>
+            <li><a href="#cookies" class="legal-toc-link hover-cream">Local Storage</a></li>
             <li><a href="#third-parties" class="legal-toc-link hover-cream">Third-Party Services</a></li>
             <li><a href="#data-retention" class="legal-toc-link hover-cream">Data Retention</a></li>
             <li><a href="#your-rights" class="legal-toc-link hover-cream">Your Rights</a></li>
@@ -142,7 +142,7 @@ const seo: PageSEOMetadata = {
                 override the default shared keys. If you enter these values:
               </p>
               <ul>
-                <li>They are stored in a <strong>browser cookie</strong> on your device only (<code>posterium_apikeys_v1</code>).</li>
+                <li>They are stored in <strong>browser localStorage</strong> on your device only (<code>posterium_apikeys_v2</code>).</li>
                 <li>They are appended as query parameters to API URLs you generate.</li>
                 <li>They are never transmitted to our servers independently of the URL you construct.</li>
                 <li>We never store, log, or process third-party API keys on our servers.</li>
@@ -190,14 +190,14 @@ const seo: PageSEOMetadata = {
 
           <div class="legal-divider" aria-hidden="true"></div>
 
-          <!-- ── 4. Cookies & Local Storage ─────────────────────────── -->
+          <!-- ── 4. Local Storage ───────────────────────────────────── -->
           <section id="cookies" class="legal-section" style="scroll-margin-top:80px;">
             <div class="legal-section-label syne-font">04</div>
-            <h2 class="syne-font legal-section-title">Cookies &amp; Local Storage</h2>
+            <h2 class="syne-font legal-section-title">Local Storage</h2>
             <div class="legal-prose body-font">
               <p>
-                Posterium uses the browser storage mechanisms listed below. No third-party
-                tracking cookies are set.
+                Posterium stores builder data locally in your browser. No builder cookies or
+                third-party tracking cookies are set.
               </p>
 
               <div class="legal-table-wrap">
@@ -212,10 +212,10 @@ const seo: PageSEOMetadata = {
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>posterium_apikeys_v1</code></td>
-                      <td>Cookie</td>
+                      <td><code>posterium_apikeys_v2</code></td>
+                      <td>localStorage</td>
                       <td>Stores optional TMDB / Fanart.tv API key overrides you supply</td>
-                      <td>1 year</td>
+                      <td>Persistent (until cleared)</td>
                     </tr>
                     <tr>
                       <td><code>posterium_config_v2</code></td>
@@ -237,9 +237,21 @@ const seo: PageSEOMetadata = {
                     </tr>
                     <tr>
                       <td><code>posterium_recent_cmds</code></td>
-                      <td>sessionStorage</td>
-                      <td>Tracks recently used command palette commands this session</td>
-                      <td>Session</td>
+                      <td>localStorage</td>
+                      <td>Tracks recently used command palette commands across visits</td>
+                      <td>Persistent (until cleared)</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_history_v1</code></td>
+                      <td>localStorage</td>
+                      <td>Stores undo/redo history for the builder locally on your device</td>
+                      <td>Persistent (until cleared)</td>
+                    </tr>
+                    <tr>
+                      <td><code>posterium_last_mode</code></td>
+                      <td>localStorage</td>
+                      <td>Remembers the last builder mode you were working in</td>
+                      <td>Persistent (until cleared)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -247,7 +259,7 @@ const seo: PageSEOMetadata = {
 
               <p>
                 You can clear all of the above at any time by clearing your browser's
-                cookies and site data for <code>posterium.xyz</code>. Doing so
+                site data for <code>posterium.xyz</code>. Doing so
                 will reset the builder to default settings.
               </p>
             </div>
@@ -321,7 +333,7 @@ const seo: PageSEOMetadata = {
                 this period.
               </p>
               <p>
-                Data stored in your browser (localStorage, sessionStorage, cookies) is
+                Data stored in your browser localStorage is
                 retained until you clear it. There is no server-side copy of this data.
               </p>
             </div>

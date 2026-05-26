@@ -13,21 +13,27 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => (
     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(196,124,46,0.16)' }}
     aria-label="Builder mode"
   >
-    {(['simple', 'advanced'] as const).map((item) => {
-      const active = mode === item;
+    {(
+      [
+        { id: 'walkthrough', label: 'Walkthrough' },
+        { id: 'simple', label: 'Simple' },
+        { id: 'advanced', label: 'Advanced' },
+      ] as const
+    ).map((item) => {
+      const active = mode === item.id;
       return (
         <button
-          key={item}
+          key={item.id}
           type="button"
-          onClick={() => onChange(item)}
+          onClick={() => onChange(item.id)}
           aria-pressed={active}
-          className="h-7 px-2.5 rounded-md syne-font text-[10px] font-bold uppercase tracking-wider transition-all"
+          className="h-7 px-2.5 rounded-md syne-font text-[10px] font-bold uppercase tracking-[0.16em] transition-all"
           style={{
             color: active ? '#070706' : 'var(--film-text-dim)',
             background: active ? 'var(--film-amber)' : 'transparent',
           }}
         >
-          {item}
+          {item.label}
         </button>
       );
     })}

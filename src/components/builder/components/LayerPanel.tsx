@@ -103,7 +103,8 @@ const ApiKeysPanel: React.FC<{
         className="body-font leading-relaxed"
         style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
       >
-        Override the default API keys used to fetch ratings and posters. Stored in a browser cookie.
+        Override the default API keys used to fetch ratings and posters. Stored in browser
+        localStorage on this device only.
       </p>
 
       {[
