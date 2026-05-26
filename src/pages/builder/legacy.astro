@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BuilderApp from '@/components/builder/index.tsx';
+import { SITE_CONFIG } from '@/lib/config';
 import '@/styles/global.css';
+
+const canonical = `${SITE_CONFIG.baseUrl}/builder/legacy`;
 ---
 
 <BaseLayout
@@ -9,6 +12,15 @@ import '@/styles/global.css';
     title: 'Legacy Builder Entry | Posterium',
     description:
       'Direct entry to Posterium’s legacy simple builder route for users who want the classic editor starting point.',
+    canonical,
+    ogImage: SITE_CONFIG.ogImageUrl,
+    ogImageAlt: 'Posterium legacy builder entry',
+    robots: 'index, follow',
+    breadcrumbs: [
+      { name: 'Home', url: SITE_CONFIG.baseUrl },
+      { name: 'Legacy Builder', url: canonical },
+    ],
+    jsonLd: [],
   }}
   bodyClass="overflow-hidden"
 >

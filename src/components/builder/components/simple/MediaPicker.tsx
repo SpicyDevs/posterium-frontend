@@ -51,7 +51,11 @@ const MediaPicker: React.FC<Props> = ({ config, setConfig, title = 'Media select
         setResults(next);
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return;
-        setError('Search failed. Check your connection and try again.');
+        setError(
+          error instanceof Error && error.message
+            ? error.message
+            : 'Search failed. Check your connection and try again.'
+        );
       } finally {
         setLoading(false);
       }

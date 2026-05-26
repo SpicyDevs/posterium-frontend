@@ -199,20 +199,23 @@ const buildPosterUrl = (config: PosterConfig, baseUrl: string): string => {
   }
 };
 
-const createCarouselVariant = (config: PosterConfig, side: 'left' | 'right'): PosterConfig => {
-  const ratings =
-    config.ratings.length > 0
-      ? side === 'left'
-        ? config.ratings.slice(0, Math.min(3, config.ratings.length))
-        : [...config.ratings].reverse().slice(0, Math.min(4, config.ratings.length)).reverse()
-      : DEFAULT_CONFIG.ratings.slice(0, 3);
+const getCarouselRatings = (
+  config: PosterConfig,
+  side: 'left' | 'right',
+  maxCount: number
+): RatingType[] => {
+  if (config.ratings.length === 0) return DEFAULT_CONFIG.ratings.slice(0, maxCount);
+  if (side === 'left') return config.ratings.slice(0, Math.min(maxCount, config.ratings.length));
+  return [...config.ratings].reverse().slice(0, Math.min(maxCount, config.ratings.length)).reverse();
+};
 
+const createCarouselVariant = (config: PosterConfig, side: 'left' | 'right'): PosterConfig => {
   return mergePosterConfig(config, {
     theme: side === 'left' ? (config.theme === 'glass' ? 'solid' : 'glass') : config.theme,
     layout: 'row',
     uiPreset: side === 'left' ? 'b' : config.uiPreset ?? 'b',
     preset: side === 'left' ? 'tl' : 'br',
-    ratings,
+    ratings: getCarouselRatings(config, side, side === 'left' ? 3 : 4),
   });
 };
 

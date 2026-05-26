@@ -1581,7 +1581,7 @@ const BuilderApp: React.FC<{
     } catch {
       return DEFAULT_CONFIG;
     }
-  }, { persist: true });
+  }, { persist: persistMode });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
 

@@ -102,6 +102,7 @@ export const loadLastMode = (): PersistedBuilderMode | null => {
 };
 
 export const saveLastMode = (mode: PersistedBuilderMode) => {
+  if (!VALID_MODES.includes(mode)) return;
   writeStoredString(BUILDER_LAST_MODE_STORAGE_KEY, mode);
 };
 
