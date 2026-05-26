@@ -30,6 +30,7 @@ import {
   SelectionPanel,
 } from './components/panels';
 import MobileDock from './components/layout/MobileDock';
+import AdvancedMobileStudio from './components/layout/AdvancedMobileStudio';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -1331,14 +1332,16 @@ const StudioLayout: React.FC<{
 
             {/* Sidebar Canvas Toggles removed — now in navbar */}
 
-            <PreviewCanvas
-              config={config}
-              setConfig={setConfig}
-              selectedIds={selectedIds}
-              onSelect={handleSelectionOverride}
-              onContextMenu={openCtxMenu}
-              onLogoContextMenu={(e) => openCtxMenu('logo', e)}
-            />
+            {(isDesktop || builderMode !== 'advanced') && (
+              <PreviewCanvas
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+                onContextMenu={openCtxMenu}
+                onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+              />
+            )}
             {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
               <div
@@ -1389,8 +1392,25 @@ const StudioLayout: React.FC<{
             </aside>
           )}
 
-          {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
+          {/* Advanced mobile app layout */}
+          {!isFullscreen && builderMode === 'advanced' && (
+            <AdvancedMobileStudio
+              leftPanel={<AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />}
+              rightPanel={renderAdvancedPanel()}
+            >
+              <PreviewCanvas
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+                onContextMenu={openCtxMenu}
+                onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+              />
+            </AdvancedMobileStudio>
+          )}
+
+          {/* Legacy mobile panel for simple mode */}
+          {!isFullscreen && builderMode !== 'advanced' && (
             <div
               className={clsx(
                 'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
@@ -1399,37 +1419,12 @@ const StudioLayout: React.FC<{
                   : 'h-0 border-t-0'
               )}
             >
-              {/* Swipe-down dismiss handle */}
-              <div
-                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                onClick={() => setMobileSheetMode('hidden')}
-                onTouchStart={(e) => {
-                  const startY = e.touches[0].clientY;
-                  const onMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 40) {
-                      setMobileSheetMode('hidden');
-                      window.removeEventListener('touchmove', onMove);
-                    }
-                  };
-                  window.addEventListener('touchmove', onMove, { passive: true });
-                  const cleanup = () => {
-                    window.removeEventListener('touchmove', onMove);
-                  };
-                  window.addEventListener('touchend', cleanup, { once: true });
-                }}
-              >
+              <div className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)]" onClick={() => setMobileSheetMode('hidden')}>
                 <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
               </div>
-
               <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
                 {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
+                  <LayerPanel config={config} setConfig={setConfig} selectedIds={selectedIds} onSelect={handleSelectionOverride} detailLevel="simple" />
                 )}
                 {(activeTab === 'badges' || activeTab === 'selection') && (
                   <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
@@ -1439,13 +1434,14 @@ const StudioLayout: React.FC<{
           )}
         </div>
 
-        {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-        />
+        {builderMode !== 'advanced' && (
+          <MobileDock
+            hasBadges={config.ratings.length > 0}
+            hasLogo={config.logo}
+            isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
+            selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+          />
+        )}
 
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
