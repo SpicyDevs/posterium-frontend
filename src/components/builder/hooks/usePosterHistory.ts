@@ -12,10 +12,10 @@ interface Options {
 
 export const usePosterHistory = (
   initialState: PosterConfig | (() => PosterConfig),
-  options: Options = {}
+  { persist = false }: Options = {}
 ) => {
   const [stateObj, setStateObj] = useState(() => {
-    if (options.persist) {
+    if (persist) {
       const stored = loadBuilderHistory();
       if (stored) return stored;
     }
@@ -26,9 +26,9 @@ export const usePosterHistory = (
   const state = stateObj.history[stateObj.currentIndex];
 
   useEffect(() => {
-    if (!options.persist) return;
+    if (!persist) return;
     saveBuilderHistory(stateObj);
-  }, [options.persist, stateObj]);
+  }, [persist, stateObj]);
 
   const setState = useCallback((action: React.SetStateAction<PosterConfig>) => {
     setStateObj((prev) => {
