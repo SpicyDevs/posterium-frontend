@@ -25,9 +25,10 @@ const NODES = [
   { id: 'tokyo',      label: 'Tokyo',    url: 'https://jp-r-vercel.vercel.app',       path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Tokyo, JP',     health: true,  http: false },
   { id: 'mumbai',     label: 'Mumbai',   url: 'https://rasterize-node.vercel.app',   path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Mumbai, IN',    health: true,  http: false },
   { id: 'ohio',       label: 'Ohio',     url: 'https://r-netlify.netlify.app',        path: '/api/rasterize', tier: 1, tag: 'netlify',  region: 'Ohio, US',      health: true,  http: false },
-  { id: 'france',     label: 'FR 1',     url: 'http://fr1.spaceify.eu:25980',        path: '',               tier: 2, tag: 'spaceify', region: 'France',         health: false, http: true  },
-  { id: 'germany',    label: 'DE 20',    url: 'http://de20.spaceify.eu:26100',       path: '',               tier: 2, tag: 'spaceify', region: 'Germany',        health: false, http: true  },
-  { id: 'cf_worker',  label: 'Simple',   url: 'https://r-cf.spicydevs.xyz',          path: '',               tier: 3, tag: 'worker',   region: 'Global (WASM)', health: false, http: false },
+  { id: 'france',     label: 'FR 1',     url: 'http://fr1.spaceify.eu:25980',        path: '',               tier: 2, tag: 'spaceify', region: 'France',         health: true, http: true  },
+  { id: 'germany',    label: 'DE 20',    url: 'http://de20.spaceify.eu:26100',       path: '',               tier: 2, tag: 'spaceify', region: 'Germany',        health: true, http: true  },
+  { id: 'germany',    label: 'DE 2',    url: 'http://node-3.midas.host:25108',       path: '',               tier: 2, tag: 'midas', region: 'Germany',        health: false, http: true  },
+  { id: 'cf_worker',  label: 'Simple',   url: 'https://r-cf.spicydevs.xyz',          path: '',               tier: 3, tag: 'worker',   region: 'Global (WASM)', health: true, http: false },
   { id: 'render_eu',  label: 'EUC',      url: 'https://euc-r-render.onrender.com',   path: '',               tier: 3, tag: 'render',   region: 'EU Central',    health: true,  http: false },
 ] as const;
 
