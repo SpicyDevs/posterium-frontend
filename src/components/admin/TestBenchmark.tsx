@@ -1,40 +1,456 @@
 // src/components/admin/TestBenchmark.tsx
-// v2 — client-side benchmark with rendered poster image display
-//      Tests each node with 3 modes: GET ?url=, POST URL-SVG, POST B64-SVG
-//      HTTP nodes (Spaceify) are skipped due to browser mixed-content policy.
+//
+// v3 — HTTP nodes now benchmarked via CF Worker /proxy endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+// Previously HTTP nodes (Spaceify, Midas) were skipped due to browser
+// mixed-content policy. The CF Worker at r-cf.spicydevs.xyz now exposes a
+// /proxy endpoint that forwards requests server-side to HTTP targets.
+// All three test modes (GET ?url=, POST URL-SVG, POST B64-SVG) are proxied.
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
 
-const API_BASE   = 'https://api.spicydevs.xyz';
-const TIMEOUT_MS = 14_000;
+const API_BASE      = 'https://api.spicydevs.xyz';
+const CF_PROXY_BASE = 'https://r-cf.spicydevs.xyz/proxy';
+const TIMEOUT_MS    = 14_000;
 
 const CH = {
-  amber: '#c47c2e', gold: '#d4a245', cream: '#f0e6cc',
-  green: '#4ade80', red: '#f87171', orange: '#fb923c',
-  yellow: '#facc15', blue: '#60a5fa', purple: '#a78bfa',
-  teal: '#2dd4bf', ghost: 'rgba(140,130,112,0.45)',
+  amber:  '#c47c2e',
+  gold:   '#d4a245',
+  cream:  '#f0e6cc',
+  green:  '#4ade80',
+  red:    '#f87171',
+  orange: '#fb923c',
+  yellow: '#facc15',
+  blue:   '#60a5fa',
+  purple: '#a78bfa',
+  teal:   '#2dd4bf',
+  ghost:  'rgba(140,130,112,0.45)',
 };
 
 // ── Node registry ─────────────────────────────────────────────────────────────
+
 const NODES = [
-  { id: 'washington', label: 'US East',  url: 'https://us-r-vercel.vercel.app',       path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Virginia, US',  health: true,  http: false },
-  { id: 'london',     label: 'London',   url: 'https://uk-r-vercel.vercel.app',       path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'London, UK',    health: true,  http: false },
-  { id: 'tokyo',      label: 'Tokyo',    url: 'https://jp-r-vercel.vercel.app',       path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Tokyo, JP',     health: true,  http: false },
-  { id: 'mumbai',     label: 'Mumbai',   url: 'https://rasterize-node.vercel.app',   path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Mumbai, IN',    health: true,  http: false },
-  { id: 'ohio',       label: 'Ohio',     url: 'https://r-netlify.netlify.app',        path: '/api/rasterize', tier: 1, tag: 'netlify',  region: 'Ohio, US',      health: true,  http: false },
-  { id: 'france',     label: 'FR 1',     url: 'http://fr1.spaceify.eu:25980',        path: '',               tier: 2, tag: 'spaceify', region: 'France',         health: true, http: true  },
-  { id: 'germany',    label: 'DE 20',    url: 'http://de20.spaceify.eu:26100',       path: '',               tier: 2, tag: 'spaceify', region: 'Germany',        health: true, http: true  },
-  { id: 'germany',    label: 'DE 2',    url: 'http://node-3.midas.host:25108',       path: '',               tier: 2, tag: 'midas', region: 'Germany',        health: false, http: true  },
-  { id: 'cf_worker',  label: 'Simple',   url: 'https://r-cf.spicydevs.xyz',          path: '',               tier: 3, tag: 'worker',   region: 'Global (WASM)', health: true, http: false },
-  { id: 'render_eu',  label: 'EUC',      url: 'https://euc-r-render.onrender.com',   path: '',               tier: 3, tag: 'render',   region: 'EU Central',    health: true,  http: false },
+  { id: 'washington', label: 'US East',  url: 'https://us-r-vercel.vercel.app',     path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Virginia, US',  health: true,  http: false },
+  { id: 'london',     label: 'London',   url: 'https://uk-r-vercel.vercel.app',     path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'London, UK',    health: true,  http: false },
+  { id: 'tokyo',      label: 'Tokyo',    url: 'https://jp-r-vercel.vercel.app',     path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Tokyo, JP',     health: true,  http: false },
+  { id: 'mumbai',     label: 'Mumbai',   url: 'https://rasterize-node.vercel.app', path: '/api/rasterize', tier: 1, tag: 'vercel',   region: 'Mumbai, IN',    health: true,  http: false },
+  { id: 'ohio',       label: 'Ohio',     url: 'https://r-netlify.netlify.app',      path: '/api/rasterize', tier: 1, tag: 'netlify',  region: 'Ohio, US',      health: true,  http: false },
+  { id: 'france',     label: 'FR 1',     url: 'http://fr1.spaceify.eu:25980',       path: '',               tier: 2, tag: 'spaceify', region: 'France',         health: true,  http: true  },
+  { id: 'germany',    label: 'DE 20',    url: 'http://de20.spaceify.eu:26100',      path: '',               tier: 2, tag: 'spaceify', region: 'Germany',        health: true,  http: true  },
+  { id: 'midas',      label: 'DE 2',     url: 'http://node-3.midas.host:25108',     path: '',               tier: 2, tag: 'midas',    region: 'Germany',        health: false, http: true  },
+  { id: 'cf_worker',  label: 'Simple',   url: 'https://r-cf.spicydevs.xyz',         path: '',               tier: 3, tag: 'worker',   region: 'Global (WASM)', health: true,  http: false },
+  { id: 'render_eu',  label: 'EUC',      url: 'https://euc-r-render.onrender.com',  path: '',               tier: 3, tag: 'render',   region: 'EU Central',    health: true,  http: false },
 ] as const;
 
 const EXAMPLES = [
   { label: 'Inception',       type: 'movie', id: 'tt1375666',  params: 'r=imdb,rt' },
   { label: 'Breaking Bad',    type: 'tv',    id: 'tt0903747',  params: 'r=imdb,tmdb' },
+  { label: 'Attack on Titan', type: 'anime', id: '16498',      params: 'r=mal,anilist' },
+  { label: 'Dune: Part Two',  type: 'movie', id: 'tt15239678', params: 'r=imdb,rt,age' },
+  { label: 'The Bear',        type: 'tv',    id: '136315',     params: 'r=imdb,tmdb,rt' },
+];
+
+const TIER_META: Record<number, { label: string; color: string }> = {
+  1: { label: 'Serverless', color: '#2dd4bf' },
+  2: { label: 'Dedicated',  color: '#60a5fa' },
+  3: { label: 'Legacy',     color: 'rgba(140,130,112,0.45)' },
+};
+const TAG_COLOR: Record<string, string> = {
+  vercel: CH.blue, netlify: CH.purple, spaceify: CH.teal,
+  render: CH.orange, worker: CH.yellow, midas: CH.green,
+};
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface FetchResult { ok: boolean; ms: number; status: number; note: string; imageUrl: string | null }
+interface NodeResult extends Omit<(typeof NODES)[number], 'health'> {
+  health: Record<string, any> | null;
+  getUrl:  FetchResult;
+  postUrl: FetchResult;
+  postB64: FetchResult;
+}
+interface Benchmark {
+  inputType: string; rawId: string; queryParams: string; format: string;
+  svgUrlRef: string; svgUrlB64: string;
+  urlKb: number; b64Kb: number;
+  nodes: NodeResult[];
+  wsrv: FetchResult;
+  summary: { fastestMs: number | null; fastestLabel: string | null; successCount: number };
+  timestamp: string;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const fmtMs = (ms: number | null) =>
+  ms == null || ms <= 0 ? '—' : ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${ms}ms`;
+
+const msColor = (ms: number | null) => {
+  if (!ms) return CH.ghost;
+  if (ms < 500)  return CH.green;
+  if (ms < 1200) return CH.yellow;
+  if (ms < 3000) return CH.orange;
+  return CH.red;
+};
+
+const STEPS = [
+  'Fetching SVG variants from API…',
+  'Testing all nodes: GET · POST URL-SVG · POST B64-SVG…',
+  'Testing wsrv.nl…',
+  'Fetching node health…',
+];
+
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
+
+async function fetchWithImage(url: string, opts: RequestInit = {}): Promise<FetchResult> {
+  const t0 = performance.now();
+  try {
+    const ac = new AbortController();
+    const tm = setTimeout(() => ac.abort(), TIMEOUT_MS);
+    const res = await fetch(url, { ...opts, signal: ac.signal });
+    clearTimeout(tm);
+    const ms = Math.round(performance.now() - t0);
+    if (!res.ok) {
+      await res.body?.cancel().catch(() => {});
+      return { ok: false, ms, status: res.status, note: `HTTP ${res.status}`, imageUrl: null };
+    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.startsWith('image/')) {
+      const txt = await res.text();
+      return { ok: false, ms, status: res.status, note: `Non-image (${ct}): ${txt.slice(0, 60)}`, imageUrl: null };
+    }
+    const buf = await res.arrayBuffer();
+    return { ok: true, ms, status: res.status, note: '', imageUrl: URL.createObjectURL(new Blob([buf], { type: ct })) };
+  } catch (e: any) {
+    return {
+      ok: false, ms: Math.round(performance.now() - t0), status: 0,
+      note: e.name === 'AbortError' ? `Timeout ${TIMEOUT_MS}ms` : e.message,
+      imageUrl: null,
+    };
+  }
+}
+
+/**
+ * For HTTP nodes, rewrite the target URL through the CF Worker proxy so the
+ * browser can reach them without violating mixed-content policy.
+ * For HTTPS nodes, returns the URL unchanged.
+ */
+function proxyUrl(node: typeof NODES[number], targetUrl: string): string {
+  if (!node.http) return targetUrl;
+  return `${CF_PROXY_BASE}?url=${encodeURIComponent(targetUrl)}`;
+}
+
+async function benchNode(
+  node: typeof NODES[number],
+  urlSvg: string, b64Svg: string, svgUrlRef: string, format: string,
+): Promise<NodeResult> {
+  const base        = `${node.url}${node.path}?format=${format}`;
+  const getTarget   = proxyUrl(node, `${node.url}${node.path}?format=${format}&url=${encodeURIComponent(svgUrlRef)}`);
+  const postTarget  = proxyUrl(node, base);
+  const healthTarget = proxyUrl(node, `${node.url}/health`);
+  const headers     = { 'Content-Type': 'image/svg+xml', 'X-Format': format };
+
+  const [getUrl, postUrl, postB64, health] = await Promise.all([
+    fetchWithImage(getTarget),
+    urlSvg
+      ? fetchWithImage(postTarget, { method: 'POST', body: urlSvg, headers })
+      : Promise.resolve({ ok: false, ms: 0, status: 0, note: 'SVG unavailable', imageUrl: null }),
+    b64Svg
+      ? fetchWithImage(postTarget, { method: 'POST', body: b64Svg, headers })
+      : Promise.resolve({ ok: false, ms: 0, status: 0, note: 'SVG unavailable', imageUrl: null }),
+    node.health
+      ? fetch(healthTarget, { signal: AbortSignal.timeout(4_000) })
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
+  return { ...node, health, getUrl, postUrl, postB64 };
+}
+
+async function runBenchmark(
+  inputType: string, rawId: string, params: string, format: string,
+  onStep: (s: string) => void,
+): Promise<Benchmark> {
+  const cb = Date.now();
+  const qs = `${params ? params + '&' : ''}cb=${cb}`;
+  const svgUrlRef = `${API_BASE}/${inputType}/${rawId}.svg?${qs}&no_embed=1`;
+  const svgUrlB64 = `${API_BASE}/${inputType}/${rawId}.svg?${qs}`;
+
+  onStep(STEPS[0]);
+  const [urlRes, b64Res] = await Promise.all([
+    fetch(svgUrlRef, { signal: AbortSignal.timeout(8_000) }).catch(() => null),
+    fetch(svgUrlB64, { signal: AbortSignal.timeout(8_000) }).catch(() => null),
+  ]);
+  const urlSvg = urlRes?.ok ? await urlRes.text() : '';
+  const b64Svg = b64Res?.ok ? await b64Res.text() : '';
+  const urlKb  = urlSvg ? Math.round(new Blob([urlSvg]).size / 1024) : 0;
+  const b64Kb  = b64Svg ? Math.round(new Blob([b64Svg]).size / 1024) : 0;
+
+  onStep(STEPS[1]);
+  const nodes = await Promise.all(NODES.map(n => benchNode(n, urlSvg, b64Svg, svgUrlRef, format)));
+
+  onStep(STEPS[2]);
+  const wsrv = await fetchWithImage(
+    `https://wsrv.nl/?url=${encodeURIComponent(svgUrlRef)}&output=${format === 'webp' ? 'webp' : 'png'}&q=100`
+  );
+
+  const allMs = nodes.flatMap(n =>
+    [n.getUrl, n.postUrl, n.postB64].filter(r => r.ok).map(r => r.ms)
+  );
+  const fastestMs = allMs.length ? Math.min(...allMs) : null;
+  const fastestLabel = fastestMs != null
+    ? (nodes.find(n =>
+        [n.getUrl, n.postUrl, n.postB64].some(r => r.ok && r.ms === fastestMs)
+      )?.label ?? null)
+    : null;
+
+  return {
+    inputType, rawId, queryParams: params, format,
+    svgUrlRef, svgUrlB64: svgUrlB64.replace(`&cb=${cb}`, ''),
+    urlKb, b64Kb, nodes, wsrv,
+    summary: {
+      fastestMs,
+      fastestLabel,
+      // All nodes counted — HTTP nodes now run via proxy
+      successCount: nodes.filter(n => n.getUrl.ok || n.postUrl.ok || n.postB64.ok).length,
+    },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+// ── UI Components ─────────────────────────────────────────────────────────────
+
+const FilmTip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: 'var(--film-dark)', border: '1px solid var(--film-border)',
+      borderRadius: 8, padding: '8px 12px',
+      fontFamily: 'JetBrains Mono,monospace', fontSize: 10,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+    }}>
+      <div style={{ color: CH.amber, marginBottom: 4, fontWeight: 700 }}>{label}</div>
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ color: p.color ?? CH.cream }}>
+          {p.name}: {p.value != null ? `${p.value}ms` : '—'}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+type Mode = 'getUrl' | 'postUrl' | 'postB64';
+const MODE_META: { key: Mode; label: string; sub: string }[] = [
+  { key: 'getUrl',  label: 'GET',  sub: '?url=' },
+  { key: 'postUrl', label: 'POST', sub: 'URL-SVG' },
+  { key: 'postB64', label: 'POST', sub: 'B64-SVG' },
+];
+
+const NodeCard: React.FC<{ result: NodeResult; fastestMs: number | null }> = ({ result, fastestMs }) => {
+  const bestMode: Mode = (['getUrl', 'postUrl', 'postB64'] as Mode[])
+    .filter(k => result[k].ok)
+    .sort((a, b) => result[a].ms - result[b].ms)[0] ?? 'getUrl';
+  const [mode, setMode] = useState<Mode>(bestMode);
+  const active    = result[mode];
+  const isFastest = active.ok && fastestMs !== null && active.ms === fastestMs;
+  const tagC      = TAG_COLOR[result.tag] ?? CH.ghost;
+  const tierC     = TIER_META[result.tier]?.color ?? CH.ghost;
+
+  return (
+    <div style={{
+      background: 'var(--film-char)',
+      border: `1px solid ${isFastest ? 'rgba(196,124,46,0.35)' : 'var(--film-border)'}`,
+      borderLeft: `3px solid ${active.ok ? tagC : 'rgba(248,113,113,0.4)'}`,
+      borderRadius: 8, overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '9px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>
+            {result.label}
+          </div>
+          <div style={{ fontSize: 7, color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', marginTop: 1 }}>
+            {result.region}
+            {result.http && (
+              <span style={{ color: CH.teal, marginLeft: 5 }}>via proxy</span>
+            )}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          {isFastest && (
+            <span style={{
+              fontSize: 7, fontWeight: 700, color: CH.gold,
+              background: 'rgba(196,124,46,0.12)', border: '1px solid rgba(196,124,46,0.25)',
+              borderRadius: 3, padding: '2px 5px',
+            }}>⚡</span>
+          )}
+          <span style={{
+            fontSize: 7, fontWeight: 700, color: tierC,
+            background: `${tierC}1a`, border: `1px solid ${tierC}30`,
+            borderRadius: 3, padding: '2px 5px',
+          }}>T{result.tier}</span>
+        </div>
+      </div>
+
+      {/* Mode tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {MODE_META.map(({ key, label, sub }) => {
+          const r = result[key];
+          const isActive = mode === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setMode(key)}
+              style={{
+                flex: 1, padding: '5px 2px',
+                background: isActive ? 'rgba(255,255,255,0.03)' : 'transparent',
+                border: 'none', borderRight: '1px solid rgba(255,255,255,0.05)',
+                cursor: 'pointer', color: isActive ? 'var(--film-cream)' : CH.ghost,
+                fontFamily: 'JetBrains Mono,monospace',
+                boxShadow: isActive ? `inset 0 -2px 0 ${r.ok ? msColor(r.ms) : CH.red}` : 'none',
+                transition: 'background 0.15s',
+              }}
+            >
+              <div style={{ fontSize: 8, fontWeight: 700 }}>{label}</div>
+              <div style={{ fontSize: 7, opacity: 0.7 }}>{sub}</div>
+              <div style={{ fontSize: 8, color: r.ok ? msColor(r.ms) : CH.red, fontWeight: 700 }}>
+                {r.ok ? `${r.ms}ms` : '✗'}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Poster image */}
+      <div style={{
+        background: '#050504', position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120,
+      }}>
+        {active.imageUrl ? (
+          <>
+            <img
+              src={active.imageUrl}
+              alt={result.label}
+              style={{ width: '100%', aspectRatio: '2/3', objectFit: 'contain', display: 'block', maxHeight: 220 }}
+            />
+            <div style={{
+              position: 'absolute', bottom: 5, right: 5,
+              fontFamily: 'JetBrains Mono,monospace', fontSize: 9, fontWeight: 700,
+              color: msColor(active.ms), background: 'rgba(0,0,0,0.85)',
+              padding: '2px 6px', borderRadius: 3,
+            }}>
+              {active.ms}ms
+            </div>
+          </>
+        ) : (
+          <div style={{
+            padding: '20px 12px', textAlign: 'center',
+            fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.red, lineHeight: 1.6,
+          }}>
+            ✗ {active.note.slice(0, 55)}
+          </div>
+        )}
+      </div>
+
+      {/* Health strip */}
+      {result.health && (
+        <div style={{
+          padding: '5px 10px', borderTop: '1px solid rgba(255,255,255,0.04)',
+          display: 'flex', gap: 8, flexWrap: 'wrap',
+        }}>
+          {[
+            { l: 'active', v: result.health.activeJobs ?? '—', c: result.health.activeJobs > 0 ? CH.yellow : CH.ghost },
+            { l: 'queue',  v: result.health.queuedJobs ?? '—', c: result.health.queuedJobs > 0 ? CH.orange : CH.ghost },
+            { l: 'icons',  v: result.health.iconCache?.loaded ? `✓${result.health.iconCache.iconCount}` : '✗', c: result.health.iconCache?.loaded ? CH.green : CH.red },
+            { l: 'font',   v: result.health.fontDefault ? '✓' : '—', c: result.health.fontDefault ? CH.green : CH.ghost },
+          ].map(({ l, v, c }) => (
+            <span key={l} style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
+              {l}: <span style={{ color: c }}>{String(v)}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RecommendationPanel: React.FC<{ bench: Benchmark }> = ({ bench }) => {
+  const ranked = bench.nodes
+    .map(n => {
+      const best = (['getUrl', 'postUrl', 'postB64'] as Mode[])
+        .filter(k => n[k].ok)
+        .sort((a, b) => n[a].ms - n[b].ms)[0];
+      return best ? { label: n.label, mode: MODE_META.find(m => m.key === best)!, ms: n[best].ms } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a!.ms - b!.ms) as { label: string; mode: typeof MODE_META[number]; ms: number }[];
+
+  const getVsPost = bench.nodes
+    .filter(n => n.getUrl.ok && n.postUrl.ok)
+    .map(n => ({ label: n.label, delta: n.postUrl.ms - n.getUrl.ms }))
+    .sort((a, b) => b.delta - a.delta);
+
+  const b64Penalty = bench.nodes
+    .filter(n => n.postUrl.ok && n.postB64.ok)
+    .map(n => n.postB64.ms - n.postUrl.ms);
+  const avgB64Penalty = b64Penalty.length
+    ? Math.round(b64Penalty.reduce((a, b) => a + b, 0) / b64Penalty.length)
+    : null;
+  const overhead = bench.b64Kb - bench.urlKb;
+
+  return (
+    <div style={{
+      padding: 14, background: 'rgba(196,124,46,0.04)',
+      border: '1px solid rgba(196,124,46,0.15)', borderRadius: 10,
+    }}>
+      <div style={{
+        fontFamily: 'Syne,sans-serif', fontSize: 9, fontWeight: 700,
+        letterSpacing: '0.14em', textTransform: 'uppercase' as const,
+        color: CH.amber, marginBottom: 12,
+      }}>
+        Analysis & Recommendations
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 10 }}>
+        {ranked.slice(0, 3).map((n, i) => (
+          <div key={n.label} style={{
+            padding: '10px 12px', background: 'var(--film-char)', borderRadius: 7,
+            borderLeft: `3px solid ${i === 0 ? CH.gold : i === 1 ? 'rgba(196,124,46,0.5)' : CH.ghost}`,
+          }}>
+            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, marginBottom: 3 }}>
+              #{i + 1} FASTEST
+            </div>
+            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 12, fontWeight: 700, color: 'var(--film-cream)' }}>
+              {n.label}
+            </div>
+            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: msColor(n.ms), marginTop: 2 }}>
+              {n.mode.label} {n.mode.sub}: {n.ms}ms
+            </div>
+          </div>
+        ))}
+
+        <div style={{ padding: '10px 12px', background: 'var(--film-char)', borderRadius: 7, borderLeft: `3px solid ${CH.teal}` }}>
+          <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, marginBottom: 3 }}>
+            PAYLOAD SIZE
+          </div>
+          <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: 'var(--film-cream)', lineHeight: 1.7 }}>
+            URL-SVG: <span style={{ color: CH.green }}>{bench.urlKb}KB</span><br />
+            B64-SVG: <span style={{ color: CH.orange }}>{bench.b64Kb}KB</span>
+            {overhead > 0 && ` (+${overhead}KB)`}
+          </div>
+          {avgB64Penalty !== null && (
+            <div style={{
+              fontFamily: 'JetBrains Mono,monospace', fontSize: 8,
+              color: avgB64Penalty > 100 ? CH.orange : CH.ghost, marginTop: 4,
+            }}>
+              B64 adds avg +{avgB64Penalty}ms  { label: 'Breaking Bad',    type: 'tv',    id: 'tt0903747',  params: 'r=imdb,tmdb' },
   { label: 'Attack on Titan', type: 'anime', id: '16498',      params: 'r=mal,anilist' },
   { label: 'Dune: Part Two',  type: 'movie', id: 'tt15239678', params: 'r=imdb,rt,age' },
   { label: 'The Bear',        type: 'tv',    id: '136315',      params: 'r=imdb,tmdb,rt' },
