@@ -192,9 +192,9 @@ This applies globally wherever badge values are rendered (canvas preview and
 generated SVG/PNG output). Use the `cleanValue` helper for any custom display:
 
 ```ts
-import { cleanValue } from '../utils/v3Builder';
-console.log(cleanValue('85.0%')); // → '85%'
-console.log(cleanValue('7.50')); // → '7.5'
+import { cleanValue } from "../utils/v3Builder";
+console.log(cleanValue("85.0%")); // → '85%'
+console.log(cleanValue("7.50")); // → '7.5'
 ```
 
 ---
@@ -255,21 +255,21 @@ GET /movie/155/backdrop.webp?source=tmdb&width=1920&textless=1
   badge has `blur=8`, it emits `bl=8` once rather than `imdb_blur=8&rt_blur=8`).
 
 ```ts
-import { buildOptimalUrl, cleanValue } from './src/utils/v3Builder';
+import { buildOptimalUrl, cleanValue } from "./src/utils/v3Builder";
 
 const url = buildOptimalUrl({
-  mediaType: 'movie',
-  tmdbId: '453395',
-  imdbId: 'tt12042730',
-  ratings: ['imdb', 'rt', 'age'],
-  source: 'tmdb',
+  mediaType: "movie",
+  tmdbId: "453395",
+  imdbId: "tt12042730",
+  ratings: ["imdb", "rt", "age"],
+  source: "tmdb",
   blur: 8,
   alpha: 0.4,
   radius: 12,
   shadow: 6,
   // … other fields
 });
-// → https://api.spicydevs.xyz/poster/tt12042730.png?r=i,r,a&v=3&bl=8&al=0.4&ra=12&sh=6…
+// → https://api.posterium.xyz/poster/tt12042730.png?r=i,r,a&v=3&bl=8&al=0.4&ra=12&sh=6…
 ```
 
 ---

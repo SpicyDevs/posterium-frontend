@@ -1,5 +1,5 @@
 // src/lib/dashboard/constants.ts
-export const API = 'https://api.spicydevs.xyz';
+export const API = 'https://api.posterium.xyz';
 
 export interface ReelItem {
   id: string;
@@ -388,7 +388,7 @@ export const USE_CASES: UseCase[] = [
     title: 'Plex & Jellyfin',
     tags: ['Media Servers', 'Plex', 'Jellyfin', 'Emby'],
     desc: 'Custom poster art with embedded live ratings for your self-hosted media server - paste the URL and forget it.',
-    codeSnippet: 'https://api.spicydevs.xyz/movie/155.svg?r=imdb,rt',
+    codeSnippet: 'https://api.posterium.xyz/movie/155.svg?r=imdb,rt',
     previewId: '155',
     previewType: 'movie',
     previewBadges: 'imdb,rt',
@@ -400,7 +400,7 @@ export const USE_CASES: UseCase[] = [
     title: 'Discord Bots',
     tags: ['Discord', 'Bots', 'Embeds'],
     desc: 'Rich movie embeds in any Discord bot. One image URL in the embed field - live scores in the art, no extra API calls from your bot.',
-    codeSnippet: ".setImage('https://api.spicydevs.xyz/movie/27205.webp?r=imdb,rt,meta')",
+    codeSnippet: ".setImage('https://api.posterium.xyz/movie/27205.webp?r=imdb,rt,meta')",
     previewId: '27205',
     previewType: 'movie',
     previewBadges: 'imdb,rt,meta',
@@ -424,7 +424,7 @@ export const USE_CASES: UseCase[] = [
     title: 'Personal Websites',
     tags: ['Web', 'Blogs', 'Reviews'],
     desc: 'Dynamic image source for your movie blog, portfolio, or review site - no backend needed. An img tag with a URL is all it takes.',
-    codeSnippet: '<img src="https://api.spicydevs.xyz/movie/872585.webp?r=imdb,rt,meta">',
+    codeSnippet: '<img src="https://api.posterium.xyz/movie/872585.webp?r=imdb,rt,meta">',
     previewId: '872585',
     previewType: 'movie',
     previewBadges: 'imdb,rt,meta',
@@ -448,7 +448,7 @@ export const USE_CASES: UseCase[] = [
     title: 'Print & Design',
     tags: ['Print', 'SVG', 'Art', 'Design'],
     desc: 'Print-quality vector at any scale. SVG output is lossless - import directly into Figma, Illustrator, or Affinity for print or merch layouts.',
-    codeSnippet: 'curl https://api.spicydevs.xyz/movie/475557.svg?r=imdb > joker.svg',
+    codeSnippet: 'curl https://api.posterium.xyz/movie/475557.svg?r=imdb > joker.svg',
     previewId: '475557',
     previewType: 'movie',
     previewBadges: 'imdb',

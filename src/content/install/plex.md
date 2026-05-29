@@ -35,7 +35,7 @@ Use this flow to connect Posterium generated posters inside Plex metadata workfl
 ### API pattern
 
 ```text
-https://api.spicydevs.xyz/poster/{imdb_id}?source=tmdb&imdb=true&rt=true&metacritic=true
+https://api.posterium.xyz/poster/{imdb_id}?source=tmdb&imdb=true&rt=true&metacritic=true
 ```
 
 ### Optional: query template table

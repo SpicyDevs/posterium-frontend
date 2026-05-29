@@ -12,7 +12,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
 
-const API_BASE      = 'https://api.spicydevs.xyz';
+const API_BASE      = 'https://api.posterium.xyz';
 const CF_PROXY_BASE = 'https://r-cf.spicydevs.xyz/proxy';
 const TIMEOUT_MS    = 14_000;
 

@@ -1,5 +1,5 @@
 {
-  "resource": "https://api.spicydevs.xyz/",
+  "resource": "https://api.posterium.xyz/",
   "authorization_servers": [
     "https://posterium.xyz"
   ],

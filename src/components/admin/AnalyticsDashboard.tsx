@@ -37,8 +37,8 @@ import {
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
 
-const API_BASE = 'https://api.spicydevs.xyz';
-const POSTER_API = 'https://api.spicydevs.xyz';
+const API_BASE = 'https://api.posterium.xyz';
+const POSTER_API = 'https://api.posterium.xyz';
 const AUTH_KEY = 'posterium_analytics_auth_v4';
 const CONFIG_KEY = 'posterium_dash_config_v4';
 const CORRECT_PW = 'admin123';
@@ -675,7 +675,7 @@ const PosterThumb = ({
   const src = `${POSTER_API}/${type}/${id}.svg?source=tmdb`;
   return (
     <a
-      href={`https://api.spicydevs.xyz/test/${type}/${id}.png`}
+      href={`https://api.posterium.xyz/test/${type}/${id}.png`}
       target="_blank"
       rel="noreferrer"
       style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}

@@ -60,7 +60,7 @@ import {
 
 // @ts-ignore
 const envApiUrl = import.meta.env?.VITE_API_URL;
-export const DEFAULT_API_BASE = envApiUrl || 'https://api.spicydevs.xyz';
+export const DEFAULT_API_BASE = envApiUrl || 'https://api.posterium.xyz';
 
 // ── V3 schema maps ─────────────────────────────────────────────────────────
 // CRITICAL: single-char codes must exactly match backend PROVIDER_SHORT_MAP

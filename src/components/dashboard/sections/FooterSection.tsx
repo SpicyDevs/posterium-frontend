@@ -337,7 +337,7 @@ export const FooterSection = memo(() => (
         className="mono-font"
         style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}
       >
-        {'api.spicydevs.xyz/{type}/{id}.svg?r=imdb,rt&source=tmdb'}
+        {'api.posterium.xyz/{type}/{id}.svg?r=imdb,rt&source=tmdb'}
       </code>
       <span
         className="mono-font"

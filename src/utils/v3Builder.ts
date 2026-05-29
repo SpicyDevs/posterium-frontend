@@ -83,7 +83,7 @@ function detectHoistable(config: PosterConfig): Partial<Record<string, string | 
  */
 export function buildOptimalUrl(
   config: PosterConfig,
-  baseUrl = 'https://api.spicydevs.xyz'
+  baseUrl = 'https://api.posterium.xyz'
 ): string {
   const cleanBase = baseUrl.replace(/\/$/, '');
 

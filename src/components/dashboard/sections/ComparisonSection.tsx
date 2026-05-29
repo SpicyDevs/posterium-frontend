@@ -521,7 +521,7 @@ export const ComparisonSection = memo(() => {
           className="mono-font"
           style={{ fontSize: 10, color: 'rgba(122,117,110,0.4)', letterSpacing: '0.1em' }}
         >
-          api.spicydevs.xyz/v3
+          api.posterium.xyz/v3
         </span>
       </div>
     </section>
