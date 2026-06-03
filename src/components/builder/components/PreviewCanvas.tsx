@@ -16,12 +16,7 @@ import type { PosterConfig, RatingType } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
 import DraggableLogo from './DraggableLogo';
-import {
-  calculateAutoPosition,
-  DEFAULT_API_BASE,
-  getScale,
-  snapToGridSize,
-} from '../utils';
+import { calculateAutoPosition, DEFAULT_API_BASE, getScale, snapToGridSize } from '../utils';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../context/EditorContext';
 import clsx from 'clsx';
@@ -59,7 +54,6 @@ const PreviewCanvas: React.FC<Props> = ({
 }) => {
   const {
     viewOptions,
-    mobileSheetMode,
     clearSelection,
     liveRatings,
     liveTitle,
@@ -143,10 +137,15 @@ const PreviewCanvas: React.FC<Props> = ({
           legacyWidthPx && legacyWidthPx > 120
             ? Math.max(4, Math.round((legacyWidthPx - 16 * scale) / approxCharPx))
             : undefined;
-        const charWidth = Math.max(4, Math.min(80, Math.round(itemCfg?.textCharWidth ?? legacyFromPx ?? 24)));
+        const charWidth = Math.max(
+          4,
+          Math.min(80, Math.round(itemCfg?.textCharWidth ?? legacyFromPx ?? 24))
+        );
         const legacyHeightPx = itemCfg?.textBoxHeight;
         const legacyHeightLines =
-          legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
+          legacyHeightPx && legacyHeightPx > 16
+            ? Math.max(1, Math.round(legacyHeightPx / 36))
+            : undefined;
         const charHeight = Math.max(
           1,
           Math.min(
@@ -160,13 +159,13 @@ const PreviewCanvas: React.FC<Props> = ({
         );
         const wrapEnabled = itemCfg?.textWrapEnabled ?? true;
         const w = Math.max(120, Math.round(charWidth * approxCharPx + 16 * scale));
-        const charsPerLine = Math.max(
-          1,
-          Math.floor((Math.max(w, 1) - 16 * scale) / approxCharPx)
-        );
+        const charsPerLine = Math.max(1, Math.floor((Math.max(w, 1) - 16 * scale) / approxCharPx));
         const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
         const renderedLines = wrapEnabled ? Math.min(estimatedLines, charHeight) : 1;
-        const titleHeight = Math.max(32, Math.round(charHeight * textSize * textLineHeight + 16 * scale));
+        const titleHeight = Math.max(
+          32,
+          Math.round(charHeight * textSize * textLineHeight + 16 * scale)
+        );
         return { w, h: titleHeight };
       }
       const w = Math.max(
@@ -180,12 +179,10 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
-    const auto = calculateAutoPosition(
-      id,
-      index,
-      previewRatings.length,
-      { ...config, ratings: previewRatings }
-    );
+    const auto = calculateAutoPosition(id, index, previewRatings.length, {
+      ...config,
+      ratings: previewRatings,
+    });
     const x = itemConfig?.x ?? auto.x;
     const y = itemConfig?.y ?? auto.y;
     const { w, h } = getBadgeSize(id, itemConfig);
@@ -202,18 +199,29 @@ const PreviewCanvas: React.FC<Props> = ({
   const lastPan = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    let resizeRaf: number | null = null;
     const handleResize = () => {
-      if (!containerRef.current) return;
-      const padding = 40;
-      const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
-      const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
-      setAutoScale(Math.min(scaleX, scaleY, 1));
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const padding = 40;
+        const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
+        const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
+        setAutoScale(Math.min(scaleX, scaleY, 1));
+      });
     };
     handleResize();
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, [mobileSheetMode]);
+    return () => {
+      observer.disconnect();
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+    };
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('canvas-view-state', { detail: { zoom, pan } }));
+  }, [zoom, pan]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -230,7 +238,13 @@ const PreviewCanvas: React.FC<Props> = ({
     const c = (hex || '#000000').replace('#', '');
     const valid = c.length === 3 || c.length === 6;
     if (!valid) return `rgba(0,0,0,${opacity})`;
-    const expanded = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c;
+    const expanded =
+      c.length === 3
+        ? c
+            .split('')
+            .map((ch) => ch + ch)
+            .join('')
+        : c;
     const r = parseInt(expanded.slice(0, 2), 16);
     const g = parseInt(expanded.slice(2, 4), 16);
     const b = parseInt(expanded.slice(4, 6), 16);
@@ -453,7 +467,10 @@ const PreviewCanvas: React.FC<Props> = ({
       setConfig((prev) => {
         const boxW = Math.max(120, prev.minimalTitleWidth ?? 420);
         const boxH = Math.max(36, (prev.minimalTextSize ?? 42) * 1.5);
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx)));
+        const nextX = Math.max(
+          0,
+          Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx))
+        );
         const flow = prev.minimalTitleFlow ?? 'up';
         const nextY =
           flow === 'up'
@@ -485,8 +502,14 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleMinimalYearDragEnd = useCallback(
     (dx: number, dy: number) => {
       setConfig((prev) => {
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalMetaX ?? 26) + dx)));
-        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalMetaY ?? 672) + dy)));
+        const nextX = Math.max(
+          0,
+          Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalMetaX ?? 26) + dx))
+        );
+        const nextY = Math.max(
+          0,
+          Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalMetaY ?? 672) + dy))
+        );
         return { ...prev, minimalMetaX: nextX, minimalMetaY: nextY };
       });
     },
@@ -540,7 +563,8 @@ const PreviewCanvas: React.FC<Props> = ({
           minimalDragRafRef.current = null;
           if (!minimalPendingOffsetRef.current) return;
           if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
-          if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
+          if (draggingMinimalRatingIndex !== null)
+            setMinimalRatingOffset(minimalPendingOffsetRef.current);
           if (draggingMinimalYear || draggingMinimalDuration)
             setMinimalMetaOffset(minimalPendingOffsetRef.current);
         });
@@ -689,12 +713,10 @@ const PreviewCanvas: React.FC<Props> = ({
     const index = previewRatings.indexOf(targetId);
     if (index === -1) return null;
 
-    const auto = calculateAutoPosition(
-      targetId,
-      index,
-      previewRatings.length,
-      { ...config, ratings: previewRatings }
-    );
+    const auto = calculateAutoPosition(targetId, index, previewRatings.length, {
+      ...config,
+      ratings: previewRatings,
+    });
     const iCfg = config.items[targetId];
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
@@ -816,73 +838,70 @@ const PreviewCanvas: React.FC<Props> = ({
 
         {/* Badge overlays */}
         {previewRatings.map((id: RatingType, index: number) => {
-            const auto = calculateAutoPosition(
-              id,
-              index,
-              previewRatings.length,
-              { ...config, ratings: previewRatings }
-            );
-            const iCfg = config.items[id];
-            let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
-            let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
-            if (!isFinite(x)) x = auto.x;
-            if (!isFinite(y)) y = auto.y;
+          const auto = calculateAutoPosition(id, index, previewRatings.length, {
+            ...config,
+            ratings: previewRatings,
+          });
+          const iCfg = config.items[id];
+          let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
+          let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
+          if (!isFinite(x)) x = auto.x;
+          if (!isFinite(y)) y = auto.y;
 
-            let isObscuring = false;
-            if (hoveredBadgeId && hoveredBadgeId !== id) {
-              const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
-              if (hoveredIdx !== -1) isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
-            }
+          let isObscuring = false;
+          if (hoveredBadgeId && hoveredBadgeId !== id) {
+            const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
+            if (hoveredIdx !== -1)
+              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
+          }
 
-            if (dragSession) {
-              const isTarget = dragSession.id === id;
-              const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
-              if (isTarget || isGroup) {
-                const { w: bW, h: bH } = getBadgeSize(id, iCfg);
-                // Preview clamp: at least 1px inside poster
-                let nextX = x + dragSession.dx;
-                let nextY = y + dragSession.dy;
-                if (viewOptions?.snapToGrid) {
-                  const centerX = nextX + bW / 2;
-                  const centerY = nextY + bH / 2;
-                  const middleX = CANVAS_WIDTH / 2;
-                  const middleY = CANVAS_HEIGHT / 2;
-                  if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE)
-                    nextX = middleX - bW / 2;
-                  if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE)
-                    nextY = middleY - bH / 2;
-                }
-                x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
+          if (dragSession) {
+            const isTarget = dragSession.id === id;
+            const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
+            if (isTarget || isGroup) {
+              const { w: bW, h: bH } = getBadgeSize(id, iCfg);
+              // Preview clamp: at least 1px inside poster
+              let nextX = x + dragSession.dx;
+              let nextY = y + dragSession.dy;
+              if (viewOptions?.snapToGrid) {
+                const centerX = nextX + bW / 2;
+                const centerY = nextY + bH / 2;
+                const middleX = CANVAS_WIDTH / 2;
+                const middleY = CANVAS_HEIGHT / 2;
+                if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - bW / 2;
+                if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - bH / 2;
               }
+              x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
+              y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
             }
+          }
 
-            return (
-              <DraggableBadge
-                key={id}
-                badgeId={id}
-                config={config}
-                value={
-                  id === 'year'
-                    ? liveYear.replace(/\.0+$/, '')
-                    : id === 'title'
-                      ? liveTitle
-                      : liveRatings[id]
-                }
-                x={x}
-                y={y}
-                canvasScale={currentScale}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
-                isSelected={selectedIds.has(id)}
-                onSelect={onSelect}
-                onContextMenu={onContextMenu}
-                isObscuring={isObscuring}
-                onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
-                zIndex={100 + index}
-              />
-            );
-          })}
+          return (
+            <DraggableBadge
+              key={id}
+              badgeId={id}
+              config={config}
+              value={
+                id === 'year'
+                  ? liveYear.replace(/\.0+$/, '')
+                  : id === 'title'
+                    ? liveTitle
+                    : liveRatings[id]
+              }
+              x={x}
+              y={y}
+              canvasScale={currentScale}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              isSelected={selectedIds.has(id)}
+              onSelect={onSelect}
+              onContextMenu={onContextMenu}
+              isObscuring={isObscuring}
+              onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+              zIndex={100 + index}
+            />
+          );
+        })}
 
         {config.logo && (
           <DraggableLogo
@@ -901,19 +920,20 @@ const PreviewCanvas: React.FC<Props> = ({
             className="absolute z-40 select-none"
             style={{
               left:
-                (config.minimalDurationX ?? 90) + (draggingMinimalDuration ? minimalMetaOffset.dx : 0),
+                (config.minimalDurationX ?? 90) +
+                (draggingMinimalDuration ? minimalMetaOffset.dx : 0),
               top:
-                (config.minimalDurationY ?? 672) + (draggingMinimalDuration ? minimalMetaOffset.dy : 0),
+                (config.minimalDurationY ?? 672) +
+                (draggingMinimalDuration ? minimalMetaOffset.dy : 0),
               fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
               color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
               fontWeight: config.minimalMetaWeight ?? 600,
               letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
               lineHeight: 1,
               cursor: draggingMinimalDuration ? 'grabbing' : 'grab',
-              outline:
-                selectedMinimalElements.has('minimal-duration')
-                  ? '1px dashed rgba(196,124,46,0.8)'
-                  : 'none',
+              outline: selectedMinimalElements.has('minimal-duration')
+                ? '1px dashed rgba(196,124,46,0.8)'
+                : 'none',
             }}
             onMouseDown={(e) => {
               e.preventDefault();
