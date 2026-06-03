@@ -1,6 +1,5 @@
 // src/components/builder/index.tsx
 import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
@@ -29,7 +28,11 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import MobileDock from './components/layout/MobileDock';
+import MobileToolbar, { type MobileDrawerTab } from './components/mobile/MobileToolbar';
+import MobileDrawer, { type DrawerSnapPoints } from './components/mobile/MobileDrawer';
+import MobileDock, { type DockAction } from './components/mobile/MobileDock';
+import CanvasHandles from './components/mobile/CanvasHandles';
+import ZoomPill from './components/mobile/ZoomPill';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -98,8 +101,6 @@ const StudioLayout: React.FC<{
   const {
     activeTab,
     setActiveTab,
-    mobileSheetMode,
-    setMobileSheetMode,
     selectedIds,
     selectedLogo,
     selectedMinimalElements,
@@ -124,6 +125,134 @@ const StudioLayout: React.FC<{
   const exportBtnRef = useRef<HTMLButtonElement>(null);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
+  const mobileBodyRef = useRef<HTMLDivElement>(null);
+  const drawerHeightRef = useRef(0);
+  const [drawerHeight, setDrawerHeight] = useState(0);
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [leftDrawerTab, setLeftDrawerTab] = useState<MobileDrawerTab>('source');
+  const [rightDrawerTab, setRightDrawerTab] = useState<MobileDrawerTab>('badges');
+  const [drawerTransitionLock, setDrawerTransitionLock] = useState(false);
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0);
+
+  const vibrate = useCallback((ms: number) => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms);
+  }, []);
+
+  const getDrawerSnapPoints = useCallback((): DrawerSnapPoints => {
+    if (typeof window === 'undefined') return { compact: 180, half: 320, full: 520 };
+    const safeBottom = 0;
+    const full = Math.max(180, window.innerHeight - 48 - 64 - safeBottom - 80);
+    const half = Math.max(180, Math.min(full, window.innerHeight * 0.52 - 64));
+    return { compact: 180, half, full };
+  }, []);
+
+  const [drawerSnapPoints, setDrawerSnapPoints] = useState<DrawerSnapPoints>(() =>
+    getDrawerSnapPoints()
+  );
+
+  useEffect(() => {
+    const update = () => setDrawerSnapPoints(getDrawerSnapPoints());
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, [getDrawerSnapPoints]);
+
+  const setMobileDrawerHeight = useCallback(
+    (height: number, animate = true) => {
+      const clamped = Math.max(0, Math.min(height, getDrawerSnapPoints().full));
+      drawerHeightRef.current = clamped;
+      const el = mobileBodyRef.current;
+      if (el) {
+        el.style.transition = animate
+          ? 'grid-template-rows 0.38s cubic-bezier(0.16,1,0.3,1)'
+          : 'none';
+        el.style.setProperty('--drawer-height', `${clamped}px`);
+        if (animate)
+          window.setTimeout(() => {
+            if (mobileBodyRef.current) mobileBodyRef.current.style.transition = 'none';
+          }, 390);
+      }
+      setDrawerHeight(clamped);
+    },
+    [getDrawerSnapPoints]
+  );
+
+  const closeMobileDrawers = useCallback(() => {
+    setMobileDrawerHeight(0, true);
+    setLeftDrawerOpen(false);
+    setRightDrawerOpen(false);
+    setDrawerTransitionLock(true);
+    window.setTimeout(() => {
+      setDrawerTransitionLock(false);
+      vibrate(4);
+    }, 200);
+  }, [setMobileDrawerHeight, vibrate]);
+
+  const openLeftDrawer = useCallback(
+    (tab: MobileDrawerTab = 'source') => {
+      if (drawerTransitionLock) return;
+      const open = () => {
+        setLeftDrawerTab(tab);
+        setActiveTab(tab);
+        setRightDrawerOpen(false);
+        setLeftDrawerOpen(true);
+        setMobileDrawerHeight(getDrawerSnapPoints().half, true);
+        vibrate(8);
+      };
+      if (rightDrawerOpen) {
+        setDrawerTransitionLock(true);
+        setMobileDrawerHeight(0, true);
+        setRightDrawerOpen(false);
+        window.setTimeout(() => {
+          setDrawerTransitionLock(false);
+          open();
+        }, 120);
+      } else open();
+    },
+    [
+      drawerTransitionLock,
+      getDrawerSnapPoints,
+      rightDrawerOpen,
+      setActiveTab,
+      setMobileDrawerHeight,
+      vibrate,
+    ]
+  );
+
+  const openRightDrawer = useCallback(
+    (tab: MobileDrawerTab = 'badges') => {
+      if (drawerTransitionLock) return;
+      setRightDrawerTab(tab);
+      setActiveTab(tab);
+      setRightDrawerOpen(true);
+      setLeftDrawerOpen(false);
+      setMobileDrawerHeight(getDrawerSnapPoints().half, true);
+      vibrate(8);
+    },
+    [drawerTransitionLock, getDrawerSnapPoints, setActiveTab, setMobileDrawerHeight, vibrate]
+  );
+
+  const activeMobileSide = rightDrawerOpen ? 'right' : leftDrawerOpen ? 'left' : null;
+  const activeMobileTab = rightDrawerOpen
+    ? rightDrawerTab
+    : leftDrawerOpen
+      ? leftDrawerTab
+      : 'source';
+  const activeDockItem: DockAction = !activeMobileSide
+    ? 'canvas'
+    : activeMobileSide === 'left'
+      ? leftDrawerTab === 'layers'
+        ? 'layers'
+        : 'source'
+      : rightDrawerTab === 'selection'
+        ? 'selection'
+        : 'badges';
+
   useEffect(() => {
     if (['source', 'layers', 'poster', 'badges', 'selection'].includes(activeTab)) {
       setAdvancedPanel(activeTab as BuilderPanelId);
@@ -143,10 +272,17 @@ const StudioLayout: React.FC<{
   );
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
-    const handle = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    const handle = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+      if (e.matches) {
+        setLeftDrawerOpen(false);
+        setRightDrawerOpen(false);
+        setMobileDrawerHeight(0, false);
+      }
+    };
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
-  }, []);
+  }, [setMobileDrawerHeight]);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
@@ -272,12 +408,27 @@ const StudioLayout: React.FC<{
     [setConfig]
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback(
     (id: RatingType, multi: boolean) => {
       handleSelection(id, multi);
+      vibrate(10);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setRightDrawerTab('selection');
+        setActiveTab('selection');
+        if (!rightDrawerOpen) {
+          setRightDrawerOpen(true);
+          setMobileDrawerHeight(getDrawerSnapPoints().half, true);
+        }
+      }
     },
-    [handleSelection]
+    [
+      getDrawerSnapPoints,
+      handleSelection,
+      rightDrawerOpen,
+      setActiveTab,
+      setMobileDrawerHeight,
+      vibrate,
+    ]
   );
 
   const moveLayer = useCallback(
@@ -931,20 +1082,51 @@ const StudioLayout: React.FC<{
         }
         .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
         .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
+        @keyframes panel-title-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .mobile-panel-title { animation: panel-title-in 0.12s ease forwards; }
+        @keyframes zoom-pill-tap { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(0.88); } 100% { transform: translateX(-50%) scale(1); } }
+        .zoom-pill-tap { animation: zoom-pill-tap 0.2s ease; }
+        @keyframes dock-badge-in { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes quick-menu-in { from { opacity: 0; transform: translateX(-50%) scale(0.8) translateY(8px); } to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); } }
+        .mobile-longpress-menu { animation: quick-menu-in 0.2s cubic-bezier(0.16,1,0.3,1); }
+        .mobile-toolbar-action:active span, .mobile-toolbar-export:active span { transform: scale(0.88); background: rgba(255,255,255,0.06); transition: transform 0.08s ease, background 0.08s ease; }
+        .mobile-toolbar-export:active span { background: rgba(196,124,46,0.2); }
       `}</style>
 
       <div
-        className="builder-ui flex flex-col overflow-hidden"
+        className="builder-ui grid lg:flex lg:flex-col overflow-hidden"
         style={{
           height: '100dvh',
           background: 'var(--film-black)',
           color: 'var(--film-cream)',
           fontFamily: 'DM Sans, sans-serif',
+          gridTemplateRows: '48px 1fr 64px',
+          gridTemplateAreas: '"toolbar" "body" "dock"',
         }}
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
+        {!isFullscreen && (
+          <MobileToolbar
+            drawerSide={activeMobileSide}
+            activeTab={activeMobileTab}
+            selectedIds={selectedIds}
+            selectedLogo={selectedLogo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onExport={() => setExportOpen((v) => !v)}
+            exportButtonRef={exportBtnRef}
+          />
+        )}
+
+        {(isResetOpen ||
+          isImportOpen ||
+          shortcutsOpen ||
+          ctxMenu.visible ||
+          paletteOpen ||
+          exportOpen) && (
           <Suspense fallback={null}>
             {isResetOpen && (
               <ResetDialog
@@ -994,6 +1176,7 @@ const StudioLayout: React.FC<{
                 onDeselectAll={clearSelection}
                 onResetBadge={resetLayer}
                 onDelete={deleteLayer}
+                isMobile={!isDesktop}
               />
             )}
             {paletteOpen && (
@@ -1021,7 +1204,7 @@ const StudioLayout: React.FC<{
         {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="hidden lg:flex h-12 shrink-0 items-center z-30 relative"
             style={{
               background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -1273,7 +1456,18 @@ const StudioLayout: React.FC<{
         )}
 
         {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+        <div
+          ref={mobileBodyRef}
+          className="relative overflow-hidden lg:flex lg:flex-1 lg:flex-row"
+          style={{
+            gridArea: 'body',
+            display: isDesktop ? undefined : 'grid',
+            gridTemplateRows: '1fr var(--drawer-height, 0px)',
+            gridTemplateAreas: '"canvas" "drawer"',
+            minHeight: 0,
+            willChange: 'grid-template-rows',
+          }}
+        >
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -1312,11 +1506,20 @@ const StudioLayout: React.FC<{
             id="main-canvas"
             role="main"
             aria-label="Poster canvas"
-            className="flex-1 relative overflow-hidden min-h-0"
-            style={{ background: '#111113' }}
+            className="relative overflow-hidden min-h-0 lg:flex-1"
+            style={{
+              gridArea: 'canvas',
+              background: '#111113',
+              outline:
+                selectedCount > 0 ? '2px solid rgba(196,124,46,0.3)' : '2px solid transparent',
+              outlineOffset: -2,
+              transition: 'outline-color 0.2s ease',
+            }}
             onClick={(e) => {
-              if (e.target === e.currentTarget) clearSelection();
-              if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
+              if (e.target === e.currentTarget) {
+                clearSelection();
+                vibrate(5);
+              }
             }}
           >
             <div
@@ -1329,8 +1532,6 @@ const StudioLayout: React.FC<{
               }}
             />
 
-            {/* Sidebar Canvas Toggles removed — now in navbar */}
-
             <PreviewCanvas
               config={config}
               setConfig={setConfig}
@@ -1339,7 +1540,6 @@ const StudioLayout: React.FC<{
               onContextMenu={openCtxMenu}
               onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
-            {/* Film corner accents */}
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
               <div
                 key={c}
@@ -1360,6 +1560,23 @@ const StudioLayout: React.FC<{
                 }}
               />
             ))}
+            {!isFullscreen && (
+              <div className="lg:hidden">
+                <CanvasHandles
+                  leftOpen={leftDrawerOpen}
+                  rightOpen={rightDrawerOpen}
+                  onToggleLeft={() =>
+                    leftDrawerOpen ? closeMobileDrawers() : openLeftDrawer(leftDrawerTab)
+                  }
+                  onToggleRight={() =>
+                    rightDrawerOpen ? closeMobileDrawers() : openRightDrawer(rightDrawerTab)
+                  }
+                  onCloseLeft={() => leftDrawerOpen && closeMobileDrawers()}
+                  onCloseRight={() => rightDrawerOpen && closeMobileDrawers()}
+                />
+                <ZoomPill onResetView={dispatchResetView} />
+              </div>
+            )}
           </main>
 
           {/* Right sidebar */}
@@ -1389,63 +1606,81 @@ const StudioLayout: React.FC<{
             </aside>
           )}
 
-          {/* Mobile Panel (In-flow flex item) */}
           {!isFullscreen && (
             <div
-              className={clsx(
-                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
-                mobileSheetMode !== 'hidden'
-                  ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
-                  : 'h-0 border-t-0'
-              )}
+              className="lg:hidden"
+              style={{ gridArea: 'drawer', minHeight: 0, overflow: 'hidden' }}
             >
-              {/* Swipe-down dismiss handle */}
-              <div
-                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                onClick={() => setMobileSheetMode('hidden')}
-                onTouchStart={(e) => {
-                  const startY = e.touches[0].clientY;
-                  const onMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 40) {
-                      setMobileSheetMode('hidden');
-                      window.removeEventListener('touchmove', onMove);
-                    }
-                  };
-                  window.addEventListener('touchmove', onMove, { passive: true });
-                  const cleanup = () => {
-                    window.removeEventListener('touchmove', onMove);
-                  };
-                  window.addEventListener('touchend', cleanup, { once: true });
+              <MobileDrawer
+                side={rightDrawerOpen ? 'right' : 'left'}
+                isOpen={leftDrawerOpen || rightDrawerOpen}
+                drawerHeight={drawerHeight}
+                snapPoints={drawerSnapPoints}
+                onHeightChange={setMobileDrawerHeight}
+                onClose={closeMobileDrawers}
+                activeTab={activeMobileTab}
+                onTabChange={(tab) => {
+                  if (rightDrawerOpen) {
+                    setRightDrawerTab(tab);
+                    setActiveTab(tab);
+                  } else {
+                    setLeftDrawerTab(tab);
+                    setActiveTab(tab);
+                  }
                 }}
+                selectedCount={selectedCount}
               >
-                <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
-              </div>
-
-              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
+                {leftDrawerOpen && leftDrawerTab === 'source' && (
+                  <SourcePanel {...sharedPanelProps} chrome={false} detailLevel="simple" />
                 )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+                {leftDrawerOpen && leftDrawerTab === 'layers' && (
+                  <LayersPanel {...sharedPanelProps} chrome={false} detailLevel="simple" />
                 )}
-              </div>
+                {rightDrawerOpen && rightDrawerTab === 'badges' && (
+                  <BadgesPanel {...sharedInspectorProps} detailLevel="simple" />
+                )}
+                {rightDrawerOpen && rightDrawerTab === 'selection' && (
+                  <SelectionPanel {...sharedInspectorProps} detailLevel="simple" />
+                )}
+              </MobileDrawer>
             </div>
           )}
         </div>
 
         {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-        />
+        {!isFullscreen && (
+          <MobileDock
+            active={activeDockItem}
+            selectedCount={selectedCount}
+            onSource={() =>
+              leftDrawerOpen && leftDrawerTab === 'source'
+                ? closeMobileDrawers()
+                : openLeftDrawer('source')
+            }
+            onLayers={() =>
+              leftDrawerOpen && leftDrawerTab === 'layers'
+                ? closeMobileDrawers()
+                : openLeftDrawer('layers')
+            }
+            onCanvas={() => {
+              closeMobileDrawers();
+              clearSelection();
+            }}
+            onBadges={() =>
+              rightDrawerOpen && rightDrawerTab === 'badges'
+                ? closeMobileDrawers()
+                : openRightDrawer('badges')
+            }
+            onSelection={() =>
+              rightDrawerOpen && rightDrawerTab === 'selection'
+                ? closeMobileDrawers()
+                : openRightDrawer('selection')
+            }
+            onResetView={dispatchResetView}
+            onToggleGrid={() => toggleViewOption('showGrid')}
+            onToggleSafeArea={() => toggleViewOption('showSafeArea')}
+          />
+        )}
 
         {/* Zoom + fullscreen overlay — always visible */}
         <ZoomOverlay
