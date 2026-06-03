@@ -52,6 +52,7 @@ interface Props {
   onDuplicate?: (id: RatingType) => void;
   onResetBadge: (id: LayerTargetId) => void;
   onDelete: (id: LayerTargetId) => void;
+  isMobile?: boolean;
 }
 
 const ContextMenu: React.FC<Props> = memo(
@@ -72,6 +73,7 @@ const ContextMenu: React.FC<Props> = memo(
     onDuplicate,
     onResetBadge,
     onDelete,
+    isMobile = false,
   }) => {
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -145,11 +147,22 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          { id: 'hide', label: isLogo ? 'Hide Layer' : 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
+          {
+            id: 'hide',
+            label: isLogo ? 'Hide Layer' : 'Hide Badge',
+            icon: <EyeOff size={12} />,
+            shortcut: 'H',
+          },
           { id: 'showall', label: 'Show All Badges', icon: <Eye size={12} /> },
           {
             id: 'select',
-            label: isSelected ? (isLogo ? 'Deselect Layer' : 'Deselect Badge') : isLogo ? 'Select Layer' : 'Select Badge',
+            label: isSelected
+              ? isLogo
+                ? 'Deselect Layer'
+                : 'Deselect Badge'
+              : isLogo
+                ? 'Select Layer'
+                : 'Select Badge',
             icon: isSelected ? <Square size={12} /> : <MousePointer2 size={12} />,
           },
           { id: 'selectall', label: 'Select All', icon: <CheckSquare size={12} /> },
@@ -163,9 +176,16 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          ...(!isLogo && onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
+          ...(!isLogo && onDuplicate
+            ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }]
+            : []),
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
-          { id: 'delete', label: isLogo ? 'Hide Logo Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
+          {
+            id: 'delete',
+            label: isLogo ? 'Hide Logo Layer' : 'Delete Badge',
+            icon: <Trash2 size={12} />,
+            danger: true,
+          },
         ],
       },
     ];
@@ -200,7 +220,9 @@ const ContextMenu: React.FC<Props> = memo(
           exec(() => onDeselectAll());
           break;
         case 'dup':
-          exec(() => onDuplicate?.(id));
+          exec(() => {
+            if (id !== 'logo') onDuplicate?.(id);
+          });
           break;
         case 'reset':
           exec(() => onResetBadge(id));
@@ -218,19 +240,25 @@ const ContextMenu: React.FC<Props> = memo(
         aria-label="Badge context menu"
         style={{
           position: 'fixed',
-          top: pos.y,
-          left: pos.x,
+          ...(isMobile
+            ? {
+                bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 8px)',
+                left: 8,
+                right: 8,
+                width: 'auto',
+              }
+            : { top: pos.y, left: pos.x }),
           zIndex: 9000,
           minWidth: 200,
           background: 'rgba(14,13,11,0.92)',
           backdropFilter: 'blur(20px) saturate(1.4)',
           WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
           border: '1px solid rgba(196,124,46,0.2)',
-          borderRadius: 10,
+          borderRadius: isMobile ? 16 : 10,
           boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(196,124,46,0.06)',
           padding: '4px',
           animation: 'ctx-enter 0.12s cubic-bezier(0.16,1,0.3,1)',
-          transformOrigin: 'top left',
+          transformOrigin: isMobile ? 'bottom center' : 'top left',
         }}
       >
         <style>{`

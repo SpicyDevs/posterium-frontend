@@ -546,3 +546,48 @@
     padding-left: 3px;
   }
 }
+
+@layer utilities {
+  @keyframes panel-title-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes zoom-pill-tap {
+    0% {
+      transform: translateX(-50%) scale(1);
+    }
+    50% {
+      transform: translateX(-50%) scale(0.88);
+    }
+    100% {
+      transform: translateX(-50%) scale(1);
+    }
+  }
+
+  @keyframes dock-popover-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.8) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
+    }
+  }
+
+  @keyframes badge-pop {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+}

@@ -26,6 +26,7 @@ const ZoomOverlay = memo<{
     onToggleViewOption,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    if (isMobile) return null;
     const buttonStyle = {
       color: 'var(--film-text-dim)',
       cursor: 'pointer',

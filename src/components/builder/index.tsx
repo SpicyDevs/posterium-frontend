@@ -1,6 +1,5 @@
 // src/components/builder/index.tsx
 import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
@@ -29,7 +28,19 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import MobileDock from './components/layout/MobileDock';
+import MobileToolbar from './components/mobile/MobileToolbar';
+import MobileDrawer from './components/mobile/MobileDrawer';
+import MobileDock from './components/mobile/MobileDock';
+import CanvasHandles from './components/mobile/CanvasHandles';
+import ZoomPill from './components/mobile/ZoomPill';
+import LongPressMenu from './components/mobile/LongPressMenu';
+import {
+  getDefaultDrawerHeight,
+  vibrate,
+  type LeftMobileTab,
+  type RightMobileTab,
+  type MobileDrawerSide,
+} from './components/mobile/utils';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -98,8 +109,6 @@ const StudioLayout: React.FC<{
   const {
     activeTab,
     setActiveTab,
-    mobileSheetMode,
-    setMobileSheetMode,
     selectedIds,
     selectedLogo,
     selectedMinimalElements,
@@ -122,6 +131,14 @@ const StudioLayout: React.FC<{
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobileExportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobileBodyGridRef = useRef<HTMLDivElement>(null);
+  const [mobileOpenSide, setMobileOpenSide] = useState<MobileDrawerSide | null>(null);
+  const [leftDrawerTab, setLeftDrawerTab] = useState<LeftMobileTab>('source');
+  const [rightDrawerTab, setRightDrawerTab] = useState<RightMobileTab>('badges');
+  const [drawerHeight, setDrawerHeight] = useState(0);
+  const [drawerTransitionLock, setDrawerTransitionLock] = useState(false);
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   useEffect(() => {
@@ -147,6 +164,87 @@ const StudioLayout: React.FC<{
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
   }, []);
+
+  const animateMobileDrawer = useCallback((height: number, duration = 320) => {
+    const grid = mobileBodyGridRef.current;
+    if (grid) {
+      grid.style.transition = `grid-template-rows ${duration}ms cubic-bezier(0.16,1,0.3,1)`;
+      grid.style.setProperty('--drawer-height', `${height}px`);
+    }
+    setDrawerHeight(height);
+    window.setTimeout(() => {
+      if (grid) grid.style.transition = 'none';
+      if (height === 0) vibrate(4);
+    }, duration);
+  }, []);
+
+  const closeMobileDrawer = useCallback(
+    (duration = 220) => {
+      setDrawerTransitionLock(true);
+      animateMobileDrawer(0, duration);
+      window.setTimeout(() => {
+        setMobileOpenSide(null);
+        setDrawerTransitionLock(false);
+      }, duration);
+    },
+    [animateMobileDrawer]
+  );
+
+  const openMobileDrawer = useCallback(
+    (side: MobileDrawerSide, tab: LeftMobileTab | RightMobileTab) => {
+      if (drawerTransitionLock) return;
+      const openNow = () => {
+        if (side === 'left') setLeftDrawerTab(tab as LeftMobileTab);
+        else setRightDrawerTab(tab as RightMobileTab);
+        setMobileOpenSide(side);
+        requestAnimationFrame(() => animateMobileDrawer(getDefaultDrawerHeight(), 320));
+      };
+      if (mobileOpenSide && mobileOpenSide !== side) {
+        setDrawerTransitionLock(true);
+        animateMobileDrawer(0, 200);
+        window.setTimeout(() => {
+          setDrawerTransitionLock(false);
+          openNow();
+        }, 120);
+        return;
+      }
+      openNow();
+    },
+    [animateMobileDrawer, drawerTransitionLock, mobileOpenSide]
+  );
+
+  const toggleMobileTab = useCallback(
+    (side: MobileDrawerSide, tab: LeftMobileTab | RightMobileTab) => {
+      if (mobileOpenSide === side) {
+        const current = side === 'left' ? leftDrawerTab : rightDrawerTab;
+        if (current === tab) closeMobileDrawer();
+        else {
+          if (side === 'left') setLeftDrawerTab(tab as LeftMobileTab);
+          else setRightDrawerTab(tab as RightMobileTab);
+          setActiveTab(tab as BuilderPanelId);
+          vibrate(8);
+        }
+        return;
+      }
+      openMobileDrawer(side, tab);
+      setActiveTab(tab as BuilderPanelId);
+    },
+    [
+      closeMobileDrawer,
+      leftDrawerTab,
+      mobileOpenSide,
+      openMobileDrawer,
+      rightDrawerTab,
+      setActiveTab,
+    ]
+  );
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    setMobileOpenSide(null);
+    setDrawerHeight(0);
+    mobileBodyGridRef.current?.style.setProperty('--drawer-height', '0px');
+  }, [isDesktop]);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
@@ -272,12 +370,20 @@ const StudioLayout: React.FC<{
     [setConfig]
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback(
     (id: RatingType, multi: boolean) => {
       handleSelection(id, multi);
+      vibrate(10);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setRightDrawerTab('selection');
+        setActiveTab('selection');
+        if (mobileOpenSide !== 'right') {
+          setMobileOpenSide('right');
+          requestAnimationFrame(() => animateMobileDrawer(getDefaultDrawerHeight(), 320));
+        }
+      }
     },
-    [handleSelection]
+    [animateMobileDrawer, handleSelection, mobileOpenSide, setActiveTab]
   );
 
   const moveLayer = useCallback(
@@ -934,7 +1040,7 @@ const StudioLayout: React.FC<{
       `}</style>
 
       <div
-        className="builder-ui flex flex-col overflow-hidden"
+        className="builder-ui flex flex-col overflow-hidden max-lg:grid max-lg:grid-cols-1 max-lg:[grid-template-areas:'toolbar'_'body'_'dock'] max-lg:[grid-template-rows:48px_1fr_64px]"
         style={{
           height: '100dvh',
           background: 'var(--film-black)',
@@ -944,7 +1050,29 @@ const StudioLayout: React.FC<{
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
+        {!isFullscreen && (
+          <MobileToolbar
+            openSide={mobileOpenSide}
+            leftTab={leftDrawerTab}
+            rightTab={rightDrawerTab}
+            selectedIds={selectedIds}
+            selectedLogo={selectedLogo}
+            selectedMinimalElements={selectedMinimalElements}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onExport={() => setExportOpen((v) => !v)}
+            exportButtonRef={mobileExportBtnRef}
+          />
+        )}
+
+        {(isResetOpen ||
+          isImportOpen ||
+          shortcutsOpen ||
+          ctxMenu.visible ||
+          paletteOpen ||
+          exportOpen) && (
           <Suspense fallback={null}>
             {isResetOpen && (
               <ResetDialog
@@ -966,6 +1094,9 @@ const StudioLayout: React.FC<{
                 isOpen={shortcutsOpen}
                 onClose={() => setShortcutsOpen(false)}
               />
+            )}
+            {ctxMenu.visible && !isDesktop && (
+              <div className="fixed inset-0 z-[8998] bg-black/50" onClick={closeCtxMenu} />
             )}
             {ctxMenu.visible && (
               <ContextMenu
@@ -994,6 +1125,7 @@ const StudioLayout: React.FC<{
                 onDeselectAll={clearSelection}
                 onResetBadge={resetLayer}
                 onDelete={deleteLayer}
+                isMobile={!isDesktop}
               />
             )}
             {paletteOpen && (
@@ -1012,7 +1144,7 @@ const StudioLayout: React.FC<{
                 onExtensionChange={handleExtensionChange}
                 isOpen={exportOpen}
                 onClose={() => setExportOpen(false)}
-                anchorRef={exportBtnRef}
+                anchorRef={isDesktop ? exportBtnRef : mobileExportBtnRef}
               />
             )}
           </Suspense>
@@ -1021,7 +1153,7 @@ const StudioLayout: React.FC<{
         {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="hidden h-12 shrink-0 items-center z-30 relative lg:flex"
             style={{
               background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -1273,7 +1405,10 @@ const StudioLayout: React.FC<{
         )}
 
         {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+        <div
+          ref={mobileBodyGridRef}
+          className="flex flex-1 overflow-hidden relative flex-col lg:flex-row max-lg:[grid-area:body] max-lg:grid max-lg:grid-cols-1 max-lg:[grid-template-rows:1fr_var(--drawer-height)] max-lg:[--drawer-height:0px] max-lg:[will-change:grid-template-rows]"
+        >
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -1312,11 +1447,13 @@ const StudioLayout: React.FC<{
             id="main-canvas"
             role="main"
             aria-label="Poster canvas"
-            className="flex-1 relative overflow-hidden min-h-0"
+            className="flex-1 relative overflow-hidden min-h-0 max-lg:h-full max-lg:bg-[#111113]"
             style={{ background: '#111113' }}
             onClick={(e) => {
-              if (e.target === e.currentTarget) clearSelection();
-              if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
+              if (e.target === e.currentTarget) {
+                clearSelection();
+                vibrate(5);
+              }
             }}
           >
             <div
@@ -1360,6 +1497,13 @@ const StudioLayout: React.FC<{
                 }}
               />
             ))}
+            <CanvasHandles
+              leftOpen={mobileOpenSide === 'left'}
+              rightOpen={mobileOpenSide === 'right'}
+              onToggleLeft={() => toggleMobileTab('left', leftDrawerTab)}
+              onToggleRight={() => toggleMobileTab('right', rightDrawerTab)}
+            />
+            <ZoomPill onReset={dispatchResetView} />
           </main>
 
           {/* Right sidebar */}
@@ -1389,62 +1533,95 @@ const StudioLayout: React.FC<{
             </aside>
           )}
 
-          {/* Mobile Panel (In-flow flex item) */}
+          {/* Mobile drawer (in-flow grid row that compresses the canvas above it) */}
           {!isFullscreen && (
-            <div
-              className={clsx(
-                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
-                mobileSheetMode !== 'hidden'
-                  ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
-                  : 'h-0 border-t-0'
-              )}
+            <MobileDrawer
+              side={mobileOpenSide ?? 'left'}
+              isOpen={mobileOpenSide !== null}
+              drawerHeight={drawerHeight}
+              onHeightChange={setDrawerHeight}
+              onClose={() => closeMobileDrawer()}
+              activeTab={mobileOpenSide === 'right' ? rightDrawerTab : leftDrawerTab}
+              onTabChange={(tab) => {
+                if (mobileOpenSide === 'right') {
+                  setRightDrawerTab(tab as RightMobileTab);
+                  setActiveTab(tab as BuilderPanelId);
+                } else {
+                  setLeftDrawerTab(tab as LeftMobileTab);
+                  setActiveTab(tab as BuilderPanelId);
+                }
+              }}
+              selectedCount={
+                selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size
+              }
+              bodyGridRef={mobileBodyGridRef}
             >
-              {/* Swipe-down dismiss handle */}
-              <div
-                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                onClick={() => setMobileSheetMode('hidden')}
-                onTouchStart={(e) => {
-                  const startY = e.touches[0].clientY;
-                  const onMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 40) {
-                      setMobileSheetMode('hidden');
-                      window.removeEventListener('touchmove', onMove);
-                    }
-                  };
-                  window.addEventListener('touchmove', onMove, { passive: true });
-                  const cleanup = () => {
-                    window.removeEventListener('touchmove', onMove);
-                  };
-                  window.addEventListener('touchend', cleanup, { once: true });
-                }}
-              >
-                <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
-              </div>
-
-              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
-                )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-                )}
-              </div>
-            </div>
+              {mobileOpenSide === 'left' && leftDrawerTab === 'source' && (
+                <SourcePanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  chrome={false}
+                  detailLevel="simple"
+                />
+              )}
+              {mobileOpenSide === 'left' && leftDrawerTab === 'layers' && (
+                <LayersPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  chrome={false}
+                  detailLevel="simple"
+                />
+              )}
+              {mobileOpenSide === 'right' && rightDrawerTab === 'badges' && (
+                <BadgesPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  selectedLogo={selectedLogo}
+                  selectedMinimalElements={selectedMinimalElements}
+                  detailLevel="simple"
+                />
+              )}
+              {mobileOpenSide === 'right' && rightDrawerTab === 'selection' && (
+                <SelectionPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  selectedLogo={selectedLogo}
+                  selectedMinimalElements={selectedMinimalElements}
+                  detailLevel="simple"
+                />
+              )}
+            </MobileDrawer>
           )}
         </div>
 
         {/* Mobile dock */}
         <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+          openSide={mobileOpenSide}
+          leftTab={leftDrawerTab}
+          rightTab={rightDrawerTab}
+          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size}
+          onSource={() => toggleMobileTab('left', 'source')}
+          onLayers={() => toggleMobileTab('left', 'layers')}
+          onCanvas={() => {
+            closeMobileDrawer();
+            clearSelection();
+          }}
+          onBadges={() => toggleMobileTab('right', 'badges')}
+          onSelection={() => toggleMobileTab('right', 'selection')}
+          onCanvasLongPress={() => setQuickMenuOpen(true)}
+        />
+        <LongPressMenu
+          open={quickMenuOpen}
+          onClose={() => setQuickMenuOpen(false)}
+          onResetView={dispatchResetView}
+          onToggleGrid={() => toggleViewOption('showGrid')}
+          onToggleSafeArea={() => toggleViewOption('showSafeArea')}
         />
 
         {/* Zoom + fullscreen overlay — always visible */}
