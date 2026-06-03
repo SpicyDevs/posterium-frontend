@@ -74,11 +74,19 @@ const ContextMenu: React.FC<Props> = memo(
     onDelete,
   }) => {
     const menuRef = useRef<HTMLDivElement>(null);
+    const [isMobile, setIsMobile] = React.useState(false);
+
+    useEffect(() => {
+      const update = () => setIsMobile(window.innerWidth < 1024);
+      update();
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }, []);
 
     // Clamp position to viewport
     const [pos, setPos] = React.useState({ x: state.x, y: state.y });
     React.useEffect(() => {
-      if (!state.visible || !menuRef.current) return;
+      if (!state.visible || isMobile || !menuRef.current) return;
       const rect = menuRef.current.getBoundingClientRect();
       const vw = window.innerWidth,
         vh = window.innerHeight;
@@ -86,7 +94,7 @@ const ContextMenu: React.FC<Props> = memo(
         x: state.x + rect.width > vw ? vw - rect.width - 8 : state.x,
         y: state.y + rect.height > vh ? vh - rect.height - 8 : state.y,
       });
-    }, [state.visible, state.x, state.y]);
+    }, [state.visible, state.x, state.y, isMobile]);
 
     // Close on outside click / escape / scroll
     useEffect(() => {
@@ -212,25 +220,36 @@ const ContextMenu: React.FC<Props> = memo(
     };
 
     return (
+      <>
+        {isMobile && (
+          <button
+            aria-label="Dismiss context menu"
+            onClick={onClose}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 8998, border: 0 }}
+          />
+        )}
       <div
         ref={menuRef}
         role="menu"
         aria-label="Badge context menu"
         style={{
           position: 'fixed',
-          top: pos.y,
-          left: pos.x,
+          top: isMobile ? 'auto' : pos.y,
+          left: isMobile ? 8 : pos.x,
+          right: isMobile ? 8 : 'auto',
+          bottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom, 0px) + 8px)' : 'auto',
           zIndex: 9000,
-          minWidth: 200,
+          minWidth: isMobile ? 0 : 200,
+          width: isMobile ? 'auto' : undefined,
           background: 'rgba(14,13,11,0.92)',
           backdropFilter: 'blur(20px) saturate(1.4)',
           WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
           border: '1px solid rgba(196,124,46,0.2)',
-          borderRadius: 10,
+          borderRadius: isMobile ? 16 : 10,
           boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(196,124,46,0.06)',
           padding: '4px',
           animation: 'ctx-enter 0.12s cubic-bezier(0.16,1,0.3,1)',
-          transformOrigin: 'top left',
+          transformOrigin: isMobile ? 'bottom center' : 'top left',
         }}
       >
         <style>{`
@@ -352,6 +371,7 @@ const ContextMenu: React.FC<Props> = memo(
           </React.Fragment>
         ))}
       </div>
+      </>
     );
   }
 );

@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { RatingType } from '../types';
 
 type TabType = 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection';
-export type SheetMode = 'hidden' | 'half' | 'full';
 
 export interface ViewOptions {
   showSafeArea: boolean;
@@ -16,8 +15,6 @@ export type LiveRatings = Partial<Record<string, string>>;
 interface EditorContextType {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-  mobileSheetMode: SheetMode;
-  setMobileSheetMode: (mode: SheetMode) => void;
   selectedIds: Set<RatingType>;
   selectedLogo: boolean;
   selectedMinimalElements: Set<string>;
@@ -48,7 +45,6 @@ const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTabState] = useState<TabType>('source');
-  const [mobileSheetMode, setMobileSheetMode] = useState<SheetMode>('hidden');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
   const [selectedLogo, setSelectedLogo] = useState(false);
   const [selectedMinimalElements, setSelectedMinimalElements] = useState<Set<string>>(new Set());
@@ -66,11 +62,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const setActiveTab = useCallback((tab: TabType) => {
     setActiveTabState(tab);
-    setMobileSheetMode((prev) => {
-      if (typeof window !== 'undefined' && window.innerWidth < 1024 && prev === 'hidden')
-        return 'half';
-      return prev;
-    });
   }, []);
 
   const handleSelection = useCallback(
@@ -173,8 +164,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         activeTab,
         setActiveTab,
-        mobileSheetMode,
-        setMobileSheetMode,
         selectedIds,
         selectedLogo,
         selectedMinimalElements,
