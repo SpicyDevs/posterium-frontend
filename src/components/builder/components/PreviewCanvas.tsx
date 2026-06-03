@@ -59,7 +59,6 @@ const PreviewCanvas: React.FC<Props> = ({
 }) => {
   const {
     viewOptions,
-    mobileSheetMode,
     clearSelection,
     liveRatings,
     liveTitle,
@@ -202,18 +201,26 @@ const PreviewCanvas: React.FC<Props> = ({
   const lastPan = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    let resizeRaf: number | null = null;
     const handleResize = () => {
-      if (!containerRef.current) return;
-      const padding = 40;
-      const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
-      const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
-      setAutoScale(Math.min(scaleX, scaleY, 1));
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null;
+        if (!containerRef.current) return;
+        const padding = 40;
+        const scaleX = (containerRef.current.clientWidth - padding) / CANVAS_WIDTH;
+        const scaleY = (containerRef.current.clientHeight - padding) / CANVAS_HEIGHT;
+        setAutoScale(Math.min(scaleX, scaleY, 1));
+      });
     };
     handleResize();
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, [mobileSheetMode]);
+    return () => {
+      observer.disconnect();
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+    };
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -362,6 +369,10 @@ const PreviewCanvas: React.FC<Props> = ({
     window.addEventListener('canvas-zoom', h);
     return () => window.removeEventListener('canvas-zoom', h);
   }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('canvas-view-state', { detail: { zoom, pan } }));
+  }, [zoom, pan]);
 
   const cleanPosterUrl = useMemo(() => {
     const id = config.imdbId || config.tmdbId;

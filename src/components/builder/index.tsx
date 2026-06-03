@@ -1,6 +1,5 @@
 // src/components/builder/index.tsx
 import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import clsx from 'clsx';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
@@ -29,7 +28,13 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import MobileDock from './components/layout/MobileDock';
+import MobileToolbar from './components/mobile/MobileToolbar';
+import MobileDrawer from './components/mobile/MobileDrawer';
+import MobileDock from './components/mobile/MobileDock';
+import CanvasHandles from './components/mobile/CanvasHandles';
+import ZoomPill from './components/mobile/ZoomPill';
+import LongPressMenu from './components/mobile/LongPressMenu';
+import { DEFAULT_ANIMATION, getDefaultDrawerHeight, type LeftDrawerTab, type RightDrawerTab, vibrate } from './components/mobile/utils';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -98,8 +103,6 @@ const StudioLayout: React.FC<{
   const {
     activeTab,
     setActiveTab,
-    mobileSheetMode,
-    setMobileSheetMode,
     selectedIds,
     selectedLogo,
     selectedMinimalElements,
@@ -147,6 +150,67 @@ const StudioLayout: React.FC<{
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
   }, []);
+
+  const mobileGridRef = useRef<HTMLDivElement>(null);
+  const mobileExportBtnRef = useRef<HTMLButtonElement>(null);
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [leftDrawerTab, setLeftDrawerTab] = useState<LeftDrawerTab>('source');
+  const [rightDrawerTab, setRightDrawerTab] = useState<RightDrawerTab>('badges');
+  const [drawerHeight, setDrawerHeight] = useState(0);
+  const [mountedDrawer, setMountedDrawer] = useState<'left' | 'right' | null>(null);
+  const [drawerTransitionLock, setDrawerTransitionLock] = useState(false);
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+
+  const applyDrawerHeight = useCallback((height: number, transition = 'none') => {
+    setDrawerHeight(height);
+    const grid = mobileGridRef.current;
+    if (!grid) return;
+    grid.style.transition = transition;
+    grid.style.setProperty('--drawer-height', `${height}px`);
+    if (transition !== 'none') {
+      window.setTimeout(() => {
+        if (grid) grid.style.transition = 'none';
+      }, 390);
+    }
+  }, []);
+
+  const snapDrawerTo = useCallback((height: number) => {
+    applyDrawerHeight(height, DEFAULT_ANIMATION);
+  }, [applyDrawerHeight]);
+
+  const closeMobileDrawers = useCallback(() => {
+    setLeftDrawerOpen(false);
+    setRightDrawerOpen(false);
+    setDrawerTransitionLock(true);
+    applyDrawerHeight(0, 'grid-template-rows 0.2s cubic-bezier(0.16, 1, 0.3, 1)');
+    window.setTimeout(() => {
+      setMountedDrawer(null);
+      setDrawerTransitionLock(false);
+      vibrate(4);
+    }, 220);
+  }, [applyDrawerHeight]);
+
+  const openMobileDrawer = useCallback((side: 'left' | 'right', tab?: LeftDrawerTab | RightDrawerTab) => {
+    if (drawerTransitionLock) return;
+    if (side === 'left') {
+      if (tab) setLeftDrawerTab(tab as LeftDrawerTab);
+      setRightDrawerOpen(false);
+      setMountedDrawer('left');
+      setLeftDrawerOpen(true);
+    } else {
+      if (tab) setRightDrawerTab(tab as RightDrawerTab);
+      setLeftDrawerOpen(false);
+      setMountedDrawer('right');
+      setRightDrawerOpen(true);
+    }
+    applyDrawerHeight(getDefaultDrawerHeight(), 'grid-template-rows 0.32s cubic-bezier(0.16, 1, 0.3, 1)');
+    window.setTimeout(() => vibrate(4), 320);
+  }, [applyDrawerHeight, drawerTransitionLock]);
+
+  useEffect(() => {
+    if (isDesktop) closeMobileDrawers();
+  }, [isDesktop, closeMobileDrawers]);
 
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
@@ -272,12 +336,16 @@ const StudioLayout: React.FC<{
     [setConfig]
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback(
     (id: RatingType, multi: boolean) => {
       handleSelection(id, multi);
+      vibrate(10);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        if (!rightDrawerOpen) openMobileDrawer('right', 'selection');
+        else if (rightDrawerTab === 'badges') setRightDrawerTab('selection');
+      }
     },
-    [handleSelection]
+    [handleSelection, openMobileDrawer, rightDrawerOpen, rightDrawerTab]
   );
 
   const moveLayer = useCallback(
@@ -914,6 +982,28 @@ const StudioLayout: React.FC<{
     }
   };
 
+  const renderMobileDrawerContent = () => {
+    if (mountedDrawer === 'left') {
+      const simplePanelProps = { ...sharedPanelProps, detailLevel: 'simple' as const };
+      return leftDrawerTab === 'source' ? (
+        <SourcePanel {...simplePanelProps} chrome={false} />
+      ) : (
+        <LayersPanel {...simplePanelProps} chrome={false} />
+      );
+    }
+    if (mountedDrawer === 'right') {
+      const simpleInspectorProps = { ...sharedInspectorProps, detailLevel: 'simple' as const };
+      return rightDrawerTab === 'badges' ? (
+        <BadgesPanel {...simpleInspectorProps} />
+      ) : (
+        <SelectionPanel {...simpleInspectorProps} />
+      );
+    }
+    return null;
+  };
+
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0);
+
   return (
     <>
       <a
@@ -931,10 +1021,59 @@ const StudioLayout: React.FC<{
         }
         .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
         .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
+        @keyframes panel-title-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoom-pill-tap { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(0.88); } 100% { transform: translateX(-50%) scale(1); } }
+        @keyframes mobile-popover-in { from { opacity: 0; transform: translateX(-50%) scale(0.8) translateY(8px); } to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); } }
+        @keyframes mobile-count-in { from { transform: scale(0); } to { transform: scale(1); } }
+        @media (max-width: 1023px) {
+          .mobile-builder-shell { display: grid; grid-template-rows: 48px 1fr 64px; grid-template-areas: "toolbar" "body" "dock"; height: 100dvh; }
+          .mobile-body-grid { display: grid !important; grid-template-rows: minmax(0, 1fr) var(--drawer-height, 0px); grid-template-columns: 1fr; will-change: grid-template-rows; min-height: 0; }
+          #main-canvas { grid-row: 1; width: 100%; height: 100%; outline: 2px solid ${selectedIds.size + (selectedLogo ? 1 : 0) > 0 ? 'rgba(196,124,46,0.3)' : 'transparent'}; outline-offset: -2px; transition: outline-color 0.2s ease; }
+          .mobile-toolbar { position: relative; z-index: 50; height: 48px; background: rgba(7,7,6,0.97); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(196,124,46,0.1); }
+          .mobile-toolbar-ambient { position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; pointer-events: none; z-index: 1; background: linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent); }
+          .mobile-toolbar-row { height: 48px; display: flex; align-items: center; gap: 6px; padding: 0 10px; }
+          .mobile-brand-mark { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(196,124,46,0.2); background: rgba(196,124,46,0.08); color: var(--film-amber); font-size: 16px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+          .mobile-brand-mark:active { background: rgba(196,124,46,0.15); }
+          .mobile-panel-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 8px; animation: panel-title-in 0.12s ease forwards; }
+          .mobile-panel-title-main { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--film-cream); font-family: Syne, sans-serif; }
+          .mobile-panel-title-sub { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.08em; color: rgba(140,130,112,0.45); white-space: nowrap; }
+          .mobile-toolbar-actions { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+          .mobile-toolbar-action, .mobile-export-button { width: 36px; height: 36px; padding: 2px; border: 1px solid transparent; background: transparent; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+          .mobile-toolbar-action-inner { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: transform 0.12s ease; }
+          .mobile-toolbar-action:active .mobile-toolbar-action-inner, .mobile-export-button:active .mobile-toolbar-action-inner { transform: scale(0.88); background: rgba(255,255,255,0.06); }
+          .mobile-toolbar-divider { width: 1px; height: 16px; background: rgba(196,124,46,0.12); margin: 0 2px; }
+          .mobile-export-button .mobile-toolbar-action-inner { background: rgba(196,124,46,0.12); border: 1px solid rgba(196,124,46,0.25); color: var(--film-amber); }
+          .mobile-export-button:active .mobile-toolbar-action-inner { background: rgba(196,124,46,0.2); }
+          .mobile-canvas-handle { position: absolute; top: 50%; z-index: 20; width: 24px; height: 72px; transform: translateY(-50%); background: rgba(10,9,8,0.92); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border: 1px solid rgba(196,124,46,0.2); display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; color: rgba(196,124,46,0.55); }
+          .mobile-canvas-handle-left { left: 0; border-left: none; border-radius: 0 10px 10px 0; box-shadow: 4px 0 16px rgba(0,0,0,0.4); }
+          .mobile-canvas-handle-right { right: 0; border-right: none; border-radius: 10px 0 0 10px; box-shadow: -4px 0 16px rgba(0,0,0,0.4); }
+          .mobile-canvas-handle.is-pressed, .mobile-canvas-handle:active { background: rgba(196,124,46,0.12); color: rgba(196,124,46,0.9); }
+          .mobile-handle-dots { display: flex; flex-direction: column; gap: 4px; } .mobile-handle-dots i { width: 3px; height: 3px; border-radius: 50%; background: rgba(196,124,46,0.3); }
+          .mobile-handle-icon { transition: color 0.2s ease; }
+          .mobile-zoom-pill { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 30; height: 26px; padding: 0 10px; border-radius: 13px; background: rgba(10,9,8,0.9); backdrop-filter: blur(12px); border: 1px solid rgba(196,124,46,0.18); box-shadow: 0 2px 12px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 6px; color: rgba(196,124,46,0.6); font: 500 9px 'JetBrains Mono', monospace; letter-spacing: 0.06em; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+          .mobile-zoom-pill svg { color: rgba(196,124,46,0.5); } .mobile-zoom-pill.is-visible { opacity: 1; pointer-events: auto; } .mobile-zoom-pill.is-pulsing { animation: zoom-pill-tap 0.2s ease; }
+          .mobile-drawer { grid-row: 2; position: relative; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; background: rgba(9,8,7,0.97); backdrop-filter: blur(28px) saturate(1.6); -webkit-backdrop-filter: blur(28px) saturate(1.6); border-top: 1px solid rgba(196,124,46,0.22); border-radius: 18px 18px 0 0; box-shadow: 0 -12px 60px rgba(0,0,0,0.7), 0 -1px 0 rgba(196,124,46,0.08); }
+          .mobile-drawer-grip { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10; width: 80px; height: 24px; background: transparent; touch-action: none; display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; }
+          .mobile-drawer-grip span { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); transition: width 0.15s ease, background 0.15s ease; } .mobile-drawer.is-dragging .mobile-drawer-grip span { width: 48px; background: rgba(255,255,255,0.35); }
+          .mobile-drawer-header { height: 68px; flex-shrink: 0; display: flex; align-items: center; padding: 20px 12px 0 16px; border-bottom: 1px solid rgba(196,124,46,0.08); touch-action: none; }
+          .mobile-drawer-tabs { flex: 1; display: flex; align-items: center; height: 100%; min-width: 0; } .mobile-drawer-tabs button { flex: 1; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; color: rgba(140,130,112,0.45); font: 700 10px Syne, sans-serif; letter-spacing: 0.1em; } .mobile-drawer-tabs button.is-active { color: var(--film-cream); }
+          .mobile-drawer-tabs button i { position: absolute; bottom: 0; left: 20%; width: 60%; height: 2px; opacity: 0; background: linear-gradient(90deg, transparent, var(--film-amber), transparent); } .mobile-drawer-tabs button.is-active i { opacity: 1; } .mobile-drawer-tabs b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: rgba(196,124,46,0.9); color: #070706; font: 700 8px 'JetBrains Mono', monospace; }
+          .mobile-drawer-icon-button { width: 28px; height: 28px; margin-left: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: rgba(140,130,112,0.5); display: grid; place-items: center; } .mobile-drawer-icon-button:active { color: rgba(196,124,46,0.8); background: rgba(196,124,46,0.08); }
+          .mobile-drawer-snap-dots { width: 16px; padding: 2px; margin-right: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; } .mobile-drawer-snap-dots button { width: 10px; height: 10px; display: grid; place-items: center; } .mobile-drawer-snap-dots button::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: rgba(196,124,46,0.3); } .mobile-drawer-snap-dots button.is-active::after { background: rgba(196,124,46,0.9); }
+          .mobile-drawer-content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; touch-action: pan-y; scrollbar-width: thin; scrollbar-color: rgba(196,124,46,0.15) transparent; padding-bottom: 24px; transition: opacity 0.12s ease; } .mobile-drawer-content.is-fading { opacity: 0; } .mobile-drawer-content-inner { animation: panel-title-in 0.12s ease forwards; }
+          .mobile-dock { position: relative; z-index: 50; height: 64px; min-height: 64px; padding-bottom: env(safe-area-inset-bottom,0px); background: rgba(7,7,6,0.98); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border-top: 1px solid rgba(196,124,46,0.12); box-shadow: 0 -4px 32px rgba(0,0,0,0.5), 0 -1px 0 rgba(196,124,46,0.06); display: flex; align-items: stretch; }
+          .mobile-dock-active-line { position: absolute; top: -1px; width: 32px; height: 2px; background: var(--film-amber); border-radius: 0 0 2px 2px; transition: left 0.28s cubic-bezier(0.4,0,0.2,1); z-index: 1; }
+          .mobile-dock-item { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; touch-action: manipulation; color: rgba(140,130,112,0.45); } .mobile-dock-item.is-active { color: var(--film-amber); }
+          .mobile-dock-item-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); } .mobile-dock-item:active .mobile-dock-item-inner { transform: scale(0.88); transition: transform 0.08s ease; }
+          .mobile-dock-item-inner span { margin-top: 2px; line-height: 1; font: 700 8px Syne, sans-serif; letter-spacing: 0.1em; } .mobile-dock-center-bg { position: absolute; inset: 8px 4px; border-radius: 10px; background: transparent; transition: background 0.2s ease; } .mobile-dock-item.is-center.is-active .mobile-dock-center-bg { background: rgba(196,124,46,0.06); }
+          .mobile-dock-count { position: absolute; top: 8px; right: calc(50% - 14px); width: 16px; height: 16px; border-radius: 50%; background: rgba(196,124,46,0.95); border: 1.5px solid rgba(7,7,6,0.8); color: #070706; display: grid; place-items: center; font: 800 8px 'JetBrains Mono', monospace; animation: mobile-count-in 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+          .mobile-longpress-scrim { position: fixed; inset: 0; z-index: 8997; background: transparent; } .mobile-longpress-menu { position: fixed; z-index: 8998; bottom: calc(64px + env(safe-area-inset-bottom,0px) + 8px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; border-radius: 12px; background: rgba(9,8,7,0.95); border: 1px solid rgba(196,124,46,0.18); box-shadow: 0 12px 36px rgba(0,0,0,0.55); animation: mobile-popover-in 0.2s cubic-bezier(0.16,1,0.3,1); } .mobile-longpress-menu button { width: 36px; height: 36px; border-radius: 8px; background: rgba(14,13,11,0.95); border: 1px solid rgba(196,124,46,0.2); color: var(--film-amber); display: grid; place-items: center; }
+        }
+
       `}</style>
 
       <div
-        className="builder-ui flex flex-col overflow-hidden"
+        className="builder-ui mobile-builder-shell overflow-hidden"
         style={{
           height: '100dvh',
           background: 'var(--film-black)',
@@ -943,6 +1082,24 @@ const StudioLayout: React.FC<{
         }}
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
+
+        {!isFullscreen && (
+          <MobileToolbar
+            leftOpen={leftDrawerOpen}
+            rightOpen={rightDrawerOpen}
+            leftTab={leftDrawerTab}
+            rightTab={rightDrawerTab}
+            selectedIds={selectedIds}
+            selectedLogo={selectedLogo}
+            config={config}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onExport={() => setExportOpen((v) => !v)}
+            exportButtonRef={mobileExportBtnRef}
+          />
+        )}
 
         {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
           <Suspense fallback={null}>
@@ -1012,7 +1169,7 @@ const StudioLayout: React.FC<{
                 onExtensionChange={handleExtensionChange}
                 isOpen={exportOpen}
                 onClose={() => setExportOpen(false)}
-                anchorRef={exportBtnRef}
+                anchorRef={(isDesktop ? exportBtnRef : mobileExportBtnRef) as React.RefObject<HTMLButtonElement>}
               />
             )}
           </Suspense>
@@ -1021,7 +1178,7 @@ const StudioLayout: React.FC<{
         {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="h-12 shrink-0 items-center z-30 relative hidden lg:flex"
             style={{
               background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -1273,7 +1430,7 @@ const StudioLayout: React.FC<{
         )}
 
         {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+        <div ref={mobileGridRef} className="mobile-body-grid flex flex-1 overflow-hidden relative flex-col lg:flex-row" style={{ gridArea: 'body', ['--drawer-height' as string]: `${drawerHeight}px` }}>
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -1315,8 +1472,10 @@ const StudioLayout: React.FC<{
             className="flex-1 relative overflow-hidden min-h-0"
             style={{ background: '#111113' }}
             onClick={(e) => {
-              if (e.target === e.currentTarget) clearSelection();
-              if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
+              if (e.target === e.currentTarget) {
+                clearSelection();
+                vibrate(5);
+              }
             }}
           >
             <div
@@ -1331,6 +1490,23 @@ const StudioLayout: React.FC<{
 
             {/* Sidebar Canvas Toggles removed — now in navbar */}
 
+            {!isFullscreen && (
+              <CanvasHandles
+                leftOpen={leftDrawerOpen}
+                rightOpen={rightDrawerOpen}
+                onToggleLeft={() => {
+                  if (leftDrawerOpen) closeMobileDrawers();
+                  else openMobileDrawer('left', leftDrawerTab);
+                }}
+                onToggleRight={() => {
+                  if (rightDrawerOpen) closeMobileDrawers();
+                  else openMobileDrawer('right', rightDrawerTab);
+                }}
+                onCloseLeft={closeMobileDrawers}
+                onCloseRight={closeMobileDrawers}
+              />
+            )}
+
             <PreviewCanvas
               config={config}
               setConfig={setConfig}
@@ -1340,6 +1516,8 @@ const StudioLayout: React.FC<{
               onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
             {/* Film corner accents */}
+            {!isFullscreen && <ZoomPill onResetView={dispatchResetView} />}
+
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
               <div
                 key={c}
@@ -1389,62 +1567,65 @@ const StudioLayout: React.FC<{
             </aside>
           )}
 
-          {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
-            <div
-              className={clsx(
-                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
-                mobileSheetMode !== 'hidden'
-                  ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
-                  : 'h-0 border-t-0'
-              )}
+          {/* Mobile Drawer (in-flow grid row) */}
+          {!isFullscreen && mountedDrawer && (
+            <MobileDrawer
+              side={mountedDrawer}
+              isOpen={mountedDrawer === 'left' ? leftDrawerOpen : rightDrawerOpen}
+              drawerHeight={drawerHeight}
+              onHeightChange={(height) => applyDrawerHeight(height, 'none')}
+              onSnap={snapDrawerTo}
+              onClose={closeMobileDrawers}
+              activeTab={mountedDrawer === 'left' ? leftDrawerTab : rightDrawerTab}
+              onTabChange={(tab) => {
+                if (mountedDrawer === 'left') setLeftDrawerTab(tab as LeftDrawerTab);
+                else setRightDrawerTab(tab as RightDrawerTab);
+              }}
+              selectedCount={selectedCount}
             >
-              {/* Swipe-down dismiss handle */}
-              <div
-                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                onClick={() => setMobileSheetMode('hidden')}
-                onTouchStart={(e) => {
-                  const startY = e.touches[0].clientY;
-                  const onMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 40) {
-                      setMobileSheetMode('hidden');
-                      window.removeEventListener('touchmove', onMove);
-                    }
-                  };
-                  window.addEventListener('touchmove', onMove, { passive: true });
-                  const cleanup = () => {
-                    window.removeEventListener('touchmove', onMove);
-                  };
-                  window.addEventListener('touchend', cleanup, { once: true });
-                }}
-              >
-                <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
-              </div>
-
-              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
-                )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-                )}
-              </div>
-            </div>
+              {renderMobileDrawerContent()}
+            </MobileDrawer>
           )}
         </div>
 
         {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
+        {!isFullscreen && (
+          <MobileDock
+            leftOpen={leftDrawerOpen}
+            rightOpen={rightDrawerOpen}
+            leftTab={leftDrawerTab}
+            rightTab={rightDrawerTab}
+            selectedCount={selectedCount}
+            onSource={() => {
+              if (leftDrawerOpen && leftDrawerTab === 'source') closeMobileDrawers();
+              else if (leftDrawerOpen) setLeftDrawerTab('source');
+              else openMobileDrawer('left', 'source');
+            }}
+            onLayers={() => {
+              if (leftDrawerOpen && leftDrawerTab === 'layers') closeMobileDrawers();
+              else if (leftDrawerOpen) setLeftDrawerTab('layers');
+              else openMobileDrawer('left', 'layers');
+            }}
+            onCanvas={() => { closeMobileDrawers(); clearSelection(); }}
+            onBadges={() => {
+              if (rightDrawerOpen && rightDrawerTab === 'badges') closeMobileDrawers();
+              else if (rightDrawerOpen) setRightDrawerTab('badges');
+              else openMobileDrawer('right', 'badges');
+            }}
+            onSelect={() => {
+              if (rightDrawerOpen && rightDrawerTab === 'selection') closeMobileDrawers();
+              else if (rightDrawerOpen) setRightDrawerTab('selection');
+              else openMobileDrawer('right', 'selection');
+            }}
+            onCanvasLongPress={() => setQuickMenuOpen(true)}
+          />
+        )}
+        <LongPressMenu
+          open={quickMenuOpen}
+          onClose={() => setQuickMenuOpen(false)}
+          onResetView={dispatchResetView}
+          onToggleGrid={() => toggleViewOption('showGrid')}
+          onToggleSafeArea={() => toggleViewOption('showSafeArea')}
         />
 
         {/* Zoom + fullscreen overlay — always visible */}
