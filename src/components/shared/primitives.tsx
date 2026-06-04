@@ -161,13 +161,13 @@ export const MarqueeTicker = memo<MarqueeTickerProps>(({ items, speed = 28 }) =>
             className="poster-font"
             style={{
               fontSize: 13,
-              color: i % 2 === 0 ? 'var(--film-amber)' : 'rgba(122,117,110,0.5)',
+              color: i % 2 === 0 ? 'var(--film-amber)' : 'rgba(196,185,165,0.78)',
               letterSpacing: '0.14em',
               paddingRight: 32,
             }}
           >
             {item}
-            <span style={{ color: 'rgba(196,124,46,0.25)', marginLeft: 32 }}>◆</span>
+            <span style={{ color: 'rgba(214,156,84,0.72)', marginLeft: 32 }}>◆</span>
           </span>
         ))}
       </div>
