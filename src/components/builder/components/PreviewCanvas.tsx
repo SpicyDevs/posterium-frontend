@@ -59,7 +59,6 @@ const PreviewCanvas: React.FC<Props> = ({
 }) => {
   const {
     viewOptions,
-    mobileSheetMode,
     clearSelection,
     liveRatings,
     liveTitle,
@@ -213,7 +212,7 @@ const PreviewCanvas: React.FC<Props> = ({
     const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [mobileSheetMode]);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;

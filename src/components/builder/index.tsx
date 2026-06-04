@@ -1,6 +1,5 @@
 // src/components/builder/index.tsx
-import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import clsx from 'clsx';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
@@ -29,7 +28,6 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import MobileDock from './components/layout/MobileDock';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -37,6 +35,9 @@ import {
   RotateCcw,
   Undo2,
   Redo2,
+  ChevronLeft,
+  ChevronRight,
+  X,
   PanelLeft,
   PanelRight,
   Maximize2,
@@ -48,6 +49,10 @@ import {
   Eye,
   EyeOff,
   Layers,
+  Film,
+  Monitor,
+  Sliders,
+  MousePointer2,
   CheckSquare,
   MousePointer2Off,
   Download,
@@ -98,8 +103,6 @@ const StudioLayout: React.FC<{
   const {
     activeTab,
     setActiveTab,
-    mobileSheetMode,
-    setMobileSheetMode,
     selectedIds,
     selectedLogo,
     selectedMinimalElements,
@@ -122,6 +125,22 @@ const StudioLayout: React.FC<{
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobileRootRef = useRef<HTMLDivElement>(null);
+  const mobileBottomContentRef = useRef<HTMLDivElement>(null);
+  const mobileBottomDragRef = useRef({
+    startY: 0,
+    startHeight: 0,
+    currentHeight: 0,
+    lastY: 0,
+    lastTime: 0,
+    velocity: 0,
+    raf: 0,
+  });
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
+  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'canvas' | 'badges'>('source');
+  const [isDraggingBottomPanel, setIsDraggingBottomPanel] = useState(false);
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   useEffect(() => {
@@ -272,10 +291,10 @@ const StudioLayout: React.FC<{
     [setConfig]
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback(
     (id: RatingType, multi: boolean) => {
       handleSelection(id, multi);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) setRightPanelOpen(true);
     },
     [handleSelection]
   );
@@ -897,6 +916,160 @@ const StudioLayout: React.FC<{
     selectedMinimalElements,
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
+
+  const mobileDetailLevel = 'simple' as const;
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+  const selectedLabel = useMemo(() => {
+    if (selectedCount === 0) return 'SELECT';
+    if (selectedCount > 1) return `${selectedCount} LAYERS`;
+    if (selectedLogo) return 'LOGO';
+    const minimal = [...selectedMinimalElements][0];
+    if (minimal)
+      return minimal
+        .replace(/^minimal-/, '')
+        .replace(/-/g, ' ')
+        .toUpperCase();
+    const badgeId = [...selectedIds][0];
+    return (
+      ALL_BADGES.find((badge) => badge.id === badgeId)?.label.toUpperCase() ?? badgeId.toUpperCase()
+    );
+  }, [selectedCount, selectedIds, selectedLogo, selectedMinimalElements]);
+  const mobilePanelTitle = leftPanelOpen
+    ? 'LAYERS'
+    : rightPanelOpen
+      ? 'SELECTION'
+      : bottomPanelOpen
+        ? bottomPanelTab.toUpperCase()
+        : 'CANVAS';
+
+  const getBottomPanelMaxHeight = useCallback(() => {
+    if (typeof window === 'undefined') return 520;
+    const safe = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0'
+    );
+    return Math.max(200, window.innerHeight - 48 - 56 - (Number.isFinite(safe) ? safe : 0) - 80);
+  }, []);
+
+  const setMobileBottomHeight = useCallback((height: number) => {
+    mobileRootRef.current?.style.setProperty(
+      '--bottom-panel-height',
+      `${Math.max(0, Math.round(height))}px`
+    );
+  }, []);
+
+  const getBottomSnapPoints = useCallback(() => {
+    const max = getBottomPanelMaxHeight();
+    const mid = Math.min(max, Math.max(200, Math.round(window.innerHeight * 0.48)));
+    return [200, mid, max];
+  }, [getBottomPanelMaxHeight]);
+
+  const snapBottomPanelTo = useCallback(
+    (height: number) => {
+      const points = getBottomSnapPoints();
+      const target = points.reduce((best, point) =>
+        Math.abs(point - height) < Math.abs(best - height) ? point : best
+      );
+      setMobileBottomHeight(target);
+      setBottomPanelOpen(true);
+    },
+    [getBottomSnapPoints, setMobileBottomHeight]
+  );
+
+  const closeBottomPanel = useCallback(() => {
+    setMobileBottomHeight(0);
+    setBottomPanelOpen(false);
+  }, [setMobileBottomHeight]);
+
+  const openBottomPanel = useCallback(
+    (tab: 'source' | 'canvas' | 'badges') => {
+      setBottomPanelTab(tab);
+      if (!bottomPanelOpen) {
+        const points = getBottomSnapPoints();
+        setMobileBottomHeight(points[1]);
+        setBottomPanelOpen(true);
+      }
+    },
+    [bottomPanelOpen, getBottomSnapPoints, setMobileBottomHeight]
+  );
+
+  const beginBottomPanelDrag = useCallback(
+    (clientY: number) => {
+      if (!bottomPanelOpen) return;
+      const current = parseFloat(
+        mobileRootRef.current?.style.getPropertyValue('--bottom-panel-height') || '0'
+      );
+      mobileBottomDragRef.current = {
+        ...mobileBottomDragRef.current,
+        startY: clientY,
+        startHeight: current,
+        currentHeight: current,
+        lastY: clientY,
+        lastTime: performance.now(),
+        velocity: 0,
+      };
+      setIsDraggingBottomPanel(true);
+    },
+    [bottomPanelOpen]
+  );
+
+  const moveBottomPanelDrag = useCallback(
+    (clientY: number) => {
+      if (!isDraggingBottomPanel) return;
+      const drag = mobileBottomDragRef.current;
+      const now = performance.now();
+      const elapsed = Math.max(1, now - drag.lastTime);
+      drag.velocity = ((clientY - drag.lastY) / elapsed) * 1000;
+      drag.lastY = clientY;
+      drag.lastTime = now;
+      const max = getBottomPanelMaxHeight();
+      const next = Math.max(0, Math.min(max, drag.startHeight - (clientY - drag.startY)));
+      drag.currentHeight = next;
+      if (drag.raf) cancelAnimationFrame(drag.raf);
+      drag.raf = requestAnimationFrame(() => setMobileBottomHeight(next));
+    },
+    [getBottomPanelMaxHeight, isDraggingBottomPanel, setMobileBottomHeight]
+  );
+
+  const endBottomPanelDrag = useCallback(() => {
+    if (!isDraggingBottomPanel) return;
+    setIsDraggingBottomPanel(false);
+    const drag = mobileBottomDragRef.current;
+    if (drag.currentHeight < 120) {
+      closeBottomPanel();
+      return;
+    }
+    const points = getBottomSnapPoints();
+    const sorted = [...points].sort((a, b) => a - b);
+    const currentIndex = sorted.reduce(
+      (bestIndex, point, index) =>
+        Math.abs(point - drag.currentHeight) < Math.abs(sorted[bestIndex] - drag.currentHeight)
+          ? index
+          : bestIndex,
+      0
+    );
+    if (drag.velocity > 500) {
+      const next = Math.max(0, currentIndex - 1);
+      setMobileBottomHeight(sorted[next]);
+      return;
+    }
+    if (drag.velocity < -500) {
+      const next = Math.min(sorted.length - 1, currentIndex + 1);
+      setMobileBottomHeight(sorted[next]);
+      return;
+    }
+    snapBottomPanelTo(drag.currentHeight);
+  }, [
+    closeBottomPanel,
+    getBottomSnapPoints,
+    isDraggingBottomPanel,
+    setMobileBottomHeight,
+    snapBottomPanelTo,
+  ]);
+
+  useEffect(() => {
+    if (!bottomPanelOpen) setMobileBottomHeight(0);
+  }, [bottomPanelOpen, setMobileBottomHeight]);
+
   const renderAdvancedPanel = () => {
     switch (advancedPanel) {
       case 'source':
@@ -944,7 +1117,12 @@ const StudioLayout: React.FC<{
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
+        {(isResetOpen ||
+          isImportOpen ||
+          shortcutsOpen ||
+          ctxMenu.visible ||
+          paletteOpen ||
+          exportOpen) && (
           <Suspense fallback={null}>
             {isResetOpen && (
               <ResetDialog
@@ -1021,7 +1199,7 @@ const StudioLayout: React.FC<{
         {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="hidden lg:flex h-12 shrink-0 items-center z-30 relative"
             style={{
               background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -1272,8 +1450,665 @@ const StudioLayout: React.FC<{
           </header>
         )}
 
+        {/* ── MOBILE BUILDER ── */}
+        {!isFullscreen && (
+          <div
+            ref={mobileRootRef}
+            className="lg:hidden"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              height: '100dvh',
+              width: '100vw',
+              background: 'var(--film-black)',
+              overflow: 'hidden',
+              ['--bottom-panel-height' as string]: '0px',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 48,
+                zIndex: 40,
+                background: 'rgba(7,7,6,0.95)',
+                backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(196,124,46,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 12px',
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: 'rgba(196,124,46,0.08)',
+                  border: '1px solid rgba(196,124,46,0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--film-amber)',
+                  fontFamily: 'Syne, sans-serif',
+                  fontSize: 15,
+                  fontWeight: 800,
+                }}
+              >
+                P
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  fontFamily: 'Syne, sans-serif',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: 'rgba(240,230,204,0.65)',
+                }}
+              >
+                {mobilePanelTitle}
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: canUndo ? 'rgba(240,230,204,0.7)' : 'rgba(140,130,112,0.25)',
+                    pointerEvents: canUndo ? 'auto' : 'none',
+                  }}
+                >
+                  <Undo2 size={15} />
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: canRedo ? 'rgba(240,230,204,0.7)' : 'rgba(140,130,112,0.25)',
+                    pointerEvents: canRedo ? 'auto' : 'none',
+                  }}
+                >
+                  <Redo2 size={15} />
+                </button>
+                <button
+                  ref={exportBtnRef}
+                  onClick={() => setExportOpen((v) => !v)}
+                  aria-label="Export"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(196,124,46,0.1)',
+                    border: '1px solid rgba(196,124,46,0.22)',
+                    color: 'var(--film-amber)',
+                  }}
+                >
+                  <Download size={15} />
+                </button>
+              </div>
+            </div>
+
+            <main
+              id="main-canvas"
+              aria-label="Poster canvas"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) clearSelection();
+              }}
+              style={{
+                position: 'absolute',
+                top: 48,
+                left: 0,
+                right: 0,
+                bottom:
+                  'calc(56px + env(safe-area-inset-bottom, 0px) + var(--bottom-panel-height, 0px))',
+                background: '#111113',
+                overflow: 'hidden',
+                transition: isDraggingBottomPanel
+                  ? 'none'
+                  : 'bottom 0.32s cubic-bezier(0.16,1,0.3,1)',
+              }}
+            >
+              <PreviewCanvas
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+                onContextMenu={openCtxMenu}
+                onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+              />
+              {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
+                <div
+                  key={c}
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: c.startsWith('t') ? 8 : 'auto',
+                    bottom: c.startsWith('b') ? 8 : 'auto',
+                    left: c.endsWith('l') ? 8 : 'auto',
+                    right: c.endsWith('r') ? 8 : 'auto',
+                    width: 12,
+                    height: 12,
+                    pointerEvents: 'none',
+                    borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                    borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                    borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                    borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.18)' : 'none',
+                  }}
+                />
+              ))}
+            </main>
+
+            <button
+              aria-label="Toggle layers panel"
+              onClick={() => setLeftPanelOpen((v) => !v)}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 30,
+                width: 22,
+                height: 64,
+                borderRadius: '0 10px 10px 0',
+                background: 'rgba(10,9,8,0.9)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(196,124,46,0.2)',
+                borderLeft: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: leftPanelOpen ? 'rgba(196,124,46,1)' : 'rgba(196,124,46,0.6)',
+                transition: 'color 0.15s ease',
+              }}
+            >
+              {leftPanelOpen ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+            </button>
+            <button
+              aria-label="Toggle selection panel"
+              onClick={() => setRightPanelOpen((v) => !v)}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 30,
+                width: 22,
+                height: 64,
+                borderRadius: '10px 0 0 10px',
+                background: 'rgba(10,9,8,0.9)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(196,124,46,0.2)',
+                borderRight: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: rightPanelOpen ? 'rgba(196,124,46,1)' : 'rgba(196,124,46,0.6)',
+                transition: 'color 0.15s ease',
+              }}
+            >
+              {rightPanelOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+            </button>
+            <button
+              aria-label="Toggle selection panel"
+              onClick={() => setRightPanelOpen((v) => !v)}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(50% + 44px)',
+                zIndex: 30,
+                height: 32,
+                minWidth: 64,
+                maxWidth: 120,
+                borderRadius: '16px 0 0 16px',
+                background: selectedCount > 0 ? 'rgba(196,124,46,0.18)' : 'rgba(196,124,46,0.12)',
+                border: `1px solid ${selectedCount > 0 ? 'rgba(196,124,46,0.4)' : 'rgba(196,124,46,0.25)'}`,
+                borderRight: 'none',
+                padding: '0 10px 0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Syne, sans-serif',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: selectedCount > 0 ? 'var(--film-amber)' : 'rgba(140,130,112,0.4)',
+                opacity: selectedCount > 0 ? 1 : 0.5,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                transition: 'opacity 0.2s ease, background 0.15s ease, border-color 0.15s ease',
+              }}
+            >
+              {selectedLabel}
+            </button>
+
+            <div
+              onClick={() => setLeftPanelOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 24,
+                background: 'rgba(0,0,0,0.4)',
+                opacity: leftPanelOpen ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+                pointerEvents: leftPanelOpen ? 'auto' : 'none',
+              }}
+            />
+            <aside
+              style={{
+                position: 'absolute',
+                top: 48,
+                left: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                width: 280,
+                zIndex: 25,
+                background: 'rgba(9,8,7,0.96)',
+                backdropFilter: 'blur(24px)',
+                borderRight: '1px solid rgba(196,124,46,0.18)',
+                boxShadow: '4px 0 32px rgba(0,0,0,0.6)',
+                transform: leftPanelOpen ? 'translateX(0)' : 'translateX(-100%)',
+                transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                }}
+              >
+                <div
+                  style={{
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 14px',
+                    borderBottom: '1px solid rgba(196,124,46,0.08)',
+                    gap: 8,
+                  }}
+                >
+                  <Layers size={13} color="var(--film-amber)" />
+                  <span
+                    style={{
+                      flex: 1,
+                      fontFamily: 'Syne, sans-serif',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      color: 'var(--film-cream)',
+                    }}
+                  >
+                    LAYERS
+                  </span>
+                  <button
+                    onClick={() => setLeftPanelOpen(false)}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'rgba(140,130,112,0.5)',
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <LayersPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  chrome={false}
+                  detailLevel={mobileDetailLevel}
+                />
+              </div>
+            </aside>
+
+            <div
+              onClick={() => setRightPanelOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 24,
+                background: 'rgba(0,0,0,0.4)',
+                opacity: rightPanelOpen ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+                pointerEvents: rightPanelOpen ? 'auto' : 'none',
+              }}
+            />
+            <aside
+              style={{
+                position: 'absolute',
+                top: 48,
+                right: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                width: 280,
+                zIndex: 25,
+                background: 'rgba(9,8,7,0.96)',
+                backdropFilter: 'blur(24px)',
+                borderLeft: '1px solid rgba(196,124,46,0.18)',
+                boxShadow: '-4px 0 32px rgba(0,0,0,0.6)',
+                transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)',
+                transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                }}
+              >
+                <div
+                  style={{
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 14px',
+                    borderBottom: '1px solid rgba(196,124,46,0.08)',
+                    gap: 8,
+                  }}
+                >
+                  <MousePointer2 size={13} color="var(--film-amber)" />
+                  <span
+                    style={{
+                      flex: 1,
+                      maxWidth: 160,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'Syne, sans-serif',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      color: 'var(--film-cream)',
+                    }}
+                  >
+                    {selectedCount === 0 ? 'SELECTION' : selectedLabel}
+                  </span>
+                  <button
+                    onClick={() => setRightPanelOpen(false)}
+                    style={{
+                      marginLeft: 'auto',
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'rgba(140,130,112,0.5)',
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <SelectionPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  selectedLogo={selectedLogo}
+                  selectedMinimalElements={selectedMinimalElements}
+                  detailLevel={mobileDetailLevel}
+                />
+              </div>
+            </aside>
+
+            <section
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                zIndex: 35,
+                height: 'var(--bottom-panel-height, 0px)',
+                minHeight: bottomPanelOpen ? 200 : 0,
+                maxHeight: 'calc(100dvh - 48px - 56px - env(safe-area-inset-bottom, 0px) - 80px)',
+                background: 'rgba(9,8,7,0.97)',
+                backdropFilter: 'blur(24px)',
+                borderTop: '1px solid rgba(196,124,46,0.2)',
+                borderRadius: '16px 16px 0 0',
+                boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
+                overflow: 'hidden',
+                transform: bottomPanelOpen ? 'translateY(0)' : 'translateY(100%)',
+                opacity: bottomPanelOpen ? 1 : 0,
+                pointerEvents: bottomPanelOpen ? 'auto' : 'none',
+                transition: isDraggingBottomPanel
+                  ? 'none'
+                  : 'transform 0.32s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease, height 0.32s cubic-bezier(0.16,1,0.3,1)',
+              }}
+            >
+              <div
+                onTouchStart={(e) => beginBottomPanelDrag(e.touches[0].clientY)}
+                onTouchMove={(e) => {
+                  e.preventDefault();
+                  moveBottomPanelDrag(e.touches[0].clientY);
+                }}
+                onTouchEnd={endBottomPanelDrag}
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  touchAction: 'none',
+                }}
+              >
+                <div
+                  style={{
+                    margin: '10px auto 0',
+                    width: 36,
+                    height: 4,
+                    borderRadius: 2,
+                    background: 'rgba(255,255,255,0.15)',
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 14px 0 16px',
+                  borderBottom: '1px solid rgba(196,124,46,0.08)',
+                }}
+              >
+                <div style={{ flex: 1, display: 'flex' }}>
+                  {(['source', 'canvas', 'badges'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setBottomPanelTab(tab)}
+                      style={{
+                        height: 44,
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: 'Syne, sans-serif',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color:
+                          bottomPanelTab === tab ? 'var(--film-cream)' : 'rgba(140,130,112,0.4)',
+                        borderBottom:
+                          bottomPanelTab === tab
+                            ? '2px solid var(--film-amber)'
+                            : '2px solid transparent',
+                        transition: 'color 0.15s ease',
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={closeBottomPanel}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'rgba(140,130,112,0.4)',
+                  }}
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+              <div
+                ref={mobileBottomContentRef}
+                onTouchStart={(e) => {
+                  if (mobileBottomContentRef.current?.scrollTop === 0)
+                    beginBottomPanelDrag(e.touches[0].clientY);
+                }}
+                onTouchMove={(e) => {
+                  if (isDraggingBottomPanel) {
+                    e.preventDefault();
+                    moveBottomPanelDrag(e.touches[0].clientY);
+                  }
+                }}
+                onTouchEnd={endBottomPanelDrag}
+                style={{
+                  height: 'calc(100% - 76px)',
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                  paddingBottom: 20,
+                }}
+              >
+                {bottomPanelTab === 'source' && (
+                  <SourcePanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    chrome={false}
+                    detailLevel={mobileDetailLevel}
+                  />
+                )}
+                {bottomPanelTab === 'canvas' && (
+                  <PosterPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    chrome={false}
+                    detailLevel={mobileDetailLevel}
+                  />
+                )}
+                {bottomPanelTab === 'badges' && (
+                  <BadgesPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    selectedLogo={selectedLogo}
+                    selectedMinimalElements={selectedMinimalElements}
+                    detailLevel={mobileDetailLevel}
+                  />
+                )}
+              </div>
+            </section>
+
+            <nav
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 56,
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                zIndex: 40,
+                background: 'rgba(7,7,6,0.97)',
+                backdropFilter: 'blur(20px)',
+                borderTop: '1px solid rgba(196,124,46,0.12)',
+                boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+                display: 'flex',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  width: 28,
+                  height: 2,
+                  left: `calc(${bottomPanelTab === 'source' ? 16.6667 : bottomPanelTab === 'canvas' ? 50 : 83.3333}% - 14px)`,
+                  background: 'var(--film-amber)',
+                  borderRadius: '0 0 2px 2px',
+                  opacity: bottomPanelOpen ? 1 : 0,
+                  transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.15s ease',
+                }}
+              />
+              {(
+                [
+                  { id: 'source', label: 'SOURCE', Icon: Film },
+                  { id: 'canvas', label: 'CANVAS', Icon: Monitor },
+                  { id: 'badges', label: 'BADGES', Icon: Sliders },
+                ] as const
+              ).map(({ id, label, Icon }) => {
+                const active = bottomPanelOpen && bottomPanelTab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => (active ? closeBottomPanel() : openBottomPanel(id))}
+                    style={{
+                      flex: 1,
+                      height: 56,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 5,
+                      color: active ? 'var(--film-amber)' : 'rgba(140,130,112,0.45)',
+                      transition: 'color 0.15s ease',
+                    }}
+                  >
+                    <Icon size={19} />
+                    <span
+                      style={{
+                        fontFamily: 'Syne, sans-serif',
+                        fontSize: 8,
+                        fontWeight: 700,
+                        letterSpacing: '0.09em',
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        )}
+
         {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+        <div className="hidden lg:flex flex-1 overflow-hidden relative flex-row">
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -1316,7 +2151,6 @@ const StudioLayout: React.FC<{
             style={{ background: '#111113' }}
             onClick={(e) => {
               if (e.target === e.currentTarget) clearSelection();
-              if (mobileSheetMode !== 'hidden') setMobileSheetMode('hidden');
             }}
           >
             <div
@@ -1388,77 +2222,22 @@ const StudioLayout: React.FC<{
               )}
             </aside>
           )}
-
-          {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
-            <div
-              className={clsx(
-                'lg:hidden flex flex-col shrink-0 w-full bg-[var(--film-dark)] transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden z-20',
-                mobileSheetMode !== 'hidden'
-                  ? 'h-[45dvh] border-t border-[rgba(196,124,46,0.15)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
-                  : 'h-0 border-t-0'
-              )}
-            >
-              {/* Swipe-down dismiss handle */}
-              <div
-                className="shrink-0 h-8 flex items-center justify-center bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer select-none"
-                onClick={() => setMobileSheetMode('hidden')}
-                onTouchStart={(e) => {
-                  const startY = e.touches[0].clientY;
-                  const onMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 40) {
-                      setMobileSheetMode('hidden');
-                      window.removeEventListener('touchmove', onMove);
-                    }
-                  };
-                  window.addEventListener('touchmove', onMove, { passive: true });
-                  const cleanup = () => {
-                    window.removeEventListener('touchmove', onMove);
-                  };
-                  window.addEventListener('touchend', cleanup, { once: true });
-                }}
-              >
-                <div className="w-10 h-1 rounded-full bg-[rgba(255,255,255,0.2)]" />
-              </div>
-
-              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 custom-scrollbar pb-4">
-                {(activeTab === 'source' || activeTab === 'layers' || activeTab === 'poster') && (
-                  <LayerPanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    detailLevel="simple"
-                  />
-                )}
-                {(activeTab === 'badges' || activeTab === 'selection') && (
-                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Mobile dock */}
-        <MobileDock
-          hasBadges={config.ratings.length > 0}
-          hasLogo={config.logo}
-          isMinimalPreset={(config.uiPreset ?? 'b') === 'm'}
-          selectedCount={selectedIds.size + (selectedLogo ? 1 : 0)}
-        />
-
-        {/* Zoom + fullscreen overlay — always visible */}
-        <ZoomOverlay
-          isFullscreen={isFullscreen}
-          rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
-          onToggleFullscreen={toggleFullscreen}
-          onZoomIn={() => dispatchZoom(0.25)}
-          onZoomOut={() => dispatchZoom(-0.25)}
-          onResetView={dispatchResetView}
-          isMobile={!isDesktop}
-          viewOptions={viewOptions}
-          onToggleViewOption={toggleViewOption}
-        />
+        {/* Zoom + fullscreen overlay — desktop only; mobile uses the sketch-driven fixed chrome. */}
+        {isDesktop && (
+          <ZoomOverlay
+            isFullscreen={isFullscreen}
+            rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
+            onToggleFullscreen={toggleFullscreen}
+            onZoomIn={() => dispatchZoom(0.25)}
+            onZoomOut={() => dispatchZoom(-0.25)}
+            onResetView={dispatchResetView}
+            isMobile={false}
+            viewOptions={viewOptions}
+            onToggleViewOption={toggleViewOption}
+          />
+        )}
       </div>
     </>
   );
