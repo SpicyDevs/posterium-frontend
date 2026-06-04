@@ -40,6 +40,9 @@ const ExportMenu = memo<ExportMenuProps>(
     const [builderCopied, setBuilderCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [editedUrl, setEditedUrl] = useState<string | null>(null);
+    const [isMobileViewport, setIsMobileViewport] = useState(
+      () => typeof window !== 'undefined' && window.innerWidth < 540
+    );
 
     const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
       { id: 'svg', label: 'SVG' },
@@ -123,6 +126,17 @@ const ExportMenu = memo<ExportMenuProps>(
           setPopupCoords(null);
           return;
         }
+        // Mobile override: if viewport is narrow (< 540px), anchor to bottom of screen
+        if (window.innerWidth < 540 && anchorRef?.current) {
+          const mobileRect = anchorRef.current.getBoundingClientRect();
+          const mobileWidth = Math.min(320, window.innerWidth - 24);
+          setPopupCoords({
+            top: mobileRect.bottom + 8,
+            left: Math.max(12, Math.min(window.innerWidth - mobileWidth - 12, mobileRect.right - mobileWidth)),
+            direction: 'down',
+          });
+          return;
+        }
         const rect = anchorRef.current.getBoundingClientRect();
         const width = 320;
         const panelHeight = popoverRef.current?.offsetHeight ?? 420;
@@ -146,6 +160,11 @@ const ExportMenu = memo<ExportMenuProps>(
 
       updatePosition();
 
+      const handleResize = () => {
+        setIsMobileViewport(window.innerWidth < 540);
+        updatePosition();
+      };
+
       const handler = (e: MouseEvent | TouchEvent) => {
         const target =
           'touches' in e ? (e.touches[0]?.target as Node) : ((e as MouseEvent).target as Node);
@@ -156,12 +175,12 @@ const ExportMenu = memo<ExportMenuProps>(
 
       document.addEventListener('mousedown', handler as EventListener);
       document.addEventListener('touchstart', handler as EventListener, { passive: true });
-      window.addEventListener('resize', updatePosition);
+      window.addEventListener('resize', handleResize);
       window.addEventListener('scroll', updatePosition, true);
       return () => {
         document.removeEventListener('mousedown', handler as EventListener);
         document.removeEventListener('touchstart', handler as EventListener);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('resize', handleResize);
         window.removeEventListener('scroll', updatePosition, true);
       };
     }, [isOpen, onClose, anchorRef]);
@@ -177,7 +196,7 @@ const ExportMenu = memo<ExportMenuProps>(
           top: popupCoords?.top ?? 52,
           right: popupCoords ? 'auto' : 12,
           left: popupCoords?.left,
-          width: 320,
+          width: isMobileViewport ? Math.min(320, (typeof window !== 'undefined' ? window.innerWidth - 24 : 320)) : 320,
           background: 'rgba(18,17,14,0.98)',
           border: '1px solid rgba(196,124,46,0.18)',
           borderRadius: 14,

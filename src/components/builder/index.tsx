@@ -66,6 +66,7 @@ import {
   Search,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
+import { useMobileBottomSheet } from './hooks/useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
 
@@ -296,7 +297,7 @@ const StudioLayout: React.FC<{
       handleSelection(id, multi);
       if (typeof window !== 'undefined' && window.innerWidth < 1024) setRightPanelOpen(true);
     },
-    [handleSelection]
+    [handleSelection, isDesktop]
   );
 
   const moveLayer = useCallback(
