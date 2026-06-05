@@ -79,7 +79,6 @@ const MobileBuilder: React.FC<Props> = ({
     handleSelection,
     handleLogoSelection,
     clearSelection,
-    setActiveTab,
     viewOptions,
     toggleViewOption,
   } = useEditor();
