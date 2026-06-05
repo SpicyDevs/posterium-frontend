@@ -3,6 +3,7 @@ import type { PosterConfig } from '../types';
 import type { PaletteCommand } from '../components/CommandPalette';
 import type { LayerTargetId } from '../components/ContextMenu';
 import { useEditor } from '../context/EditorContext';
+import PreviewCanvas from '../components/PreviewCanvas';
 import MobileHeader from './MobileHeader';
 import MobileLayerDrawer from './MobileLayerDrawer';
 import MobileInspectorDrawer from './MobileInspectorDrawer';
@@ -72,6 +73,8 @@ const MobileBuilder: React.FC<Props> = ({
   onOpenExport,
   onOpenReset,
   exportBtnRef,
+  onContextMenu,
+  onLogoContextMenu,
 }) => {
   const {
     selectedIds,
@@ -143,6 +146,7 @@ const MobileBuilder: React.FC<Props> = ({
         inset: 0,
         zIndex: 100,
         pointerEvents: 'auto',
+        background: 'transparent',
       }}
     >
       <MobileHeader
@@ -179,6 +183,23 @@ const MobileBuilder: React.FC<Props> = ({
         onOpenReset={onOpenReset}
         tokens={M}
       />
+
+      <div
+        style={{
+          position: 'absolute',
+          inset: '48px 0 56px 0',
+          overflow: 'hidden',
+        }}
+      >
+        <PreviewCanvas
+          config={config}
+          setConfig={setConfig}
+          selectedIds={selectedIds}
+          onSelect={(id, multi) => handleSelection(id, multi)}
+          onContextMenu={(id, e) => onContextMenu(id, e)}
+          onLogoContextMenu={onLogoContextMenu}
+        />
+      </div>
 
       <MobileBottomSheet
         sheet={sheet}
