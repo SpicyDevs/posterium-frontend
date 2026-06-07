@@ -1,11 +1,9 @@
 // src/components/dashboard/Dashboard.tsx
 import React, { Suspense, lazy } from 'react';
 import './dashboard.css';
-import { MARQUEE_TITLES } from '@/lib/dashboard/constants';
 import Nav from './Nav';
 import HeroSection from './HeroSection';
 import FilmReelSection from './FilmReelSection/index';
-import { MarqueeTicker } from './primitives';
 
 const StatsBar = lazy(() => import('./sections/StatsBar').then((m) => ({ default: m.StatsBar })));
 const CombinedSection = lazy(() =>
@@ -86,11 +84,10 @@ const Dashboard: React.FC = () => {
         <main id="main-content">
           <HeroSection />
 
-          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
+          
 
           <FilmReelSection />
 
-          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
           <ContentSection intrinsicH={260}>
             <Suspense fallback={null}>
