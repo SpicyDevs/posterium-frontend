@@ -1,11 +1,11 @@
 // src/components/dashboard/FilmReelSection/index.tsx
-// MOBILE OVERHAUL: Seamless reel with 3 images, no marquee, parallax like desktop
+// MOBILE OVERHAUL: Remove headers, seamless parallax reel
 
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { SprocketStrip } from '../primitives';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 
-const REEL_CHUNKS = 3; // Reduced from 5
+const REEL_CHUNKS = 3;
 const CHUNK_WIDTH = 4000;
 const MOSAIC_NATURAL_WIDTH = REEL_CHUNKS * CHUNK_WIDTH;
 
@@ -311,7 +311,7 @@ const DesktopStaticReel = memo(() => {
 DesktopStaticReel.displayName = 'DesktopStaticReel';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile — PARALLAX like desktop (NOT native scroll)
+// Mobile — SEAMLESS (no header, parallax like desktop)
 // ─────────────────────────────────────────────────────────────────────────────
 const MobileStaticReel = memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -411,7 +411,7 @@ const MobileStaticReel = memo(() => {
           flexDirection: 'column',
         }}
       >
-        {/* No marquee, no "THE REEL" heading on mobile for seamless look */}
+        {/* NO HEADER ON MOBILE — Seamless! */}
 
         {/* ── Top sprocket ─────────────────────────────────────────────────── */}
         <div
@@ -419,10 +419,10 @@ const MobileStaticReel = memo(() => {
             flexShrink: 0,
             background: 'rgba(255,255,255,0.015)',
             borderBottom: '1px solid rgba(255,255,255,0.045)',
-            height: 24,
+            height: 20,
           }}
         >
-          <SprocketStrip count={22} />
+          <SprocketStrip count={16} />
         </div>
 
         {/* ── Image area ───────────────────────────────────────────────────── */}
@@ -443,11 +443,11 @@ const MobileStaticReel = memo(() => {
               left: 0,
               top: 0,
               bottom: 0,
-              width: 60,
+              width: 50,
               zIndex: 2,
               pointerEvents: 'none',
               background:
-                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 70%, transparent 100%)',
             }}
           />
           {/* Right edge fade */}
@@ -458,11 +458,11 @@ const MobileStaticReel = memo(() => {
               right: 0,
               top: 0,
               bottom: 0,
-              width: 80,
+              width: 70,
               zIndex: 2,
               pointerEvents: 'none',
               background:
-                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 70%, transparent 100%)',
             }}
           />
 
@@ -504,10 +504,10 @@ const MobileStaticReel = memo(() => {
             flexShrink: 0,
             background: 'rgba(255,255,255,0.015)',
             borderTop: '1px solid rgba(255,255,255,0.045)',
-            height: 24,
+            height: 20,
           }}
         >
-          <SprocketStrip count={22} />
+          <SprocketStrip count={16} />
         </div>
 
         {/* ── Progress bar ─────────────────────────────────────────────────── */}
