@@ -137,14 +137,7 @@ const MobileBuilder: React.FC<Props> = ({
   const closeDrawers = useCallback(() => setDrawerOpen(null), []);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        pointerEvents: 'auto',
-      }}
-    >
+    <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
       <MobileHeader
         contextLabel={contextLabel}
         anyPanelOpen={anyPanelOpen}
