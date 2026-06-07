@@ -1,8 +1,8 @@
-export default {
+module.exports = {
   ci: {
     collect: {
       staticDistDir: './dist',
-      url: ['/', '/build', '/examples', '/faq'], // Key pages to test
+      url: ['http://localhost/index.html', 'http://localhost/build.html', 'http://localhost/examples.html', 'http://localhost/faq.html'], // Key pages to test
       numberOfRuns: 3, // Runs 3 times to prevent flaky scores
     },
     assert: {
