@@ -1,4 +1,6 @@
 // src/components/dashboard/sections/StatsBar.tsx
+// MOBILE OVERHAUL: Remove 01/04, UNIT labels, field numbers header
+
 import { memo } from 'react';
 import { STATS } from '@/lib/dashboard/constants';
 import { useInView, useCounter } from '@/lib/dashboard/hooks/index';
@@ -54,35 +56,8 @@ const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>
           }}
         />
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            opacity: vis ? 1 : 0,
-            transform: vis ? 'translateY(0)' : 'translateY(8px)',
-            transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
-          }}
-        >
-          <span
-            className="mono-font"
-            style={{ fontSize: 8, color: 'rgba(122,117,110,0.3)', letterSpacing: '0.14em' }}
-          >
-            {String(index + 1).padStart(2, '0')}/{String(STATS.length).padStart(2, '0')}
-          </span>
-          {stat.unit && (
-            <span
-              className="mono-font"
-              style={{
-                fontSize: 7,
-                color: 'rgba(122,117,110,0.25)',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {stat.unit}
-            </span>
-          )}
+        <div style={{ opacity: vis ? 1 : 0, transform: vis ? 'translateY(0)' : 'translateY(8px)', transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s` }}>
+          {/* Empty space where metadata was */}
         </div>
 
         <div
@@ -145,6 +120,7 @@ export const StatsBar = memo(() => {
         borderBottom: '1px solid rgba(196,124,46,0.07)',
       }}
     >
+      {/* Minimal top bar — only metadata that matters */}
       <div
         style={{
           padding: '10px clamp(20px,5vw,80px)',
@@ -168,15 +144,11 @@ export const StatsBar = memo(() => {
             textTransform: 'uppercase',
           }}
         >
-          SPICYDEVS / POSTERIUM — FIELD NUMBERS
-        </span>
-        <span
-          className="mono-font"
-          style={{ fontSize: 7, color: 'rgba(122,117,110,0.28)', letterSpacing: '0.12em' }}
-        >
           REV.2 · OPEN SOURCE · MIT
         </span>
       </div>
+
+      {/* Stats grid */}
       <div
         className="stats-grid"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}
