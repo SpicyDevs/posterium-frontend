@@ -1,4 +1,6 @@
 // src/components/dashboard/sections/FooterSection.tsx
+// MOBILE OVERHAUL: Remove PROD, DIR, SCENE, TAKE, ROLL metadata; use single grey line finisher
+
 import { memo } from 'react';
 import { Film, Github, ExternalLink } from 'lucide-react';
 import { SprocketStrip } from '../primitives';
@@ -132,7 +134,7 @@ export const FooterSection = memo(() => (
         }}
       />
 
-      {/* ── Main nav links ────────────────────────────────────────────── */}
+      {/* ── Main nav links ────────────────────────────────────────────────────────── */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px)',
@@ -196,7 +198,7 @@ export const FooterSection = memo(() => (
         }}
       />
 
-      {/* ── Bottom bar: copyright + legal links + GitHub ─────────────── */}
+      {/* ── Bottom bar: copyright + legal links + GitHub ────────────────────────── */}
       <div
         style={{
           padding: '0 clamp(20px,5vw,64px) clamp(40px,5vw,60px)',
@@ -207,7 +209,7 @@ export const FooterSection = memo(() => (
           gap: 16,
         }}
       >
-        {/* Left: metadata + legal links */}
+        {/* Left: copyright + legal links */}
         <div
           style={{
             display: 'flex',
@@ -218,45 +220,21 @@ export const FooterSection = memo(() => (
           <div
             style={{
               display: 'flex',
-              gap: 'clamp(16px,3vw,36px)',
+              gap: 'clamp(8px,2vw,24px)',
               flexWrap: 'wrap',
               alignItems: 'center',
             }}
           >
-            {[
-              ['PROD', 'Project Team'],
-              ['DIR', 'Core Team'],
-              ['REL', '2.0'],
-              ['LIC', 'MIT'],
-              [`© 2026`, ''],
-            ].map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                <span
-                  className="mono-font"
-                  style={{
-                    fontSize: 7,
-                    color: 'rgba(196,124,46,0.38)',
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {k}
-                </span>
-                {v ? (
-                  <span
-                    className="syne-font"
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: 'rgba(212,198,172,0.68)',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    {v}
-                  </span>
-                ) : null}
-              </div>
-            ))}
+            <span
+              className="mono-font"
+              style={{
+                fontSize: 8,
+                color: 'rgba(212,198,172,0.62)',
+                letterSpacing: '0.08em',
+              }}
+            >
+              © 2026 SpicyDevs
+            </span>
           </div>
 
           {/* Legal links row */}
@@ -320,12 +298,12 @@ export const FooterSection = memo(() => (
       </div>
     </div>
 
-    <SprocketEdge border="borderTop" />
-
+    {/* ── Simple grey line finisher (instead of second reel) ──────────────────────── */}
     <div
       style={{
         background: 'rgba(5,5,4,0.95)',
-        padding: '8px clamp(20px,5vw,64px)',
+        padding: '12px clamp(20px,5vw,64px)',
+        borderTop: '1px solid rgba(255,255,255,0.04)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -351,6 +329,15 @@ export const FooterSection = memo(() => (
         Free · CORS Enabled · No Auth · SVG/PNG/JPG/WebP
       </span>
     </div>
+
+    {/* ── Final grey line separator ────────────────────────────────────────────────── */}
+    <div
+      aria-hidden="true"
+      style={{
+        height: 1,
+        background: 'rgba(255,255,255,0.08)',
+      }}
+    />
   </footer>
 ));
 
