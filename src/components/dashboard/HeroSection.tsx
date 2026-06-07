@@ -403,7 +403,7 @@ const AMBIENT_STYLE: React.CSSProperties = {
   inset: 0,
   pointerEvents: 'none',
   background:
-    'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.055) 0%, transparent 70%)',
+    'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.035) 0%, transparent 70%)',
 };
 const DOT_GRID_STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -435,18 +435,18 @@ const HeroSection = memo(() => {
           width: '100%',
           maxWidth: 1280,
           margin: '0 auto',
-          padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)',
+          padding: 'clamp(48px,6vh,96px) clamp(20px,4vw,64px)',
           display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: 'clamp(40px,6vw,80px)',
-          alignItems: 'center',
+          gridTemplateColumns: '1fr',
+          gap: 'clamp(32px,5vw,64px)',
+          alignItems: 'flex-start',
         }}
       >
         <div>
           <h1
             className="h-a1 poster-font"
             style={{
-              fontSize: 'clamp(88px,13vw,200px)',
+              fontSize: 'clamp(72px,11vw,160px)',
               lineHeight: 0.84,
               letterSpacing: '0.03em',
               marginBottom: 0,
@@ -473,12 +473,12 @@ const HeroSection = memo(() => {
           <p
             className="h-a2 syne-font"
             style={{
-              fontSize: 'clamp(13px,1.4vw,16px)',
+              fontSize: 'clamp(12px,1.3vw,15px)',
               color: 'var(--film-silver)',
               fontWeight: 400,
               maxWidth: 480,
               lineHeight: 1.7,
-              marginBottom: 36,
+              marginBottom: 32,
             }}
           >
             Movie &amp; TV poster images with glassmorphism rating badges from{' '}
@@ -534,7 +534,7 @@ const HeroSection = memo(() => {
             </a>
           </div>
 
-          <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
+          <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 32, flexWrap: 'wrap' }}>
             {(
               [
                 ['∞', 'Free API calls'],
@@ -546,7 +546,7 @@ const HeroSection = memo(() => {
                 <div
                   className="poster-font"
                   style={{
-                    fontSize: 28,
+                    fontSize: 24,
                     color: 'var(--film-amber)',
                     lineHeight: 1,
                     letterSpacing: '0.04em',
@@ -557,7 +557,7 @@ const HeroSection = memo(() => {
                 <div
                   className="mono-font"
                   style={{
-                    fontSize: 8,
+                    fontSize: 7,
                     color: 'var(--film-text-dim)',
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
@@ -571,10 +571,24 @@ const HeroSection = memo(() => {
           </div>
         </div>
 
-        <div className="h-a5 hero-poster-right" aria-label="Poster showcase">
+        {/* Hidden on mobile, visible on desktop */}
+        <div className="h-a5 hero-poster-right" aria-label="Poster showcase" style={{ display: 'none' }}>
           <CyclingPoster />
         </div>
       </div>
+
+      <style>{`
+        @media (min-width: 820px) {
+          .hero-two-col {
+            grid-template-columns: 1fr auto !important;
+            align-items: center !important;
+            gap: clamp(40px, 6vw, 80px) !important;
+          }
+          .hero-poster-right {
+            display: block !important;
+          }
+        }
+      `}</style>
     </section>
   );
 });
