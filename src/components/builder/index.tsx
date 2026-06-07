@@ -1387,7 +1387,7 @@ const StudioLayout: React.FC<{
           )}
 
           {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && !isDesktop && (
+          {!isFullscreen && (
             <MobileBuilder
               config={config}
               setConfig={setConfig}
