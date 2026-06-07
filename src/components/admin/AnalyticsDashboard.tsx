@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  AreaChart, Area, Bar, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  ComposedChart, ReferenceLine, RadialBarChart, RadialBar,
+  ComposedChart
 } from 'recharts';
 import MainNavbar from '@/components/shared/MainNavbar';
 import { AmberTag } from '@/components/shared/primitives';
@@ -363,10 +363,6 @@ const LatDist = ({ row }: { row: any }) => {
   );
 };
 
-// ── Poster thumbnail ──────────────────────────────────────────────────────────
-// FIX: Removed dead/broken nodeHealth state and useEffects that referenced
-// `authed` and `live` — which are out of scope here. Health polling now lives
-// in the AnalyticsDashboard parent component where those vars actually exist.
 const PosterThumb = ({ id, type, hits, hitRate }: {
   id: string; type: string; hits: number; hitRate: number;
 }) => {
@@ -518,8 +514,6 @@ export default function AnalyticsDashboard() {
   const liveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [liveCount, setLiveCount] = useState(0);
 
-  // ── FIX: nodeHealth state and fetchNodeHealth moved here from PosterThumb
-  //    (they were incorrectly placed there, causing `authed`/`live` ReferenceErrors)
   const [nodeHealth, setNodeHealth] = useState<Record<string, any>>({});
   const [healthLoading, setHealthLoading] = useState(false);
 
@@ -545,7 +539,6 @@ export default function AnalyticsDashboard() {
     const iv = setInterval(fetchNodeHealth, 30_000);
     return () => clearInterval(iv);
   }, [live, fetchNodeHealth]);
-  // ── End fix ──
 
   const updateCfg = (next: Partial<DashConfig>) => {
     const c = { ...cfg, ...next };
@@ -598,12 +591,12 @@ export default function AnalyticsDashboard() {
         failures: num(raw.failures), race_wins: num(raw.race_wins),
         success_rate_pct: num(raw.success_rate_pct), avg_ms: nullableNum(raw.avg_ms),
       };
-    const total = nodeRows.reduce((s, r) => s + r.total_attempts, 0);
-    const succ  = nodeRows.reduce((s, r) => s + r.successes, 0);
+    const total = nodeRows.reduce((s: number, r: any) => s + r.total_attempts, 0);
+    const succ  = nodeRows.reduce((s: number, r: any) => s + r.successes, 0);
     return {
       total_attempts: total, successes: succ,
-      failures: nodeRows.reduce((s, r) => s + r.failures, 0),
-      race_wins: nodeRows.reduce((s, r) => s + r.race_wins, 0),
+      failures: nodeRows.reduce((s: number, r: any) => s + r.failures, 0),
+      race_wins: nodeRows.reduce((s: number, r: any) => s + r.race_wins, 0),
       success_rate_pct: total > 0 ? (succ / total) * 100 : 0, avg_ms: null,
     };
   }, [data, nodeRows]);
@@ -731,7 +724,7 @@ export default function AnalyticsDashboard() {
     ), [nodeRows, cfg]);
 
   const pLabel = PERIODS[cfg.period]?.label ?? cfg.period;
-  const totalDeviceReqs = useMemo(() => deviceRows.reduce((s, r) => s + r.requests, 0), [deviceRows]);
+  const totalDeviceReqs = useMemo(() => deviceRows.reduce((s: number, r: any) => s + r.requests, 0), [deviceRows]);
 
   if (!authed) return <AuthScreen onAuth={() => setAuthed(true)} />;
 
@@ -1110,12 +1103,12 @@ export default function AnalyticsDashboard() {
                 const t1fb    = fallbackTierRows.filter(r => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback');
                 const t2fb    = fallbackTierRows.filter(r => r.lane === 'geo-t2');
                 const t3fb    = fallbackTierRows.filter(r => r.lane === 'geo-t3' || r.lane === 'wsrv-t3');
-                const total   = fallbackTierRows.reduce((s, r) => s + r.attempts, 0);
+                const total   = fallbackTierRows.reduce((s: number, r: any) => s + r.attempts, 0);
                 const pct = (n: number) => total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '—';
-                const pN = primary.reduce((s, r) => s + r.attempts, 0);
-                const t1N = t1fb.reduce((s, r) => s + r.attempts, 0);
-                const t2N = t2fb.reduce((s, r) => s + r.attempts, 0);
-                const t3N = t3fb.reduce((s, r) => s + r.attempts, 0);
+                const pN = primary.reduce((s: number, r: any) => s + r.attempts, 0);
+                const t1N = t1fb.reduce((s: number, r: any) => s + r.attempts, 0);
+                const t2N = t2fb.reduce((s: number, r: any) => s + r.attempts, 0);
+                const t3N = t3fb.reduce((s: number, r: any) => s + r.attempts, 0);
                 return (
                   <>
                     <StatCard label="Primary (T1)" value={fmtNum(pN)} sub={pct(pN)} color={CH.green} />
@@ -1133,7 +1126,7 @@ export default function AnalyticsDashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {fallbackTierRows.map(row => {
                     const meta = LANE_META[row.lane] ?? { label: row.lane, color: CH.ghost };
-                    const total = fallbackTierRows.reduce((s, r) => s + r.attempts, 0) || 1;
+                    const total = fallbackTierRows.reduce((s: number, r: any) => s + r.attempts, 0) || 1;
                     return (
                       <div key={row.lane} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
@@ -1256,7 +1249,7 @@ export default function AnalyticsDashboard() {
                 {loading ? <Skel h={200} /> : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {reqFormatRows.map((r, i) => {
-                      const total = reqFormatRows.reduce((s, x) => s + x.requests, 0) || 1;
+                      const total = reqFormatRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
                       return (
                         <div key={r.format}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
@@ -1379,7 +1372,7 @@ export default function AnalyticsDashboard() {
                     </ResponsiveContainer>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {reqTypeRows.map((r, i) => {
-                        const total = reqTypeRows.reduce((s, x) => s + x.requests, 0) || 1;
+                        const total = reqTypeRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
                         return (
                           <div key={r.type} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
@@ -1535,7 +1528,7 @@ export default function AnalyticsDashboard() {
                 {loading ? <Skel h={180} /> : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {formatRows.map((r, i) => {
-                      const total = formatRows.reduce((s, x) => s + x.attempts, 0) || 1;
+                      const total = formatRows.reduce((s: number, x: any) => s + x.attempts, 0) || 1;
                       return (
                         <div key={r.format}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -1653,7 +1646,7 @@ export default function AnalyticsDashboard() {
                 {loading ? <Skel h={180} /> : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {svgVsRaster.map((r, i) => {
-                      const total  = svgVsRaster.reduce((s, x) => s + x.requests, 0) || 1;
+                      const total  = svgVsRaster.reduce((s: number, x: any) => s + x.requests, 0) || 1;
                       const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                       return (
                         <div key={r.category}>
@@ -1679,7 +1672,7 @@ export default function AnalyticsDashboard() {
                 {loading ? <Skel h={180} /> : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {svgPresetRows.map((r, i) => {
-                      const total  = svgPresetRows.reduce((s, x) => s + x.requests, 0) || 1;
+                      const total  = svgPresetRows.reduce((s: number, x: any) => s + x.requests, 0) || 1;
                       const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                       return (
                         <div key={r.preset}>
