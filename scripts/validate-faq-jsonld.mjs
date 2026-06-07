@@ -46,7 +46,19 @@ const toPlainText = (value = '') =>
 
 const schemas = [
   ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
-].map((match) => JSON.parse(match[1]));
+].flatMap((match) => {
+  const schema = JSON.parse(match[1]);
+
+  if (Array.isArray(schema)) {
+    return schema;
+  }
+
+  if (Array.isArray(schema['@graph'])) {
+    return schema['@graph'];
+  }
+
+  return [schema];
+});
 const faqSchema = schemas.find((schema) => schema['@type'] === 'FAQPage');
 const breadcrumbSchema = schemas.find((schema) => schema['@type'] === 'BreadcrumbList');
 
