@@ -17,7 +17,7 @@ interface Props {
 }
 
 const MobileLayerDrawer: React.FC<Props> = memo(
-  ({ open, onClose, config, selectedIds, selectedLogo, onSelect, onSelectLogo, onDeselectAll, tokens }) => {
+  ({ open, onClose, config, selectedIds, onSelect, onSelectLogo, onDeselectAll, tokens }) => {
     return (
       <div
         aria-hidden={!open}
