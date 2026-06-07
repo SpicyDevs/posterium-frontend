@@ -1,19 +1,11 @@
 // src/components/dashboard/FilmReelSection/index.tsx
-//
-// Displays the pre-generated chunked reel-mosaic.webp/.jpg as a scroll-driven
-// horizontal parallax strip. The 20,000px composite is chunked to bypass WebP limits.
-//
-// Desktop: the images are pinned sticky while the user scrolls vertically;
-//          scroll progress is converted to a horizontal translateX pan.
-//
-// Mobile:  the flex container sits in a native overflow-x: scroll strip with
-//          a fixed display height.
+// MOBILE OVERHAUL: Seamless reel with 3 images, no marquee, parallax like desktop
 
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { SprocketStrip } from '../primitives';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 
-const REEL_CHUNKS = 5;
+const REEL_CHUNKS = 3; // Reduced from 5
 const CHUNK_WIDTH = 4000;
 const MOSAIC_NATURAL_WIDTH = REEL_CHUNKS * CHUNK_WIDTH;
 
@@ -21,34 +13,25 @@ const MOSAIC_NATURAL_WIDTH = REEL_CHUNKS * CHUNK_WIDTH;
 // Desktop — sticky scroll → horizontal pan
 // ─────────────────────────────────────────────────────────────────────────────
 const DesktopStaticReel = memo(() => {
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const imgRef          = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
-  // Cache the container's document-top to avoid repeated getBoundingClientRect
-  // calls inside the hot scroll path.
   const containerTopRef = useRef<number>(0);
 
-  // ── Height calibration ─────────────────────────────────────────────────
-  // container.height = imageRenderedWidth - viewportWidth + viewportHeight
-  // This gives exactly enough scroll space to pan the image from left→right.
   const recalc = useCallback(() => {
-    const img       = imgRef.current;
+    const img = imgRef.current;
     const container = containerRef.current;
     if (!container) return;
 
-    // offsetWidth reflects the actual rendered width (respects CSS height: 100%).
-    // Fall back to the natural width estimate until the image loads.
     const imgW = img?.offsetWidth || MOSAIC_NATURAL_WIDTH;
-    const vw   = window.innerWidth;
-    const vh   = window.innerHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
     if (imgW > vw) {
       container.style.height = `${imgW - vw + vh}px`;
     }
 
-    // Cache absolute top (stable between resizes)
-    containerTopRef.current =
-      container.getBoundingClientRect().top + window.scrollY;
+    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
   }, []);
 
   useEffect(() => {
@@ -56,30 +39,28 @@ const DesktopStaticReel = memo(() => {
 
     const img = imgRef.current;
     const images = img?.querySelectorAll('img') || [];
-    images.forEach(i => i.addEventListener('load', recalc));
+    images.forEach((i) => i.addEventListener('load', recalc));
     window.addEventListener('resize', recalc, { passive: true });
 
-    // Re-measure after fonts / layout settle
     const t1 = setTimeout(recalc, 300);
     const t2 = setTimeout(recalc, 1000);
 
     return () => {
-      images.forEach(i => i.removeEventListener('load', recalc));
+      images.forEach((i) => i.removeEventListener('load', recalc));
       window.removeEventListener('resize', recalc);
       clearTimeout(t1);
       clearTimeout(t2);
     };
   }, [recalc]);
 
-  // ── Scroll-driven horizontal pan ───────────────────────────────────────
   useEffect(() => {
     let rafId: number | null = null;
 
     const update = () => {
       rafId = null;
       const container = containerRef.current;
-      const img       = imgRef.current;
-      const fill      = progressFillRef.current;
+      const img = imgRef.current;
+      const fill = progressFillRef.current;
       if (!container || !img) return;
 
       const scrollable = container.offsetHeight - window.innerHeight;
@@ -90,8 +71,7 @@ const DesktopStaticReel = memo(() => {
         Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
       );
 
-      // Use offsetWidth (rendered) so the pan matches what the user sees.
-      const imgW     = img.offsetWidth || MOSAIC_NATURAL_WIDTH;
+      const imgW = img.offsetWidth || MOSAIC_NATURAL_WIDTH;
       const maxShift = Math.max(0, imgW - window.innerWidth);
 
       img.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
@@ -103,7 +83,6 @@ const DesktopStaticReel = memo(() => {
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    // Run once immediately to set initial state
     update();
 
     return () => {
@@ -131,7 +110,7 @@ const DesktopStaticReel = memo(() => {
           flexDirection: 'column',
         }}
       >
-        {/* ── Header ──────────────────────────────────────────────────── */}
+        {/* ── Minimal header ──────────────────────────────────────────────────── */}
         <div
           style={{
             flexShrink: 0,
@@ -175,7 +154,7 @@ const DesktopStaticReel = memo(() => {
           </span>
         </div>
 
-        {/* ── Top sprocket ────────────────────────────────────────────── */}
+        {/* ── Top sprocket ────────────────────────────────────────────────────── */}
         <div
           style={{
             flexShrink: 0,
@@ -186,7 +165,7 @@ const DesktopStaticReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* ── Image area ──────────────────────────────────────────────── */}
+        {/* ── Image area ──────────────────────────────────────────────────────── */}
         <div
           style={{
             flex: 1,
@@ -227,12 +206,8 @@ const DesktopStaticReel = memo(() => {
             }}
           />
 
-          {/* 
-           * Wrap multiple image chunks in a flex container 
-           * to seamlessly stitch them into one massive horizontal strip
-           */}
           <div
-            ref={imgRef as any}
+            ref={imgRef}
             style={{
               display: 'flex',
               height: '100%',
@@ -247,15 +222,14 @@ const DesktopStaticReel = memo(() => {
                 <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
                 <img
                   src={`/reel-mosaic-${i + 1}.jpg`}
-                  alt={i === 0 ? "Collage of movie and TV show posters with IMDb rating badges" : ""}
+                  alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''}
                   style={{
                     display: 'block',
                     height: '100%',
                     width: 'auto',
                     maxWidth: 'none',
                   }}
-                  loading={i < 2 ? "eager" : "lazy"}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  loading={i < 2 ? 'eager' : 'lazy'}
                   fetchPriority={i === 0 ? ('high' as any) : 'auto'}
                   decoding="async"
                 />
@@ -264,7 +238,7 @@ const DesktopStaticReel = memo(() => {
           </div>
         </div>
 
-        {/* ── Bottom sprocket ─────────────────────────────────────────── */}
+        {/* ── Bottom sprocket ─────────────────────────────────────────────────── */}
         <div
           style={{
             flexShrink: 0,
@@ -275,7 +249,7 @@ const DesktopStaticReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
 
-        {/* ── Progress bar ────────────────────────────────────────────── */}
+        {/* ── Progress bar ────────────────────────────────────────────────────── */}
         <div
           style={{
             flexShrink: 0,
@@ -337,112 +311,258 @@ const DesktopStaticReel = memo(() => {
 DesktopStaticReel.displayName = 'DesktopStaticReel';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile — native horizontal scroll strip
+// Mobile — PARALLAX like desktop (NOT native scroll)
 // ─────────────────────────────────────────────────────────────────────────────
-const MobileStaticReel = memo(() => (
-  <section
-    id="reel"
-    aria-label="Film Reel Showcase"
-    style={{ background: 'var(--film-dark)', overflow: 'hidden' }}
-  >
-    {/* Header */}
-    <div style={{ padding: '36px 22px 14px' }}>
+const MobileStaticReel = memo(() => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  const containerTopRef = useRef<number>(0);
+
+  const recalc = useCallback(() => {
+    const track = trackRef.current;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const trackW = track?.offsetWidth || MOSAIC_NATURAL_WIDTH;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (trackW > vw) {
+      container.style.height = `${trackW - vw + vh}px`;
+    }
+
+    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
+  }, []);
+
+  useEffect(() => {
+    recalc();
+
+    const track = trackRef.current;
+    const images = track?.querySelectorAll('img') || [];
+    images.forEach((i) => i.addEventListener('load', recalc));
+    window.addEventListener('resize', recalc, { passive: true });
+
+    const t1 = setTimeout(recalc, 300);
+    const t2 = setTimeout(recalc, 1000);
+
+    return () => {
+      images.forEach((i) => i.removeEventListener('load', recalc));
+      window.removeEventListener('resize', recalc);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [recalc]);
+
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
+      const container = containerRef.current;
+      const track = trackRef.current;
+      const fill = progressFillRef.current;
+      if (!container || !track) return;
+
+      const scrollable = container.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+
+      const progress = Math.max(
+        0,
+        Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
+      );
+
+      const trackW = track.offsetWidth || MOSAIC_NATURAL_WIDTH;
+      const maxShift = Math.max(0, trackW - window.innerWidth);
+
+      track.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
+      if (fill) fill.style.width = `${progress * 100}%`;
+    };
+
+    const onScroll = () => {
+      if (rafId === null) rafId = requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  return (
+    <div
+      id="reel"
+      ref={containerRef}
+      role="region"
+      aria-label="Film Reel Showcase"
+      style={{ position: 'relative' }}
+    >
       <div
-        className="poster-font"
-        style={{ fontSize: 30, color: 'var(--film-cream)', letterSpacing: '0.06em' }}
-      >
-        THE REEL
-      </div>
-      <div
-        className="syne-font"
         style={{
-          fontSize: 10,
-          color: 'var(--film-silver)',
-          letterSpacing: '0.16em',
-          textTransform: 'uppercase',
-          marginTop: 3,
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          overflow: 'hidden',
+          background: 'var(--film-dark)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        Swipe to browse · {REEL_ITEMS.length} titles
-      </div>
-    </div>
+        {/* No marquee, no "THE REEL" heading on mobile for seamless look */}
 
-    {/* Top sprocket */}
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.018)',
-        borderTop: '1px solid rgba(255,255,255,0.055)',
-        borderBottom: '1px solid rgba(255,255,255,0.055)',
-      }}
-    >
-      <SprocketStrip count={22} />
-    </div>
+        {/* ── Top sprocket ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderBottom: '1px solid rgba(255,255,255,0.045)',
+            height: 24,
+          }}
+        >
+          <SprocketStrip count={22} />
+        </div>
 
-    {/* Horizontal scroll image strip */}
-    <div
-      style={{
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        scrollbarWidth: 'none' as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        WebkitOverflowScrolling: 'touch' as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        msOverflowStyle: 'none' as any,
-      }}
-    >
-      <div style={{ display: 'flex', height: 280, width: 'max-content', filter: 'sepia(0.18) saturate(0.72) brightness(0.9)' }}>
-        {Array.from({ length: REEL_CHUNKS }).map((_, i) => (
-          <picture key={i} style={{ display: 'block', height: '100%' }}>
-            <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
-            <img
-              src={`/reel-mosaic-${i + 1}.jpg`}
-              alt={i === 0 ? "Collage of movie and TV show posters with IMDb rating badges" : ""}
+        {/* ── Image area ───────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {/* Left edge fade */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 60,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+            }}
+          />
+          {/* Right edge fade */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 80,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+            }}
+          />
+
+          <div
+            ref={trackRef}
+            style={{
+              display: 'flex',
+              height: '100%',
+              width: 'max-content',
+              flexShrink: 0,
+              willChange: 'transform',
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
+            }}
+          >
+            {Array.from({ length: REEL_CHUNKS }).map((_, i) => (
+              <picture key={i} style={{ display: 'block', height: '100%' }}>
+                <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
+                <img
+                  src={`/reel-mosaic-${i + 1}.jpg`}
+                  alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''}
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: 'none',
+                  }}
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? ('high' as any) : 'auto'}
+                  decoding="async"
+                />
+              </picture>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Bottom sprocket ──────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderTop: '1px solid rgba(255,255,255,0.045)',
+            height: 24,
+          }}
+        >
+          <SprocketStrip count={22} />
+        </div>
+
+        {/* ── Progress bar ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '6px 16px',
+            borderTop: '1px solid rgba(196,124,46,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: 99,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              ref={progressFillRef}
               style={{
                 height: '100%',
-                width: 'auto',
-                maxWidth: 'none',
-                display: 'block',
+                width: '0%',
+                borderRadius: 99,
+                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
+                transition: 'none',
               }}
-              loading="lazy"
-              decoding="async"
             />
-          </picture>
-        ))}
+          </div>
+        </div>
       </div>
     </div>
-
-    {/* Bottom sprocket */}
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.018)',
-        borderTop: '1px solid rgba(255,255,255,0.055)',
-      }}
-    >
-      <SprocketStrip count={22} />
-    </div>
-  </section>
-));
+  );
+});
 MobileStaticReel.displayName = 'MobileStaticReel';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Root export — renders SSR stub, then the right variant after hydration
+// Root export
 // ─────────────────────────────────────────────────────────────────────────────
 const FilmReelSection = memo(() => {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mq     = window.matchMedia('(min-width: 769px)');
+    const mq = window.matchMedia('(min-width: 769px)');
     const update = () => setIsDesktop(mq.matches);
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  // ── SSR / pre-hydration stub ─────────────────────────────────────────
-  // Matches the desktop component's outer structure so there is no layout
-  // shift on hydration; actual content is painted client-side only.
   if (isDesktop === null) {
     return (
       <div
