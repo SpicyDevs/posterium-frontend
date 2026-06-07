@@ -1,5 +1,5 @@
 // src/components/builder/index.tsx
-import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
@@ -28,7 +28,6 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import MobileBuilder from './mobile/MobileBuilder';
 import ToolbarBtn from './components/toolbar/ToolbarButton';
 import ZoomOverlay from './components/canvas/ZoomOverlay';
 import { EditorProvider, useEditor } from './context/EditorContext';
@@ -36,6 +35,9 @@ import {
   RotateCcw,
   Undo2,
   Redo2,
+  ChevronLeft,
+  ChevronRight,
+  X,
   PanelLeft,
   PanelRight,
   Maximize2,
@@ -47,6 +49,10 @@ import {
   Eye,
   EyeOff,
   Layers,
+  Film,
+  Monitor,
+  Sliders,
+  MousePointer2,
   CheckSquare,
   MousePointer2Off,
   Download,
@@ -60,6 +66,7 @@ import {
   Search,
 } from 'lucide-react';
 import { usePosterHistory } from './hooks/usePosterHistory';
+import { useMobileBottomSheet } from './hooks/useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
 
@@ -119,6 +126,34 @@ const StudioLayout: React.FC<{
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const mobileRootRef = useRef<HTMLDivElement>(null);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'canvas' | 'badges'>('source');
+
+  const {
+    bottomPanelOpen, setBottomPanelOpen,
+    isDragging: isDraggingBottomPanel, setIsDragging: setIsDraggingBottomPanel,
+    open: openBottomPanelSheet,
+    close: closeBottomPanel,
+    beginDrag: beginBottomPanelDrag,
+    moveDrag: moveBottomPanelDrag,
+    endDrag: endBottomPanelDrag,
+    setHeight: setMobileBottomHeight,
+    getSnapPoints: getBottomSnapPoints,
+  } = useMobileBottomSheet(mobileRootRef);
+  void setBottomPanelOpen;
+  void setIsDraggingBottomPanel;
+  void setMobileBottomHeight;
+  void getBottomSnapPoints;
+
+  const openBottomPanel = useCallback(
+    (tab: 'source' | 'canvas' | 'badges') => {
+      setBottomPanelTab(tab);
+      openBottomPanelSheet();
+    },
+    [openBottomPanelSheet]
+  );
   const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   useEffect(() => {
@@ -269,12 +304,12 @@ const StudioLayout: React.FC<{
     [setConfig]
   );
 
-  // Auto-open Edit panel on mobile when badge is tapped — DISABLED (drawer requires deliberate open)
   const handleSelectionOverride = useCallback(
     (id: RatingType, multi: boolean) => {
       handleSelection(id, multi);
+      if (!isDesktop) setRightPanelOpen(true);
     },
-    [handleSelection]
+    [handleSelection, isDesktop]
   );
 
   const moveLayer = useCallback(
@@ -894,6 +929,24 @@ const StudioLayout: React.FC<{
     selectedMinimalElements,
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
+
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+  const selectedLabel = useMemo(() => {
+    if (selectedCount === 0) return 'SELECT';
+    if (selectedCount > 1) return `${selectedCount} LAYERS`;
+    if (selectedLogo) return 'LOGO';
+    const minimal = [...selectedMinimalElements][0];
+    if (minimal)
+      return minimal
+        .replace(/^minimal-/, '')
+        .replace(/-/g, ' ')
+        .toUpperCase();
+    const badgeId = [...selectedIds][0];
+    return (
+      ALL_BADGES.find((badge) => badge.id === badgeId)?.label.toUpperCase() ?? badgeId.toUpperCase()
+    );
+  }, [selectedCount, selectedIds, selectedLogo, selectedMinimalElements]);
+
   const renderAdvancedPanel = () => {
     switch (advancedPanel) {
       case 'source':
@@ -941,7 +994,12 @@ const StudioLayout: React.FC<{
       >
         <h1 className="sr-only">Posterium Poster Builder</h1>
 
-        {(isResetOpen || isImportOpen || shortcutsOpen || ctxMenu.visible || paletteOpen || exportOpen) && (
+        {(isResetOpen ||
+          isImportOpen ||
+          shortcutsOpen ||
+          ctxMenu.visible ||
+          paletteOpen ||
+          exportOpen) && (
           <Suspense fallback={null}>
             {isResetOpen && (
               <ResetDialog
@@ -1018,7 +1076,7 @@ const StudioLayout: React.FC<{
         {/* ── HEADER ── */}
         {!isFullscreen && (
           <header
-            className="h-12 shrink-0 flex items-center z-30 relative"
+            className="hidden lg:flex h-12 shrink-0 items-center z-30 relative"
             style={{
               background: 'rgba(7,7,6,0.97)',
               borderBottom: '1px solid rgba(196,124,46,0.08)',
@@ -1269,8 +1327,1107 @@ const StudioLayout: React.FC<{
           </header>
         )}
 
+        {/* ── MOBILE BUILDER ── */}
+        {!isFullscreen && (
+          <div
+            ref={mobileRootRef}
+            className="lg:hidden"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              height: '100dvh',
+              width: '100vw',
+              background: 'var(--film-black)',
+              overflow: 'hidden',
+              '--bph': '0px',
+            } as React.CSSProperties}
+          >
+            {/* ── TOP HEADER BAR ── */}
+            {/* Height: 48px. Dark near-black background matching desktop header. */}
+            {/* Left: POSTERIUM wordmark + mode label. Center: context title. Right: action buttons. */}
+            <header
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 48,
+                zIndex: 40,
+                background: 'rgba(7,7,6,0.97)',
+                borderBottom: '1px solid rgba(196,124,46,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 12px',
+                gap: 0,
+              }}
+            >
+              {/* Ambient gradient rule on header bottom — matches desktop header exactly */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 1,
+                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              {/* LEFT: Wordmark */}
+              {/* Uses poster-font exactly like desktop. "POSTERIUM" in cream at 16px tracking 0.12em */}
+              <a
+                href="/"
+                style={{
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                  marginRight: 8,
+                }}
+              >
+                <span
+                  className="poster-font"
+                  style={{
+                    fontSize: 16,
+                    color: 'var(--film-cream)',
+                    letterSpacing: '0.12em',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  POSTERIUM
+                </span>
+              </a>
+
+              {/* Separator — thin amber vertical rule */}
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 1,
+                  height: 16,
+                  background: 'rgba(196,124,46,0.2)',
+                  flexShrink: 0,
+                  marginRight: 8,
+                }}
+              />
+
+              {/* CENTER: Context label — expands to fill remaining space */}
+              {/* Shows which panel is active or "BUILDER" when canvas is in focus */}
+              {/* Uses Syne font, 9px, bold, tracking 0.1em, dimmed amber color */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span
+                  className="syne-font"
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: leftPanelOpen || rightPanelOpen || bottomPanelOpen
+                      ? 'rgba(196,124,46,0.8)'
+                      : 'rgba(240,230,204,0.4)',
+                  }}
+                >
+                  {leftPanelOpen
+                    ? 'Layers'
+                    : rightPanelOpen
+                    ? selectedCount > 0
+                      ? selectedLabel
+                      : 'Inspector'
+                    : bottomPanelOpen
+                    ? bottomPanelTab === 'source'
+                      ? 'Source'
+                      : bottomPanelTab === 'canvas'
+                      ? 'Canvas'
+                      : 'Badges'
+                    : 'Builder'}
+                </span>
+              </div>
+
+              {/* RIGHT: Action buttons — 32×32 each, gap 4px */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                {/* Undo */}
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    color: canUndo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
+                    cursor: canUndo ? 'pointer' : 'default',
+                    transition: 'color 0.15s, background 0.15s',
+                  }}
+                >
+                  <Undo2 size={14} />
+                </button>
+
+                {/* Redo */}
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    color: canRedo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
+                    cursor: canRedo ? 'pointer' : 'default',
+                    transition: 'color 0.15s, background 0.15s',
+                  }}
+                >
+                  <Redo2 size={14} />
+                </button>
+
+                {/* Thin separator */}
+                <div
+                  aria-hidden="true"
+                  style={{ width: 1, height: 16, background: 'rgba(196,124,46,0.12)', margin: '0 2px' }}
+                />
+
+                {/* Export CTA — amber filled, matches desktop export button style */}
+                <button
+                  ref={exportBtnRef}
+                  onClick={() => setExportOpen((v) => !v)}
+                  aria-label="Export poster"
+                  style={{
+                    height: 32,
+                    paddingInline: 12,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 5,
+                    background: exportOpen ? 'rgba(196,124,46,0.85)' : 'var(--film-amber)',
+                    color: '#070706',
+                    border: 'none',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Download size={13} />
+                  <span
+                    className="syne-font"
+                    style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
+                  >
+                    EXPORT
+                  </span>
+                </button>
+              </div>
+            </header>
+
+            {/* ── CANVAS ── */}
+            {/* Top: 48px (header). Bottom: 56px (nav) + safe-area + var(--bph) (bottom sheet). */}
+            {/* Transition on bottom must match the bottom sheet transition duration exactly: 0.32s. */}
+            <main
+              id="main-canvas"
+              aria-label="Poster canvas"
+              style={{
+                position: 'absolute',
+                top: 48,
+                left: 0,
+                right: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
+                background: '#111113',
+                overflow: 'hidden',
+                transition: isDraggingBottomPanel
+                  ? 'none'
+                  : 'bottom 0.32s cubic-bezier(0.16,1,0.3,1)',
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) clearSelection();
+              }}
+            >
+              <PreviewCanvas
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+                onContextMenu={openCtxMenu}
+                onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+              />
+
+              {/* Film corner accents — 12×12px, z-index 10 so they render above canvas but below panels */}
+              {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
+                <div
+                  key={c}
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: c.startsWith('t') ? 8 : 'auto',
+                    bottom: c.startsWith('b') ? 8 : 'auto',
+                    left: c.endsWith('l') ? 8 : 'auto',
+                    right: c.endsWith('r') ? 8 : 'auto',
+                    width: 12,
+                    height: 12,
+                    pointerEvents: 'none',
+                    zIndex: 10,
+                    borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.22)' : 'none',
+                    borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.22)' : 'none',
+                    borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.22)' : 'none',
+                    borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.22)' : 'none',
+                  }}
+                />
+              ))}
+
+              {/* Zoom overlay for mobile — bottom-right corner inside canvas */}
+              {/* Stacked vertically: ZoomIn, ZoomOut, ResetView. No fullscreen toggle on mobile. */}
+              {/* z-index: 20, positioned 12px from bottom and right of canvas area */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 16,
+                  right: 14,
+                  zIndex: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  padding: 4,
+                  borderRadius: 12,
+                  background: 'rgba(14,13,11,0.88)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(196,124,46,0.18)',
+                }}
+              >
+                {[
+                  { icon: <ZoomIn size={14} />, label: 'Zoom in', action: () => dispatchZoom(0.25) },
+                  { icon: <ZoomOut size={14} />, label: 'Zoom out', action: () => dispatchZoom(-0.25) },
+                  { icon: <RotateCcw size={13} />, label: 'Reset view', action: dispatchResetView },
+                ].map(({ icon, label, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    aria-label={label}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(140,130,112,0.7)',
+                      cursor: 'pointer',
+                    }}
+                    onTouchStart={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
+                      (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                    }}
+                    onTouchEnd={(e) => {
+                      setTimeout(() => {
+                        (e.currentTarget as HTMLButtonElement).style.color = 'rgba(140,130,112,0.7)';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      }, 120);
+                    }}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </main>
+
+            {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
+            {/* Width: 22px. Height: 64px. Centered vertically at 50%. Rounded right corners only. */}
+            {/* z-index: 30 (above canvas, below drawers). */}
+            <button
+              aria-label={leftPanelOpen ? 'Close layers panel' : 'Open layers panel'}
+              aria-expanded={leftPanelOpen}
+              onClick={() => setLeftPanelOpen((v) => !v)}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 30,
+                width: 22,
+                height: 64,
+                borderRadius: '0 10px 10px 0',
+                background: leftPanelOpen
+                  ? 'rgba(196,124,46,0.18)'
+                  : 'rgba(10,9,8,0.9)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(196,124,46,0.22)',
+                borderLeft: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: leftPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {leftPanelOpen ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+            </button>
+
+            {/* ── RIGHT EDGE HANDLE (Selection/Inspector toggle) ── */}
+            {/* Identical geometry to left handle but mirrored. Rounded left corners only. */}
+            <button
+              aria-label={rightPanelOpen ? 'Close inspector panel' : 'Open inspector panel'}
+              aria-expanded={rightPanelOpen}
+              onClick={() => setRightPanelOpen((v) => !v)}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 30,
+                width: 22,
+                height: 64,
+                borderRadius: '10px 0 0 10px',
+                background: rightPanelOpen
+                  ? 'rgba(196,124,46,0.18)'
+                  : 'rgba(10,9,8,0.9)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(196,124,46,0.22)',
+                borderRight: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: rightPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {rightPanelOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+            </button>
+
+            {/* ── SELECTION CHIP ── */}
+            {/* Appears below the right edge handle when something is selected. */}
+            {/* Only visible (opacity 1, pointer-events auto) when selectedCount > 0. */}
+            {/* Tapping it opens the right inspector drawer. */}
+            <button
+              aria-label="Open inspector for selected layers"
+              onClick={() => { if (selectedCount > 0) setRightPanelOpen(true); }}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(50% + 44px)',
+                zIndex: 30,
+                height: 30,
+                minWidth: 56,
+                maxWidth: 110,
+                borderRadius: '14px 0 0 14px',
+                background: selectedCount > 0
+                  ? 'rgba(196,124,46,0.16)'
+                  : 'rgba(196,124,46,0.07)',
+                border: `1px solid ${selectedCount > 0 ? 'rgba(196,124,46,0.38)' : 'rgba(196,124,46,0.18)'}`,
+                borderRight: 'none',
+                paddingInline: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Syne, sans-serif',
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: selectedCount > 0 ? 'var(--film-amber)' : 'rgba(140,130,112,0.35)',
+                cursor: selectedCount > 0 ? 'pointer' : 'default',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                opacity: selectedCount > 0 ? 1 : 0.5,
+                pointerEvents: selectedCount > 0 ? 'auto' : 'none',
+                transition: 'opacity 0.2s, background 0.15s, border-color 0.15s',
+              }}
+            >
+              {selectedLabel}
+            </button>
+
+            {/* ── LEFT PANEL DRAWER BACKDROP ── */}
+            {/* Covers entire screen when drawer is open. Clicking closes the drawer. */}
+            {/* Use visibility instead of conditional render to avoid re-mount. */}
+            <div
+              aria-hidden="true"
+              onClick={() => setLeftPanelOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 24,
+                background: 'rgba(0,0,0,0.45)',
+                backdropFilter: 'blur(2px)',
+                opacity: leftPanelOpen ? 1 : 0,
+                visibility: leftPanelOpen ? 'visible' : 'hidden',
+                transition: 'opacity 0.28s ease, visibility 0.28s',
+                pointerEvents: leftPanelOpen ? 'auto' : 'none',
+              }}
+            />
+
+            {/* ── LEFT PANEL DRAWER ── */}
+            {/* Width: min(280px, 85vw). Slides in from left. */}
+            {/* Top: 48px (below header). Bottom: 56px (above nav) + safe-area-inset-bottom. */}
+            {/* Content: LayersPanel with hideTabs=true (no internal tab bar, takes full height). */}
+            {/* CRITICAL: Use visibility:hidden NOT display:none so the panel stays mounted. */}
+            <aside
+              aria-label="Layers panel"
+              aria-hidden={!leftPanelOpen}
+              style={{
+                position: 'absolute',
+                top: 48,
+                left: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                width: 'min(280px, 85vw)',
+                zIndex: 25,
+                background: 'var(--film-dark)',
+                borderRight: '1px solid rgba(196,124,46,0.18)',
+                boxShadow: '4px 0 40px rgba(0,0,0,0.7)',
+                display: 'flex',
+                flexDirection: 'column',
+                transform: leftPanelOpen ? 'translateX(0)' : 'translateX(-100%)',
+                transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                visibility: leftPanelOpen ? 'visible' : 'hidden',
+              }}
+            >
+              {/* Right-edge inner glow for left drawer — matches SidebarLayout's cyber-path aesthetic */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  width: 40,
+                  background: 'linear-gradient(to left, rgba(196,124,46,0.03), transparent)',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              />
+              {/* Drawer header — matches desktop sidebar header style exactly */}
+              {/* Height: 44px. Icon + title on left, close button on right. */}
+              <div
+                style={{
+                  height: 44,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px 0 14px',
+                  borderBottom: '1px solid rgba(196,124,46,0.08)',
+                  background: 'var(--film-mid)',
+                  gap: 8,
+                }}
+              >
+                <Layers size={13} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                <span
+                  className="syne-font"
+                  style={{
+                    flex: 1,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--film-cream)',
+                  }}
+                >
+                  Layers
+                </span>
+                {/* Close button — minimum 36×36 tap target */}
+                <button
+                  onClick={() => setLeftPanelOpen(false)}
+                  aria-label="Close layers panel"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(140,130,112,0.5)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  onTouchStart={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
+                  }}
+                  onTouchEnd={(e) => {
+                    setTimeout(() => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'rgba(140,130,112,0.5)';
+                    }, 150);
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Content — fills remaining height, scrollable */}
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                }}
+              >
+                <LayersPanel
+                  config={config}
+                  setConfig={setConfig}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectionOverride}
+                  chrome={false}
+                  detailLevel="simple"
+                />
+              </div>
+            </aside>
+
+            {/* ── RIGHT PANEL DRAWER BACKDROP ── */}
+            <div
+              aria-hidden="true"
+              onClick={() => setRightPanelOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 24,
+                background: 'rgba(0,0,0,0.45)',
+                backdropFilter: 'blur(2px)',
+                opacity: rightPanelOpen ? 1 : 0,
+                visibility: rightPanelOpen ? 'visible' : 'hidden',
+                transition: 'opacity 0.28s ease, visibility 0.28s',
+                pointerEvents: rightPanelOpen ? 'auto' : 'none',
+              }}
+            />
+
+            {/* ── RIGHT PANEL DRAWER ── */}
+            {/* Identical geometry to left drawer but slides from right. */}
+            {/* Content: SelectionPanel when items selected, BadgesPanel when nothing selected. */}
+            {/* CRITICAL: Use visibility:hidden, not display:none, to keep panel mounted. */}
+            <aside
+              aria-label="Inspector panel"
+              aria-hidden={!rightPanelOpen}
+              style={{
+                position: 'absolute',
+                top: 48,
+                right: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                width: 'min(280px, 85vw)',
+                zIndex: 25,
+                background: 'var(--film-dark)',
+                borderLeft: '1px solid rgba(196,124,46,0.18)',
+                boxShadow: '-4px 0 40px rgba(0,0,0,0.7)',
+                display: 'flex',
+                flexDirection: 'column',
+                transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)',
+                transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                visibility: rightPanelOpen ? 'visible' : 'hidden',
+              }}
+            >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  width: 40,
+                  background: 'linear-gradient(to right, rgba(196,124,46,0.03), transparent)',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              />
+              {/* Drawer header */}
+              <div
+                style={{
+                  height: 44,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px 0 14px',
+                  borderBottom: '1px solid rgba(196,124,46,0.08)',
+                  background: 'var(--film-mid)',
+                  gap: 8,
+                }}
+              >
+                <MousePointer2 size={13} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                <span
+                  className="syne-font"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--film-cream)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {selectedCount === 0 ? 'Inspector' : selectedLabel}
+                </span>
+                <button
+                  onClick={() => setRightPanelOpen(false)}
+                  aria-label="Close inspector panel"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(140,130,112,0.5)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  onTouchStart={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
+                  }}
+                  onTouchEnd={(e) => {
+                    setTimeout(() => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'rgba(140,130,112,0.5)';
+                    }, 150);
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                }}
+              >
+                {selectedCount > 0 ? (
+                  <SelectionPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    selectedLogo={selectedLogo}
+                    selectedMinimalElements={selectedMinimalElements}
+                    detailLevel="simple"
+                  />
+                ) : (
+                  <BadgesPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    selectedLogo={selectedLogo}
+                    selectedMinimalElements={selectedMinimalElements}
+                    detailLevel="simple"
+                  />
+                )}
+              </div>
+            </aside>
+
+            {/* ── BOTTOM SHEET PANEL ── */}
+            {/* Position: above the bottom nav bar (56px + safe area). */}
+            {/* Height: driven by CSS var --bph. Snaps to 200px / ~48vh / ~88vh. */}
+            {/* Contains: drag handle, tab bar, scrollable content. */}
+            {/* IMPORTANT: All three tab contents must be rendered simultaneously with */}
+            {/* display:none to avoid remounting and re-running effects on tab switch. */}
+            <section
+              aria-label="Editor panels"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                zIndex: 35,
+                height: 'var(--bph, 0px)',
+                background: 'var(--film-dark)',
+                borderTop: '1px solid rgba(196,124,46,0.2)',
+                borderRadius: '16px 16px 0 0',
+                boxShadow: '0 -8px 48px rgba(0,0,0,0.7)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                transform: bottomPanelOpen ? 'translateY(0)' : 'translateY(100%)',
+                opacity: bottomPanelOpen ? 1 : 0,
+                pointerEvents: bottomPanelOpen ? 'auto' : 'none',
+                transition: isDraggingBottomPanel
+                  ? 'none'
+                  : 'transform 0.32s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease',
+              }}
+            >
+              {/* Ambient gradient at top edge — visual depth cue */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 1,
+                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.25), transparent)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                }}
+              />
+
+              {/* DRAG HANDLE ZONE */}
+              {/* Height: 28px. Centered pill handle. Touch events initiate drag. */}
+              {/* Dragging upward increases panel height, downward decreases. */}
+              <div
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  beginBottomPanelDrag(e.touches[0].clientY, bottomPanelOpen);
+                }}
+                onTouchMove={(e) => {
+                  if (!isDraggingBottomPanel) return;
+                  e.preventDefault();
+                  moveBottomPanelDrag(e.touches[0].clientY);
+                }}
+                onTouchEnd={() => endBottomPanelDrag()}
+                style={{
+                  height: 28,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  paddingTop: 8,
+                  cursor: 'ns-resize',
+                  touchAction: 'none',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+              >
+                {/* Pill */}
+                <div
+                  style={{
+                    width: 40,
+                    height: 4,
+                    borderRadius: 2,
+                    background: isDraggingBottomPanel
+                      ? 'rgba(196,124,46,0.6)'
+                      : 'rgba(255,255,255,0.18)',
+                    transition: 'background 0.15s',
+                  }}
+                />
+              </div>
+
+              {/* TAB BAR */}
+              {/* Height: 40px. Three tabs. Active tab has bottom amber border 2px. */}
+              {/* Uses Syne font, 9px, bold, 0.1em tracking. Matches desktop PanelTabs aesthetic. */}
+              <div
+                style={{
+                  height: 40,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  borderBottom: '1px solid rgba(196,124,46,0.08)',
+                  background: 'var(--film-mid)',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+              >
+                {/* Close button — right of tab bar */}
+                {/* Width: 44px to meet minimum tap target. Chevron down icon. */}
+                <button
+                  onClick={closeBottomPanel}
+                  aria-label="Close editor panel"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(140,130,112,0.45)',
+                    cursor: 'pointer',
+                    zIndex: 1,
+                  }}
+                >
+                  <ChevronDown size={14} />
+                </button>
+
+                {/* Tab buttons — three equal-width buttons filling remaining space (minus 44px for close) */}
+                {(
+                  [
+                    { id: 'source', label: 'Source' },
+                    { id: 'canvas', label: 'Canvas' },
+                    { id: 'badges', label: 'Badges' },
+                  ] as const
+                ).map(({ id, label }) => {
+                  const active = bottomPanelTab === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setBottomPanelTab(id)}
+                      style={{
+                        flex: 1,
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: active
+                          ? '2px solid var(--film-amber)'
+                          : '2px solid transparent',
+                        fontFamily: 'Syne, sans-serif',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: active
+                          ? 'var(--film-cream)'
+                          : 'rgba(140,130,112,0.45)',
+                        cursor: 'pointer',
+                        transition: 'color 0.15s, border-bottom-color 0.15s',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* CONTENT AREA */}
+              {/* All three panels are mounted simultaneously. Only one is visible via display. */}
+              {/* This eliminates remounting, re-running effects, and scroll position loss on tab switch. */}
+              {/* Each content div has its own overflow-y:auto with touch scrolling. */}
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  position: 'relative',
+                }}
+              >
+                {/* SOURCE TAB CONTENT */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                    display: bottomPanelTab === 'source' ? 'block' : 'none',
+                    paddingBottom: 24,
+                  }}
+                >
+                  <SourcePanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    chrome={false}
+                    detailLevel="simple"
+                  />
+                </div>
+
+                {/* CANVAS TAB CONTENT */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                    display: bottomPanelTab === 'canvas' ? 'block' : 'none',
+                    paddingBottom: 24,
+                  }}
+                >
+                  <PosterPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    chrome={false}
+                    detailLevel="simple"
+                  />
+                </div>
+
+                {/* BADGES TAB CONTENT */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                    display: bottomPanelTab === 'badges' ? 'block' : 'none',
+                    paddingBottom: 24,
+                  }}
+                >
+                  <BadgesPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    selectedLogo={selectedLogo}
+                    selectedMinimalElements={selectedMinimalElements}
+                    detailLevel="simple"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* ── BOTTOM NAVIGATION BAR ── */}
+            {/* Height: 56px. Three tab buttons filling equal width. */}
+            {/* Active indicator: 2px amber line at TOP of bar (not the tab bottom border). */}
+            {/* The indicator is a single absolutely-positioned div that translates X. */}
+            {/* This avoids percentage-based left calculations that break with safe-area. */}
+            <nav
+              aria-label="Editor navigation"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                zIndex: 40,
+                background: 'rgba(7,7,6,0.97)',
+                backdropFilter: 'blur(24px)',
+                borderTop: '1px solid rgba(196,124,46,0.12)',
+                boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 1,
+                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.18), transparent)',
+                  pointerEvents: 'none',
+                }}
+              />
+              {/* Active indicator bar — 28px wide, 2px tall, translates X based on active tab */}
+              {/* Tab indices: source=0, canvas=1, badges=2. Each tab is 1/3 of nav width. */}
+              {/* Indicator centered within its tab: left = (tabIndex * 33.333%) + (33.333% - 28px) / 2 */}
+              {/* Use transform: translateX for GPU-accelerated animation instead of left: */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 'calc(33.333% * var(--active-tab-index, 0) + (33.333% - 28px) / 2)',
+                  width: 28,
+                  height: 2,
+                  background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
+                  borderRadius: '0 0 2px 2px',
+                  transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
+                  '--active-tab-index': bottomPanelTab === 'source'
+                    ? 0
+                    : bottomPanelTab === 'canvas'
+                    ? 1
+                    : 2,
+                } as React.CSSProperties}
+              />
+
+              {/* Invisible drag zone at top of nav bar — dragging up from here opens/expands the bottom sheet */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -16,
+                  left: 0,
+                  right: 0,
+                  height: 24,
+                  zIndex: 1,
+                  cursor: 'ns-resize',
+                  touchAction: 'none',
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  beginBottomPanelDrag(e.touches[0].clientY, bottomPanelOpen);
+                }}
+                onTouchMove={(e) => {
+                  if (!isDraggingBottomPanel) return;
+                  e.preventDefault();
+                  moveBottomPanelDrag(e.touches[0].clientY);
+                }}
+                onTouchEnd={() => endBottomPanelDrag()}
+              />
+
+              {/* Nav buttons row — fills the 56px of the nav (excluding safe-area padding at bottom) */}
+              <div style={{ flex: 1, display: 'flex' }}>
+                {(
+                  [
+                    { id: 'source', label: 'Source', Icon: Film },
+                    { id: 'canvas', label: 'Canvas', Icon: Monitor },
+                    { id: 'badges', label: 'Badges', Icon: Sliders },
+                  ] as const
+                ).map(({ id, label, Icon }) => {
+                  const active = bottomPanelOpen && bottomPanelTab === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => active ? closeBottomPanel() : openBottomPanel(id)}
+                      aria-label={`${label} panel`}
+                      aria-pressed={active}
+                      style={{
+                        flex: 1,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                        background: 'transparent',
+                        border: 'none',
+                        color: active ? 'var(--film-amber)' : 'rgba(140,130,112,0.45)',
+                        cursor: 'pointer',
+                        transition: 'color 0.15s',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <Icon size={20} />
+                      <span
+                        className="syne-font"
+                        style={{
+                          fontSize: 8,
+                          fontWeight: 700,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+          </div>
+        )}
+
+
         {/* ── BODY ── */}
-        <div className="flex flex-1 overflow-hidden relative flex-col lg:flex-row">
+        <div className="hidden lg:flex flex-1 overflow-hidden relative flex-row">
           {/* Left sidebar */}
           {!isFullscreen && (
             <aside
@@ -1313,7 +2470,6 @@ const StudioLayout: React.FC<{
             style={{ background: '#111113' }}
             onClick={(e) => {
               if (e.target === e.currentTarget) clearSelection();
-              // Reset any selection overlay when tapping the canvas background.
             }}
           >
             <div
@@ -1385,33 +2541,13 @@ const StudioLayout: React.FC<{
               )}
             </aside>
           )}
-
-          {/* Mobile Panel (In-flow flex item) */}
-          {!isFullscreen && (
-            <MobileBuilder
-              config={config}
-              setConfig={setConfig}
-              undo={undo}
-              redo={redo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              exportOpen={exportOpen}
-              onOpenExport={() => setExportOpen(true)}
-              onOpenReset={() => setIsResetOpen(true)}
-              exportBtnRef={exportBtnRef}
-              onContextMenu={openCtxMenu}
-              onLogoContextMenu={(e) => openCtxMenu('logo', e)}
-              paletteCommands={paletteCommands}
-            />
-          )}
         </div>
 
-        {/* Mobile dock */}
-        {/* Zoom + fullscreen overlay — desktop only; mobile uses the new native controls. */}
+        {/* Zoom + fullscreen overlay — desktop only; mobile uses the sketch-driven fixed chrome. */}
         {isDesktop && (
           <ZoomOverlay
             isFullscreen={isFullscreen}
-            rightSidebarWidth={rightVisible && !isFullscreen ? rightW : 0}
+            rightSidebarWidth={isDesktop && rightVisible && !isFullscreen ? rightW : 0}
             onToggleFullscreen={toggleFullscreen}
             onZoomIn={() => dispatchZoom(0.25)}
             onZoomOut={() => dispatchZoom(-0.25)}
