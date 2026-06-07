@@ -1,5 +1,4 @@
-// src/components/dashboard/sections/CombinedSection.tsx
-// Import paths corrected: ../../constants → @/lib/dashboard/constants, ../../hooks → @/lib/dashboard/hooks
+// src/components/dashboard/sections/CombinedSection.tsx - SIMPLIFIED VERSION
 import { memo, useState, useCallback, useEffect } from 'react';
 import { FEATURES, USE_CASES, API } from '@/lib/dashboard/constants';
 import { useInView } from '@/lib/dashboard/hooks/index';
@@ -9,26 +8,26 @@ import { SectionHeader } from '@/components/dashboard/components/SectionHeader';
 const FEATURE_TUPLES = [
   [
     'Drag-Drop Editor',
-    '⌖',
+    '✏️',
     '155',
     'movie',
     'imdb,rt,meta,tmdb',
     'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244',
   ],
   ['Instant API URL', '⚡', '27205', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
-  ['Multiple Sources', '⊞', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
-  ['Live Ratings', '◉', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
+  ['Multiple Sources', '🌐', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
+  ['Live Ratings', '🔄', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
   [
     'Movies, TV & Anime',
-    '▣',
+    '🎬',
     '238',
     'movie',
     'imdb,meta',
     'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88',
   ],
-  ['Any Export Format', '◫', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
-  ['Textless Posters', '◻', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
-  ['Plex & Jellyfin Ready', '▤', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
+  ['Any Export Format', '💾', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
+  ['Textless Posters', '🖼️', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
+  ['Plex & Jellyfin Ready', '📺', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
 ] as const;
 const ICON_MAP: Record<string, string> = Object.fromEntries(
   FEATURE_TUPLES.map(([title, icon]) => [title, icon])
@@ -81,6 +80,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
       <div className="combined-features-list" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
         {FEATURES.map((feat, i) => {
           const isActive = active === i;
+          const icon = ICON_MAP[feat.title] ?? '◆';
           return (
             <button
               key={feat.title}
@@ -93,7 +93,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                 borderLeft: isActive ? '2px solid var(--film-amber)' : '2px solid transparent',
                 cursor: 'pointer',
                 textAlign: 'left',
-                padding: '14px 20px',
+                padding: '12px 16px',
                 background: isActive ? 'rgba(196,124,46,0.038)' : 'transparent',
                 transition: 'background 0.18s, border-color 0.18s',
                 opacity: vis ? 1 : 0,
@@ -103,20 +103,19 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                 transitionDelay: `0s,0s,${i * 0.04}s,${i * 0.04}s`,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
               }}
             >
               <span
                 style={{
-                  fontSize: 14,
+                  fontSize: 18,
                   color: isActive ? 'var(--film-amber)' : 'rgba(196,185,165,0.72)',
                   transition: 'color 0.18s',
                   flexShrink: 0,
-                  fontFamily: 'monospace',
                   lineHeight: 1,
                 }}
               >
-                {ICON_MAP[feat.title] ?? '◆'}
+                {icon}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -167,19 +166,19 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
         key={active}
         className="combined-features-detail"
         style={{
-          padding: 'clamp(20px,3vw,36px)',
+          padding: 'clamp(16px,2.5vw,28px)',
           display: 'flex',
-          gap: 24,
+          gap: 20,
           alignItems: 'flex-start',
           animation: 'fade-up 0.3s ease both',
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span
               className="poster-font"
               style={{
-                fontSize: 'clamp(36px,5vw,56px)',
+                fontSize: 'clamp(32px,4.5vw,48px)',
                 lineHeight: 0.9,
                 color: 'rgba(196,124,46,0.1)',
                 letterSpacing: '0.02em',
@@ -199,9 +198,9 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                   background: 'rgba(196,124,46,0.06)',
                   border: '1px solid rgba(196,124,46,0.14)',
                   borderRadius: 2,
-                  padding: '2px 7px',
+                  padding: '2px 6px',
                   display: 'block',
-                  marginBottom: 5,
+                  marginBottom: 4,
                 }}
               >
                 {f.tag}
@@ -209,7 +208,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               <div
                 className="syne-font"
                 style={{
-                  fontSize: 'clamp(14px,2vw,19px)',
+                  fontSize: 'clamp(13px,1.8vw,17px)',
                   fontWeight: 800,
                   color: 'var(--film-cream)',
                 }}
@@ -221,11 +220,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
           <p
             className="body-font"
             style={{
-              fontSize: 12,
+              fontSize: 11,
               color: 'var(--film-silver)',
-              lineHeight: 1.75,
+              lineHeight: 1.6,
               maxWidth: 440,
-              marginBottom: 18,
+              marginBottom: 14,
             }}
           >
             {f.desc}
@@ -234,11 +233,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 7,
+              gap: 6,
               background: 'rgba(14,13,11,0.9)',
               border: '1px solid rgba(196,124,46,0.12)',
               borderRadius: 3,
-              padding: '7px 12px',
+              padding: '6px 10px',
               maxWidth: '100%',
               overflow: 'hidden',
             }}
@@ -246,7 +245,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
             <span
               className="mono-font"
               style={{
-                fontSize: 7,
+                fontSize: 6,
                 color: 'rgba(196,124,46,0.35)',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
@@ -258,7 +257,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
             <code
               className="mono-font"
               style={{
-                fontSize: 8,
+                fontSize: 7,
                 color: 'rgba(240,230,204,0.82)',
                 letterSpacing: '0.04em',
                 overflow: 'hidden',
@@ -269,11 +268,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               {f.hint}
             </code>
           </div>
-          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span
               style={{
-                width: 5,
-                height: 5,
+                width: 4,
+                height: 4,
                 borderRadius: '50%',
                 background: '#36A240',
                 boxShadow: '0 0 5px rgba(54,162,64,0.5)',
@@ -281,9 +280,9 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
             />
             <span
               className="mono-font"
-              style={{ fontSize: 7, color: '#36A240', letterSpacing: '0.14em' }}
+              style={{ fontSize: 6, color: '#36A240', letterSpacing: '0.12em', textTransform: 'uppercase' }}
             >
-              LIVE · FREE · {f.size.toUpperCase()}
+              Live · Free · {f.size.toUpperCase()}
             </span>
           </div>
         </div>
@@ -307,36 +306,30 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
       <div
         key={uc.title}
         style={{
-          padding: 'clamp(20px,3vw,32px)',
+          padding: 'clamp(16px,2vw,24px)',
           borderRight: i % 3 !== 2 ? '1px solid rgba(255,255,255,0.04)' : 'none',
           borderBottom: i < USE_CASES.length - 3 ? '1px solid rgba(255,255,255,0.04)' : 'none',
           opacity: vis ? 1 : 0,
-          transform: vis ? 'translateY(0)' : 'translateY(16px)',
-          transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`,
+          transform: vis ? 'translateY(0)' : 'translateY(12px)',
+          transition: `opacity 0.5s ease ${i * 0.05}s, transform 0.5s ease ${i * 0.05}s`,
         }}
       >
-        <div style={{ fontSize: 24, marginBottom: 12, lineHeight: 1 }}>{uc.icon}</div>
+        <div style={{ fontSize: 22, marginBottom: 10, lineHeight: 1 }}>{uc.icon}</div>
         <h3
           className="syne-font"
           style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 800,
             color: 'var(--film-cream)',
-            marginBottom: 8,
+            marginBottom: 6,
             margin: 0,
           }}
         >
-          {/* If you ever create dedicated landing pages, link them here. Otherwise, a self-referential anchor creates the keyword association. */}
-          <a
-            href={`#${uc.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-            style={{ color: 'inherit', textDecoration: 'none' }}
-          >
-            {uc.title}
-          </a>
+          {uc.title}
         </h3>
         <p
           className="body-font"
-          style={{ fontSize: 11, color: 'var(--film-silver)', lineHeight: 1.72, marginBottom: 14 }}
+          style={{ fontSize: 10, color: 'var(--film-silver)', lineHeight: 1.5, marginBottom: 10 }}
         >
           {uc.desc}
         </p>
@@ -344,9 +337,9 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
           <code
             className="mono-font"
             style={{
-              fontSize: 8,
+              fontSize: 7,
               color: 'rgba(196,124,46,0.55)',
-              letterSpacing: '0.03em',
+              letterSpacing: '0.02em',
               display: 'block',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -354,33 +347,12 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
               background: 'rgba(196,124,46,0.04)',
               border: '1px solid rgba(196,124,46,0.1)',
               borderRadius: 3,
-              padding: '5px 8px',
+              padding: '4px 6px',
             }}
           >
             {uc.codeSnippet}
           </code>
         )}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
-          {uc.tags.slice(0, 2).map((t) => (
-            <span
-              key={t}
-              className="syne-font"
-              style={{
-                fontSize: 7,
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'rgba(196,185,165,0.72)',
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.045)',
-                padding: '2px 6px',
-                borderRadius: 2,
-              }}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
       </div>
     ))}
   </div>
@@ -444,7 +416,7 @@ export const CombinedSection = memo(() => {
                       borderRadius: 3,
                       color: active ? 'var(--film-amber)' : 'rgba(196,185,165,0.74)',
                       cursor: 'pointer',
-                      padding: '7px 18px',
+                      padding: '6px 14px',
                       fontSize: 9,
                       fontWeight: 700,
                       letterSpacing: '0.1em',
@@ -463,22 +435,24 @@ export const CombinedSection = memo(() => {
       {tab === 'features' ? <FeaturesPane vis={vis} /> : <IntegrationsPane vis={vis} />}
       <div
         style={{
-          padding: '10px clamp(20px,5vw,64px)',
-          background: 'rgba(255,255,255,0.008)',
+          padding: '8px clamp(16px,4vw,56px)',
+          background: 'rgba(255,255,255,0.006)',
           borderTop: '1px solid rgba(255,255,255,0.03)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 10,
+          gap: 8,
+          opacity: vis ? 1 : 0,
+          transition: 'opacity 0.55s ease',
         }}
       >
         <span
           className="mono-font"
           style={{
-            fontSize: 7,
+            fontSize: 6,
             color: 'rgba(196,185,165,0.74)',
-            letterSpacing: '0.14em',
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
           }}
         >
@@ -488,7 +462,7 @@ export const CombinedSection = memo(() => {
         </span>
         <span
           className="mono-font"
-          style={{ fontSize: 7, color: 'rgba(196,185,165,0.72)', letterSpacing: '0.1em' }}
+          style={{ fontSize: 6, color: 'rgba(196,185,165,0.72)', letterSpacing: '0.08em' }}
         >
           © SPICYDEVS
         </span>
