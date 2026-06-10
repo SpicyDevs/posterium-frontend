@@ -227,6 +227,12 @@ Posterium is free and will stay free. If it saves you time or brings you joy, co
 
 ---
 
+## 📄 License
+
+MIT © [Project Team](#)
+
+---
+
 <div align="center">
   <sub>Built with ❤️ by <a href="#">Project Team</a> · <a href="#">Live Editor</a> · <a href="#">GitHub</a></sub>
 </div>
