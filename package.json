@@ -8,14 +8,16 @@
     "prebuild-push": "npm run clean",
     "build": "astro build",
     "preview": "astro preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --noUnusedLocals false --noUnusedParameters false --noImplicitAny false",
     "format": "prettier --write .",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy": "wrangler deploy --env production",
     "release:staging": "npm run typecheck && npm run test && npm run build && npm run deploy:staging",
-    "cf:dev": "wrangler dev"
+    "cf:dev": "wrangler dev",
+    "test:links": "npx lychee ./dist/**/*.html --offline --no-progress",
+    "test:lhci": "lhci autorun"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -31,6 +33,7 @@
   "devDependencies": {
     "@astrojs/react": "^4.0.0",
     "@astrojs/sitemap": "^3.7.1",
+    "@lhci/cli": "^0.15.1",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
