@@ -1,14 +1,29 @@
 // src/components/dashboard/sections/FooterSection.tsx
-// Cleaner footer: no sprocket strips, single white line bottom, removed slop text
-
 import { memo } from 'react';
 import { Film, Github, ExternalLink } from 'lucide-react';
+import { SprocketStrip } from '../primitives';
 
 const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
   ['Project Repo', '#', false],
+  ['Project Team', '#', false],
+  ['MIT License', '#', false],
   ['API Docs', '#combined'],
 ] as const;
+
+const LEGAL_LINKS = [
+  ['Privacy Policy', '/privacy'],
+  ['Terms of Service', '/terms'],
+] as const;
+
+const SprocketEdge = memo<{ border: 'borderTop' | 'borderBottom' }>(({ border }) => (
+  <div
+    style={{ background: 'rgba(255,255,255,0.012)', [border]: '1px solid rgba(255,255,255,0.04)' }}
+  >
+    <SprocketStrip count={64} />
+  </div>
+));
+SprocketEdge.displayName = 'SprocketEdge';
 
 export const FooterSection = memo(() => (
   <footer
@@ -19,9 +34,11 @@ export const FooterSection = memo(() => (
       overflow: 'hidden',
     }}
   >
+    <SprocketEdge border="borderBottom" />
+
     <div style={{ position: 'relative', zIndex: 1 }}>
       <div
-        style={{ padding: 'clamp(48px,7vw,80px) clamp(20px,5vw,64px) 0', position: 'relative' }}
+        style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,64px) 0', position: 'relative' }}
       >
         <div
           aria-hidden="true"
@@ -45,7 +62,7 @@ export const FooterSection = memo(() => (
         </div>
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
             <div
               style={{
                 width: 44,
@@ -65,7 +82,7 @@ export const FooterSection = memo(() => (
               <div
                 className="poster-font"
                 style={{
-                  fontSize: 'clamp(32px,5vw,48px)',
+                  fontSize: 'clamp(32px,5vw,52px)',
                   color: 'var(--film-cream)',
                   letterSpacing: '0.08em',
                   lineHeight: 0.9,
@@ -78,27 +95,28 @@ export const FooterSection = memo(() => (
                 style={{
                   fontSize: 8,
                   color: 'rgba(196,124,46,0.5)',
-                  letterSpacing: '0.16em',
+                  letterSpacing: '0.18em',
                   textTransform: 'uppercase',
-                  marginTop: 3,
+                  marginTop: 4,
                 }}
               >
-                Free Poster API
+                Free Poster API · MIT License
               </div>
             </div>
           </div>
 
           <p
-            className="body-font"
+            className="syne-font"
             style={{
-              fontSize: 'clamp(12px,1.5vw,15px)',
-              color: 'rgba(205,195,178,0.75)',
-              lineHeight: 1.6,
+              fontSize: 'clamp(12px,1.6vw,16px)',
+              color: 'rgba(205,195,178,0.78)',
+              lineHeight: 1.7,
               maxWidth: 520,
               marginBottom: 0,
             }}
           >
-            Generate movie and TV posters with live rating badges. No account. No rate limits.
+            Generate custom movie and TV poster images with glassmorphism rating badges. One URL. No
+            account. No rate limits.
           </p>
         </div>
       </div>
@@ -106,10 +124,11 @@ export const FooterSection = memo(() => (
       <div
         aria-hidden="true"
         style={{
-          margin: 'clamp(28px,4vw,40px) clamp(20px,5vw,64px)',
+          margin: 'clamp(28px,4vw,44px) clamp(20px,5vw,64px)',
           height: 1,
-          background: 'linear-gradient(90deg, var(--film-amber), rgba(196,124,46,0.08) 50%, transparent 100%)',
-          opacity: 0.5,
+          background:
+            'linear-gradient(90deg, var(--film-amber), rgba(196,124,46,0.12) 70%, transparent 100%)',
+          opacity: 0.45,
         }}
       />
 
@@ -121,7 +140,6 @@ export const FooterSection = memo(() => (
           alignItems: 'center',
           gap: 0,
           flexWrap: 'wrap',
-          marginBottom: 'clamp(20px,3vw,32px)',
         }}
       >
         {FOOTER_LINKS.map(([label, href, external], i) => {
@@ -141,7 +159,7 @@ export const FooterSection = memo(() => (
                   textDecoration: 'none',
                   color: 'rgba(212,198,172,0.74)',
                   fontFamily: 'Syne, sans-serif',
-                  padding: '4px 0',
+                  padding: '5px 0',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
@@ -155,9 +173,10 @@ export const FooterSection = memo(() => (
                 <span
                   aria-hidden="true"
                   style={{
-                    margin: '0 12px',
+                    margin: '0 16px',
                     color: 'rgba(196,124,46,0.2)',
                     fontSize: 10,
+                    fontFamily: 'monospace',
                   }}
                 >
                   ·
@@ -168,51 +187,128 @@ export const FooterSection = memo(() => (
         })}
       </div>
 
-      {/* ── Bottom metadata bar ─────────────────────────────────────────── */}
+      <div
+        aria-hidden="true"
+        style={{
+          margin: 'clamp(24px,3.5vw,40px) clamp(20px,5vw,64px)',
+          height: 1,
+          background: 'rgba(255,255,255,0.04)',
+        }}
+      />
+
+      {/* ── Bottom bar: copyright + legal links + GitHub ─────────────── */}
       <div
         style={{
-          padding: '0 clamp(20px,5vw,64px) clamp(28px,4vw,48px)',
+          padding: '0 clamp(20px,5vw,64px) clamp(40px,5vw,60px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 12,
-          borderTop: '1px solid rgba(255,255,255,0.04)',
+          gap: 16,
         }}
       >
-        <div style={{ display: 'flex', gap: 'clamp(12px,2.5vw,24px)', flexWrap: 'wrap', alignItems: 'center' }}>
-          {[
-            ['© 2026', ''],
-            ['MIT License', ''],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span
-                className="mono-font"
-                style={{
-                  fontSize: 7,
-                  color: 'rgba(196,124,46,0.35)',
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {k}
+        {/* Left: metadata + legal links */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              gap: 'clamp(16px,3vw,36px)',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+            }}
+          >
+            {[
+              ['PROD', 'Project Team'],
+              ['DIR', 'Core Team'],
+              ['REL', '2.0'],
+              ['LIC', 'MIT'],
+              [`© 2026`, ''],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                <span
+                  className="mono-font"
+                  style={{
+                    fontSize: 7,
+                    color: 'rgba(196,124,46,0.38)',
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {k}
+                </span>
+                {v ? (
+                  <span
+                    className="syne-font"
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: 'rgba(212,198,172,0.68)',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {v}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {/* Legal links row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            {LEGAL_LINKS.map(([label, href], i) => (
+              <span key={label}>
+                <a
+                  href={href}
+                  className="hover-amber"
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    color: 'rgba(212,198,172,0.64)',
+                    fontFamily: 'Syne, sans-serif',
+                    transition: 'color 0.18s',
+                  }}
+                >
+                  {label}
+                </a>
+                {i < LEGAL_LINKS.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      margin: '0 12px',
+                      color: 'rgba(196,124,46,0.15)',
+                      fontSize: 8,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    ·
+                  </span>
+                )}
               </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
+        {/* Right: GitHub */}
         <a
           href="#"
-          onClick={(event) => event.preventDefault()}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 5,
+            gap: 6,
             color: 'rgba(196,124,46,0.45)',
             textDecoration: 'none',
             fontFamily: 'Syne, sans-serif',
             fontWeight: 700,
-            fontSize: 8,
+            fontSize: 9,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
             transition: 'color 0.18s',
@@ -224,34 +320,36 @@ export const FooterSection = memo(() => (
       </div>
     </div>
 
-    {/* ── Clapboard end line (white) ────────────────────────────────────── */}
-    <div
-      aria-hidden="true"
-      style={{
-        height: 2,
-        background: 'rgba(255,255,255,0.12)',
-        marginTop: 'clamp(24px,3vw,36px)',
-      }}
-    />
+    <SprocketEdge border="borderTop" />
 
-    {/* ── API URL footer ──────────────────────────────────────────────────── */}
     <div
       style={{
         background: 'rgba(5,5,4,0.95)',
         padding: '8px clamp(20px,5vw,64px)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        justifyContent: 'space-between',
         flexWrap: 'wrap',
+        gap: 8,
       }}
     >
       <code
         className="mono-font"
         style={{ fontSize: 8, color: 'rgba(196,124,46,0.28)', letterSpacing: '0.08em' }}
       >
-        api.posterium.xyz/movie/{'{id}'}.svg
+        {'api.posterium.xyz/{type}/{id}.svg?r=imdb,rt&source=tmdb'}
       </code>
+      <span
+        className="mono-font"
+        style={{
+          fontSize: 7,
+          color: 'rgba(212,198,172,0.5)',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+        }}
+      >
+        Free · CORS Enabled · No Auth · SVG/PNG/JPG/WebP
+      </span>
     </div>
   </footer>
 ));
