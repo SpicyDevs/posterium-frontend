@@ -1,172 +1,581 @@
 // src/components/dashboard/FilmReelSection/index.tsx
-// Removed: animated movie name marquee above/below the reel strip
-import { memo, useRef, useEffect, useState } from 'react';
-import { API } from '@/lib/dashboard/constants';
+import { memo, useRef, useEffect, useState, useCallback } from 'react';
+import { SprocketStrip } from '../primitives';
+import { REEL_ITEMS } from '@/lib/dashboard/constants';
 
-const REEL_POSTERS = [
-  { id: '155',    type: 'movie', r: 'imdb',     pos: 'imdb_x=14&imdb_y=14' },
-  { id: '238',    type: 'movie', r: 'imdb,rt',  pos: 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88' },
-  { id: '680',    type: 'movie', r: 'rt,meta',  pos: 'rt_x=14&rt_y=14&meta_x=14&meta_y=88' },
-  { id: '27205',  type: 'movie', r: 'imdb',     pos: 'imdb_x=310&imdb_y=14' },
-  { id: '872585', type: 'movie', r: 'imdb,rt',  pos: 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88' },
-  { id: '157336', type: 'movie', r: 'rt',       pos: 'rt_x=310&rt_y=14' },
-  { id: '1396',   type: 'tv',    r: 'imdb',     pos: 'imdb_x=14&imdb_y=14' },
-  { id: '475557', type: 'movie', r: 'imdb,meta',pos: 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88' },
-] as const;
+const DESKTOP_REEL_CHUNKS = 3;
+const MOBILE_REEL_CHUNKS = 2;
+const CHUNK_WIDTH = 4000;
+const MOSAIC_NATURAL_WIDTH = DESKTOP_REEL_CHUNKS * CHUNK_WIDTH;
 
-// Duplicate for seamless loop
-const REEL_ITEMS = [...REEL_POSTERS, ...REEL_POSTERS];
+// ─────────────────────────────────────────────────────────────────────────────
+// Desktop — sticky scroll → horizontal pan
+// ─────────────────────────────────────────────────────────────────────────────
+const DesktopStaticReel = memo(() => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  const containerTopRef = useRef<number>(0);
 
-function buildSrc(p: (typeof REEL_POSTERS)[number]) {
-  return `${API}/${p.type}/${p.id}.svg?r=${p.r}&source=tmdb&blur=7&alpha=0.43&rad=10&${p.pos}`;
-}
+  const recalc = useCallback(() => {
+    const img = imgRef.current;
+    const container = containerRef.current;
+    if (!container) return;
 
-// Static perforations on a film strip segment
-const Perfs = memo<{ count?: number }>(({ count = 6 }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%', justifyContent: 'space-around', padding: '6px 0' }}>
-    {Array.from({ length: count }, (_, i) => (
-      <div key={i} style={{
-        width: 12, height: 16, borderRadius: 2,
-        background: '#000',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8)',
-        flexShrink: 0,
-      }} />
-    ))}
-  </div>
-));
-Perfs.displayName = 'Perfs';
+    const imgW = img?.offsetWidth || MOSAIC_NATURAL_WIDTH;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-const PosterCard = memo<{ p: (typeof REEL_ITEMS)[number]; index: number }>(({ p, index }) => {
-  const [loaded, setLoaded] = useState(false);
-  const src = buildSrc(p);
-  return (
-    <div style={{
-      width: 'clamp(100px,12vw,152px)',
-      aspectRatio: '2/3',
-      flexShrink: 0,
-      position: 'relative',
-      borderRadius: 3,
-      overflow: 'hidden',
-      background: '#0f0e0c',
-      border: '1px solid rgba(196,124,46,0.12)',
-      boxShadow: '0 8px 28px rgba(0,0,0,0.6)',
-    }}>
-      {!loaded && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(110deg,#13120f 25%,#1c1a16 50%,#13120f 75%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer 1.8s linear infinite',
-        }} />
-      )}
-      <img
-        src={src}
-        alt=""
-        aria-hidden="true"
-        loading={index < 4 ? 'eager' : 'lazy'}
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
-      />
-    </div>
-  );
-});
-PosterCard.displayName = 'PosterCard';
+    if (imgW > vw) {
+      container.style.height = `${imgW - vw + vh}px`;
+    }
 
-const FilmReelSection = memo(() => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const rafRef   = useRef<number | null>(null);
-  const xRef     = useRef(0);
-  const SPEED    = 0.6; // px per frame
+    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
+  }, []);
 
   useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    let paused = false;
+    recalc();
 
-    const onEnter = () => { paused = true; };
-    const onLeave = () => { paused = false; };
-    track.addEventListener('mouseenter', onEnter);
-    track.addEventListener('mouseleave', onLeave);
+    const img = imgRef.current;
+    const images = img?.querySelectorAll('img') || [];
+    images.forEach((i) => i.addEventListener('load', recalc));
+    window.addEventListener('resize', recalc, { passive: true });
 
-    const tick = () => {
-      if (!paused) {
-        xRef.current -= SPEED;
-        const halfW = track.scrollWidth / 2;
-        if (Math.abs(xRef.current) >= halfW) xRef.current = 0;
-        track.style.transform = `translateX(${xRef.current}px)`;
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+    const t1 = setTimeout(recalc, 300);
+    const t2 = setTimeout(recalc, 1000);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      track.removeEventListener('mouseenter', onEnter);
-      track.removeEventListener('mouseleave', onLeave);
+      images.forEach((i) => i.removeEventListener('load', recalc));
+      window.removeEventListener('resize', recalc);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [recalc]);
+
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
+      const container = containerRef.current;
+      const img = imgRef.current;
+      const fill = progressFillRef.current;
+      if (!container || !img) return;
+
+      const scrollable = container.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+
+      const progress = Math.max(
+        0,
+        Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
+      );
+
+      const imgW = img.offsetWidth || MOSAIC_NATURAL_WIDTH;
+      const maxShift = Math.max(0, imgW - window.innerWidth);
+
+      img.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
+      if (fill) fill.style.width = `${progress * 100}%`;
+    };
+
+    const onScroll = () => {
+      if (rafId === null) rafId = requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
 
   return (
-    <section
+    <div
       id="reel"
-      aria-label="Poster showcase reel"
-      style={{ background: 'var(--film-black)', padding: '0', overflow: 'hidden', position: 'relative' }}
+      ref={containerRef}
+      role="region"
+      aria-label="Film Reel Showcase"
+      style={{ position: 'relative' }}
     >
-      {/* Edge fade masks */}
-      <div aria-hidden="true" style={{
-        position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none',
-        background: 'linear-gradient(90deg, var(--film-black) 0%, transparent 8%, transparent 92%, var(--film-black) 100%)',
-      }} />
-
-      {/* Film strip */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        background: 'rgba(7,7,6,0.98)',
-        borderTop: '1px solid rgba(196,124,46,0.08)',
-        borderBottom: '1px solid rgba(196,124,46,0.08)',
-        overflow: 'hidden',
-        position: 'relative',
-      }}>
-        {/* Left perforations */}
-        <div className="film-perforation" aria-hidden="true" style={{
-          width: 28, flexShrink: 0, background: 'rgba(0,0,0,0.6)',
-          borderRight: '1px solid rgba(255,255,255,0.04)',
-          alignSelf: 'stretch', display: 'flex', alignItems: 'stretch',
-        }}>
-          <Perfs count={7} />
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          overflow: 'hidden',
+          background: 'var(--film-dark)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* ── Minimal header ──────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '14px 48px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(196,124,46,0.08)',
+          }}
+        >
+          <div>
+            <div
+              className="poster-font"
+              style={{
+                fontSize: 20,
+                color: 'var(--film-cream)',
+                letterSpacing: '0.08em',
+                lineHeight: 1,
+              }}
+            >
+              THE REEL
+            </div>
+            <div
+              className="syne-font"
+              style={{
+                fontSize: 8,
+                color: 'var(--film-silver)',
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                marginTop: 2,
+              }}
+            >
+              Scroll to pan
+            </div>
+          </div>
+          <span
+            className="mono-font"
+            style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.12em' }}
+          >
+            {REEL_ITEMS.length} titles
+          </span>
         </div>
 
-        {/* Scrolling track */}
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', padding: '16px 0' }}>
+        {/* ── Top sprocket ────────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderBottom: '1px solid rgba(255,255,255,0.045)',
+          }}
+        >
+          <SprocketStrip count={48} />
+        </div>
+
+        {/* ── Image area ──────────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {/* Left edge fade */}
           <div
-            ref={trackRef}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 140,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+            }}
+          />
+          {/* Right edge fade */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 200,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+            }}
+          />
+
+          <div
+            ref={imgRef}
             style={{
               display: 'flex',
-              gap: 14,
+              height: '100%',
               width: 'max-content',
+              flexShrink: 0,
               willChange: 'transform',
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
             }}
           >
-            {REEL_ITEMS.map((p, i) => (
-              <PosterCard key={`${p.id}-${i}`} p={p} index={i} />
+            {Array.from({ length: DESKTOP_REEL_CHUNKS }).map((_, i) => (
+              <picture key={i} style={{ display: 'block', height: '100%' }}>
+                <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
+                <img
+                  src={`/reel-mosaic-${i + 1}.jpg`}
+                  alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''}
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: 'none',
+                  }}
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? ('high' as any) : 'auto'}
+                  decoding="async"
+                />
+              </picture>
             ))}
           </div>
         </div>
 
-        {/* Right perforations */}
-        <div className="film-perforation" aria-hidden="true" style={{
-          width: 28, flexShrink: 0, background: 'rgba(0,0,0,0.6)',
-          borderLeft: '1px solid rgba(255,255,255,0.04)',
-          alignSelf: 'stretch', display: 'flex', alignItems: 'stretch',
-        }}>
-          <Perfs count={7} />
+        {/* ── Bottom sprocket ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderTop: '1px solid rgba(255,255,255,0.045)',
+          }}
+        >
+          <SprocketStrip count={48} />
+        </div>
+
+        {/* ── Progress bar ────────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '7px 48px',
+            borderTop: '1px solid rgba(196,124,46,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <span
+            className="mono-font"
+            style={{
+              fontSize: 7,
+              color: 'var(--film-text-ghost)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              flexShrink: 0,
+            }}
+          >
+            Reel
+          </span>
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: 99,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              ref={progressFillRef}
+              style={{
+                height: '100%',
+                width: '0%',
+                borderRadius: 99,
+                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
+                transition: 'none',
+              }}
+            />
+          </div>
+          <span
+            className="mono-font"
+            style={{
+              fontSize: 7,
+              color: 'var(--film-text-ghost)',
+              flexShrink: 0,
+              letterSpacing: '0.1em',
+            }}
+          >
+            {REEL_ITEMS.length} frames
+          </span>
         </div>
       </div>
-    </section>
+    </div>
   );
 });
+DesktopStaticReel.displayName = 'DesktopStaticReel';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mobile — PARALLAX like desktop (NOT native scroll)
+// ─────────────────────────────────────────────────────────────────────────────
+const MobileStaticReel = memo(() => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  const containerTopRef = useRef<number>(0);
+
+  // Mobile uses 2 chunks so width = 2 × CHUNK_WIDTH
+  const mosaicMobileWidth = MOBILE_REEL_CHUNKS * CHUNK_WIDTH;
+
+  const recalc = useCallback(() => {
+    const track = trackRef.current;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const trackW = track?.offsetWidth || mosaicMobileWidth;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (trackW > vw) {
+      container.style.height = `${trackW - vw + vh}px`;
+    }
+
+    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
+  }, [mosaicMobileWidth]);
+
+  useEffect(() => {
+    recalc();
+
+    const track = trackRef.current;
+    const images = track?.querySelectorAll('img') || [];
+    images.forEach((i) => i.addEventListener('load', recalc));
+    window.addEventListener('resize', recalc, { passive: true });
+
+    const t1 = setTimeout(recalc, 300);
+    const t2 = setTimeout(recalc, 1000);
+
+    return () => {
+      images.forEach((i) => i.removeEventListener('load', recalc));
+      window.removeEventListener('resize', recalc);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [recalc]);
+
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
+      const container = containerRef.current;
+      const track = trackRef.current;
+      const fill = progressFillRef.current;
+      if (!container || !track) return;
+
+      const scrollable = container.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+
+      const progress = Math.max(
+        0,
+        Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
+      );
+
+      const trackW = track.offsetWidth || mosaicMobileWidth;
+      const maxShift = Math.max(0, trackW - window.innerWidth);
+
+      track.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
+      if (fill) fill.style.width = `${progress * 100}%`;
+    };
+
+    const onScroll = () => {
+      if (rafId === null) rafId = requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [mosaicMobileWidth]);
+
+  return (
+    <div
+      id="reel"
+      ref={containerRef}
+      role="region"
+      aria-label="Film Reel Showcase"
+      style={{ position: 'relative' }}
+    >
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          overflow: 'hidden',
+          background: 'var(--film-dark)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* ── Top sprocket ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderBottom: '1px solid rgba(255,255,255,0.045)',
+            height: 24,
+          }}
+        >
+          <SprocketStrip count={22} />
+        </div>
+
+        {/* ── Image area ───────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {/* Left edge fade */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 60,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+            }}
+          />
+          {/* Right edge fade */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 80,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+            }}
+          />
+
+          <div
+            ref={trackRef}
+            style={{
+              display: 'flex',
+              height: '100%',
+              width: 'max-content',
+              flexShrink: 0,
+              willChange: 'transform',
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
+            }}
+          >
+            {Array.from({ length: MOBILE_REEL_CHUNKS }).map((_, i) => (
+              <picture key={i} style={{ display: 'block', height: '100%' }}>
+                <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
+                <img
+                  src={`/reel-mosaic-${i + 1}.jpg`}
+                  alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''}
+                  style={{
+                    display: 'block',
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: 'none',
+                  }}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? ('high' as any) : 'auto'}
+                  decoding="async"
+                />
+              </picture>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Bottom sprocket ──────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderTop: '1px solid rgba(255,255,255,0.045)',
+            height: 24,
+          }}
+        >
+          <SprocketStrip count={22} />
+        </div>
+
+        {/* ── Progress bar ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '6px 16px',
+            borderTop: '1px solid rgba(196,124,46,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: 99,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              ref={progressFillRef}
+              style={{
+                height: '100%',
+                width: '0%',
+                borderRadius: 99,
+                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
+                transition: 'none',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+MobileStaticReel.displayName = 'MobileStaticReel';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Root export
+// ─────────────────────────────────────────────────────────────────────────────
+const FilmReelSection = memo(() => {
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(min-width: 769px)');
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  if (isDesktop === null) {
+    return (
+      <div
+        id="reel"
+        role="region"
+        aria-label="Film Reel Showcase"
+        style={{ height: '100dvh', background: 'var(--film-dark)' }}
+      />
+    );
+  }
+
+  return isDesktop ? <DesktopStaticReel /> : <MobileStaticReel />;
+});
+
 FilmReelSection.displayName = 'FilmReelSection';
 export default FilmReelSection;
