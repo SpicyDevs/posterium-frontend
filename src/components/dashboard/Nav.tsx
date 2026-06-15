@@ -12,22 +12,14 @@ const NAV_LINKS = [
 ] as const;
 
 const LINK_BASE: React.CSSProperties = {
-  color: 'rgba(224, 210, 180, 0.88)',
+  color: 'rgba(224, 210, 180, 0.75)',
   fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: '0.1em',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
   textTransform: 'uppercase',
   padding: '4px 14px',
   textDecoration: 'none',
   fontFamily: 'Syne, sans-serif',
-};
-
-const GITHUB_BASE: React.CSSProperties = {
-  color: 'rgba(200, 185, 155, 0.78)',
-  display: 'flex',
-  alignItems: 'center',
-  padding: '6px 8px',
-  borderRadius: 4,
 };
 
 const Nav = memo(() => {
@@ -70,42 +62,38 @@ const Nav = memo(() => {
       <nav
         aria-label="Main navigation"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 52,
+          display: 'flex', alignItems: 'center',
           padding: '0 clamp(20px,4vw,56px)',
           background: scrolled ? 'rgba(7,7,6,0.97)' : 'transparent',
           backdropFilter: scrolled ? 'blur(24px) saturate(1.3)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(196,124,46,0.1)' : '1px solid transparent',
+          borderBottom: scrolled ? '1px solid rgba(196,124,46,0.08)' : '1px solid transparent',
           justifyContent: 'space-between',
           gap: 24,
           transition: 'background 0.35s ease, border-color 0.35s ease',
         }}
       >
-        <a 
-          href="/" 
-          style={{ 
-            textDecoration: 'none', 
+        {/* Logo — Syne for consistency, no FOUT */}
+        <a
+          href="/"
+          style={{
+            textDecoration: 'none',
             flexShrink: 0,
             opacity: scrolled ? 1 : 0,
             pointerEvents: scrolled ? 'auto' : 'none',
-            transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
-            transition: 'opacity 0.35s ease, transform 0.35s ease'
+            transform: scrolled ? 'translateY(0)' : 'translateY(-8px)',
+            transition: 'opacity 0.35s ease, transform 0.35s ease',
           }}
         >
           <span
-            className="poster-font"
+            className="syne-font"
             style={{
-              fontSize: 22,
+              fontSize: 15,
+              fontWeight: 900,
               color: 'var(--film-cream)',
-              letterSpacing: '0.12em',
+              letterSpacing: '0.22em',
               lineHeight: 1,
-              textShadow: '0 0 32px rgba(196,124,46,0.18)',
+              textTransform: 'uppercase',
             }}
           >
             POSTERIUM
@@ -114,18 +102,10 @@ const Nav = memo(() => {
 
         <div
           className="nav-links-desktop"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flex: 1,
-            justifyContent: 'center',
-            gap: 0,
-          }}
+          style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center', gap: 0 }}
         >
           {NAV_LINKS.map(({ label, href }) => (
-            <a key={label} href={href} className="hover-cream" style={LINK_BASE}>
-              {label}
-            </a>
+            <a key={label} href={href} className="hover-cream" style={LINK_BASE}>{label}</a>
           ))}
         </div>
 
@@ -135,11 +115,12 @@ const Nav = memo(() => {
             aria-label="Repository"
             className="nav-links-desktop hover-cream"
             style={{
-              ...GITHUB_BASE,
+              color: 'rgba(200, 185, 155, 0.55)',
+              display: 'flex', alignItems: 'center', padding: '6px 8px', borderRadius: 4,
               opacity: scrolled ? 1 : 0,
               pointerEvents: scrolled ? 'auto' : 'none',
-              transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
-              transition: 'opacity 0.35s ease, transform 0.35s ease'
+              transform: scrolled ? 'translateY(0)' : 'translateY(-8px)',
+              transition: 'opacity 0.35s ease, transform 0.35s ease, color 0.18s ease',
             }}
           >
             <Github size={15} />
@@ -149,23 +130,14 @@ const Nav = memo(() => {
             href="/build"
             className="syne-font"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              background: 'var(--film-amber)',
-              color: '#070706',
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              padding: '7px 16px',
-              borderRadius: 3,
-              flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'var(--film-amber)', color: '#070706',
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+              textDecoration: 'none', padding: '7px 16px', borderRadius: 3, flexShrink: 0,
               boxShadow: '0 0 18px rgba(196,124,46,0.22)',
               opacity: scrolled ? 1 : 0,
               pointerEvents: scrolled ? 'auto' : 'none',
-              transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
+              transform: scrolled ? 'translateY(0)' : 'translateY(-8px)',
               transition: 'opacity 0.35s ease, transform 0.35s ease, box-shadow 0.2s, background 0.2s',
             }}
           >
@@ -180,15 +152,9 @@ const Nav = memo(() => {
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-haspopup="dialog"
             style={{
-              background: 'none',
-              border: '1px solid rgba(196,124,46,0.2)',
-              color: 'var(--film-cream)',
-              width: 34,
-              height: 34,
-              borderRadius: 4,
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: 'none', border: '1px solid rgba(196,124,46,0.2)',
+              color: 'var(--film-cream)', width: 34, height: 34, borderRadius: 4,
+              cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
             }}
           >
             {menuOpen ? <X size={14} /> : <Menu size={14} />}
@@ -198,81 +164,26 @@ const Nav = memo(() => {
 
       {menuOpen && (
         <div
-          role="dialog"
-          aria-modal={true}
-          aria-label="Navigation menu"
+          role="dialog" aria-modal={true} aria-label="Navigation menu"
           style={{
-            position: 'fixed',
-            top: 56,
-            left: 0,
-            right: 0,
-            background: 'rgba(7,7,6,0.98)',
-            backdropFilter: 'blur(24px)',
-            borderBottom: '1px solid rgba(196,124,46,0.1)',
-            padding: '6px 20px 14px',
-            zIndex: 99,
-            display: 'flex',
-            flexDirection: 'column',
+            position: 'fixed', top: 52, left: 0, right: 0,
+            background: 'rgba(7,7,6,0.98)', backdropFilter: 'blur(24px)',
+            borderBottom: '1px solid rgba(196,124,46,0.08)',
+            padding: '6px 20px 14px', zIndex: 99, display: 'flex', flexDirection: 'column',
           }}
         >
           {NAV_LINKS.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              onClick={closeMenu}
-              className="syne-font hover-cream"
-              style={{
-                color: 'rgba(240, 230, 204, 0.82)',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '12px 8px',
-                textDecoration: 'none',
-                borderBottom: '1px solid rgba(196,124,46,0.06)',
-              }}
-            >
+            <a key={label} href={href} onClick={closeMenu} className="syne-font hover-cream"
+              style={{ color: 'rgba(240, 230, 204, 0.75)', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '12px 8px', textDecoration: 'none', borderBottom: '1px solid rgba(196,124,46,0.05)' }}>
               {label}
             </a>
           ))}
-          <a
-            href="/build"
-            onClick={closeMenu}
-            className="syne-font"
-            style={{
-              color: 'rgba(196,124,46,0.85)',
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase',
-              padding: '12px 8px',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              marginTop: 2,
-            }}
-          >
+          <a href="/build" onClick={closeMenu} className="syne-font"
+            style={{ color: 'var(--film-amber)', fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '12px 8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, opacity: 0.85 }}>
             Open Builder
           </a>
-          <a
-            href="#"
-            onClick={closeMenu}
-            className="syne-font"
-            style={{
-              color: 'rgba(196,124,46,0.85)',
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase',
-              padding: '12px 8px',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              marginTop: 2,
-            }}
-          >
+          <a href="#" onClick={closeMenu} className="syne-font"
+            style={{ color: 'var(--film-amber)', fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '12px 8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7, opacity: 0.85 }}>
             <Github size={13} /> Repository
           </a>
         </div>
