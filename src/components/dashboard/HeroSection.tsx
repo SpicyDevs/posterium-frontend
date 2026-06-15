@@ -25,7 +25,7 @@ const HERO_POSTERS: HeroPoster[] = [
 const TOTAL = HERO_POSTERS.length;
 
 function getPosterSrc(p: HeroPoster): string {
-  return `${API}/${p.type}/${p.id}.svg?r=${p.r}&source=tmdb&blur=${p.blur}&alpha=${p.alpha}&rad=${p.rad}&${p.pos}`;
+  return `${API}/${p.type}/${p.id}.webp?r=${p.r}&source=tmdb&blur=${p.blur}&alpha=${p.alpha}&rad=${p.rad}&${p.pos}`;
 }
 
 const POSTER_SRCS = HERO_POSTERS.map(getPosterSrc);
