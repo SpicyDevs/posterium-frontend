@@ -248,13 +248,13 @@ const HeroSection = memo(() => {
       {/* Mobile poster peek — dimmed cards visible on the right edge */}
       <div aria-hidden="true" className="hero-mobile-peek">
         <img
-          src={POSTER_SRCS[2]}
+          src={POSTER_SRCS[0]}
           alt=""
           loading="lazy"
           className="hero-mobile-peek-far"
         />
         <img
-          src={POSTER_SRCS[0]}
+          src={POSTER_SRCS[2]}
           alt=""
           loading="lazy"
           className="hero-mobile-peek-near"
