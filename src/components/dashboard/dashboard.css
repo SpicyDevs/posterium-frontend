@@ -91,11 +91,11 @@ nav a.syne-font {
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 6px;
-  /* right edge ~60px off-screen → left edge visible at ~40% of screen */
   right: -60px;
   top: 50%;
   transform: translateY(-56%) rotate(4deg);
-  opacity: 0.14;
+  opacity: 1;
+  filter: brightness(0.18) saturate(0.6);
   z-index: 1;
   border: 1px solid rgba(196, 124, 46, 0.08);
 }
@@ -108,11 +108,11 @@ nav a.syne-font {
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 6px;
-  /* right edge ~160px off-screen → only left sliver visible */
   right: -160px;
   top: 50%;
   transform: translateY(-36%) rotate(-3deg);
-  opacity: 0.22;
+  opacity: 1;
+  filter: brightness(0.26) saturate(0.65);
   z-index: 2;
   border: 1px solid rgba(196, 124, 46, 0.1);
 }
