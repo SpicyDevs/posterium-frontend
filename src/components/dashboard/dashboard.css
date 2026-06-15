@@ -61,15 +61,20 @@ nav a.syne-font {
 }
 
 /* ── Mobile hero poster peek ── */
+/*
+ * Layout intent (matches sketch):
+ *   - Two tall dim posters peek from the right edge
+ *   - "far" poster: left-of-pair, more area visible, dimmer (behind)
+ *   - "near" poster: right-of-pair, mostly clipped off-screen, slightly brighter (in front)
+ *   - A left-to-right gradient masks where they overlap the hero text
+ */
 .hero-mobile-peek {
   display: none;
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 52%;
+  inset: 0;
   pointer-events: none;
   z-index: 2;
+  overflow: hidden;
 }
 
 @media (max-width: 820px) {
@@ -78,40 +83,56 @@ nav a.syne-font {
   }
 }
 
+/* Far poster — more visible, behind, left of the pair */
 .hero-mobile-peek-far {
   position: absolute;
-  width: 136px;
-  height: 204px;
+  height: 54dvh;
+  width: auto;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: 8px;
-  right: -18px;
+  border-radius: 6px;
+  /* right edge ~60px off-screen → left edge visible at ~40% of screen */
+  right: -60px;
   top: 50%;
-  transform: translateY(-68%) rotate(7deg);
-  opacity: 0.11;
-  border: 1px solid rgba(196, 124, 46, 0.07);
+  transform: translateY(-56%) rotate(4deg);
+  opacity: 0.14;
+  z-index: 1;
+  border: 1px solid rgba(196, 124, 46, 0.08);
 }
 
+/* Near poster — mostly clipped, in front, right of the pair */
 .hero-mobile-peek-near {
   position: absolute;
-  width: 136px;
-  height: 204px;
+  height: 54dvh;
+  width: auto;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: 8px;
-  right: -32px;
+  border-radius: 6px;
+  /* right edge ~160px off-screen → only left sliver visible */
+  right: -160px;
   top: 50%;
-  transform: translateY(-28%) rotate(-3deg);
-  opacity: 0.19;
+  transform: translateY(-36%) rotate(-3deg);
+  opacity: 0.22;
+  z-index: 2;
   border: 1px solid rgba(196, 124, 46, 0.1);
 }
 
-/* Left-edge gradient to blend posters into the content */
+/* Left-to-right gradient — keeps text readable, blends posters in */
 .hero-mobile-peek-fade {
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 65%;
-  background: linear-gradient(to right, var(--film-black) 0%, rgba(7, 7, 6, 0.7) 60%, transparent 100%);
+  /* solid black for text zone, then fade out over the poster area */
+  width: 72%;
+  background: linear-gradient(
+    to right,
+    var(--film-black) 0%,
+    var(--film-black) 28%,
+    rgba(7, 7, 6, 0.82) 52%,
+    transparent 100%
+  );
+  z-index: 3;
 }
 
 /* ── Overlays ── */
