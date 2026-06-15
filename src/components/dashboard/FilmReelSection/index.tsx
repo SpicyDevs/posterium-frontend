@@ -15,42 +15,40 @@ const DesktopStaticReel = memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
-  const containerTopRef = useRef<number>(0);
+  // Track whether a scroll is in flight — don't mutate height mid-scroll
+  const isScrollingRef = useRef(false);
+  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const recalc = useCallback(() => {
+  const setHeight = useCallback(() => {
+    // Never mutate height while user is scrolling — causes browser layout jump
+    if (isScrollingRef.current) return;
     const img = imgRef.current;
     const container = containerRef.current;
     if (!container) return;
-
-    const imgW = img?.offsetWidth || MOSAIC_NATURAL_WIDTH;
+    // scrollWidth is more reliable than offsetWidth for max-content tracks
+    const imgW = img?.scrollWidth || MOSAIC_NATURAL_WIDTH;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-
     if (imgW > vw) {
       container.style.height = `${imgW - vw + vh}px`;
     }
-
-    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
   }, []);
 
   useEffect(() => {
-    recalc();
-
+    setHeight();
     const img = imgRef.current;
     const images = img?.querySelectorAll('img') || [];
-    images.forEach((i) => i.addEventListener('load', recalc));
-    window.addEventListener('resize', recalc, { passive: true });
-
-    const t1 = setTimeout(recalc, 300);
-    const t2 = setTimeout(recalc, 1000);
-
+    images.forEach((i) => i.addEventListener('load', setHeight));
+    window.addEventListener('resize', setHeight, { passive: true });
+    const t1 = setTimeout(setHeight, 300);
+    const t2 = setTimeout(setHeight, 1000);
     return () => {
-      images.forEach((i) => i.removeEventListener('load', recalc));
-      window.removeEventListener('resize', recalc);
+      images.forEach((i) => i.removeEventListener('load', setHeight));
+      window.removeEventListener('resize', setHeight);
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [recalc]);
+  }, [setHeight]);
 
   useEffect(() => {
     let rafId: number | null = null;
@@ -65,12 +63,11 @@ const DesktopStaticReel = memo(() => {
       const scrollable = container.offsetHeight - window.innerHeight;
       if (scrollable <= 0) return;
 
-      const progress = Math.max(
-        0,
-        Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
-      );
+      // Always compute fresh — never use a stale cached value
+      const containerTop = container.getBoundingClientRect().top + window.scrollY;
+      const progress = Math.max(0, Math.min(1, (window.scrollY - containerTop) / scrollable));
 
-      const imgW = img.offsetWidth || MOSAIC_NATURAL_WIDTH;
+      const imgW = img.scrollWidth || MOSAIC_NATURAL_WIDTH;
       const maxShift = Math.max(0, imgW - window.innerWidth);
 
       img.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
@@ -78,6 +75,12 @@ const DesktopStaticReel = memo(() => {
     };
 
     const onScroll = () => {
+      isScrollingRef.current = true;
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+      scrollEndTimerRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+        setHeight(); // Safe to recalc now that scroll settled
+      }, 150);
       if (rafId === null) rafId = requestAnimationFrame(update);
     };
 
@@ -87,8 +90,9 @@ const DesktopStaticReel = memo(() => {
     return () => {
       window.removeEventListener('scroll', onScroll);
       if (rafId !== null) cancelAnimationFrame(rafId);
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
     };
-  }, []);
+  }, [setHeight]);
 
   return (
     <div
@@ -316,45 +320,40 @@ const MobileStaticReel = memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
-  const containerTopRef = useRef<number>(0);
+  const isScrollingRef = useRef(false);
+  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Mobile uses 2 chunks so width = 2 × CHUNK_WIDTH
   const mosaicMobileWidth = MOBILE_REEL_CHUNKS * CHUNK_WIDTH;
 
-  const recalc = useCallback(() => {
+  const setHeight = useCallback(() => {
+    if (isScrollingRef.current) return;
     const track = trackRef.current;
     const container = containerRef.current;
     if (!container) return;
-
-    const trackW = track?.offsetWidth || mosaicMobileWidth;
+    const trackW = track?.scrollWidth || mosaicMobileWidth;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-
     if (trackW > vw) {
       container.style.height = `${trackW - vw + vh}px`;
     }
-
-    containerTopRef.current = container.getBoundingClientRect().top + window.scrollY;
   }, [mosaicMobileWidth]);
 
   useEffect(() => {
-    recalc();
-
+    setHeight();
     const track = trackRef.current;
     const images = track?.querySelectorAll('img') || [];
-    images.forEach((i) => i.addEventListener('load', recalc));
-    window.addEventListener('resize', recalc, { passive: true });
-
-    const t1 = setTimeout(recalc, 300);
-    const t2 = setTimeout(recalc, 1000);
-
+    images.forEach((i) => i.addEventListener('load', setHeight));
+    window.addEventListener('resize', setHeight, { passive: true });
+    const t1 = setTimeout(setHeight, 300);
+    const t2 = setTimeout(setHeight, 1000);
     return () => {
-      images.forEach((i) => i.removeEventListener('load', recalc));
-      window.removeEventListener('resize', recalc);
+      images.forEach((i) => i.removeEventListener('load', setHeight));
+      window.removeEventListener('resize', setHeight);
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [recalc]);
+  }, [setHeight]);
 
   useEffect(() => {
     let rafId: number | null = null;
@@ -369,12 +368,11 @@ const MobileStaticReel = memo(() => {
       const scrollable = container.offsetHeight - window.innerHeight;
       if (scrollable <= 0) return;
 
-      const progress = Math.max(
-        0,
-        Math.min(1, (window.scrollY - containerTopRef.current) / scrollable)
-      );
+      // Always compute fresh — never use a stale cached value
+      const containerTop = container.getBoundingClientRect().top + window.scrollY;
+      const progress = Math.max(0, Math.min(1, (window.scrollY - containerTop) / scrollable));
 
-      const trackW = track.offsetWidth || mosaicMobileWidth;
+      const trackW = track.scrollWidth || mosaicMobileWidth;
       const maxShift = Math.max(0, trackW - window.innerWidth);
 
       track.style.transform = `translate3d(${-progress * maxShift}px, 0, 0)`;
@@ -382,6 +380,12 @@ const MobileStaticReel = memo(() => {
     };
 
     const onScroll = () => {
+      isScrollingRef.current = true;
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+      scrollEndTimerRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+        setHeight(); // Safe to recalc now that scroll settled
+      }, 150);
       if (rafId === null) rafId = requestAnimationFrame(update);
     };
 
@@ -391,8 +395,9 @@ const MobileStaticReel = memo(() => {
     return () => {
       window.removeEventListener('scroll', onScroll);
       if (rafId !== null) cancelAnimationFrame(rafId);
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
     };
-  }, [mosaicMobileWidth]);
+  }, [mosaicMobileWidth, setHeight]);
 
   return (
     <div
