@@ -14,66 +14,12 @@ interface HeroPoster {
 }
 
 const HERO_POSTERS: HeroPoster[] = [
-  {
-    id: '155',
-    type: 'movie',
-    title: 'The Dark Knight',
-    r: 'imdb,rt',
-    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',
-    blur: 8,
-    alpha: 0.46,
-    rad: 10,
-  },
-  {
-    id: '872585',
-    type: 'movie',
-    title: 'Oppenheimer',
-    r: 'rt,meta',
-    pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86',
-    blur: 8,
-    alpha: 0.46,
-    rad: 10,
-  },
-  {
-    id: '238',
-    type: 'movie',
-    title: 'The Godfather',
-    r: 'imdb',
-    pos: 'imdb_x=10&imdb_y=12',
-    blur: 7,
-    alpha: 0.44,
-    rad: 10,
-  },
-  {
-    id: '680',
-    type: 'movie',
-    title: 'Pulp Fiction',
-    r: 'imdb,rt,meta',
-    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',
-    blur: 8,
-    alpha: 0.46,
-    rad: 10,
-  },
-  {
-    id: '27205',
-    type: 'movie',
-    title: 'Inception',
-    r: 'imdb,rt',
-    pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',
-    blur: 8,
-    alpha: 0.46,
-    rad: 10,
-  },
-  {
-    id: '278',
-    type: 'movie',
-    title: 'The Shawshank Redemption',
-    r: 'imdb',
-    pos: 'imdb_x=10&imdb_y=12',
-    blur: 7,
-    alpha: 0.44,
-    rad: 10,
-  },
+  { id: '155', type: 'movie', title: 'The Dark Knight', r: 'imdb,rt', pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86', blur: 8, alpha: 0.46, rad: 10 },
+  { id: '872585', type: 'movie', title: 'Oppenheimer', r: 'rt,meta', pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86', blur: 8, alpha: 0.46, rad: 10 },
+  { id: '238', type: 'movie', title: 'The Godfather', r: 'imdb', pos: 'imdb_x=10&imdb_y=12', blur: 7, alpha: 0.44, rad: 10 },
+  { id: '680', type: 'movie', title: 'Pulp Fiction', r: 'imdb,rt,meta', pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160', blur: 8, alpha: 0.46, rad: 10 },
+  { id: '27205', type: 'movie', title: 'Inception', r: 'imdb,rt', pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86', blur: 8, alpha: 0.46, rad: 10 },
+  { id: '278', type: 'movie', title: 'The Shawshank Redemption', r: 'imdb', pos: 'imdb_x=10&imdb_y=12', blur: 7, alpha: 0.44, rad: 10 },
 ];
 
 const TOTAL = HERO_POSTERS.length;
@@ -113,25 +59,17 @@ const CyclingPoster = memo(() => {
   const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(true);
   const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
 
-  useEffect(() => {
-    activeIdxRef.current = activeIdx;
-  }, [activeIdx]);
+  useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
 
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        isVisibleRef.current = entry.isIntersecting;
-      },
-      { threshold: 0.05 }
-    );
+    const obs = new IntersectionObserver(([entry]) => { isVisibleRef.current = entry.isIntersecting; }, { threshold: 0.05 });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -140,9 +78,7 @@ const CyclingPoster = memo(() => {
     if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
     if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
-    swapTimerRef.current = null;
-    settleTimerRef.current = null;
-    guardTimerRef.current = null;
+    swapTimerRef.current = null; settleTimerRef.current = null; guardTimerRef.current = null;
   }, []);
 
   const finishTransition = useCallback(() => {
@@ -151,34 +87,21 @@ const CyclingPoster = memo(() => {
     setTransitioning(false);
   }, [clearTransitionTimers]);
 
-  const isPosterReady = useCallback(
-    (index: number) => Boolean(loadedRef.current[index] || failedRef.current[index]),
-    []
-  );
+  const isPosterReady = useCallback((index: number) => Boolean(loadedRef.current[index] || failedRef.current[index]), []);
 
-  const doTransition = useCallback(
-    (next: number) => {
-      if (next === activeIdxRef.current || transitioningRef.current || !isPosterReady(next)) return;
-      clearTransitionTimers();
-      transitioningRef.current = true;
-      setTransitioning(true);
-      swapTimerRef.current = setTimeout(() => {
-        setActiveIdx(next);
-        settleTimerRef.current = setTimeout(() => {
-          finishTransition();
-        }, 360);
-      }, 50);
-      guardTimerRef.current = setTimeout(finishTransition, 1400);
-    },
-    [clearTransitionTimers, finishTransition, isPosterReady]
-  );
+  const doTransition = useCallback((next: number) => {
+    if (next === activeIdxRef.current || transitioningRef.current || !isPosterReady(next)) return;
+    clearTransitionTimers();
+    transitioningRef.current = true;
+    setTransitioning(true);
+    swapTimerRef.current = setTimeout(() => {
+      setActiveIdx(next);
+      settleTimerRef.current = setTimeout(() => { finishTransition(); }, 360);
+    }, 50);
+    guardTimerRef.current = setTimeout(finishTransition, 1400);
+  }, [clearTransitionTimers, finishTransition, isPosterReady]);
 
-  const goTo = useCallback(
-    (next: number) => {
-      doTransition(next);
-    },
-    [doTransition]
-  );
+  const goTo = useCallback((next: number) => { doTransition(next); }, [doTransition]);
 
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -197,23 +120,9 @@ const CyclingPoster = memo(() => {
     };
   }, [finishTransition, loaded, restartInterval]);
 
-  const handlePrev = useCallback(() => {
-    goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL);
-    restartInterval();
-  }, [goTo, restartInterval]);
-
-  const handleNext = useCallback(() => {
-    goTo((activeIdxRef.current + 1) % TOTAL);
-    restartInterval();
-  }, [goTo, restartInterval]);
-
-  const handleDot = useCallback(
-    (i: number) => {
-      goTo(i);
-      restartInterval();
-    },
-    [goTo, restartInterval]
-  );
+  const handlePrev = useCallback(() => { goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL); restartInterval(); }, [goTo, restartInterval]);
+  const handleNext = useCallback(() => { goTo((activeIdxRef.current + 1) % TOTAL); restartInterval(); }, [goTo, restartInterval]);
+  const handleDot = useCallback((i: number) => { goTo(i); restartInterval(); }, [goTo, restartInterval]);
 
   const onLoad = useCallback((i: number) => {
     if (loadedRef.current[i]) return;
@@ -228,160 +137,82 @@ const CyclingPoster = memo(() => {
   }, []);
 
   useEffect(() => {
-    imgRefs.current.forEach((img, i) => {
-      if (img?.complete && img.naturalWidth > 0) onLoad(i);
-    });
+    imgRefs.current.forEach((img, i) => { if (img?.complete && img.naturalWidth > 0) onLoad(i); });
   }, [onLoad]);
 
   return (
-    <div
-      ref={sectionRef}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: 'clamp(200px,26vw,320px)',
-          aspectRatio: '2/3',
-          borderRadius: 6,
-          overflow: 'hidden',
-          background: '#111009',
-          border: '1px solid rgba(196,124,46,0.18)',
-          boxShadow:
-            '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)',
-        }}
-      >
-        {CORNERS.map((c) => (
-          <div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />
-        ))}
+    <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+      <div style={{
+        position: 'relative',
+        width: 'clamp(200px,26vw,320px)',
+        aspectRatio: '2/3',
+        borderRadius: 6,
+        overflow: 'hidden',
+        background: '#111009',
+        border: '1px solid rgba(196,124,46,0.18)',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)',
+      }}>
+        {CORNERS.map((c) => (<div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />))}
 
-        {HERO_POSTERS.map((p, i) => {
-          return (
-            <img
-              key={p.id}
-              ref={(el) => {
-                imgRefs.current[i] = el;
-              }}
-              src={POSTER_SRCS[i]}
-              alt={`Custom ${p.type === 'movie' ? 'movie' : 'TV show'} poster for ${p.title} featuring live IMDb and Rotten Tomatoes rating badges`}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              fetchPriority={i === 0 ? 'high' : 'auto'}
-              decoding={i === 0 ? 'sync' : 'async'}
-              onLoad={() => onLoad(i)}
-              onError={() => onError(i)}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-                opacity: i === activeIdx ? 1 : 0,
-                willChange: transitioning ? 'opacity' : 'auto',
-                transition: 'opacity 0.35s ease',
-                pointerEvents: 'none',
-              }}
-            />
-          );
-        })}
-
-        {activeIdx !== 0 && !loaded[activeIdx] && !failed[activeIdx] && (
-          <div
+        {HERO_POSTERS.map((p, i) => (
+          <img
+            key={p.id}
+            ref={(el) => { imgRefs.current[i] = el; }}
+            src={POSTER_SRCS[i]}
+            alt={`Custom ${p.type === 'movie' ? 'movie' : 'TV show'} poster for ${p.title} featuring live rating badges`}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchPriority={i === 0 ? 'high' : 'auto'}
+            decoding={i === 0 ? 'sync' : 'async'}
+            onLoad={() => onLoad(i)}
+            onError={() => onError(i)}
             style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 1.6s linear infinite',
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+              opacity: i === activeIdx ? 1 : 0,
+              willChange: transitioning ? 'opacity' : 'auto',
+              transition: 'opacity 0.35s ease',
+              pointerEvents: 'none',
             }}
           />
+        ))}
+
+        {activeIdx !== 0 && !loaded[activeIdx] && !failed[activeIdx] && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1,
+            background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)',
+            backgroundSize: '200% 100%', animation: 'shimmer 1.6s linear infinite',
+          }} />
         )}
         {failed[activeIdx] && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              display: 'grid',
-              placeItems: 'center',
-              background: '#14120f',
-              color: 'rgba(196,124,46,0.65)',
-              fontSize: 24,
-            }}
-          >
-            🎞
-          </div>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'grid', placeItems: 'center', background: '#14120f', color: 'rgba(196,124,46,0.65)', fontSize: 24 }}>🎞</div>
         )}
 
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 2,
-            padding: '28px 12px 12px',
-            background: 'linear-gradient(to top, rgba(7,7,6,0.9) 0%, transparent 100%)',
-            opacity: transitioning ? 0 : 1,
-            transition: 'opacity 0.25s ease',
-          }}
-        >
-          <span
-            className="mono-font"
-            style={{
-              fontSize: 8,
-              color: 'rgba(196,124,46,0.65)',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,
+          padding: '28px 12px 12px',
+          background: 'linear-gradient(to top, rgba(7,7,6,0.9) 0%, transparent 100%)',
+          opacity: transitioning ? 0 : 1, transition: 'opacity 0.25s ease',
+        }}>
+          <span className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.65)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             {HERO_POSTERS[activeIdx].title}
           </span>
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button
-          onClick={handlePrev}
-          aria-label="Previous poster"
-          className="carousel-icon-btn"
-          style={{
-            justifyContent: 'center',
-          }}
-        >
+        <button onClick={handlePrev} aria-label="Previous poster" className="carousel-icon-btn" style={{ justifyContent: 'center' }}>
           <ChevronLeft size={12} />
         </button>
-
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {HERO_POSTERS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => handleDot(i)}
-              aria-label={`Go to poster ${i + 1}`}
-              style={{
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                background: i === activeIdx ? 'var(--film-amber)' : 'rgba(196,124,46,0.25)',
-                width: i === activeIdx ? 20 : 6,
-                height: 6,
-                borderRadius: 3,
-                transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
-                flexShrink: 0,
-              }}
-            />
+            <button key={i} onClick={() => handleDot(i)} aria-label={`Go to poster ${i + 1}`} style={{
+              border: 'none', cursor: 'pointer', padding: 0,
+              background: i === activeIdx ? 'var(--film-amber)' : 'rgba(196,124,46,0.25)',
+              width: i === activeIdx ? 20 : 6, height: 6, borderRadius: 3,
+              transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)', flexShrink: 0,
+            }} />
           ))}
         </div>
-
-        <button
-          onClick={handleNext}
-          aria-label="Next poster"
-          className="carousel-icon-btn"
-          style={{
-            justifyContent: 'center',
-          }}
-        >
+        <button onClick={handleNext} aria-label="Next poster" className="carousel-icon-btn" style={{ justifyContent: 'center' }}>
           <ChevronRight size={12} />
         </button>
       </div>
@@ -398,174 +229,88 @@ const HERO_SECTION_STYLE: React.CSSProperties = {
   overflow: 'hidden',
   background: 'var(--film-black)',
 };
-const AMBIENT_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  pointerEvents: 'none',
-  background:
-    'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.055) 0%, transparent 70%)',
-};
-const DOT_GRID_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  pointerEvents: 'none',
-  opacity: 0.18,
-  backgroundImage: 'radial-gradient(rgba(196,124,46,0.15) 1px, transparent 1px)',
-  backgroundSize: '36px 36px',
-};
-const AMBER_RULE_STYLE: React.CSSProperties = {
-  width: 120,
-  height: 1,
-  background: 'linear-gradient(90deg, var(--film-amber), transparent)',
-  margin: '24px 0 24px',
-  opacity: 0.6,
-};
 
 const HeroSection = memo(() => {
   return (
     <section aria-label="Hero" style={HERO_SECTION_STYLE}>
-      <div aria-hidden="true" style={AMBIENT_STYLE} />
-      <div aria-hidden="true" style={DOT_GRID_STYLE} />
+      {/* Ambient glow */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 55% 60% at 22% 50%, rgba(196,124,46,0.055) 0%, transparent 70%)',
+      }} />
+      {/* Dot grid */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.18,
+        backgroundImage: 'radial-gradient(rgba(196,124,46,0.15) 1px, transparent 1px)',
+        backgroundSize: '36px 36px',
+      }} />
+
+      {/* Mobile poster peek — dimmed cards visible on the right edge */}
+      <div aria-hidden="true" className="hero-mobile-peek">
+        <img
+          src={POSTER_SRCS[2]}
+          alt=""
+          loading="lazy"
+          className="hero-mobile-peek-far"
+        />
+        <img
+          src={POSTER_SRCS[0]}
+          alt=""
+          loading="lazy"
+          className="hero-mobile-peek-near"
+        />
+        {/* left-edge blend */}
+        <div className="hero-mobile-peek-fade" />
+      </div>
 
       <div
         className="hero-two-col"
         style={{
-          position: 'relative',
-          zIndex: 10,
-          width: '100%',
-          maxWidth: 1280,
-          margin: '0 auto',
+          position: 'relative', zIndex: 10, width: '100%', maxWidth: 1280, margin: '0 auto',
           padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: 'clamp(40px,6vw,80px)',
-          alignItems: 'center',
+          display: 'grid', gridTemplateColumns: '1fr auto',
+          gap: 'clamp(40px,6vw,80px)', alignItems: 'center',
         }}
       >
         <div>
           <h1
             className="h-a1 poster-font"
-            style={{
-              fontSize: 'clamp(88px,13vw,200px)',
-              lineHeight: 0.84,
-              letterSpacing: '0.03em',
-              marginBottom: 0,
-            }}
+            style={{ fontSize: 'clamp(88px,13vw,200px)', lineHeight: 0.84, letterSpacing: '0.03em', marginBottom: 0 }}
             aria-label="Posterium"
           >
-            <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>
-              POSTER
-            </span>
-            <span
-              aria-hidden="true"
-              style={{
-                color: 'transparent',
-                WebkitTextStroke: '2px var(--film-amber)',
-                display: 'block',
-              }}
-            >
-              IUM
-            </span>
+            <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>POSTER</span>
+            <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
           </h1>
 
-          <div className="h-a2" style={AMBER_RULE_STYLE} />
+          <div className="h-a2" style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
 
-          <p
-            className="h-a2 syne-font"
-            style={{
-              fontSize: 'clamp(13px,1.4vw,16px)',
-              color: 'var(--film-silver)',
-              fontWeight: 400,
-              maxWidth: 480,
-              lineHeight: 1.7,
-              marginBottom: 36,
-            }}
-          >
+          <p className="h-a2 syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 480, lineHeight: 1.7, marginBottom: 36 }}>
             Movie &amp; TV poster images with glassmorphism rating badges from{' '}
             <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
-            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>
-            , <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>,
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
+            <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>,
             and more — all from a single URL.
           </p>
 
           <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a
-              href="/build"
-              title="Open Poster Builder"
-              aria-label="Open Movie Poster Builder"
+            <a href="/build" title="Open Poster Builder" aria-label="Open Movie Poster Builder"
               className="glow-cta syne-font"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 7,
-                background: 'var(--film-amber)',
-                color: '#070706',
-                fontWeight: 700,
-                fontSize: 11,
-                letterSpacing: '0.09em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                padding: '12px 24px',
-                borderRadius: 4,
-              }}
-            >
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
               Open Builder <ArrowRight size={12} />
             </a>
-            <a
-              href="/installation"
-              className="syne-font border-hover-amber"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                color: 'var(--film-silver)',
-                fontWeight: 600,
-                fontSize: 11,
-                letterSpacing: '0.09em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                padding: '11px 20px',
-                borderRadius: 4,
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.02)',
-              }}
-            >
+            <a href="/installation" className="syne-font border-hover-amber"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--film-silver)', fontWeight: 600, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '11px 20px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
               Installation Guide
             </a>
           </div>
 
           <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
-            {(
-              [
-                ['∞', 'Free API calls'],
-                ['10+', 'Rating sources'],
-                ['0', 'Auth required'],
-              ] as const
+            {(['∞', 'Free API calls'] as const) && (
+              [['∞', 'Free API calls'], ['10+', 'Rating sources'], ['0', 'Auth required']] as const
             ).map(([val, label]) => (
               <div key={label}>
-                <div
-                  className="poster-font"
-                  style={{
-                    fontSize: 28,
-                    color: 'var(--film-amber)',
-                    lineHeight: 1,
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {val}
-                </div>
-                <div
-                  className="mono-font"
-                  style={{
-                    fontSize: 8,
-                    color: 'var(--film-text-dim)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    marginTop: 3,
-                  }}
-                >
-                  {label}
-                </div>
+                <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>{val}</div>
+                <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
               </div>
             ))}
           </div>
