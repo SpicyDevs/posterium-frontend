@@ -1,11 +1,9 @@
 // src/components/dashboard/Dashboard.tsx
 import React, { Suspense, lazy } from 'react';
 import './dashboard.css';
-import { MARQUEE_TITLES } from '@/lib/dashboard/constants';
 import Nav from './Nav';
 import HeroSection from './HeroSection';
 import FilmReelSection from './FilmReelSection/index';
-import { MarqueeTicker } from './primitives';
 
 const StatsBar = lazy(() => import('./sections/StatsBar').then((m) => ({ default: m.StatsBar })));
 const CombinedSection = lazy(() =>
@@ -21,9 +19,6 @@ const FooterSection = lazy(() =>
   import('./sections/FooterSection').then((m) => ({ default: m.FooterSection }))
 );
 
-// ─────────────────────────────────────────────────────────────────────
-// ContentSection — content-visibility:auto for below-fold sections
-// ─────────────────────────────────────────────────────────────────────
 const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number }> = ({
   children,
   intrinsicH = 600,
@@ -40,9 +35,6 @@ const ContentSection: React.FC<{ children: React.ReactNode; intrinsicH?: number 
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────────────
-// Dashboard
-// ─────────────────────────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   return (
     <>
@@ -63,12 +55,8 @@ const Dashboard: React.FC = () => {
           textDecoration: 'none',
           letterSpacing: '0.06em',
         }}
-        onFocus={(e) => {
-          (e.currentTarget as HTMLElement).style.left = '8px';
-        }}
-        onBlur={(e) => {
-          (e.currentTarget as HTMLElement).style.left = '-9999px';
-        }}
+        onFocus={(e) => { (e.currentTarget as HTMLElement).style.left = '8px'; }}
+        onBlur={(e) => { (e.currentTarget as HTMLElement).style.left = '-9999px'; }}
       >
         Skip to main content
       </a>
@@ -86,11 +74,7 @@ const Dashboard: React.FC = () => {
         <main id="main-content">
           <HeroSection />
 
-          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
-
           <FilmReelSection />
-
-          <MarqueeTicker items={MARQUEE_TITLES} speed={128} />
 
           <ContentSection intrinsicH={260}>
             <Suspense fallback={null}>
