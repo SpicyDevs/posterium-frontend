@@ -23,7 +23,7 @@ const ICON_MAP: Record<string, string> = Object.fromEntries(
 const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
   FEATURE_TUPLES.map(([title, , id, type, r, pos]) => [
     title,
-    `${API}/${type}/${id}.svg?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`,
+    `${API}/${type}/${id}.webp?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`,
   ])
 );
 
