@@ -94,7 +94,8 @@ nav a.syne-font {
   right: -60px;
   top: 50%;
   transform: translateY(-56%) rotate(4deg);
-  opacity: 1;
+  /* clip-path managed by JS (iris close/open) — starts hidden until JS runs */
+  clip-path: circle(0% at 50% 50%);
   filter: brightness(0.18) saturate(0.6);
   z-index: 1;
   border: 1px solid rgba(196, 124, 46, 0.08);
@@ -111,7 +112,7 @@ nav a.syne-font {
   right: -160px;
   top: 50%;
   transform: translateY(-36%) rotate(-3deg);
-  opacity: 1;
+  clip-path: circle(0% at 50% 50%);
   filter: brightness(0.26) saturate(0.65);
   z-index: 2;
   border: 1px solid rgba(196, 124, 46, 0.1);
