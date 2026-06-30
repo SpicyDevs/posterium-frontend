@@ -126,31 +126,45 @@ const ExportMenu = memo<ExportMenuProps>(
           setPopupCoords(null);
           return;
         }
+        
         // Mobile override: if viewport is narrow (< 540px), anchor to bottom of screen
         if (window.innerWidth < 540 && anchorRef?.current) {
           const mobileRect = anchorRef.current.getBoundingClientRect();
           const mobileWidth = Math.min(320, window.innerWidth - 24);
+          
+          let idealMobileLeft = mobileRect.left;
+          if (idealMobileLeft + mobileWidth > window.innerWidth - 12) {
+            idealMobileLeft = mobileRect.right - mobileWidth;
+          }
+
           setPopupCoords({
             top: mobileRect.bottom + 8,
-            left: Math.max(12, Math.min(window.innerWidth - mobileWidth - 12, mobileRect.right - mobileWidth)),
+            left: Math.max(12, idealMobileLeft),
             direction: 'down',
           });
           return;
         }
+        
         const rect = anchorRef.current.getBoundingClientRect();
         const width = 320;
         const panelHeight = popoverRef.current?.offsetHeight ?? 420;
         const margin = 12;
-        const left = Math.min(
-          Math.max(margin, rect.right - width),
-          Math.max(margin, window.innerWidth - width - margin)
-        );
+        
+        // Base coordinate logic: align left with button, fallback to right align if clipped, ensure positive margin
+        let idealLeft = rect.left;
+        if (idealLeft + width > window.innerWidth - margin) {
+          idealLeft = rect.right - width;
+        }
+        const left = Math.max(margin, idealLeft);
+        
         const spaceAbove = rect.top - margin;
         const spaceBelow = window.innerHeight - rect.bottom - margin;
         const showAbove = spaceAbove > spaceBelow && spaceAbove >= panelHeight;
+        
         const top = showAbove
           ? Math.max(margin, rect.top - panelHeight - 8)
           : Math.min(window.innerHeight - panelHeight - margin, rect.bottom + 8);
+          
         setPopupCoords({
           top,
           left,
