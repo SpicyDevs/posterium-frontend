@@ -245,7 +245,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/api\.spicydevs\.xyz\/.*/i,
+            urlPattern: /^https:\/\/api\.posterium\.xyz\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'posterium-api-cache',
