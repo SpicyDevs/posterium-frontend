@@ -219,7 +219,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             background: 'rgba(0,0,0,0.2)',
           }}
         >
-          <Search size={14} style={{ color: 'rgba(196,124,46,0.5)', flexShrink: 0 }} />
+          <Search size={14} style={{ color: 'rgba(196,124,46,0.65)', flexShrink: 0 }} />
           <input
             ref={inputRef}
             type="text"
@@ -229,7 +229,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             autoComplete="off"
             spellCheck={false}
             aria-label="Search commands"
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
+            className="focus:outline-none"
             style={{
               flex: 1,
               background: 'transparent',
@@ -290,7 +290,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               style={{
                 padding: '40px 20px',
                 textAlign: 'center',
-                color: 'rgba(140,130,112,0.5)',
+                color: 'rgba(140,130,112,0.65)',
                 fontSize: 12,
                 fontFamily: 'Syne, sans-serif',
               }}
@@ -320,10 +320,10 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                     <div
                       style={{
                         padding: '8px 12px 4px',
-                        fontSize: 8,
+                        fontSize: 10,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
-                        color: cat === 'Recent' ? 'rgba(196,124,46,0.6)' : 'rgba(140,130,112,0.5)',
+                        color: cat === 'Recent' ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.65)',
                         fontFamily: 'Syne, sans-serif',
                         textTransform: 'uppercase',
                       }}
@@ -372,17 +372,17 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                   border: '1px solid rgba(196,124,46,0.12)',
                   borderRadius: 3,
                   padding: '2px 5px',
-                  fontSize: 8,
+                  fontSize: 10,
                   fontFamily: 'JetBrains Mono, monospace',
-                  color: 'rgba(196,124,46,0.5)',
+                  color: 'rgba(196,124,46,0.65)',
                 }}
               >
                 {key}
               </kbd>
               <span
                 style={{
-                  fontSize: 8,
-                  color: 'rgba(140,130,112,0.5)',
+                  fontSize: 10,
+                  color: 'rgba(140,130,112,0.65)',
                   fontFamily: 'Syne, sans-serif',
                 }}
               >
@@ -391,11 +391,11 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             </div>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Command size={8} style={{ color: 'rgba(140,130,112,0.5)' }} />
+            <Command size={8} style={{ color: 'rgba(140,130,112,0.65)' }} />
             <span
               style={{
-                fontSize: 8,
-                color: 'rgba(140,130,112,0.5)',
+                fontSize: 10,
+                color: 'rgba(140,130,112,0.65)',
                 fontFamily: 'JetBrains Mono, monospace',
                 letterSpacing: '0.08em',
               }}
@@ -474,9 +474,9 @@ const CommandItem = memo<{
         <span
           style={{
             display: 'block',
-            fontSize: 9,
+            fontSize: 10,
             marginTop: 2,
-            color: 'rgba(140,130,112,0.5)',
+            color: 'rgba(140,130,112,0.65)',
             fontFamily: 'DM Sans, sans-serif',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -489,8 +489,8 @@ const CommandItem = memo<{
     </span>
     <span
       style={{
-        fontSize: 8,
-        color: 'rgba(140,130,112,0.5)',
+        fontSize: 10,
+        color: 'rgba(140,130,112,0.65)',
         fontFamily: 'JetBrains Mono, monospace',
         letterSpacing: '0.08em',
         flexShrink: 0,
@@ -505,7 +505,7 @@ const CommandItem = memo<{
           border: `1px solid ${isActive ? 'rgba(196,124,46,0.2)' : 'rgba(196,124,46,0.08)'}`,
           borderRadius: 3,
           padding: '1px 4px',
-          fontSize: 8,
+          fontSize: 10,
           fontFamily: 'JetBrains Mono, monospace',
           color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.5)',
           flexShrink: 0,

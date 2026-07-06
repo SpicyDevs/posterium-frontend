@@ -127,7 +127,7 @@ const PresetPanel: React.FC<Props> = memo(({ config, setConfig }) => {
           </div>
           <p
             style={{
-              fontSize: 9,
+              fontSize: 10,
               color: 'var(--film-text-dim)',
               fontFamily: 'DM Sans, sans-serif',
               margin: 0,
@@ -195,7 +195,7 @@ const PresetPanel: React.FC<Props> = memo(({ config, setConfig }) => {
                   {isActive && (
                     <span
                       style={{
-                        fontSize: 8,
+                        fontSize: 10,
                         fontWeight: 700,
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
@@ -221,7 +221,7 @@ const PresetPanel: React.FC<Props> = memo(({ config, setConfig }) => {
                 </p>
                 <p
                   style={{
-                    fontSize: 9,
+                    fontSize: 10,
                     color: 'rgba(140,130,112,0.65)',
                     fontFamily: 'DM Sans, sans-serif',
                     margin: 0,
@@ -245,11 +245,11 @@ const PresetPanel: React.FC<Props> = memo(({ config, setConfig }) => {
         >
           <p
             style={{
-              fontSize: 8,
+              fontSize: 10,
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              color: 'rgba(196,124,46,0.5)',
+              color: 'rgba(196,124,46,0.65)',
               fontFamily: 'Syne, sans-serif',
               marginBottom: 6,
               margin: '0 0 6px 0',
@@ -259,7 +259,7 @@ const PresetPanel: React.FC<Props> = memo(({ config, setConfig }) => {
           </p>
           <p
             style={{
-              fontSize: 9,
+              fontSize: 10,
               color: 'rgba(140,130,112,0.7)',
               fontFamily: 'DM Sans, sans-serif',
               margin: 0,

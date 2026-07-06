@@ -125,7 +125,27 @@ const StudioLayout: React.FC<{
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const importBtnRef = useRef<HTMLButtonElement>(null);
-  const exportBtnRef = useRef<HTMLButtonElement>(null);
+  // Two physical Export buttons exist in the DOM at once (desktop header +
+  // mobile toolbar) — only one is visible at a time via CSS (`lg:hidden` /
+  // `hidden lg:flex`), but both stay mounted. Using a single shared ref for
+  // both meant `.current` always ended up pointing at whichever button
+  // rendered last (the mobile one), which is display:none on desktop and
+  // therefore reports a zero-size rect at (0,0) — causing the export popover
+  // to appear pinned to the top-left corner instead of under the visible
+  // button. Give each button its own ref and resolve to whichever is
+  // actually visible when the popover needs to position itself.
+  const exportBtnRefDesktop = useRef<HTMLButtonElement>(null);
+  const exportBtnRefMobile = useRef<HTMLButtonElement>(null);
+  const exportBtnRef = useMemo<React.RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        const desktopEl = exportBtnRefDesktop.current;
+        if (desktopEl && desktopEl.offsetParent !== null) return desktopEl;
+        return exportBtnRefMobile.current;
+      },
+    }),
+    []
+  );
   const mobileRootRef = useRef<HTMLDivElement>(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
@@ -1273,7 +1293,7 @@ const StudioLayout: React.FC<{
 
               {/* Export CTA */}
               <button
-                ref={exportBtnRef}
+                ref={exportBtnRefDesktop}
                 onClick={() => setExportOpen((v) => !v)}
                 className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
                 style={{
@@ -1505,7 +1525,7 @@ const StudioLayout: React.FC<{
 
                 {/* Export CTA — amber filled, matches desktop export button style */}
                 <button
-                  ref={exportBtnRef}
+                  ref={exportBtnRefMobile}
                   onClick={() => setExportOpen((v) => !v)}
                   aria-label="Export poster"
                   style={{
@@ -1736,7 +1756,7 @@ const StudioLayout: React.FC<{
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontFamily: 'Syne, sans-serif',
-                fontSize: 8,
+                fontSize: 9,
                 fontWeight: 700,
                 letterSpacing: '0.08em',
                 color: selectedCount > 0 ? 'var(--film-amber)' : 'rgba(140,130,112,0.35)',
@@ -2408,7 +2428,7 @@ const StudioLayout: React.FC<{
                       <span
                         className="syne-font"
                         style={{
-                          fontSize: 8,
+                          fontSize: 9,
                           fontWeight: 700,
                           letterSpacing: '0.1em',
                           textTransform: 'uppercase',
@@ -2586,6 +2606,40 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
   });
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+
+  // Warm up the lazily-loaded overlays (keyboard shortcuts modal, reset/import
+  // dialogs, export popover, context menu, command palette) once the builder
+  // is idle after mount. These are code-split with React.lazy() to keep the
+  // initial bundle small, but that means the *first* time a user opens one —
+  // e.g. clicking Export, or right-clicking a badge to open the context menu —
+  // the browser has to fetch (and parse) the chunk before it can render,
+  // which shows up as a one-time delay on that first interaction. Since these
+  // chunks are small and the user is very likely to touch at least one of
+  // them, prefetching them during idle time removes that delay without
+  // giving up the code-splitting benefit for the initial page load.
+  useEffect(() => {
+    const preload = () => {
+      import('./components/KeyboardShortcutsModal');
+      import('./components/ResetDialogue');
+      import('./components/ImportDialogue');
+      import('./components/ExportPopover');
+      import('./components/ContextMenu');
+      import('./components/CommandPalette');
+    };
+
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (typeof w.requestIdleCallback === 'function') {
+      const handle = w.requestIdleCallback(preload);
+      return () => w.cancelIdleCallback?.(handle);
+    }
+
+    const timeout = window.setTimeout(preload, 300);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));

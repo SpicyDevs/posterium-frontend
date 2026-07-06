@@ -75,15 +75,15 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: 20,
-      height: 18,
-      padding: '0 4px',
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(196,124,46,0.12)',
-      borderRadius: 3,
-      fontSize: 8,
+      minWidth: 24,
+      height: 22,
+      padding: '0 6px',
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(196,124,46,0.18)',
+      borderRadius: 4,
+      fontSize: 12,
       fontFamily: 'JetBrains Mono, monospace',
-      color: 'rgba(196,124,46,0.6)',
+      color: 'rgba(196,124,46,0.85)',
       userSelect: 'none',
     }}
   >
@@ -203,7 +203,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   <div>
                     <p
                       style={{
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: 600,
                         color: 'var(--film-cream)',
                         fontFamily: 'Syne, sans-serif',
@@ -214,8 +214,8 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                     </p>
                     <p
                       style={{
-                        fontSize: 8,
-                        color: 'rgba(140,130,112,0.5)',
+                        fontSize: 10,
+                        color: 'rgba(140,130,112,0.65)',
                         fontFamily: 'JetBrains Mono, monospace',
                         letterSpacing: '0.08em',
                         marginTop: 3,
@@ -282,11 +282,11 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                     >
                       <p
                         style={{
-                          fontSize: 8,
+                          fontSize: 10,
                           fontWeight: 700,
                           letterSpacing: '0.12em',
                           marginBottom: 12,
-                          color: 'rgba(196,124,46,0.5)',
+                          color: 'rgba(196,124,46,0.65)',
                           fontFamily: 'Syne, sans-serif',
                           textTransform: 'uppercase',
                           margin: 0,
@@ -307,8 +307,8 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                           >
                             <span
                               style={{
-                                fontSize: 10,
-                                color: 'rgba(240,230,204,0.75)',
+                                fontSize: 12,
+                                color: 'rgba(240,230,204,0.88)',
                                 fontFamily: 'DM Sans, sans-serif',
                               }}
                             >
@@ -327,8 +327,8 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                                   {i > 0 && (
                                     <span
                                       style={{
-                                        fontSize: 8,
-                                        color: 'rgba(122,117,110,0.4)',
+                                        fontSize: 10,
+                                        color: 'rgba(122,117,110,0.55)',
                                       }}
                                     >
                                       +
@@ -359,9 +359,9 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
               >
                 <span
                   style={{
-                    fontSize: 8,
+                    fontSize: 10,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.5)',
+                    color: 'rgba(140,130,112,0.65)',
                     letterSpacing: '0.08em',
                   }}
                 >
@@ -369,9 +369,9 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 </span>
                 <span
                   style={{
-                    fontSize: 8,
+                    fontSize: 10,
                     fontFamily: 'JetBrains Mono, monospace',
-                    color: 'rgba(140,130,112,0.4)',
+                    color: 'rgba(140,130,112,0.55)',
                     letterSpacing: '0.06em',
                   }}
                 >

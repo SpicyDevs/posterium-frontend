@@ -235,7 +235,7 @@ const ExportMenu = memo<ExportMenuProps>(
             <Download size={13} style={{ color: 'var(--film-amber)' }} />
             <span
               className="syne-font font-bold uppercase tracking-widest"
-              style={{ fontSize: 10, color: 'var(--film-cream)' }}
+              style={{ fontSize: 11, color: 'var(--film-cream)' }}
             >
               Export
             </span>
@@ -259,7 +259,7 @@ const ExportMenu = memo<ExportMenuProps>(
         <div className="px-4 pt-3 pb-2">
           <p
             className="syne-font uppercase tracking-widest mb-2"
-            style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
+            style={{ fontSize: 10, color: 'var(--film-text-dim)', fontWeight: 700 }}
           >
             Format
           </p>
@@ -290,7 +290,7 @@ const ExportMenu = memo<ExportMenuProps>(
         <div className="px-4 pt-1 pb-3">
           <p
             className="syne-font uppercase tracking-widest mb-1.5"
-            style={{ fontSize: 8, color: 'var(--film-text-dim)', fontWeight: 700 }}
+            style={{ fontSize: 10, color: 'var(--film-text-dim)', fontWeight: 700 }}
           >
             API URL
           </p>
@@ -310,7 +310,7 @@ const ExportMenu = memo<ExportMenuProps>(
               }}
               aria-label="API URL"
               className="flex-1 min-w-0 bg-transparent border-none outline-none mono-font"
-              style={{ fontSize: 10, color: 'var(--film-text-dim)' }}
+              style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
               spellCheck={false}
             />
             {onLoadConfig && editedUrl !== null && editedUrl !== currentUrl ? (

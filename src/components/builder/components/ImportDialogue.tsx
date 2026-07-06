@@ -162,11 +162,11 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
       <div style={{ padding: '12px 16px 8px' }}>
         <p
           style={{
-            fontSize: 8,
+            fontSize: 10,
             fontWeight: 700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: 'rgba(196,124,46,0.5)',
+            color: 'rgba(196,124,46,0.65)',
             fontFamily: 'Syne, sans-serif',
             marginBottom: 8,
             margin: 0,
@@ -175,6 +175,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
           API URL
         </p>
         <div
+          className="focus-within:ring-1 focus-within:ring-[#C47C2E]/50"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -185,7 +186,6 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             border: '1px solid rgba(196,124,46,0.12)',
             transition: 'all 0.2s',
           }}
-          onFocus={() => {}}
         >
           <input
             type="url"
@@ -200,7 +200,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             autoFocus
             spellCheck={false}
             aria-label="Paste API URL"
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
+            className="focus:outline-none"
             style={{
               flex: 1,
               background: 'transparent',

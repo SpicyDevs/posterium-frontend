@@ -274,17 +274,17 @@ const ContextMenu: React.FC<Props> = memo(
             {isLogo ? 'logo' : id}
           </span>
           {isSelected && (
-            <span
-              style={{
-                marginLeft: 'auto',
-                fontSize: 8,
-                color: 'rgba(196,124,46,0.5)',
-                fontFamily: 'JetBrains Mono, monospace',
-                letterSpacing: '0.1em',
-              }}
-            >
-              selected
-            </span>
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: 9,
+                  color: 'rgba(196,124,46,0.65)',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  letterSpacing: '0.1em',
+                }}
+              >
+                selected
+              </span>
           )}
         </div>
 
