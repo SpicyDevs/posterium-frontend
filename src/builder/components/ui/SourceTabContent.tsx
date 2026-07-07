@@ -270,108 +270,112 @@ const SourceTabContent: React.FC<Props> = ({
         </Combobox>
       </div>
 
-      {/* Media type + ID */}
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <div>
-          <p
-            className="syne-font uppercase tracking-widest mb-1.5"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-          >
-            Media Type
-          </p>
-          <SelectBox
-            value={config.mediaType}
-            onChange={(v) => updateConfig('mediaType', v as PosterConfig['mediaType'])}
-            options={[
-              { id: 'movie', label: '🎬 Movie' },
-              { id: 'tv', label: '📺 TV Series' },
-              { id: 'anime', label: '🎌 Anime' },
-            ]}
-          />
-        </div>
-        <div className="w-24">
-          <p
-            className="syne-font uppercase tracking-widest mb-1.5"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-          >
-            IMDb ID
-          </p>
-          <input
-            type="text"
-            value={config.imdbId || config.tmdbId}
-            onChange={(e) => {
-              const val = e.target.value.trim();
-              if (val.startsWith('tt')) {
-                setConfig((prev) => ({ ...prev, imdbId: val }));
-              } else {
-                setConfig((prev) => ({ ...prev, tmdbId: val, imdbId: undefined }));
-              }
-            }}
-            className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontSize: 11,
-              color: 'var(--film-pale)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
-            }}
-            onMouseLeave={(e) => {
-              if (document.activeElement !== e.currentTarget) {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-              }
-            }}
-            onFocus={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
-            }}
-            onBlur={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Source + ptype */}
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <p
-            className="syne-font uppercase tracking-widest mb-1.5"
-            style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-          >
-            Poster Source
-          </p>
-          <SelectBox
-            value={config.source}
-            onChange={(v) => updateConfig('source', v as PosterConfig['source'])}
-            options={sourceOptions}
-          />
-        </div>
-        {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
-          <div>
-            <p
-              className="syne-font uppercase tracking-widest mb-1.5"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
-            >
-              Poster Type
-            </p>
-            <SelectBox
-              value={config.ptype || 'auto'}
-              onChange={(v) => updateConfig('ptype', v)}
-              options={ptypeOptions}
-            />
+      {isAdvanced && (
+        <>
+          {/* Media type + ID */}
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div>
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+              >
+                Media Type
+              </p>
+              <SelectBox
+                value={config.mediaType}
+                onChange={(v) => updateConfig('mediaType', v as PosterConfig['mediaType'])}
+                options={[
+                  { id: 'movie', label: '🎬 Movie' },
+                  { id: 'tv', label: '📺 TV Series' },
+                  { id: 'anime', label: '🎌 Anime' },
+                ]}
+              />
+            </div>
+            <div className="w-24">
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+              >
+                IMDb ID
+              </p>
+              <input
+                type="text"
+                value={config.imdbId || config.tmdbId}
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  if (val.startsWith('tt')) {
+                    setConfig((prev) => ({ ...prev, imdbId: val }));
+                  } else {
+                    setConfig((prev) => ({ ...prev, tmdbId: val, imdbId: undefined }));
+                  }
+                }}
+                className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  fontSize: 11,
+                  color: 'var(--film-pale)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  if (document.activeElement !== e.currentTarget) {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                  }
+                }}
+                onFocus={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                }}
+                onBlur={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                }}
+              />
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Textless toggle */}
-      <ToggleRow
-        label="Textless Poster"
-        sub="Remove title text from image"
-        checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
-        onChange={(v) => updateConfig('textless', v)}
-        disabled={['metahub', 'imdb'].includes(config.source)}
-      />
+          {/* Source + ptype */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p
+                className="syne-font uppercase tracking-widest mb-1.5"
+                style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+              >
+                Poster Source
+              </p>
+              <SelectBox
+                value={config.source}
+                onChange={(v) => updateConfig('source', v as PosterConfig['source'])}
+                options={sourceOptions}
+              />
+            </div>
+            {['fanart', 'tmdb', 'imdb'].includes(config.source) && (
+              <div>
+                <p
+                  className="syne-font uppercase tracking-widest mb-1.5"
+                  style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+                >
+                  Poster Type
+                </p>
+                <SelectBox
+                  value={config.ptype || 'auto'}
+                  onChange={(v) => updateConfig('ptype', v)}
+                  options={ptypeOptions}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Textless toggle */}
+          <ToggleRow
+            label="Textless Poster"
+            sub="Remove title text from image"
+            checked={['metahub', 'imdb'].includes(config.source) ? false : config.textless}
+            onChange={(v) => updateConfig('textless', v)}
+            disabled={['metahub', 'imdb'].includes(config.source)}
+          />
+        </>
+      )}
 
       <div className="pt-1 space-y-2">
         <ToggleRow
@@ -469,19 +473,21 @@ const SourceTabContent: React.FC<Props> = ({
             />
           </Switch>
         </div>
-        <div className="px-1">
-          <SegmentedRow
-            label="Logo Source"
-            value={String(config.logoSource ?? 'auto')}
-            onChange={(v) =>
-              updateConfig(
-                'logoSource',
-                v === 'auto' ? null : (v as PosterConfig['logoSource'])
-              )
-            }
-            options={logoSourceOptions}
-          />
-        </div>
+        {isAdvanced && (
+          <div className="px-1">
+            <SegmentedRow
+              label="Logo Source"
+              value={String(config.logoSource ?? 'auto')}
+              onChange={(v) =>
+                updateConfig(
+                  'logoSource',
+                  v === 'auto' ? null : (v as PosterConfig['logoSource'])
+                )
+              }
+              options={logoSourceOptions}
+            />
+          </div>
+        )}
         <div
           className="mt-5 mx-1"
           style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
