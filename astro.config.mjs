@@ -280,6 +280,11 @@ export default defineConfig({
     imageSitemapEnhancer(),
   ],
   vite: {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
+    },
     esbuild: {
       target: 'es2020',
       legalComments: 'none',
