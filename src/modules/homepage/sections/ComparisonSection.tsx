@@ -16,19 +16,19 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { feature: 'Rating Sources', sub: 'Supported platforms', ours: '12 live sources — IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1–3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Score Freshness', sub: 'When ratings update', ours: 'Live on every request', theirs: 'Cached or manual refresh', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Delivery', sub: 'How posters are served', ours: 'Edge URL — auto-updates everywhere', theirs: 'Static downloads (scores get stale)', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Visual Editor', sub: 'Customizing layouts', ours: 'Drag-and-drop with live preview', theirs: 'Forms or code-only', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Textless & Logos', sub: 'Clean artwork', ours: 'Auto-fetch textless + inject vector logos', theirs: 'Requires Photoshop or static upload', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Fallback Sources', sub: 'When TMDB fails', ours: 'Cascade: Fanart → Metahub → IMDb', theirs: 'Poster breaks or shows blank', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Export Formats', sub: 'Vector and raster', ours: 'SVG, WebP, PNG, JPG', theirs: 'PNG/JPG only', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Pricing', sub: 'Cost to generate', ours: '100% free, MIT open source', theirs: 'Paid tiers or credit limits', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Auth Required', sub: 'Registration', ours: 'None — just a URL', theirs: 'Mandatory sign-up', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Rating Sources', sub: 'Supported platforms', ours: '12 live sources — IMDb, RT, Meta, Letterboxd, MAL, and more', theirs: 'Usually 1–3 sources', ourStatus: 'win', theirStatus: 'partial' },
+  { feature: 'Score Freshness', sub: 'When ratings update', ours: 'Updated on every request', theirs: 'Often cached or manually refreshed', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Delivery', sub: 'How posters are served', ours: 'Single poster URL that updates everywhere', theirs: 'Static exports that can go stale', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Visual Editor', sub: 'Customizing layouts', ours: 'Drag-and-drop with live preview', theirs: 'Mostly forms or code', ourStatus: 'win', theirStatus: 'partial' },
+  { feature: 'Textless & Logos', sub: 'Clean artwork', ours: 'Can auto-fetch textless art and add vector logos', theirs: 'Usually manual edits or uploads', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Fallback Sources', sub: 'When TMDB fails', ours: 'Automatic fallback: Fanart → Metahub → IMDb', theirs: 'Can fail or return blank posters', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Export Formats', sub: 'Vector and raster', ours: 'SVG, WebP, PNG, JPG', theirs: 'Usually PNG/JPG only', ourStatus: 'win', theirStatus: 'partial' },
+  { feature: 'Pricing', sub: 'Cost to generate', ours: 'Free and MIT open source', theirs: 'Paid tiers or usage limits', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Auth Required', sub: 'Registration', ours: 'No account — just a poster URL', theirs: 'Sign-up required', ourStatus: 'win', theirStatus: 'loss' },
   // Honest Posterium limitations
-  { feature: 'Generation Speed', sub: 'First request latency', ours: '80–400 ms on cold edge start', theirs: 'Instant (pre-rendered cache)', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
-  { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported — URL-based only', theirs: 'Some support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
-  { feature: 'Offline / Local', sub: 'Network dependency', ours: 'Requires internet connection', theirs: 'Local library support varies', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
+  { feature: 'Generation Speed', sub: 'First request latency', ours: '80–400 ms on cold starts', theirs: 'Can be instant with pre-rendered cache', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
+  { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported right now (URL-based flow)', theirs: 'Some tools support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
+  { feature: 'Offline / Local', sub: 'Network dependency', ours: 'Needs an internet connection', theirs: 'Offline support varies by tool', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
 ];
 
 const WIN_ICON = (
@@ -150,7 +150,7 @@ export const ComparisonSection = memo(() => {
         <SectionHeader
           tag="Head-to-head"
           title={<>THE SPEC<br /><span style={{ color: 'var(--film-amber)' }}>SHEET</span></>}
-          description="Every feature side by side — including where we fall short."
+          description="A side-by-side comparison, including current limitations."
           padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) clamp(24px,3vw,36px)"
         />
       </div>

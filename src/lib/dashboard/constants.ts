@@ -288,10 +288,10 @@ export interface Stat {
   unit?: string;
 }
 export const STATS: Stat[] = [
-  { value: '∞', label: 'Free API Calls', sub: 'No rate limits, ever', unit: '' },
-  { value: '10+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · More', unit: 'src' },
-  { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP', unit: 'fmt' },
-  { value: '0', label: 'Auth Required', sub: "Just a URL. That's it.", unit: '' },
+  { value: '∞', label: 'Free API Calls', sub: 'Unlimited usage, no account needed', unit: '' },
+  { value: '10+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · and more', unit: 'src' },
+  { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP output', unit: 'fmt' },
+  { value: '0', label: 'Auth Required', sub: 'Use your poster URL directly', unit: '' },
 ];
 
 export interface Feature {
@@ -309,7 +309,7 @@ export const FEATURES: Feature[] = [
     size: 'large',
     icon: '⌖',
     hint: '?imdb_x=310&imdb_y=20',
-    desc: 'Pixel-perfect badge positioning with multi-select, group-move, keyboard shortcuts, and full undo/redo history. Adjust per-badge or globally - glassmorphism blur, opacity, corner radius, shadow, and border all editable live.',
+    desc: 'Place badges exactly where you want with multi-select, group move, shortcuts, and full undo/redo. Tweak blur, opacity, radius, shadow, and borders per badge or globally.',
   },
   {
     title: 'Instant API URL',
@@ -317,7 +317,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '⚡',
     hint: '?r=imdb,rt&source=tmdb',
-    desc: 'One URL returns the complete poster with live ratings baked in. No authentication, no rate limits, no account. Paste the URL wherever an image is expected - Discord embed, Notion, HTML img tag, anything.',
+    desc: 'One URL gives you the full poster with live ratings built in. No auth, no account, no rate limits. Paste it anywhere an image URL works.',
   },
   {
     title: 'Multiple Sources',
@@ -325,7 +325,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '⊞',
     hint: '?source=tmdb|fanart|imdb',
-    desc: 'TMDB, Fanart.tv, Metahub, and IMDb poster sources. Textless variants supported. Auto-selects best available art for any title. Falls back gracefully when a source is unavailable.',
+    desc: 'Choose TMDB, Fanart.tv, Metahub, or IMDb poster sources. Textless variants are supported, and Posterium falls back automatically when a source is missing.',
   },
   {
     title: 'Live Ratings',
@@ -333,7 +333,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◉',
     hint: '?r=imdb,rt,meta,tmdb,letterboxd',
-    desc: 'IMDb, RT, Metacritic, TMDB, Letterboxd, MAL, AniList - always fetched fresh. Scores in the image reflect what the site shows right now, not cached data from months ago.',
+    desc: 'IMDb, RT, Metacritic, TMDB, Letterboxd, MAL, and AniList ratings are fetched fresh, so the poster reflects current scores instead of stale cached values.',
   },
   {
     title: 'Movies, TV & Anime',
@@ -341,7 +341,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '▣',
     hint: '?type=movie|tv|anime',
-    desc: 'Full media type support including TMDB movie/TV IDs, MAL anime IDs, and AniList IDs. Badge types auto-match media type - no manual switching needed.',
+    desc: 'Works with movies, TV, and anime using TMDB, MAL, and AniList IDs. Badge types adjust to the media type automatically.',
   },
   {
     title: 'Any Export Format',
@@ -349,7 +349,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◫',
     hint: '/movie/155.svg|.png|.jpg|.webp',
-    desc: 'SVG for lossless vector clarity at any resolution. PNG, JPG, and WebP for universal compatibility in platforms that block SVG sources.',
+    desc: 'Export as SVG for crisp vector output, or use PNG, JPG, and WebP for broad compatibility.',
   },
   {
     title: 'Textless Posters',
@@ -357,7 +357,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◻',
     hint: '?textless=1',
-    desc: 'Strip title text from artwork using the textless=1 parameter for a clean, cinematic look - popular for Plex home screens and custom gallery setups.',
+    desc: 'Use textless=1 to remove title text and get a cleaner poster look for media servers and gallery layouts.',
   },
   {
     title: 'Plex & Jellyfin Ready',
@@ -365,7 +365,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '▤',
     hint: 'Paste URL → Plex poster field',
-    desc: 'Paste the API URL directly into Plex or Jellyfin as custom poster art. Live ratings update every time the poster is fetched - no manual refreshing required.',
+    desc: 'Paste the poster URL into Plex or Jellyfin custom artwork fields. Ratings refresh whenever the image is fetched.',
   },
 ];
 
@@ -387,7 +387,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: -0.8,
     title: 'Plex & Jellyfin',
     tags: ['Media Servers', 'Plex', 'Jellyfin', 'Emby'],
-    desc: 'Custom poster art with embedded live ratings for your self-hosted media server - paste the URL and forget it.',
+    desc: 'Use custom poster art with live ratings in self-hosted media servers. Paste the URL once and keep it updated.',
     codeSnippet: 'https://api.posterium.xyz/movie/155.svg?r=imdb,rt',
     previewId: '155',
     previewType: 'movie',
@@ -399,7 +399,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: 0.6,
     title: 'Discord Bots',
     tags: ['Discord', 'Bots', 'Embeds'],
-    desc: 'Rich movie embeds in any Discord bot. One image URL in the embed field - live scores in the art, no extra API calls from your bot.',
+    desc: 'Add richer Discord movie embeds with one image URL. Scores are already in the poster, so your bot stays simple.',
     codeSnippet: ".setImage('https://api.posterium.xyz/movie/27205.webp?r=imdb,rt,meta')",
     previewId: '27205',
     previewType: 'movie',
@@ -411,7 +411,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: -0.4,
     title: 'Notion & Obsidian',
     tags: ['Notion', 'Obsidian', 'Databases'],
-    desc: 'Embed live poster images directly in watchlist databases and movie notes. Scores update in the image - no manual edits.',
+    desc: 'Drop live poster images into watchlists and notes. Ratings update in place without manual edits.',
     codeSnippet: '![poster](#)',
     previewId: '238',
     previewType: 'movie',
@@ -423,7 +423,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: 1.0,
     title: 'Personal Websites',
     tags: ['Web', 'Blogs', 'Reviews'],
-    desc: 'Dynamic image source for your movie blog, portfolio, or review site - no backend needed. An img tag with a URL is all it takes.',
+    desc: 'Use dynamic poster images on blogs, portfolios, or review sites with no backend required.',
     codeSnippet: '<img src="https://api.posterium.xyz/movie/872585.webp?r=imdb,rt,meta">',
     previewId: '872585',
     previewType: 'movie',
@@ -435,7 +435,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: -0.6,
     title: 'Make · Zapier · n8n',
     tags: ['Automation', 'Make', 'Zapier'],
-    desc: 'Auto-generate posters for new watchlist entries via no-code automation workflows. Compose the URL from TMDB ID and pass it as an image field.',
+    desc: 'Generate posters automatically in Make, Zapier, or n8n flows by composing the poster URL from media IDs.',
     codeSnippet: '{{base}}/movie/{{tmdb_id}}.webp?r=imdb,rt&source=tmdb',
     previewId: '1396',
     previewType: 'tv',
@@ -447,7 +447,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: 0.9,
     title: 'Print & Design',
     tags: ['Print', 'SVG', 'Art', 'Design'],
-    desc: 'Print-quality vector at any scale. SVG output is lossless - import directly into Figma, Illustrator, or Affinity for print or merch layouts.',
+    desc: 'Export print-ready SVG at any scale, then import directly into tools like Figma, Illustrator, or Affinity.',
     codeSnippet: 'curl https://api.posterium.xyz/movie/475557.svg?r=imdb > joker.svg',
     previewId: '475557',
     previewType: 'movie',

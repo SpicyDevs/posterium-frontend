@@ -143,8 +143,8 @@ export const CTASection = memo(() => {
               maxWidth: 480,
             }}
           >
-            No account. No rate limits. Drag, position, copy your URL. Posterium is free
-            infrastructure for your media setup.
+            No account. No rate limits. Build your layout, then copy one poster URL that
+            works in your setup.
           </span>
         </div>
 
@@ -169,7 +169,7 @@ export const CTASection = memo(() => {
               borderRadius: 5,
             }}
           >
-            Open Free Builder <ArrowRight size={13} />
+            Open Builder <ArrowRight size={13} />
           </a>
           <a
             href="#"

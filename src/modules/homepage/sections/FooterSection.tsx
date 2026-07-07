@@ -51,7 +51,7 @@ export const FooterSection = memo(() => (
         </div>
 
         <p className="syne-font" style={{ fontSize: 'clamp(12px,1.4vw,14px)', color: 'rgba(200,190,170,0.6)', lineHeight: 1.65, maxWidth: 460, marginBottom: 0 }}>
-          Generate movie and TV poster images with glassmorphism rating badges. One URL. No account. No rate limits.
+          Create movie and TV posters with live rating badges. Use one poster URL anywhere. No account. No rate limits.
         </p>
       </div>
 

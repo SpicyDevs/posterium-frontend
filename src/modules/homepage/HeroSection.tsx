@@ -250,11 +250,11 @@ const HeroSection = memo(() => (
         </h1>
         <div className="h-a2" style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
         <p className="h-a2 syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 480, lineHeight: 1.7, marginBottom: 36 }}>
-          Movie &amp; TV poster images with glassmorphism rating badges from{' '}
+          Generate movie and TV posters with clean rating badges from{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>,
-          and more — all from a single URL.
+          and more, all from one poster URL.
         </p>
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>

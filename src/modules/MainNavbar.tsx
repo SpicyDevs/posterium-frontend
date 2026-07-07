@@ -220,7 +220,7 @@ const MainNavbar = memo<MainNavbarProps>(
                 onChange={(e) => search?.onChange?.(e.target.value)}
                 onFocus={() => search?.onActivate?.()}
                 readOnly={search?.readOnly || !search?.onChange}
-                placeholder={search?.placeholder ?? 'Search…'}
+                placeholder={search?.placeholder ?? 'Search'}
                 aria-label={search?.placeholder ?? 'Search'}
                 className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
                 style={{
@@ -362,7 +362,7 @@ const MainNavbar = memo<MainNavbarProps>(
                   value={search?.value ?? ''}
                   onChange={(e) => search?.onChange?.(e.target.value)}
                   readOnly={search?.readOnly || !search?.onChange}
-                  placeholder={search?.placeholder ?? 'Search…'}
+                  placeholder={search?.placeholder ?? 'Search'}
                   aria-label={search?.placeholder ?? 'Search'}
                   className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
                   style={{
