@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import MainNavbar from '@/components/shared/MainNavbar';
+import MainNavbar from '@/modules/Navbar/MainNavbar';
 import Accordion from '@/ui/Accordion.astro';
 import FaqSearch from '@/modules/FAQ/FaqSearch';
 import { AmberTag } from '@/ui/primitives';
@@ -10,7 +10,7 @@ import { SITE_CONFIG } from '@/constants/site';
 import { buildFAQPageSchema } from '@/seo/lib/schema-builders';
 import { contentToPlainText } from '@/seo/lib/text-processing';
 import type { PageSEOMetadata } from '@/types/seo';
-import { getRelatedContentLinks } from '@/lib/internal-links';
+import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';
 
 // Get all FAQ entries at build time
