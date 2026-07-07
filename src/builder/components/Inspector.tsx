@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { useEditor } from '../EditorContext';
-import { BadgesPanel, SelectionPanel } from './panels';
+import { BadgesPanel, SelectionPanel } from './Panels';
 import type { PosterConfig } from '../types';
 import { Badge, MousePointer2 } from 'lucide-react';
 import SidebarLayout from './SidebarLayout';

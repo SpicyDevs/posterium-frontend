@@ -19,7 +19,6 @@ import {
   saveKeysToCookie,
 } from './builderStorage';
 import PreviewCanvas from './components/PreviewCanvas';
-import LayerPanel from './components/LayerPanel';
 import Inspector from './components/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/AdvancedPanelNav';
 import type { BuilderMode } from './components/ModeToggle';
@@ -29,7 +28,7 @@ import {
   PosterPanel,
   BadgesPanel,
   SelectionPanel,
-} from './components/panels';
+} from './components/Panels';
 import BuilderDesktopHeader from './components/BuilderDesktopHeader';
 import ZoomOverlay from './components/ZoomOverlay';
 import { EditorProvider, useEditor } from './EditorContext';
@@ -150,7 +149,7 @@ const StudioLayout: React.FC<{
   const mobileRootRef = useRef<HTMLDivElement>(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
-  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'canvas' | 'badges'>('source');
+  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'badges'>('source');
 
   const {
     bottomPanelOpen,
@@ -163,7 +162,7 @@ const StudioLayout: React.FC<{
   } = useMobileBottomSheet(mobileRootRef);
 
   const openBottomPanel = useCallback(
-    (tab: 'source' | 'canvas' | 'badges') => {
+    (tab: 'source' | 'badges') => {
       setBottomPanelTab(tab);
       openBottomPanelSheet();
     },
@@ -1230,9 +1229,7 @@ const StudioLayout: React.FC<{
                       : bottomPanelOpen
                         ? bottomPanelTab === 'source'
                           ? 'Source'
-                          : bottomPanelTab === 'canvas'
-                            ? 'Canvas'
-                            : 'Badges'
+                          : 'Badges'
                         : 'Builder'}
                 </span>
               </div>
@@ -1970,7 +1967,6 @@ const StudioLayout: React.FC<{
                 {(
                   [
                     { id: 'source', label: 'Source' },
-                    { id: 'canvas', label: 'Canvas' },
                     { id: 'badges', label: 'Badges' },
                   ] as const
                 ).map(({ id, label }) => {
@@ -2007,7 +2003,7 @@ const StudioLayout: React.FC<{
               </div>
 
               {/* CONTENT AREA */}
-              {/* All three panels are mounted simultaneously. Only one is visible via display. */}
+              {/* Both panels are mounted simultaneously. Only one is visible via display. */}
               {/* This eliminates remounting, re-running effects, and scroll position loss on tab switch. */}
               {/* Each content div has its own overflow-y:auto with touch scrolling. */}
               <div
@@ -2031,29 +2027,6 @@ const StudioLayout: React.FC<{
                   }}
                 >
                   <SourcePanel
-                    config={config}
-                    setConfig={setConfig}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelectionOverride}
-                    chrome={false}
-                    detailLevel="simple"
-                  />
-                </div>
-
-                {/* CANVAS TAB CONTENT */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehavior: 'contain',
-                    display: bottomPanelTab === 'canvas' ? 'block' : 'none',
-                    paddingBottom: 24,
-                  }}
-                >
-                  <PosterPanel
                     config={config}
                     setConfig={setConfig}
                     selectedIds={selectedIds}
@@ -2125,8 +2098,8 @@ const StudioLayout: React.FC<{
                 }}
               />
               {/* Active indicator bar — 28px wide, 2px tall, translates X based on active tab */}
-              {/* Tab indices: source=0, canvas=1, badges=2. Each tab is 1/3 of nav width. */}
-              {/* Indicator centered within its tab: left = (tabIndex * 33.333%) + (33.333% - 28px) / 2 */}
+              {/* Tab indices: source=0, badges=1. Each tab is 1/2 of nav width. */}
+              {/* Indicator centered within its tab: left = (tabIndex * 50%) + (50% - 28px) / 2 */}
               {/* Use transform: translateX for GPU-accelerated animation instead of left: */}
               <div
                 aria-hidden="true"
@@ -2134,14 +2107,13 @@ const StudioLayout: React.FC<{
                   {
                     position: 'absolute',
                     top: 0,
-                    left: 'calc(33.333% * var(--active-tab-index, 0) + (33.333% - 28px) / 2)',
+                    left: 'calc(50% * var(--active-tab-index, 0) + (50% - 28px) / 2)',
                     width: 28,
                     height: 2,
                     background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
                     borderRadius: '0 0 2px 2px',
                     transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
-                    '--active-tab-index':
-                      bottomPanelTab === 'source' ? 0 : bottomPanelTab === 'canvas' ? 1 : 2,
+                    '--active-tab-index': bottomPanelTab === 'source' ? 0 : 1,
                   } as React.CSSProperties
                 }
               />
@@ -2175,7 +2147,6 @@ const StudioLayout: React.FC<{
                 {(
                   [
                     { id: 'source', label: 'Source', Icon: Film },
-                    { id: 'canvas', label: 'Canvas', Icon: Monitor },
                     { id: 'badges', label: 'Badges', Icon: Sliders },
                   ] as const
                 ).map(({ id, label, Icon }) => {
@@ -2241,11 +2212,12 @@ const StudioLayout: React.FC<{
               {builderMode === 'advanced' ? (
                 <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
               ) : (
-                <LayerPanel
+                <SourcePanel
                   config={config}
                   setConfig={setConfig}
                   selectedIds={selectedIds}
                   onSelect={handleSelectionOverride}
+                  chrome={false}
                   detailLevel="simple"
                 />
               )}
