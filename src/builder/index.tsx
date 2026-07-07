@@ -28,7 +28,7 @@ import {
   PosterPanel,
   BadgesPanel,
   SelectionPanel,
-} from './components/panels';
+} from './components/Panels';
 import BuilderDesktopHeader from './components/BuilderDesktopHeader';
 import ZoomOverlay from './components/ZoomOverlay';
 import { EditorProvider, useEditor } from './EditorContext';
