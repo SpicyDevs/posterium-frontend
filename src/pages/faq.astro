@@ -2,12 +2,14 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import MainNavbar from '@/components/shared/MainNavbar';
-import Accordion from '@/components/ui/Accordion.astro';
-import FaqSearch from '@/components/faq/FaqSearch';
-import { AmberTag } from '@/components/shared/primitives';
-import RelatedContent from '@/components/seo/RelatedContent.astro';
-import { SITE_CONFIG } from '@/lib/config';
-import { buildFAQPageSchema, contentToPlainText, type PageSEOMetadata } from '@/lib/seo';
+import Accordion from '@/ui/Accordion.astro';
+import FaqSearch from '@/modules/FAQ/FaqSearch';
+import { AmberTag } from '@/ui/primitives';
+import RelatedContent from '@/seo/components/RelatedContent.astro';
+import { SITE_CONFIG } from '@/constants/site';
+import { buildFAQPageSchema } from '@/seo/lib/schema-builders';
+import { contentToPlainText } from '@/seo/lib/text-processing';
+import type { PageSEOMetadata } from '@/types/seo';
 import { getRelatedContentLinks } from '@/lib/internal-links';
 import '@/styles/global.css';
 

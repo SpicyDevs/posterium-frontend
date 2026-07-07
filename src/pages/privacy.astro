@@ -1,10 +1,11 @@
 ---
 // src/pages/privacy.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import MainNavbar from '@/components/shared/MainNavbar';
-import { AmberTag } from '@/components/shared/primitives';
-import { SITE_CONFIG } from '@/lib/config';
-import { buildArticleOrTechArticleSchema, type PageSEOMetadata } from '@/lib/seo';
+import MainNavbar from '@/modules/Navbar/MainNavbar';
+import { AmberTag } from '@/ui/primitives';
+import { SITE_CONFIG } from '@/constants/site';
+import { buildArticleOrTechArticleSchema } from '@/seo/lib/schema-builders';
+import type { PageSEOMetadata } from '@/types/seo';
 import '@/styles/global.css';
 
 const LAST_UPDATED = 'April 6, 2026';

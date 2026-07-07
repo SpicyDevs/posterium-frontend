@@ -9,8 +9,8 @@
 //   • Comprehensive timing analytics + payload size analysis
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import MainNavbar from '@/components/shared/MainNavbar';
-import { AmberTag } from '@/components/shared/primitives';
+import MainNavbar from '@/modules/Navbar/MainNavbar';
+import { AmberTag } from '@/ui/primitives';
 
 const API_BASE      = 'https://api.posterium.xyz';
 const CF_PROXY_BASE = 'https://r-cf.spicydevs.xyz/proxy';

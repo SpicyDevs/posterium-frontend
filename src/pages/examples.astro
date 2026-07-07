@@ -7,15 +7,15 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import ExamplesPage from '@/components/examples/ExamplesPage';
-import RelatedContent from '@/components/seo/RelatedContent.astro';
-import { SITE_CONFIG } from '@/lib/config';
+import ExamplesPage from '@/modules/ExamplesPage';
+import RelatedContent from '@/seo/components/RelatedContent.astro';
+import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   extractVideoObjectSchemas,
-  type PageSEOMetadata,
-} from '@/lib/seo';
-import { getRelatedContentLinks } from '@/lib/internal-links';
+} from '@/seo/lib/schema-builders';
+import type { PageSEOMetadata } from '@/types/seo';
+import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';
 
 const exampleEntries = await getCollection('examples');

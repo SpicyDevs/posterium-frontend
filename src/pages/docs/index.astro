@@ -1,15 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
 import DocsLayout from '@/layouts/DocsLayout.astro';
-import RelatedContent from '@/components/seo/RelatedContent.astro';
-import { SITE_CONFIG } from '@/lib/config';
+import RelatedContent from '@/seo/components/RelatedContent.astro';
+import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   buildCollectionBreadcrumbs,
   extractVideoObjectSchemas,
-  type PageSEOMetadata,
-} from '@/lib/seo';
-import { getRelatedContentLinks } from '@/lib/internal-links';
+} from '@/seo/lib/schema-builders';
+import type { PageSEOMetadata } from '@/types/seo';
+import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';
 
 const docsEntries = await getCollection('docs');

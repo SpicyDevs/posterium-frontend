@@ -2,8 +2,8 @@
 // src/pages/admin/analytics.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
-import { SITE_CONFIG } from '@/lib/config';
-import type { PageSEOMetadata } from '@/lib/seo';
+import { SITE_CONFIG } from '@/constants/site';
+import type { PageSEOMetadata } from '@/types/seo';
 
 const canonical = `${SITE_CONFIG.baseUrl}/admin/analytics`;
 const seo: PageSEOMetadata = {

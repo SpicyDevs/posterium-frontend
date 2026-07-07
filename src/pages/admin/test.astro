@@ -2,8 +2,8 @@
 // src/pages/test.astro
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TestBenchmark from '../../components/admin/TestBenchmark';
-import { SITE_CONFIG } from '@/lib/config';
-import type { PageSEOMetadata } from '@/lib/seo';
+import { SITE_CONFIG } from '@/constants/site';
+import type { PageSEOMetadata } from '@/types/seo';
 
 const canonical = `${SITE_CONFIG.baseUrl}/admin/test`;
 const seo: PageSEOMetadata = {

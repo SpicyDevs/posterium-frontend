@@ -5,11 +5,10 @@ import {
   buildHowToSchema,
   buildSchemaGraph,
   buildWebApplicationSchema,
-  contentToPlainText,
   extractVideoObjectSchemas,
-  toFAQEntries,
-  type SchemaObject,
-} from './seo';
+} from '@/seo/lib/schema-builders';
+import { contentToPlainText, toFAQEntries } from '@/seo/lib/text-processing';
+import type { SchemaObject } from '@/types/seo';
 
 const getFAQQuestions = (schema: SchemaObject) =>
   (schema.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>).map(

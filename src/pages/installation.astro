@@ -15,20 +15,20 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import MainNavbar from '@/components/shared/MainNavbar';
-import ShowcaseViewer from '@/components/installation/ShowcaseViewer';
-import TableOfContentsClient from '@/components/TableOfContentsClient';
-import { AmberTag } from '@/components/shared/primitives';
-import RelatedContent from '@/components/seo/RelatedContent.astro';
+import MainNavbar from '@/modules/Navbar/MainNavbar';
+import ShowcaseViewer from '@/modules/Showcase/ShowcaseViewer';
+import TableOfContentsClient from '@/modules/TableOfContents/TableOfContentsClient';
+import { AmberTag } from '@/ui/primitives';
+import RelatedContent from '@/seo/components/RelatedContent.astro';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
-import { SITE_CONFIG } from '@/lib/config';
+import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   buildHowToSchema,
   extractVideoObjectSchemas,
-  type PageSEOMetadata,
-} from '@/lib/seo';
-import { getRelatedContentLinks } from '@/lib/internal-links';
+} from '@/seo/lib/schema-builders';
+import type { PageSEOMetadata } from '@/types/seo';
+import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';
 
 const placeholderImages = {

@@ -1,10 +1,10 @@
 ---
 // src/pages/404.astro
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import NotFound from '@/components/NotFound.tsx';
+import NotFound from '@/modules/NotFound';
 import '@/styles/global.css';
-import { SITE_CONFIG } from '@/lib/config';
-import type { PageSEOMetadata } from '@/lib/seo';
+import { SITE_CONFIG } from '@/constants/site';
+import type { PageSEOMetadata } from '@/types/seo';
 
 const canonical = `${SITE_CONFIG.baseUrl}/404`;
 const seo: PageSEOMetadata = {
