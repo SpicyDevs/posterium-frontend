@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
-import { useEditor } from '../../context/EditorContext';
-import { BadgesPanel, SelectionPanel } from '../panels';
-import type { PosterConfig } from '../../types';
+import { useEditor } from '../EditorContext';
+import { BadgesPanel, SelectionPanel } from './panels';
+import type { PosterConfig } from '../types';
 import { Badge, MousePointer2 } from 'lucide-react';
-import SidebarLayout from '../SidebarLayout';
-import PanelTabs from '../navigation/PanelTabs';
+import SidebarLayout from './SidebarLayout';
+import PanelTabs from './PanelTabs';
 
 interface Props {
   config: PosterConfig;

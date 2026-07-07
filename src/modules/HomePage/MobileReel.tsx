@@ -1,8 +1,6 @@
-// src/components/dashboard/FilmReelSection/MobileReel.tsx
-// Import paths corrected: ../../constants → @/lib/dashboard/constants
 import { memo, useRef } from 'react';
 import { REEL_ITEMS, API } from '@/lib/dashboard/constants';
-import { SprocketStrip } from '../primitives';
+import { SprocketStrip } from './primitives';
 import { ProgressiveImage } from '@/ui/ProgressiveImage';
 
 const POSTER_W = 148;

@@ -1,6 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { SITE_CONFIG } from '@/constants/site';
-import { stripMarkdown } from '@/seo/lib/text-processing';
+import { stripMarkdown } from '@/seo/text-processing';
 
 type SupportedCollection = 'faq' | 'install' | 'examples' | 'docs';
 

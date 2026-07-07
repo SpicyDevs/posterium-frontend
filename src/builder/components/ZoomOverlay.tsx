@@ -1,6 +1,6 @@
 import { memo, useState, type MouseEvent } from 'react';
 import { Maximize2, Minimize2, RotateCcw, Settings, ZoomIn, ZoomOut } from 'lucide-react';
-import type { ViewOptions } from '../../context/EditorContext';
+import type { ViewOptions } from '../EditorContext';
 import BuilderSettingsPopover from './BuilderSettingsPopover';
 
 const ZoomOverlay = memo<{

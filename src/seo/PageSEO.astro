@@ -1,8 +1,7 @@
 ---
-// src/components/seo/PageSEO.astro
 import { SEO_DEFAULTS, SITE_CONFIG } from '@/constants/site';
-import { absoluteUrl } from '@/seo/lib/text-processing';
-import { buildSchemaGraph } from '@/seo/lib/schema-builders';
+import { absoluteUrl } from '@/seo/text-processing';
+import { buildSchemaGraph } from '@/seo/schema-builders';
 import type { PageSEOMetadata } from '@/types/seo';
 
 interface Props {

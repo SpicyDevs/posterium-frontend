@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { ExtensionType, PosterConfig } from '../types';
-import ExportMenu from '@/modules/ExportMenu';
+import ExportMenu from '@/modules/ExportMenu.tsx';
 
 interface Props {
   config: PosterConfig;

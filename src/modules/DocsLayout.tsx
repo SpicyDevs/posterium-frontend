@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from 'react';
-import MainNavbar from '@/modules/Navbar/MainNavbar';
+import MainNavbar from '@/modules/MainNavbar';
 
 export interface DocsSidebarLink {
   id: string;

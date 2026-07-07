@@ -1,7 +1,7 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { Check, Copy, ExternalLink, Search, X } from 'lucide-react';
-import MainNavbar from '@/modules/Navbar/MainNavbar';
-import ExportMenu from '@/modules/ExportMenu';
+import MainNavbar from '@/modules/MainNavbar';
+import ExportMenu from '@/modules/ExportMenu.tsx';
 import { ProgressiveImage } from '@/ui/ProgressiveImage';
 import { PageHeader, EmptyState, Card } from '@/ui';
 import { API, REEL_ITEMS } from '@/lib/dashboard/constants';

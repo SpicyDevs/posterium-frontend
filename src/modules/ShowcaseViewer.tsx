@@ -14,7 +14,7 @@
 //    ≤2-item array that only recalculates when props change anyway.
 
 import { memo, useState, useCallback } from 'react';
-import ShowcaseMediaFrame from './ShowcaseMediaFrame';
+import ShowcaseMediaFrame from '@/modules/ShowcaseMediaFrame';
 import SegmentedControl from '@/ui/SegmentedControl';
 
 export type InstallationDevice = 'desktop' | 'tv' | 'mobile';

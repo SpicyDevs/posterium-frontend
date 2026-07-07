@@ -1,7 +1,7 @@
 // src/components/dashboard/sections/ComparisonSection.tsx
 import { memo } from 'react';
 import { useInView } from '@/lib/dashboard/hooks/index';
-import { SectionHeader } from '@/modules/HomePage/components/SectionHeader';
+import { SectionHeader } from '@/modules/homepage/SectionHeader';
 
 type Status = 'win' | 'partial' | 'loss';
 

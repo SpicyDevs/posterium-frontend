@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { PosterConfig } from '../types';
+import type { PosterConfig } from './types';
 
 export const usePosterHistory = (initialState: PosterConfig | (() => PosterConfig)) => {
   const [stateObj, setStateObj] = useState(() => {

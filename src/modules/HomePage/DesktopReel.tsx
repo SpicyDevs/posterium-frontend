@@ -1,7 +1,7 @@
 import { memo, useRef, useEffect } from 'react';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 import { useScrollReel } from '@/lib/dashboard/hooks/index';
-import { SprocketStrip } from '../primitives';
+import { SprocketStrip } from './primitives';
 import { API } from '@/lib/dashboard/constants';
 import { ProgressiveImage } from '@/ui/ProgressiveImage';
 

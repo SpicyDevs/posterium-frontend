@@ -7,13 +7,13 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import ExamplesPage from '@/modules/ExamplesPage';
-import RelatedContent from '@/seo/components/RelatedContent.astro';
+import ExamplesPage from '@/modules/ExamplesPage.tsx';
+import RelatedContent from '@/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   extractVideoObjectSchemas,
-} from '@/seo/lib/schema-builders';
+} from '@/seo/schema-builders';
 import type { PageSEOMetadata } from '@/types/seo';
 import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';

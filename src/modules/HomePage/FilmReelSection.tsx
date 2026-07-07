@@ -1,6 +1,5 @@
-// src/components/dashboard/FilmReelSection/index.tsx
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
-import { SprocketStrip } from '../primitives';
+import { SprocketStrip } from './primitives';
 import { REEL_ITEMS } from '@/lib/dashboard/constants';
 
 const DESKTOP_REEL_CHUNKS = 3;

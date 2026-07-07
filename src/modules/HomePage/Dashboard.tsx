@@ -3,7 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import './dashboard.css';
 import Nav from './Nav';
 import HeroSection from './HeroSection';
-import FilmReelSection from './FilmReelSection/index';
+import FilmReelSection from './FilmReelSection';
 
 const StatsBar = lazy(() => import('./sections/StatsBar').then((m) => ({ default: m.StatsBar })));
 const CombinedSection = lazy(() =>

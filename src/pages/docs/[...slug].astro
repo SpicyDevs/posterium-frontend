@@ -1,13 +1,13 @@
 ---
 import { getCollection } from 'astro:content';
 import DocsLayout from '@/layouts/DocsLayout.astro';
-import RelatedContent from '@/seo/components/RelatedContent.astro';
+import RelatedContent from '@/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   buildCollectionBreadcrumbs,
   extractVideoObjectSchemas,
-} from '@/seo/lib/schema-builders';
+} from '@/seo/schema-builders';
 import type { PageSEOMetadata } from '@/types/seo';
 import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';

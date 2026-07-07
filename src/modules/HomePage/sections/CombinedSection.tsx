@@ -3,7 +3,7 @@ import { memo, useState, useCallback, useEffect } from 'react';
 import { FEATURES, USE_CASES, API } from '@/lib/dashboard/constants';
 import { useInView } from '@/lib/dashboard/hooks/index';
 import { ProgressiveImage } from '@/ui/ProgressiveImage';
-import { SectionHeader } from '@/modules/HomePage/components/SectionHeader';
+import { SectionHeader } from '@/modules/homepage/SectionHeader';
 
 const FEATURE_TUPLES = [
   ['Drag-Drop Editor', '⌖', '155', 'movie', 'imdb,rt,meta,tmdb', 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244'],

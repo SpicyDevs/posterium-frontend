@@ -17,12 +17,12 @@ import {
   MAX_QUERY_CONFIG_LENGTH,
   loadKeysFromCookie,
   saveKeysToCookie,
-} from './systems/storage/builderStorage';
+} from './builderStorage';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
-import Inspector from './components/layout/Inspector';
-import AdvancedPanelNav, { type BuilderPanelId } from './components/navigation/AdvancedPanelNav';
-import ModeToggle, { type BuilderMode } from './components/navigation/ModeToggle';
+import Inspector from './components/Inspector';
+import AdvancedPanelNav, { type BuilderPanelId } from './components/AdvancedPanelNav';
+import type { BuilderMode } from './components/ModeToggle';
 import {
   SourcePanel,
   LayersPanel,
@@ -30,9 +30,9 @@ import {
   BadgesPanel,
   SelectionPanel,
 } from './components/panels';
-import ToolbarBtn from './components/toolbar/ToolbarButton';
-import ZoomOverlay from './components/canvas/ZoomOverlay';
-import { EditorProvider, useEditor } from './context/EditorContext';
+import BuilderDesktopHeader from './components/BuilderDesktopHeader';
+import ZoomOverlay from './components/ZoomOverlay';
+import { EditorProvider, useEditor } from './EditorContext';
 import {
   RotateCcw,
   Undo2,
@@ -65,10 +65,9 @@ import {
   Keyboard,
   Type,
   ChevronDown,
-  Search,
 } from 'lucide-react';
-import { usePosterHistory } from './hooks/usePosterHistory';
-import { useMobileBottomSheet } from './hooks/useMobileBottomSheet';
+import { usePosterHistory } from './usePosterHistory';
+import { useMobileBottomSheet } from './useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
 
@@ -154,20 +153,14 @@ const StudioLayout: React.FC<{
   const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'canvas' | 'badges'>('source');
 
   const {
-    bottomPanelOpen, setBottomPanelOpen,
-    isDragging: isDraggingBottomPanel, setIsDragging: setIsDraggingBottomPanel,
+    bottomPanelOpen,
+    isDragging: isDraggingBottomPanel,
     open: openBottomPanelSheet,
     close: closeBottomPanel,
     beginDrag: beginBottomPanelDrag,
     moveDrag: moveBottomPanelDrag,
     endDrag: endBottomPanelDrag,
-    setHeight: setMobileBottomHeight,
-    getSnapPoints: getBottomSnapPoints,
   } = useMobileBottomSheet(mobileRootRef);
-  void setBottomPanelOpen;
-  void setIsDraggingBottomPanel;
-  void setMobileBottomHeight;
-  void getBottomSnapPoints;
 
   const openBottomPanel = useCallback(
     (tab: 'source' | 'canvas' | 'badges') => {
@@ -362,11 +355,9 @@ const StudioLayout: React.FC<{
   const showAllBadges = useCallback(() => {
     setConfig((prev) => ({
       ...prev,
-      ratings: ALL_BADGES.map((b) => b.id).filter(
-        (id) => prev.ratings.includes(id) || !prev.ratings.includes(id)
-      ),
+      ratings: ALL_BADGES.map((b) => b.id),
     }));
-  }, [setConfig]);
+  }, []);
 
   const resetBadge = useCallback(
     (id: RatingType) => {
@@ -1095,274 +1086,45 @@ const StudioLayout: React.FC<{
           </Suspense>
         )}
 
-        {/* ── HEADER ── */}
-        {!isFullscreen && (
-          <header
-            className="hidden lg:flex h-12 shrink-0 items-center z-30 relative"
-            style={{
-              background: 'rgba(7,7,6,0.97)',
-              borderBottom: '1px solid rgba(196,124,46,0.08)',
-            }}
-          >
-            {/* Ambient gradient rule */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-              style={{
-                background:
-                  'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
-              }}
-              aria-hidden="true"
-            />
-
-            {/* Left Header Area */}
-            <div className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto">
-              {/* Wordmark */}
-              <a
-                href="/"
-                className="flex items-center"
-                style={{ textDecoration: 'none', flexShrink: 0 }}
-              >
-                <span
-                  className="poster-font select-none hidden sm:block"
-                  style={{
-                    fontSize: 18,
-                    color: 'var(--film-cream)',
-                    letterSpacing: '0.12em',
-                    lineHeight: 'normal',
-                  }}
-                >
-                  POSTERIUM
-                </span>
-                <span
-                  className="poster-font select-none sm:hidden"
-                  style={{
-                    fontSize: 14,
-                    color: 'var(--film-amber)',
-                    letterSpacing: '0.12em',
-                    lineHeight: 'normal',
-                  }}
-                >
-                  P
-                </span>
-              </a>
-              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
-              <button
-                onClick={() => setPaletteOpen(true)}
-                title="Search commands (⌘K)"
-                className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
-                style={{
-                  color: 'var(--film-text-dim)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={12} className="shrink-0" />
-                <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
-              </button>
-              <ToolbarBtn
-                onClick={() => setShortcutsOpen((v) => !v)}
-                label="Keyboard Shortcuts (⌘/)"
-                active={shortcutsOpen}
-                hideOnMobile
-              >
-                <Keyboard size={14} />
-              </ToolbarBtn>
-            </div>
-
-            {/* Central area: sidebar toggles flank the command palette search */}
-            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
-              {/* Left sidebar toggle - desktop only */}
-              <button
-                onClick={() => setLeftVisible(!leftVisible)}
-                title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-                style={{
-                  color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                  border: '1px solid transparent',
-                  background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = leftVisible
-                    ? 'rgba(196,124,46,0.08)'
-                    : 'transparent';
-                }}
-              >
-                <PanelLeft size={14} />
-              </button>
-
-              {/* Full search bar - sm and above */}
-              <button
-                onClick={() => setPaletteOpen(true)}
-                className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'var(--film-text-dim)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                }}
-              >
-                <Search size={13} className="shrink-0" />
-                <span className="text-[11px] syne-font text-left flex-1 min-w-0 truncate">
-                  Search commands...
-                </span>
-                <kbd
-                  className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                >
-                  ⌘K
-                </kbd>
-              </button>
-
-              {/* Right sidebar toggle - desktop only */}
-              <button
-                onClick={() => setRightVisible(!rightVisible)}
-                title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-                className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-                style={{
-                  color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                  border: '1px solid transparent',
-                  background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = rightVisible
-                    ? 'rgba(196,124,46,0.08)'
-                    : 'transparent';
-                }}
-              >
-                <PanelRight size={14} />
-              </button>
-            </div>
-
-            {/* Right Header Area */}
-            <div className="ml-auto flex items-center justify-end px-2 sm:px-3 shrink-0 gap-0.5 sm:gap-1 max-lg:!w-auto">
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* History */}
-              <ToolbarBtn onClick={undo} disabled={!canUndo} label="Undo (⌘Z)">
-                <Undo2 size={14} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} label="Redo (⌘Y)">
-                <Redo2 size={14} />
-              </ToolbarBtn>
-
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* Import */}
-              <button
-                ref={importBtnRef}
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
-                style={{ color: 'var(--film-text-dim)' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
-                }}
-              >
-                <Download size={13} className="rotate-180" />
-                <span className="text-[11px] font-medium uppercase tracking-wider max-[1300px]:hidden">
-                  Import
-                </span>
-              </button>
-
-              {/* Export CTA */}
-              <button
-                ref={exportBtnRefDesktop}
-                onClick={() => setExportOpen((v) => !v)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
-                style={{
-                  background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
-                  color: '#070706',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  boxShadow: exportOpen ? 'none' : '0 0 16px rgba(196,124,46,0.2)',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  if (!exportOpen) (e.currentTarget as HTMLElement).style.background = '#d4a245';
-                }}
-                onMouseLeave={(e) => {
-                  if (!exportOpen)
-                    (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
-                }}
-              >
-                <Download size={12} />
-                <span className="max-[1300px]:hidden">Export</span>
-                <ChevronDown
-                  className="max-[1300px]:hidden"
-                  size={10}
-                  style={{
-                    transform: exportOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s',
-                  }}
-                />
-              </button>
-
-              <div
-                className="w-px h-4 mx-1 hidden lg:block"
-                style={{ background: 'rgba(196,124,46,0.12)' }}
-                aria-hidden="true"
-              />
-
-              {/* Reset - permanently placed at top right */}
-              <button
-                onClick={() => setIsResetOpen(true)}
-                className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <RotateCcw size={13} />
-                <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">
-                  Reset
-                </span>
-              </button>
-            </div>
-          </header>
-        )}
+        <BuilderDesktopHeader
+          isFullscreen={isFullscreen}
+          leftVisible={leftVisible}
+          setLeftVisible={setLeftVisible}
+          rightVisible={rightVisible}
+          setRightVisible={setRightVisible}
+          builderMode={builderMode}
+          setBuilderMode={setBuilderMode}
+          setPaletteOpen={setPaletteOpen}
+          shortcutsOpen={shortcutsOpen}
+          setShortcutsOpen={setShortcutsOpen}
+          canUndo={canUndo}
+          undo={undo}
+          canRedo={canRedo}
+          redo={redo}
+          importBtnRef={importBtnRef}
+          exportBtnRefDesktop={exportBtnRefDesktop}
+          exportOpen={exportOpen}
+          setExportOpen={setExportOpen}
+          setIsResetOpen={setIsResetOpen}
+          setIsImportOpen={setIsImportOpen}
+        />
 
         {/* ── MOBILE BUILDER ── */}
         {!isFullscreen && (
           <div
             ref={mobileRootRef}
             className="lg:hidden"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              height: '100dvh',
-              width: '100vw',
-              background: 'var(--film-black)',
-              overflow: 'hidden',
-              '--bph': '0px',
-            } as React.CSSProperties}
+            style={
+              {
+                position: 'fixed',
+                inset: 0,
+                height: '100dvh',
+                width: '100vw',
+                background: 'var(--film-black)',
+                overflow: 'hidden',
+                '--bph': '0px',
+              } as React.CSSProperties
+            }
           >
             {/* ── TOP HEADER BAR ── */}
             {/* Height: 48px. Dark near-black background matching desktop header. */}
@@ -1392,7 +1154,8 @@ const StudioLayout: React.FC<{
                   left: 0,
                   right: 0,
                   height: 1,
-                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
                   pointerEvents: 'none',
                 }}
               />
@@ -1452,24 +1215,25 @@ const StudioLayout: React.FC<{
                     fontWeight: 700,
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    color: leftPanelOpen || rightPanelOpen || bottomPanelOpen
-                      ? 'rgba(196,124,46,0.8)'
-                      : 'rgba(240,230,204,0.4)',
+                    color:
+                      leftPanelOpen || rightPanelOpen || bottomPanelOpen
+                        ? 'rgba(196,124,46,0.8)'
+                        : 'rgba(240,230,204,0.4)',
                   }}
                 >
                   {leftPanelOpen
                     ? 'Layers'
                     : rightPanelOpen
-                    ? selectedCount > 0
-                      ? selectedLabel
-                      : 'Inspector'
-                    : bottomPanelOpen
-                    ? bottomPanelTab === 'source'
-                      ? 'Source'
-                      : bottomPanelTab === 'canvas'
-                      ? 'Canvas'
-                      : 'Badges'
-                    : 'Builder'}
+                      ? selectedCount > 0
+                        ? selectedLabel
+                        : 'Inspector'
+                      : bottomPanelOpen
+                        ? bottomPanelTab === 'source'
+                          ? 'Source'
+                          : bottomPanelTab === 'canvas'
+                            ? 'Canvas'
+                            : 'Badges'
+                        : 'Builder'}
                 </span>
               </div>
 
@@ -1522,7 +1286,12 @@ const StudioLayout: React.FC<{
                 {/* Thin separator */}
                 <div
                   aria-hidden="true"
-                  style={{ width: 1, height: 16, background: 'rgba(196,124,46,0.12)', margin: '0 2px' }}
+                  style={{
+                    width: 1,
+                    height: 16,
+                    background: 'rgba(196,124,46,0.12)',
+                    margin: '0 2px',
+                  }}
                 />
 
                 {/* Export CTA — amber filled, matches desktop export button style */}
@@ -1630,8 +1399,16 @@ const StudioLayout: React.FC<{
                 }}
               >
                 {[
-                  { icon: <ZoomIn size={14} />, label: 'Zoom in', action: () => dispatchZoom(0.25) },
-                  { icon: <ZoomOut size={14} />, label: 'Zoom out', action: () => dispatchZoom(-0.25) },
+                  {
+                    icon: <ZoomIn size={14} />,
+                    label: 'Zoom in',
+                    action: () => dispatchZoom(0.25),
+                  },
+                  {
+                    icon: <ZoomOut size={14} />,
+                    label: 'Zoom out',
+                    action: () => dispatchZoom(-0.25),
+                  },
                   { icon: <RotateCcw size={13} />, label: 'Reset view', action: dispatchResetView },
                 ].map(({ icon, label, action }) => (
                   <button
@@ -1652,11 +1429,13 @@ const StudioLayout: React.FC<{
                     }}
                     onTouchStart={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
-                      (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(196,124,46,0.1)';
                     }}
                     onTouchEnd={(e) => {
                       setTimeout(() => {
-                        (e.currentTarget as HTMLButtonElement).style.color = 'rgba(140,130,112,0.7)';
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          'rgba(140,130,112,0.7)';
                         (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                       }, 120);
                     }}
@@ -1683,9 +1462,7 @@ const StudioLayout: React.FC<{
                 width: 22,
                 height: 64,
                 borderRadius: '0 10px 10px 0',
-                background: leftPanelOpen
-                  ? 'rgba(196,124,46,0.18)'
-                  : 'rgba(10,9,8,0.9)',
+                background: leftPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
                 backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(196,124,46,0.22)',
                 borderLeft: 'none',
@@ -1715,9 +1492,7 @@ const StudioLayout: React.FC<{
                 width: 22,
                 height: 64,
                 borderRadius: '10px 0 0 10px',
-                background: rightPanelOpen
-                  ? 'rgba(196,124,46,0.18)'
-                  : 'rgba(10,9,8,0.9)',
+                background: rightPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
                 backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(196,124,46,0.22)',
                 borderRight: 'none',
@@ -1738,7 +1513,9 @@ const StudioLayout: React.FC<{
             {/* Tapping it opens the right inspector drawer. */}
             <button
               aria-label="Open inspector for selected layers"
-              onClick={() => { if (selectedCount > 0) setRightPanelOpen(true); }}
+              onClick={() => {
+                if (selectedCount > 0) setRightPanelOpen(true);
+              }}
               style={{
                 position: 'absolute',
                 right: 0,
@@ -1748,9 +1525,7 @@ const StudioLayout: React.FC<{
                 minWidth: 56,
                 maxWidth: 110,
                 borderRadius: '14px 0 0 14px',
-                background: selectedCount > 0
-                  ? 'rgba(196,124,46,0.16)'
-                  : 'rgba(196,124,46,0.07)',
+                background: selectedCount > 0 ? 'rgba(196,124,46,0.16)' : 'rgba(196,124,46,0.07)',
                 border: `1px solid ${selectedCount > 0 ? 'rgba(196,124,46,0.38)' : 'rgba(196,124,46,0.18)'}`,
                 borderRight: 'none',
                 paddingInline: '10px 12px',
@@ -1878,7 +1653,8 @@ const StudioLayout: React.FC<{
                     flexShrink: 0,
                   }}
                   onTouchStart={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                    (e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(196,124,46,0.1)';
                     (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
                   }}
                   onTouchEnd={(e) => {
@@ -2016,7 +1792,8 @@ const StudioLayout: React.FC<{
                     flexShrink: 0,
                   }}
                   onTouchStart={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196,124,46,0.1)';
+                    (e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(196,124,46,0.1)';
                     (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
                   }}
                   onTouchEnd={(e) => {
@@ -2102,7 +1879,8 @@ const StudioLayout: React.FC<{
                   left: 0,
                   right: 0,
                   height: 1,
-                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.25), transparent)',
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(196,124,46,0.25), transparent)',
                   pointerEvents: 'none',
                   zIndex: 1,
                 }}
@@ -2217,9 +1995,7 @@ const StudioLayout: React.FC<{
                         fontWeight: 700,
                         letterSpacing: '0.1em',
                         textTransform: 'uppercase',
-                        color: active
-                          ? 'var(--film-cream)'
-                          : 'rgba(140,130,112,0.45)',
+                        color: active ? 'var(--film-cream)' : 'rgba(140,130,112,0.45)',
                         cursor: 'pointer',
                         transition: 'color 0.15s, border-bottom-color 0.15s',
                       }}
@@ -2343,7 +2119,8 @@ const StudioLayout: React.FC<{
                   left: 0,
                   right: 0,
                   height: 1,
-                  background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.18), transparent)',
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(196,124,46,0.18), transparent)',
                   pointerEvents: 'none',
                 }}
               />
@@ -2353,21 +2130,20 @@ const StudioLayout: React.FC<{
               {/* Use transform: translateX for GPU-accelerated animation instead of left: */}
               <div
                 aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 'calc(33.333% * var(--active-tab-index, 0) + (33.333% - 28px) / 2)',
-                  width: 28,
-                  height: 2,
-                  background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
-                  borderRadius: '0 0 2px 2px',
-                  transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
-                  '--active-tab-index': bottomPanelTab === 'source'
-                    ? 0
-                    : bottomPanelTab === 'canvas'
-                    ? 1
-                    : 2,
-                } as React.CSSProperties}
+                style={
+                  {
+                    position: 'absolute',
+                    top: 0,
+                    left: 'calc(33.333% * var(--active-tab-index, 0) + (33.333% - 28px) / 2)',
+                    width: 28,
+                    height: 2,
+                    background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
+                    borderRadius: '0 0 2px 2px',
+                    transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
+                    '--active-tab-index':
+                      bottomPanelTab === 'source' ? 0 : bottomPanelTab === 'canvas' ? 1 : 2,
+                  } as React.CSSProperties
+                }
               />
 
               {/* Invisible drag zone at top of nav bar — dragging up from here opens/expands the bottom sheet */}
@@ -2407,7 +2183,7 @@ const StudioLayout: React.FC<{
                   return (
                     <button
                       key={id}
-                      onClick={() => active ? closeBottomPanel() : openBottomPanel(id)}
+                      onClick={() => (active ? closeBottomPanel() : openBottomPanel(id))}
                       aria-label={`${label} panel`}
                       aria-pressed={active}
                       style={{
@@ -2446,7 +2222,6 @@ const StudioLayout: React.FC<{
             </nav>
           </div>
         )}
-
 
         {/* ── BODY ── */}
         <div className="hidden lg:flex flex-1 overflow-hidden relative flex-row">

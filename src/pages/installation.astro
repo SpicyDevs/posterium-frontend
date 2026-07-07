@@ -15,18 +15,18 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import MainNavbar from '@/modules/Navbar/MainNavbar';
-import ShowcaseViewer from '@/modules/Showcase/ShowcaseViewer';
-import TableOfContentsClient from '@/modules/TableOfContents/TableOfContentsClient';
+import MainNavbar from '@/modules/MainNavbar';
+import ShowcaseViewer from '@/modules/ShowcaseViewer';
+import TableOfContentsClient from '@/modules/TableOfContentsClient';
 import { AmberTag } from '@/ui/primitives';
-import RelatedContent from '@/seo/components/RelatedContent.astro';
+import RelatedContent from '@/seo/RelatedContent.astro';
 import { extractMarkdownHeadings } from '@/lib/markdown-headings';
 import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
   buildHowToSchema,
   extractVideoObjectSchemas,
-} from '@/seo/lib/schema-builders';
+} from '@/seo/schema-builders';
 import type { PageSEOMetadata } from '@/types/seo';
 import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';

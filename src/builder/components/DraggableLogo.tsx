@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { PosterConfig } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
 import { ImageOff, Move } from 'lucide-react';
-import { useEditor } from '../context/EditorContext';
+import { useEditor } from '../EditorContext';
 import { snapToGridSize } from '../utils/positioning';
 
 interface Props {

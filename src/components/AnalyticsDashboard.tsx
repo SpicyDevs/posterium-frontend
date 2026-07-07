@@ -13,7 +13,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ComposedChart, ReferenceLine, RadialBarChart, RadialBar,
 } from 'recharts';
-import MainNavbar from '@/modules/Navbar/MainNavbar';
+import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
 
 const API_BASE = 'https://api.posterium.xyz';

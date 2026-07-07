@@ -1,14 +1,14 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import MainNavbar from '@/modules/Navbar/MainNavbar';
+import MainNavbar from '@/modules/MainNavbar';
 import Accordion from '@/ui/Accordion.astro';
-import FaqSearch from '@/modules/FAQ/FaqSearch';
+import FaqSearch from '@/modules/FaqSearch';
 import { AmberTag } from '@/ui/primitives';
-import RelatedContent from '@/seo/components/RelatedContent.astro';
+import RelatedContent from '@/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/constants/site';
-import { buildFAQPageSchema } from '@/seo/lib/schema-builders';
-import { contentToPlainText } from '@/seo/lib/text-processing';
+import { buildFAQPageSchema } from '@/seo/schema-builders';
+import { contentToPlainText } from '@/seo/text-processing';
 import type { PageSEOMetadata } from '@/types/seo';
 import { getRelatedContentLinks } from '@/seo/internal-links';
 import '@/styles/global.css';

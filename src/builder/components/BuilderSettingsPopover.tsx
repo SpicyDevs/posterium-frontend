@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Grid3x3, Magnet, ShieldCheck, SlidersHorizontal } from 'lucide-react';
-import ToggleRow from '../ui/ToggleRow';
-import type { ViewOptions } from '../../context/EditorContext';
+import ToggleRow from './ui/ToggleRow';
+import type { ViewOptions } from '../EditorContext';
 
 interface BuilderSettingsPopoverProps {
   isOpen: boolean;

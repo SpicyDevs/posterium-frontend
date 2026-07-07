@@ -19,7 +19,7 @@ import DraggableLogo from './DraggableLogo';
 import { DEFAULT_API_BASE } from '../utils/constants';
 import { calculateAutoPosition, getScale, snapToGridSize } from '../utils/positioning';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
-import { useEditor } from '../context/EditorContext';
+import { useEditor } from '../EditorContext';
 import clsx from 'clsx';
 
 const SNAP_CENTER_TOLERANCE = 8;
@@ -78,12 +78,10 @@ const PreviewCanvas: React.FC<Props> = ({
     null
   );
   const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
-  const [minimalTextOffset, setMinimalTextOffset] = useState({ dx: 0, dy: 0 });
   const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
   const [draggingMinimalYear, setDraggingMinimalYear] = useState(false);
   const [draggingMinimalDuration, setDraggingMinimalDuration] = useState(false);
-  const [minimalRatingOffset, setMinimalRatingOffset] = useState({ dx: 0, dy: 0 });
   const [minimalMetaOffset, setMinimalMetaOffset] = useState({ dx: 0, dy: 0 });
   const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
@@ -153,14 +151,7 @@ const PreviewCanvas: React.FC<Props> = ({
             )
           )
         );
-        const wrapEnabled = itemCfg?.textWrapEnabled ?? true;
         const w = Math.max(120, Math.round(charWidth * approxCharPx + 16 * scale));
-        const charsPerLine = Math.max(
-          1,
-          Math.floor((Math.max(w, 1) - 16 * scale) / approxCharPx)
-        );
-        const estimatedLines = Math.max(1, Math.ceil(Math.max(shown.length, 1) / charsPerLine));
-        const renderedLines = wrapEnabled ? Math.min(estimatedLines, charHeight) : 1;
         const titleHeight = Math.max(32, Math.round(charHeight * textSize * textLineHeight + 16 * scale));
         return { w, h: titleHeight };
       }
@@ -231,37 +222,6 @@ const PreviewCanvas: React.FC<Props> = ({
     const b = parseInt(expanded.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }, []);
-  const minimalRatings = useMemo(() => {
-    const raw = config.minimalRatings?.slice(0, 3) ?? [];
-    if (raw.length > 0) return raw;
-    return [
-      {
-        provider: 'imdb' as RatingType,
-        enabled: true,
-        x: 140,
-        y: 672,
-        size: 26,
-        color: '#facc15',
-        opacity: 1,
-        iconMode: 'star' as const,
-        symbol: '★',
-        bgEnabled: false,
-        bgColor: '#000000',
-        bgOpacity: 0,
-        borderW: 0,
-        borderColor: '#ffffff',
-        borderOpacity: 0.7,
-        radius: 0,
-        paddingX: 0,
-        paddingY: 0,
-        shadowEnabled: false,
-        shadowX: 0,
-        shadowY: 0,
-        shadowBlur: 0,
-        shadowColor: '#000000',
-      },
-    ];
-  }, [config.minimalRatings]);
 
   const clampPan = useCallback(
     (newX: number, newY: number) => {
@@ -534,8 +494,6 @@ const PreviewCanvas: React.FC<Props> = ({
         minimalDragRafRef.current = requestAnimationFrame(() => {
           minimalDragRafRef.current = null;
           if (!minimalPendingOffsetRef.current) return;
-          if (isDraggingMinimalText) setMinimalTextOffset(minimalPendingOffsetRef.current);
-          if (draggingMinimalRatingIndex !== null) setMinimalRatingOffset(minimalPendingOffsetRef.current);
           if (draggingMinimalYear || draggingMinimalDuration)
             setMinimalMetaOffset(minimalPendingOffsetRef.current);
         });
@@ -561,8 +519,6 @@ const PreviewCanvas: React.FC<Props> = ({
       minimalTextStartRef.current = null;
       minimalRatingStartRef.current = null;
       minimalMetaStartRef.current = null;
-      setMinimalTextOffset({ dx: 0, dy: 0 });
-      setMinimalRatingOffset({ dx: 0, dy: 0 });
       setMinimalMetaOffset({ dx: 0, dy: 0 });
       setIsDraggingMinimalText(false);
       setDraggingMinimalRatingIndex(null);

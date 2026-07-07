@@ -9,7 +9,7 @@ import type {
   ArticleContentEntry,
   FAQEntry,
 } from '@/types/seo';
-import { absoluteUrl } from './text-processing';
+import { absoluteUrl } from '@/seo/text-processing';
 
 const siteNavigationItems: BreadcrumbItem[] = [
   { name: 'Home', url: SITE_CONFIG.baseUrl },

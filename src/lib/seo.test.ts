@@ -6,8 +6,8 @@ import {
   buildSchemaGraph,
   buildWebApplicationSchema,
   extractVideoObjectSchemas,
-} from '@/seo/lib/schema-builders';
-import { contentToPlainText, toFAQEntries } from '@/seo/lib/text-processing';
+} from '@/seo/schema-builders';
+import { contentToPlainText, toFAQEntries } from '@/seo/text-processing';
 import type { SchemaObject } from '@/types/seo';
 
 const getFAQQuestions = (schema: SchemaObject) =>

@@ -1,4 +1,4 @@
-import type { ApiKeys } from '../../types';
+import type { ApiKeys } from './types';
 
 export const BUILDER_STORAGE_KEY = 'posterium_config_v2';
 export const MAX_QUERY_CONFIG_LENGTH = 12000;

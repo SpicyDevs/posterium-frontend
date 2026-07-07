@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
-import { AmberTag } from '@/modules/HomePage/primitives';
+import { AmberTag } from '@/modules/homepage/primitives';
 
 interface SectionHeaderProps {
   tag: string;
