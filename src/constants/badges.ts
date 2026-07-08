@@ -229,3 +229,37 @@ export const BADGE_ICONS: Record<string, { vb: string; body: string; color: stri
     body: '<path d="M0 0h512v512H0" fill="#1e2630"/><path d="M321.92 323.27V136.6c0-10.698-5.887-16.602-16.558-16.602h-36.433c-10.672 0-16.561 5.904-16.561 16.602v88.651c0 2.497 23.996 14.089 24.623 16.541 18.282 71.61 3.972 128.92-13.359 131.6 28.337 1.405 31.455 15.064 10.348 5.731 3.229-38.209 15.828-38.134 52.049-1.406.31.317 7.427 15.282 7.87 15.282h85.545c10.672 0 16.558-5.9 16.558-16.6v-36.524c0-10.698-5.886-16.602-16.558-16.602z" fill="#02a9ff"/><path d="M170.68 120 74.999 393h74.338l16.192-47.222h80.96L262.315 393h73.968l-95.314-273zm11.776 165.28 23.183-75.629 25.393 75.629z" fill="#fefefe"/>',
   },
 };
+
+// === DYNAMIC ICON FETCHING ===
+let _iconsPromise: Promise<void> | null = null;
+
+export const fetchApiIcons = (): Promise<void> => {
+  if (typeof window === 'undefined') return Promise.resolve(); // Safe SSR execution
+  
+  if (!_iconsPromise) {
+    _iconsPromise = fetch('https://api.posterium.xyz/data/icons')
+      .then((res) => {
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+      })
+      .then((payload) => {
+        // Handle wrapper shapes ({ data: [...] } or array/object structure direct response)
+        const data = payload?.data || payload;
+        
+        if (Array.isArray(data)) {
+          data.forEach((icon) => {
+            const key = icon.id || icon.name;
+            if (key) {
+              BADGE_ICONS[key] = { vb: icon.vb, body: icon.body, color: icon.color };
+            }
+          });
+        } else if (typeof data === 'object' && data !== null) {
+          Object.assign(BADGE_ICONS, data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load dynamic badge icons:', err);
+      });
+  }
+  return _iconsPromise;
+};

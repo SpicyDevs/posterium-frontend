@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GripVertical, Eye, EyeOff } from 'lucide-react';
 import type { DraggableProvided } from '@hello-pangea/dnd';
 import clsx from 'clsx';
 import type { RatingType } from '../../types';
-import { BADGE_ICONS } from '../../constants';
+import { BADGE_ICONS, fetchApiIcons } from '../../../constants/badges';
 
 interface BadgeRowProps {
   badge: { id: RatingType; label: string };
@@ -30,6 +30,13 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
   provided,
   isDraggingItem = false,
 }) => {
+  const [iconsLoaded, setIconsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Fetches the dynamic icons payload exactly once and triggers a re-render to paint SVG geometry
+    fetchApiIcons().then(() => setIconsLoaded(true));
+  }, []);
+
   const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
   const iconColor = isActive ? (iconData?.color ?? 'var(--film-text-dim)') : 'rgba(74,74,82,0.6)';
   const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-50';
@@ -45,6 +52,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
 
   return (
     <div
+      data-icons-loaded={iconsLoaded}
       ref={provided?.innerRef}
       {...provided?.draggableProps}
       onClick={(e) => {
