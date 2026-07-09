@@ -7,12 +7,14 @@ interface BuilderSettingsPopoverProps {
   isOpen: boolean;
   viewOptions: ViewOptions;
   onToggleViewOption: (key: keyof ViewOptions) => void;
+  isMobile?: boolean;
 }
 
 const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
   isOpen,
   viewOptions,
   onToggleViewOption,
+  isMobile = false,
 }) => {
   if (!isOpen) return null;
 
@@ -20,9 +22,9 @@ const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
     <div
       className="absolute z-[60] w-[260px] rounded-2xl overflow-hidden"
       style={{
-        right: '100%',
-        top: 0,
-        marginRight: 10,
+        ...(isMobile
+          ? { bottom: '100%', right: 0, marginBottom: 10 }
+          : { right: '100%', top: 0, marginRight: 10 }),
         background: 'rgba(18,17,14,0.98)',
         border: '1px solid rgba(196,124,46,0.18)',
         boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
@@ -31,8 +33,8 @@ const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
     >
       <style>{`
         @keyframes builder-settings-in {
-          from { opacity: 0; transform: translateX(8px) scale(0.97); }
-          to   { opacity: 1; transform: translateX(0) scale(1); }
+          from { opacity: 0; transform: scale(0.96); }
+          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
       <div

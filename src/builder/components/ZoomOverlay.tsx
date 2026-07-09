@@ -46,7 +46,7 @@ const ZoomOverlay = memo<{
         className={`fixed z-40 flex items-center gap-1 rounded-xl select-none ${isMobile ? 'flex-row' : 'flex-col'}`}
         style={{
           ...(isMobile
-            ? { bottom: 76, right: 12 }
+            ? { bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))', right: 12 }
             : {
                 top: '50%',
                 transform: 'translateY(-50%)',
@@ -60,11 +60,12 @@ const ZoomOverlay = memo<{
           boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
         }}
       >
-        <BuilderSettingsPopover
-          isOpen={settingsOpen}
-          viewOptions={viewOptions}
-          onToggleViewOption={onToggleViewOption}
-        />
+          <BuilderSettingsPopover
+            isOpen={settingsOpen}
+            viewOptions={viewOptions}
+            onToggleViewOption={onToggleViewOption}
+            isMobile={isMobile}
+          />
         {[
           { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
           { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },

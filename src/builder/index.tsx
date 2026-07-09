@@ -22,7 +22,7 @@ import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/AdvancedPanelNav';
-import type { BuilderMode } from './components/ModeToggle';
+import ModeToggle, { type BuilderMode } from './components/ModeToggle';
 import {
   SourcePanel,
   LayersPanel,
@@ -65,6 +65,7 @@ import {
   Keyboard,
   Type,
   ChevronDown,
+  Search,
 } from 'lucide-react';
 import { usePosterHistory } from './usePosterHistory';
 import { useMobileBottomSheet } from './useMobileBottomSheet';
@@ -125,7 +126,23 @@ const StudioLayout: React.FC<{
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const importBtnRef = useRef<HTMLButtonElement>(null);
+  // Two physical Import buttons exist in the DOM at once (desktop header +
+  // mobile toolbar) — only one is visible at a time via CSS (`lg:hidden` /
+  // `hidden lg:flex`), but both stay mounted. Give each its own ref and
+  // resolve to whichever is actually visible when the dialog needs to
+  // position itself, mirroring the Export button pattern below.
+  const importBtnRefDesktop = useRef<HTMLButtonElement>(null);
+  const importBtnRefMobile = useRef<HTMLButtonElement>(null);
+  const importBtnRef = useMemo<React.RefObject<HTMLButtonElement | null>>(
+    () => ({
+      get current() {
+        const desktopEl = importBtnRefDesktop.current;
+        if (desktopEl && desktopEl.offsetParent !== null) return desktopEl;
+        return importBtnRefMobile.current;
+      },
+    }),
+    []
+  );
   // Two physical Export buttons exist in the DOM at once (desktop header +
   // mobile toolbar) — only one is visible at a time via CSS (`lg:hidden` /
   // `hidden lg:flex`), but both stay mounted. Using a single shared ref for
@@ -994,6 +1011,7 @@ const StudioLayout: React.FC<{
         }
         .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
         .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
+        .mobile-header-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
       <div
@@ -1101,7 +1119,7 @@ const StudioLayout: React.FC<{
           undo={undo}
           canRedo={canRedo}
           redo={redo}
-          importBtnRef={importBtnRef}
+          importBtnRef={importBtnRefDesktop}
           exportBtnRefDesktop={exportBtnRefDesktop}
           exportOpen={exportOpen}
           setExportOpen={setExportOpen}
@@ -1127,8 +1145,10 @@ const StudioLayout: React.FC<{
             }
           >
             {/* ── TOP HEADER BAR ── */}
-            {/* Height: 48px. Dark near-black background matching desktop header. */}
-            {/* Left: POSTERIUM wordmark + mode label. Center: context title. Right: action buttons. */}
+            {/* Height: 48px. Packs logo, mode switcher, a horizontally-scrollable
+               tool row (search / shortcuts / import / reset / undo / redo), an
+               optional context label, and the Export CTA — mirroring the
+               desktop/tablet header's feature set within mobile width. */}
             <header
               style={{
                 position: 'absolute',
@@ -1141,8 +1161,8 @@ const StudioLayout: React.FC<{
                 borderBottom: '1px solid rgba(196,124,46,0.1)',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '0 12px',
-                gap: 0,
+                padding: '0 8px',
+                gap: 6,
               }}
             >
               {/* Ambient gradient rule on header bottom — matches desktop header exactly */}
@@ -1160,14 +1180,12 @@ const StudioLayout: React.FC<{
                 }}
               />
 
-              {/* LEFT: Wordmark */}
-              {/* Uses poster-font exactly like desktop. "POSTERIUM" in cream at 16px tracking 0.12em */}
+              {/* LEFT: Wordmark (compact) */}
               <a
                 href="/"
                 style={{
                   textDecoration: 'none',
                   flexShrink: 0,
-                  marginRight: 8,
                 }}
               >
                 <span
@@ -1175,37 +1193,182 @@ const StudioLayout: React.FC<{
                   style={{
                     fontSize: 16,
                     color: 'var(--film-cream)',
-                    letterSpacing: '0.12em',
+                    letterSpacing: '0.1em',
                     lineHeight: 1,
                     userSelect: 'none',
                   }}
                 >
-                  POSTERIUM
+                  P
                 </span>
               </a>
 
-              {/* Separator — thin amber vertical rule */}
+              {/* Builder mode — dropdown below 80rem (see ModeToggle.tsx) */}
+              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
+
+              {/* Separator */}
               <div
                 aria-hidden="true"
-                style={{
-                  width: 1,
-                  height: 16,
-                  background: 'rgba(196,124,46,0.2)',
-                  flexShrink: 0,
-                  marginRight: 8,
-                }}
+                style={{ width: 1, height: 16, background: 'rgba(196,124,46,0.14)', flexShrink: 0 }}
               />
 
-              {/* CENTER: Context label — expands to fill remaining space */}
-              {/* Shows which panel is active or "BUILDER" when canvas is in focus */}
-              {/* Uses Syne font, 9px, bold, tracking 0.1em, dimmed amber color */}
+              {/* Scrollable tool row — mirrors the desktop header's action buttons */}
               <div
+                className="mobile-header-scroll"
                 style={{
                   flex: 1,
                   minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                }}
+              >
+                <button
+                  onClick={() => setPaletteOpen((v) => !v)}
+                  aria-label="Search commands"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: paletteOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
+                    border: 'none',
+                    color: paletteOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Search size={14} />
+                </button>
+
+                <button
+                  onClick={() => setShortcutsOpen((v) => !v)}
+                  aria-label="Keyboard shortcuts"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: shortcutsOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
+                    border: 'none',
+                    color: shortcutsOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Keyboard size={14} />
+                </button>
+
+                <button
+                  ref={importBtnRefMobile}
+                  onClick={() => setIsImportOpen(true)}
+                  aria-label="Import from URL"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isImportOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
+                    border: 'none',
+                    color: isImportOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Download size={14} style={{ transform: 'rotate(180deg)' }} />
+                </button>
+
+                <button
+                  onClick={() => setIsResetOpen(true)}
+                  aria-label="Reset configuration"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(248,113,113,0.75)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <RotateCcw size={14} />
+                </button>
+
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 1,
+                    height: 16,
+                    background: 'rgba(196,124,46,0.12)',
+                    flexShrink: 0,
+                    margin: '0 2px',
+                  }}
+                />
+
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: canUndo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
+                    cursor: canUndo ? 'pointer' : 'default',
+                  }}
+                >
+                  <Undo2 size={14} />
+                </button>
+
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: canRedo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
+                    cursor: canRedo ? 'pointer' : 'default',
+                  }}
+                >
+                  <Redo2 size={14} />
+                </button>
+              </div>
+
+              {/* Context label — only shown once there is room for it */}
+              <div
+                className="hidden sm:flex"
+                style={{
+                  minWidth: 0,
+                  maxWidth: 110,
                   overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  alignItems: 'center',
                 }}
               >
                 <span
@@ -1215,6 +1378,9 @@ const StudioLayout: React.FC<{
                     fontWeight: 700,
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                     color:
                       leftPanelOpen || rightPanelOpen || bottomPanelOpen
                         ? 'rgba(196,124,46,0.8)'
@@ -1237,92 +1403,34 @@ const StudioLayout: React.FC<{
                 </span>
               </div>
 
-              {/* RIGHT: Action buttons — 32×32 each, gap 4px */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                {/* Undo */}
-                <button
-                  onClick={undo}
-                  disabled={!canUndo}
-                  aria-label="Undo"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: '1px solid transparent',
-                    color: canUndo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
-                    cursor: canUndo ? 'pointer' : 'default',
-                    transition: 'color 0.15s, background 0.15s',
-                  }}
+              {/* RIGHT: Export CTA — amber filled, matches desktop export button style */}
+              <button
+                ref={exportBtnRefMobile}
+                onClick={() => setExportOpen((v) => !v)}
+                aria-label="Export poster"
+                style={{
+                  height: 32,
+                  paddingInline: 12,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                  background: exportOpen ? 'rgba(196,124,46,0.85)' : 'var(--film-amber)',
+                  color: '#070706',
+                  border: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                <Download size={13} />
+                <span
+                  className="syne-font"
+                  style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
                 >
-                  <Undo2 size={14} />
-                </button>
-
-                {/* Redo */}
-                <button
-                  onClick={redo}
-                  disabled={!canRedo}
-                  aria-label="Redo"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: '1px solid transparent',
-                    color: canRedo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
-                    cursor: canRedo ? 'pointer' : 'default',
-                    transition: 'color 0.15s, background 0.15s',
-                  }}
-                >
-                  <Redo2 size={14} />
-                </button>
-
-                {/* Thin separator */}
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: 1,
-                    height: 16,
-                    background: 'rgba(196,124,46,0.12)',
-                    margin: '0 2px',
-                  }}
-                />
-
-                {/* Export CTA — amber filled, matches desktop export button style */}
-                <button
-                  ref={exportBtnRefMobile}
-                  onClick={() => setExportOpen((v) => !v)}
-                  aria-label="Export poster"
-                  style={{
-                    height: 32,
-                    paddingInline: 12,
-                    borderRadius: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 5,
-                    background: exportOpen ? 'rgba(196,124,46,0.85)' : 'var(--film-amber)',
-                    color: '#070706',
-                    border: 'none',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Download size={13} />
-                  <span
-                    className="syne-font"
-                    style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
-                  >
-                    EXPORT
-                  </span>
-                </button>
-              </div>
+                  EXPORT
+                </span>
+              </button>
             </header>
 
             {/* ── CANVAS ── */}
@@ -1379,71 +1487,20 @@ const StudioLayout: React.FC<{
                 />
               ))}
 
-              {/* Zoom overlay for mobile — bottom-right corner inside canvas */}
-              {/* Stacked vertically: ZoomIn, ZoomOut, ResetView. No fullscreen toggle on mobile. */}
-              {/* z-index: 20, positioned 12px from bottom and right of canvas area */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 16,
-                  right: 14,
-                  zIndex: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  padding: 4,
-                  borderRadius: 12,
-                  background: 'rgba(14,13,11,0.88)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(196,124,46,0.18)',
-                }}
-              >
-                {[
-                  {
-                    icon: <ZoomIn size={14} />,
-                    label: 'Zoom in',
-                    action: () => dispatchZoom(0.25),
-                  },
-                  {
-                    icon: <ZoomOut size={14} />,
-                    label: 'Zoom out',
-                    action: () => dispatchZoom(-0.25),
-                  },
-                  { icon: <RotateCcw size={13} />, label: 'Reset view', action: dispatchResetView },
-                ].map(({ icon, label, action }) => (
-                  <button
-                    key={label}
-                    onClick={action}
-                    aria-label={label}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'rgba(140,130,112,0.7)',
-                      cursor: 'pointer',
-                    }}
-                    onTouchStart={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
-                      (e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(196,124,46,0.1)';
-                    }}
-                    onTouchEnd={(e) => {
-                      setTimeout(() => {
-                        (e.currentTarget as HTMLButtonElement).style.color =
-                          'rgba(140,130,112,0.7)';
-                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                      }, 120);
-                    }}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+              {/* Zoom / grid overlay for mobile — same floating pill as desktop
+                 (zoom in/out, reset view, and the settings gear with
+                 snap/grid/safe-area toggles), laid out horizontally. */}
+              <ZoomOverlay
+                isFullscreen={false}
+                rightSidebarWidth={0}
+                onToggleFullscreen={() => {}}
+                onZoomIn={() => dispatchZoom(0.25)}
+                onZoomOut={() => dispatchZoom(-0.25)}
+                onResetView={dispatchResetView}
+                isMobile
+                viewOptions={viewOptions}
+                onToggleViewOption={toggleViewOption}
+              />
             </main>
 
             {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
@@ -1505,48 +1562,6 @@ const StudioLayout: React.FC<{
               }}
             >
               {rightPanelOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
-            </button>
-
-            {/* ── SELECTION CHIP ── */}
-            {/* Appears below the right edge handle when something is selected. */}
-            {/* Only visible (opacity 1, pointer-events auto) when selectedCount > 0. */}
-            {/* Tapping it opens the right inspector drawer. */}
-            <button
-              aria-label="Open inspector for selected layers"
-              onClick={() => {
-                if (selectedCount > 0) setRightPanelOpen(true);
-              }}
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(50% + 44px)',
-                zIndex: 30,
-                height: 30,
-                minWidth: 56,
-                maxWidth: 110,
-                borderRadius: '14px 0 0 14px',
-                background: selectedCount > 0 ? 'rgba(196,124,46,0.16)' : 'rgba(196,124,46,0.07)',
-                border: `1px solid ${selectedCount > 0 ? 'rgba(196,124,46,0.38)' : 'rgba(196,124,46,0.18)'}`,
-                borderRight: 'none',
-                paddingInline: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Syne, sans-serif',
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                color: selectedCount > 0 ? 'var(--film-amber)' : 'rgba(140,130,112,0.35)',
-                cursor: selectedCount > 0 ? 'pointer' : 'default',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                opacity: selectedCount > 0 ? 1 : 0.5,
-                pointerEvents: selectedCount > 0 ? 'auto' : 'none',
-                transition: 'opacity 0.2s, background 0.15s, border-color 0.15s',
-              }}
-            >
-              {selectedLabel}
             </button>
 
             {/* ── LEFT PANEL DRAWER BACKDROP ── */}
@@ -2340,7 +2355,8 @@ const StudioLayout: React.FC<{
           )}
         </div>
 
-        {/* Zoom + fullscreen overlay — desktop only; mobile uses the sketch-driven fixed chrome. */}
+        {/* Zoom + fullscreen overlay — desktop only; mobile uses the horizontal
+           ZoomOverlay pill inside the mobile canvas above. */}
         {isDesktop && (
           <ZoomOverlay
             isFullscreen={isFullscreen}
