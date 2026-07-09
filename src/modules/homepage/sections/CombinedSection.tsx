@@ -252,7 +252,7 @@ export const CombinedSection = memo(() => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
       }}>
         <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.45)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          {tab === 'features' ? `${FEATURES.length} features · MIT · Open source` : `${USE_CASES.length} integrations · No auth · CORS enabled`}
+          {tab === 'features' ? `${FEATURES.length} features · MIT license · Open source` : `${USE_CASES.length} integrations · No auth needed · CORS open`}
         </span>
         <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.4)', letterSpacing: '0.1em' }}>© SPICYDEVS</span>
       </div>

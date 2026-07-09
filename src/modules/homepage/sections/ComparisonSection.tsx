@@ -150,7 +150,7 @@ export const ComparisonSection = memo(() => {
         <SectionHeader
           tag="Head-to-head"
           title={<>THE SPEC<br /><span style={{ color: 'var(--film-amber)' }}>SHEET</span></>}
-          description="Every feature side by side — including where we fall short."
+          description="We lay it all out. The wins, the trade-offs, the stuff we just don't do yet."
           padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) clamp(24px,3vw,36px)"
         />
       </div>

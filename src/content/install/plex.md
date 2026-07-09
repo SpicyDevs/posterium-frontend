@@ -9,28 +9,28 @@ showcaseImages:
     - /placeholders/install-mobile-alt.svg
 ---
 
-# Plex installation guide
+# Plex
 
 ![Plex setup preview](/placeholders/install-desktop.svg)
 
 [![Plex](#)](#)
 [![Posterium](#)](#)
 
-Use this flow to connect Posterium generated posters inside Plex metadata workflows.
+Paste a Posterium URL into Plex's custom poster field. That's the whole trick.
 
-## Requirements
+## What you'll need
 
-- Plex Media Server (latest stable)
-- A poster automation tool or metadata agent that accepts custom image URLs
-- Access to Posterium builder or API output
+- Plex Media Server (any recent version)
+- A tool or workflow that accepts custom image URLs (all of them do)
+- A Posterium URL from the builder or API
 
-## Step-by-step
+## Steps
 
-1. Open Posterium and generate the poster style you want.
-2. Copy the final poster URL.
-3. In Plex, open the movie or show details panel.
-4. Edit artwork and paste the Posterium URL.
-5. Save and refresh metadata.
+1. Open Posterium and build your poster layout.
+2. Copy the final URL.
+3. In Plex, open the movie or show you want to customize.
+4. Click Edit Artwork → Upload Photo → enter the Posterium URL.
+5. Save. Done.
 
 ### API pattern
 
@@ -38,17 +38,17 @@ Use this flow to connect Posterium generated posters inside Plex metadata workfl
 https://api.posterium.xyz/poster/{imdb_id}?source=tmdb&imdb=true&rt=true&metacritic=true
 ```
 
-### Optional: query template table
+### Options
 
-| Parameter    | Description                   | Example |
-| ------------ | ----------------------------- | ------- |
-| `source`     | Metadata source               | `tmdb`  |
-| `imdb`       | Include IMDb badge            | `true`  |
-| `rt`         | Include Rotten Tomatoes badge | `true`  |
-| `metacritic` | Include Metacritic badge      | `true`  |
+| Parameter    | What it does                | Example |
+| ------------ | --------------------------- | ------- |
+| `source`     | Which poster backend to use | `tmdb`  |
+| `imdb`       | Add IMDb badge              | `true`  |
+| `rt`         | Add Rotten Tomatoes badge   | `true`  |
+| `metacritic` | Add Metacritic badge        | `true`  |
 
-## Verification checklist
+## Checklist
 
-- [ ] Poster URL resolves in browser
-- [ ] Plex updates artwork preview
-- [ ] Ratings render in final poster image
+- [ ] Poster URL loads in your browser before you paste it
+- [ ] Plex preview shows your custom artwork
+- [ ] Ratings render on the final poster image

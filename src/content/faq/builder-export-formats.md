@@ -4,6 +4,8 @@ question: Which export formats are supported?
 order: 2
 ---
 
-You can export in **SVG, PNG, JPG, and WEBP**.
+Four formats: **SVG, PNG, JPG, WebP**.
 
-These options are available from the export menu in both the builder and examples gallery.
+SVG is the default — vector, lossless, looks sharp at any size. PNG and JPG are there for platforms that don't handle SVGs well (Discord, some Notion setups). WebP gives you smaller file sizes if that matters.
+
+The export menu in the builder and examples gallery lets you switch between them.

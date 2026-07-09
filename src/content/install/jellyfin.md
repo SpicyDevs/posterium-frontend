@@ -9,14 +9,14 @@ showcaseImages:
     - /placeholders/install-mobile-alt.svg
 ---
 
-# Jellyfin installation guide
+# Jellyfin
 
-Jellyfin accepts remote poster URLs through metadata plugins and manual edits.
+Jellyfin accepts remote poster URLs in its metadata editor. Same idea as Plex — paste and go.
 
 ## Steps
 
-1. Build your poster style in Posterium.
-2. Copy the generated URL.
-3. Open Jellyfin item edit screen.
-4. Apply the remote image URL.
-5. Refresh metadata for the library.
+1. Build your poster in Posterium.
+2. Copy the URL.
+3. In Jellyfin, open the item's edit screen.
+4. Paste into the remote image field under Images.
+5. Refresh metadata for the library to pull the artwork.

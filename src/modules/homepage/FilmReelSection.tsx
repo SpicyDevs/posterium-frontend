@@ -102,8 +102,8 @@ const DesktopStaticReel = memo(() => {
       }}>
         <div style={{ flexShrink: 0, padding: '14px 48px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(196,124,46,0.08)' }}>
           <div>
-            <div className="poster-font" style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}>THE REEL</div>
-            <div className="syne-font" style={{ fontSize: 8, color: 'var(--film-silver)', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2 }}>Scroll to pan</div>
+            <div className="poster-font" style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}>THE GALLERY</div>
+            <div className="syne-font" style={{ fontSize: 8, color: 'var(--film-silver)', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2 }}>Scroll to browse</div>
           </div>
           <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.12em' }}>{REEL_ITEMS.length} titles</span>
         </div>

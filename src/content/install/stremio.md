@@ -9,13 +9,13 @@ showcaseImages:
     - /placeholders/install-mobile-alt.svg
 ---
 
-# Stremio installation guide
+# Stremio
 
-Integrate Posterium output in Stremio addon metadata pipelines.
+Stremio uses addons for metadata. You'll need to hook the Posterium URL into your addon's poster response.
 
 ## Steps
 
-1. Prepare Posterium URL template.
-2. Map title ID to poster endpoint.
-3. Return URL in addon metadata response.
-4. Reload addon and validate poster output.
+1. Build a Posterium URL template for your poster layout.
+2. In your addon code, map each title's ID to the poster endpoint.
+3. Return the URL in the addon's metadata response payload.
+4. Reload the addon and verify the poster shows up.

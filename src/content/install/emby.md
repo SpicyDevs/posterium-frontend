@@ -9,15 +9,15 @@ showcaseImages:
     - /placeholders/install-mobile-alt.svg
 ---
 
-# Emby installation guide
+# Emby
 
-Use Posterium image URLs in Emby custom artwork fields.
+Same workflow as Jellyfin — Emby's custom artwork field accepts a URL directly.
 
 ## Steps
 
 1. Generate a poster in Posterium.
 2. Copy the API URL.
-3. Open Emby item metadata.
-4. Paste URL into poster field and save.
+3. In Emby, open the item's metadata editor.
+4. Paste the URL into the poster/image field and save.
 
-> Tip: Keep your URL template in a note so you can reapply quickly.
+> Tip: Keep your URL template handy in a note. You'll reuse it across your library.

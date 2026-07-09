@@ -112,7 +112,7 @@ export const CTASection = memo(() => {
             marginBottom: 36,
           }}
         >
-          <span className="sr-only">Ready to build custom movie posters?</span>
+          <span className="sr-only">Start building custom movie posters</span>
           <span aria-hidden="true">
             START
             <br />
@@ -143,8 +143,7 @@ export const CTASection = memo(() => {
               maxWidth: 480,
             }}
           >
-            No account. No rate limits. Drag, position, copy your URL. Free
-            infrastructure for your media setup.
+            No sign-up, no rate limits, no tricks. Drag badges where you want them, copy the URL, paste it in Plex. That's the whole flow.
           </span>
         </div>
 

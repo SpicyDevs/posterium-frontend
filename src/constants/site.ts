@@ -46,9 +46,9 @@ export const SEO_DEFAULTS: {
   og: OGMeta;
   twitter: TwitterMeta;
 } = {
-  title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
+  title: 'Posterium — Live Poster Generator with Rating Badges',
   description:
-    'Generate movie and TV posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd + 20 more ratings. Add genre tags, cast information, and visual overlays. Works with Plex, Jellyfin, Kodi, Discord.',
+    'Generate movie and TV posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, and more. Live ratings baked into the artwork. Free API, no account needed. Works with Plex, Jellyfin, Kodi, Discord.',
   keywords:
     'movie poster generator, rating posters, posterium, rpdb, top poster api, IMDB ratings, Rotten Tomatoes ratings, ' +
     'Metacritic ratings, TMDB poster, free poster API, Plex custom poster, Stremio custom poster,' +
@@ -59,10 +59,10 @@ export const SEO_DEFAULTS: {
   og: {
     type: 'website',
     url: SITE_CONFIG.baseUrl,
-    title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
+    title: 'Posterium — Live Poster Generator with Rating Badges',
     description:
-      'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
-      'and more! Free API, no account needed.',
+      'Movie and TV posters with live IMDb, RT, Metacritic, and Letterboxd scores ' +
+      'baked right in. Free API, no account, no rate limits.',
     image: SITE_CONFIG.ogImageUrl,
     imageWidth: SITE_CONFIG.ogImageWidth,
     imageHeight: SITE_CONFIG.ogImageHeight,
@@ -72,10 +72,10 @@ export const SEO_DEFAULTS: {
   twitter: {
     card: 'summary_large_image',
     creator: SITE_CONFIG.twitterHandle,
-    title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
+    title: 'Posterium — Live Poster Generator with Rating Badges',
     description:
-      'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
-      'and more! Free API, no account needed.',
+      'Movie and TV posters with live IMDb, RT, Metacritic, and Letterboxd scores ' +
+      'baked right in. Free API, no account, no rate limits.',
     image: SITE_CONFIG.ogImageUrl,
     imageAlt: 'Posterium - Movie & TV Poster API with Rating Badges',
   },

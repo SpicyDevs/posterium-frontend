@@ -9,13 +9,13 @@ showcaseImages:
     - /placeholders/install-mobile-alt.svg
 ---
 
-# Kodi installation guide
+# Kodi
 
-Kodi can use Posterium through scrapers, addons, or manual art overrides.
+Kodi can pull Posterium artwork through scrapers, addons, or manual art overrides.
 
 ## Steps
 
-1. Generate Posterium URL.
-2. Open Kodi media item information.
-3. Choose artwork override/addon mapping.
-4. Apply URL and refresh item metadata.
+1. Generate a Posterium URL for your title.
+2. In Kodi, open the media item's information screen.
+3. Choose artwork override or configure your scraper/addon to use the URL.
+4. Refresh the item's metadata.

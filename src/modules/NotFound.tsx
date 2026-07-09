@@ -174,7 +174,7 @@ const NotFound: React.FC = () => {
             marginBottom: 10,
           }}
         >
-          This reel is missing
+          This page got cut
         </h1>
 
         <p
@@ -187,9 +187,9 @@ const NotFound: React.FC = () => {
             margin: '0 auto 36px',
           }}
         >
-          The page you&apos;re looking for doesn&apos;t exist or was moved.
+          Nothing here. Either it never existed or it wandered off.
           <br />
-          Redirecting you back to the homepage.
+          Redirecting to the homepage in
         </p>
 
         {/* Countdown card */}
@@ -255,10 +255,10 @@ const NotFound: React.FC = () => {
                 marginBottom: 2,
               }}
             >
-              Redirecting automatically
+              Heads up
             </strong>
             <span style={{ fontSize: 11, color: '#52525b' }}>
-              Taking you home in {remaining} second{remaining !== 1 ? 's' : ''}
+              Back to the main page in {remaining} second{remaining !== 1 ? 's' : ''}
             </span>
           </div>
         </div>

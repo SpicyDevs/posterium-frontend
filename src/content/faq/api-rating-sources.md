@@ -4,7 +4,7 @@ question: Which rating sources are supported?
 order: 1
 ---
 
-Posterium supports multiple rating sources, including:
+Twelve sources, last count:
 
 - IMDb
 - Rotten Tomatoes
@@ -13,3 +13,10 @@ Posterium supports multiple rating sources, including:
 - Letterboxd
 - AniList
 - MyAnimeList
+- Douban
+- FilmAffinity
+- Filmweb
+- Criticker
+- MUBI
+
+Add them to your URL with the `r` parameter — comma-separated, no spaces. Example: `?r=imdb,rt,meta,letterboxd`. The API fetches them fresh on every request.
