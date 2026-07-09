@@ -254,7 +254,7 @@ const HeroSection = memo(() => (
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
-          {' — '}a dozen sources, one URL. No account. No rate limits.
+          {' - '}a dozen sources, one URL. No account. No rate limits.
         </p>
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>

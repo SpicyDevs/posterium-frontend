@@ -161,6 +161,12 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               {f.hint}
             </code>
           </div>
+
+          {f.desc && (
+            <p className="body-font" style={{ fontSize: 11, color: 'var(--film-silver)', lineHeight: 1.65, marginTop: 16 }}>
+              {f.desc}
+            </p>
+          )}
         </div>
 
         <ThumbImg title={f.title} alt={f.title} />

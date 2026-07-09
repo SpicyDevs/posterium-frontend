@@ -309,7 +309,7 @@ export const FEATURES: Feature[] = [
     size: 'large',
     icon: '⌖',
     hint: '?imdb_x=310&imdb_y=20',
-    desc: 'Click, drag, done. Multi-select badges, move them as a group, nudge with keyboard shortcuts. Full undo/redo history so you can experiment without fear. Every badge has its own blur, opacity, corner radius, shadow, and border — or set them all at once.',
+    desc: 'Grab a badge, drop it wherever. No coordinate math to fiddle with. Select a few at once and shift them together. Keyboard arrows for pixel-perfect nudges when you are that close. Full undo/redo stack. Try something wild, hit undo if it looks bad. Every badge has its own blur, opacity, corner radius, shadow, and border controls. Or tweak them globally. Your call.',
   },
   {
     title: 'Instant API URL',
@@ -317,7 +317,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '⚡',
     hint: '?r=imdb,rt&source=tmdb',
-    desc: 'One URL, full poster, live scores. No auth headers, no API keys, no sign-up flow. Paste it into any img tag, Discord embed, Notion page, or HTML template and it just works.',
+    desc: 'One URL gives you a finished poster with live scores baked in. No headers to set. No keys to rotate. No sign-up page to stare at. Paste the link into any img tag, Discord embed, Notion page, or HTML template. It loads in a browser. It loads in Plex. It loads in a Discord bot. That is the whole integration.',
   },
   {
     title: 'Multiple Sources',
@@ -325,7 +325,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '⊞',
     hint: '?source=tmdb|fanart|imdb',
-    desc: 'TMDB, Fanart.tv, Metahub, IMDb — four poster backends. Textless variants included. Auto-picks the best artwork for any title. If one source goes down, the next kicks in. Never a blank square.',
+    desc: 'Four backends, one URL. TMDB, Fanart.tv, Metahub, IMDb. Posterium tries each one and serves the best-looking artwork it finds. If a source is down or missing the title, it moves to the next without you lifting a finger. Textless variants are included where available. You never get a broken image or a generic placeholder.',
   },
   {
     title: 'Live Ratings',
@@ -333,7 +333,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◉',
     hint: '?r=imdb,rt,meta,tmdb,letterboxd',
-    desc: 'IMDb, RT, Metacritic, TMDB, Letterboxd, MAL, AniList — 12 sources total. Every request fetches fresh scores. That 8.6/10 is what the site shows right now, not a snapshot from last month.',
+    desc: 'Twelve sources. IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, AniList, Douban, and more. Scores are fetched live on every request. When someone loads your Plex library, the poster reflects what the rating sites show that second. Not a cached score from three months ago. That 8.6 is the real 8.6.',
   },
   {
     title: 'Movies, TV & Anime',
@@ -341,7 +341,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '▣',
     hint: '?type=movie|tv|anime',
-    desc: 'TMDB movie and TV IDs, MAL anime IDs, AniList IDs — all work out of the box. Badge styles auto-match the media type. Nothing extra to flip.',
+    desc: 'TMDB IDs for movies and TV, MAL IDs for anime, AniList IDs too. Just drop the ID in and the right poster appears. Badge styles auto-detect what kind of media you are working with. No manual toggle between movie mode and TV mode. It figures it out.',
   },
   {
     title: 'Any Export Format',
@@ -349,7 +349,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◫',
     hint: '/movie/155.svg|.png|.jpg|.webp',
-    desc: 'SVG stays crisp at any zoom level. PNG, JPG, and WebP for platforms that hate SVGs. Pick the format, get the URL.',
+    desc: 'SVG exports stay crisp at any zoom. Perfect for print, Figma mockups, or retina displays. PNG and JPG for platforms that block SVGs entirely. WebP when file size matters more. Pick your format from the export menu and get a URL back. No download button hunting.',
   },
   {
     title: 'Textless Posters',
@@ -357,7 +357,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◻',
     hint: '?textless=1',
-    desc: 'Flip `textless=1` and the title text drops out. Clean, cinematic look — popular for Plex home screens and gallery walls.',
+    desc: 'Some posters look better without the title slapped on top. Add `textless=1` to your URL and the artwork text drops out. Leaves you with just the image and your rating badges. Popular for Plex home screens, gallery walls, and anyone who wants their poster grid to feel like a film festival lineup.',
   },
   {
     title: 'Plex & Jellyfin Ready',
@@ -365,7 +365,7 @@ export const FEATURES: Feature[] = [
     size: 'medium',
     icon: '▤',
     hint: 'Paste URL → Plex poster field',
-    desc: 'Paste the API URL straight into Plex or Jellyfin as custom poster art. Every time the poster loads, the scores update. No manual refreshes, no cron jobs.',
+    desc: 'Open the item in Plex or Jellyfin, paste the Posterium URL into the custom artwork field, and you are done. Every time that poster loads, the scores refresh from the source. No cron jobs, no right-click save-as, no uploading files. Just a URL that stays current on its own.',
   },
 ];
 
@@ -411,7 +411,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: -0.4,
     title: 'Notion & Obsidian',
     tags: ['Notion', 'Obsidian', 'Databases'],
-    desc: 'Embed into watchlist databases, movie notes, or dashboards. The image updates itself — no manual edits when a score changes.',
+    desc: 'Embed into watchlist databases, movie notes, or dashboards. The image updates itself. No manual edits when a score changes.',
     codeSnippet: '![poster](#)',
     previewId: '238',
     previewType: 'movie',
@@ -447,7 +447,7 @@ export const USE_CASES: UseCase[] = [
     rotateHint: 0.9,
     title: 'Print & Design',
     tags: ['Print', 'SVG', 'Art', 'Design'],
-    desc: 'SVG exports are lossless vectors — drop them into Figma, Illustrator, or Affinity for posters, merch, or print layouts at any scale.',
+    desc: 'SVG exports are lossless vectors. Drop them into Figma, Illustrator, or Affinity for posters, merch, or print layouts at any scale.',
     codeSnippet: 'curl https://api.posterium.xyz/movie/475557.svg?r=imdb > joker.svg',
     previewId: '475557',
     previewType: 'movie',

@@ -16,18 +16,18 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { feature: 'Rating Sources', sub: 'Supported platforms', ours: '12 live sources — IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1–3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
+  { feature: 'Rating Sources', sub: 'Supported platforms', ours: '12 live sources - IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1-3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
   { feature: 'Score Freshness', sub: 'When ratings update', ours: 'Live on every request', theirs: 'Cached or manual refresh', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Delivery', sub: 'How posters are served', ours: 'Edge URL — auto-updates everywhere', theirs: 'Static downloads (scores get stale)', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Delivery', sub: 'How posters are served', ours: 'Edge URL - auto-updates everywhere', theirs: 'Static downloads (scores get stale)', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Visual Editor', sub: 'Customizing layouts', ours: 'Drag-and-drop with live preview', theirs: 'Forms or code-only', ourStatus: 'win', theirStatus: 'partial' },
   { feature: 'Textless & Logos', sub: 'Clean artwork', ours: 'Auto-fetch textless + inject vector logos', theirs: 'Requires Photoshop or static upload', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Fallback Sources', sub: 'When TMDB fails', ours: 'Cascade: Fanart → Metahub → IMDb', theirs: 'Poster breaks or shows blank', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Export Formats', sub: 'Vector and raster', ours: 'SVG, WebP, PNG, JPG', theirs: 'PNG/JPG only', ourStatus: 'win', theirStatus: 'partial' },
   { feature: 'Pricing', sub: 'Cost to generate', ours: '100% free, MIT open source', theirs: 'Paid tiers or credit limits', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Auth Required', sub: 'Registration', ours: 'None — just a URL', theirs: 'Mandatory sign-up', ourStatus: 'win', theirStatus: 'loss' },
+  { feature: 'Auth Required', sub: 'Registration', ours: 'None - just a URL', theirs: 'Mandatory sign-up', ourStatus: 'win', theirStatus: 'loss' },
   // Honest Posterium limitations
-  { feature: 'Generation Speed', sub: 'First request latency', ours: '80–400 ms on cold edge start', theirs: 'Instant (pre-rendered cache)', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
-  { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported — URL-based only', theirs: 'Some support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
+  { feature: 'Generation Speed', sub: 'First request latency', ours: '80-400 ms on cold edge start', theirs: 'Instant (pre-rendered cache)', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
+  { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported - URL-based only', theirs: 'Some support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
   { feature: 'Offline / Local', sub: 'Network dependency', ours: 'Requires internet connection', theirs: 'Local library support varies', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
 ];
 
