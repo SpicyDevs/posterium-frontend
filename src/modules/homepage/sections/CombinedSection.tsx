@@ -121,7 +121,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
         })}
       </div>
 
-      {/* Right detail — no verbose description, just hint + poster */}
+      {/* Right detail — just the API hint and poster */}
       <div
         key={active}
         className="combined-features-detail"

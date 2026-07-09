@@ -48,7 +48,7 @@ export const SEO_DEFAULTS: {
 } = {
   title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
   description:
-    'Generate movie and TV posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd + 20 More ratings. Add genre tags, cast information, and visual overlays. Integrates seamlessly with Plex, Jellyfin, Kodi, Discord.',
+    'Generate movie and TV posters with IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd + 20 more ratings. Add genre tags, cast information, and visual overlays. Works with Plex, Jellyfin, Kodi, Discord.',
   keywords:
     'movie poster generator, rating posters, posterium, rpdb, top poster api, IMDB ratings, Rotten Tomatoes ratings, ' +
     'Metacritic ratings, TMDB poster, free poster API, Plex custom poster, Stremio custom poster,' +

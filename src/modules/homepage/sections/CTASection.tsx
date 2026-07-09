@@ -114,14 +114,14 @@ export const CTASection = memo(() => {
         >
           <span className="sr-only">Ready to build custom movie posters?</span>
           <span aria-hidden="true">
-            READY
+            START
             <br />
           </span>
           <span
             aria-hidden="true"
             style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)' }}
           >
-            TO BUILD?
+            BUILDING
           </span>
         </h2>
 
@@ -143,7 +143,7 @@ export const CTASection = memo(() => {
               maxWidth: 480,
             }}
           >
-            No account. No rate limits. Drag, position, copy your URL. Posterium is free
+            No account. No rate limits. Drag, position, copy your URL. Free
             infrastructure for your media setup.
           </span>
         </div>
