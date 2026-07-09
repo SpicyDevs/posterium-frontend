@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ChevronDown } from 'lucide-react';
+import SelectBox from './ui/SelectBox';
 
 export type BuilderMode = 'simple' | 'advanced';
 
@@ -15,39 +15,18 @@ const MODE_OPTIONS: { id: BuilderMode; label: string }[] = [
 
 const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => (
   <>
-    {/* Dropdown variant — used below the 80rem (xl) breakpoint, i.e. on
-       mobile, tablet, and small desktop windows. */}
-    <div className="relative flex items-center xl:hidden">
-      <select
+    {/* Dropdown variant — below 80rem (xl), uses SelectBox to match
+       the builder's other dropdown styling exactly. */}
+    <div className="xl:hidden w-[90px]">
+      <SelectBox
         value={mode}
-        onChange={(e) => onChange(e.target.value as BuilderMode)}
-        aria-label="Builder mode"
-        className="h-8 pl-2.5 pr-6 rounded-lg syne-font text-[10px] font-bold uppercase tracking-wider appearance-none focus:outline-none cursor-pointer"
-        style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(196,124,46,0.16)',
-          color: 'var(--film-cream)',
-        }}
-      >
-        {MODE_OPTIONS.map((opt) => (
-          <option
-            key={opt.id}
-            value={opt.id}
-            style={{ background: 'var(--film-mid)', color: 'var(--film-cream)' }}
-          >
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={11}
-        className="pointer-events-none absolute right-2"
-        style={{ color: 'var(--film-text-dim)' }}
+        onChange={(v) => onChange(v as BuilderMode)}
+        options={MODE_OPTIONS}
       />
     </div>
 
-    {/* Segmented switcher — used at the 80rem (xl) breakpoint and up, where
-       there's enough width for the full pill control. */}
+    {/* Segmented switcher — at 80rem (xl) and up, where there's enough
+       width for the full pill control. */}
     <div
       className="hidden xl:flex items-center rounded-lg p-0.5 h-8"
       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(196,124,46,0.16)' }}

@@ -1425,7 +1425,7 @@ const StudioLayout: React.FC<{
               >
                 <Download size={13} />
                 <span
-                  className="syne-font"
+                  className="syne-font max-[60rem]:hidden"
                   style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
                 >
                   EXPORT

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Grid3x3, Magnet, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import ToggleRow from './ui/ToggleRow';
 import type { ViewOptions } from '../EditorContext';
 
@@ -68,31 +68,6 @@ const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
           checked={viewOptions.showSafeArea}
           onChange={() => onToggleViewOption('showSafeArea')}
         />
-      </div>
-      <div
-        className="grid grid-cols-3 gap-1.5 px-4 py-3"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
-      >
-        {[
-          { label: 'Snap', active: viewOptions.snapToGrid, Icon: Magnet },
-          { label: 'Grid', active: viewOptions.showGrid, Icon: Grid3x3 },
-          { label: 'Safe', active: viewOptions.showSafeArea, Icon: ShieldCheck },
-        ].map(({ label, active, Icon }) => (
-          <div
-            key={label}
-            className="h-8 rounded-lg flex items-center justify-center gap-1 syne-font text-[9px] font-bold uppercase"
-            style={{
-              color: active ? 'var(--film-amber)' : 'var(--film-text-dim)',
-              background: active ? 'rgba(196,124,46,0.1)' : 'rgba(255,255,255,0.025)',
-              border: active
-                ? '1px solid rgba(196,124,46,0.18)'
-                : '1px solid rgba(255,255,255,0.05)',
-            }}
-          >
-            <Icon size={10} />
-            {label}
-          </div>
-        ))}
       </div>
     </div>
   );
