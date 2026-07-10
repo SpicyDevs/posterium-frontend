@@ -73,6 +73,16 @@ export const generateApiUrl = (
     p.set('ls', config.labelSize.toString());
   if (config.labelColor) p.set('lc', config.labelColor);
 
+  if (config.decimals !== undefined && config.decimals !== DEFAULTS.decimals) p.set('dc', config.decimals.toString());
+  if (config.forceDecimals) p.set('fd', '1');
+  if (config.outOfSize !== undefined && config.outOfSize !== DEFAULTS.outOfSize) p.set('os', config.outOfSize.toString());
+  if (config.outOfColor) p.set('oc', config.outOfColor);
+  if (config.uniform) p.set('ub', '1');
+  if (config.iconPos && config.iconPos !== DEFAULTS.iconPos) p.set('ip', config.iconPos);
+  if (config.labelInside) p.set('li', '1');
+  if (config.logoMaxW !== null && config.logoMaxW !== undefined) p.set('lmw', config.logoMaxW.toString());
+  if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
+
   config.ratings.filter(isApiRatingKey).forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
@@ -125,6 +135,18 @@ export const generateApiUrl = (
       p.set(`${code}_ls`, item.labelSize.toString());
     if (item.labelColor !== undefined && item.labelColor !== config.labelColor)
       p.set(`${code}_lc`, item.labelColor);
+    if (item.decimals !== undefined && item.decimals !== (config.decimals ?? DEFAULTS.decimals))
+      p.set(`${code}_dc`, item.decimals.toString());
+    if (item.forceDecimals !== undefined && item.forceDecimals !== (config.forceDecimals ?? false))
+      p.set(`${code}_fd`, item.forceDecimals ? '1' : '0');
+    if (item.outOfSize !== undefined && item.outOfSize !== (config.outOfSize ?? DEFAULTS.outOfSize))
+      p.set(`${code}_os`, item.outOfSize.toString());
+    if (item.outOfColor !== undefined && item.outOfColor !== config.outOfColor)
+      p.set(`${code}_oc`, item.outOfColor);
+    if (item.iconPos !== undefined && item.iconPos !== config.iconPos)
+      p.set(`${code}_ip`, item.iconPos);
+    if (item.labelInside !== undefined && item.labelInside !== (config.labelInside ?? false))
+      p.set(`${code}_li`, item.labelInside ? '1' : '0');
     if (item.textCharWidth !== undefined && key === 'title')
       p.set(`${code}_tw`, Math.round(item.textCharWidth).toString());
     if (item.textCharHeight !== undefined && key === 'title')

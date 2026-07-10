@@ -56,4 +56,10 @@ export const DEFAULTS = {
   minimalTextSize: 60,
   minimalTextX: 26,
   minimalTextY: 556,
+  decimals: -1,
+  forceDecimals: false,
+  outOfSize: 0,
+  uniform: false,
+  iconPos: 'left',
+  labelInside: false,
 } as const;

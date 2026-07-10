@@ -72,6 +72,12 @@ export interface BadgeConfig {
   labelText?: string;
   labelSize?: number;
   labelColor?: string;
+  decimals?: number;
+  forceDecimals?: boolean;
+  outOfSize?: number;
+  outOfColor?: string;
+  iconPos?: 'left' | 'right' | 'above' | 'below' | 'center';
+  labelInside?: boolean;
   textSize?: number;
   textWeight?: number;
   textLetterSpacing?: number;
@@ -177,6 +183,15 @@ export interface PosterConfig {
   labelText?: string;
   labelSize?: number;
   labelColor?: string;
+  decimals?: number;
+  forceDecimals?: boolean;
+  outOfSize?: number;
+  outOfColor?: string;
+  uniform?: boolean;
+  iconPos?: 'left' | 'right' | 'above' | 'below' | 'center';
+  labelInside?: boolean;
+  logoMaxW?: number | null;
+  logoMaxH?: number | null;
   items: Partial<Record<RatingType, BadgeConfig>>;
   logo: boolean;
   logoSource: LogoSourceType;

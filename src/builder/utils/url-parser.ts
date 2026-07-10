@@ -154,6 +154,24 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           case 'wr':
             items[badgeKey].textWrapEnabled = value !== '0';
             break;
+          case 'dc':
+            items[badgeKey].decimals = parseInt(value);
+            break;
+          case 'fd':
+            items[badgeKey].forceDecimals = value === '1';
+            break;
+          case 'os':
+            items[badgeKey].outOfSize = parseInt(value);
+            break;
+          case 'oc':
+            items[badgeKey].outOfColor = value;
+            break;
+          case 'ip':
+            items[badgeKey].iconPos = value as BadgeConfig['iconPos'];
+            break;
+          case 'li':
+            items[badgeKey].labelInside = value === '1';
+            break;
         }
       }
 
@@ -193,6 +211,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         if (!raw) return undefined;
         const v = parseInt(raw);
         return isNaN(v) ? undefined : v;
+      };
+
+      const getBoolOrUndefined = (v3k: string, v2k: string): boolean | undefined => {
+        if (p.has(v3k)) return p.get(v3k) === '1';
+        if (p.has(v2k)) return p.get(v2k) === '1';
+        return undefined;
       };
 
       return {
@@ -296,6 +320,31 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             ? parseInt(p.get('label_size')!)
             : undefined,
         labelColor: p.get('lc') || p.get('label_color') || undefined,
+        decimals: p.has('dc')
+          ? parseInt(p.get('dc')!)
+          : p.has('decimals')
+            ? parseInt(p.get('decimals')!)
+            : DEFAULTS.decimals,
+        forceDecimals: getBoolOrUndefined('fd', 'force_decimals') ?? DEFAULTS.forceDecimals,
+        outOfSize: p.has('os')
+          ? parseInt(p.get('os')!)
+          : p.has('out_of_size')
+            ? parseInt(p.get('out_of_size')!)
+            : DEFAULTS.outOfSize,
+        outOfColor: p.get('oc') || p.get('out_of_color') || undefined,
+        uniform: getBoolOrUndefined('ub', 'uniform') ?? DEFAULTS.uniform,
+        iconPos: (p.get('ip') || p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
+        labelInside: getBoolOrUndefined('li', 'label_inside') ?? DEFAULTS.labelInside,
+        logoMaxW: p.has('lmw')
+          ? parseInt(p.get('lmw')!)
+          : p.has('logo_max_w')
+            ? parseInt(p.get('logo_max_w')!)
+            : null,
+        logoMaxH: p.has('lmh')
+          ? parseInt(p.get('lmh')!)
+          : p.has('logo_max_h')
+            ? parseInt(p.get('logo_max_h')!)
+            : null,
         keys,
         items,
         logo: p.get('logo') === '1',
@@ -357,8 +406,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       const tw = p.get(`${key}_tw`);
       const th = p.get(`${key}_th`);
       const wr = p.get(`${key}_wr`);
+      const dc = p.get(`${key}_dc`) ?? p.get(`${key}_decimals`);
+      const fd = p.get(`${key}_fd`) ?? p.get(`${key}_force_decimals`);
+      const os = p.get(`${key}_os`) ?? p.get(`${key}_out_of_size`);
+      const oc = p.get(`${key}_oc`) ?? p.get(`${key}_out_of_color`);
+      const ip = p.get(`${key}_ip`) ?? p.get(`${key}_icon_pos`);
+      const li = p.get(`${key}_li`) ?? p.get(`${key}_label_inside`);
 
-      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt || nm || lp || tw || th || wr) {
+      if (x || y || bg || txt || blur || alpha || rad || sh || icon || scale || bw || nt || nm || lp || tw || th || wr || dc || fd || os || oc || ip || li) {
         items[key] = {
           ...(x ? { x: parseInt(x) } : {}),
           ...(y ? { y: parseInt(y) } : {}),
@@ -383,6 +438,12 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ...(tw ? { textCharWidth: parseInt(tw) } : {}),
           ...(th ? { textCharHeight: parseInt(th) } : {}),
           ...(wr ? { textWrapEnabled: wr !== '0' } : {}),
+          ...(dc ? { decimals: parseInt(dc) } : {}),
+          ...(fd ? { forceDecimals: fd === '1' } : {}),
+          ...(os ? { outOfSize: parseInt(os) } : {}),
+          ...(oc ? { outOfColor: oc } : {}),
+          ...(ip ? { iconPos: ip as BadgeConfig['iconPos'] } : {}),
+          ...(li ? { labelInside: li === '1' } : {}),
         };
       }
     });
@@ -502,6 +563,19 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       labelText: p.get('label_text') || undefined,
       labelSize: p.has('label_size') ? parseInt(p.get('label_size')!) : undefined,
       labelColor: p.get('label_color') || undefined,
+      decimals: p.has('decimals')
+        ? parseInt(p.get('decimals')!)
+        : DEFAULTS.decimals,
+      forceDecimals: p.get('force_decimals') === '1' || false,
+      outOfSize: p.has('out_of_size')
+        ? parseInt(p.get('out_of_size')!)
+        : DEFAULTS.outOfSize,
+      outOfColor: p.get('out_of_color') || undefined,
+      uniform: p.get('uniform') === '1' || false,
+      iconPos: (p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
+      labelInside: p.get('label_inside') === '1' || false,
+      logoMaxW: p.has('logo_max_w') ? parseInt(p.get('logo_max_w')!) : null,
+      logoMaxH: p.has('logo_max_h') ? parseInt(p.get('logo_max_h')!) : null,
       keys,
       items,
       logo: p.get('logo') === '1',
