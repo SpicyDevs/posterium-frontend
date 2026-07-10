@@ -156,6 +156,10 @@ export const DEFAULT_CONFIG: PosterConfig = {
   logoShadow: 6,
   fallbackEnabled: false,
   fallbackPool: [],
+  noEmbed: false,
+  compressIcons: false,
+  malId: undefined,
+  font: undefined,
   keys: {},
 };
 

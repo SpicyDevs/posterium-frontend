@@ -429,6 +429,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ? parseFloat(p.get('logo_opacity')!)
           : DEFAULTS.logoOpacity,
         logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+        noEmbed: getBoolOrUndefined('ne', 'no_embed') ?? DEFAULTS.noEmbed,
+        compressIcons: p.get('compress_icons') === '1' || p.get('no_icon') === '1' || false,
+        sourcePriority: (() => {
+          const raw = p.get('so') ?? p.get('source_order');
+          if (!raw) return undefined;
+          return raw.split(',').map((s) => s.trim()).filter(Boolean);
+        })(),
+        malId: p.get('mid') ?? p.get('mal_id') ?? undefined,
+        font: p.get('fn') || p.get('font') || undefined,
       };
     }
 
@@ -686,6 +695,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         ? parseFloat(p.get('logo_opacity')!)
         : DEFAULTS.logoOpacity,
       logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+      noEmbed: p.get('no_embed') === '1' || false,
+      compressIcons: p.get('compress_icons') === '1' || p.get('no_icon') === '1' || false,
+      sourcePriority: (() => {
+        const raw = p.get('source_order');
+        if (!raw) return undefined;
+        return raw.split(',').map((s) => s.trim()).filter(Boolean);
+      })(),
+      malId: p.get('mal_id') || undefined,
+      font: p.get('font') || undefined,
     };
   } catch (e) {
     console.error('Failed to parse URL', e);

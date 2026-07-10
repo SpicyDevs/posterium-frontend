@@ -90,6 +90,12 @@ export const generateApiUrl = (
   if (config.minimalTitleWeight !== undefined && config.minimalTitleWeight !== 700) p.set('ti_wt', config.minimalTitleWeight.toString());
   if (config.minimalTitleShadowBlur !== undefined && config.minimalTitleShadowBlur > 0) p.set('ti_sh', config.minimalTitleShadowBlur.toString());
 
+  if (config.noEmbed) p.set('ne', '1');
+  if (config.compressIcons) p.set('compress_icons', '1');
+  if (config.sourcePriority && config.sourcePriority.length > 0) p.set('so', config.sourcePriority.join(','));
+  if (config.malId) p.set('mid', config.malId);
+  if (config.font) p.set('fn', config.font);
+
   config.ratings.filter(isApiRatingKey).forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];

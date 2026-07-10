@@ -208,5 +208,10 @@ export interface PosterConfig {
   logoShadow: number;
   fallbackEnabled: boolean;
   fallbackPool: RatingType[];
+  noEmbed?: boolean;
+  compressIcons?: boolean;
+  sourcePriority?: string[];
+  malId?: string;
+  font?: string;
   keys?: ApiKeys;
 }

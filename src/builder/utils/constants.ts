@@ -60,5 +60,6 @@ export const DEFAULTS = {
   uniform: false,
   iconPos: 'left',
   labelInside: false,
-
+  noEmbed: false,
+  compressIcons: false,
 } as const;
