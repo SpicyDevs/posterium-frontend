@@ -121,6 +121,9 @@ export interface PosterConfig {
   minimalTextX: number;
   minimalTextY: number;
   minimalTitleEnabled?: boolean;
+  minimalTitleX?: number;
+  minimalTitleY?: number;
+  minimalTitleSize?: number;
   minimalTitleWidth?: number;
   minimalTitleAlign?: 'left' | 'center' | 'right';
   minimalTitleFlow?: 'up' | 'down';

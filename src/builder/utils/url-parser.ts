@@ -287,19 +287,59 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           : p.has('minimal_text_y')
             ? parseInt(p.get('minimal_text_y')!)
             : DEFAULTS.minimalTextY,
-        minimalTitleEnabled: true,
-        minimalTitleWidth: 420,
-        minimalTitleAlign: 'left',
+        minimalTitleEnabled: (() => {
+          const raw = p.get('ti') ?? p.get('title');
+          return raw !== null ? raw === '1' : p.get('p') === 'm';
+        })(),
+        minimalTitleX: p.has('ti_x')
+          ? parseInt(p.get('ti_x')!)
+          : p.has('title_x')
+            ? parseInt(p.get('title_x')!)
+            : DEFAULTS.minimalTitleX,
+        minimalTitleY: p.has('ti_y')
+          ? parseInt(p.get('ti_y')!)
+          : p.has('title_y')
+            ? parseInt(p.get('title_y')!)
+            : DEFAULTS.minimalTitleY,
+        minimalTitleSize: p.has('ti_sz')
+          ? parseInt(p.get('ti_sz')!)
+          : p.has('title_size')
+            ? parseInt(p.get('title_size')!)
+            : DEFAULTS.minimalTitleSize,
+        minimalTitleWidth: p.has('ti_wd')
+          ? parseInt(p.get('ti_wd')!)
+          : p.has('title_width')
+            ? parseInt(p.get('title_width')!)
+            : 420,
+        minimalTitleAlign: (() => {
+          const raw = p.get('ti_al') || p.get('title_align');
+          if (raw === 'start' || raw === 'middle' || raw === 'end') {
+            return { start: 'left', middle: 'center', end: 'right' }[raw] as 'left';
+          }
+          if (raw === 'left' || raw === 'center' || raw === 'right') return raw;
+          return 'left';
+        })(),
         minimalTitleFlow: 'up',
-        minimalTitleColor: '#f5f5f5',
+        minimalTitleColor: p.get('ti_tx') || p.get('title_color') || '#f5f5f5',
         minimalTitleOpacity: 1,
-        minimalTitleWeight: 700,
+        minimalTitleWeight: p.has('ti_wt')
+          ? parseInt(p.get('ti_wt')!)
+          : p.has('title_weight')
+            ? parseInt(p.get('title_weight')!)
+            : 700,
         minimalTitleLetterSpacing: 0,
         minimalTitleLineHeight: 1.02,
-        minimalTitleShadowEnabled: false,
+        minimalTitleShadowEnabled: (() => {
+          const raw = p.get('ti_sh') ?? p.get('title_shadow');
+          return raw !== null ? parseInt(raw) > 0 : false;
+        })(),
         minimalTitleShadowX: 0,
         minimalTitleShadowY: 0,
-        minimalTitleShadowBlur: 0,
+        minimalTitleShadowBlur: p.has('ti_sh')
+          ? parseInt(p.get('ti_sh')!)
+          : p.has('title_shadow')
+            ? parseInt(p.get('title_shadow')!)
+            : 0,
         minimalTitleShadowColor: '#000000',
         minimalTitleBorderW: 0,
         minimalTitleBorderColor: '#d4a245',
@@ -541,19 +581,46 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         : p.has('mty')
           ? parseInt(p.get('mty')!)
           : DEFAULTS.minimalTextY,
-      minimalTitleEnabled: true,
-      minimalTitleWidth: 420,
-      minimalTitleAlign: 'left',
+      minimalTitleEnabled: (() => {
+        const raw = p.get('title');
+        return raw !== null ? raw === '1' : p.get('preset') === 'minimal';
+      })(),
+      minimalTitleX: p.has('title_x')
+        ? parseInt(p.get('title_x')!)
+        : DEFAULTS.minimalTitleX,
+      minimalTitleY: p.has('title_y')
+        ? parseInt(p.get('title_y')!)
+        : DEFAULTS.minimalTitleY,
+      minimalTitleSize: p.has('title_size')
+        ? parseInt(p.get('title_size')!)
+        : DEFAULTS.minimalTitleSize,
+      minimalTitleWidth: p.has('title_width')
+        ? parseInt(p.get('title_width')!)
+        : 420,
+      minimalTitleAlign: (() => {
+        const raw = p.get('title_align');
+        if (raw === 'start' || raw === 'middle' || raw === 'end') {
+          return { start: 'left', middle: 'center', end: 'right' }[raw] as 'left';
+        }
+        if (raw === 'left' || raw === 'center' || raw === 'right') return raw;
+        return 'left';
+      })(),
       minimalTitleFlow: 'up',
-      minimalTitleColor: '#f5f5f5',
+      minimalTitleColor: p.get('title_color') || '#f5f5f5',
       minimalTitleOpacity: 1,
-      minimalTitleWeight: 700,
+      minimalTitleWeight: p.has('title_weight')
+        ? parseInt(p.get('title_weight')!)
+        : 700,
       minimalTitleLetterSpacing: 0,
       minimalTitleLineHeight: 1.02,
-      minimalTitleShadowEnabled: false,
+      minimalTitleShadowEnabled: p.has('title_shadow')
+        ? parseInt(p.get('title_shadow')!) > 0
+        : false,
       minimalTitleShadowX: 0,
       minimalTitleShadowY: 0,
-      minimalTitleShadowBlur: 0,
+      minimalTitleShadowBlur: p.has('title_shadow')
+        ? parseInt(p.get('title_shadow')!)
+        : 0,
       minimalTitleShadowColor: '#000000',
       minimalTitleBorderW: 0,
       minimalTitleBorderColor: '#d4a245',

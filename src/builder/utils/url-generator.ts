@@ -80,6 +80,16 @@ export const generateApiUrl = (
   if (config.logoMaxW !== null && config.logoMaxW !== undefined) p.set('lmw', config.logoMaxW.toString());
   if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
 
+  if (config.minimalTitleEnabled && config.uiPreset !== 'm') p.set('ti', '1');
+  if (config.minimalTitleX !== undefined && config.minimalTitleX !== DEFAULTS.minimalTitleX) p.set('ti_x', config.minimalTitleX.toString());
+  if (config.minimalTitleY !== undefined && config.minimalTitleY !== DEFAULTS.minimalTitleY) p.set('ti_y', config.minimalTitleY.toString());
+  if (config.minimalTitleSize !== undefined && config.minimalTitleSize !== DEFAULTS.minimalTitleSize) p.set('ti_sz', config.minimalTitleSize.toString());
+  if (config.minimalTitleColor && config.minimalTitleColor !== '#f5f5f5') p.set('ti_tx', config.minimalTitleColor);
+  if (config.minimalTitleAlign && config.minimalTitleAlign !== 'left') p.set('ti_al', ({ left: 'start', center: 'middle', right: 'end' })[config.minimalTitleAlign]);
+  if (config.minimalTitleWidth !== undefined && config.minimalTitleWidth !== 420) p.set('ti_wd', config.minimalTitleWidth.toString());
+  if (config.minimalTitleWeight !== undefined && config.minimalTitleWeight !== 700) p.set('ti_wt', config.minimalTitleWeight.toString());
+  if (config.minimalTitleShadowBlur !== undefined && config.minimalTitleShadowBlur > 0) p.set('ti_sh', config.minimalTitleShadowBlur.toString());
+
   config.ratings.filter(isApiRatingKey).forEach((key: RatingType, index: number) => {
     const item = config.items[key] || {};
     const code = V3_KEY_TO_CODE[key];
