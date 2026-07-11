@@ -1,4 +1,5 @@
 import type { PosterConfig, RatingType } from '@/types/poster';
+import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
 export const DEFAULT_CONFIG: PosterConfig = {
   mediaType: 'movie',
@@ -13,15 +14,6 @@ export const DEFAULT_CONFIG: PosterConfig = {
   extension: 'png',
   posterBlur: 0,
   grayscale: false,
-  titleEnabled: false,
-  titleX: 25,
-  titleY: 100,
-  titleSize: 48,
-  titleWidth: 450,
-  titleAlign: 'start',
-  titleColor: '#ffffff',
-  titleWeight: 800,
-  titleShadowBlur: 0,
   layout: 'custom',
   preset: 'custom',
   blur: 0,
@@ -82,7 +74,6 @@ export const DEFAULT_CONFIG: PosterConfig = {
   compressIcons: false,
   malId: undefined,
   font: undefined,
-  keys: {},
 };
 
 export const CANVAS_WIDTH = 500;
@@ -106,21 +97,6 @@ export const ALL_BADGES: { id: RatingType; label: string }[] = [
   { id: 'runtime', label: 'Runtime' },
   { id: 'year', label: 'Year' },
 ];
-
-export const PROVIDER_DISPLAY_NAMES: Partial<Record<RatingType, string>> = {
-  title: 'Title',
-  imdb: 'IMDb',
-  rt: 'Rotten Tomatoes',
-  rt_popcorn: 'Audience Score',
-  tmdb: 'TMDB',
-  letterboxd: 'Letterboxd',
-  meta: 'Metacritic',
-  mal: 'MyAnimeList',
-  anilist: 'AniList',
-  age: 'Age Rating',
-  runtime: 'Runtime',
-  year: 'Year',
-};
 
 export const BADGE_ICONS: Record<string, { vb: string; body: string; color: string }> = {
   imdb: {
@@ -167,7 +143,7 @@ export const fetchApiIcons = (): Promise<void> => {
   if (typeof window === 'undefined') return Promise.resolve(); // Safe SSR execution
   
   if (!_iconsPromise) {
-    _iconsPromise = fetch('https://api.posterium.xyz/data/icons')
+    _iconsPromise = fetch(`${DEFAULT_API_BASE}/data/icons`)
       .then((res) => {
         if (!res.ok) throw new Error(`API Error: ${res.status}`);
         return res.json();

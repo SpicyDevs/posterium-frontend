@@ -31,7 +31,6 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
   panelMode?: 'source' | 'layers';
   hideTabs?: boolean;
-  detailLevel?: 'simple' | 'advanced';
 }
 
 interface SearchResult {
@@ -67,7 +66,6 @@ const LayerPanel: React.FC<Props> = ({
   onSelect,
   panelMode,
   hideTabs = false,
-  detailLevel = 'simple',
 }) => {
   const {
     setBatchSelection,
@@ -81,8 +79,6 @@ const LayerPanel: React.FC<Props> = ({
     fallbackEnabled,
     setFallbackEnabled,
   } = useEditor();
-
-  const isAdvanced = detailLevel === 'advanced';
 
   const [localMode, setLocalMode] = useState<'source' | 'layers'>(panelMode ?? 'source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
@@ -450,7 +446,6 @@ const LayerPanel: React.FC<Props> = ({
           results={results}
           isSearching={isSearching}
           handleSelectMedia={handleSelectMedia}
-          isAdvanced={isAdvanced}
           sourceOptions={sourceOptions}
           logoSourceOptions={logoSourceOptions}
           ptypeOptions={ptypeOptions}

@@ -5,7 +5,6 @@
 export const SITE_CONFIG = {
   name: 'Posterium',
   baseUrl: 'https://posterium.xyz',
-  apiBase: 'https://api.posterium.xyz',
   themeColor: '#0a0a0a',
   locale: 'en_US',
   twitterHandle: '',

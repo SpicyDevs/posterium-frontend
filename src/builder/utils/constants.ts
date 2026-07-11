@@ -6,6 +6,7 @@ const envApiUrl =
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.posterium.xyz';
 
 export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> = {
+  title: 'T',
   imdb: 'i',
   rt: 'r',
   rt_popcorn: 'p',
@@ -16,6 +17,7 @@ export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> = {
   anilist: 'A',
   age: 'a',
   runtime: 'n',
+  year: 'y',
 };
 
 export const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
@@ -23,13 +25,10 @@ export const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
 );
 
 export const API_RATING_KEYS: RatingType[] = [
-  'imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'anilist', 'age', 'runtime',
+  'imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'anilist', 'age', 'runtime', 'year',
 ];
 
 export const isApiRatingKey = (k: RatingType): boolean => API_RATING_KEYS.includes(k);
-
-export const PROVIDER_SHORT: Partial<Record<RatingType, string>> = V3_KEY_TO_CODE;
-export const SHORT_PROVIDER: Record<string, RatingType> = V3_CODE_TO_KEY;
 
 export const DEFAULTS = {
   blur: 0,
@@ -56,4 +55,5 @@ export const DEFAULTS = {
   labelInside: false,
   noEmbed: false,
   compressIcons: false,
+  logoZ: 90,
 } as const;

@@ -2,7 +2,6 @@ import type {
   PosterConfig,
   RatingType,
   MediaType,
-  ApiKeys,
   ExtensionType,
   LogoSourceType,
   BadgeConfig,
@@ -40,12 +39,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
 
     const p = url.searchParams;
     const isV3 = p.get('v') === '3';
-
-    const keys: ApiKeys = {};
-    if (p.has('tmdb_key')) keys.tmdb = p.get('tmdb_key')!;
-    if (p.has('fanart_key')) keys.fanart = p.get('fanart_key')!;
-    if (p.has('omdb_key')) keys.omdb = p.get('omdb_key')!;
-    if (p.has('mdblist_key')) keys.mdblist = p.get('mdblist_key')!;
 
     const items: PosterConfig['items'] = {};
 
@@ -149,7 +142,57 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           case 'li':
             items[badgeKey].labelInside = value === '1';
             break;
+          case 'sx':
+            items[badgeKey].shadowX = parseInt(value);
+            break;
+          case 'sy':
+            items[badgeKey].shadowY = parseInt(value);
+            break;
+          case 'sv':
+            items[badgeKey].shadowColor = value.startsWith('#') ? value : `#${value}`;
+            break;
+          case 'sw':
+            items[badgeKey].shadowOpacity = parseFloat(value);
+            break;
+          case 'sz':
+            items[badgeKey].textSize = parseInt(value);
+            break;
+          case 'al':
+            items[badgeKey].textAlign = value as BadgeConfig['textAlign'];
+            break;
+          case 'wd':
+            items[badgeKey].textBoxWidth = parseInt(value);
+            break;
+          case 'wt':
+            items[badgeKey].textWeight = parseInt(value);
+            break;
         }
+      }
+
+      // ── Backward-compat: ti_* params → items.title ────────────────────
+      if (p.get('ti') === '1' || p.get('title') === '1') {
+        if (!items.title) items.title = {};
+        const v = (v3k: string, v2k: string): string | null => p.get(v3k) ?? p.get(v2k);
+        const vi = (v3k: string, v2k: string): number | undefined => {
+          const r = v(v3k, v2k);
+          return r !== null ? parseInt(r) : undefined;
+        };
+        const ti_x = vi('ti_x', 'title_x');
+        if (ti_x !== undefined) items.title.x = ti_x;
+        const ti_y = vi('ti_y', 'title_y');
+        if (ti_y !== undefined) items.title.y = ti_y;
+        const ti_sz = vi('ti_sz', 'title_size');
+        if (ti_sz !== undefined) items.title.textSize = ti_sz;
+        const ti_tx = v('ti_tx', 'title_color');
+        if (ti_tx !== null) items.title.txt = ti_tx.startsWith('#') ? ti_tx : `#${ti_tx}`;
+        const ti_al = v('ti_al', 'title_align');
+        if (ti_al !== null) items.title.textAlign = ti_al as BadgeConfig['textAlign'];
+        const ti_wd = vi('ti_wd', 'title_width');
+        if (ti_wd !== undefined) items.title.textBoxWidth = ti_wd;
+        const ti_wt = vi('ti_wt', 'title_weight');
+        if (ti_wt !== undefined) items.title.textWeight = ti_wt;
+        const ti_sh = vi('ti_sh', 'title_shadow');
+        if (ti_sh !== undefined) items.title.shadow = ti_sh;
       }
 
       const ratingCodes = p.has('r')
@@ -207,8 +250,8 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         source: (p.get('source') as PosterConfig['source']) || 'tmdb',
         ptype: p.get('pt') || p.get('ptype') || 'auto',
         textless: p.get('tl') === '1' || p.get('textless') === '1',
-        theme: 'glass',
-        size: 'md',
+        theme: DEFAULT_CONFIG.theme,
+        size: DEFAULT_CONFIG.size,
         blur: getNum('bl', 'blur', DEFAULTS.blur),
         alpha: getFloat('al', 'alpha', DEFAULTS.alpha),
         radius: getNum('ra', 'rad', DEFAULTS.radius),
@@ -261,7 +304,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           : p.has('logo_max_h')
             ? parseInt(p.get('logo_max_h')!)
             : null,
-        keys,
         items,
         logo: p.get('logo') === '1',
         logoSource,
@@ -273,6 +315,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ? parseFloat(p.get('logo_opacity')!)
           : DEFAULTS.logoOpacity,
         logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
+        logoZ: p.has('lz') ? parseInt(p.get('lz')!) : (p.has('logo_z') ? parseInt(p.get('logo_z')!) : DEFAULTS.logoZ),
         noEmbed: getBoolOrUndefined('ne', 'no_embed') ?? DEFAULTS.noEmbed,
         compressIcons: false,
         sourcePriority: (() => {
@@ -282,15 +325,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         })(),
         malId: p.get('mid') ?? p.get('mal_id') ?? undefined,
         font: p.get('fn') || p.get('font') || undefined,
-        titleEnabled: p.get('ti') === '1',
-        titleX: getNum('ti_x', 'title_x', 25),
-        titleY: getNum('ti_y', 'title_y', 100),
-        titleSize: getNum('ti_sz', 'title_size', 48),
-        titleWidth: getNum('ti_wd', 'title_width', 450),
-        titleAlign: (p.get('ti_al') || p.get('title_align') || 'start') as PosterConfig['titleAlign'],
-        titleColor: p.get('ti_tx') || p.get('title_color') || '#ffffff',
-        titleWeight: getNum('ti_wt', 'title_weight', 800),
-        titleShadowBlur: getNum('ti_sh', 'title_shadow', 0),
       };
     }
 

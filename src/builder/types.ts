@@ -9,7 +9,6 @@ export type {
   ExtensionType,
   LogoSourceType,
   BadgeConfig,
-  ApiKeys,
   PosterConfig,
 } from '@/types/poster';
 export {

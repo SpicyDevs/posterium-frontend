@@ -70,13 +70,6 @@ export interface BadgeConfig {
   textShadowColor?: string;
 }
 
-export interface ApiKeys {
-  tmdb?: string;
-  fanart?: string;
-  omdb?: string;
-  mdblist?: string;
-}
-
 export interface PosterConfig {
   mediaType: MediaType;
   tmdbId: string;
@@ -90,15 +83,6 @@ export interface PosterConfig {
   extension: ExtensionType;
   posterBlur: number;
   grayscale: boolean;
-  titleEnabled?: boolean;
-  titleX?: number;
-  titleY?: number;
-  titleSize?: number;
-  titleWidth?: number;
-  titleAlign?: 'start' | 'middle' | 'end';
-  titleColor?: string;
-  titleWeight?: number;
-  titleShadowBlur?: number;
   layout: LayoutType;
   preset: PresetType;
   blur: number;
@@ -151,5 +135,4 @@ export interface PosterConfig {
   sourcePriority?: string[];
   malId?: string;
   font?: string;
-  keys?: ApiKeys;
 }

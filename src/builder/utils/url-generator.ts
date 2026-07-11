@@ -29,11 +29,6 @@ export const generateApiUrl = (
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('pt', config.ptype);
 
-  if (config.keys?.tmdb) p.set('tmdb_key', config.keys.tmdb);
-  if (config.keys?.fanart) p.set('fanart_key', config.keys.fanart);
-  if (config.keys?.omdb) p.set('omdb_key', config.keys.omdb);
-  if (config.keys?.mdblist) p.set('mdblist_key', config.keys.mdblist);
-
   if (config.blur !== DEFAULTS.blur) p.set('bl', config.blur.toString());
   if (config.alpha !== DEFAULTS.alpha) p.set('al', config.alpha.toString());
   if (config.radius !== DEFAULTS.radius) p.set('ra', config.radius.toString());
@@ -76,17 +71,18 @@ export const generateApiUrl = (
   if (config.logoMaxW !== null && config.logoMaxW !== undefined) p.set('lmw', config.logoMaxW.toString());
   if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
 
-  const titleActive = config.titleEnabled || config.ratings.includes('title');
-  if (titleActive) {
+  const titleItem = config.items?.title;
+  if (titleItem) {
+    const T = 'T';
     p.set('ti', '1');
-    if (config.titleX !== undefined) p.set('ti_x', config.titleX.toString());
-    if (config.titleY !== undefined) p.set('ti_y', config.titleY.toString());
-    if (config.titleSize !== undefined && config.titleSize !== 48) p.set('ti_sz', config.titleSize.toString());
-    if (config.titleColor && config.titleColor !== '#ffffff') p.set('ti_tx', config.titleColor);
-    if (config.titleAlign && config.titleAlign !== 'start') p.set('ti_al', config.titleAlign);
-    if (config.titleWidth !== undefined && config.titleWidth !== 450) p.set('ti_wd', config.titleWidth.toString());
-    if (config.titleWeight !== undefined && config.titleWeight !== 800) p.set('ti_wt', config.titleWeight.toString());
-    if (config.titleShadowBlur !== undefined && config.titleShadowBlur > 0) p.set('ti_sh', config.titleShadowBlur.toString());
+    if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
+    if (titleItem.y !== undefined) p.set(`${T}_y`, titleItem.y.toString());
+    if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
+    if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
+    if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_al`, titleItem.textAlign);
+    if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
+    if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
+    if (titleItem.shadow !== undefined && titleItem.shadow > 0) p.set(`${T}_sh`, titleItem.shadow.toString());
   }
 
   if (config.sourcePriority && config.sourcePriority.length > 0) p.set('so', config.sourcePriority.join(','));
@@ -115,6 +111,10 @@ export const generateApiUrl = (
     if (eff(item.alpha, config.alpha)) p.set(`${code}_al`, item.alpha!.toString());
     if (eff(item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
     if (eff(item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
+    if (item.shadowX !== undefined && item.shadowX !== 0) p.set(`${code}_sx`, item.shadowX.toString());
+    if (item.shadowY !== undefined && item.shadowY !== (config.shadowY ?? 2)) p.set(`${code}_sy`, item.shadowY.toString());
+    if (item.shadowColor !== undefined && item.shadowColor !== '#000000') p.set(`${code}_sv`, item.shadowColor);
+    if (item.shadowOpacity !== undefined && item.shadowOpacity !== 0.35) p.set(`${code}_sw`, item.shadowOpacity.toString());
 
     const itemIcon = item.icon ?? config.icon ?? true;
     if (itemIcon !== (config.icon ?? true)) p.set(`${code}_ic`, itemIcon ? '1' : '0');
@@ -171,6 +171,7 @@ export const generateApiUrl = (
     if (config.logoOpacity !== DEFAULTS.logoOpacity)
       p.set('logo_opacity', config.logoOpacity.toFixed(2));
     if (config.logoShadow !== DEFAULTS.logoShadow) p.set('logo_sh', config.logoShadow.toString());
+    if (config.logoZ !== undefined && config.logoZ !== DEFAULTS.logoZ) p.set('lz', config.logoZ.toString());
   }
 
   const queryString = p.toString();

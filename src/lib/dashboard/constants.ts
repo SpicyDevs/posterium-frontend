@@ -1,5 +1,7 @@
 // src/lib/dashboard/constants.ts
-export const API = 'https://api.posterium.xyz';
+import { DEFAULT_API_BASE } from '@/builder/utils/constants';
+
+export const API = DEFAULT_API_BASE;
 
 export interface ReelItem {
   id: string;

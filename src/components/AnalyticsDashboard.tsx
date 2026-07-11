@@ -15,9 +15,10 @@ import {
 } from 'recharts';
 import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
+import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
-const API_BASE = 'https://api.posterium.xyz';
-const POSTER_API = 'https://api.posterium.xyz';
+const API_BASE = DEFAULT_API_BASE;
+const POSTER_API = DEFAULT_API_BASE;
 const AUTH_KEY = 'posterium_analytics_auth_v4';
 const CONFIG_KEY = 'posterium_dash_config_v4';
 const CORRECT_PW = 'admin123';

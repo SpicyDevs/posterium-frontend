@@ -14,7 +14,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
 import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils/positioning';
-import { BADGE_ICONS } from '../constants';
+import { BADGE_ICONS } from '@/constants/badges';
 
 // ── Preset defaults (mirrors backend presets/badge.js and presets/minimal.js) ──
 const PRESET_DEFAULTS = {
@@ -54,6 +54,7 @@ interface Props {
   onHoverChange?: (isHovered: boolean) => void;
   value?: string;
   zIndex?: number;
+  uniformFontSize?: number | null;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -71,6 +72,7 @@ const DraggableBadge: React.FC<Props> = ({
   onHoverChange,
   value,
   zIndex,
+  uniformFontSize,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? config.scale ?? 1.0;
@@ -218,12 +220,17 @@ const DraggableBadge: React.FC<Props> = ({
   const rawShadow = itemConfig?.shadow ?? baseShadow;
   const shadowVal = typeof rawShadow === 'boolean' ? (rawShadow ? 6 : 0) : rawShadow;
   const showIcon = itemConfig?.icon ?? baseIcon;
+  const iconPos = itemConfig?.iconPos ?? config.iconPos ?? 'left';
   const showTextVal = itemConfig?.showText ?? config.showText ?? true;
   const normalizeVal = itemConfig?.normalize ?? config.normalize ?? false;
-  const outOfVal = itemConfig?.outOf ?? config.outOf;
+    const outOfVal = itemConfig?.outOf ?? config.outOf;
+    const outOfSizeRaw = itemConfig?.outOfSize ?? config.outOfSize ?? 0;
+    const outOfColorVal = itemConfig?.outOfColor ?? config.outOfColor ?? null;
 
   // ── Label props ───────────────────────────────────────────────────────────
   const labelPos = itemConfig?.labelPos ?? config.labelPos ?? null;
+  const labelInside = itemConfig?.labelInside ?? config.labelInside ?? false;
+  const hasInsideLabel = labelInside && labelPos && badgeId !== 'age';
   const labelText =
     itemConfig?.labelText ??
     config.labelText ??
@@ -328,10 +335,11 @@ const DraggableBadge: React.FC<Props> = ({
         Math.ceil(effectiveTitleHeightLines * textSize * textLineHeight + 16 * displayScale)
       )
     : titleContentHeight;
+  const labelInsideExtra = hasInsideLabel ? labelSizeVal + 6 * displayScale : 0;
   const height =
     badgeId === 'title'
       ? Math.max(32, Math.round(resolvedTitleHeight))
-      : baseHeight;
+      : baseHeight + labelInsideExtra;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const toRgba = (hex: string | undefined, alpha: number) => {
@@ -367,10 +375,46 @@ const DraggableBadge: React.FC<Props> = ({
   const finalBackground = isObscuring ? `${slantPattern}, ${bgFill}` : bgFill;
 
   const iconSize = 36 * displayScale;
-  const iconLeft = 10 * displayScale;
-  const iconTop = 12 * displayScale;
-  const textRight = 10 * displayScale;
-  const fontSize = 28 * displayScale;
+  const isRuntime = badgeId === 'runtime';
+  const iconW = isRuntime ? 32 : 36;
+  const iconWPx = iconW * displayScale;
+  // Dynamic icon/text position based on iconPos (matches backend iconLayoutFor)
+  const iconLayout = (() => {
+    const bw = baseWidth;
+    const bh = baseHeight;
+    switch (iconPos) {
+      case 'right':
+        return {
+          icon: { left: bw - iconWPx - (isRuntime ? 9 : 12) * displayScale, top: isRuntime ? 14 * displayScale : 12 * displayScale },
+          text: { left: 12 * displayScale, right: 'auto', textAlign: 'start' as const, transform: 'translateY(-50%)' as const },
+        };
+      case 'above':
+        return {
+          icon: { left: (bw - iconWPx) / 2, top: 4 * displayScale },
+          text: { left: '50%', textAlign: 'center' as const, transform: 'translateX(-50%)' as const, top: `${bh * 0.75}px` },
+        };
+      case 'below':
+        return {
+          icon: { left: (bw - iconWPx) / 2, top: bh - iconWPx - 4 * displayScale },
+          text: { left: '50%', textAlign: 'center' as const, transform: 'translateX(-50%)' as const, top: `${bh * 0.25}px` },
+        };
+      case 'center':
+        return {
+          icon: { left: (bw - iconWPx) / 2, top: (bh - iconWPx) / 2 },
+          text: null,
+        };
+      case 'left':
+      default:
+        return {
+          icon: { left: isRuntime ? 9 * displayScale : 12 * displayScale, top: isRuntime ? 14 * displayScale : 12 * displayScale },
+          text: { right: 10 * displayScale, textAlign: 'end' as const, transform: 'translateY(-50%)' as const },
+        };
+    }
+  })();
+
+  // Uniform mode: override font size for non-title/year badges
+  const isTitleOrYear = badgeId === 'title' || badgeId === 'year';
+  const fontSize = (uniformFontSize && !isTitleOrYear ? uniformFontSize : 28) * displayScale;
 
   // ── Label layout helpers ──────────────────────────────────────────────────
   const LABEL_GAP = 5 * displayScale;
@@ -443,33 +487,34 @@ const DraggableBadge: React.FC<Props> = ({
       anilist: '85%',
     };
     const rawValue = (value ?? dummyVals[badgeId] ?? '0.0').trim();
+    const decimals = itemConfig?.decimals ?? config.decimals ?? -1;
+    const forceDecimals = itemConfig?.forceDecimals ?? config.forceDecimals ?? false;
+    const applyDecimals = (s: string): string => {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return s;
+      if (decimals >= 0) {
+        return forceDecimals ? n.toFixed(decimals) : String(Number(n.toFixed(decimals)));
+      }
+      return String(n);
+    };
     const normalized = (() => {
-      if (!normalizeVal) return rawValue;
+      if (!normalizeVal) return applyDecimals(rawValue);
       const pct = rawValue.match(/^(-?\d+(?:\.\d+)?)%$/);
       if (pct) {
         const n = Number(pct[1]);
-        if (!Number.isFinite(n)) return rawValue;
-        return `${((Math.max(0, n) / 100) * 10).toFixed(1).replace(/\.0$/, '')}`;
+        if (!Number.isFinite(n)) return applyDecimals(rawValue);
+        const val = (Math.max(0, n) / 100) * 10;
+        return forceDecimals ? val.toFixed(decimals >= 0 ? decimals : 1) : String(Number(val.toFixed(decimals >= 0 ? decimals : 1)));
       }
       const num = Number(rawValue);
-      if (!Number.isFinite(num)) return rawValue;
-      if (num > 10) return `${(num / 10).toFixed(1).replace(/\.0$/, '')}`;
-      return `${num.toFixed(1).replace(/\.0$/, '')}`;
+      if (!Number.isFinite(num)) return applyDecimals(rawValue);
+      if (num > 10) {
+        const val = num / 10;
+        return forceDecimals ? val.toFixed(decimals >= 0 ? decimals : 1) : String(Number(val.toFixed(decimals >= 0 ? decimals : 1)));
+      }
+      return applyDecimals(rawValue);
     })();
-    const runtimeCompact = (() => {
-      if (badgeId !== 'runtime') return normalized;
-      const m = normalized.match(/^(\d+)\s*h(?:\s*(\d+)\s*m?)?$/i);
-      if (!m) return normalized;
-      const hh = m[1];
-      const mm = (m[2] ?? '0').padStart(2, '0');
-      return `${hh}:${mm}`;
-    })();
-    const numericDisplay = badgeId === 'year'
-      ? runtimeCompact.replace(/\.0+$/, '')
-      : /^\d+(\.\d+)?$/.test(runtimeCompact)
-      ? Number(runtimeCompact).toFixed(1)
-      : runtimeCompact;
-    const displayValue = numericDisplay;
+    const displayValue = badgeId === 'year' ? normalized.replace(/\.0+$/, '') : normalized;
     const truncatedTitleValue =
       badgeId === 'title' && textMaxChars > 0 && displayValue.length > textMaxChars
         ? `${displayValue.slice(0, textMaxChars).trimEnd()}…`
@@ -574,7 +619,7 @@ const DraggableBadge: React.FC<Props> = ({
       outOfVal && outOfVal > 0 && /^\d+(\.\d+)?$/.test(displayValue) ? (
         <span className="inline-flex items-end gap-[0.1em]">
           <span>{displayValue}</span>
-          <span style={{ fontSize: '0.72em', opacity: 0.9, lineHeight: 1 }}>{`/${outOfVal}`}</span>
+          <span style={{ fontSize: outOfSizeRaw > 0 ? `${outOfSizeRaw * displayScale}px` : '0.72em', color: outOfColorVal || 'rgba(255,255,255,0.52)', lineHeight: 1 }}>{`/${outOfVal}`}</span>
         </span>
       ) : isRtPercent ? (
         <span className="inline-flex items-end gap-[0.08em]">
@@ -585,14 +630,15 @@ const DraggableBadge: React.FC<Props> = ({
         displayValue
       );
 
+    const textHide = iconPos === 'center';
     return (
       <>
-        {iconData && (
+        {iconData && !textHide && (
           <div
             style={{
               position: 'absolute',
-              left: iconLeft,
-              top: iconTop,
+              left: iconLayout.icon.left,
+              top: iconLayout.icon.top,
               lineHeight: 0,
               pointerEvents: 'none',
               display: 'flex',
@@ -614,14 +660,12 @@ const DraggableBadge: React.FC<Props> = ({
             />
           </div>
         )}
-        {/* Value text — hidden when showText is false */}
-        {showTextVal && (
+        {/* Value text — hidden when showText is false or iconPos=center */}
+        {showTextVal && !textHide && iconLayout.text && (
           <span
             style={{
               position: 'absolute',
-              right: textRight,
-              top: '50%',
-              transform: 'translateY(-50%)',
+              ...iconLayout.text,
               fontSize,
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontWeight: 'bold',
@@ -633,6 +677,29 @@ const DraggableBadge: React.FC<Props> = ({
             }}
           >
             {valueNode}
+          </span>
+        )}
+        {/* Inside label (labelInside mode) — rendered inside the pill, below value */}
+        {hasInsideLabel && (
+          <span
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 4 * displayScale,
+              textAlign: 'center',
+              fontSize: labelSizeVal,
+              color: labelColorVal,
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 500,
+              lineHeight: 1,
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {labelText}
           </span>
         )}
       </>
@@ -719,8 +786,8 @@ const DraggableBadge: React.FC<Props> = ({
         />
       )}
 
-      {/* Label — rendered outside the clipping div so it shows outside badge bounds */}
-      {labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
+      {/* Label — rendered outside the clipping div so it shows outside badge bounds (suppressed when labelInside is active) */}
+      {!labelInside && labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
 
       {/* Selection dot */}
       {isSelected && (

@@ -1,6 +1,6 @@
 // src/components/builder/index.tsx
 import React, { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { PosterConfig, ExtensionType, ApiKeys, RatingType } from './types';
+import type { PosterConfig, ExtensionType, RatingType } from './types';
 import {
   DEFAULT_CONFIG,
   ALL_BADGES,
@@ -12,12 +12,7 @@ import {
 import { parseUrlToConfig } from './utils/url-parser';
 import { DEFAULT_API_BASE } from './utils/constants';
 import { calculateAutoPosition, getScale } from './utils/positioning';
-import {
-  BUILDER_STORAGE_KEY,
-  MAX_QUERY_CONFIG_LENGTH,
-  loadKeysFromCookie,
-  saveKeysToCookie,
-} from './builderStorage';
+import { BUILDER_STORAGE_KEY } from './builderStorage';
 import PreviewCanvas from './components/PreviewCanvas';
 import LayerPanel from './components/LayerPanel';
 import Inspector from './components/Inspector';
@@ -165,7 +160,7 @@ const StudioLayout: React.FC<{
   const mobileRootRef = useRef<HTMLDivElement>(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
-  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'badges'>('source');
+  const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'layers' | 'badges'>('source');
 
   const {
     bottomPanelOpen,
@@ -178,7 +173,7 @@ const StudioLayout: React.FC<{
   } = useMobileBottomSheet(mobileRootRef);
 
   const openBottomPanel = useCallback(
-    (tab: 'source' | 'badges') => {
+    (tab: 'source' | 'layers' | 'badges') => {
       setBottomPanelTab(tab);
       openBottomPanelSheet();
     },
@@ -284,10 +279,13 @@ const StudioLayout: React.FC<{
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
         if (activeMinimal.includes('minimal-title')) {
-          const boxW = Math.max(120, next.titleWidth ?? 450);
-          const boxH = Math.max(36, (next.titleSize ?? 48) * 1.5);
-          next.titleX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, (next.titleX ?? 25) + dx));
-          next.titleY = Math.max(boxH, Math.min(CANVAS_HEIGHT, (next.titleY ?? 100) + dy));
+          const ti = next.items?.title ?? {};
+          const boxW = Math.max(120, ti.textBoxWidth ?? 450);
+          const boxH = Math.max(36, (ti.textSize ?? 48) * 1.5);
+          next.items = {
+            ...next.items,
+            title: { ...ti, x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)), y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)) },
+          };
         }
         if (activeMinimal.includes('minimal-year')) {
           const yearItem = { ...(next.items.year ?? { icon: false, alpha: 0 }) };
@@ -1949,6 +1947,7 @@ const StudioLayout: React.FC<{
                 {(
                   [
                     { id: 'source', label: 'Source' },
+                    { id: 'layers', label: 'Layers' },
                     { id: 'badges', label: 'Badges' },
                   ] as const
                 ).map(({ id, label }) => {
@@ -2014,6 +2013,28 @@ const StudioLayout: React.FC<{
                     selectedIds={selectedIds}
                     onSelect={handleSelectionOverride}
                     chrome={false}
+                    detailLevel="simple"
+                  />
+                </div>
+
+                {/* LAYERS TAB CONTENT */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                    display: bottomPanelTab === 'layers' ? 'block' : 'none',
+                    paddingBottom: 24,
+                  }}
+                >
+                  <LayersPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
                     detailLevel="simple"
                   />
                 </div>
@@ -2089,14 +2110,14 @@ const StudioLayout: React.FC<{
                   {
                     position: 'absolute',
                     top: 0,
-                    left: 'calc(50% * var(--active-tab-index, 0) + (50% - 28px) / 2)',
+                    left: 'calc(33.33% * var(--active-tab-index, 0) + (33.33% - 28px) / 2)',
                     width: 28,
                     height: 2,
                     background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
                     borderRadius: '0 0 2px 2px',
                     transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
                     '--active-tab-index':
-                      bottomPanelTab === 'source' ? 0 : 1,
+                      bottomPanelTab === 'source' ? 0 : bottomPanelTab === 'layers' ? 1 : 2,
                   } as React.CSSProperties
                 }
               />
@@ -2130,6 +2151,7 @@ const StudioLayout: React.FC<{
                 {(
                   [
                     { id: 'source', label: 'Source', Icon: Film },
+                    { id: 'layers', label: 'Layers', Icon: Layers },
                     { id: 'badges', label: 'Badges', Icon: Sliders },
                   ] as const
                 ).map(({ id, label, Icon }) => {
@@ -2200,7 +2222,6 @@ const StudioLayout: React.FC<{
                   setConfig={setConfig}
                   selectedIds={selectedIds}
                   onSelect={handleSelectionOverride}
-                  detailLevel="simple"
                 />
               )}
               <div
@@ -2383,15 +2404,10 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
     redo,
     canUndo,
     canRedo,
-  } = usePosterHistory(() => {
+    } = usePosterHistory(() => {
     try {
       const saved = localStorage.getItem(BUILDER_STORAGE_KEY);
-      const cfg = saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
-      const cookieKeys = loadKeysFromCookie();
-      if (cookieKeys && Object.keys(cookieKeys).some((k) => cookieKeys[k as keyof ApiKeys])) {
-        return { ...cfg, keys: { ...cookieKeys, ...cfg.keys } };
-      }
-      return cfg;
+      return saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
     } catch {
       return DEFAULT_CONFIG;
     }
@@ -2437,13 +2453,6 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
     localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
-  useEffect(() => {
-    if (config.keys) {
-      const hasAnyKey = Object.values(config.keys).some((v) => v && v.trim());
-      if (hasAnyKey) saveKeysToCookie(config.keys);
-    }
-  }, [config.keys]);
-
   const handleLoadConfig = useCallback(
     (url: string) => {
       setConfig(parseUrlToConfig(url));
@@ -2465,7 +2474,6 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
       source: current.source,
       ptype: current.ptype,
       textless: current.textless,
-      keys: current.keys,
     }));
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
   }, [setConfig]);
@@ -2478,23 +2486,6 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
       return;
     }
 
-    const configParam = params.get('config');
-    if (!configParam) return;
-    if (configParam.length > MAX_QUERY_CONFIG_LENGTH) return;
-
-    try {
-      const decoded = atob(decodeURIComponent(configParam));
-      const parsed = JSON.parse(decoded) as Partial<PosterConfig>;
-      if (!parsed || !Array.isArray(parsed.ratings)) return;
-
-      setConfig({
-        ...DEFAULT_CONFIG,
-        ...parsed,
-        items: parsed.items ?? {},
-      } as PosterConfig);
-    } catch {
-      // ignore malformed config input
-    }
   }, [handleLoadConfig, setConfig]);
 
   return (

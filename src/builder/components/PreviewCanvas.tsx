@@ -388,11 +388,12 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleMinimalTextDragEnd = useCallback(
     (dx: number, dy: number) => {
       setConfig((prev) => {
-        const boxW = Math.max(120, prev.titleWidth ?? 450);
-        const boxH = Math.max(36, (prev.titleSize ?? 48) * 1.5);
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round((prev.titleX ?? 25) + dx)));
-        const nextY = Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round((prev.titleY ?? 100) + dy)));
-        return { ...prev, titleX: nextX, titleY: nextY };
+        const ti = prev.items?.title ?? {};
+        const boxW = Math.max(120, ti.textBoxWidth ?? 450);
+        const boxH = Math.max(36, (ti.textSize ?? 48) * 1.5);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round((ti.x ?? 25) + dx)));
+        const nextY = Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round((ti.y ?? 100) + dy)));
+        return { ...prev, items: { ...prev.items, title: { ...ti, x: nextX, y: nextY } } };
       });
     },
     [setConfig]
@@ -755,11 +756,25 @@ const PreviewCanvas: React.FC<Props> = ({
               }
             }
 
+            // Uniform mode: compute shared font size across all badges
+            const uniformSize = config.uniform && config.ratings.length > 0
+              ? Math.min(...config.ratings.map(r => {
+                  const it = config.items[r];
+                  const v = liveRatings[r];
+                  const val = v ?? '';
+                  const hasIcon = it?.icon ?? config.icon ?? true;
+                  const len = String(val).length;
+                  if (hasIcon) { if (len > 8) return 17; if (len > 5) return 21; return 27; }
+                  if (len > 8) return 18; if (len > 5) return 22; return 28;
+                }))
+              : null;
+
             return (
               <DraggableBadge
                 key={id}
                 badgeId={id}
                 config={config}
+                uniformFontSize={uniformSize}
                 value={
                   id === 'year'
                     ? liveYear.replace(/\.0+$/, '')

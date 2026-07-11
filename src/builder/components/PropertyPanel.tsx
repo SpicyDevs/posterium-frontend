@@ -860,34 +860,34 @@ const PropertyPanel: React.FC<Props> = ({
             <Section title="Title" sectionId="selection-title-overlay">
               <SliderRow
                 label="Size"
-                value={config.titleSize ?? 48}
+                value={config.items?.title?.textSize ?? 48}
                 min={14}
                 max={120}
                 step={1}
                 unit="px"
-                onChange={(v) => updateConfig('titleSize', Math.round(v))}
+                onChange={(v) => updateTitleDefaults({ textSize: Math.round(v) })}
               />
               <SliderRow
                 label="Width"
-                value={config.titleWidth ?? 450}
+                value={config.items?.title?.textBoxWidth ?? 450}
                 min={100}
                 max={800}
                 step={10}
                 unit="px"
-                onChange={(v) => updateConfig('titleWidth', Math.round(v))}
+                onChange={(v) => updateTitleDefaults({ textBoxWidth: Math.round(v) })}
               />
               <ColorRow
                 label="Color"
-                value={config.titleColor ?? '#ffffff'}
-                onChange={(v) => updateConfig('titleColor', v)}
+                value={config.items?.title?.txt ?? '#ffffff'}
+                onChange={(v) => updateTitleDefaults({ txt: v })}
               />
               <SliderRow
                 label="Weight"
-                value={config.titleWeight ?? 700}
+                value={config.items?.title?.textWeight ?? 700}
                 min={100}
                 max={900}
                 step={100}
-                onChange={(v) => updateConfig('titleWeight', Math.round(v))}
+                onChange={(v) => updateTitleDefaults({ textWeight: Math.round(v) })}
               />
             </Section>
           )}

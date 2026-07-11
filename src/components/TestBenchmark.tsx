@@ -11,8 +11,9 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
+import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
-const API_BASE      = 'https://api.posterium.xyz';
+const API_BASE      = DEFAULT_API_BASE;
 const CF_PROXY_BASE = 'https://r-cf.spicydevs.xyz/proxy';
 const TIMEOUT_MS    = 14_000;
 

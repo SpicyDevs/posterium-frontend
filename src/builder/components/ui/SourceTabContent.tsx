@@ -1,9 +1,8 @@
 import React from 'react';
 import { Combobox, Switch } from '@headlessui/react';
-import { Search, Loader2, ImagePlay, Badge, KeyRound } from 'lucide-react';
+import { Search, Loader2, ImagePlay, Badge } from 'lucide-react';
 import clsx from 'clsx';
-import { SelectBox, ToggleRow, SegmentedRow, Section, SliderRow } from './index';
-import ApiKeysPanel from './ApiKeysPanel';
+import { SelectBox, ToggleRow, SegmentedRow, SliderRow } from './index';
 import type { PosterConfig } from '../../types';
 
 interface SearchResult {
@@ -26,7 +25,6 @@ interface Props {
   results: SearchResult[];
   isSearching: boolean;
   handleSelectMedia: (item: SearchResult | null) => void;
-  isAdvanced: boolean;
   sourceOptions: Array<{ id: string; label: string }>;
   logoSourceOptions: Array<{ id: string; label: string }>;
   ptypeOptions: Array<{ id: string; label: string }>;
@@ -48,7 +46,6 @@ const SourceTabContent: React.FC<Props> = ({
   results,
   isSearching,
   handleSelectMedia,
-  isAdvanced,
   sourceOptions,
   logoSourceOptions,
   ptypeOptions,
@@ -505,16 +502,7 @@ const SourceTabContent: React.FC<Props> = ({
         </div>
       </div>
 
-      {isAdvanced && (
-        <Section
-          inset="compact"
-          title="API Keys"
-          icon={<KeyRound size={10} />}
-          defaultOpen={false}
-        >
-          <ApiKeysPanel config={config} setConfig={setConfig} />
-        </Section>
-      )}
+      
     </div>
   );
 };
