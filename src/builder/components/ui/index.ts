@@ -8,4 +8,5 @@ export { default as ColorRow } from './ColorRow';
 export { default as ApiKeysPanel } from './ApiKeysPanel';
 export { default as BadgeRow } from './BadgeRow';
 export { default as LogoLayerRow } from './LogoLayerRow';
+export { default as TitleLayerRow } from './TitleLayerRow';
 export { default as SourceTabContent } from './SourceTabContent';

@@ -155,6 +155,18 @@ export const generateApiUrl = (
       p.set(`${code}_wr`, item.textWrapEnabled ? '1' : '0');
   });
 
+  if (config.titleEnabled) {
+    p.set('ti', '1');
+    if (config.titleX !== undefined) p.set('ti_x', Math.round(config.titleX).toString());
+    if (config.titleY !== undefined) p.set('ti_y', Math.round(config.titleY).toString());
+    if (config.titleSize !== undefined && config.titleSize !== DEFAULTS.titleSize) p.set('ti_sz', config.titleSize.toString());
+    if (config.titleColor) p.set('ti_tx', config.titleColor);
+    if (config.titleAlign && config.titleAlign !== 'start') p.set('ti_al', config.titleAlign);
+    if (config.titleWidth !== undefined && config.titleWidth > 0) p.set('ti_wd', config.titleWidth.toString());
+    if (config.titleShadow !== undefined && config.titleShadow > 0) p.set('ti_sh', config.titleShadow.toString());
+    if (config.titleWeight !== undefined && config.titleWeight !== 700) p.set('ti_wt', config.titleWeight.toString());
+  }
+
   if (config.logo) {
     p.set('logo', '1');
     if (config.logoSource) p.set('logo_source', config.logoSource);

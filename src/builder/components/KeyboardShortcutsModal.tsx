@@ -71,6 +71,7 @@ interface Props {
 
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <kbd
+    className="mono-font"
     style={{
       display: 'inline-flex',
       alignItems: 'center',
@@ -82,7 +83,6 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       border: '1px solid rgba(196,124,46,0.18)',
       borderRadius: 4,
       fontSize: 12,
-      fontFamily: 'JetBrains Mono, monospace',
       color: 'rgba(196,124,46,0.85)',
       userSelect: 'none',
     }}
@@ -202,21 +202,21 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   </div>
                   <div>
                     <p
+                      className="syne-font"
                       style={{
                         fontSize: 14,
                         fontWeight: 600,
                         color: 'var(--film-cream)',
-                        fontFamily: 'Syne, sans-serif',
                         margin: 0,
                       }}
                     >
                       Keyboard Shortcuts
                     </p>
                     <p
+                      className="mono-font"
                       style={{
                         fontSize: 10,
                         color: 'rgba(140,130,112,0.65)',
-                        fontFamily: 'JetBrains Mono, monospace',
                         letterSpacing: '0.08em',
                         marginTop: 3,
                         margin: 0,
@@ -281,13 +281,13 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                       }}
                     >
                       <p
+                        className="syne-font"
                         style={{
                           fontSize: 10,
                           fontWeight: 700,
                           letterSpacing: '0.12em',
                           marginBottom: 12,
                           color: 'rgba(196,124,46,0.65)',
-                          fontFamily: 'Syne, sans-serif',
                           textTransform: 'uppercase',
                           margin: 0,
                         }}
@@ -306,10 +306,10 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                             }}
                           >
                             <span
+                              className="body-font"
                               style={{
                                 fontSize: 12,
                                 color: 'rgba(240,230,204,0.88)',
-                                fontFamily: 'DM Sans, sans-serif',
                               }}
                             >
                               {label}
@@ -358,9 +358,9 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 }}
               >
                 <span
+                  className="mono-font"
                   style={{
                     fontSize: 10,
-                    fontFamily: 'JetBrains Mono, monospace',
                     color: 'rgba(140,130,112,0.65)',
                     letterSpacing: '0.08em',
                   }}
@@ -368,9 +368,9 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   Press <Kbd>Esc</Kbd> or <Kbd>⌘/</Kbd> to close
                 </span>
                 <span
+                  className="mono-font"
                   style={{
                     fontSize: 10,
-                    fontFamily: 'JetBrains Mono, monospace',
                     color: 'rgba(140,130,112,0.55)',
                     letterSpacing: '0.06em',
                   }}

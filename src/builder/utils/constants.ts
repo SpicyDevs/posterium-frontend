@@ -62,4 +62,6 @@ export const DEFAULTS = {
   uniform: false,
   iconPos: 'left',
   labelInside: false,
+  titleSize: 36,
+  titleWeight: 700,
 } as const;

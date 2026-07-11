@@ -105,7 +105,7 @@ const ColorPicker: React.FC<Props> = memo(
             tabIndex={-1}
           />
           <div className="flex-1 relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-400 pointer-events-none">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] mono-font text-zinc-400 pointer-events-none">
               #
             </span>
             <input
@@ -116,7 +116,7 @@ const ColorPicker: React.FC<Props> = memo(
               maxLength={7}
               spellCheck={false}
               autoComplete="off"
-              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[11px] font-mono text-zinc-300 uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
+              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[11px] mono-font text-zinc-300 uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
             />
           </div>
         </div>
@@ -124,7 +124,7 @@ const ColorPicker: React.FC<Props> = memo(
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-zinc-400">Opacity</span>
-              <span className="text-[10px] font-mono text-zinc-400">
+              <span className="text-[10px] mono-font text-zinc-400">
                 {Math.round(opacity * 100)}%
               </span>
             </div>

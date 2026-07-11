@@ -2,7 +2,7 @@ import React from 'react';
 import { Combobox, Switch } from '@headlessui/react';
 import { Search, Loader2, ImagePlay, Badge, KeyRound } from 'lucide-react';
 import clsx from 'clsx';
-import { SelectBox, ToggleRow, SegmentedRow, Section } from './index';
+import { SelectBox, ToggleRow, SegmentedRow, Section, SliderRow } from './index';
 import ApiKeysPanel from './ApiKeysPanel';
 import type { PosterConfig } from '../../types';
 
@@ -34,7 +34,7 @@ interface Props {
   titleBadgeEnabled: boolean;
   badgesVisible: boolean;
   handleLogoSelection: (multi: boolean) => void;
-  setActiveTab: (tab: 'source' | 'layers' | 'poster' | 'badges' | 'logo' | 'selection') => void;
+  setActiveTab: (tab: 'source' | 'layers' | 'badges' | 'logo' | 'selection') => void;
   enableBadges: () => void;
   disableBadges: (opts?: { persistPreference?: boolean }) => void;
 }
@@ -373,57 +373,21 @@ const SourceTabContent: React.FC<Props> = ({
         disabled={['metahub', 'imdb'].includes(config.source)}
       />
 
-      <div className="pt-1 space-y-2">
-        <ToggleRow
-          label="Title Layer"
-          sub="Show title as draggable badge layer"
-          checked={titleBadgeEnabled}
-          onChange={(v) =>
-            setConfig((prev) => ({
-              ...prev,
-              ratings: v
-                ? prev.ratings.includes('title')
-                  ? prev.ratings
-                  : [...prev.ratings, 'title']
-                : prev.ratings.filter((r) => r !== 'title'),
-            }))
-          }
-        />
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p
-              className="body-font font-medium flex items-center gap-1.5"
-              style={{ fontSize: 11, color: 'var(--film-text-label)' }}
-            >
-              <Badge size={11} /> Badges
-            </p>
-            <p
-              className="body-font mt-0.5"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            >
-              Show/hide all layers with badge behavior
-            </p>
-          </div>
-          <Switch
-            checked={badgesVisible}
-            onChange={(v) => {
-              if (v) enableBadges();
-              else disableBadges({ persistPreference: true });
-            }}
-            className={clsx(
-              'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-              badgesVisible ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
-            )}
-          >
-            <span
-              className={clsx(
-                'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
-                badgesVisible ? 'translate-x-[18px]' : 'translate-x-[3px]'
-              )}
-            />
-          </Switch>
-        </div>
-      </div>
+      {/* Background */}
+      <SliderRow
+        label="Poster Blur"
+        value={config.posterBlur}
+        min={0}
+        max={20}
+        unit="px"
+        onChange={(v) => updateConfig('posterBlur', v)}
+      />
+      <ToggleRow
+        label="Grayscale"
+        sub="Desaturate poster image"
+        checked={config.grayscale}
+        onChange={(v) => updateConfig('grayscale', v)}
+      />
 
       {/* Logo overlay */}
       <div className="pt-5">
@@ -487,6 +451,58 @@ const SourceTabContent: React.FC<Props> = ({
           style={{ height: 1, background: 'rgba(255,255,255,0.04)' }}
           aria-hidden="true"
         />
+      </div>
+
+      <div className="pt-1 space-y-2">
+        <ToggleRow
+          label="Title Layer"
+          sub="Show title as draggable badge layer"
+          checked={titleBadgeEnabled}
+          onChange={(v) =>
+            setConfig((prev) => ({
+              ...prev,
+              ratings: v
+                ? prev.ratings.includes('title')
+                  ? prev.ratings
+                  : [...prev.ratings, 'title']
+                : prev.ratings.filter((r) => r !== 'title'),
+            }))
+          }
+        />
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className="body-font font-medium flex items-center gap-1.5"
+              style={{ fontSize: 11, color: 'var(--film-text-label)' }}
+            >
+              <Badge size={11} /> Badges
+            </p>
+            <p
+              className="body-font mt-0.5"
+              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+            >
+              Show/hide all layers with badge behavior
+            </p>
+          </div>
+          <Switch
+            checked={badgesVisible}
+            onChange={(v) => {
+              if (v) enableBadges();
+              else disableBadges({ persistPreference: true });
+            }}
+            className={clsx(
+              'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
+              badgesVisible ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+            )}
+          >
+            <span
+              className={clsx(
+                'inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform',
+                badgesVisible ? 'translate-x-[18px]' : 'translate-x-[3px]'
+              )}
+            />
+          </Switch>
+        </div>
       </div>
 
       {isAdvanced && (

@@ -178,7 +178,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
             Search commands...
           </span>
           <kbd
-            className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
+            className="text-[9px] mono-font px-1.5 py-0.5 rounded border bg-white/5 shrink-0"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           >
             ⌘K
@@ -270,7 +270,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
               (e.currentTarget as HTMLElement).style.background = 'var(--film-amber)';
           }}
         >
-          <Download size={12} />
+          <Download size={13} />
           <span className="max-[1300px]:hidden">Export</span>
           <ChevronDown
             className="max-[1300px]:hidden"

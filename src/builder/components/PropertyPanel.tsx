@@ -223,30 +223,11 @@ const PropertyPanel: React.FC<Props> = ({
       return { ...prev, items: newItems };
     });
 
-  const updateTitleDefaults = (updates: Partial<BadgeConfig>) =>
+  const updateTitleDefaults = (updates: Partial<PosterConfig>) =>
     setConfig((prev) => ({
       ...prev,
-      items: {
-        ...prev.items,
-        title: {
-          ...(prev.items.title ?? {}),
-          ...updates,
-        },
-      },
+      ...updates,
     }));
-
-  const clearTitleDefaultProp = (prop: keyof BadgeConfig) =>
-    setConfig((prev) => {
-      const nextTitle = { ...(prev.items.title ?? {}) };
-      delete nextTitle[prop];
-      return {
-        ...prev,
-        items: {
-          ...prev.items,
-          title: nextTitle,
-        },
-      };
-    });
 
   // Returns the shared value across all selected badges, or null if mixed.
   const getCommonValue = <K extends keyof BadgeConfig>(
@@ -366,6 +347,18 @@ const PropertyPanel: React.FC<Props> = ({
                 value={String(config.iconType ?? 1)}
                 onChange={(v) => updateConfig('iconType', Math.max(1, Math.min(3, Number(v) || 1)))}
               />
+              <SegmentedRow
+                label="Icon Position"
+                options={[
+                  { id: 'left', label: 'Left' },
+                  { id: 'right', label: 'Right' },
+                  { id: 'above', label: 'Top' },
+                  { id: 'below', label: 'Bottom' },
+                  { id: 'center', label: 'Center' },
+                ]}
+                value={config.iconPos ?? 'left'}
+                onChange={(v) => updateConfig('iconPos', v as PosterConfig['iconPos'])}
+              />
             </Section>
 
             <Section
@@ -382,6 +375,12 @@ const PropertyPanel: React.FC<Props> = ({
                 formatValue={(v) => `${v.toFixed(2)}×`}
                 onChange={(v) => updateConfig('scale', v)}
                 onReset={config.scale !== 1 ? () => updateConfig('scale', 1.0) : undefined}
+              />
+              <ToggleRow
+                label="Uniform Size"
+                sub="All badges use the same scale"
+                checked={config.uniform ?? false}
+                onChange={(v) => updateConfig('uniform', v)}
               />
               <SliderRow
                 label="Glass Blur"
@@ -498,6 +497,34 @@ const PropertyPanel: React.FC<Props> = ({
                   checked={(config.outOf ?? 0) > 0}
                   onChange={(v) => updateConfig('outOf', v ? 10 : undefined)}
                 />
+                <ToggleRow
+                  label="Show Decimals"
+                  sub="Force decimal display on scores"
+                  checked={config.forceDecimals ?? false}
+                  onChange={(v) => updateConfig('forceDecimals', v)}
+                />
+                <SliderRow
+                  label="Decimals"
+                  value={config.decimals ?? -1}
+                  min={-1}
+                  max={3}
+                  step={1}
+                  formatValue={(v) => (v === -1 ? 'Auto' : `${v}d`)}
+                  onChange={(v) => updateConfig('decimals', v === -1 ? undefined : v)}
+                />
+                <SliderRow
+                  label="Out of Size"
+                  value={config.outOfSize ?? 0}
+                  min={0}
+                  max={10}
+                  step={1}
+                  onChange={(v) => updateConfig('outOfSize', v)}
+                />
+                <ColorRow
+                  label="Out of Color"
+                  value={config.outOfColor ?? '#ffffff'}
+                  onChange={(v) => updateConfig('outOfColor', v)}
+                />
               </Section>
             )}
 
@@ -542,6 +569,12 @@ const PropertyPanel: React.FC<Props> = ({
                   )}
                   {config.labelPos ? 'Labels Visible' : 'Labels Hidden'}
                 </button>
+                <ToggleRow
+                  label="Label Inside Badge"
+                  sub="Place label text inside the badge"
+                  checked={config.labelInside ?? false}
+                  onChange={(v) => updateConfig('labelInside', v)}
+                />
                 <SegmentedRow
                   label="Label Position"
                   options={[
@@ -594,58 +627,24 @@ const PropertyPanel: React.FC<Props> = ({
           <Section title="Title Layer" icon={<Type size={10} />} sectionId="global-title-layer">
             <SliderRow
               label="Container Width"
-              value={Math.max(4, Math.round(config.items.title?.textCharWidth ?? 24))}
-              min={4}
+              value={Math.max(4, Math.round(config.titleWidth ?? 0))}
+              min={0}
               max={80}
               step={1}
               unit="ch"
-              onChange={(v) => updateTitleDefaults({ textCharWidth: Math.round(v) })}
-              onReset={() =>
-                updateTitleDefaults({
-                  textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
-                })
-              }
-            />
-            <SliderRow
-              label="Container Height"
-              value={Math.max(1, Math.round(config.items.title?.textCharHeight ?? 1))}
-              min={1}
-              max={12}
-              step={1}
-              unit="ln"
-              onChange={(v) => updateTitleDefaults({ textCharHeight: Math.round(v) })}
-              onReset={() =>
-                updateTitleDefaults({
-                  textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
-                })
-              }
+              formatValue={(v) => (v <= 0 ? 'Auto' : `${Math.round(v)} ch`)}
+              onChange={(v) => updateTitleDefaults({ titleWidth: Math.round(v) })}
+              onReset={() => updateTitleDefaults({ titleWidth: 0 })}
             />
             <SegmentedRow
               label="Text Align"
               options={[
-                { id: 'left', label: 'Left' },
-                { id: 'center', label: 'Center' },
-                { id: 'right', label: 'Right' },
+                { id: 'start', label: 'Left' },
+                { id: 'middle', label: 'Center' },
+                { id: 'end', label: 'Right' },
               ]}
-              value={config.items.title?.textAlign ?? 'left'}
-              onChange={(v) => updateTitleDefaults({ textAlign: v as BadgeConfig['textAlign'] })}
-            />
-            <SliderRow
-              label="Ellipsis Cutoff"
-              value={Math.max(0, Math.round(config.items.title?.textMaxChars ?? 0))}
-              min={0}
-              max={300}
-              step={1}
-              unit="ch"
-              formatValue={(v) => (v <= 0 ? 'Full' : `${Math.round(v)} ch`)}
-              onChange={(v) => updateTitleDefaults({ textMaxChars: Math.round(v) })}
-              onReset={() => clearTitleDefaultProp('textMaxChars')}
-            />
-            <ToggleRow
-              label="Auto Wrap"
-              sub="Wrap based on character width/height"
-              checked={config.items.title?.textWrapEnabled ?? true}
-              onChange={(v) => updateTitleDefaults({ textWrapEnabled: v })}
+              value={config.titleAlign ?? 'start'}
+              onChange={(v) => updateTitleDefaults({ titleAlign: v as PosterConfig['titleAlign'] })}
             />
           </Section>
         )}
@@ -933,6 +932,25 @@ const PropertyPanel: React.FC<Props> = ({
   const commonTextShadowBlur = (getCommonValue('textShadowBlur', 8) ?? 8) as number;
   const commonTextShadowColor = (getCommonValue('textShadowColor', '#000000') ??
     '#000000') as string;
+  const commonDecimals = (getCommonValue('decimals', config.decimals ?? -1) ??
+    config.decimals ??
+    -1) as number;
+  const commonForceDecimals = (getCommonValue('forceDecimals', config.forceDecimals ?? false) ??
+    config.forceDecimals ??
+    false) as boolean;
+  const commonOutOfSize = (getCommonValue('outOfSize', config.outOfSize ?? 0) ??
+    config.outOfSize ??
+    0) as number;
+  const commonOutOfColor = (() => {
+    const v = getCommonValue('outOfColor', config.outOfColor ?? '#ffffff');
+    return (v === null ? (config.outOfColor ?? '#ffffff') : v) as string;
+  })();
+  const commonIconPos = (getCommonValue('iconPos', config.iconPos ?? 'left') ??
+    config.iconPos ??
+    'left') as string;
+  const commonLabelInside = (getCommonValue('labelInside', config.labelInside ?? false) ??
+    config.labelInside ??
+    false) as boolean;
 
   return (
     <SidebarLayout side="right" bodyClassName="pb-24">
@@ -1026,15 +1044,16 @@ const PropertyPanel: React.FC<Props> = ({
               {isOnlyTitleSelected && (
                 <SliderRow
                   label="Container Width"
-                  value={Math.max(4, Math.round(commonTextCharWidth))}
-                  min={4}
+                  value={Math.max(0, Math.round(commonTextCharWidth))}
+                  min={0}
                   max={80}
                   step={1}
                   unit="ch"
+                  formatValue={(v) => (v <= 0 ? 'Auto' : `${Math.round(v)} ch`)}
                   onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
                   onReset={() =>
                     updateSelectedBadges({
-                      textCharWidth: DEFAULT_CONFIG.items.title?.textCharWidth ?? 24,
+                      textCharWidth: 0,
                     })
                   }
                 />
@@ -1311,6 +1330,18 @@ const PropertyPanel: React.FC<Props> = ({
                   updateSelectedBadges({ iconType: Math.max(1, Math.min(3, Number(v) || 1)) })
                 }
               />
+              <SegmentedRow
+                label="Icon Position"
+                options={[
+                  { id: 'left', label: 'Left' },
+                  { id: 'right', label: 'Right' },
+                  { id: 'above', label: 'Top' },
+                  { id: 'below', label: 'Bottom' },
+                  { id: 'center', label: 'Center' },
+                ]}
+                value={commonIconPos ?? 'left'}
+                onChange={(v) => updateSelectedBadges({ iconPos: v as BadgeConfig['iconPos'] })}
+              />
             </Section>
           )}
 
@@ -1334,6 +1365,34 @@ const PropertyPanel: React.FC<Props> = ({
                 checked={(commonOutOf ?? 0) > 0}
                 onChange={(v) => updateSelectedBadges({ outOf: v ? 10 : undefined })}
               />
+              <ToggleRow
+                label="Show Decimals"
+                sub="Force decimal display on score"
+                checked={commonForceDecimals ?? false}
+                onChange={(v) => updateSelectedBadges({ forceDecimals: v })}
+              />
+              <SliderRow
+                label="Decimals"
+                value={commonDecimals ?? -1}
+                min={-1}
+                max={3}
+                step={1}
+                formatValue={(v) => (v === -1 ? 'Auto' : `${v}d`)}
+                onChange={(v) => updateSelectedBadges({ decimals: v === -1 ? undefined : v })}
+              />
+              <SliderRow
+                label="Out of Size"
+                value={commonOutOfSize ?? 0}
+                min={0}
+                max={10}
+                step={1}
+                onChange={(v) => updateSelectedBadges({ outOfSize: v })}
+              />
+              <ColorRow
+                label="Out of Color"
+                value={commonOutOfColor ?? '#ffffff'}
+                onChange={(v) => updateSelectedBadges({ outOfColor: v })}
+              />
             </Section>
           )}
 
@@ -1345,6 +1404,12 @@ const PropertyPanel: React.FC<Props> = ({
               defaultOpen={false}
               sectionId="badge-labels"
             >
+              <ToggleRow
+                label="Label Inside Badge"
+                sub="Place label text inside the badge"
+                checked={commonLabelInside ?? false}
+                onChange={(v) => updateSelectedBadges({ labelInside: v })}
+              />
               <SegmentedRow
                 label="Label Position"
                 options={[

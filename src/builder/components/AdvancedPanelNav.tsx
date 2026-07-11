@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
-import { Badge, Film, Layers, Monitor, MousePointer2 } from 'lucide-react';
+import { Badge, Film, Layers, MousePointer2 } from 'lucide-react';
 import clsx from 'clsx';
 
-export type BuilderPanelId = 'source' | 'layers' | 'poster' | 'badges' | 'selection';
+export type BuilderPanelId = 'source' | 'layers' | 'badges' | 'selection';
 
 export const BUILDER_PANELS: Array<{
   id: BuilderPanelId;
@@ -12,7 +12,6 @@ export const BUILDER_PANELS: Array<{
 }> = [
   { id: 'source', label: 'Source', description: 'Media, IDs, source', Icon: Film },
   { id: 'layers', label: 'Layers', description: 'Order and visibility', Icon: Layers },
-  { id: 'poster', label: 'Poster', description: 'Canvas and effects', Icon: Monitor },
   { id: 'badges', label: 'Badges', description: 'Global badge style', Icon: Badge },
   { id: 'selection', label: 'Selection', description: 'Selected layer edits', Icon: MousePointer2 },
 ];

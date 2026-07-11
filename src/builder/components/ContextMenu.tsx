@@ -262,11 +262,11 @@ const ContextMenu: React.FC<Props> = memo(
             }}
           />
           <span
+            className="syne-font"
             style={{
               fontSize: 10,
               fontWeight: 700,
               color: 'var(--film-amber)',
-              fontFamily: 'Syne, sans-serif',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}
@@ -275,11 +275,11 @@ const ContextMenu: React.FC<Props> = memo(
           </span>
           {isSelected && (
               <span
+                className="mono-font"
                 style={{
                   marginLeft: 'auto',
                   fontSize: 9,
                   color: 'rgba(196,124,46,0.65)',
-                  fontFamily: 'JetBrains Mono, monospace',
                   letterSpacing: '0.1em',
                 }}
               >
@@ -299,6 +299,7 @@ const ContextMenu: React.FC<Props> = memo(
                 role="menuitem"
                 onClick={() => handleAction(item.id)}
                 disabled={item.disabled}
+                className="syne-font"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -311,7 +312,6 @@ const ContextMenu: React.FC<Props> = memo(
                   cursor: 'pointer',
                   color: item.danger ? 'rgba(248,113,113,0.85)' : 'rgba(240,230,204,0.75)',
                   fontSize: 11,
-                  fontFamily: 'Syne, sans-serif',
                   fontWeight: 500,
                   textAlign: 'left',
                   transition: 'background 0.1s, color 0.1s',
@@ -336,10 +336,10 @@ const ContextMenu: React.FC<Props> = memo(
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.shortcut && (
                   <span
+                    className="mono-font"
                     style={{
                       fontSize: 9,
                       color: 'var(--film-text-dim)',
-                      fontFamily: 'JetBrains Mono, monospace',
                       letterSpacing: '0.05em',
                       flexShrink: 0,
                     }}

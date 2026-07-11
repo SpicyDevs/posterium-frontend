@@ -81,12 +81,60 @@ export const calculateAutoPosition = (
   const current = dims[index] ?? dims.find((d) => d.id === ratingId) ?? dims[0];
   const isRow = config.layout === 'row';
 
-  const groupW = isRow
-    ? dims.reduce((sum, d) => sum + d.w, 0) + Math.max(dims.length - 1, 0) * GAP
-    : Math.max(...dims.map((d) => d.w), current.w);
-  const groupH = isRow
-    ? Math.max(...dims.map((d) => d.h), current.h)
-    : dims.reduce((sum, d) => sum + d.h, 0) + Math.max(dims.length - 1, 0) * GAP;
+  const availW = CANVAS_WIDTH - 2 * PADDING;
+
+  if (isRow) {
+    const rows: { start: number; end: number; rowW: number; rowH: number }[] = [];
+    let rowStart = 0;
+    let rowW = 0;
+    let maxRowH = 0;
+    for (let i = 0; i < dims.length; i++) {
+      const d = dims[i];
+      const needed = rowW === 0 ? d.w : rowW + GAP + d.w;
+      if (needed > availW && rowW > 0) {
+        rows.push({ start: rowStart, end: i, rowW, rowH: maxRowH });
+        rowStart = i;
+        rowW = d.w;
+        maxRowH = d.h;
+      } else {
+        rowW = needed;
+        maxRowH = Math.max(maxRowH, d.h);
+      }
+    }
+    if (rowStart < dims.length) {
+      rows.push({ start: rowStart, end: dims.length, rowW, rowH: maxRowH });
+    }
+
+    const totalH = rows.reduce((sum, r) => sum + r.rowH, 0) + Math.max(rows.length - 1, 0) * GAP;
+
+    let baseY: number;
+    if (config.preset.includes('t')) baseY = PADDING;
+    else if (config.preset.includes('b')) baseY = CANVAS_HEIGHT - totalH - PADDING;
+    else baseY = (CANVAS_HEIGHT - totalH) / 2;
+
+    let rowOffsetY = 0;
+    for (const row of rows) {
+      if (index >= row.start && index < row.end) {
+        const precedingW = dims.slice(row.start, index).reduce((sum, d) => sum + d.w, 0) + (index - row.start) * GAP;
+
+        let baseX: number;
+        if (config.preset.includes('l')) baseX = PADDING;
+        else if (config.preset.includes('r')) baseX = CANVAS_WIDTH - PADDING - row.rowW;
+        else baseX = (CANVAS_WIDTH - row.rowW) / 2;
+
+        return {
+          x: Math.round(baseX + precedingW),
+          y: Math.round(baseY + rowOffsetY + (row.rowH - current.h) / 2),
+        };
+      }
+      rowOffsetY += row.rowH + GAP;
+    }
+
+    return { x: Math.round((CANVAS_WIDTH - current.w) / 2), y: Math.round(baseY) };
+  }
+
+  const groupW = Math.max(...dims.map((d) => d.w), current.w);
+  const groupH = dims.reduce((sum, d) => sum + d.h, 0) + Math.max(dims.length - 1, 0) * GAP;
 
   let presetX = 0,
     presetY = 0;
@@ -99,12 +147,8 @@ export const calculateAutoPosition = (
   else if (config.preset.includes('b')) presetY = CANVAS_HEIGHT - groupH - PADDING;
   else presetY = (CANVAS_HEIGHT - groupH) / 2;
 
-  const x = isRow
-    ? presetX + dims.slice(0, index).reduce((sum, d) => sum + d.w, 0) + index * GAP
-    : presetX + (groupW - current.w) / 2;
-  const y = isRow
-    ? presetY + (groupH - current.h) / 2
-    : presetY + dims.slice(0, index).reduce((sum, d) => sum + d.h, 0) + index * GAP;
+  const x = presetX + (groupW - current.w) / 2;
+  const y = presetY + dims.slice(0, index).reduce((sum, d) => sum + d.h, 0) + index * GAP;
 
   return { x: Math.round(x), y: Math.round(y) };
 };

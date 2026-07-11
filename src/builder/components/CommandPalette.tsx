@@ -229,19 +229,19 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             autoComplete="off"
             spellCheck={false}
             aria-label="Search commands"
-            className="focus:outline-none"
+            className="focus:outline-none syne-font"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               fontSize: 13,
               color: 'var(--film-cream)',
-              fontFamily: 'Syne, sans-serif',
               fontWeight: 500,
             }}
           />
           <button
             onClick={onClose}
+            className="mono-font"
             style={{
               background: 'transparent',
               border: '1px solid rgba(196,124,46,0.12)',
@@ -250,7 +250,6 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               cursor: 'pointer',
               padding: '4px 8px',
               fontSize: 10,
-              fontFamily: 'JetBrains Mono, monospace',
               transition: 'all 0.2s',
               flexShrink: 0,
               display: 'flex',
@@ -287,12 +286,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
         >
           {flatList.length === 0 && (
             <div
+              className="syne-font"
               style={{
                 padding: '40px 20px',
                 textAlign: 'center',
                 color: 'rgba(140,130,112,0.65)',
                 fontSize: 12,
-                fontFamily: 'Syne, sans-serif',
               }}
             >
               No commands match "{query}"
@@ -318,13 +317,13 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                 Array.from(groups.entries()).map(([cat, items]) => (
                   <React.Fragment key={cat}>
                     <div
+                      className="syne-font"
                       style={{
                         padding: '8px 12px 4px',
                         fontSize: 10,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
                         color: cat === 'Recent' ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.65)',
-                        fontFamily: 'Syne, sans-serif',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -367,23 +366,23 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           ].map(([key, label]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <kbd
+                className="mono-font"
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(196,124,46,0.12)',
                   borderRadius: 3,
                   padding: '2px 5px',
                   fontSize: 10,
-                  fontFamily: 'JetBrains Mono, monospace',
                   color: 'rgba(196,124,46,0.65)',
                 }}
               >
                 {key}
               </kbd>
               <span
+                className="syne-font"
                 style={{
                   fontSize: 10,
                   color: 'rgba(140,130,112,0.65)',
-                  fontFamily: 'Syne, sans-serif',
                 }}
               >
                 {label}
@@ -393,10 +392,10 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Command size={8} style={{ color: 'rgba(140,130,112,0.65)' }} />
             <span
+              className="mono-font"
               style={{
                 fontSize: 10,
                 color: 'rgba(140,130,112,0.65)',
-                fontFamily: 'JetBrains Mono, monospace',
                 letterSpacing: '0.08em',
               }}
             >
@@ -456,11 +455,11 @@ const CommandItem = memo<{
     </span>
     <span style={{ flex: 1, minWidth: 0 }}>
       <span
+        className="syne-font"
         style={{
           display: 'block',
           fontSize: 11,
           color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.65)',
-          fontFamily: 'Syne, sans-serif',
           fontWeight: 600,
           transition: 'color 0.1s',
           whiteSpace: 'nowrap',
@@ -472,12 +471,12 @@ const CommandItem = memo<{
       </span>
       {cmd.description && (
         <span
+          className="body-font"
           style={{
             display: 'block',
             fontSize: 10,
             marginTop: 2,
             color: 'rgba(140,130,112,0.65)',
-            fontFamily: 'DM Sans, sans-serif',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -488,10 +487,10 @@ const CommandItem = memo<{
       )}
     </span>
     <span
+      className="mono-font"
       style={{
         fontSize: 10,
         color: 'rgba(140,130,112,0.65)',
-        fontFamily: 'JetBrains Mono, monospace',
         letterSpacing: '0.08em',
         flexShrink: 0,
       }}
@@ -500,13 +499,13 @@ const CommandItem = memo<{
     </span>
     {cmd.shortcut && (
       <kbd
+        className="mono-font"
         style={{
           background: 'rgba(255,255,255,0.03)',
           border: `1px solid ${isActive ? 'rgba(196,124,46,0.2)' : 'rgba(196,124,46,0.08)'}`,
           borderRadius: 3,
           padding: '1px 4px',
           fontSize: 10,
-          fontFamily: 'JetBrains Mono, monospace',
           color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.5)',
           flexShrink: 0,
           transition: 'all 0.1s',

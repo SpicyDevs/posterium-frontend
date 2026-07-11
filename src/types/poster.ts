@@ -190,6 +190,15 @@ export interface PosterConfig {
   uniform?: boolean;
   iconPos?: 'left' | 'right' | 'above' | 'below' | 'center';
   labelInside?: boolean;
+  titleEnabled?: boolean;
+  titleX?: number;
+  titleY?: number;
+  titleSize?: number;
+  titleColor?: string;
+  titleAlign?: 'start' | 'middle' | 'end';
+  titleWidth?: number;
+  titleShadow?: number;
+  titleWeight?: number;
   logoMaxW?: number | null;
   logoMaxH?: number | null;
   items: Partial<Record<RatingType, BadgeConfig>>;

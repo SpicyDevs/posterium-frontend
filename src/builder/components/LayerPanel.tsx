@@ -9,10 +9,6 @@ import {
   Clapperboard,
   Eye,
   EyeOff,
-  Monitor,
-  ShieldCheck,
-  Grid3x3,
-  Magnet,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
@@ -23,9 +19,9 @@ import { DEFAULT_API_BASE } from '../utils/constants';
 import { useEditor } from '../EditorContext';
 import SidebarLayout from './SidebarLayout';
 import PanelTabs from './PanelTabs';
-import { Section, SliderRow, ToggleRow } from './ui';
 import BadgeRow from './ui/BadgeRow';
 import LogoLayerRow from './ui/LogoLayerRow';
+import TitleLayerRow from './ui/TitleLayerRow';
 import SourceTabContent from './ui/SourceTabContent';
 
 interface Props {
@@ -33,7 +29,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
-  panelMode?: 'source' | 'layers' | 'poster';
+  panelMode?: 'source' | 'layers';
   hideTabs?: boolean;
   detailLevel?: 'simple' | 'advanced';
 }
@@ -84,13 +80,11 @@ const LayerPanel: React.FC<Props> = ({
     setLiveYear,
     fallbackEnabled,
     setFallbackEnabled,
-    viewOptions,
-    toggleViewOption,
   } = useEditor();
 
   const isAdvanced = detailLevel === 'advanced';
 
-  const [localMode, setLocalMode] = useState<'source' | 'layers' | 'poster'>(panelMode ?? 'source');
+  const [localMode, setLocalMode] = useState<'source' | 'layers'>(panelMode ?? 'source');
   const [inactiveOrder, setInactiveOrder] = useState<RatingType[]>([]);
 
   useEffect(() => {
@@ -98,7 +92,7 @@ const LayerPanel: React.FC<Props> = ({
       setLocalMode(panelMode);
       return;
     }
-    if (activeTab === 'source' || activeTab === 'poster' || activeTab === 'layers')
+    if (activeTab === 'source' || activeTab === 'layers')
       setLocalMode(activeTab);
   }, [activeTab, panelMode]);
 
@@ -299,16 +293,18 @@ const LayerPanel: React.FC<Props> = ({
     [onSelect, setActiveTab, setConfig]
   );
 
-  const allVisible = config.ratings.length === ALL_BADGES.length;
+  const allVisible = config.ratings.filter((id) => id !== 'title' && id !== 'year').length === ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year').length;
   const handleToggleAll = useCallback(() => {
+    const badgeOnly = ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year');
     if (allVisible) {
       setConfig((prev) => {
-        setInactiveOrder((io) => [...[...prev.ratings].reverse(), ...io]);
-        return { ...prev, ratings: [] };
+        const prevBadges = prev.ratings.filter((id) => id !== 'title' && id !== 'year');
+        setInactiveOrder((io) => [...[...prevBadges].reverse(), ...io]);
+        return { ...prev, ratings: prev.ratings.filter((id) => id === 'title' || id === 'year') };
       });
     } else {
       setConfig((prev) => {
-        const missing = ALL_BADGES.filter((b) => !prev.ratings.includes(b.id)).map((b) => b.id);
+        const missing = badgeOnly.filter((b) => !prev.ratings.includes(b.id)).map((b) => b.id);
         return { ...prev, ratings: [...missing, ...prev.ratings] };
       });
       setInactiveOrder([]);
@@ -316,25 +312,26 @@ const LayerPanel: React.FC<Props> = ({
   }, [allVisible, setConfig]);
 
   const allVisibleSelected =
-    config.ratings.length > 0 && config.ratings.every((r) => selectedIds.has(r));
+    config.ratings.length > 0 && config.ratings.filter((r) => r !== 'title' && r !== 'year').every((r) => selectedIds.has(r));
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       setBatchSelection(
-        checked ? ALL_BADGES.filter((b) => config.ratings.includes(b.id)).map((b) => b.id) : []
+        checked ? ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year' && config.ratings.includes(b.id)).map((b) => b.id) : []
       );
     },
     [setBatchSelection, config.ratings]
   );
 
   const activeBadges = [...config.ratings]
-    .filter((id) => ALL_BADGES.some((b) => b.id === id))
+    .filter((id) => id !== 'title' && id !== 'year' && ALL_BADGES.some((b) => b.id === id))
     .map((id, idx) => ({
       kind: 'badge' as const,
       id,
       label: ALL_BADGES.find((b) => b.id === id)?.label ?? id.toUpperCase(),
       z: 100 + idx,
     }));
+  const titleActive = config.ratings.includes('title');
   const activeLayers = [
     ...activeBadges,
     ...(config.logo
@@ -349,7 +346,7 @@ const LayerPanel: React.FC<Props> = ({
       : []),
   ].sort((a, b) => b.z - a.z);
 
-  const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
+  const inactiveBadges = ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year' && !config.ratings.includes(b.id)).sort((a, b) => {
     const ia = inactiveOrder.indexOf(a.id),
       ib = inactiveOrder.indexOf(b.id);
     if (ia === -1 && ib === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
@@ -442,7 +439,6 @@ const LayerPanel: React.FC<Props> = ({
             tabs={[
               { id: 'source', label: 'Source', icon: <Film size={11} strokeWidth={2} /> },
               { id: 'layers', label: 'Layers', icon: <Layers size={11} strokeWidth={2} /> },
-              { id: 'poster', label: 'Poster', icon: <Monitor size={11} strokeWidth={2} /> },
             ]}
           />
         )
@@ -472,94 +468,6 @@ const LayerPanel: React.FC<Props> = ({
           enableBadges={enableBadges}
           disableBadges={disableBadges}
         />
-      )}
-
-      {/* ── Poster/Canvas Tab ─────────────────────────────────────────────── */}
-      {localMode === 'poster' && (
-        <div className="space-y-4 px-1">
-          <div
-            className="p-2.5 rounded-xl"
-            style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)',
-            }}
-          >
-            <p className="syne-font" style={{ fontSize: 11, color: 'var(--film-text-label)' }}>
-              Poster / Canvas
-            </p>
-            <p className="body-font mt-1" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
-              500×750 canvas · central controls for poster effects, overlays, and export format.
-            </p>
-          </div>
-
-          <Section inset="compact" title="Background" icon={<Monitor size={13} />} defaultOpen>
-            <SliderRow
-              label="Poster Blur"
-              value={config.posterBlur}
-              min={0}
-              max={20}
-              unit="px"
-              onChange={(v) => updateConfig('posterBlur', v)}
-            />
-            <ToggleRow
-              label="Grayscale"
-              sub="Desaturate poster image"
-              checked={config.grayscale}
-              onChange={(v) => updateConfig('grayscale', v)}
-            />
-          </Section>
-
-          {isAdvanced && (
-            <Section
-              inset="compact"
-              title="Canvas Overlays"
-              icon={<ShieldCheck size={13} />}
-              defaultOpen
-            >
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleViewOption('showSafeArea')}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
-                    viewOptions.showSafeArea
-                      ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  <ShieldCheck size={10} />
-                  Safe Area
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleViewOption('showGrid')}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
-                    viewOptions.showGrid
-                      ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  <Grid3x3 size={10} />
-                  Grid
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleViewOption('snapToGrid')}
-                  className={clsx(
-                    'h-8 rounded-lg text-[11px] font-medium col-span-2 flex items-center justify-center gap-1.5 transition-all active:scale-95 syne-font',
-                    viewOptions.snapToGrid
-                      ? 'bg-[rgba(196,124,46,0.1)] text-[var(--film-pale)] border border-[rgba(196,124,46,0.22)]'
-                      : 'bg-[rgba(255,255,255,0.02)] text-[var(--film-text-dim)] border border-[rgba(255,255,255,0.05)]'
-                  )}
-                >
-                  <Magnet size={10} />
-                  Snap to Grid
-                </button>
-              </div>
-            </Section>
-          )}
-        </div>
       )}
 
       {/* ── Layers Tab ──────────────────────────────────────────────────────── */}
@@ -615,6 +523,29 @@ const LayerPanel: React.FC<Props> = ({
             </div>
 
             <DragDropContext onDragEnd={handleDragEnd}>
+              {titleActive && (
+                <div className="space-y-0.5 mb-1">
+                  <TitleLayerRow
+                    isActive={true}
+                    isSelected={selectedIds.has('title')}
+                    onSelect={(multi) => onSelect('title', multi)}
+                    onEnable={() => {
+                      setConfig((prev) => ({
+                        ...prev,
+                        ratings: prev.ratings.includes('title')
+                          ? prev.ratings
+                          : [...prev.ratings, 'title'],
+                      }));
+                    }}
+                    onDisable={() => {
+                      setConfig((prev) => ({
+                        ...prev,
+                        ratings: prev.ratings.filter((r) => r !== 'title'),
+                      }));
+                    }}
+                  />
+                </div>
+              )}
               {activeLayers.length > 0 ? (
                 <Droppable droppableId="active">
                   {(provided) => (

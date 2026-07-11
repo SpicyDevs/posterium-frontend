@@ -219,6 +219,16 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         return undefined;
       };
 
+      const titleEnabled = p.get('ti') === '1';
+      const titleX = p.has('ti_x') ? parseInt(p.get('ti_x')!) : undefined;
+      const titleY = p.has('ti_y') ? parseInt(p.get('ti_y')!) : undefined;
+      const titleSize = p.has('ti_sz') ? parseInt(p.get('ti_sz')!) : DEFAULTS.titleSize;
+      const titleColor = p.get('ti_tx') || undefined;
+      const titleAlign = (p.get('ti_al') || 'start') as PosterConfig['titleAlign'];
+      const titleWidth = p.has('ti_wd') ? parseInt(p.get('ti_wd')!) : 0;
+      const titleShadow = p.has('ti_sh') ? parseInt(p.get('ti_sh')!) : 0;
+      const titleWeight = p.has('ti_wt') ? parseInt(p.get('ti_wt')!) : 700;
+
       return {
         mediaType,
         tmdbId,
@@ -335,6 +345,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         uniform: getBoolOrUndefined('ub', 'uniform') ?? DEFAULTS.uniform,
         iconPos: (p.get('ip') || p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
         labelInside: getBoolOrUndefined('li', 'label_inside') ?? DEFAULTS.labelInside,
+        titleEnabled,
+        titleX,
+        titleY,
+        titleSize,
+        titleColor,
+        titleAlign,
+        titleWidth,
+        titleShadow,
+        titleWeight,
         logoMaxW: p.has('lmw')
           ? parseInt(p.get('lmw')!)
           : p.has('logo_max_w')
@@ -574,6 +593,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       uniform: p.get('uniform') === '1' || false,
       iconPos: (p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
       labelInside: p.get('label_inside') === '1' || false,
+      titleEnabled: p.get('ti') === '1',
+      titleX: p.has('ti_x') ? parseInt(p.get('ti_x')!) : undefined,
+      titleY: p.has('ti_y') ? parseInt(p.get('ti_y')!) : undefined,
+      titleSize: p.has('ti_sz') ? parseInt(p.get('ti_sz')!) : DEFAULTS.titleSize,
+      titleColor: p.get('ti_tx') || undefined,
+      titleAlign: (p.get('ti_al') || 'start') as PosterConfig['titleAlign'],
+      titleWidth: p.has('ti_wd') ? parseInt(p.get('ti_wd')!) : 0,
+      titleShadow: p.has('ti_sh') ? parseInt(p.get('ti_sh')!) : 0,
+      titleWeight: p.has('ti_wt') ? parseInt(p.get('ti_wt')!) : 700,
       logoMaxW: p.has('logo_max_w') ? parseInt(p.get('logo_max_w')!) : null,
       logoMaxH: p.has('logo_max_h') ? parseInt(p.get('logo_max_h')!) : null,
       keys,

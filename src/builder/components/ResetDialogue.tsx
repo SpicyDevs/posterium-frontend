@@ -86,13 +86,13 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                   <AlertTriangle size={13} style={{ color: 'var(--film-amber)' }} />
                 </span>
                 <span
+                  className="syne-font"
                   style={{
                     fontSize: 10,
                     fontWeight: 700,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     color: 'var(--film-cream)',
-                    fontFamily: 'Syne, sans-serif',
                   }}
                 >
                   Reset Configuration
@@ -127,10 +127,10 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
             </div>
             <div style={{ padding: '16px 16px' }}>
               <p
+                className="body-font"
                 style={{
                   fontSize: 11,
                   lineHeight: 1.5,
-                  fontFamily: 'DM Sans, sans-serif',
                   color: 'var(--film-text-dim)',
                   margin: 0,
                 }}
@@ -147,6 +147,7 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
               >
                 <button
                   onClick={onClose}
+                  className="syne-font"
                   style={{
                     flex: 1,
                     height: 36,
@@ -155,7 +156,6 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                     fontWeight: 700,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
-                    fontFamily: 'Syne, sans-serif',
                     transition: 'all 0.2s',
                     border: '1px solid rgba(196,124,46,0.16)',
                     background: 'rgba(196,124,46,0.04)',
@@ -178,6 +178,7 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                     onConfirm();
                     onClose();
                   }}
+                  className="syne-font"
                   style={{
                     flex: 1,
                     height: 36,
@@ -186,7 +187,6 @@ const ResetDialog = memo<Props>(({ isOpen, onClose, onConfirm }) => (
                     fontWeight: 700,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
-                    fontFamily: 'Syne, sans-serif',
                     transition: 'all 0.2s',
                     background: 'rgba(196,124,46,0.82)',
                     border: '1px solid rgba(196,124,46,0.4)',
