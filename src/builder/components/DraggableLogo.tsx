@@ -30,14 +30,6 @@ const DraggableLogo: React.FC<Props> = ({
   const { viewOptions } = useEditor();
   const lw = config.logoW,
     lh = config.logoH;
-  const bgPadding = config.logoBgEnabled ? config.logoBgPadding : 0;
-  const bgShadow =
-    config.logoBgEnabled && config.logoBgShadow > 0
-      ? `0 ${config.logoBgShadow * 0.5}px ${config.logoBgShadow}px rgba(0,0,0,0.5)`
-      : undefined;
-  const bgBorderColor = config.logoBgBorderC ?? '#ffffff';
-  const hasStandaloneBorder = !config.logoBgEnabled && config.logoBgBorderW > 0;
-  const logoRadius = Math.max(0, config.logoBgRadius ?? 0);
   const baseX =
     config.logoX !== null && config.logoX !== undefined
       ? config.logoX
@@ -190,38 +182,9 @@ const DraggableLogo: React.FC<Props> = ({
               ? '1.5px dashed rgba(255,255,255,0.35)'
               : '1.5px dashed rgba(255,255,255,0.12)',
           outlineOffset: 3,
-          borderRadius: logoRadius,
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
       >
-        {config.logoBgEnabled && (
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              inset: `${-bgPadding}px`,
-              borderRadius: logoRadius,
-              background: config.logoBgColor ?? '#000000',
-              opacity: config.logoBgOpacity,
-              boxShadow: bgShadow,
-              outline:
-                config.logoBgBorderW > 0
-                  ? `${config.logoBgBorderW}px solid ${bgBorderColor}`
-                  : 'none',
-              outlineOffset: 0,
-            }}
-          />
-        )}
-        {hasStandaloneBorder && (
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              inset: 0,
-              borderRadius: logoRadius,
-              outline: `${config.logoBgBorderW}px solid ${bgBorderColor}`,
-              outlineOffset: 0,
-            }}
-          />
-        )}
         {logoUrl && !imgError ? (
           <img
             src={logoUrl}
@@ -233,7 +196,7 @@ const DraggableLogo: React.FC<Props> = ({
               onLogoLoad?.(img.naturalWidth, img.naturalHeight);
             }}
             className="w-full h-full object-contain pointer-events-none relative z-10"
-            style={{ userSelect: 'none', borderRadius: logoRadius, filter: dropShadow }}
+            style={{ userSelect: 'none', filter: dropShadow }}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded relative z-10">

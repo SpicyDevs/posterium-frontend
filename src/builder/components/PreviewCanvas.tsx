@@ -375,9 +375,6 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleLogoDragEnd = (dx: number, dy: number) => {
     const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
     setConfig((prev) => {
-      const bgPadding = prev.logoBgEnabled ? prev.logoBgPadding : 0;
-      const effectiveW = prev.logoW + bgPadding * 2;
-      const effectiveH = prev.logoH + bgPadding * 2;
       const currentX =
         prev.logoX !== null && prev.logoX !== undefined
           ? prev.logoX
@@ -394,10 +391,10 @@ const PreviewCanvas: React.FC<Props> = ({
       return {
         ...prev,
         logoX: Math.round(
-          Math.max(1 - effectiveW + bgPadding, Math.min(nextX, CANVAS_WIDTH - 1 - bgPadding))
+          Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))
         ),
         logoY: Math.round(
-          Math.max(1 - effectiveH + bgPadding, Math.min(nextY, CANVAS_HEIGHT - 1 - bgPadding))
+          Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))
         ),
       };
     });

@@ -394,7 +394,7 @@ const SourceTabContent: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <ImagePlay
-              size={13}
+              size={10}
               style={{ color: config.logo ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
             />
             <div>
@@ -509,7 +509,7 @@ const SourceTabContent: React.FC<Props> = ({
         <Section
           inset="compact"
           title="API Keys"
-          icon={<KeyRound size={13} />}
+          icon={<KeyRound size={10} />}
           defaultOpen={false}
         >
           <ApiKeysPanel config={config} setConfig={setConfig} />

@@ -1,6 +1,6 @@
 import type { PosterConfig, RatingType } from '../types';
 import { DEFAULT_API_BASE, V3_KEY_TO_CODE, isApiRatingKey, DEFAULTS } from './constants';
-import { calculateAutoPosition } from './positioning';
+import { calculateAutoPosition, getScale } from './positioning';
 
 export const generateApiUrl = (
   config: PosterConfig,
@@ -53,9 +53,6 @@ export const generateApiUrl = (
   if (config.minimalTextSize !== DEFAULTS.minimalTextSize) p.set('mts', config.minimalTextSize.toString());
   if (config.minimalTextX !== DEFAULTS.minimalTextX) p.set('mtx', config.minimalTextX.toString());
   if (config.minimalTextY !== DEFAULTS.minimalTextY) p.set('mty', config.minimalTextY.toString());
-
-  if (config.layout !== 'custom') p.set('l', config.layout);
-  if (config.preset !== 'custom') p.set('pos', config.preset);
 
   if (config.uiPreset && config.uiPreset !== 'b') p.set('p', config.uiPreset);
 
@@ -147,24 +144,40 @@ export const generateApiUrl = (
       p.set(`${code}_ip`, item.iconPos);
     if (item.labelInside !== undefined && item.labelInside !== (config.labelInside ?? false))
       p.set(`${code}_li`, item.labelInside ? '1' : '0');
-    if (item.textCharWidth !== undefined && key === 'title')
-      p.set(`${code}_tw`, Math.round(item.textCharWidth).toString());
-    if (item.textCharHeight !== undefined && key === 'title')
-      p.set(`${code}_th`, Math.round(item.textCharHeight).toString());
-    if (item.textWrapEnabled !== undefined && key === 'title')
-      p.set(`${code}_wr`, item.textWrapEnabled ? '1' : '0');
+
   });
 
-  if (config.titleEnabled) {
+  if (config.ratings.includes('title')) {
+    const titleIdx = config.ratings.indexOf('title');
+    const titleItem = config.items.title ?? {};
+    const autoPos = calculateAutoPosition('title', titleIdx, config.ratings.length, config);
+    const tiX = titleItem.x ?? autoPos.x;
+    const tiY = titleItem.y ?? autoPos.y;
     p.set('ti', '1');
-    if (config.titleX !== undefined) p.set('ti_x', Math.round(config.titleX).toString());
-    if (config.titleY !== undefined) p.set('ti_y', Math.round(config.titleY).toString());
-    if (config.titleSize !== undefined && config.titleSize !== DEFAULTS.titleSize) p.set('ti_sz', config.titleSize.toString());
-    if (config.titleColor) p.set('ti_tx', config.titleColor);
-    if (config.titleAlign && config.titleAlign !== 'start') p.set('ti_al', config.titleAlign);
-    if (config.titleWidth !== undefined && config.titleWidth > 0) p.set('ti_wd', config.titleWidth.toString());
-    if (config.titleShadow !== undefined && config.titleShadow > 0) p.set('ti_sh', config.titleShadow.toString());
-    if (config.titleWeight !== undefined && config.titleWeight !== 700) p.set('ti_wt', config.titleWeight.toString());
+    p.set('ti_x', Math.round(tiX).toString());
+    p.set('ti_y', Math.round(tiY).toString());
+    if (titleItem.textSize !== undefined && titleItem.textSize !== 36)
+      p.set('ti_sz', titleItem.textSize.toString());
+    if (titleItem.txt) p.set('ti_tx', titleItem.txt);
+    if (titleItem.textAlign) {
+      const alignMap: Record<string, string> = { left: 'start', center: 'middle', right: 'end' };
+      const mapped = alignMap[titleItem.textAlign] ?? titleItem.textAlign;
+      if (mapped !== 'start') p.set('ti_al', mapped);
+    }
+    if (titleItem.textCharWidth !== undefined && titleItem.textCharWidth > 0) {
+      const sizeScale = getScale(config.size);
+      const perBadgeScale = titleItem.scale ?? (config.scale ?? 1.0);
+      const textSize = Math.max(8, titleItem.textSize ?? 36) * sizeScale * perBadgeScale;
+      const letterSpacing = (titleItem.textLetterSpacing ?? 0) * sizeScale * perBadgeScale;
+      const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, letterSpacing));
+      const widthPx = Math.round(titleItem.textCharWidth * approxCharPx + 16 * sizeScale * perBadgeScale);
+      p.set('ti_wd', widthPx.toString());
+    }
+    if (titleItem.textShadowEnabled) {
+      p.set('ti_sh', (titleItem.textShadowBlur ?? 8).toString());
+    }
+    if (titleItem.textWeight !== undefined && titleItem.textWeight !== 700)
+      p.set('ti_wt', titleItem.textWeight.toString());
   }
 
   if (config.logo) {
@@ -178,20 +191,6 @@ export const generateApiUrl = (
     if (config.logoOpacity !== DEFAULTS.logoOpacity)
       p.set('logo_opacity', config.logoOpacity.toFixed(2));
     if (config.logoShadow !== DEFAULTS.logoShadow) p.set('logo_sh', config.logoShadow.toString());
-    if (config.logoBgEnabled) p.set('logo_bg', '1');
-    if (config.logoBgColor && config.logoBgColor !== '#000000') p.set('logo_bg_c', config.logoBgColor);
-    if (config.logoBgOpacity !== DEFAULTS.logoBgOpacity)
-      p.set('logo_bg_a', config.logoBgOpacity.toFixed(2));
-    if (config.logoBgRadius !== DEFAULTS.logoBgRadius)
-      p.set('logo_bg_r', config.logoBgRadius.toString());
-    if (config.logoBgPadding !== DEFAULTS.logoBgPadding)
-      p.set('logo_bg_p', config.logoBgPadding.toString());
-    if (config.logoBgBorderW !== DEFAULTS.logoBgBorderW)
-      p.set('logo_bg_bw', config.logoBgBorderW.toString());
-    if (config.logoBgBorderC && config.logoBgBorderC !== '#ffffff')
-      p.set('logo_bg_bc', config.logoBgBorderC);
-    if (config.logoBgShadow !== DEFAULTS.logoBgShadow)
-      p.set('logo_bg_sh', config.logoBgShadow.toString());
   }
 
   const queryString = p.toString();

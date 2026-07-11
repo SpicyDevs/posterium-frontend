@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { DEFAULT_CONFIG } from '../types';
 import { V3_CODE_TO_KEY, DEFAULTS } from './constants';
+import { getScale } from './positioning';
 
 const createDefaultMinimalRating = () => ({
   provider: 'imdb' as RatingType,
@@ -219,15 +220,36 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         return undefined;
       };
 
-      const titleEnabled = p.get('ti') === '1';
-      const titleX = p.has('ti_x') ? parseInt(p.get('ti_x')!) : undefined;
-      const titleY = p.has('ti_y') ? parseInt(p.get('ti_y')!) : undefined;
-      const titleSize = p.has('ti_sz') ? parseInt(p.get('ti_sz')!) : DEFAULTS.titleSize;
-      const titleColor = p.get('ti_tx') || undefined;
-      const titleAlign = (p.get('ti_al') || 'start') as PosterConfig['titleAlign'];
-      const titleWidth = p.has('ti_wd') ? parseInt(p.get('ti_wd')!) : 0;
-      const titleShadow = p.has('ti_sh') ? parseInt(p.get('ti_sh')!) : 0;
-      const titleWeight = p.has('ti_wt') ? parseInt(p.get('ti_wt')!) : 700;
+      // Handle title as separate param set
+      if (p.get('ti') === '1') {
+        parsedRatings.push('title');
+        const alignMap: Record<string, 'left' | 'center' | 'right'> = { start: 'left', middle: 'center', end: 'right' };
+        const tiAl = p.get('ti_al');
+        const tiWd = p.has('ti_wd') ? parseInt(p.get('ti_wd')!) : undefined;
+        let textCharWidth: number | undefined;
+        if (tiWd !== undefined && tiWd > 0) {
+          const sizeScale = getScale('md');
+          const textSize = Math.max(8, p.has('ti_sz') ? parseInt(p.get('ti_sz')!) : 36) * sizeScale;
+          const approxCharPx = Math.max(1, textSize * 0.54);
+          textCharWidth = Math.max(4, Math.round((tiWd - 16 * sizeScale) / approxCharPx));
+        }
+        items.title = {
+          icon: false,
+          alpha: 0,
+          blur: 0,
+          radius: 0,
+          shadow: 0,
+          borderW: 0,
+          ...(p.has('ti_x') ? { x: parseInt(p.get('ti_x')!) } : {}),
+          ...(p.has('ti_y') ? { y: parseInt(p.get('ti_y')!) } : {}),
+          ...(p.has('ti_sz') ? { textSize: parseInt(p.get('ti_sz')!) } : {}),
+          ...(p.get('ti_tx') ? { txt: p.get('ti_tx')! } : {}),
+          ...(tiAl ? { textAlign: (alignMap[tiAl] ?? tiAl) as 'left' | 'center' | 'right' } : {}),
+          ...(textCharWidth !== undefined ? { textCharWidth } : {}),
+          ...(p.has('ti_sh') ? { textShadowEnabled: true, textShadowBlur: parseInt(p.get('ti_sh')!) } : {}),
+          ...(p.has('ti_wt') ? { textWeight: parseInt(p.get('ti_wt')!) } : {}),
+        };
+      }
 
       return {
         mediaType,
@@ -345,15 +367,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         uniform: getBoolOrUndefined('ub', 'uniform') ?? DEFAULTS.uniform,
         iconPos: (p.get('ip') || p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
         labelInside: getBoolOrUndefined('li', 'label_inside') ?? DEFAULTS.labelInside,
-        titleEnabled,
-        titleX,
-        titleY,
-        titleSize,
-        titleColor,
-        titleAlign,
-        titleWidth,
-        titleShadow,
-        titleWeight,
         logoMaxW: p.has('lmw')
           ? parseInt(p.get('lmw')!)
           : p.has('logo_max_w')
@@ -376,24 +389,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ? parseFloat(p.get('logo_opacity')!)
           : DEFAULTS.logoOpacity,
         logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
-        logoBgEnabled: p.get('logo_bg') === '1',
-        logoBgColor: p.get('logo_bg_c') || '#000000',
-        logoBgOpacity: p.has('logo_bg_a')
-          ? parseFloat(p.get('logo_bg_a')!)
-          : DEFAULTS.logoBgOpacity,
-        logoBgRadius: p.has('logo_bg_r')
-          ? parseInt(p.get('logo_bg_r')!)
-          : DEFAULTS.logoBgRadius,
-        logoBgPadding: p.has('logo_bg_p')
-          ? parseInt(p.get('logo_bg_p')!)
-          : DEFAULTS.logoBgPadding,
-        logoBgBorderW: p.has('logo_bg_bw')
-          ? parseInt(p.get('logo_bg_bw')!)
-          : DEFAULTS.logoBgBorderW,
-        logoBgBorderC: p.get('logo_bg_bc') || '#ffffff',
-        logoBgShadow: p.has('logo_bg_sh')
-          ? parseInt(p.get('logo_bg_sh')!)
-          : DEFAULTS.logoBgShadow,
       };
     }
 
@@ -492,6 +487,23 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       : null;
 
     const v2OutOf = p.has('out_of') ? parseInt(p.get('out_of')!) || undefined : undefined;
+
+    if (p.get('ti') === '1') {
+      items.title = {
+        icon: false,
+        alpha: 0,
+        blur: 0,
+        radius: 0,
+        shadow: 0,
+        borderW: 0,
+        ...(p.has('ti_x') ? { x: parseInt(p.get('ti_x')!) } : {}),
+        ...(p.has('ti_y') ? { y: parseInt(p.get('ti_y')!) } : {}),
+        ...(p.has('ti_sz') ? { textSize: parseInt(p.get('ti_sz')!) } : {}),
+        ...(p.get('ti_tx') ? { txt: p.get('ti_tx')! } : {}),
+        ...(p.get('ti_al') ? { textAlign: ({ start: 'left', middle: 'center', end: 'right' }[p.get('ti_al')!] ?? p.get('ti_al')!) as 'left' | 'center' | 'right' } : {}),
+        ...(p.has('ti_wt') ? { textWeight: parseInt(p.get('ti_wt')!) } : {}),
+      };
+    }
 
     return {
       mediaType,
@@ -593,15 +605,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       uniform: p.get('uniform') === '1' || false,
       iconPos: (p.get('icon_pos') || DEFAULTS.iconPos) as PosterConfig['iconPos'],
       labelInside: p.get('label_inside') === '1' || false,
-      titleEnabled: p.get('ti') === '1',
-      titleX: p.has('ti_x') ? parseInt(p.get('ti_x')!) : undefined,
-      titleY: p.has('ti_y') ? parseInt(p.get('ti_y')!) : undefined,
-      titleSize: p.has('ti_sz') ? parseInt(p.get('ti_sz')!) : DEFAULTS.titleSize,
-      titleColor: p.get('ti_tx') || undefined,
-      titleAlign: (p.get('ti_al') || 'start') as PosterConfig['titleAlign'],
-      titleWidth: p.has('ti_wd') ? parseInt(p.get('ti_wd')!) : 0,
-      titleShadow: p.has('ti_sh') ? parseInt(p.get('ti_sh')!) : 0,
-      titleWeight: p.has('ti_wt') ? parseInt(p.get('ti_wt')!) : 700,
       logoMaxW: p.has('logo_max_w') ? parseInt(p.get('logo_max_w')!) : null,
       logoMaxH: p.has('logo_max_h') ? parseInt(p.get('logo_max_h')!) : null,
       keys,
@@ -616,18 +619,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         ? parseFloat(p.get('logo_opacity')!)
         : DEFAULTS.logoOpacity,
       logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
-      logoBgEnabled: p.get('logo_bg') === '1',
-      logoBgColor: p.get('logo_bg_c') || '#000000',
-      logoBgOpacity: p.has('logo_bg_a')
-        ? parseFloat(p.get('logo_bg_a')!)
-        : DEFAULTS.logoBgOpacity,
-      logoBgRadius: p.has('logo_bg_r') ? parseInt(p.get('logo_bg_r')!) : DEFAULTS.logoBgRadius,
-      logoBgPadding: p.has('logo_bg_p') ? parseInt(p.get('logo_bg_p')!) : DEFAULTS.logoBgPadding,
-      logoBgBorderW: p.has('logo_bg_bw')
-        ? parseInt(p.get('logo_bg_bw')!)
-        : DEFAULTS.logoBgBorderW,
-      logoBgBorderC: p.get('logo_bg_bc') || '#ffffff',
-      logoBgShadow: p.has('logo_bg_sh') ? parseInt(p.get('logo_bg_sh')!) : DEFAULTS.logoBgShadow,
     };
   } catch (e) {
     console.error('Failed to parse URL', e);

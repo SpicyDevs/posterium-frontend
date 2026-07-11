@@ -46,11 +46,6 @@ export const DEFAULTS = {
   logoH: 100,
   logoOpacity: 1.0,
   logoShadow: 6,
-  logoBgOpacity: 0.45,
-  logoBgRadius: 12,
-  logoBgPadding: 10,
-  logoBgBorderW: 0,
-  logoBgShadow: 6,
   iconType: 1,
   labelSize: 11,
   minimalTextSize: 60,
@@ -62,6 +57,5 @@ export const DEFAULTS = {
   uniform: false,
   iconPos: 'left',
   labelInside: false,
-  titleSize: 36,
-  titleWeight: 700,
+
 } as const;

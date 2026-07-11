@@ -117,13 +117,13 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             style={{ color: 'var(--film-amber)', transform: 'rotate(180deg)' }}
           />
           <span
+            className="syne-font"
             style={{
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: 'var(--film-cream)',
-              fontFamily: 'Syne, sans-serif',
             }}
           >
             Import
@@ -161,13 +161,13 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
       {/* Content */}
       <div style={{ padding: '12px 16px 8px' }}>
         <p
+          className="syne-font"
           style={{
             fontSize: 10,
             fontWeight: 700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
             color: 'rgba(196,124,46,0.65)',
-            fontFamily: 'Syne, sans-serif',
             marginBottom: 8,
             margin: 0,
           }}
@@ -200,13 +200,12 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             autoFocus
             spellCheck={false}
             aria-label="Paste API URL"
-            className="focus:outline-none"
+            className="focus:outline-none mono-font"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               fontSize: 10,
-              fontFamily: 'JetBrains Mono, monospace',
               color: 'var(--film-text-dim)',
             }}
           />
@@ -227,6 +226,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             onClose();
             setVal('');
           }}
+          className="syne-font"
           style={{
             flex: 1,
             height: 32,
@@ -235,7 +235,6 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             fontWeight: 600,
             letterSpacing: '0.04em',
             textTransform: 'uppercase',
-            fontFamily: 'Syne, sans-serif',
             transition: 'all 0.2s',
             border: '1px solid rgba(196,124,46,0.16)',
             background: 'rgba(196,124,46,0.04)',
@@ -256,6 +255,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         <button
           onClick={handleLoad}
           disabled={!val.trim()}
+          className="syne-font"
           style={{
             flex: 1,
             height: 32,
@@ -264,7 +264,6 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
             fontWeight: 700,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
-            fontFamily: 'Syne, sans-serif',
             transition: 'all 0.2s',
             background: val.trim() ? 'var(--film-amber)' : 'rgba(196,124,46,0.2)',
             border: '1px solid ' + (val.trim() ? 'var(--film-amber)' : 'rgba(196,124,46,0.2)'),

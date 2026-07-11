@@ -4,8 +4,6 @@ import ToolbarBtn from './ToolbarButton';
 import {
   Search,
   Keyboard,
-  PanelLeft,
-  PanelRight,
   Undo2,
   Redo2,
   Download,
@@ -15,10 +13,6 @@ import {
 
 interface BuilderDesktopHeaderProps {
   isFullscreen: boolean;
-  leftVisible: boolean;
-  setLeftVisible: (v: boolean | ((prev: boolean) => boolean)) => void;
-  rightVisible: boolean;
-  setRightVisible: (v: boolean | ((prev: boolean) => boolean)) => void;
   builderMode: BuilderMode;
   setBuilderMode: (m: BuilderMode) => void;
   setPaletteOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
@@ -38,10 +32,6 @@ interface BuilderDesktopHeaderProps {
 
 const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
   isFullscreen,
-  leftVisible,
-  setLeftVisible,
-  rightVisible,
-  setRightVisible,
   builderMode,
   setBuilderMode,
   setPaletteOpen,
@@ -123,7 +113,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
             (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
           }}
         >
-          <Search size={12} className="shrink-0" />
+          <Search size={13} className="shrink-0" />
           <span className="text-[11px] syne-font whitespace-nowrap">Search…</span>
         </button>
         <ToolbarBtn
@@ -137,27 +127,6 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
       </div>
 
       <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
-        <button
-          onClick={() => setLeftVisible(!leftVisible)}
-          title={`${leftVisible ? 'Hide' : 'Show'} Layers ([)`}
-          className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-          style={{
-            color: leftVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-            border: '1px solid transparent',
-            background: leftVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = leftVisible
-              ? 'rgba(196,124,46,0.08)'
-              : 'transparent';
-          }}
-        >
-          <PanelLeft size={14} />
-        </button>
-
         <button
           onClick={() => setPaletteOpen(true)}
           className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
@@ -183,27 +152,6 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
           >
             ⌘K
           </kbd>
-        </button>
-
-        <button
-          onClick={() => setRightVisible(!rightVisible)}
-          title={`${rightVisible ? 'Hide' : 'Show'} Inspector (])`}
-          className="shrink-0 w-8 h-8 rounded-lg items-center justify-center transition-all hidden lg:flex pointer-events-auto"
-          style={{
-            color: rightVisible ? 'var(--film-amber)' : 'var(--film-text-dim)',
-            border: '1px solid transparent',
-            background: rightVisible ? 'rgba(196,124,46,0.08)' : 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(196,124,46,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = rightVisible
-              ? 'rgba(196,124,46,0.08)'
-              : 'transparent';
-          }}
-        >
-          <PanelRight size={14} />
         </button>
       </div>
 

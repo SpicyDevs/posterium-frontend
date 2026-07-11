@@ -45,7 +45,7 @@ const AdvancedPanelNav: React.FC<Props> = memo(({ activePanel, onChange }) => (
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: active ? 'rgba(196,124,46,0.16)' : 'rgba(255,255,255,0.04)' }}
             >
-              <Icon size={14} />
+              <Icon size={13} />
             </span>
             <span className="min-w-0">
               <span className="block syne-font text-[12px] font-bold tracking-wide">{label}</span>

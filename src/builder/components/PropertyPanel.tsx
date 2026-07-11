@@ -65,7 +65,7 @@ const AlignmentGrid: React.FC<{ value: PresetType; onChange: (v: PresetType) => 
   value,
   onChange,
 }) => (
-  <div className="grid grid-cols-3 gap-1 w-[5.5rem]">
+  <div className="grid grid-cols-3 gap-1 max-w-[5.5rem] w-full">
     {GRID_POSITIONS.map((pos) => (
       <button
         key={pos.id}
@@ -223,10 +223,13 @@ const PropertyPanel: React.FC<Props> = ({
       return { ...prev, items: newItems };
     });
 
-  const updateTitleDefaults = (updates: Partial<PosterConfig>) =>
+  const updateTitleDefaults = (updates: Partial<BadgeConfig>) =>
     setConfig((prev) => ({
       ...prev,
-      ...updates,
+      items: {
+        ...prev.items,
+        title: { ...prev.items.title, ...updates },
+      },
     }));
 
   // Returns the shared value across all selected badges, or null if mixed.
@@ -267,7 +270,7 @@ const PropertyPanel: React.FC<Props> = ({
         {showBadgeSettings && (
           <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
             <div className="flex items-start gap-4">
-              <div>
+              <div className="flex-1">
                 <p
                   className="body-font mb-2"
                   style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
@@ -627,24 +630,24 @@ const PropertyPanel: React.FC<Props> = ({
           <Section title="Title Layer" icon={<Type size={10} />} sectionId="global-title-layer">
             <SliderRow
               label="Container Width"
-              value={Math.max(4, Math.round(config.titleWidth ?? 0))}
+              value={Math.max(0, Math.round(config.items.title?.textCharWidth ?? 0))}
               min={0}
               max={80}
               step={1}
               unit="ch"
               formatValue={(v) => (v <= 0 ? 'Auto' : `${Math.round(v)} ch`)}
-              onChange={(v) => updateTitleDefaults({ titleWidth: Math.round(v) })}
-              onReset={() => updateTitleDefaults({ titleWidth: 0 })}
+              onChange={(v) => updateTitleDefaults({ textCharWidth: Math.round(v) })}
+              onReset={() => updateTitleDefaults({ textCharWidth: 0 })}
             />
             <SegmentedRow
               label="Text Align"
               options={[
-                { id: 'start', label: 'Left' },
-                { id: 'middle', label: 'Center' },
-                { id: 'end', label: 'Right' },
+                { id: 'left', label: 'Left' },
+                { id: 'center', label: 'Center' },
+                { id: 'right', label: 'Right' },
               ]}
-              value={config.titleAlign ?? 'start'}
-              onChange={(v) => updateTitleDefaults({ titleAlign: v as PosterConfig['titleAlign'] })}
+              value={config.items.title?.textAlign ?? 'left'}
+              onChange={(v) => updateTitleDefaults({ textAlign: v as BadgeConfig['textAlign'] })}
             />
           </Section>
         )}
@@ -683,87 +686,6 @@ const PropertyPanel: React.FC<Props> = ({
                 min={0}
                 max={30}
                 onChange={(v) => updateConfig('logoShadow', v)}
-              />
-              <ToggleRow
-                label="Background"
-                sub="Add a styled panel behind the logo"
-                checked={config.logoBgEnabled}
-                onChange={(v) => updateConfig('logoBgEnabled', v)}
-              />
-              <SliderRow
-                label="Border Width"
-                value={config.logoBgBorderW}
-                min={0}
-                max={10}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgBorderW', v)}
-              />
-              {config.logoBgBorderW > 0 && (
-                <ColorRow
-                  label="Border Color"
-                  value={config.logoBgBorderC ?? '#ffffff'}
-                  onChange={(v) => updateConfig('logoBgBorderC', v)}
-                />
-              )}
-              {config.logoBgEnabled && (
-                <>
-                  <ColorRow
-                    label="Background Color"
-                    value={config.logoBgColor ?? '#000000'}
-                    onChange={(v) => updateConfig('logoBgColor', v)}
-                    showOpacity
-                    opacity={config.logoBgOpacity}
-                    onOpacityChange={(v) => updateConfig('logoBgOpacity', v)}
-                  />
-                  <SliderRow
-                    label="Padding"
-                    value={config.logoBgPadding}
-                    min={0}
-                    max={48}
-                    unit="px"
-                    onChange={(v) => updateConfig('logoBgPadding', v)}
-                  />
-                  <SliderRow
-                    label="Background Shadow"
-                    value={config.logoBgShadow}
-                    min={0}
-                    max={30}
-                    onChange={(v) => updateConfig('logoBgShadow', v)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        logoBgEnabled: true,
-                        logoBgColor: prev.bg ?? '#000000',
-                        logoBgOpacity: prev.alpha,
-                        logoBgRadius: prev.radius,
-                        logoBgPadding: 10,
-                        logoBgBorderW: prev.borderW ?? 0,
-                        logoBgBorderC: prev.borderC ?? '#ffffff',
-                        logoBgShadow: resolveShadow(prev.shadow, 6),
-                      }))
-                    }
-                    className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
-                    style={{
-                      border: '1px solid rgba(196,124,46,0.16)',
-                      background: 'rgba(196,124,46,0.08)',
-                      color: 'var(--film-pale)',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    Apply Badge Style to Logo Background
-                  </button>
-                </>
-              )}
-              <SliderRow
-                label="Border Radius"
-                value={config.logoBgRadius}
-                min={0}
-                max={40}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgRadius', v)}
               />
               <p
                 className="body-font leading-relaxed"
@@ -1489,87 +1411,6 @@ const PropertyPanel: React.FC<Props> = ({
             max={30}
             onChange={(v) => updateConfig('logoShadow', v)}
           />
-          <ToggleRow
-            label="Background"
-            sub="Add a styled panel behind the logo"
-            checked={config.logoBgEnabled}
-            onChange={(v) => updateConfig('logoBgEnabled', v)}
-          />
-          <SliderRow
-            label="Border Width"
-            value={config.logoBgBorderW}
-            min={0}
-            max={10}
-            unit="px"
-            onChange={(v) => updateConfig('logoBgBorderW', Math.round(v))}
-          />
-          {config.logoBgBorderW > 0 && (
-            <ColorRow
-              label="Border Color"
-              value={config.logoBgBorderC ?? '#ffffff'}
-              onChange={(v) => updateConfig('logoBgBorderC', v)}
-            />
-          )}
-          {config.logoBgEnabled && (
-            <>
-              <ColorRow
-                label="Background Color"
-                value={config.logoBgColor ?? '#000000'}
-                showOpacity
-                opacity={config.logoBgOpacity}
-                onChange={(v) => updateConfig('logoBgColor', v)}
-                onOpacityChange={(v) => updateConfig('logoBgOpacity', Number(v.toFixed(2)))}
-              />
-              <SliderRow
-                label="Padding"
-                value={config.logoBgPadding}
-                min={0}
-                max={48}
-                unit="px"
-                onChange={(v) => updateConfig('logoBgPadding', v)}
-              />
-              <SliderRow
-                label="Background Shadow"
-                value={config.logoBgShadow}
-                min={0}
-                max={30}
-                onChange={(v) => updateConfig('logoBgShadow', v)}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    logoBgEnabled: true,
-                    logoBgColor: prev.bg ?? '#000000',
-                    logoBgOpacity: prev.alpha,
-                    logoBgRadius: prev.radius,
-                    logoBgPadding: 10,
-                    logoBgBorderW: prev.borderW ?? 0,
-                    logoBgBorderC: prev.borderC ?? '#ffffff',
-                    logoBgShadow: resolveShadow(prev.shadow, 6),
-                  }))
-                }
-                className="w-full h-8 rounded-lg text-[11px] font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer syne-font"
-                style={{
-                  border: '1px solid rgba(196,124,46,0.16)',
-                  background: 'rgba(196,124,46,0.08)',
-                  color: 'var(--film-pale)',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Apply Badge Style to Logo Background
-              </button>
-            </>
-          )}
-          <SliderRow
-            label="Border Radius"
-            value={config.logoBgRadius}
-            min={0}
-            max={40}
-            unit="px"
-            onChange={(v) => updateConfig('logoBgRadius', v)}
-          />
         </Section>
       )}
 
@@ -1593,14 +1434,6 @@ const PropertyPanel: React.FC<Props> = ({
                   logoOpacity: DEFAULT_CONFIG.logoOpacity,
                   logoZ: DEFAULT_CONFIG.logoZ,
                   logoShadow: DEFAULT_CONFIG.logoShadow,
-                  logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
-                  logoBgColor: DEFAULT_CONFIG.logoBgColor,
-                  logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
-                  logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
-                  logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
-                  logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
-                  logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
-                  logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
                 };
               })
             }

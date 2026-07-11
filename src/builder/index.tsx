@@ -427,14 +427,6 @@ const StudioLayout: React.FC<{
           logoOpacity: DEFAULT_CONFIG.logoOpacity,
           logoZ: DEFAULT_CONFIG.logoZ,
           logoShadow: DEFAULT_CONFIG.logoShadow,
-          logoBgEnabled: DEFAULT_CONFIG.logoBgEnabled,
-          logoBgColor: DEFAULT_CONFIG.logoBgColor,
-          logoBgOpacity: DEFAULT_CONFIG.logoBgOpacity,
-          logoBgRadius: DEFAULT_CONFIG.logoBgRadius,
-          logoBgPadding: DEFAULT_CONFIG.logoBgPadding,
-          logoBgBorderW: DEFAULT_CONFIG.logoBgBorderW,
-          logoBgBorderC: DEFAULT_CONFIG.logoBgBorderC,
-          logoBgShadow: DEFAULT_CONFIG.logoBgShadow,
         }));
         return;
       }
@@ -662,7 +654,15 @@ const StudioLayout: React.FC<{
       e.preventDefault();
       const sx = e.clientX,
         sw = leftW;
-      const move = (m: MouseEvent) => setLeftW(Math.max(220, Math.min(sw + m.clientX - sx, 540)));
+      const move = (m: MouseEvent) => {
+        const newW = sw + m.clientX - sx;
+        if (newW < 120) {
+          setLeftVisible(false);
+          setLeftW(272);
+        } else {
+          setLeftW(Math.max(220, Math.min(newW, 540)));
+        }
+      };
       const up = () => {
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
@@ -682,8 +682,15 @@ const StudioLayout: React.FC<{
       e.preventDefault();
       const sx = e.clientX,
         sw = rightW;
-      const move = (m: MouseEvent) =>
-        setRightW(Math.max(248, Math.min(sw - (m.clientX - sx), 540)));
+      const move = (m: MouseEvent) => {
+        const newW = sw - (m.clientX - sx);
+        if (newW < 120) {
+          setRightVisible(false);
+          setRightW(272);
+        } else {
+          setRightW(Math.max(248, Math.min(newW, 540)));
+        }
+      };
       const up = () => {
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
@@ -1102,10 +1109,6 @@ const StudioLayout: React.FC<{
 
         <BuilderDesktopHeader
           isFullscreen={isFullscreen}
-          leftVisible={leftVisible}
-          setLeftVisible={setLeftVisible}
-          rightVisible={rightVisible}
-          setRightVisible={setRightVisible}
           builderMode={builderMode}
           setBuilderMode={setBuilderMode}
           setPaletteOpen={setPaletteOpen}
@@ -2263,7 +2266,67 @@ const StudioLayout: React.FC<{
               }}
             />
 
-            {/* Sidebar Canvas Toggles removed — now in navbar */}
+            {/* ── DESKTOP LEFT EDGE TOGGLE ── */}
+            {!isFullscreen && (
+              <button
+                aria-label={leftVisible ? 'Hide layers panel' : 'Show layers panel'}
+                aria-expanded={leftVisible}
+                onClick={() => setLeftVisible((v) => !v)}
+                className="hidden lg:flex"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 30,
+                  width: 22,
+                  height: 64,
+                  borderRadius: '0 10px 10px 0',
+                  background: leftVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(196,124,46,0.22)',
+                  borderLeft: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: leftVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {leftVisible ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+              </button>
+            )}
+
+            {/* ── DESKTOP RIGHT EDGE TOGGLE ── */}
+            {!isFullscreen && (
+              <button
+                aria-label={rightVisible ? 'Hide inspector panel' : 'Show inspector panel'}
+                aria-expanded={rightVisible}
+                onClick={() => setRightVisible((v) => !v)}
+                className="hidden lg:flex"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 30,
+                  width: 22,
+                  height: 64,
+                  borderRadius: '10px 0 0 10px',
+                  background: rightVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(196,124,46,0.22)',
+                  borderRight: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: rightVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {rightVisible ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+              </button>
+            )}
 
             <PreviewCanvas
               config={config}

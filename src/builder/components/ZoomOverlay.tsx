@@ -69,7 +69,7 @@ const ZoomOverlay = memo<{
         {[
           { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
           { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-          { icon: <RotateCcw size={14} />, label: 'Reset Canvas View', action: onResetView },
+          { icon: <RotateCcw size={15} />, label: 'Reset Canvas View', action: onResetView },
         ].map(({ icon, label, action }) => (
           <button
             key={label}

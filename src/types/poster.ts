@@ -190,15 +190,7 @@ export interface PosterConfig {
   uniform?: boolean;
   iconPos?: 'left' | 'right' | 'above' | 'below' | 'center';
   labelInside?: boolean;
-  titleEnabled?: boolean;
-  titleX?: number;
-  titleY?: number;
-  titleSize?: number;
-  titleColor?: string;
-  titleAlign?: 'start' | 'middle' | 'end';
-  titleWidth?: number;
-  titleShadow?: number;
-  titleWeight?: number;
+
   logoMaxW?: number | null;
   logoMaxH?: number | null;
   items: Partial<Record<RatingType, BadgeConfig>>;
@@ -211,14 +203,6 @@ export interface PosterConfig {
   logoOpacity: number;
   logoZ?: number;
   logoShadow: number;
-  logoBgEnabled: boolean;
-  logoBgColor?: string;
-  logoBgOpacity: number;
-  logoBgRadius: number;
-  logoBgPadding: number;
-  logoBgBorderW: number;
-  logoBgBorderC?: string;
-  logoBgShadow: number;
   fallbackEnabled: boolean;
   fallbackPool: RatingType[];
   keys?: ApiKeys;
