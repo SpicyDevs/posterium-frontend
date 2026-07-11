@@ -117,7 +117,7 @@ const DesktopStaticReel = memo(() => {
             {Array.from({ length: DESKTOP_REEL_CHUNKS }).map((_, i) => (
               <picture key={i} style={{ display: 'block', height: '100%' }}>
                 <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
-                <img src={`/reel-mosaic-${i + 1}.jpg`} alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''} style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }} loading={i < 2 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? ('high' as any) : 'auto'} decoding="async" />
+                <img src={`/reel-mosaic-${i + 1}.jpg`} alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''} style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }} loading="lazy" fetchPriority={i === 0 ? ('high' as any) : 'auto'} decoding="async" />
               </picture>
             ))}
           </div>
@@ -235,7 +235,7 @@ const MobileStaticReel = memo(() => {
             {Array.from({ length: MOBILE_REEL_CHUNKS }).map((_, i) => (
               <picture key={i} style={{ display: 'block', height: '100%' }}>
                 <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
-                <img src={`/reel-mosaic-${i + 1}.jpg`} alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''} style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }} loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? ('high' as any) : 'auto'} decoding="async" />
+                <img src={`/reel-mosaic-${i + 1}.jpg`} alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''} style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }} loading="lazy" fetchPriority={i === 0 ? ('high' as any) : 'auto'} decoding="async" />
               </picture>
             ))}
           </div>

@@ -8,8 +8,8 @@ interface HeroPoster {
 }
 
 const HERO_POSTERS: HeroPoster[] = [
-  { id: '155',    type: 'movie', title: 'The Dark Knight',          r: 'imdb,rt',      pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                             blur: 8, alpha: 0.46, rad: 10 },
   { id: '872585', type: 'movie', title: 'Oppenheimer',              r: 'rt,meta',      pos: 'rt_x=10&rt_y=12&meta_x=10&meta_y=86',                             blur: 8, alpha: 0.46, rad: 10 },
+  { id: '155',    type: 'movie', title: 'The Dark Knight',          r: 'imdb,rt',      pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                             blur: 8, alpha: 0.46, rad: 10 },
   { id: '238',    type: 'movie', title: 'The Godfather',            r: 'imdb',         pos: 'imdb_x=10&imdb_y=12',                                             blur: 7, alpha: 0.44, rad: 10 },
   { id: '680',    type: 'movie', title: 'Pulp Fiction',             r: 'imdb,rt,meta', pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',      blur: 8, alpha: 0.46, rad: 10 },
   { id: '27205',  type: 'movie', title: 'Inception',                r: 'imdb,rt',      pos: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',                             blur: 8, alpha: 0.46, rad: 10 },
@@ -47,7 +47,7 @@ const MobilePosterPeek = memo(() => {
 
   // Iris-close → swap src → iris-open from a new random point
   const cycleImg = useCallback((
-    ref: React.RefObject<HTMLImageElement>,
+    ref: React.RefObject<HTMLImageElement | null>,
     idx: React.MutableRefObject<number>,
   ) => {
     const img = ref.current;
@@ -175,17 +175,24 @@ const CyclingPoster = memo(() => {
   const goTo = useCallback((n: number) => doTrans(n), [doTrans]);
 
   const restartInterval = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      if (!isVisRef.current || transRef.current) return;
-      goTo((activeIdxRef.current + 1) % TOTAL);
-    }, 4500);
-  }, [goTo]);
+    if (intervalRef.current) clearTimeout(intervalRef.current);
+    const tick = () => {
+      if (!isVisRef.current) { intervalRef.current = null; return; }
+      const next = (activeIdxRef.current + 1) % TOTAL;
+      if (transRef.current || !ready(next)) {
+        intervalRef.current = setTimeout(tick, 500);
+        return;
+      }
+      goTo(next);
+      intervalRef.current = setTimeout(tick, 4500);
+    };
+    intervalRef.current = setTimeout(tick, 4500);
+  }, [goTo, ready]);
 
   useEffect(() => {
     if (!loaded[0]) return;
     restartInterval();
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); finish(); };
+    return () => { if (intervalRef.current) clearTimeout(intervalRef.current); finish(); };
   }, [finish, loaded, restartInterval]);
 
   const onLoad  = useCallback((i: number) => { if (loadedRef.current[i]) return; loadedRef.current = {...loadedRef.current, [i]: true}; setLoaded(p => ({...p, [i]: true})); }, []);
@@ -202,7 +209,7 @@ const CyclingPoster = memo(() => {
         {HERO_POSTERS.map((p, i) => (
           <img key={p.id} ref={el => { imgRefs.current[i] = el; }}
             src={POSTER_SRCS[i]} alt={`Poster for ${p.title} with live rating badges`}
-            loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? 'high' : 'auto'}
+            loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i < 2 ? 'high' : 'auto'}
             decoding={i === 0 ? 'sync' : 'async'} onLoad={() => onLoad(i)} onError={() => onError(i)}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: i === activeIdx ? 1 : 0, willChange: transitioning ? 'opacity' : 'auto', transition: 'opacity 0.35s ease', pointerEvents: 'none' }}
           />

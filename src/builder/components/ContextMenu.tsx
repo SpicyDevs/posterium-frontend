@@ -49,7 +49,7 @@ interface Props {
   onDeselect: (id: LayerTargetId) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
-  onDuplicate?: (id: RatingType) => void;
+  onDuplicate?: (id: LayerTargetId) => void;
   onResetBadge: (id: LayerTargetId) => void;
   onDelete: (id: LayerTargetId) => void;
 }

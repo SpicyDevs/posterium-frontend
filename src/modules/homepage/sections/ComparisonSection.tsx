@@ -74,7 +74,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
             gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
             borderBottom: '1px solid rgba(255,255,255,0.04)',
           }}>
-            <div colSpan={5 as any} style={{ padding: '8px clamp(14px,2.5vw,28px)' }}>
+            <div style={{ gridColumn: 'span 5', padding: '8px clamp(14px,2.5vw,28px)' }}>
               <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
                 Where we fall short
               </span>

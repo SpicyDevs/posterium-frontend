@@ -8,7 +8,7 @@
 //   • Icon cache status prominently shown per node
 //   • Comprehensive timing analytics + payload size analysis
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
@@ -558,7 +558,7 @@ function TimingBars({ nodes }:{ nodes:NodeResult[] }) {
             { r:n.postUrl,   label:'POST URL', color:C.blue },
             { r:n.postB64,   label:'POST B64', color:C.orange },
             { r:n.getRaster, label:'GET',       color:C.ghost },
-          ].map(({ r, label, color }) => (
+          ].map(({ r, label }) => (
             <div key={label} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
               <span style={{ ...MONO, fontSize:7, color:C.ghost, minWidth:54 }}>{label}</span>
               <div style={{ flex:1, height:8, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
