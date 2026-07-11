@@ -265,16 +265,17 @@ export default defineConfig({
     compress({
       HTML: {
         'html-minifier-terser': {
-          removeAttributeQuotes: false,
-          collapseWhitespace: false,
+          removeAttributeQuotes: true,
+          collapseWhitespace: true,
           removeComments: true,
           minifyJS: true,
           minifyCSS: true,
+          minifyURLs: true,
         },
       },
       CSS: true,
       JS: true,
-      SVG: false,
+      SVG: true,
       Image: false,
     }),
     imageSitemapEnhancer(),
@@ -286,11 +287,11 @@ export default defineConfig({
       },
     },
     esbuild: {
-      target: 'es2020',
+      target: 'es2022',
       legalComments: 'none',
     },
     build: {
-      chunkSizeWarningLimit: 900,
+      chunkSizeWarningLimit: 400,
       assetsInlineLimit: 4096,
       rollupOptions: {
         output: {

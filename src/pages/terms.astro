@@ -20,6 +20,8 @@ const seo: PageSEOMetadata = {
   ogImage: `${SITE_URL}/og-image.png`,
   ogImageAlt: 'Terms of Service for Posterium',
   robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  datePublished: '2025-04-06',
+  dateModified: '2026-04-06',
   breadcrumbs: [
     { name: 'Home', url: SITE_URL },
     { name: 'Terms of Service', url: canonical },
@@ -30,6 +32,7 @@ const seo: PageSEOMetadata = {
       data: {
         title: 'Terms of Service | Posterium',
         description: 'Terms of Service for Posterium — the free movie and TV poster generator with live rating badges.',
+        publishDate: '2025-04-06',
         updatedDate: LAST_UPDATED,
       },
     }),
@@ -43,7 +46,7 @@ const seo: PageSEOMetadata = {
 >
 
   <div style="min-height: 100dvh; background: var(--film-black); color: var(--film-cream);">
-    <MainNavbar client:load keepSearchOnMobile showMobileBuildCta />
+    <MainNavbar client:idle keepSearchOnMobile showMobileBuildCta />
 
     <!-- ── Page header ─────────────────────────────────────────────── -->
     <header class="legal-hero">

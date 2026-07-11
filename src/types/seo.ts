@@ -18,10 +18,13 @@ export interface PageSEOMetadata {
   ogImageAlt: string;
   robots: string;
   keywords?: string;
+  datePublished?: string;
+  dateModified?: string;
   og?: Partial<OGMeta>;
   twitter?: Partial<TwitterMeta>;
   breadcrumbs?: BreadcrumbItem[];
   jsonLd: SchemaObject[];
+  speakable?: SpeakableSpec;
 }
 
 export interface WebApplicationSchemaMeta {
@@ -54,6 +57,10 @@ export interface CollectionBreadcrumbMeta {
   slug?: string;
   sectionName: string;
   sectionPath: string;
+}
+
+export interface SpeakableSpec {
+  cssSelector: string[];
 }
 
 export interface ArticleContentEntry {

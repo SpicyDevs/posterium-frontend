@@ -8,7 +8,7 @@ export const SITE_CONFIG = {
   apiBase: 'https://api.posterium.xyz',
   themeColor: '#0a0a0a',
   locale: 'en_US',
-  twitterHandle: '',
+  twitterHandle: '@posterium',
   github: 'https://github.com/SpicyDevs',
   ogImageUrl: 'https://posterium.xyz/og-image.png',
   ogImageWidth: 1366,

@@ -99,5 +99,10 @@ function safeStringify(obj: unknown): string {
 <meta name="msapplication-TileColor" content={SITE_CONFIG.themeColor} />
 <meta name="msapplication-config" content="/browserconfig.xml" />
 
+<!-- Google site verification (optional, from env) -->
+{import.meta.env.PUBLIC_GOOGLE_VERIFICATION && (
+  <meta name="google-site-verification" content={import.meta.env.PUBLIC_GOOGLE_VERIFICATION} />
+)}
+
 <!-- Structured data -->
 <script type="application/ld+json" set:html={safeStringify(schemaGraph)} />

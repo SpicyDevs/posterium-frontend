@@ -12,6 +12,7 @@ import RelatedContent from '@/seo/RelatedContent.astro';
 import { SITE_CONFIG } from '@/constants/site';
 import {
   buildArticleOrTechArticleSchema,
+  buildItemListSchema,
   extractVideoObjectSchemas,
 } from '@/seo/schema-builders';
 import type { PageSEOMetadata } from '@/types/seo';
@@ -51,16 +52,26 @@ const seo: PageSEOMetadata = {
     { name: 'Home', url: SITE_CONFIG.baseUrl },
     { name: 'Examples', url: canonical },
   ],
-  jsonLd: sortedExamples.flatMap((entry) => {
-    const article = buildArticleOrTechArticleSchema({ ...entry, slug: `examples/${entry.id}` });
-    const videos = extractVideoObjectSchemas({
-      title: `${entry.data.title} example`,
-      description: entry.data.description,
-      canonical: `${canonical}#${entry.id}`,
-      markdown: entry.body,
-    });
-    return [article, ...videos];
-  }),
+  speakable: { cssSelector: ['h1', '.prose p'] },
+  jsonLd: [
+    buildItemListSchema(
+      sortedExamples.map((entry) => ({
+        name: entry.data.title,
+        url: `${canonical}#${entry.id}`,
+        description: entry.data.description,
+      }))
+    ),
+    ...sortedExamples.flatMap((entry) => {
+      const article = buildArticleOrTechArticleSchema({ ...entry, slug: `examples/${entry.id}` });
+      const videos = extractVideoObjectSchemas({
+        title: `${entry.data.title} example`,
+        description: entry.data.description,
+        canonical: `${canonical}#${entry.id}`,
+        markdown: entry.body,
+      });
+      return [article, ...videos];
+    }),
+  ],
 };
 ---
 

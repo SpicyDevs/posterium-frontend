@@ -56,13 +56,23 @@ export function buildWebsiteSchema(): SchemaObject {
     url: SITE_CONFIG.baseUrl,
     description: SEO_DEFAULTS.description,
     publisher: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
+    potentialAction: [
+      {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_CONFIG.baseUrl}/faq?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    ],
   };
 }
 
 export function buildWebPageSchema(
-  meta: Pick<PageSEOMetadata, 'title' | 'description' | 'canonical' | 'ogImage' | 'ogImageAlt'>
+  meta: Pick<PageSEOMetadata, 'title' | 'description' | 'canonical' | 'ogImage' | 'ogImageAlt' | 'datePublished' | 'dateModified' | 'speakable'>
 ): SchemaObject {
-  return {
+  const schema: SchemaObject = {
     '@type': 'WebPage',
     '@id': `${meta.canonical}#webpage`,
     url: meta.canonical,
@@ -77,6 +87,15 @@ export function buildWebPageSchema(
       caption: meta.ogImageAlt,
     },
   };
+  if (meta.datePublished) schema.datePublished = meta.datePublished;
+  if (meta.dateModified) schema.dateModified = meta.dateModified;
+  if (meta.speakable) {
+    schema.speakable = {
+      '@type': 'SpeakableSpecification',
+      cssSelector: meta.speakable.cssSelector,
+    };
+  }
+  return schema;
 }
 
 export function buildBreadcrumbSchema(items: BreadcrumbItem[], canonical?: string): SchemaObject {
@@ -232,6 +251,7 @@ export function extractVideoObjectSchemas(meta: {
   description: string;
   canonical: string;
   markdown?: string;
+  uploadDate?: string;
 }): SchemaObject[] {
   const urls = extractVideoUrls(meta.markdown ?? '');
 
@@ -252,7 +272,7 @@ export function extractVideoObjectSchemas(meta: {
       thumbnailUrl: thumbnail,
       contentUrl: url,
       embedUrl,
-      uploadDate: new Date().toISOString(),
+      uploadDate: meta.uploadDate,
       isFamilyFriendly: true,
     };
   });
@@ -291,6 +311,19 @@ export function buildArticleOrTechArticleSchema(contentEntry: ArticleContentEntr
     author: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
     publisher: { '@id': `${SITE_CONFIG.baseUrl}/#organization` },
     inLanguage: 'en-US',
+  };
+}
+
+export function buildItemListSchema(items: { name: string; url: string; description?: string }[]): SchemaObject {
+  return {
+    '@type': 'ItemList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      url: item.url,
+      description: item.description,
+    })),
   };
 }
 

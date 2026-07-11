@@ -19,10 +19,11 @@
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
   Link: <https://api.posterium.xyz>; rel=preconnect
-  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: <https://api.themoviedb.org>; rel=preconnect
+  Link: <https://image.tmdb.org>; rel=preconnect
   Link: </.well-known/api-catalog>; rel="api-catalog"
   Link: </faq>; rel="service-doc"; type="text/html"
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com data:; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org
 
 /404.html
   Cache-Control: public, max-age=0, must-revalidate

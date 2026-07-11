@@ -24,6 +24,8 @@ const pageSeo = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <link rel="alternate" hreflang="en" href="https://posterium.xyz" />
+
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
@@ -33,13 +35,10 @@ const pageSeo = {
 
     <PageSEO meta={pageSeo} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
-    />
+    <!-- Self-hosted fonts (preload critical display+body fonts) -->
+    <link rel="preload" href="/fonts/bebas-neue-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/plus-jakarta-sans-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
 
     <script is:inline>
       (() => {
@@ -97,6 +96,59 @@ const pageSeo = {
         ).catch(() => {
           // no-op: browser/agent compatibility can vary
         });
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
+        if ('performance' in window === false || 'PerformanceObserver' in window === false) return;
+        try {
+          const vitals = {};
+          const report = (metrics) => {
+            const data = { url: location.pathname, ...metrics };
+            try { navigator.sendBeacon?.('/api/vitals', JSON.stringify(data)); } catch {}
+          };
+          const obsLCP = new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            if (entries.length) {
+              vitals.lcp = entries[entries.length - 1].startTime;
+              report(vitals);
+            }
+          });
+          obsLCP.observe({ type: 'largest-contentful-paint', buffered: true });
+          const obsCLS = new PerformanceObserver((list) => {
+            let cls = 0;
+            for (const entry of list.getEntries()) {
+              if (!entry.hadRecentInput) cls += entry.value;
+            }
+            vitals.cls = cls;
+            report(vitals);
+          });
+          obsCLS.observe({ type: 'layout-shift', buffered: true });
+          const obsINP = new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            const last = entries[entries.length - 1];
+            if (last) {
+              vitals.inp = last.duration;
+              report(vitals);
+            }
+          });
+          obsINP.observe({ type: 'first-input', buffered: true });
+          if ('EventTiming' in PerformanceObserver.supportedEntryTypes) {
+            try {
+              const obs = new PerformanceObserver((list) => {
+                const entries = list.getEntries();
+                for (const e of entries) {
+                  if (e.duration > 0) {
+                    vitals.inp = Math.max(vitals.inp || 0, e.duration);
+                    report(vitals);
+                  }
+                }
+              });
+              obs.observe({ type: 'event', durationThreshold: 16 });
+            } catch {}
+          }
+        } catch {}
       })();
     </script>
 

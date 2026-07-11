@@ -481,6 +481,12 @@
   }
 }
 
+/* ── Content visibility for below-fold sections ────────────────────────── */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
+}
+
 /* ─── Utilities ─────────────────────────────────────────────────────────────── */
 @layer utilities {
   .sidebar-label {

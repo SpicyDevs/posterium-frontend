@@ -82,6 +82,7 @@ const seo: PageSEOMetadata = {
     { name: 'Home', url: SITE_CONFIG.baseUrl },
     { name: 'Installation', url: canonical },
   ],
+  speakable: { cssSelector: ['h1', '.prose p', 'h2'] },
   jsonLd: preparedGuides.flatMap((entry) => {
     const steps = entry.headings.map((heading) => heading.text);
     const stepImages = [
@@ -126,7 +127,7 @@ const seo: PageSEOMetadata = {
 
   <div class="install-root">
     <MainNavbar
-      client:load
+      client:idle
       search={{ value: '', placeholder: 'Search guides...', readOnly: true }}
       keepSearchOnMobile
       showMobileBuildCta
