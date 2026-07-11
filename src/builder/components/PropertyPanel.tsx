@@ -1,7 +1,7 @@
 // src/components/builder/components/PropertyPanel.tsx
 import React, { memo, useRef, useEffect } from 'react';
 import type { PosterConfig, RatingType, PresetType, BadgeConfig } from '../types';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_CONFIG } from '../types';
+import { DEFAULT_CONFIG } from '../types';
 import {
   Layers,
   Layout,
@@ -97,61 +97,6 @@ function resolveShadow(v: number | boolean | undefined, fallback: number): numbe
   return v;
 }
 
-const makeDefaultMinimalRating = (provider: RatingType = 'imdb', x = 342, y = 688) => ({
-  provider,
-  enabled: true,
-  x,
-  y,
-  size: 26,
-  color: '#facc15',
-  opacity: 1,
-  iconMode: 'star' as const,
-  symbol: '★',
-  bgEnabled: false,
-  bgColor: '#000000',
-  bgOpacity: 0,
-  borderW: 0,
-  borderColor: '#ffffff',
-  borderOpacity: 0.7,
-  radius: 0,
-  paddingX: 0,
-  paddingY: 0,
-  shadowEnabled: false,
-  shadowX: 0,
-  shadowY: 0,
-  shadowBlur: 0,
-  shadowColor: '#000000',
-});
-
-const placeMinimalRatings = (
-  ratings: NonNullable<PosterConfig['minimalRatings']>,
-  preset: PosterConfig['preset'],
-  layout: PosterConfig['layout']
-) => {
-  const activePreset = preset === 'custom' ? 'bc' : preset;
-  const activeLayout = layout === 'custom' ? 'row' : layout;
-  const gap = 14;
-  const chipW = 120;
-  const chipH = 34;
-  const total = ratings.length;
-  if (total === 0) return ratings;
-  const groupW = activeLayout === 'row' ? total * chipW + (total - 1) * gap : chipW;
-  const groupH = activeLayout === 'col' ? total * chipH + (total - 1) * gap : chipH;
-  let startX = 0;
-  let startY = 0;
-  if (activePreset.includes('l')) startX = 20;
-  else if (activePreset.includes('r')) startX = CANVAS_WIDTH - groupW - 20;
-  else startX = Math.round((CANVAS_WIDTH - groupW) / 2);
-  if (activePreset.includes('t')) startY = 20;
-  else if (activePreset.includes('b')) startY = CANVAS_HEIGHT - groupH - 26;
-  else startY = Math.round((CANVAS_HEIGHT - groupH) / 2);
-  return ratings.map((item, index) => ({
-    ...item,
-    x: Math.round(startX + (activeLayout === 'row' ? index * (chipW + gap) : 0)),
-    y: Math.round(startY + (activeLayout === 'col' ? index * (chipH + gap) : 0)),
-  }));
-};
-
 // ── Main component ─────────────────────────────────────────────────────────────
 const PropertyPanel: React.FC<Props> = ({
   config,
@@ -170,16 +115,6 @@ const PropertyPanel: React.FC<Props> = ({
   const updateConfig = <K extends keyof PosterConfig>(key: K, value: PosterConfig[K]) => {
     setConfig((prev) => {
       if (key === 'layout' || key === 'preset') {
-        if ((prev.uiPreset ?? 'b') === 'm') {
-          const nextPreset = (key === 'preset' ? value : prev.preset) as PosterConfig['preset'];
-          const nextLayout = (key === 'layout' ? value : prev.layout) as PosterConfig['layout'];
-          const placed = placeMinimalRatings(
-            [...(prev.minimalRatings ?? [makeDefaultMinimalRating()])].slice(0, 3),
-            nextPreset,
-            nextLayout
-          );
-          return { ...prev, [key]: value, minimalRatings: placed };
-        }
         const newItems = { ...prev.items };
         (Object.keys(newItems) as RatingType[]).forEach((k) => {
           if (newItems[k]) {
@@ -270,6 +205,36 @@ const PropertyPanel: React.FC<Props> = ({
         {showBadgeSettings && (
           <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
             <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <p
+                  className="body-font mb-2"
+                  style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
+                >
+                  Mode
+                </p>
+                <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                  {[
+                    { id: 'b' as const, label: 'Badge' },
+                    { id: 'm' as const, label: 'Minimal' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => updateConfig('uiPreset', opt.id)}
+                      className="flex-1 py-1.5 text-center transition-all"
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 500,
+                        background: (config.uiPreset ?? 'b') === opt.id ? 'rgba(196,124,46,0.25)' : 'transparent',
+                        color: (config.uiPreset ?? 'b') === opt.id ? 'var(--film-amber)' : 'var(--film-text-dim)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="flex-1">
                 <p
                   className="body-font mb-2"
@@ -753,7 +718,6 @@ const PropertyPanel: React.FC<Props> = ({
       const only = Array.from(selectedMinimalElements)[0];
       if (only === 'minimal-title') return 'Title';
       if (only === 'minimal-year') return 'Year';
-      if (only === 'minimal-duration') return 'Duration';
       if (only === 'minimal-logo') return 'Logo Overlay';
       if (only.startsWith('minimal-rating-'))
         return `Rating Slot ${Number(only.split('-').pop() ?? 0) + 1}`;
@@ -823,8 +787,6 @@ const PropertyPanel: React.FC<Props> = ({
     return (v === null ? (config.borderC ?? '#ffffff') : v) as string;
   })();
   const minimalTitleSelected = selectedMinimalElements.has('minimal-title');
-  const minimalYearSelected = selectedMinimalElements.has('minimal-year');
-  const minimalDurationSelected = selectedMinimalElements.has('minimal-duration');
   const commonTextSize = (getCommonValue('textSize', isOnlyYearSelected ? 42 : 36) ??
     (isOnlyYearSelected ? 42 : 36)) as number;
   const commonTextWeight = (getCommonValue('textWeight', 700) ?? 700) as number;
@@ -894,54 +856,39 @@ const PropertyPanel: React.FC<Props> = ({
 
       {selectedMinimalElements.size > 0 && (
         <>
-          {(minimalTitleSelected || minimalYearSelected || minimalDurationSelected) && (
-            <Section title="Selected Text" sectionId="selection-minimal-text">
-              {minimalTitleSelected && (
-                <>
-                  <SliderRow
-                    label="Title Size"
-                    value={config.minimalTextSize}
-                    min={14}
-                    max={120}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalTextSize', Math.round(v))}
-                  />
-                  <ColorRow
-                    label="Title Color"
-                    value={config.minimalTitleColor ?? '#f5f5f5'}
-                    onChange={(v) => updateConfig('minimalTitleColor', v)}
-                    showOpacity
-                    opacity={config.minimalTitleOpacity ?? 1}
-                    onOpacityChange={(v) =>
-                      updateConfig('minimalTitleOpacity', Number(v.toFixed(2)))
-                    }
-                  />
-                </>
-              )}
-              {(minimalYearSelected || minimalDurationSelected) && (
-                <>
-                  <SliderRow
-                    label="Meta Size"
-                    value={config.minimalMetaSize ?? 50}
-                    min={18}
-                    max={80}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => updateConfig('minimalMetaSize', Math.round(v))}
-                  />
-                  <ColorRow
-                    label="Meta Color"
-                    value={config.minimalMetaColor ?? '#d6dde3'}
-                    onChange={(v) => updateConfig('minimalMetaColor', v)}
-                    showOpacity
-                    opacity={config.minimalMetaOpacity ?? 0.92}
-                    onOpacityChange={(v) =>
-                      updateConfig('minimalMetaOpacity', Number(v.toFixed(2)))
-                    }
-                  />
-                </>
-              )}
+          {minimalTitleSelected && (
+            <Section title="Title" sectionId="selection-title-overlay">
+              <SliderRow
+                label="Size"
+                value={config.titleSize ?? 48}
+                min={14}
+                max={120}
+                step={1}
+                unit="px"
+                onChange={(v) => updateConfig('titleSize', Math.round(v))}
+              />
+              <SliderRow
+                label="Width"
+                value={config.titleWidth ?? 450}
+                min={100}
+                max={800}
+                step={10}
+                unit="px"
+                onChange={(v) => updateConfig('titleWidth', Math.round(v))}
+              />
+              <ColorRow
+                label="Color"
+                value={config.titleColor ?? '#ffffff'}
+                onChange={(v) => updateConfig('titleColor', v)}
+              />
+              <SliderRow
+                label="Weight"
+                value={config.titleWeight ?? 700}
+                min={100}
+                max={900}
+                step={100}
+                onChange={(v) => updateConfig('titleWeight', Math.round(v))}
+              />
             </Section>
           )}
         </>

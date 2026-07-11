@@ -8,8 +8,6 @@ export type {
   SourceType,
   ExtensionType,
   LogoSourceType,
-  MinimalRatingIconMode,
-  MinimalRatingConfig,
   BadgeConfig,
   ApiKeys,
   PosterConfig,

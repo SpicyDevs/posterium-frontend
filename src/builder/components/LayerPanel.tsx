@@ -143,12 +143,6 @@ const LayerPanel: React.FC<Props> = ({
   const titleBadgeEnabled = config.ratings.includes('title');
 
   useEffect(() => {
-    if ((config.uiPreset ?? 'b') !== 'b') {
-      setConfig((prev) => ({ ...prev, uiPreset: 'b' }));
-    }
-  }, [config.uiPreset, setConfig]);
-
-  useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
     const ctrl = new AbortController();
     (async () => {

@@ -284,49 +284,16 @@ const StudioLayout: React.FC<{
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
         }
         if (activeMinimal.includes('minimal-title')) {
-          const boxW = Math.max(120, next.minimalTitleWidth ?? 420);
-          const boxH = Math.max(36, (next.minimalTextSize ?? 42) * 1.5);
-          next.minimalTextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, next.minimalTextX + dx));
-          const flow = next.minimalTitleFlow ?? 'up';
-          next.minimalTextY =
-            flow === 'up'
-              ? Math.max(boxH, Math.min(CANVAS_HEIGHT, next.minimalTextY + dy))
-              : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, next.minimalTextY + dy));
+          const boxW = Math.max(120, next.titleWidth ?? 450);
+          const boxH = Math.max(36, (next.titleSize ?? 48) * 1.5);
+          next.titleX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, (next.titleX ?? 25) + dx));
+          next.titleY = Math.max(boxH, Math.min(CANVAS_HEIGHT, (next.titleY ?? 100) + dy));
         }
         if (activeMinimal.includes('minimal-year')) {
-          next.minimalMetaX = Math.max(
-            0,
-            Math.min(CANVAS_WIDTH - 120, (next.minimalMetaX ?? 26) + dx)
-          );
-          next.minimalMetaY = Math.max(
-            0,
-            Math.min(CANVAS_HEIGHT - 40, (next.minimalMetaY ?? 672) + dy)
-          );
-        }
-        if (activeMinimal.includes('minimal-duration')) {
-          next.minimalDurationX = Math.max(
-            0,
-            Math.min(CANVAS_WIDTH - 120, (next.minimalDurationX ?? 90) + dx)
-          );
-          next.minimalDurationY = Math.max(
-            0,
-            Math.min(CANVAS_HEIGHT - 40, (next.minimalDurationY ?? 672) + dy)
-          );
-        }
-        if (activeMinimal.some((id) => id.startsWith('minimal-rating-'))) {
-          const list = [...(next.minimalRatings ?? [])];
-          activeMinimal
-            .filter((id) => id.startsWith('minimal-rating-'))
-            .forEach((id) => {
-              const idx = Number(id.split('-').pop() ?? -1);
-              if (!Number.isFinite(idx) || !list[idx]) return;
-              list[idx] = {
-                ...list[idx],
-                x: Math.max(0, Math.min(CANVAS_WIDTH - 140, list[idx].x + dx)),
-                y: Math.max(0, Math.min(CANVAS_HEIGHT - 40, list[idx].y + dy)),
-              };
-            });
-          next.minimalRatings = list;
+          const yearItem = { ...(next.items.year ?? { icon: false, alpha: 0 }) };
+          yearItem.x = Math.max(0, Math.min(CANVAS_WIDTH - 120, (yearItem.x ?? 25) + dx));
+          yearItem.y = Math.max(0, Math.min(CANVAS_HEIGHT - 40, (yearItem.y ?? 683) + dy));
+          next.items = { ...next.items, year: yearItem };
         }
         return next;
       });

@@ -61,7 +61,6 @@ const PreviewCanvas: React.FC<Props> = ({
     liveYear,
     selectedLogo,
     selectedMinimalElements,
-    handleMinimalSelection,
     handleLogoSelection,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,10 +80,7 @@ const PreviewCanvas: React.FC<Props> = ({
   const minimalTextStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const [draggingMinimalRatingIndex, setDraggingMinimalRatingIndex] = useState<number | null>(null);
   const [draggingMinimalYear, setDraggingMinimalYear] = useState(false);
-  const [draggingMinimalDuration, setDraggingMinimalDuration] = useState(false);
-  const [minimalMetaOffset, setMinimalMetaOffset] = useState({ dx: 0, dy: 0 });
   const minimalRatingStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
-  const minimalMetaStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const minimalDragRafRef = useRef<number | null>(null);
   const minimalPendingOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
   const hasLiveRatings = Object.keys(liveRatings).length > 0;
@@ -212,17 +208,6 @@ const PreviewCanvas: React.FC<Props> = ({
   }, []);
 
   const currentScale = autoScale * zoom;
-  const toRgba = useCallback((hex: string | undefined, opacity: number) => {
-    const c = (hex || '#000000').replace('#', '');
-    const valid = c.length === 3 || c.length === 6;
-    if (!valid) return `rgba(0,0,0,${opacity})`;
-    const expanded = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c;
-    const r = parseInt(expanded.slice(0, 2), 16);
-    const g = parseInt(expanded.slice(2, 4), 16);
-    const b = parseInt(expanded.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }, []);
-
   const clampPan = useCallback(
     (newX: number, newY: number) => {
       const container = containerRef.current;
@@ -403,32 +388,25 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleMinimalTextDragEnd = useCallback(
     (dx: number, dy: number) => {
       setConfig((prev) => {
-        const boxW = Math.max(120, prev.minimalTitleWidth ?? 420);
-        const boxH = Math.max(36, (prev.minimalTextSize ?? 42) * 1.5);
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(prev.minimalTextX + dx)));
-        const flow = prev.minimalTitleFlow ?? 'up';
-        const nextY =
-          flow === 'up'
-            ? Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round(prev.minimalTextY + dy)))
-            : Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(prev.minimalTextY + dy)));
-        return { ...prev, minimalTextX: nextX, minimalTextY: nextY };
+        const boxW = Math.max(120, prev.titleWidth ?? 450);
+        const boxH = Math.max(36, (prev.titleSize ?? 48) * 1.5);
+        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round((prev.titleX ?? 25) + dx)));
+        const nextY = Math.max(boxH, Math.min(CANVAS_HEIGHT, Math.round((prev.titleY ?? 100) + dy)));
+        return { ...prev, titleX: nextX, titleY: nextY };
       });
     },
     [setConfig]
   );
 
   const handleMinimalRatingDragEnd = useCallback(
-    (index: number, dx: number, dy: number) => {
+    (_index: number, dx: number, dy: number) => {
       setConfig((prev) => {
-        const items = [...(prev.minimalRatings ?? [])];
-        const item = items[index];
-        if (!item) return prev;
-        const boxW = 140;
-        const boxH = Math.max(32, item.size + item.paddingY * 2);
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - boxW, Math.round(item.x + dx)));
-        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - boxH, Math.round(item.y + dy)));
-        items[index] = { ...item, x: nextX, y: nextY };
-        return { ...prev, minimalRatings: items };
+        const items = { ...prev.items };
+        const imdbItem = { ...(items.imdb ?? { x: 340, y: 20 }) };
+        imdbItem.x = Math.max(0, Math.min(CANVAS_WIDTH - 140, Math.round((imdbItem.x ?? 340) + dx)));
+        imdbItem.y = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((imdbItem.y ?? 20) + dy)));
+        items.imdb = imdbItem;
+        return { ...prev, items };
       });
     },
     [setConfig]
@@ -437,26 +415,12 @@ const PreviewCanvas: React.FC<Props> = ({
   const handleMinimalYearDragEnd = useCallback(
     (dx: number, dy: number) => {
       setConfig((prev) => {
-        const nextX = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalMetaX ?? 26) + dx)));
-        const nextY = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalMetaY ?? 672) + dy)));
-        return { ...prev, minimalMetaX: nextX, minimalMetaY: nextY };
-      });
-    },
-    [setConfig]
-  );
-
-  const handleMinimalDurationDragEnd = useCallback(
-    (dx: number, dy: number) => {
-      setConfig((prev) => {
-        const nextX = Math.max(
-          0,
-          Math.min(CANVAS_WIDTH - 120, Math.round((prev.minimalDurationX ?? 90) + dx))
-        );
-        const nextY = Math.max(
-          0,
-          Math.min(CANVAS_HEIGHT - 40, Math.round((prev.minimalDurationY ?? 672) + dy))
-        );
-        return { ...prev, minimalDurationX: nextX, minimalDurationY: nextY };
+        const items = { ...prev.items };
+        const yearItem = { ...(items.year ?? { x: 25, y: 683 }) };
+        yearItem.x = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((yearItem.x ?? 25) + dx)));
+        yearItem.y = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((yearItem.y ?? 683) + dy)));
+        items.year = yearItem;
+        return { ...prev, items };
       });
     },
     [setConfig]
@@ -466,8 +430,7 @@ const PreviewCanvas: React.FC<Props> = ({
     if (
       !isDraggingMinimalText &&
       draggingMinimalRatingIndex === null &&
-      !draggingMinimalYear &&
-      !draggingMinimalDuration
+      !draggingMinimalYear
     )
       return;
     const onMM = (e: MouseEvent) => {
@@ -481,18 +444,11 @@ const PreviewCanvas: React.FC<Props> = ({
           dx: (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale,
           dy: (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale,
         };
-      } else if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
-        minimalPendingOffsetRef.current = {
-          dx: (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale,
-          dy: (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale,
-        };
       }
       if (minimalDragRafRef.current === null) {
         minimalDragRafRef.current = requestAnimationFrame(() => {
           minimalDragRafRef.current = null;
           if (!minimalPendingOffsetRef.current) return;
-          if (draggingMinimalYear || draggingMinimalDuration)
-            setMinimalMetaOffset(minimalPendingOffsetRef.current);
         });
       }
     };
@@ -507,20 +463,16 @@ const PreviewCanvas: React.FC<Props> = ({
         const dy = (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale;
         handleMinimalRatingDragEnd(draggingMinimalRatingIndex, dx, dy);
       }
-      if ((draggingMinimalYear || draggingMinimalDuration) && minimalMetaStartRef.current) {
-        const dx = (e.clientX - minimalMetaStartRef.current.mouseX) / currentScale;
-        const dy = (e.clientY - minimalMetaStartRef.current.mouseY) / currentScale;
-        if (draggingMinimalYear) handleMinimalYearDragEnd(dx, dy);
-        if (draggingMinimalDuration) handleMinimalDurationDragEnd(dx, dy);
+      if (draggingMinimalYear && minimalRatingStartRef.current) {
+        const dx = (e.clientX - minimalRatingStartRef.current.mouseX) / currentScale;
+        const dy = (e.clientY - minimalRatingStartRef.current.mouseY) / currentScale;
+        handleMinimalYearDragEnd(dx, dy);
       }
       minimalTextStartRef.current = null;
       minimalRatingStartRef.current = null;
-      minimalMetaStartRef.current = null;
-      setMinimalMetaOffset({ dx: 0, dy: 0 });
       setIsDraggingMinimalText(false);
       setDraggingMinimalRatingIndex(null);
       setDraggingMinimalYear(false);
-      setDraggingMinimalDuration(false);
     };
     window.addEventListener('mousemove', onMM);
     window.addEventListener('mouseup', onMU);
@@ -536,12 +488,10 @@ const PreviewCanvas: React.FC<Props> = ({
     isDraggingMinimalText,
     draggingMinimalRatingIndex,
     draggingMinimalYear,
-    draggingMinimalDuration,
     currentScale,
     handleMinimalTextDragEnd,
     handleMinimalRatingDragEnd,
     handleMinimalYearDragEnd,
-    handleMinimalDurationDragEnd,
   ]);
 
   const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
@@ -842,38 +792,6 @@ const PreviewCanvas: React.FC<Props> = ({
             onSelect={(multi) => handleLogoSelection(multi)}
             onContextMenu={onLogoContextMenu}
           />
-        )}
-
-        {(config.minimalDurationEnabled ?? false) && (
-          <div
-            className="absolute z-40 select-none"
-            style={{
-              left:
-                (config.minimalDurationX ?? 90) + (draggingMinimalDuration ? minimalMetaOffset.dx : 0),
-              top:
-                (config.minimalDurationY ?? 672) + (draggingMinimalDuration ? minimalMetaOffset.dy : 0),
-              fontSize: `${Math.round((config.minimalMetaSize ?? 50) * 0.8)}px`,
-              color: toRgba(config.minimalMetaColor, config.minimalMetaOpacity ?? 0.92),
-              fontWeight: config.minimalMetaWeight ?? 600,
-              letterSpacing: `${config.minimalMetaLetterSpacing ?? 0}px`,
-              lineHeight: 1,
-              cursor: draggingMinimalDuration ? 'grabbing' : 'grab',
-              outline:
-                selectedMinimalElements.has('minimal-duration')
-                  ? '1px dashed rgba(196,124,46,0.8)'
-                  : 'none',
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleMinimalSelection('minimal-duration', e.shiftKey || e.ctrlKey || e.metaKey);
-              setDraggingMinimalDuration(true);
-              minimalMetaStartRef.current = { mouseX: e.clientX, mouseY: e.clientY };
-            }}
-            title="Drag duration"
-          >
-            {(liveRatings.runtime ?? '').toString().trim() || '--'}
-          </div>
         )}
       </div>
 
