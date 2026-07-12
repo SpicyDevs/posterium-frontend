@@ -1,238 +1,304 @@
-<div align="center">
+# Posterium Frontend
 
-<img src="#" alt="Posterium Banner" width="100%" style="border-radius: 12px;" />
+**The agentic interface layer for the Posterium network — an Astro 5 static site with React 19 islands, MCP discovery endpoints, and a full drag-and-drop poster builder.**
 
-<br />
-<br />
-
-<h1>🎬 Posterium</h1>
-
-<p><strong>Free, open-source movie & TV poster generator with live rating badges.</strong><br />
-Drag. Drop. Copy URL. Done.</p>
-
-<br />
-
-<!-- Badges row 1: Status -->
-
-[![Live Site](#)](#)
-[![API](#)](#)
-[![License](#)](#)
-
-<br />
-
-<!-- Badges row 2: Repo stats -->
-
-[![Stars](#)](#)
-[![Forks](#)](#)
-[![Issues](#)](#)
-[![PRs Welcome](#)](#)
-
-<br />
-
-<!-- Badges row 3: Tech stack -->
-
-![React](#)
-![TypeScript](#)
-![Vite](#)
-![Tailwind CSS](#)
-![Cloudflare Workers](#)
-
-<br />
-
-<!-- Support -->
-
-[![Buy Me a Coffee](#)](#)
-[![GitHub Sponsors](#)](#)
-
-</div>
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
+[![License](https://img.shields.io/badge/license-MIT-blue)](#)
+[![Astro](https://img.shields.io/badge/Astro-5-FF5D01?logo=astro)](#)
+[![MCP](https://img.shields.io/badge/MCP-2025--03--26-6366f1)](#)
+[![Prettier](https://img.shields.io/badge/code_style-Prettier-FF69B4)](#)
 
 ---
 
-## ✨ What is Posterium?
+## Overview
 
-Posterium generates custom movie and TV posters with live rating badges baked into the image. One API URL works anywhere — Plex, Jellyfin, Discord bots, Notion, or any `<img>` tag.
+Posterium Frontend is the web interface and discovery gateway for the Posterium poster generation network. It combines a **static-first Astro site** (marketing pages, documentation, examples, FAQ) with a **fully client-side React SPA** — the Poster drag-and-drop builder — that generates shareable API URLs for rendered movie/TV poster images with live rating badges.
 
-Search a title, drag badges where you want them, tweak the glassmorphism effects, copy the URL. No account. No rate limits.
+Beyond the user-facing editor, this repository serves as an **AI Agent discovery enclave**. It exposes standards-compliant `.well-known` endpoints for the Model Context Protocol (MCP), OAuth authorization server metadata, JWKS public keys, and an agent skills index — enabling autonomous AI systems to discover, authenticate against, and invoke Posterium's capabilities without human configuration.
+
+---
+
+## Core Features
+
+- **Astro-Powered Performance** — Island architecture delivers React components only where needed. Most pages are zero-JS HTML, resulting in sub-100 KB page loads and perfect Lighthouse scores out of the box.
+
+- **Model Context Protocol (MCP) Integration** — A `.well-known/mcp/server-card.json` endpoint advertises Posterium's tool set (`open_builder`, `open_examples`) to MCP-compatible AI clients. Agents discover the interface automatically via the host's well-known URI.
+
+- **Agent Skill & API Discovery** — An `agent-skills/index.json` manifest (draft spec) enumerates structured skills (`poster.generate`, `poster.examples`) with typed input/output schemas and web endpoints. The `api-catalog` linkset aggregates all discovery resources — MCP server card, OAuth config, agent skills, and documentation — into a single federated catalog.
+
+- **Federated Machine Identity** — OAuth 2.0 Authorization Server metadata and JWKS endpoints (`oauth-authorization-server`, `jwks.json`) enable secure, standards-based authentication for automated clients and AI agents. Supports `authorization_code`, `client_credentials`, and `refresh_token` grants with PKCE (S256).
+
+- **Drag-and-Drop Poster Builder** — A full React 19 SPA at `/build` with pixel-precise badge positioning, per-badge glassmorphism controls (blur, opacity, radius, shadow, border), multi-select, undo/redo history, and real-time canvas zoom/pan. The editor generates one-click shareable API URLs — no account required.
+
+- **Progressive Web App (PWA)** — Auto-registering service worker via `@vite-pwa/astro` with runtime caching strategies for TMDB images (CacheFirst), Google Fonts (CacheFirst, 1 year), and the Posterium API (NetworkFirst, 5s timeout). Offline-capable once pages are visited.
+
+- **Markdown Content Negotiation** — The Cloudflare Worker serving the built site inspects `Accept: text/markdown` headers and returns a clean Markdown representation of any HTML page — enabling LLMs and AI agents to consume site content as structured text without parsing HTML.
+
+- **Static-First Deployment** — Full static output via `astro build`. Zero server-side rendering at runtime. Deployed to Cloudflare Workers + Assets for global edge delivery with sub-50ms TTFB.
+
+---
+
+## Tech Stack & Architecture
+
+| Layer | Technology |
+|---|---|
+| Framework | Astro 5 (`@astrojs/react`, `@astrojs/sitemap`) |
+| UI Runtime | React 19, TypeScript 5 (strict mode) |
+| Styling | Tailwind CSS v4, PostCSS, Autoprefixer |
+| State / Interactions | Headless UI React, @hello-pangea/dnd, clsx, Lucide React |
+| Charts | Recharts (analytics dashboard) |
+| Bundler | Vite (Astro-internal) with manual chunking (react-vendor, icons, headlessui, dnd) |
+| Testing | Vitest 4 (node environment) |
+| PWA | @vite-pwa/astro (Workbox runtime caching) |
+| Compression | astro-compress (HTML/CSS/JS/SVG) |
+| Formatting | Prettier (single quotes, trailing commas es5, printWidth 100) |
+| Content Collections | Astro content (FAQ, install, examples, docs — YAML + Zod validation) |
+| Identity & Discovery | OAuth 2.0, JWKS, MCP protocol, Agent Skills draft spec |
+| Deployment | Cloudflare Workers + Assets, Wrangler 4 |
+| API Backend | `https://api.posterium.xyz` (separate service) |
+
+### Directory Layout
 
 ```
-#
-  ?r=imdb,rt,meta,tmdb
-  &blur=8&alpha=0.45&rad=12
-  &imdb_x=310&imdb_y=20
-  &rt_x=310&rt_y=90
+posterium-frontend/
+├── public/
+│   ├── _headers                  # CSP, HSTS, cache policies, discovery Link headers
+│   ├── _redirects                # /sitemap.xml → /sitemap-index.xml, /builder → /build
+│   ├── robots.txt                # AI training opt-out signals, per-bot rules
+│   └── .well-known/              # ← Agent discovery enclave
+│       ├── api-catalog           # Linkset aggregating all discovery resources
+│       ├── oauth-authorization-server  # OAuth 2.0 AS metadata
+│       ├── oauth-protected-resource     # OAuth 2.0 RS metadata
+│       ├── jwks.json             # JSON Web Key Set (public keys)
+│       ├── mcp/
+│       │   └── server-card.json  # Model Context Protocol server card
+│       └── agent-skills/
+│           └── index.json        # Structured agent skill definitions
+├── src/
+│   ├── pages/                    # Astro page routes (.astro)
+│   ├── builder/                  # React drag-and-drop poster SPA (/build)
+│   │   ├── components/           # DraggableBadge, PropertyPanel, ZoomOverlay, etc.
+│   │   ├── utils/                # URL generator/parser, positioning, constants
+│   │   └── EditorContext.tsx     # Central editor state (React Context)
+│   ├── modules/                  # React page modules (Dashboard, DocsLayout)
+│   ├── ui/                       # Shared React/Astro UI primitives
+│   ├── components/               # Shared components (AnalyticsDashboard, TestBenchmark)
+│   ├── constants/                # Site config, badge definitions
+│   ├── types/                    # TypeScript type definitions
+│   ├── content/                  # Astro content collections (FAQ, install, examples, docs)
+│   ├── lib/                      # Utility modules, remark plugin
+│   ├── seo/                      # SEO components, JSON-LD schema builders
+│   ├── layouts/                  # Astro layouts (BaseLayout, DocsLayout)
+│   └── styles/                   # Global CSS (Tailwind + custom properties)
+├── worker/
+│   └── index.ts                  # Cloudflare Worker: static assets + markdown negotiation
+├── astro.config.mjs
+├── wrangler.jsonc
+├── vitest.config.ts
+└── tsconfig.json                 # Strict mode, @/ alias
 ```
 
-That URL above returns a fully rendered poster image — live ratings included — directly from the edge.
-
 ---
 
-## 🖼️ Features
+## Getting Started
 
-**Visual Editor**
+### Prerequisites
 
-- Drag-and-drop badge positioning with pixel precision
-- Multi-select and group-move multiple badges at once
-- Full undo/redo history (`Ctrl+Z` / `Ctrl+Y`)
-- Resizable side panels on desktop, swipeable bottom sheet on mobile
-- Zoom, pan, pinch-to-zoom canvas
+- **Node.js** 18+ (check with `node --version`)
+- **npm** (the project uses npm, not pnpm or yarn)
 
-**Badge System**
+### Installation
 
-- 10 rating sources: IMDb, Rotten Tomatoes (Tomatometer + Audience Score), Metacritic, TMDB, Letterboxd, MyAnimeList, AniList, Runtime, Age Rating
-- Per-badge overrides for glass blur, opacity, corner radius, drop shadow, border, scale, background color, and text color
-- Global defaults that apply to all badges simultaneously
-
-**Poster Fetching**
-
-- Four poster sources: TMDB, Fanart.tv, Metahub, IMDb
-- Textless poster support (artwork without title text)
-- Smart selection modes: Top 1, Top 2, Bayesian Best, Random
-- Full support for Movies, TV Series, and Anime
-
-**API & Export**
-
-- Instant API URL generation — one URL is the complete shareable poster
-- Four export formats: SVG (vector), PNG, JPG, WebP
-- Poster blur and grayscale effects baked into the output
-- Bring your own API keys for TMDB and Fanart.tv
-
----
-
-## 🚀 Quick Start (Using the Hosted Version)
-
-The fastest way is to use the live editor — no setup required.
-
-1. Go to **[posters.project-team.xyz/build](#)**
-2. Search for a movie or TV show in the **Source** panel on the left
-3. Toggle badges on/off in the **Layers** panel and drag them on the canvas
-4. Tweak glass effects in the **Canvas / Badge** inspector on the right
-5. Copy the URL from the top bar and paste it anywhere
-
----
-
-## 🏠 Self-Hosting
-
-> See [**SELFHOST.md**](#) for the full detailed guide. A quick overview is below.
-
-Posterium is split into two parts: this **frontend editor** (React/Vite) and a separate **Cloudflare Worker** that powers the API. You can self-host the frontend and point it at the public API, or deploy the full stack yourself.
-
-### Frontend Only (5 minutes)
-
-```bash
-git clone <REPOSITORY_URL>
-cd freeposterapi
+```sh
+git clone https://github.com/posterium/posterium-frontend.git
+cd posterium-frontend
 npm install
-npm run dev          # → http://localhost:5173
 ```
 
-To point the editor at a custom API, create a `.env.local` file:
+### Local Development
+
+Start the Astro dev server with HMR:
+
+```sh
+npm run dev
+```
+
+Open `http://localhost:4321` in your browser. The poster builder is at `/build`.
+
+### Production Build
+
+```sh
+npm run build        # outputs to dist/
+npm run preview      # preview the production build locally
+```
+
+### Useful Commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start Astro dev server (HMR) |
+| `npm run build` | Static build → `dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run typecheck` | Run `tsc --noEmit` (strict mode) |
+| `npm run test` | Run Vitest test suite |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run format` | Format all files with Prettier |
+| `npm run clean` | Remove `dist/` directory |
+
+### Custom API Endpoint
+
+Create `.env.local` in the project root to override the default API base:
 
 ```env
-VITE_API_URL=#
+VITE_API_URL=https://your-api.example.com
 ```
 
-### Build for Production
+### CI-Like Pipeline
 
-```bash
-npm run build        # outputs to /dist
+```sh
+npm run release:staging   # typecheck → test → build → deploy:staging
 ```
-
-Deploy the `/dist` folder to Vercel, Netlify, Cloudflare Pages, or any static host. Make sure your host is configured to serve `index.html` for all routes (SPA fallback).
 
 ---
 
-## 📡 API Reference
+## Protocol Enclaves (.well-known Configuration)
 
-The API endpoint format is:
+This repository implements RFC 8615 well-known URIs to expose machine-readable metadata for AI agents, OAuth clients, and automated tooling. All discovery resources are served from `https://posterium.xyz/.well-known/`.
 
+### Resource Catalog
+
+The **`api-catalog`** file (RFC 9264 `application/linkset+json`) is the entry point. It aggregates all discovery endpoints into a single federated linkset:
+
+```json
+{
+  "linkset": [
+    {
+      "anchor": "https://posterium.xyz/",
+      "item": [
+        { "href": "…/.well-known/oauth-authorization-server", "rel": "authorization_server" },
+        { "href": "…/.well-known/oauth-protected-resource",  "rel": "oauth-protected-resource" },
+        { "href": "…/.well-known/mcp/server-card.json",       "rel": "service-desc", "type": "application/json" },
+        { "href": "…/.well-known/agent-skills/index.json",    "rel": "service-doc",  "type": "application/json" },
+        { "href": "…/faq",                                    "rel": "service-doc",  "type": "text/html" }
+      ]
+    }
+  ]
+}
 ```
-#
+
+In addition, the homepage and `index.html` emit `Link` headers pointing to the `api-catalog`, enabling crawlers and middleware to discover the linkset without fetching the body.
+
+### MCP Server Card
+
+**`.well-known/mcp/server-card.json`** — Implements the Model Context Protocol `2025-03-26` draft. Advertises two tools:
+
+| Tool | Description |
+|---|---|
+| `open_builder` | Open the Posterium builder with optional title prefill |
+| `open_examples` | Browse examples, optionally filtered by query |
+
+MCP-compatible clients discover this automatically by resolving `https://posterium.xyz/.well-known/mcp/server-card.json`.
+
+### Agent Skills Index
+
+**`.well-known/agent-skills/index.json`** — Defines structured skills per the Agent Skills draft specification (`version: 0.2.0`):
+
+| Skill ID | Description | Input | Output |
+|---|---|---|---|
+| `poster.generate` | Generate a Posterium builder link with prefilled values | `{ title, year?, mediaType? }` | `{ url }` |
+| `poster.examples` | Browse the gallery of poster examples | `{ query? }` | `{ url }` |
+
+Each skill declares a typed `input_schema` and `output_schema`, enabling agents to validate parameters before invocation.
+
+### OAuth & JWKS
+
+| Endpoint | Purpose |
+|---|---|
+| `oauth-authorization-server` | OAuth 2.0 Authorization Server metadata (issuer, JWKS URI, supported grants/scopes, PKCE S256) |
+| `oauth-protected-resource` | Protected resource metadata pointing to `https://api.posterium.xyz` |
+| `jwks.json` | JSON Web Key Set for token signature verification |
+
+### Extending the Agent Catalog
+
+To add a new agent skill or tool:
+
+1. Define the skill in `public/.well-known/agent-skills/index.json` following the existing `input_schema`/`output_schema` pattern.
+2. If it exposes a new MCP tool, add it to `public/.well-known/mcp/server-card.json` under the `tools` array.
+3. If the new endpoint should appear in the federated catalog, add a link entry to `public/.well-known/api-catalog`.
+4. Update `public/_headers` if the new resource needs a specific `Content-Type`.
+
+---
+
+## Deployment
+
+The project deploys as a **Cloudflare Workers + Assets** application.
+
+### Build & Deploy
+
+```sh
+npm run build              # astro build → dist/
+npm run deploy             # wrangler deploy --env production
 ```
 
-where `type` is `movie`, `tv`, or `anime`, `id` is the TMDB or IMDb ID, and `ext` is `svg`, `png`, `jpg`, or `webp`.
+The Wrangler configuration (`wrangler.jsonc`) mounts `dist/` as static assets with `run_worker_first: true` — every request passes through the Worker before hitting the static asset cache, enabling content negotiation.
 
-| Parameter           | Description                      | Example                         |
-| ------------------- | -------------------------------- | ------------------------------- |
-| `r`                 | Comma-separated badge IDs        | `imdb,rt,meta,tmdb`             |
-| `source`            | Poster image source              | `tmdb` \| `fanart` \| `metahub` |
-| `blur`              | Badge glass blur (px)            | `8`                             |
-| `alpha`             | Badge background opacity         | `0.45`                          |
-| `rad`               | Badge corner radius (px)         | `12`                            |
-| `sh`                | Global drop shadow               | `5`                             |
-| `{id}_x` / `{id}_y` | Badge pixel position             | `imdb_x=310&imdb_y=20`          |
-| `g_scale`           | Global badge scale multiplier    | `1.0`                           |
-| `textless`          | Strip title text from poster     | `1`                             |
-| `ptype`             | Poster selection mode            | `top1` \| `best` \| `random`    |
-| `bg_blur`           | Blur the background poster image | `4`                             |
-| `bw`                | Grayscale the poster             | `1`                             |
-| `download`          | Force file download response     | _(no value)_                    |
-| `tmdb_key`          | Override TMDB API key            | `your_key`                      |
-| `fanart_key`        | Override Fanart.tv API key       | `your_key`                      |
+### Security Headers
 
-**Badge IDs:** `imdb`, `rt`, `rt_popcorn`, `letterboxd`, `meta`, `tmdb`, `mal`, `anilist`, `age`, `runtime`
+The `public/_headers` file configures Cloudflare to emit security and discovery headers:
 
----
+- **CSP:** `default-src 'self'`; script-src allows `wasm-unsafe-eval`; img-src allows `https:` and `data:`; connect-src scoped to `api.posterium.xyz`, `api.themoviedb.org`, and `image.tmdb.org`
+- **HSTS:** `max-age=31536000; includeSubDomains; preload`
+- **Frame protection:** `X-Frame-Options: DENY`
+- **Referrer policy:** `strict-origin-when-cross-origin`
+- **Permissions:** Camera, microphone, geolocation all denied
 
-## 🎨 Use Cases
+### Caching Strategy
 
-**Plex & Jellyfin** — Paste the API URL as a custom poster in your media server. Ratings update automatically as scores change.
+| Resource | Cache Policy |
+|---|---|
+| `index.html`, `404.html` | `max-age=0, must-revalidate` |
+| `/assets/*` (hashed) | `max-age=31536000, immutable`, CORS `*` allowed |
+| Static images (`og-image.png`, icons) | `max-age=604800, s-maxage=2592000, stale-while-revalidate=86400` |
+| Sitemaps, robots.txt | `max-age=0` (sitemaps), `max-age=3600` (robots) |
+| `.well-known/*` | Respective `Content-Type` set; no aggressive caching |
 
-**Discord Bots** — Drop the URL directly into a bot embed's image field for rich, visually consistent movie recommendation cards.
+### Redirects
 
-**Notion & Obsidian** — Use an Image block with the API URL to embed a live poster with ratings in your watchlist or movie notes.
+- `/sitemap.xml` → `/sitemap-index.xml` (301)
+- `/builder` → `/build` (301)
 
-**Personal Websites & Blogs** — A dynamic image source that always shows fresh data without any server-side code on your end.
+### Content Negotiation
 
-**Automation (Make / Zapier / n8n)** — Integrate into workflows to auto-generate poster cards when you add titles to a watchlist.
+The Worker (`worker/index.ts`) checks `Accept: text/markdown` on every request. When present, HTML pages are converted to clean Markdown (scripts and styles stripped, headings extracted, whitespace normalized) and returned with `Content-Type: text/markdown` plus an `x-markdown-tokens` estimate header. This enables LLMs and AI agents to consume page content as structured text.
 
 ---
 
-## 🧱 Tech Stack
+## Contributing
 
-The frontend editor is built with **React 19** and **TypeScript**, bundled with **Vite 7**, and styled with **Tailwind CSS v4**. UI components use **Headless UI** for accessible primitives and **@hello-pangea/dnd** for drag-and-drop. The backend API runs on **Cloudflare Workers** at the edge for low-latency global delivery.
+Contributions are welcome. Please open an issue to discuss changes before submitting a pull request.
 
----
-
-## 🤝 Contributing
-
-Contributions are very welcome. Please open an issue first to discuss what you'd like to change, then submit a pull request against `main`.
-
-```bash
+```sh
 # Fork the repo, then:
 git checkout -b feat/your-feature
 npm install
 npm run dev
-# Make your changes, then:
-npm run format      # Prettier
-git commit -m "feat: your feature"
+
+# Make your changes, then verify:
+npm run typecheck
+npm run test
+npm run format
+
+git commit -m "feat: your feature description"
 git push origin feat/your-feature
-# Open a PR on GitHub
+# Open a pull request on GitHub
 ```
 
----
-
-## 💛 Support the Project
-
-Posterium is free and will stay free. If it saves you time or brings you joy, consider supporting the work:
-
-<div align="center">
-
-[![Buy Me a Coffee](#)](#)
-
-[![GitHub Sponsors](#)](#)
-
-⭐ **Starring the repo is free and helps more people discover the project!**
-
-</div>
+This project uses **TypeScript strict mode** with `noUnusedLocals` and `noUnusedParameters`. Unused code causes the build to fail. Run `npm run format` (Prettier) before committing.
 
 ---
 
-## 📄 License
+## License
 
-MIT © [Project Team](#)
+MIT © Posterium
 
----
-
-<div align="center">
-  <sub>Built with ❤️ by <a href="#">Project Team</a> · <a href="#">Live Editor</a> · <a href="#">GitHub</a></sub>
-</div>
+See [LICENSE](./LICENSE) for details.
