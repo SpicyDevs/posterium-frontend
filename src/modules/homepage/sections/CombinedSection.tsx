@@ -35,7 +35,7 @@ const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
       src={src}
       alt={alt}
       containerStyle={{
-        width: 'clamp(100px,18%,180px)',
+        width: 'clamp(120px,22%,200px)',
         aspectRatio: '2/3',
         borderRadius: 4,
         border: '1px solid rgba(196,124,46,0.14)',
@@ -186,15 +186,15 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
         transform: vis ? 'translateY(0)' : 'translateY(14px)',
         transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`,
       }}>
-        <div style={{ fontSize: 20, marginBottom: 10, lineHeight: 1 }}>{uc.icon}</div>
-        <h3 className="syne-font" style={{ fontSize: 12, fontWeight: 800, color: 'var(--film-cream)', marginBottom: 6, margin: '0 0 6px' }}>
+        <div style={{ fontSize: 'clamp(16px,2vw,20px)', marginBottom: 10, lineHeight: 1 }}>{uc.icon}</div>
+        <h3 className="syne-font" style={{ fontSize: 'clamp(10px,1.4vw,12px)', fontWeight: 800, color: 'var(--film-cream)', marginBottom: 6, margin: '0 0 6px' }}>
           {uc.title}
         </h3>
-        <p className="body-font" style={{ fontSize: 11, color: 'var(--film-silver)', lineHeight: 1.65, marginBottom: 10 }}>
+        <p className="body-font" style={{ fontSize: 'clamp(10px,1.2vw,11px)', color: 'var(--film-silver)', lineHeight: 1.65, marginBottom: 10 }}>
           {uc.desc}
         </p>
         {uc.codeSnippet && (
-          <code className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.5)', letterSpacing: '0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(196,124,46,0.04)', border: '1px solid rgba(196,124,46,0.08)', borderRadius: 3, padding: '4px 8px' }}>
+          <code className="integrations-code mono-font" style={{ fontSize: 'clamp(7px,0.9vw,8px)', color: 'rgba(196,124,46,0.5)', letterSpacing: '0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(196,124,46,0.04)', border: '1px solid rgba(196,124,46,0.08)', borderRadius: 3, padding: '4px 8px' }}>
             {uc.codeSnippet}
           </code>
         )}
