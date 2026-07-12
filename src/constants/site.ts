@@ -62,7 +62,7 @@ export const SEO_DEFAULTS: {
     title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
     description:
       'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
-      'and more! Free API, no account needed.',
+      'and more! Free API and zero configuration.',
     image: SITE_CONFIG.ogImageUrl,
     imageWidth: SITE_CONFIG.ogImageWidth,
     imageHeight: SITE_CONFIG.ogImageHeight,
@@ -75,7 +75,7 @@ export const SEO_DEFAULTS: {
     title: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
     description:
       'Generate custom posters with live rating badges from IMDb, RT, Metacritic ' +
-      'and more! Free API, no account needed.',
+      'and more! Free API and zero configuration.',
     image: SITE_CONFIG.ogImageUrl,
     imageAlt: 'Posterium - Movie & TV Poster API with Rating Badges',
   },

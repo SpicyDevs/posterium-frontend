@@ -140,12 +140,140 @@ DesktopStaticReel.displayName = 'DesktopStaticReel';
 // ─────────────────────────────────────────────────────────────────────────────
 // Mobile — 2-column poster grid (no parallax, no scroll-jacking)
 // ─────────────────────────────────────────────────────────────────────────────
+const MOBILE_REEL_VISIBLE = 8;
+
+const PosterFallback = () => (
+  <div
+    aria-hidden="true"
+    style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--film-char)',
+      color: 'rgba(196,124,46,0.2)',
+      fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase',
+    }}
+  >
+    no poster
+  </div>
+);
+
+const PosterCard = memo<{ item: (typeof REEL_ITEMS)[0]; visible: boolean }>(
+  ({ item, visible }) => {
+    const [hovered, setHovered] = useState(false);
+    const [errored, setErrored] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    const posterSrc = `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=12&alpha=0.35&rad=6`;
+
+    return (
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: 'relative',
+          borderRadius: 6,
+          overflow: 'hidden',
+          background: '#111009',
+          border: '1px solid rgba(196,124,46,0.12)',
+          boxShadow: hovered
+            ? '0 8px 28px rgba(0,0,0,0.6), 0 0 20px rgba(196,124,46,0.08)'
+            : '0 4px 12px rgba(0,0,0,0.4)',
+          transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+          transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+          aspectRatio: '2/3',
+        }}
+      >
+        {!visible ? null : errored ? (
+          <PosterFallback />
+        ) : (
+          <>
+            {!loaded && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(110deg, #111009 30%, #1a1814 50%, #111009 70%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.5s ease-in-out infinite',
+                }}
+              />
+            )}
+            <picture>
+              <source srcSet={posterSrc} type="image/webp" />
+              <img
+                src={posterSrc}
+                alt={`${item.title} (${item.year}) — ${item.genre}`}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setLoaded(true)}
+                onError={() => setErrored(true)}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: loaded ? 1 : 0,
+                  transition: 'opacity 0.25s ease',
+                }}
+              />
+            </picture>
+            {/* Hover overlay with metadata */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to top, rgba(7,7,6,0.92) 0%, rgba(7,7,6,0.4) 50%, transparent 100%)',
+                opacity: hovered ? 1 : 0,
+                transition: 'opacity 0.28s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                padding: 10,
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                className="syne-font"
+                style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', lineHeight: 1.2, marginBottom: 2 }}
+              >
+                {item.title}
+              </div>
+              <div
+                className="mono-font"
+                style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.06em' }}
+              >
+                {item.year} · {item.genre}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+);
+PosterCard.displayName = 'PosterCard';
+
 const MobilePosterGrid = memo(() => {
-  const [hovered, setHovered] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(MOBILE_REEL_VISIBLE);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && visibleCount < REEL_ITEMS.length) {
+          setVisibleCount((prev) => Math.min(prev + 8, REEL_ITEMS.length));
+        }
+      },
+      { rootMargin: '400px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [visibleCount]);
 
   return (
     <section
-      id="reel"
       role="region"
       aria-label="Poster Gallery"
       style={{
@@ -200,6 +328,7 @@ const MobilePosterGrid = memo(() => {
 
       {/* 2-column grid */}
       <div
+        ref={gridRef}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
@@ -207,74 +336,9 @@ const MobilePosterGrid = memo(() => {
           padding: '16px clamp(16px,4vw,24px)',
         }}
       >
-        {REEL_ITEMS.map((item, i) => {
-          const posterSrc = `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=7&alpha=0.43&rad=10&imdb_x=8&imdb_y=8&rt_x=8&rt_y=64`;
-          const isHovered = hovered === i;
-          return (
-            <div
-              key={item.id}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-              style={{
-                position: 'relative',
-                borderRadius: 6,
-                overflow: 'hidden',
-                background: '#111009',
-                border: '1px solid rgba(196,124,46,0.12)',
-                boxShadow: isHovered
-                  ? '0 8px 28px rgba(0,0,0,0.6), 0 0 20px rgba(196,124,46,0.08)'
-                  : '0 4px 12px rgba(0,0,0,0.4)',
-                transition: 'box-shadow 0.3s ease, transform 0.3s ease',
-                transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
-                aspectRatio: '2/3',
-              }}
-            >
-              <picture>
-                <source srcSet={posterSrc.replace('.webp', '.webp')} type="image/webp" />
-                <img
-                  src={posterSrc}
-                  alt={`${item.title} (${item.year}) — ${item.genre}`}
-                  loading="lazy"
-                  decoding="async"
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              </picture>
-              {/* Hover overlay with metadata */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(7,7,6,0.92) 0%, rgba(7,7,6,0.4) 50%, transparent 100%)',
-                  opacity: isHovered ? 1 : 0,
-                  transition: 'opacity 0.28s ease',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  padding: 10,
-                  pointerEvents: 'none',
-                }}
-              >
-                <div
-                  className="syne-font"
-                  style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', lineHeight: 1.2, marginBottom: 2 }}
-                >
-                  {item.title}
-                </div>
-                <div
-                  className="mono-font"
-                  style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.06em' }}
-                >
-                  {item.year} · {item.genre}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {REEL_ITEMS.map((item, i) => (
+          <PosterCard key={item.id} item={item} visible={i < visibleCount} />
+        ))}
       </div>
     </section>
   );
@@ -285,22 +349,16 @@ MobilePosterGrid.displayName = 'MobilePosterGrid';
 // Root export
 // ─────────────────────────────────────────────────────────────────────────────
 const FilmReelSection = memo(() => {
-  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia('(min-width: 769px)');
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
-
-  if (isDesktop === null) {
-    return <div id="reel" role="region" aria-label="Film Reel Showcase" style={{ height: '100dvh', background: 'var(--film-dark)' }} />;
-  }
-
-  return isDesktop ? <DesktopStaticReel /> : <MobilePosterGrid />;
+  return (
+    <>
+      <div className="desktop-reel-section">
+        <DesktopStaticReel />
+      </div>
+      <div className="mobile-reel-section">
+        <MobilePosterGrid />
+      </div>
+    </>
+  );
 });
 
 FilmReelSection.displayName = 'FilmReelSection';

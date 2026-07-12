@@ -35,7 +35,7 @@ const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
       src={src}
       alt={alt}
       containerStyle={{
-        width: 'clamp(88px,14%,128px)',
+        width: 'clamp(100px,18%,180px)',
         aspectRatio: '2/3',
         borderRadius: 4,
         border: '1px solid rgba(196,124,46,0.14)',
@@ -177,12 +177,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
 FeaturesPane.displayName = 'FeaturesPane';
 
 const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+  <div className="integrations-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
     {USE_CASES.map((uc, i) => (
-      <div key={uc.title} style={{
+      <div key={uc.title} className="integrations-cell" style={{
         padding: 'clamp(18px,2.5vw,28px)',
-        borderRight: i % 3 !== 2 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-        borderBottom: i < USE_CASES.length - 3 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
         opacity: vis ? 1 : 0,
         transform: vis ? 'translateY(0)' : 'translateY(14px)',
         transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`,
@@ -258,7 +257,7 @@ export const CombinedSection = memo(() => {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
       }}>
         <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.45)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          {tab === 'features' ? `${FEATURES.length} features · MIT license · Open source` : `${USE_CASES.length} integrations · No auth needed · CORS open`}
+          {tab === 'features' ? `${FEATURES.length} features · MIT license · Open source` : `${USE_CASES.length} integrations · CORS open · Open source`}
         </span>
         <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.4)', letterSpacing: '0.1em' }}>© SPICYDEVS</span>
       </div>

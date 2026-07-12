@@ -151,7 +151,7 @@ export const StatsBar = memo(() => {
       {/* Stats grid */}
       <div
         className="stats-grid"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)' }}
       >
         {STATS.map((s, i) => (
           <StatPanel key={s.label} stat={s} index={i} vis={vis} />

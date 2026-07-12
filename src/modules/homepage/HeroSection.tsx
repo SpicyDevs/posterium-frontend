@@ -261,7 +261,7 @@ const HeroSection = memo(() => (
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
-          {' - '}a dozen sources, one URL. No account needed.
+          {' - '}a dozen sources, one URL. Zero configuration.
         </p>
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
@@ -272,15 +272,10 @@ const HeroSection = memo(() => (
           </a>
         </div>
         <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
-          {(['10+', '0'] as const).map((val, i) => {
-            const labels = ['Rating sources', 'Auth required'];
-            return (
-              <div key={val}>
-                <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>{val}</div>
-                <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>{labels[i]}</div>
-              </div>
-            );
-          })}
+          <div>
+            <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>10+</div>
+            <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>Rating sources</div>
+          </div>
         </div>
       </div>
       <div className="h-a5 hero-poster-right" aria-label="Poster showcase">

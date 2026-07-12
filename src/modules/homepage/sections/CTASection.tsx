@@ -143,7 +143,7 @@ export const CTASection = memo(() => {
               maxWidth: 480,
             }}
           >
-            No sign-up required. Drag badges where you want them, copy the URL, paste it in Plex. That's the whole flow.
+            Drag badges where you want them, copy the URL, paste it in Plex. That's the whole flow.
           </span>
         </div>
 

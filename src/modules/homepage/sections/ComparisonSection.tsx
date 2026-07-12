@@ -24,7 +24,6 @@ const ROWS: Row[] = [
   { feature: 'Fallback Sources', sub: 'When TMDB fails', ours: 'Cascade: Fanart → Metahub → IMDb', theirs: 'Poster breaks or shows blank', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Export Formats', sub: 'Vector and raster', ours: 'SVG, WebP, PNG, JPG', theirs: 'PNG/JPG only', ourStatus: 'win', theirStatus: 'partial' },
   { feature: 'Pricing', sub: 'Cost to generate', ours: '100% free, MIT open source', theirs: 'Paid tiers or credit limits', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Auth Required', sub: 'Registration', ours: 'None - just a URL', theirs: 'Mandatory sign-up', ourStatus: 'win', theirStatus: 'loss' },
   // Honest Posterium limitations
   { feature: 'Generation Speed', sub: 'First request latency', ours: '80-400 ms on cold edge start', theirs: 'Instant (pre-rendered cache)', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
   { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported - URL-based only', theirs: 'Some support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },

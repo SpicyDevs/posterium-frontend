@@ -292,7 +292,6 @@ export interface Stat {
 export const STATS: Stat[] = [
   { value: '10+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more', unit: 'src' },
   { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP', unit: 'fmt' },
-  { value: '0', label: 'Auth Required', sub: 'No sign-up. Just a URL.', unit: '' },
 ];
 
 export interface Feature {
@@ -486,6 +485,6 @@ export const MARQUEE_TITLES = [
   'FREE POSTER API',
   'POSTERIUM',
   'OPEN SOURCE',
-  'NO ACCOUNT NEEDED',
+  'OPEN SOURCE',
   'NOW SHOWING',
 ];
