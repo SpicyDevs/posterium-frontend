@@ -72,7 +72,7 @@ export const generateApiUrl = (
   if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
 
   const titleItem = config.items?.title;
-  if (titleItem) {
+  if (titleItem && config.ratings.includes('title')) {
     const T = 'T';
     p.set('ti', '1');
     if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
