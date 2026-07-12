@@ -35,7 +35,7 @@ const ThumbImg = memo<{ title: string; alt: string }>(({ title, alt }) => {
       src={src}
       alt={alt}
       containerStyle={{
-        width: 'clamp(120px,22%,200px)',
+        width: 'clamp(150px,40vw,240px)',
         aspectRatio: '2/3',
         borderRadius: 4,
         border: '1px solid rgba(196,124,46,0.14)',
@@ -181,7 +181,6 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
     {USE_CASES.map((uc, i) => (
       <div key={uc.title} className="integrations-cell" style={{
         padding: 'clamp(18px,2.5vw,28px)',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
         opacity: vis ? 1 : 0,
         transform: vis ? 'translateY(0)' : 'translateY(14px)',
         transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`,

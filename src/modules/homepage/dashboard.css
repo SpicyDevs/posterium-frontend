@@ -300,6 +300,7 @@ select option { background: #0e0d0b; color: #f0e6cc; }
 /* ── Integrations grid responsive ── */
 .integrations-cell {
   border-right: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 @media (min-width: 821px) {
   .integrations-cell:nth-child(3n) { border-right: none; }
@@ -340,7 +341,7 @@ select option { background: #0e0d0b; color: #f0e6cc; }
   .combined-features-list { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.04) !important; }
   .combined-features-detail { flex-direction: column; gap: 16px !important; }
   .combined-features-detail > div:first-child { width: 100%; }
-  .combined-features-detail > div:last-child { width: min(220px, 55vw); }
+  .combined-features-detail > div:last-child { width: clamp(150px, 44vw, 280px); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
