@@ -39,15 +39,39 @@ const Nav = memo(() => {
     return () => window.removeEventListener('scroll', update);
   }, []);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!menuOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      closeMenu();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMenu();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeMenu, menuOpen]);
 
   useEffect(() => {
@@ -111,7 +135,7 @@ const Nav = memo(() => {
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <a
-            href="#"
+            href="https://github.com/SpicyDevs/posterium-frontend"
             aria-label="Repository"
             className="nav-links-desktop hover-cream"
             style={{
@@ -164,6 +188,7 @@ const Nav = memo(() => {
 
       {menuOpen && (
         <div
+          ref={dialogRef}
           role="dialog" aria-modal={true} aria-label="Navigation menu"
           style={{
             position: 'fixed', top: 52, left: 0, right: 0,
@@ -182,7 +207,7 @@ const Nav = memo(() => {
             style={{ color: 'var(--film-amber)', fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '12px 8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, opacity: 0.85 }}>
             Open Builder
           </a>
-          <a href="#" onClick={closeMenu} className="syne-font"
+          <a href="https://github.com/SpicyDevs/posterium-frontend" onClick={closeMenu} className="syne-font"
             style={{ color: 'var(--film-amber)', fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', padding: '12px 8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7, opacity: 0.85 }}>
             <Github size={13} /> Repository
           </a>

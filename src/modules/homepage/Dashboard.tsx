@@ -55,8 +55,8 @@ const Dashboard: React.FC = () => {
           textDecoration: 'none',
           letterSpacing: '0.06em',
         }}
-        onFocus={(e) => { (e.currentTarget as HTMLElement).style.left = '8px'; }}
-        onBlur={(e) => { (e.currentTarget as HTMLElement).style.left = '-9999px'; }}
+        onFocus={(e) => { e.currentTarget.style.left = '8px'; }}
+        onBlur={(e) => { e.currentTarget.style.left = '-9999px'; }}
       >
         Skip to main content
       </a>

@@ -290,7 +290,6 @@ export interface Stat {
   unit?: string;
 }
 export const STATS: Stat[] = [
-  { value: '∞', label: 'Free API Calls', sub: 'No rate limits, never', unit: '' },
   { value: '10+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more', unit: 'src' },
   { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP', unit: 'fmt' },
   { value: '0', label: 'Auth Required', sub: 'No sign-up. Just a URL.', unit: '' },

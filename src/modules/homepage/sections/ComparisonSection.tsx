@@ -69,7 +69,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
     return (
       <>
         {isFirstDrawback && (
-          <div style={{
+          <div role="row" style={{
             display: 'grid',
             gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
             borderBottom: '1px solid rgba(255,255,255,0.04)',
@@ -82,6 +82,8 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
           </div>
         )}
         <div
+          className="comp-row"
+          role="row"
           style={{
             display: 'grid',
             gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
@@ -93,7 +95,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
           }}
         >
           {/* Feature label */}
-          <div style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)' }}>
+          <div role="gridcell" className="comp-cell-feature" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)' }}>
             <div className="syne-font" style={{ fontSize: 'clamp(11px,1.3vw,13px)', fontWeight: 700, color: 'rgba(230,220,198,0.9)', marginBottom: row.sub ? 3 : 0, letterSpacing: '0.02em' }}>
               {row.feature}
             </div>
@@ -104,10 +106,10 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
             )}
           </div>
 
-          <div style={{ background: 'rgba(196,124,46,0.08)' }} aria-hidden="true" />
+          <div className="comp-sep" style={{ background: 'rgba(196,124,46,0.08)' }} aria-hidden="true" />
 
           {/* Posterium */}
-          <div style={{
+          <div role="gridcell" className="comp-cell-posterium" style={{
             padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)',
             background: row.ourStatus === 'win' ? 'rgba(196,124,46,0.025)' : 'transparent',
             display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -118,10 +120,10 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
             </span>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.025)' }} aria-hidden="true" />
+          <div className="comp-sep" style={{ background: 'rgba(255,255,255,0.025)' }} aria-hidden="true" />
 
           {/* Others */}
-          <div style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <div role="gridcell" className="comp-cell-others" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span style={{ marginTop: 2 }}>{getIcon(row.theirStatus)}</span>
             <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.theirStatus), lineHeight: 1.45 }}>
               {row.theirs}
@@ -166,32 +168,32 @@ export const ComparisonSection = memo(() => {
           transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s',
         }}>
           {/* Sticky column headers */}
-          <div style={{
+          <div role="row" className="comp-header" style={{
             position: 'sticky', top: 52, zIndex: 10,
             display: 'grid', gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
             borderBottom: '1px solid rgba(196,124,46,0.22)',
             background: 'rgba(10,9,8,0.96)', backdropFilter: 'blur(20px)',
             borderTopLeftRadius: 16, borderTopRightRadius: 16,
           }}>
-            <div style={{ padding: '13px clamp(14px,2.5vw,28px)' }}>
+            <div role="columnheader" className="comp-cell-feature" style={{ padding: '13px clamp(14px,2.5vw,28px)' }}>
               <span className="mono-font" style={{ fontSize: 9, color: 'rgba(200,190,170,0.45)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
                 Feature
               </span>
             </div>
-            <div style={{ background: 'rgba(196,124,46,0.18)' }} aria-hidden="true" />
-            <div style={{ padding: '13px clamp(14px,2.5vw,28px)', background: 'rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="comp-sep" style={{ background: 'rgba(196,124,46,0.18)' }} aria-hidden="true" />
+            <div role="columnheader" className="comp-cell-posterium" style={{ padding: '13px clamp(14px,2.5vw,28px)', background: 'rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--film-amber)', boxShadow: '0 0 8px rgba(196,124,46,0.7)', flexShrink: 0 }} />
               <span className="syne-font" style={{ fontSize: 11, color: 'var(--film-amber)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 800 }}>Posterium</span>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.06)' }} aria-hidden="true" />
-            <div style={{ padding: '13px clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="comp-sep" style={{ background: 'rgba(255,255,255,0.06)' }} aria-hidden="true" />
+            <div role="columnheader" className="comp-cell-others" style={{ padding: '13px clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(122,117,110,0.28)', flexShrink: 0 }} />
               <span className="syne-font" style={{ fontSize: 11, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Others</span>
             </div>
           </div>
 
           {/* Rows */}
-          <div style={{ borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: 'hidden' }}>
+          <div role="grid" aria-label="Feature comparison data" style={{ borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: 'hidden' }}>
             {ROWS.map((row, i) => (
               <CompRow
                 key={row.feature}

@@ -261,7 +261,7 @@ const HeroSection = memo(() => (
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
-          {' - '}a dozen sources, one URL. No account. No rate limits.
+          {' - '}a dozen sources, one URL. No account needed.
         </p>
         <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
@@ -272,8 +272,8 @@ const HeroSection = memo(() => (
           </a>
         </div>
         <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
-          {(['∞', '10+', '0'] as const).map((val, i) => {
-            const labels = ['Free API calls', 'Rating sources', 'Auth required'];
+          {(['10+', '0'] as const).map((val, i) => {
+            const labels = ['Rating sources', 'Auth required'];
             return (
               <div key={val}>
                 <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>{val}</div>

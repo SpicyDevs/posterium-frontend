@@ -313,3 +313,59 @@ select option { background: #0e0d0b; color: #f0e6cc; }
 @media (max-width: 420px) {
   .stats-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ── Comparison table: mobile stacked cards ── */
+@media (max-width: 768px) {
+  .comp-header {
+    grid-template-columns: 1fr !important;
+  }
+  .comp-header .comp-sep,
+  .comp-header .comp-cell-posterium,
+  .comp-header .comp-cell-others {
+    display: none !important;
+  }
+  .comp-header .comp-cell-feature {
+    text-align: center;
+  }
+
+  .comp-row {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    padding: 0;
+  }
+  .comp-row .comp-sep {
+    display: none !important;
+  }
+  .comp-row .comp-cell-feature {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.015);
+  }
+  .comp-row .comp-cell-posterium,
+  .comp-row .comp-cell-others {
+    padding-left: clamp(32px,6vw,48px) !important;
+    position: relative;
+  }
+  .comp-row .comp-cell-posterium::before {
+    content: 'Posterium';
+    position: absolute;
+    left: clamp(14px,2.5vw,28px);
+    top: clamp(12px,2vw,18px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--film-amber);
+    opacity: 0.5;
+  }
+  .comp-row .comp-cell-others::before {
+    content: 'Others';
+    position: absolute;
+    left: clamp(14px,2.5vw,28px);
+    top: clamp(12px,2vw,18px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(122,117,110,0.4);
+  }
+}

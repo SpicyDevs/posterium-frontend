@@ -143,7 +143,7 @@ export const CTASection = memo(() => {
               maxWidth: 480,
             }}
           >
-            No sign-up, no rate limits, no tricks. Drag badges where you want them, copy the URL, paste it in Plex. That's the whole flow.
+            No sign-up required. Drag badges where you want them, copy the URL, paste it in Plex. That's the whole flow.
           </span>
         </div>
 
@@ -171,7 +171,7 @@ export const CTASection = memo(() => {
             Open Free Builder <ArrowRight size={13} />
           </a>
           <a
-            href="#"
+            href="https://github.com/SpicyDevs/posterium-frontend"
             target="_blank"
             rel="noreferrer"
             className="syne-font border-hover-amber"

@@ -4,8 +4,8 @@ import { Film, Github, ExternalLink } from 'lucide-react';
 
 const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
-  ['Project Repo', '#', false],
-  ['MIT License', '#', false],
+  ['Project Repo', 'https://github.com/SpicyDevs/posterium-frontend', true],
+  ['MIT License', '/LICENSE', false],
   ['API Docs', '#combined'],
   ['FAQ', '/faq'],
 ] as const;
@@ -111,7 +111,7 @@ export const FooterSection = memo(() => (
         </div>
 
         {/* GitHub */}
-        <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(196,124,46,0.35)', textDecoration: 'none', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.18s' }}>
+        <a href="https://github.com/SpicyDevs/posterium-frontend" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(196,124,46,0.35)', textDecoration: 'none', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.18s' }}>
           <Github size={12} />
           Open Source
         </a>
