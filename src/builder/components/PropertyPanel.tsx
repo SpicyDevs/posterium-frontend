@@ -204,37 +204,7 @@ const PropertyPanel: React.FC<Props> = ({
       <SidebarLayout side="right" bodyClassName="pb-24">
         {showBadgeSettings && (
           <Section title="Layout" icon={<Layout size={10} />} sectionId="global-layout">
-            <div className="flex items-start gap-4">
-              <div className="flex-1">
-                <p
-                  className="body-font mb-2"
-                  style={{ fontSize: 10, color: 'var(--film-text-label)', fontWeight: 500 }}
-                >
-                  Mode
-                </p>
-                <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-                  {[
-                    { id: 'b' as const, label: 'Badge' },
-                    { id: 'm' as const, label: 'Minimal' },
-                  ].map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => updateConfig('uiPreset', opt.id)}
-                      className="flex-1 py-1.5 text-center transition-all"
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 500,
-                        background: (config.uiPreset ?? 'b') === opt.id ? 'rgba(196,124,46,0.25)' : 'transparent',
-                        color: (config.uiPreset ?? 'b') === opt.id ? 'var(--film-amber)' : 'var(--film-text-dim)',
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="flex items-start gap-6">
               <div className="flex-1">
                 <p
                   className="body-font mb-2"

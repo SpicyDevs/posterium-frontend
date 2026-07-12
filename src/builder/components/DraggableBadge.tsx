@@ -386,7 +386,7 @@ const DraggableBadge: React.FC<Props> = ({
       case 'right':
         return {
           icon: { left: bw - iconWPx - (isRuntime ? 9 : 12) * displayScale, top: isRuntime ? 14 * displayScale : 12 * displayScale },
-          text: { left: 12 * displayScale, right: 'auto', textAlign: 'start' as const, transform: 'translateY(-50%)' as const },
+          text: { top: '50%' as const, left: 12 * displayScale, right: 'auto', textAlign: 'start' as const, transform: 'translateY(-50%)' as const },
         };
       case 'above':
         return {
@@ -407,7 +407,7 @@ const DraggableBadge: React.FC<Props> = ({
       default:
         return {
           icon: { left: isRuntime ? 9 * displayScale : 12 * displayScale, top: isRuntime ? 14 * displayScale : 12 * displayScale },
-          text: { right: 10 * displayScale, textAlign: 'end' as const, transform: 'translateY(-50%)' as const },
+          text: { top: '50%' as const, right: 10 * displayScale, textAlign: 'end' as const, transform: 'translateY(-50%)' as const },
         };
     }
   })();

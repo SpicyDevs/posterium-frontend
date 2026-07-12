@@ -50,7 +50,7 @@ const ZoomOverlay = memo<{
             : {
                 top: '50%',
                 transform: 'translateY(-50%)',
-                right: isFullscreen ? 20 : rightSidebarWidth + 20,
+                right: isFullscreen ? 20 : rightSidebarWidth + 40,
                 transition: 'right 0.3s cubic-bezier(0.16,1,0.3,1)',
               }),
           background: 'rgba(14,13,11,0.92)',

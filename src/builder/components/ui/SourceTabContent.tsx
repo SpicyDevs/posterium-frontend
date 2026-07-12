@@ -370,6 +370,38 @@ const SourceTabContent: React.FC<Props> = ({
         disabled={['metahub', 'imdb'].includes(config.source)}
       />
 
+      {/* Badge Mode */}
+      <div>
+        <p
+          className="syne-font uppercase tracking-widest mb-1.5"
+          style={{ fontSize: 9, color: 'var(--film-text-dim)', fontWeight: 700 }}
+        >
+          Badge Mode
+        </p>
+        <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+          {[
+            { id: 'b' as const, label: 'Badge' },
+            { id: 'm' as const, label: 'Minimal' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => updateConfig('uiPreset', opt.id)}
+              className="flex-1 py-1.5 text-center transition-all"
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                background: (config.uiPreset ?? 'b') === opt.id ? 'rgba(196,124,46,0.25)' : 'transparent',
+                color: (config.uiPreset ?? 'b') === opt.id ? 'var(--film-amber)' : 'var(--film-text-dim)',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Background */}
       <SliderRow
         label="Poster Blur"
