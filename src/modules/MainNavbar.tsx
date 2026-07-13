@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Coffee, Github, Menu, Search, X } from 'lucide-react';
+import { Coffee, Github, Menu, X } from 'lucide-react';
+import SearchInput from '@/ui/SearchInput';
 
 export interface NavbarLink {
   label: string;
@@ -52,6 +53,7 @@ const MainNavbar = memo<MainNavbarProps>(
     const searchInputRef = useRef<HTMLInputElement>(null);
     const mobileToggleRef = useRef<HTMLButtonElement>(null);
     const wasMenuOpenRef = useRef(false);
+    const mobileDialogRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       if (!revealOnScroll) {
@@ -107,13 +109,35 @@ const MainNavbar = memo<MainNavbarProps>(
 
     useEffect(() => {
       if (!menuOpen) return;
-      const handleEscape = (event: KeyboardEvent) => {
-        if (event.key !== 'Escape') return;
-        event.preventDefault();
-        setMenuOpen(false);
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setMenuOpen(false);
+          return;
+        }
+        if (event.key !== 'Tab' || !mobileDialogRef.current) return;
+        const focusable = mobileDialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey) {
+          if (document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       };
-      window.addEventListener('keydown', handleEscape);
-      return () => window.removeEventListener('keydown', handleEscape);
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
     }, [menuOpen, setMenuOpen]);
 
     useEffect(() => {
@@ -199,40 +223,15 @@ const MainNavbar = memo<MainNavbarProps>(
             className="main-nav-search"
             style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}
           >
-            <div
-              style={{
-                width: 'min(440px,100%)',
-                height: 34,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '0 10px',
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.03)',
-                color: 'var(--film-text-dim)',
-              }}
-            >
-              <Search size={13} className="shrink-0" />
-              <input
-                ref={searchInputRef}
-                value={search?.value ?? ''}
-                onChange={(e) => search?.onChange?.(e.target.value)}
-                onFocus={() => search?.onActivate?.()}
-                readOnly={search?.readOnly || !search?.onChange}
-                placeholder={search?.placeholder ?? 'Search…'}
-                aria-label={search?.placeholder ?? 'Search'}
-                className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--film-cream)',
-                  fontSize: 11,
-                  letterSpacing: '0.02em',
-                }}
-              />
-            </div>
+            <SearchInput
+              ref={searchInputRef}
+              value={search?.value ?? ''}
+              onChange={(e) => search?.onChange?.(e.target.value)}
+              onActivate={search?.onActivate}
+              readOnly={search?.readOnly || !search?.onChange}
+              placeholder={search?.placeholder ?? 'Search…'}
+              style={{ width: 'min(440px,100%)' }}
+            />
           </div>
 
           <div
@@ -337,6 +336,7 @@ const MainNavbar = memo<MainNavbarProps>(
 
         {menuOpen && visible && (
           <div
+            ref={mobileDialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
@@ -356,24 +356,13 @@ const MainNavbar = memo<MainNavbarProps>(
             }}
           >
             {!keepSearchOnMobile ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Search size={13} color="var(--film-text-dim)" />
-                <input
-                  value={search?.value ?? ''}
-                  onChange={(e) => search?.onChange?.(e.target.value)}
-                  readOnly={search?.readOnly || !search?.onChange}
-                  placeholder={search?.placeholder ?? 'Search…'}
-                  aria-label={search?.placeholder ?? 'Search'}
-                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
-                  style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--film-cream)',
-                    fontSize: 12,
-                  }}
-                />
-              </div>
+              <SearchInput
+                value={search?.value ?? ''}
+                onChange={(e) => search?.onChange?.(e.target.value)}
+                readOnly={search?.readOnly || !search?.onChange}
+                placeholder={search?.placeholder ?? 'Search…'}
+                style={{ background: 'transparent', border: 'none', padding: 0, height: 'auto', width: '100%' }}
+              />
             ) : null}
 
             {links.map(({ label, href, external }) => (

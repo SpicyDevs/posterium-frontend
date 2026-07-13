@@ -1,5 +1,6 @@
 import { memo, useState, useMemo, useEffect } from 'react';
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import SearchInput from '@/ui/SearchInput';
 
 export interface FaqSearchItem {
   id: string;
@@ -70,43 +71,24 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
   }, [filteredIds, matchCount]);
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100%',
-        maxWidth: 400,
-      }}
-    >
       <div
         style={{
-          height: 38,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '0 12px',
-          borderRadius: 8,
-          border: isActive ? '1px solid rgba(196,124,46,0.4)' : '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(255,255,255,0.03)',
-          transition: 'border-color 0.15s ease',
+          position: 'relative',
+          width: '100%',
+          maxWidth: 400,
         }}
       >
-        <Search size={14} color="var(--film-text-dim)" style={{ flexShrink: 0 }} />
-        <input
-          type="text"
+        <SearchInput
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onFocus={() => setIsActive(true)}
+          onActivate={() => setIsActive(true)}
           onBlur={() => setIsActive(false)}
           placeholder="Search FAQs..."
-          aria-label="Search FAQs"
-          className="syne-font focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C47C2E] focus-visible:outline-offset-2 rounded-sm"
           style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--film-cream)',
-            fontSize: 12,
-            letterSpacing: '0.02em',
+            height: 38,
+            padding: '0 12px',
+            border: isActive ? '1px solid rgba(196,124,46,0.4)' : '1px solid rgba(255,255,255,0.08)',
+            transition: 'border-color 0.15s ease',
           }}
         />
         {search && (
@@ -114,6 +96,10 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
             type="button"
             onClick={() => setSearch('')}
             style={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
               background: 'none',
               border: 'none',
               padding: 4,
@@ -121,6 +107,7 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
               color: 'var(--film-text-dim)',
               display: 'flex',
               alignItems: 'center',
+              zIndex: 1,
             }}
             aria-label="Clear search"
           >
@@ -128,7 +115,6 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
           </button>
         )}
       </div>
-    </div>
   );
 });
 

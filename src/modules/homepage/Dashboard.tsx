@@ -1,7 +1,7 @@
 // src/components/dashboard/Dashboard.tsx
 import React, { Suspense, lazy } from 'react';
 import './dashboard.css';
-import Nav from './Nav';
+import MainNavbar from '@/modules/MainNavbar';
 import HeroSection from './HeroSection';
 import FilmReelSection from './FilmReelSection';
 
@@ -69,7 +69,15 @@ const Dashboard: React.FC = () => {
           fontFamily: 'DM Sans, sans-serif',
         }}
       >
-        <Nav />
+        <MainNavbar
+          revealOnScroll
+          sectionLinks={[
+            { label: 'Reel', href: '#reel' },
+            { label: 'Features', href: '#combined' },
+            { label: 'Integrations', href: '#integrations' },
+          ]}
+          showMobileBuildCta
+        />
 
         <main id="main-content">
           <HeroSection />
