@@ -157,14 +157,17 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           case 'sz':
             items[badgeKey].textSize = parseInt(value);
             break;
-          case 'al':
-            items[badgeKey].textAlign = value as BadgeConfig['textAlign'];
-            break;
           case 'wd':
             items[badgeKey].textBoxWidth = parseInt(value);
             break;
           case 'wt':
             items[badgeKey].textWeight = parseInt(value);
+            break;
+          case 'ln':
+            items[badgeKey].lines = value as '1' | '2';
+            break;
+          case 'va':
+            items[badgeKey].verticalAnchor = value as 'top' | 'bottom';
             break;
         }
       }
@@ -193,6 +196,10 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         if (ti_wt !== undefined) items.title.textWeight = ti_wt;
         const ti_sh = vi('ti_sh', 'title_shadow');
         if (ti_sh !== undefined) items.title.shadow = ti_sh;
+        const ti_ln = v('ti_ln', 'title_lines');
+        if (ti_ln !== null && ['1', '2'].includes(ti_ln)) items.title.lines = ti_ln as '1' | '2';
+        const ti_va = v('ti_va', 'title_vertical_anchor');
+        if (ti_va === 'top' || ti_va === 'bottom') items.title.verticalAnchor = ti_va;
       }
 
       const ratingCodes = p.has('r')

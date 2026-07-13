@@ -72,7 +72,9 @@ const LayerPanel: React.FC<Props> = ({
     activeTab,
     setActiveTab,
     selectedLogo,
+    selectedTitle,
     handleLogoSelection,
+    handleTitleSelection,
     setLiveRatings,
     setLiveTitle,
     setLiveYear,
@@ -136,7 +138,7 @@ const LayerPanel: React.FC<Props> = ({
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
   const savedActiveBadgesRef = useRef<RatingType[]>([]);
   const badgesVisible = config.ratings.length > 0;
-  const titleBadgeEnabled = config.ratings.includes('title');
+  const titleBadgeEnabled = config.titleEnabled ?? false;
 
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
@@ -263,7 +265,7 @@ const LayerPanel: React.FC<Props> = ({
       if (visible) {
         setConfig((prev) => {
           if (prev.ratings.includes(id)) return prev;
-          if (id !== 'title' && id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
+          if (id !== 'year') return { ...prev, ratings: [id, ...prev.ratings] };
           const nextItems = { ...prev.items, [id]: { ...(prev.items[id] ?? {}) } };
           const titleItem = nextItems[id];
           if (titleItem) {
@@ -283,14 +285,14 @@ const LayerPanel: React.FC<Props> = ({
     [onSelect, setActiveTab, setConfig]
   );
 
-  const allVisible = config.ratings.filter((id) => id !== 'title' && id !== 'year').length === ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year').length;
+  const allVisible = config.ratings.filter((id) => id !== 'year').length === ALL_BADGES.filter((b) => b.id !== 'year').length;
   const handleToggleAll = useCallback(() => {
-    const badgeOnly = ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year');
+    const badgeOnly = ALL_BADGES.filter((b) => b.id !== 'year');
     if (allVisible) {
       setConfig((prev) => {
-        const prevBadges = prev.ratings.filter((id) => id !== 'title' && id !== 'year');
+        const prevBadges = prev.ratings.filter((id) => id !== 'year');
         setInactiveOrder((io) => [...[...prevBadges].reverse(), ...io]);
-        return { ...prev, ratings: prev.ratings.filter((id) => id === 'title' || id === 'year') };
+        return { ...prev, ratings: prev.ratings.filter((id) => id === 'year') };
       });
     } else {
       setConfig((prev) => {
@@ -302,26 +304,26 @@ const LayerPanel: React.FC<Props> = ({
   }, [allVisible, setConfig]);
 
   const allVisibleSelected =
-    config.ratings.length > 0 && config.ratings.filter((r) => r !== 'title' && r !== 'year').every((r) => selectedIds.has(r));
+    config.ratings.length > 0 && config.ratings.filter((r) => r !== 'year').every((r) => selectedIds.has(r));
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       setBatchSelection(
-        checked ? ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year' && config.ratings.includes(b.id)).map((b) => b.id) : []
+        checked ? ALL_BADGES.filter((b) => b.id !== 'year' && config.ratings.includes(b.id)).map((b) => b.id) : []
       );
     },
     [setBatchSelection, config.ratings]
   );
 
   const activeBadges = [...config.ratings]
-    .filter((id) => id !== 'title' && id !== 'year' && ALL_BADGES.some((b) => b.id === id))
+    .filter((id) => ALL_BADGES.some((b) => b.id === id))
     .map((id, idx) => ({
       kind: 'badge' as const,
       id,
       label: ALL_BADGES.find((b) => b.id === id)?.label ?? id.toUpperCase(),
       z: 100 + idx,
     }));
-  const titleActive = config.ratings.includes('title');
+  const titleActive = config.titleEnabled ?? false;
   const activeLayers = [
     ...activeBadges,
     ...(config.logo
@@ -336,7 +338,7 @@ const LayerPanel: React.FC<Props> = ({
       : []),
   ].sort((a, b) => b.z - a.z);
 
-  const inactiveBadges = ALL_BADGES.filter((b) => b.id !== 'title' && b.id !== 'year' && !config.ratings.includes(b.id)).sort((a, b) => {
+  const inactiveBadges = ALL_BADGES.filter((b) => !config.ratings.includes(b.id)).sort((a, b) => {
     const ia = inactiveOrder.indexOf(a.id),
       ib = inactiveOrder.indexOf(b.id);
     if (ia === -1 && ib === -1) return ALL_BADGES.indexOf(a) - ALL_BADGES.indexOf(b);
@@ -516,20 +518,18 @@ const LayerPanel: React.FC<Props> = ({
                 <div className="space-y-0.5 mb-1">
                   <TitleLayerRow
                     isActive={true}
-                    isSelected={selectedIds.has('title')}
-                    onSelect={(multi) => onSelect('title', multi)}
+                    isSelected={selectedTitle}
+                    onSelect={(multi) => handleTitleSelection(multi)}
                     onEnable={() => {
                       setConfig((prev) => ({
                         ...prev,
-                        ratings: prev.ratings.includes('title')
-                          ? prev.ratings
-                          : [...prev.ratings, 'title'],
+                        titleEnabled: true,
                       }));
                     }}
                     onDisable={() => {
                       setConfig((prev) => ({
                         ...prev,
-                        ratings: prev.ratings.filter((r) => r !== 'title'),
+                        titleEnabled: false,
                       }));
                     }}
                   />

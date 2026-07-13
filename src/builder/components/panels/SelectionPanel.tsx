@@ -7,6 +7,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   selectedLogo?: boolean;
+  selectedTitle?: boolean;
   selectedMinimalElements?: Set<string>;
   detailLevel?: 'simple' | 'advanced';
 }

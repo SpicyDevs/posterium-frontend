@@ -15,6 +15,7 @@ import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import type { PosterConfig, RatingType } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import DraggableBadge from './DraggableBadge';
+import DraggableTitle from './DraggableTitle';
 import DraggableLogo from './DraggableLogo';
 import { DEFAULT_API_BASE } from '../utils/constants';
 import { calculateAutoPosition, getScale, snapToGridSize } from '../utils/positioning';
@@ -29,7 +30,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   onSelect: (id: RatingType, multi: boolean) => void;
-  onContextMenu?: (id: RatingType, e: React.MouseEvent) => void;
+  onContextMenu?: (id: string, e: React.MouseEvent) => void;
   onLogoContextMenu?: (e: React.MouseEvent) => void;
   isFullscreen?: boolean;
   rightSidebarWidth?: number;
@@ -57,11 +58,12 @@ const PreviewCanvas: React.FC<Props> = ({
     viewOptions,
     clearSelection,
     liveRatings,
-    liveTitle,
     liveYear,
     selectedLogo,
+    selectedTitle,
     selectedMinimalElements,
     handleLogoSelection,
+    handleTitleSelection,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +75,7 @@ const PreviewCanvas: React.FC<Props> = ({
   const [isPanning, setIsPanning] = useState(false);
   const panFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<RatingType | null>(null);
-  const [dragSession, setDragSession] = useState<{ id: RatingType; dx: number; dy: number } | null>(
+  const [dragSession, setDragSession] = useState<{ id: string; dx: number; dy: number } | null>(
     null
   );
   const [isDraggingMinimalText, setIsDraggingMinimalText] = useState(false);
@@ -87,7 +89,7 @@ const PreviewCanvas: React.FC<Props> = ({
   const previewRatings = useMemo(() => {
     if (!hasLiveRatings || config.fallbackEnabled) return config.ratings;
     return config.ratings.filter((id) => {
-      if (id === 'year' || id === 'title') return true;
+      if (id === 'year') return true;
       const v = liveRatings[id];
       return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
     });
@@ -98,7 +100,7 @@ const PreviewCanvas: React.FC<Props> = ({
   );
 
   // rAF throttle for drag move updates
-  const pendingDragRef = useRef<{ id: RatingType; dx: number; dy: number } | null>(null);
+  const pendingDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const dragRafRef = useRef<number | null>(null);
 
   useEffect(
@@ -114,50 +116,16 @@ const PreviewCanvas: React.FC<Props> = ({
       const h = BASE_BADGE_H * scale;
       const textSize = Math.max(8, itemCfg?.textSize ?? 28) * scale;
       const textLetterSpacing = (itemCfg?.textLetterSpacing ?? 0) * scale;
-      const textMaxChars = Math.max(0, itemCfg?.textMaxChars ?? 0);
-      const textLineHeight = itemCfg?.textLineHeight ?? 1.1;
-      const legacyMaxLinesRaw = Math.round(itemCfg?.textMaxLines ?? 0);
-      if (id !== 'title' && id !== 'year') return { w: BASE_BADGE_W * scale, h };
-      const raw = (baseValue ?? (id === 'year' ? liveYear : liveTitle) ?? '').trim();
-      const fallback = id === 'year' ? '2026' : 'Title';
-      const measured = raw.length > 0 ? raw : fallback;
-      const shown =
-        id === 'title' && textMaxChars > 0 && measured.length > textMaxChars
-          ? `${measured.slice(0, textMaxChars).trimEnd()}…`
-          : measured;
-      if (id === 'title') {
-        const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
-        const legacyWidthPx = itemCfg?.textBoxWidth;
-        const legacyFromPx =
-          legacyWidthPx && legacyWidthPx > 120
-            ? Math.max(4, Math.round((legacyWidthPx - 16 * scale) / approxCharPx))
-            : undefined;
-        const charWidth = Math.max(4, Math.min(80, Math.round(itemCfg?.textCharWidth ?? legacyFromPx ?? 24)));
-        const legacyHeightPx = itemCfg?.textBoxHeight;
-        const legacyHeightLines =
-          legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
-        const charHeight = Math.max(
-          1,
-          Math.min(
-            12,
-            Math.round(
-              itemCfg?.textCharHeight ??
-                legacyHeightLines ??
-                (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)
-            )
-          )
-        );
-        const w = Math.max(120, Math.round(charWidth * approxCharPx + 16 * scale));
-        const titleHeight = Math.max(32, Math.round(charHeight * textSize * textLineHeight + 16 * scale));
-        return { w, h: titleHeight };
-      }
+      if (id !== 'year') return { w: BASE_BADGE_W * scale, h };
+      const raw = (baseValue ?? liveYear ?? '').trim();
+      const measured = raw.length > 0 ? raw : '2026';
       const w = Math.max(
         BASE_BADGE_W * scale,
-        Math.ceil(shown.length * (textSize * 0.62 + textLetterSpacing) + 28 * scale)
+        Math.ceil(measured.length * (textSize * 0.62 + textLetterSpacing) + 28 * scale)
       );
       return { w, h };
     },
-    [config.scale, config.size, liveTitle, liveYear]
+    [config.scale, config.size, liveYear]
   );
 
   const getBadgeRect = (id: RatingType, index: number) => {
@@ -495,7 +463,7 @@ const PreviewCanvas: React.FC<Props> = ({
     handleMinimalYearDragEnd,
   ]);
 
-  const handleDragMove = useCallback((id: RatingType, dx: number, dy: number) => {
+  const handleDragMove = useCallback((id: string, dx: number, dy: number) => {
     if (!isFinite(dx) || !isFinite(dy)) return;
     pendingDragRef.current = { id, dx, dy };
     if (dragRafRef.current === null) {
@@ -506,7 +474,7 @@ const PreviewCanvas: React.FC<Props> = ({
     }
   }, []);
 
-  const handleDragEnd = (id: RatingType, dx: number, dy: number) => {
+  const handleDragEnd = (id: string, dx: number, dy: number) => {
     if (dragRafRef.current !== null) {
       cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = null;
@@ -514,6 +482,38 @@ const PreviewCanvas: React.FC<Props> = ({
     pendingDragRef.current = null;
     setDragSession(null);
     if (dx === 0 && dy === 0) return;
+
+    if (id === 'title') {
+      setConfig((prev: PosterConfig) => {
+        const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
+        const ti = { ...(prev.items.title ?? {}) };
+        const startX = ti.x ?? 25;
+        const startY = ti.y ?? 100;
+        // Compute visual container width matching DraggableTitle's dynamicWidth
+        const sizeScale = getScale(prev.size);
+        const itemScale = ti.scale ?? prev.scale ?? 1.0;
+        const displayScale = itemScale * sizeScale;
+        const textSize = Math.max(8, (ti.textSize ?? 48) * displayScale);
+        const textLetterSpacing = (ti.textLetterSpacing ?? 0) * displayScale;
+        const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
+        const legacyFromPx =
+          ti.textBoxWidth && ti.textBoxWidth > 120
+            ? Math.max(4, Math.round((ti.textBoxWidth - 16 * displayScale) / approxCharPx))
+            : undefined;
+        const titleCharWidth = Math.max(4, Math.min(80, Math.round(ti.textCharWidth ?? legacyFromPx ?? 24)));
+        const dynamicWidth = Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale));
+        const boxW = Math.max(120, ti.textBoxWidth ?? dynamicWidth);
+        // Content height estimate matching DraggableTitle
+        const textLineHeight = ti.textLineHeight ?? 1.1;
+        const titleCharHeight = Math.max(1, Math.min(12, Math.round(ti.textCharHeight ?? 1)));
+        const estimatedHeight = Math.max(32, Math.ceil(titleCharHeight * textSize * textLineHeight + 16 * displayScale));
+        const boxH = Math.max(36, estimatedHeight);
+        ti.x = Math.max(1 - boxW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
+        ti.y = Math.max(1 - boxH, Math.min(snap(startY + dy), CANVAS_HEIGHT - 1));
+        return { ...prev, items: { ...prev.items, title: ti }, layout: 'custom', preset: 'custom' };
+      });
+      return;
+    }
 
     setConfig((prev: PosterConfig) => {
       const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);
@@ -545,62 +545,45 @@ const PreviewCanvas: React.FC<Props> = ({
         }
         let startX = newItems[targetId].x;
         let startY = newItems[targetId].y;
-        if (startX === undefined || startY === undefined) {
-          const auto = calculateAutoPosition(
-            targetId,
-            prev.ratings.indexOf(targetId),
-            prev.ratings.length,
-            prev
-          );
-          startX = startX ?? auto.x;
-          startY = startY ?? auto.y;
-        }
-        const { w: selWidth, h: selHeight } = getBadgeSize(
-          targetId,
-          newItems[targetId],
-          targetId === 'year' ? liveYear : targetId === 'title' ? liveTitle : undefined
-        );
-        // Constrain so at least 1px of the badge remains inside the poster
-        let nextX = snap(startX + dx);
-        let nextY = snap(startY + dy);
-        if (viewOptions?.snapToGrid) {
-          const centerX = nextX + selWidth / 2;
-          const centerY = nextY + selHeight / 2;
-          const middleX = CANVAS_WIDTH / 2;
-          const middleY = CANVAS_HEIGHT / 2;
-          if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - selWidth / 2;
-          if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - selHeight / 2;
-        }
-        newItems[targetId]!.x = Math.max(1 - selWidth, Math.min(nextX, CANVAS_WIDTH - 1));
-        newItems[targetId]!.y = Math.max(1 - selHeight, Math.min(nextY, CANVAS_HEIGHT - 1));
+        if (startX === undefined) startX = 0;
+        if (startY === undefined) startY = 0;
+        const baseScale = getScale(prev.size) * (prev.items?.[targetId]?.scale ?? prev.scale ?? 1.0);
+        const badgeW = BASE_BADGE_W * baseScale;
+        const badgeH = BASE_BADGE_H * baseScale;
+        const clampedX = Math.max(1 - badgeW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
+        const clampedY = Math.max(1 - badgeH, Math.min(snap(startY + dy), CANVAS_HEIGHT - 1));
+        newItems[targetId] = { ...newItems[targetId], x: clampedX, y: clampedY };
       };
 
-      if (selectedIds.has(id) && selectedIds.size > 1) selectedIds.forEach(applyDelta);
-      else applyDelta(id);
+      if (selectedIds.has(id as RatingType) && selectedIds.size > 1) {
+        selectedIds.forEach(applyDelta);
+      } else {
+        applyDelta(id as RatingType);
+      }
 
-      return { ...prev, layout: 'custom', preset: 'custom', items: newItems };
+      return { ...prev, items: newItems, layout: 'custom', preset: 'custom' };
     });
   };
 
   const badgeSnapGuide = useMemo(() => {
     if (!dragSession || !viewOptions?.snapToGrid) return null;
-    const targetId = dragSession.id;
-    const index = previewRatings.indexOf(targetId);
+    const tid = dragSession.id as RatingType;
+    const index = previewRatings.indexOf(tid);
     if (index === -1) return null;
 
     const auto = calculateAutoPosition(
-      targetId,
+      tid,
       index,
       previewRatings.length,
       { ...config, ratings: previewRatings }
     );
-    const iCfg = config.items[targetId];
+    const iCfg = config.items[tid];
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
     if (!isFinite(x)) x = auto.x;
     if (!isFinite(y)) y = auto.y;
 
-    const { w: bW, h: bH } = getBadgeSize(targetId, iCfg);
+    const { w: bW, h: bH } = getBadgeSize(tid, iCfg);
     const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
     const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
     const centerX = nextX + bW / 2;
@@ -713,6 +696,16 @@ const PreviewCanvas: React.FC<Props> = ({
           onError={handleImageError}
         />
 
+        {/* Minimal preset gradient overlay — matches backend's bottom-quarter SVG gradient */}
+        {(config.uiPreset ?? 'b') === 'm' && (
+          <div
+            className="absolute inset-0 z-20 pointer-events-none"
+            style={{
+              background: `linear-gradient(180deg, transparent 0%, transparent ${Math.round(CANVAS_HEIGHT * 0.75)}px, rgba(0,0,0,1) ${CANVAS_HEIGHT}px)`,
+            }}
+          />
+        )}
+
         {/* Badge overlays */}
         {previewRatings.map((id: RatingType, index: number) => {
             const auto = calculateAutoPosition(
@@ -735,7 +728,7 @@ const PreviewCanvas: React.FC<Props> = ({
 
             if (dragSession) {
               const isTarget = dragSession.id === id;
-              const isGroup = selectedIds.has(dragSession.id) && selectedIds.has(id);
+              const isGroup = selectedIds.has(dragSession.id as RatingType) && selectedIds.has(id);
               if (isTarget || isGroup) {
                 const { w: bW, h: bH } = getBadgeSize(id, iCfg);
                 // Preview clamp: at least 1px inside poster
@@ -778,9 +771,7 @@ const PreviewCanvas: React.FC<Props> = ({
                 value={
                   id === 'year'
                     ? liveYear.replace(/\.0+$/, '')
-                    : id === 'title'
-                      ? liveTitle
-                      : liveRatings[id]
+                    : liveRatings[id]
                 }
                 x={x}
                 y={y}
@@ -796,6 +787,20 @@ const PreviewCanvas: React.FC<Props> = ({
               />
             );
           })}
+
+        {config.titleEnabled && (
+          <DraggableTitle
+            config={config}
+            canvasScale={currentScale}
+            isSelected={selectedTitle}
+            onSelect={handleTitleSelection}
+            onDragMove={(dx, dy) => handleDragMove('title', dx, dy)}
+            onDragEnd={(dx, dy) => handleDragEnd('title', dx, dy)}
+            onContextMenu={(e) => onContextMenu?.('title', e)}
+            dragOffsetX={dragSession?.id === 'title' ? dragSession.dx : 0}
+            dragOffsetY={dragSession?.id === 'title' ? dragSession.dy : 0}
+          />
+        )}
 
         {config.logo && (
           <DraggableLogo

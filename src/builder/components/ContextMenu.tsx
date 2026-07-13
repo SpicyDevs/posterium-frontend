@@ -16,7 +16,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { RatingType } from '../types';
-export type LayerTargetId = RatingType | 'logo';
+export type LayerTargetId = RatingType | 'logo' | 'title';
 
 export interface ContextMenuState {
   visible: boolean;
@@ -119,6 +119,7 @@ const ContextMenu: React.FC<Props> = memo(
 
     const id = state.badgeId;
     const isLogo = id === 'logo';
+    const isTitle = id === 'title';
 
     interface Group {
       items: ContextMenuAction[];
@@ -145,11 +146,11 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          { id: 'hide', label: isLogo ? 'Hide Layer' : 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
+          { id: 'hide', label: isLogo || isTitle ? 'Hide Layer' : 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
           { id: 'showall', label: 'Show All Badges', icon: <Eye size={12} /> },
           {
             id: 'select',
-            label: isSelected ? (isLogo ? 'Deselect Layer' : 'Deselect Badge') : isLogo ? 'Select Layer' : 'Select Badge',
+            label: isSelected ? (isLogo || isTitle ? 'Deselect Layer' : 'Deselect Badge') : isLogo || isTitle ? 'Select Layer' : 'Select Badge',
             icon: isSelected ? <Square size={12} /> : <MousePointer2 size={12} />,
           },
           { id: 'selectall', label: 'Select All', icon: <CheckSquare size={12} /> },
@@ -165,7 +166,7 @@ const ContextMenu: React.FC<Props> = memo(
         items: [
           ...(!isLogo && onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
-          { id: 'delete', label: isLogo ? 'Hide Logo Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
+          { id: 'delete', label: isLogo ? 'Hide Logo Layer' : isTitle ? 'Hide Title Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
         ],
       },
     ];
@@ -271,7 +272,7 @@ const ContextMenu: React.FC<Props> = memo(
               textTransform: 'uppercase',
             }}
           >
-            {isLogo ? 'logo' : id}
+            {isLogo ? 'logo' : isTitle ? 'title' : id}
           </span>
           {isSelected && (
               <span

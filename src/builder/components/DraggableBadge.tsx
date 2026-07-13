@@ -21,9 +21,6 @@ const PRESET_DEFAULTS = {
   b: { blur: 0, alpha: 0.4, radius: 12, shadow: 6, icon: true },
   m: { blur: 0, alpha: 0.0, radius: 0, shadow: 0, icon: false },
 } as const;
-const TITLE_ACCENT_MIN_RADIUS = 6;
-
-// ── Provider display names for default label text ──────────────────────────
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   imdb: 'IMDb',
   rt: 'Rotten Tomatoes',
@@ -36,7 +33,6 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   age: 'Age Rating',
   runtime: 'Runtime',
   year: 'Year',
-  title: 'Title',
 };
 
 interface Props {
@@ -264,30 +260,10 @@ const DraggableBadge: React.FC<Props> = ({
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
   const txtColor = itemConfig?.txt || config.txt || '#ffffff';
   const textSize = Math.max(8, itemConfig?.textSize ?? 28) * displayScale;
-  const textWeight = Math.max(100, Math.min(900, itemConfig?.textWeight ?? 700));
+  const textWeight = Math.max(100, Math.min(900, itemConfig?.textWeight ?? 800));
   const textLetterSpacing = (itemConfig?.textLetterSpacing ?? 0) * displayScale;
   const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
   const textAlign = itemConfig?.textAlign ?? 'left';
-  const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
-  const legacyMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
-  const wrapEnabled = itemConfig?.textWrapEnabled ?? true;
-  const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
-  const legacyWidthPx = itemConfig?.textBoxWidth;
-  const legacyFromPx =
-    legacyWidthPx && legacyWidthPx > 120
-      ? Math.max(4, Math.round((legacyWidthPx - 16 * displayScale) / approxCharPx))
-      : undefined;
-  const titleCharWidth = Math.max(
-    4,
-    Math.min(80, Math.round(itemConfig?.textCharWidth ?? legacyFromPx ?? 24))
-  );
-  const legacyHeightPx = itemConfig?.textBoxHeight;
-  const legacyHeightLines =
-    legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
-  const titleCharHeight = Math.max(
-    1,
-    Math.min(12, Math.round(itemConfig?.textCharHeight ?? legacyHeightLines ?? (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)))
-  );
   const textShadow =
     itemConfig?.textShadowEnabled && itemConfig?.textShadowBlur !== undefined
       ? `${itemConfig.textShadowX ?? 0}px ${itemConfig.textShadowY ?? 2}px ${
@@ -298,48 +274,15 @@ const DraggableBadge: React.FC<Props> = ({
             itemConfig.textShadowBlur ?? 8
           }px ${itemConfig.textShadowColor ?? '#000000'}`
         : 'none';
-  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : ''))
-    .toString()
-    .trim() || (badgeId === 'year' ? '2026' : badgeId === 'title' ? 'Title' : '')
-  ).trim();
-  const displayTextForSizing =
-    badgeId === 'title' && textMaxChars > 0 && rawTextForSizing.length > textMaxChars
-      ? `${rawTextForSizing.slice(0, textMaxChars).trimEnd()}…`
-      : rawTextForSizing;
-  const dynamicTextWidth =
-    badgeId === 'title'
-      ? Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale))
-      : badgeId === 'year'
-      ? Math.max(
-          baseWidth,
-          Math.ceil(displayTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
-        )
-      : baseWidth;
-  const width = dynamicTextWidth;
-  const titleCharsPerLine = Math.max(
-    1,
-    Math.floor((Math.max(width, 1) - 16 * displayScale) / approxCharPx)
-  );
-  const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(displayTextForSizing.length, 1) / titleCharsPerLine));
-  const titleRenderedLines = wrapEnabled ? Math.min(titleEstimatedLines, titleCharHeight) : 1;
-  const titleContentHeight = Math.max(
-    baseHeight,
-    Math.ceil(titleRenderedLines * textSize * textLineHeight + 16 * displayScale)
-  );
-  const hasExplicitTitleCharHeight =
-    itemConfig?.textCharHeight !== undefined || legacyHeightLines !== undefined;
-  const effectiveTitleHeightLines = hasExplicitTitleCharHeight ? titleCharHeight : titleRenderedLines;
-  const resolvedTitleHeight = hasExplicitTitleCharHeight
+  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : '')).toString().trim() || (badgeId === 'year' ? '2026' : '')).trim();
+  const width = badgeId === 'year'
     ? Math.max(
-        baseHeight,
-        Math.ceil(effectiveTitleHeightLines * textSize * textLineHeight + 16 * displayScale)
+        baseWidth,
+        Math.ceil(rawTextForSizing.length * (textSize * 0.62 + textLetterSpacing) + 28 * displayScale)
       )
-    : titleContentHeight;
+    : baseWidth;
   const labelInsideExtra = hasInsideLabel ? labelSizeVal + 6 * displayScale : 0;
-  const height =
-    badgeId === 'title'
-      ? Math.max(32, Math.round(resolvedTitleHeight))
-      : baseHeight + labelInsideExtra;
+  const height = baseHeight + labelInsideExtra;
 
   // ── SHADOW ────────────────────────────────────────────────────────────────
   const toRgba = (hex: string | undefined, alpha: number) => {
@@ -412,9 +355,8 @@ const DraggableBadge: React.FC<Props> = ({
     }
   })();
 
-  // Uniform mode: override font size for non-title/year badges
-  const isTitleOrYear = badgeId === 'title' || badgeId === 'year';
-  const fontSize = (uniformFontSize && !isTitleOrYear ? uniformFontSize : 28) * displayScale;
+  const isYear = badgeId === 'year';
+  const fontSize = (uniformFontSize && !isYear ? uniformFontSize : 28) * displayScale;
 
   // ── Label layout helpers ──────────────────────────────────────────────────
   const LABEL_GAP = 5 * displayScale;
@@ -482,7 +424,6 @@ const DraggableBadge: React.FC<Props> = ({
       tmdb: '85%',
       runtime: '2h 15m',
       year: '2026',
-      title: 'Title',
       mal: '8.5',
       anilist: '85%',
     };
@@ -515,21 +456,17 @@ const DraggableBadge: React.FC<Props> = ({
       return applyDecimals(rawValue);
     })();
     const displayValue = badgeId === 'year' ? normalized.replace(/\.0+$/, '') : normalized;
-    const truncatedTitleValue =
-      badgeId === 'title' && textMaxChars > 0 && displayValue.length > textMaxChars
-        ? `${displayValue.slice(0, textMaxChars).trimEnd()}…`
-        : displayValue;
 
-    if (badgeId === 'title' || badgeId === 'year') {
+    const yearMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
+    if (badgeId === 'year') {
       return showTextVal ? (
         <span
           style={{
             position: 'absolute',
             left: 8 * displayScale,
             right: 8 * displayScale,
-            top: badgeId === 'title' ? 8 * displayScale : '50%',
-            bottom: badgeId === 'title' ? 8 * displayScale : 'auto',
-            transform: badgeId === 'title' ? 'none' : 'translateY(-50%)',
+            top: '50%',
+            transform: 'translateY(-50%)',
             fontSize: textSize,
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontWeight: textWeight,
@@ -538,17 +475,14 @@ const DraggableBadge: React.FC<Props> = ({
             letterSpacing: `${textLetterSpacing}px`,
             textAlign,
             textShadow,
-            whiteSpace: badgeId === 'title' ? 'normal' : 'nowrap',
-            wordBreak: badgeId === 'title' ? 'break-word' : 'normal',
-            overflow: badgeId === 'title' ? 'hidden' : textMaxChars > 0 ? 'hidden' : 'visible',
-            textOverflow: badgeId === 'title' ? 'clip' : textMaxChars > 0 ? 'ellipsis' : 'clip',
-            display: badgeId === 'title' && wrapEnabled ? '-webkit-box' : 'inline-block',
-            WebkitBoxOrient: badgeId === 'title' ? 'vertical' : undefined,
-            WebkitLineClamp: badgeId === 'title' && wrapEnabled ? titleCharHeight : undefined,
+            whiteSpace: 'nowrap',
+            wordBreak: 'normal',
+            overflow: yearMaxChars > 0 ? 'hidden' : 'visible',
+            textOverflow: yearMaxChars > 0 ? 'ellipsis' : 'clip',
             pointerEvents: 'none',
           }}
         >
-          {badgeId === 'title' ? truncatedTitleValue : displayValue}
+          {displayValue}
         </span>
       ) : null;
     }
@@ -775,17 +709,6 @@ const DraggableBadge: React.FC<Props> = ({
           }}
         />
       )}
-      {badgeId === 'title' && (
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            inset: 0,
-            borderRadius: `${Math.max(radiusVal, TITLE_ACCENT_MIN_RADIUS)}px`,
-            border: '1px dotted rgba(196,124,46,0.4)',
-          }}
-        />
-      )}
-
       {/* Label — rendered outside the clipping div so it shows outside badge bounds (suppressed when labelInside is active) */}
       {!labelInside && labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
 

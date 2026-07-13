@@ -87,7 +87,7 @@ const htmlToMarkdown = (html: string): string => {
   return markdown;
 };
 
-export const onRequest = defineMiddleware(async (context, next) => {
+export const onRequest = defineMiddleware(async (context: any, next: any) => {
   if (context.isPrerendered) {
     return next();
   }

@@ -16,10 +16,12 @@ interface EditorContextType {
   setActiveTab: (tab: TabType) => void;
   selectedIds: Set<RatingType>;
   selectedLogo: boolean;
+  selectedTitle: boolean;
   selectedMinimalElements: Set<string>;
   handleSelection: (id: RatingType, multi: boolean) => void;
   handleMinimalSelection: (id: string, multi: boolean) => void;
   handleLogoSelection: (multi: boolean) => void;
+  handleTitleSelection: (multi: boolean) => void;
   setBatchSelection: (ids: RatingType[]) => void;
   clearSelection: () => void;
   viewOptions: ViewOptions;
@@ -46,6 +48,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<TabType>('source');
   const [selectedIds, setSelectedIds] = useState<Set<RatingType>>(new Set());
   const [selectedLogo, setSelectedLogo] = useState(false);
+  const [selectedTitle, setSelectedTitle] = useState(false);
   const [selectedMinimalElements, setSelectedMinimalElements] = useState<Set<string>>(new Set());
   const [viewOptions, setViewOptions] = useState<ViewOptions>({
     showSafeArea: false,
@@ -80,6 +83,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         logoSelected = multi ? prev : false;
         return logoSelected;
       });
+      setSelectedTitle(false);
       if (!multi) setSelectedMinimalElements(new Set());
       // Use queueMicrotask so we read nextSize after the setter has run,
       // avoiding stale-closure issues in React 18 concurrent mode.
@@ -109,6 +113,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         logoSelected = multi ? prev : false;
         return logoSelected;
       });
+      setSelectedTitle(false);
       queueMicrotask(() => {
         if (nextSize > 0 || logoSelected) setActiveTab('selection');
         else setActiveTab('badges');
@@ -125,7 +130,29 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return multi ? prev : new Set<RatingType>();
       });
       if (!multi) setSelectedMinimalElements(new Set());
+      setSelectedTitle(false);
       setSelectedLogo((prev) => {
+        const next = multi ? !prev : true;
+        queueMicrotask(() => {
+          if (next || badgeCount > 0) setActiveTab('selection');
+          else setActiveTab('badges');
+        });
+        return next;
+      });
+    },
+    [setActiveTab]
+  );
+
+  const handleTitleSelection = useCallback(
+    (multi: boolean) => {
+      let badgeCount = 0;
+      setSelectedIds((prev) => {
+        badgeCount = multi ? prev.size : 0;
+        return multi ? prev : new Set<RatingType>();
+      });
+      if (!multi) setSelectedMinimalElements(new Set());
+      setSelectedLogo(false);
+      setSelectedTitle((prev) => {
         const next = multi ? !prev : true;
         queueMicrotask(() => {
           if (next || badgeCount > 0) setActiveTab('selection');
@@ -141,6 +168,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     (ids: RatingType[]) => {
       setSelectedIds(new Set(ids));
       setSelectedLogo(false);
+      setSelectedTitle(false);
       setSelectedMinimalElements(new Set());
       if (ids.length > 0) setActiveTab('selection');
     },
@@ -150,6 +178,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
     setSelectedLogo(false);
+    setSelectedTitle(false);
     setSelectedMinimalElements(new Set());
     setActiveTab('badges');
   }, [setActiveTab]);
@@ -165,10 +194,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setActiveTab,
         selectedIds,
         selectedLogo,
+        selectedTitle,
         selectedMinimalElements,
         handleSelection,
         handleMinimalSelection,
         handleLogoSelection,
+        handleTitleSelection,
         setBatchSelection,
         clearSelection,
         viewOptions,

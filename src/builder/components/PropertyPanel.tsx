@@ -25,6 +25,7 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<PosterConfig>>;
   selectedIds: Set<RatingType>;
   selectedLogo?: boolean;
+  selectedTitle?: boolean;
   selectedMinimalElements?: Set<string>;
   viewMode?: 'global' | 'selection';
   mode?: 'badges' | 'logo' | 'selection';
@@ -103,6 +104,7 @@ const PropertyPanel: React.FC<Props> = ({
   setConfig,
   selectedIds,
   selectedLogo = false,
+  selectedTitle = false,
   selectedMinimalElements = new Set<string>(),
   viewMode,
   mode,
@@ -183,7 +185,7 @@ const PropertyPanel: React.FC<Props> = ({
   const showGlobal = panelMode !== 'selection';
   const showBadgeSettings = panelMode === 'badges';
   const showLogoSettings = panelMode === 'badges';
-  const showTitleDefaults = showBadgeSettings && config.ratings.includes('title');
+  const showTitleDefaults = showBadgeSettings && (config.titleEnabled ?? false);
   const logoSectionTitle = 'Logo Overlay';
   const LOGO_BASE_W = 320;
   const LOGO_BASE_H = 84;
@@ -676,7 +678,7 @@ const PropertyPanel: React.FC<Props> = ({
 
   const selectionCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
   const isAgeSelected = selectedIds.has('age');
-  const isOnlyTitleSelected = selectedIds.size === 1 && selectedIds.has('title');
+  const isOnlyTitleSelected = selectedTitle ?? false;
   const isOnlyYearSelected = selectedIds.size === 1 && selectedIds.has('year');
   const isTitleOrYearOnlySelection = isOnlyTitleSelected || isOnlyYearSelected;
   const multi = selectionCount > 1;

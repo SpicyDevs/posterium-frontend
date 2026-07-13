@@ -1,4 +1,4 @@
-import type { PosterConfig, RatingType, BadgeConfig } from '../types';
+import type { PosterConfig, RatingType } from '../types';
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
@@ -13,25 +13,6 @@ export const SNAP_GRID_SIZE = 10;
 export const snapToGridSize = (n: number, gridSize = SNAP_GRID_SIZE): number =>
   Math.round(n / gridSize) * gridSize;
 
-const clampTitleCharWidth = (n: number) => Math.max(4, Math.min(80, Math.round(n)));
-const clampTitleCharHeight = (n: number) => Math.max(1, Math.min(12, Math.round(n)));
-
-const resolveTitleCharWidth = (item: BadgeConfig | undefined, sizeScale: number, perBadgeScale: number) => {
-  const textSize = Math.max(8, item?.textSize ?? 36) * sizeScale * perBadgeScale;
-  const letterSpacing = (item?.textLetterSpacing ?? 0) * sizeScale * perBadgeScale;
-  const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, letterSpacing));
-  const legacyPx = item?.textBoxWidth;
-  const fromLegacy =
-    legacyPx && legacyPx > 120 ? Math.max(4, Math.round((legacyPx - 16 * sizeScale * perBadgeScale) / approxCharPx)) : undefined;
-  return clampTitleCharWidth(item?.textCharWidth ?? fromLegacy ?? 24);
-};
-
-const resolveTitleCharHeight = (item: BadgeConfig | undefined) => {
-  const legacyPx = item?.textBoxHeight;
-  const fromLegacy = legacyPx && legacyPx > 16 ? Math.max(1, Math.round(legacyPx / 36)) : undefined;
-  return clampTitleCharHeight(item?.textCharHeight ?? fromLegacy ?? 1);
-};
-
 export const calculateAutoPosition = (
   ratingId: RatingType,
   index: number,
@@ -45,29 +26,10 @@ export const calculateAutoPosition = (
   const orderedIds = ratings.length > 0 ? ratings : [fallbackId];
   const dims = orderedIds.map((id) => {
     const perBadgeScale = config.items[id]?.scale ?? globalScale;
-    const isTitle = id === 'title';
-    const item = config.items[id];
-    const titleCharsW = resolveTitleCharWidth(item, sizeScale, perBadgeScale);
-    const titleCharsH = resolveTitleCharHeight(item);
-    const titleTextSize = Math.max(8, item?.textSize ?? 36) * sizeScale * perBadgeScale;
-    const titleLetterSpacing = (item?.textLetterSpacing ?? 0) * sizeScale * perBadgeScale;
-    const titleLineHeight = item?.textLineHeight ?? 1.1;
-    const titleWidthPx = Math.max(
-      120,
-      Math.round(titleCharsW * (titleTextSize * 0.54 + Math.max(0, titleLetterSpacing)) + 16 * sizeScale * perBadgeScale)
-    );
-    const titleHeightPx = Math.max(
-      32,
-      Math.round(titleCharsH * titleTextSize * titleLineHeight + 16 * sizeScale * perBadgeScale)
-    );
     return {
       id,
-      w: isTitle
-        ? titleWidthPx
-        : BASE_BADGE_W * sizeScale * perBadgeScale,
-      h: isTitle
-        ? titleHeightPx
-        : BASE_BADGE_H * sizeScale * perBadgeScale,
+      w: BASE_BADGE_W * sizeScale * perBadgeScale,
+      h: BASE_BADGE_H * sizeScale * perBadgeScale,
     };
   });
   if (dims.length === 0) {

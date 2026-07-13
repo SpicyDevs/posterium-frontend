@@ -5,7 +5,7 @@ const envApiUrl =
   (import.meta as any).env?.VITE_API_URL as string | undefined;
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.posterium.xyz';
 
-export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> = {
+export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> & { title?: string } = {
   title: 'T',
   imdb: 'i',
   rt: 'r',

@@ -485,17 +485,10 @@ const SourceTabContent: React.FC<Props> = ({
       <div className="pt-1 space-y-2">
         <ToggleRow
           label="Title Layer"
-          sub="Show title as draggable badge layer"
+          sub="Show title as draggable layer"
           checked={titleBadgeEnabled}
           onChange={(v) =>
-            setConfig((prev) => ({
-              ...prev,
-              ratings: v
-                ? prev.ratings.includes('title')
-                  ? prev.ratings
-                  : [...prev.ratings, 'title']
-                : prev.ratings.filter((r) => r !== 'title'),
-            }))
+            setConfig((prev) => ({ ...prev, titleEnabled: v }))
           }
         />
         <div className="flex items-center justify-between gap-3">

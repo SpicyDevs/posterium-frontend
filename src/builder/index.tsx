@@ -101,9 +101,11 @@ const StudioLayout: React.FC<{
     setActiveTab,
     selectedIds,
     selectedLogo,
+    selectedTitle,
     selectedMinimalElements,
     handleSelection,
     handleLogoSelection,
+    handleTitleSelection,
     clearSelection,
     setBatchSelection,
     viewOptions,
@@ -220,6 +222,7 @@ const StudioLayout: React.FC<{
 
   const selectedIdsRef = useRef(selectedIds);
   const selectedLogoRef = useRef(selectedLogo);
+  const selectedTitleRef = useRef(selectedTitle);
   const selectedMinimalElementsRef = useRef(selectedMinimalElements);
   const configRatingsRef = useRef(config.ratings);
   useEffect(() => {
@@ -227,6 +230,9 @@ const StudioLayout: React.FC<{
   });
   useEffect(() => {
     selectedLogoRef.current = selectedLogo;
+  });
+  useEffect(() => {
+    selectedTitleRef.current = selectedTitle;
   });
   useEffect(() => {
     selectedMinimalElementsRef.current = selectedMinimalElements;
@@ -248,7 +254,8 @@ const StudioLayout: React.FC<{
       const activeBadges = Array.from(selectedIdsRef.current);
       const activeMinimal = Array.from(selectedMinimalElementsRef.current);
       const hasLogo = selectedLogoRef.current || activeMinimal.includes('minimal-logo');
-      if (activeBadges.length === 0 && activeMinimal.length === 0 && !hasLogo) return;
+      const hasTitle = selectedTitleRef.current || activeMinimal.includes('minimal-title');
+      if (activeBadges.length === 0 && activeMinimal.length === 0 && !hasLogo && !hasTitle) return;
       setConfig((prev) => {
         const next: PosterConfig = { ...prev, items: { ...prev.items } };
         if (activeBadges.length > 0) {
@@ -277,6 +284,15 @@ const StudioLayout: React.FC<{
               : Math.round((CANVAS_WIDTH - next.logoW) / 2);
           next.logoX = Math.max(1 - next.logoW, Math.min(currentX + dx, CANVAS_WIDTH - 1));
           next.logoY = Math.max(1 - next.logoH, Math.min(next.logoY + dy, CANVAS_HEIGHT - 1));
+        }
+        if (hasTitle) {
+          const ti = next.items?.title ?? {};
+          const boxW = Math.max(120, ti.textBoxWidth ?? 450);
+          const boxH = Math.max(36, (ti.textSize ?? 48) * 1.5);
+          next.items = {
+            ...next.items,
+            title: { ...ti, x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)), y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)) },
+          };
         }
         if (activeMinimal.includes('minimal-title')) {
           const ti = next.items?.title ?? {};
@@ -376,6 +392,11 @@ const StudioLayout: React.FC<{
         clearSelection();
         return;
       }
+      if (id === 'title') {
+        setConfig((prev) => ({ ...prev, titleEnabled: false }));
+        clearSelection();
+        return;
+      }
       hideBadge(id);
     },
     [setConfig, clearSelection, hideBadge]
@@ -395,6 +416,14 @@ const StudioLayout: React.FC<{
         }));
         return;
       }
+      if (id === 'title') {
+        setConfig((prev) => {
+          const ni = { ...prev.items };
+          delete ni.title;
+          return { ...prev, items: ni };
+        });
+        return;
+      }
       resetBadge(id);
     },
     [setConfig, resetBadge]
@@ -403,6 +432,11 @@ const StudioLayout: React.FC<{
     (id: LayerTargetId) => {
       if (id === 'logo') {
         setConfig((prev) => ({ ...prev, logo: false }));
+        clearSelection();
+        return;
+      }
+      if (id === 'title') {
+        setConfig((prev) => ({ ...prev, titleEnabled: false }));
         clearSelection();
         return;
       }
@@ -491,12 +525,15 @@ const StudioLayout: React.FC<{
       }
       if (
         (e.key === 'Delete' || e.key === 'Backspace') &&
-        (selectedIdsRef.current.size > 0 || selectedLogoRef.current)
+        (selectedIdsRef.current.size > 0 || selectedLogoRef.current || selectedTitleRef.current)
       ) {
         e.preventDefault();
         const rm = new Set(selectedIdsRef.current);
         if (rm.size > 0) {
           setConfig((p) => ({ ...p, ratings: p.ratings.filter((r) => !rm.has(r)) }));
+        }
+        if (selectedTitleRef.current) {
+          setConfig((p) => ({ ...p, titleEnabled: false }));
         }
         clearSelection();
         return;
@@ -910,7 +947,9 @@ const StudioLayout: React.FC<{
   const ctxBadgeSelected = ctxMenu.badgeId
     ? ctxMenu.badgeId === 'logo'
       ? selectedLogo
-      : selectedIds.has(ctxMenu.badgeId)
+      : ctxMenu.badgeId === 'title'
+        ? selectedTitle
+        : selectedIds.has(ctxMenu.badgeId)
     : false;
 
   const advancedDetailLevel = builderMode === 'advanced' ? 'advanced' : 'simple';
@@ -926,15 +965,17 @@ const StudioLayout: React.FC<{
     setConfig,
     selectedIds,
     selectedLogo,
+    selectedTitle,
     selectedMinimalElements,
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
 
-  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + selectedMinimalElements.size;
+  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + (selectedTitle ? 1 : 0) + selectedMinimalElements.size;
   const selectedLabel = useMemo(() => {
     if (selectedCount === 0) return 'SELECT';
     if (selectedCount > 1) return `${selectedCount} LAYERS`;
     if (selectedLogo) return 'LOGO';
+    if (selectedTitle) return 'TITLE';
     const minimal = [...selectedMinimalElements][0];
     if (minimal)
       return minimal
@@ -1027,21 +1068,21 @@ const StudioLayout: React.FC<{
                 onClose={closeCtxMenu}
                 isSelected={ctxBadgeSelected}
                 onBringToFront={(id) =>
-                  id === 'logo' ? moveLogoLayer('front') : moveLayer(id, 'front')
+                  id === 'logo' ? moveLogoLayer('front') : id === 'title' ? null : moveLayer(id, 'front')
                 }
                 onBringForward={(id) =>
-                  id === 'logo' ? moveLogoLayer('forward') : moveLayer(id, 'forward')
+                  id === 'logo' ? moveLogoLayer('forward') : id === 'title' ? null : moveLayer(id, 'forward')
                 }
                 onSendBackward={(id) =>
-                  id === 'logo' ? moveLogoLayer('back') : moveLayer(id, 'back')
+                  id === 'logo' ? moveLogoLayer('back') : id === 'title' ? null : moveLayer(id, 'back')
                 }
                 onSendToBack={(id) =>
-                  id === 'logo' ? moveLogoLayer('toback') : moveLayer(id, 'toback')
+                  id === 'logo' ? moveLogoLayer('toback') : id === 'title' ? null : moveLayer(id, 'toback')
                 }
                 onHide={hideLayer}
                 onShowAll={showAllBadges}
                 onSelect={(id) =>
-                  id === 'logo' ? handleLogoSelection(false) : handleSelectionOverride(id, false)
+                  id === 'logo' ? handleLogoSelection(false) : id === 'title' ? handleTitleSelection(false) : handleSelectionOverride(id, false)
                 }
                 onDeselect={() => clearSelection()}
                 onSelectAll={() => setBatchSelection(config.ratings)}
@@ -1422,7 +1463,7 @@ const StudioLayout: React.FC<{
                 setConfig={setConfig}
                 selectedIds={selectedIds}
                 onSelect={handleSelectionOverride}
-                onContextMenu={openCtxMenu}
+                onContextMenu={openCtxMenu as (id: string, e: React.MouseEvent) => void}
                 onLogoContextMenu={(e) => openCtxMenu('logo', e)}
               />
 
@@ -2321,7 +2362,7 @@ const StudioLayout: React.FC<{
               setConfig={setConfig}
               selectedIds={selectedIds}
               onSelect={handleSelectionOverride}
-              onContextMenu={openCtxMenu}
+              onContextMenu={openCtxMenu as (id: string, e: React.MouseEvent) => void}
               onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
             {/* Film corner accents */}

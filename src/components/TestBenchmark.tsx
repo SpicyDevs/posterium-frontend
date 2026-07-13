@@ -49,7 +49,7 @@ const EXAMPLES = [
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface FetchResult { ok:boolean; ms:number; status:number; note:string; imageUrl:string|null }
+interface FetchResult { ok:boolean; ms:number; status:number; note:string; imageUrl:string|null; fallback?:string|null }
 interface HealthData {
   reachable: boolean;
   status?: string; version?: string; node?: string;
@@ -272,9 +272,19 @@ function PosterCell({ result, label, badge }:{ result:FetchResult; label:string;
           <>
             <img src={result.imageUrl} alt={label}
               style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-            <div style={{ position:'absolute', bottom:4, right:4, ...MONO, fontSize:8, fontWeight:700,
-              color:msColor(result.ms), background:'rgba(0,0,0,0.85)', padding:'2px 5px', borderRadius:3 }}>
-              {result.ms}ms
+            <div style={{ position:'absolute', bottom:4, right:4, display:'flex', gap:3 }}>
+              {result.fallback && (
+                <span style={{ ...MONO, fontSize:7, fontWeight:700,
+                  color:'#f59e0b', background:'rgba(0,0,0,0.85)',
+                  padding:'2px 5px', borderRadius:3 }}>
+                  ⚠ {result.fallback}
+                </span>
+              )}
+              <span style={{ ...MONO, fontSize:8, fontWeight:700,
+                color:msColor(result.ms), background:'rgba(0,0,0,0.85)',
+                padding:'2px 5px', borderRadius:3 }}>
+                {result.ms}ms
+              </span>
             </div>
           </>
         ) : (
@@ -293,6 +303,7 @@ function PosterCell({ result, label, badge }:{ result:FetchResult; label:string;
           {result.ok ? `${result.ms}ms` : 'FAIL'}
         </Pill>
         {result.ok && <Pill color={C.ghost}>HTTP {result.status}</Pill>}
+        {result.fallback && <Pill color="#f59e0b">wsrv fallback</Pill>}
       </div>
     </div>
   );
@@ -336,8 +347,8 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
           {reachable && h.version && <Pill color={C.ghost}>v{h.version}</Pill>}
           {!reachable && h.error && (
             <span style={{ ...MONO, fontSize:7, color:C.red }}>{h.error.slice(0,60)}</span>
-          )}
-        </div>
+        )}
+      </div>
       </div>
 
       {/* Poster comparison: POST URL-SVG vs POST B64-SVG */}
@@ -407,9 +418,10 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
 
 // Summary panel
 function SummaryPanel({ bench }:{ bench:Benchmark }) {
-  const postMs = bench.nodes.filter(n=>n.postUrl.ok).map(n=>n.postUrl.ms);
-  const b64Ms  = bench.nodes.filter(n=>n.postB64.ok).map(n=>n.postB64.ms);
-  const getMs  = bench.nodes.filter(n=>n.getRaster.ok).map(n=>n.getRaster.ms);
+  const postMs = bench.nodes.filter(n=>n.postUrl.ok && !n.postUrl.fallback).map(n=>n.postUrl.ms);
+  const b64Ms  = bench.nodes.filter(n=>n.postB64.ok && !n.postB64.fallback).map(n=>n.postB64.ms);
+  const getMs  = bench.nodes.filter(n=>n.getRaster.ok && !n.getRaster.fallback).map(n=>n.getRaster.ms);
+  const fallbackNodes = bench.nodes.filter(n=>n.postUrl.fallback || n.postB64.fallback || n.getRaster.fallback);
 
   const avg = (arr:number[]) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null;
   const min = (arr:number[]) => arr.length ? Math.min(...arr) : null;
@@ -474,6 +486,19 @@ function SummaryPanel({ bench }:{ bench:Benchmark }) {
             </span>
             <span style={{ ...MONO, fontSize:7, color:C.ghost, marginLeft:8 }}>
               · {bench.urlKb}KB (URL-SVG) vs {bench.b64Kb}KB (B64-SVG)
+            </span>
+          </div>
+        )}
+
+        {/* Fallback warning — excluded from clean averages */}
+        {fallbackNodes.length > 0 && (
+          <div style={{ marginTop:10, padding:'6px 8px', borderRadius:4,
+            background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)' }}>
+            <span style={{ ...MONO, fontSize:8, color:'#f59e0b' }}>
+              ⚠ {fallbackNodes.length} node{fallbackNodes.length > 1 ? 's' : ''} used wsrv fallback — excluded from averages
+            </span>
+            <span style={{ ...MONO, fontSize:7, color:C.ghost, marginLeft:8 }}>
+              · {fallbackNodes.map(n => n.label).join(' · ')}
             </span>
           </div>
         )}

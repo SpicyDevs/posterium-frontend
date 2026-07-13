@@ -9,7 +9,6 @@ export type RatingType =
   | 'age'
   | 'runtime'
   | 'year'
-  | 'title'
   | 'mal'
   | 'anilist';
 export type ThemeType = 'glass' | 'solid';
@@ -56,6 +55,8 @@ export interface BadgeConfig {
   textLetterSpacing?: number;
   textLineHeight?: number;
   textAlign?: 'left' | 'center' | 'right';
+  lines?: '1' | '2';
+  verticalAnchor?: 'top' | 'bottom';
   textMaxChars?: number;
   textMaxLines?: number;
   textBoxWidth?: number;
@@ -118,7 +119,8 @@ export interface PosterConfig {
 
   logoMaxW?: number | null;
   logoMaxH?: number | null;
-  items: Partial<Record<RatingType, BadgeConfig>>;
+  titleEnabled?: boolean;
+  items: Partial<Record<RatingType, BadgeConfig>> & { title?: BadgeConfig };
   logo: boolean;
   logoSource: LogoSourceType;
   logoX: number | null;

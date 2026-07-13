@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { PosterConfig } from '../types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../types';
-import { ImageOff, Move } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
 import { useEditor } from '../EditorContext';
 import { snapToGridSize } from '../utils/positioning';
 
@@ -93,8 +93,8 @@ const DraggableLogo: React.FC<Props> = ({
     };
   }, [isDragging]);
   const snapVal = (val: number) => (viewOptions?.snapToGrid ? snapToGridSize(val) : val);
-  let renderX = isDragging ? baseX + liveOffset.dx : snapVal(baseX + liveOffset.dx),
-    renderY = isDragging ? baseY + liveOffset.dy : snapVal(baseY + liveOffset.dy);
+  let renderX = snapVal(baseX + liveOffset.dx),
+    renderY = snapVal(baseY + liveOffset.dy);
   const centreX = CANVAS_WIDTH / 2,
     centreY = CANVAS_HEIGHT / 2,
     snapTolerance = 8;
@@ -113,7 +113,6 @@ const DraggableLogo: React.FC<Props> = ({
     hasDraggedRef.current = false;
     dragStartRef.current = { mouseX, mouseY };
   };
-  const isVisible = isHovered || isDragging;
   return (
     <>
       {nearCentreX && (
@@ -209,17 +208,24 @@ const DraggableLogo: React.FC<Props> = ({
             )}
           </div>
         )}
-        {isVisible && !imgError && (
+        {isSelected && (
           <div
-            className="absolute bottom-0 right-0 rounded-tl pointer-events-none flex items-center justify-center"
+            className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
             style={{
-              width: 18,
-              height: 18,
-              background: 'rgba(196,124,46,0.7)',
-              backdropFilter: 'blur(4px)',
+              top: `${-(7 * canvasScale)}px`,
+              right: `${-(7 * canvasScale)}px`,
+              width: `${14 * canvasScale}px`,
+              height: `${14 * canvasScale}px`,
             }}
           >
-            <Move size={10} className="text-white" />
+            <div
+              className="bg-white"
+              style={{
+                width: `${6 * canvasScale}px`,
+                height: `${6 * canvasScale}px`,
+                borderRadius: `${1.5 * canvasScale}px`,
+              }}
+            />
           </div>
         )}
       </div>

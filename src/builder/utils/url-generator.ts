@@ -72,7 +72,7 @@ export const generateApiUrl = (
   if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
 
   const titleItem = config.items?.title;
-  if (titleItem && config.ratings.includes('title')) {
+  if (titleItem && (config.titleEnabled ?? false)) {
     const T = 'T';
     p.set('ti', '1');
     if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
@@ -83,6 +83,9 @@ export const generateApiUrl = (
     if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
     if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
     if (titleItem.shadow !== undefined && titleItem.shadow > 0) p.set(`${T}_sh`, titleItem.shadow.toString());
+    if (titleItem.lines !== undefined) p.set(`${T}_ln`, titleItem.lines);
+    const vaDefault = config.uiPreset === 'm' ? 'bottom' : 'top';
+    if (titleItem.verticalAnchor !== undefined && titleItem.verticalAnchor !== vaDefault) p.set(`${T}_va`, titleItem.verticalAnchor);
   }
 
   if (config.sourcePriority && config.sourcePriority.length > 0) p.set('so', config.sourcePriority.join(','));

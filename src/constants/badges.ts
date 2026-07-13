@@ -84,7 +84,6 @@ export const GAP = 10;
 export const PADDING = 20;
 
 export const ALL_BADGES: { id: RatingType; label: string }[] = [
-  { id: 'title', label: 'Title' },
   { id: 'imdb', label: 'IMDb' },
   { id: 'rt', label: 'Rotten Tomatoes' },
   { id: 'rt_popcorn', label: 'Audience Score' },

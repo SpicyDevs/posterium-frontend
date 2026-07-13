@@ -147,7 +147,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
         >
           {badge.label}
         </span>
-        {isActive && ratingVal && badge.id !== 'title' && (
+        {isActive && ratingVal && (
           <span className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
             {badge.id === 'year' ? ratingVal.replace(/\.0+$/, '') : ratingVal}
           </span>
