@@ -54,6 +54,14 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         const suffix = name.slice(2);
 
         if (!items[badgeKey]) items[badgeKey] = {};
+
+        // Title text-align uses T_ta (not T_al) to avoid collision with per-badge alpha
+        if (code === 'T' && suffix === 'ta') {
+          if (!items.title) items.title = {};
+          items.title.textAlign = value as BadgeConfig['textAlign'];
+          continue;
+        }
+
         switch (suffix) {
           case 'x':
             items[badgeKey].x = parseInt(value);
@@ -188,8 +196,6 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         if (ti_sz !== undefined) items.title.textSize = ti_sz;
         const ti_tx = v('ti_tx', 'title_color');
         if (ti_tx !== null) items.title.txt = ti_tx.startsWith('#') ? ti_tx : `#${ti_tx}`;
-        const ti_al = v('ti_al', 'title_align');
-        if (ti_al !== null) items.title.textAlign = ti_al as BadgeConfig['textAlign'];
         const ti_wd = vi('ti_wd', 'title_width');
         if (ti_wd !== undefined) items.title.textBoxWidth = ti_wd;
         const ti_wt = vi('ti_wt', 'title_weight');

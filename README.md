@@ -150,7 +150,7 @@ npm run preview      # preview the production build locally
 Create `.env.local` in the project root to override the default API base:
 
 ```env
-VITE_API_URL=https://your-api.example.com
+PUBLIC_API_URL=https://your-api.example.com
 ```
 
 ### CI-Like Pipeline

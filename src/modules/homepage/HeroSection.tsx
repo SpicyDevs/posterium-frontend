@@ -1,5 +1,6 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FilmCorners } from './primitives';
 import { API } from '@/lib/dashboard/constants';
 
 interface HeroPoster {
@@ -23,17 +24,7 @@ function getPosterSrc(p: HeroPoster) {
 }
 const POSTER_SRCS = HERO_POSTERS.map(getPosterSrc);
 
-const CORNERS = ['tl', 'tr', 'bl', 'br'] as const;
-const CORNER_STYLE = (c: (typeof CORNERS)[number]): React.CSSProperties => ({
-  position: 'absolute',
-  top: c.startsWith('t') ? 10 : 'auto', bottom: c.startsWith('b') ? 10 : 'auto',
-  left: c.endsWith('l') ? 10 : 'auto',  right: c.endsWith('r') ? 10 : 'auto',
-  width: 14, height: 14, zIndex: 3,
-  borderTop:    c.startsWith('t') ? '1.5px solid rgba(196,124,46,0.45)' : 'none',
-  borderBottom: c.startsWith('b') ? '1.5px solid rgba(196,124,46,0.45)' : 'none',
-  borderLeft:   c.endsWith('l')   ? '1.5px solid rgba(196,124,46,0.45)' : 'none',
-  borderRight:  c.endsWith('r')   ? '1.5px solid rgba(196,124,46,0.45)' : 'none',
-});
+
 
 // ─── Mobile poster peek with iris close/open from random points ───────────────
 const rndPct = () => `${15 + Math.floor(Math.random() * 70)}%`;
@@ -205,7 +196,7 @@ const CyclingPoster = memo(() => {
   return (
     <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
       <div style={{ position: 'relative', width: 'clamp(200px,26vw,320px)', aspectRatio: '2/3', borderRadius: 6, overflow: 'hidden', background: '#111009', border: '1px solid rgba(196,124,46,0.18)', boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)' }}>
-        {CORNERS.map(c => <div key={c} aria-hidden="true" style={CORNER_STYLE(c)} />)}
+        <FilmCorners />
         {HERO_POSTERS.map((p, i) => (
           <img key={p.id} ref={el => { imgRefs.current[i] = el; }}
             src={POSTER_SRCS[i]} alt={`Poster for ${p.title} with live rating badges`}
@@ -251,19 +242,19 @@ const HeroSection = memo(() => (
 
     <div className="hero-two-col" style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 1280, margin: '0 auto', padding: 'clamp(64px,9vh,112px) clamp(40px,5vw,72px)', display: 'grid', gridTemplateColumns: '1fr auto', gap: 'clamp(40px,6vw,80px)', alignItems: 'center' }}>
       <div>
-        <h1 className="h-a1 poster-font" style={{ fontSize: 'clamp(88px,13vw,200px)', lineHeight: 0.84, letterSpacing: '0.03em', marginBottom: 0 }} aria-label="Posterium">
+        <h1 className="poster-font" style={{ fontSize: 'clamp(88px,13vw,200px)', lineHeight: 0.84, letterSpacing: '0.03em', marginBottom: 0 }} aria-label="Posterium">
           <span aria-hidden="true" style={{ color: 'var(--film-cream)', display: 'block' }}>POSTER</span>
           <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
         </h1>
-        <div className="h-a2" style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
-<p className="h-a2 syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 480, lineHeight: 1.7, marginBottom: 36 }}>
+        <div style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
+<p className="syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 480, lineHeight: 1.7, marginBottom: 36 }}>
           Live ratings baked right into your posters.{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
           {' - '}a dozen sources, one URL. Zero configuration.
         </p>
-        <div className="h-a3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
             Open Builder <ArrowRight size={12} />
           </a>
@@ -271,14 +262,14 @@ const HeroSection = memo(() => (
             Installation Guide
           </a>
         </div>
-        <div className="h-a4" style={{ display: 'flex', gap: 24, marginTop: 40 }}>
+        <div style={{ display: 'flex', gap: 24, marginTop: 40 }}>
           <div>
             <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>10+</div>
             <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>Rating sources</div>
           </div>
         </div>
       </div>
-      <div className="h-a5 hero-poster-right" aria-label="Poster showcase">
+      <div className="hero-poster-right" aria-label="Poster showcase">
         <CyclingPoster />
       </div>
     </div>

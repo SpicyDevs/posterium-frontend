@@ -1,8 +1,1 @@
-export {
-  SprocketStrip,
-  FilmEdge,
-  AmberDivider,
-  AmberTag,
-  MarqueeTicker,
-  FilmCorners,
-} from '@/ui/primitives';
+export { SprocketStrip, AmberTag, FilmCorners } from '@/ui/primitives';

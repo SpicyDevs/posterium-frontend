@@ -55,7 +55,7 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 - **PWA**: auto-registering service worker via `@vite-pwa/astro` with TMDB/Google Fonts/posters CDN caching
 - **Builder app**: `<BuilderApp client:only="react" />` — fully client-side React; SSR only renders skip-link + hidden SEO text
 - **Two builder modes**: `simple` and `advanced` (mode toggle in builder header)
-- **API base**: `https://api.posterium.xyz` (override via `VITE_API_URL` env var or `.env.local`)
+- **API base**: `https://api.posterium.xyz` (override via `PUBLIC_API_URL` env var or `.env.local`)
 - **Site URLs**: Always no trailing slash (`trailingSlash: 'never'`, `format: 'file'`)
 - **Prettier**: single quotes, trailing commas (es5), printWidth 100, semicolons
 - **.npmrc**: `prefer-offline=true`, `legacy-peer-deps=false`, `fund=false`, `audit=false`

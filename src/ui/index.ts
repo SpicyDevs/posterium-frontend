@@ -8,11 +8,4 @@ export { default as EmptyState } from './EmptyState';
 export { default as SectionHeading } from './SectionHeading';
 
 // Re-export primitives for convenience
-export {
-  AmberTag,
-  AmberDivider,
-  SprocketStrip,
-  FilmEdge,
-  FilmCorners,
-  MarqueeTicker,
-} from '@/ui/primitives';
+export { AmberTag, SprocketStrip, FilmCorners } from '@/ui/primitives';

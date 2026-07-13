@@ -2,7 +2,7 @@ import type { RatingType } from '../types';
 
 const envApiUrl =
   typeof import.meta !== 'undefined' &&
-  (import.meta as any).env?.VITE_API_URL as string | undefined;
+  (import.meta as any).env?.PUBLIC_API_URL as string | undefined;
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.posterium.xyz';
 
 export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> & { title?: string } = {

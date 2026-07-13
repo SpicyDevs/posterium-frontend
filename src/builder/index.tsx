@@ -27,6 +27,7 @@ import {
 import BuilderDesktopHeader from './components/BuilderDesktopHeader';
 import ZoomOverlay from './components/ZoomOverlay';
 import { EditorProvider, useEditor } from './EditorContext';
+import { FilmCorners } from '@/ui/primitives';
 import {
   RotateCcw,
   Undo2,
@@ -919,6 +920,16 @@ const StudioLayout: React.FC<{
       },
     },
     {
+      id: 'export-webp',
+      label: 'Export as WebP',
+      category: 'Export',
+      icon: <Download size={13} />,
+      action: () => {
+        setConfig((p) => ({ ...p, extension: 'webp' }));
+        setExportOpen(true);
+      },
+    },
+    {
       id: 'reset',
       label: 'Reset All Settings',
       category: 'File',
@@ -1045,7 +1056,7 @@ const StudioLayout: React.FC<{
               <ResetDialog
                 isOpen={isResetOpen}
                 onClose={() => setIsResetOpen(false)}
-                onConfirm={handleReset}
+                onConfirm={() => { handleReset(); clearSelection(); }}
               />
             )}
             {isImportOpen && (
@@ -1467,28 +1478,7 @@ const StudioLayout: React.FC<{
                 onLogoContextMenu={(e) => openCtxMenu('logo', e)}
               />
 
-              {/* Film corner accents — 12×12px, z-index 10 so they render above canvas but below panels */}
-              {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
-                <div
-                  key={c}
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: c.startsWith('t') ? 8 : 'auto',
-                    bottom: c.startsWith('b') ? 8 : 'auto',
-                    left: c.endsWith('l') ? 8 : 'auto',
-                    right: c.endsWith('r') ? 8 : 'auto',
-                    width: 12,
-                    height: 12,
-                    pointerEvents: 'none',
-                    zIndex: 10,
-                    borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.22)' : 'none',
-                    borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.22)' : 'none',
-                    borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.22)' : 'none',
-                    borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.22)' : 'none',
-                  }}
-                />
-              ))}
+              <FilmCorners />
 
               {/* Zoom / grid overlay for mobile — same floating pill as desktop
                  (zoom in/out, reset view, and the settings gear with
@@ -2365,27 +2355,7 @@ const StudioLayout: React.FC<{
               onContextMenu={openCtxMenu as (id: string, e: React.MouseEvent) => void}
               onLogoContextMenu={(e) => openCtxMenu('logo', e)}
             />
-            {/* Film corner accents */}
-            {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
-              <div
-                key={c}
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: c.startsWith('t') ? 8 : 'auto',
-                  bottom: c.startsWith('b') ? 8 : 'auto',
-                  left: c.endsWith('l') ? 8 : 'auto',
-                  right: c.endsWith('r') ? 8 : 'auto',
-                  width: 12,
-                  height: 12,
-                  pointerEvents: 'none',
-                  borderTop: c.startsWith('t') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                  borderBottom: c.startsWith('b') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                  borderLeft: c.endsWith('l') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                  borderRight: c.endsWith('r') ? '1px solid rgba(196,124,46,0.18)' : 'none',
-                }}
-              />
-            ))}
+            <FilmCorners />
           </main>
 
           {/* Right sidebar */}

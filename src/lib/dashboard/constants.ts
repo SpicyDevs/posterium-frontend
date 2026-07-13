@@ -469,22 +469,4 @@ export const API_PARAMS = [
   { p: 'download', d: 'Force file download header', e: '(no value)' },
 ] as const;
 
-export const MARQUEE_TITLES = [
-  'NOW SHOWING',
-  'THE DARK KNIGHT',
-  'INCEPTION',
-  'OPPENHEIMER',
-  'BREAKING BAD',
-  "SCHINDLER'S LIST",
-  'GAME OF THRONES',
-  'JOKER',
-  'NO WAY HOME',
-  'STRANGER THINGS',
-  'THE GODFATHER',
-  'BARBIE',
-  'FREE POSTER API',
-  'POSTERIUM',
-  'OPEN SOURCE',
-  'OPEN SOURCE',
-  'NOW SHOWING',
-];
+

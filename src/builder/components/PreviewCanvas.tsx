@@ -1,15 +1,9 @@
 // src/builder/components/PreviewCanvas.tsx
 //
-// FEATURE: posterBlur and grayscale are now applied entirely on the frontend
-// via CSS `filter` on the poster <img> element. They are NOT sent to the
-// backend as bg_blur/gs parameters, so the backend does not need to re-process
-// the image. This eliminates a round-trip fetch for those visual effects and
-// makes the preview update instantly when sliders are dragged.
-//
-// The backend still ACCEPTS bg_blur and gs for non-builder use cases (direct
-// API URL usage, Plex/Jellyfin). The builder just no longer sends them.
-//
-// The cleanPosterUrl therefore no longer includes bg_blur or bw/gs.
+// posterBlur and grayscale are applied via CSS `filter` on this preview <img>
+// for instant slider feedback during editing, avoiding a backend round-trip
+// while dragging. The real exported poster URL (see url-generator.ts) still
+// sends these as `pb`/`gs` query params so the final rendered image matches.
 
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { PosterConfig, RatingType } from '../types';

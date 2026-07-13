@@ -154,95 +154,12 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* ── Film overlays ────────────────────────────────────────────────────── */
-  .grain-layer {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23g)'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 186px 186px;
-    animation: grain-anim 0.14s steps(1) infinite;
-  }
-
-  .scan-layer {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9998;
-    background: repeating-linear-gradient(
-      180deg,
-      transparent 0px,
-      transparent 3px,
-      rgba(0, 0, 0, 0.012) 3px,
-      rgba(0, 0, 0, 0.012) 4px
-    );
-  }
-
-  /* ── Keyframes (deduplicated — dashboard.css no longer needs to redefine) */
-  @keyframes grain-anim {
-    0% {
-      transform: translate(0, 0);
-    }
-    14% {
-      transform: translate(-3%, -4%);
-    }
-    28% {
-      transform: translate(4%, 2%);
-    }
-    42% {
-      transform: translate(-2%, 5%);
-    }
-    57% {
-      transform: translate(5%, -3%);
-    }
-    71% {
-      transform: translate(-4%, 3%);
-    }
-    85% {
-      transform: translate(2%, -5%);
-    }
-  }
-
   @keyframes shimmer {
     0% {
       background-position: 200% 0;
     }
     100% {
       background-position: -200% 0;
-    }
-  }
-
-  @keyframes marquee-scroll {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
-
-  @keyframes hero-reveal {
-    from {
-      opacity: 0;
-      transform: translateY(36px) skewY(0.8deg);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) skewY(0deg);
-    }
-  }
-
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(22px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
     }
   }
 
@@ -510,45 +427,5 @@
     color: var(--film-cream) !important;
   }
 
-  /* ── Cyberpunk sidebar cut paths ─────────────────────────────────────── */
-  .cyber-path-left {
-    --cut: 24px;
-    clip-path: polygon(
-      0 0,
-      calc(100% - var(--cut)) 0,
-      100% var(--cut),
-      100% calc(100% - var(--cut)),
-      calc(100% - var(--cut)) 100%,
-      0 100%
-    );
-  }
 
-  .cyber-path-right {
-    --cut: 24px;
-    clip-path: polygon(
-      var(--cut) 0,
-      100% 0,
-      100% 100%,
-      var(--cut) 100%,
-      0 calc(100% - var(--cut)),
-      0 var(--cut)
-    );
-  }
-
-  .cyber-border-outer-left {
-    background: rgba(196, 124, 46, 0.4);
-    padding-right: 1px;
-  }
-  .cyber-border-gap-left {
-    background: var(--film-black);
-    padding-right: 3px;
-  }
-  .cyber-border-outer-right {
-    background: rgba(196, 124, 46, 0.4);
-    padding-left: 1px;
-  }
-  .cyber-border-gap-right {
-    background: var(--film-black);
-    padding-left: 3px;
-  }
 }

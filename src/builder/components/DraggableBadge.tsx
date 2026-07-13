@@ -488,6 +488,7 @@ const DraggableBadge: React.FC<Props> = ({
     }
 
     if (badgeId === 'age') {
+      const ageDisplay = (value ?? '').trim() || 'PG-13';
       return (
         <div className="w-full h-full flex items-center justify-center relative">
           <div
@@ -507,7 +508,7 @@ const DraggableBadge: React.FC<Props> = ({
                 color: txtColor,
               }}
             >
-              PG-13
+              {ageDisplay}
             </span>
           )}
         </div>

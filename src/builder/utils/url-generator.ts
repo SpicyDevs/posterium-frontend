@@ -8,8 +8,14 @@ export const generateApiUrl = (
 ): string => {
   const cleanBase = baseUrl.replace(/\/$/, '');
 
-  const displayId = config.imdbId || '{imdb_id}';
-  const pathSegment = `/poster/${displayId}`;
+  let pathSegment: string;
+  if (config.imdbId) {
+    pathSegment = `/poster/${config.imdbId}`;
+  } else if (config.mediaType && config.tmdbId) {
+    pathSegment = `/${config.mediaType}/${config.tmdbId}`;
+  } else {
+    pathSegment = `/poster/{imdb_id}`;
+  }
 
   const p = new URLSearchParams();
 
@@ -51,6 +57,7 @@ export const generateApiUrl = (
   if (config.showText === false) p.set('nt', '1');
 
   if (config.normalize) p.set('nm', '1');
+  if (config.noEmbed) p.set('ne', '1');
   if (config.outOf !== undefined) p.set('of', config.outOf.toString());
 
   if (config.iconType !== undefined) p.set('it', config.iconType.toString());
@@ -79,7 +86,7 @@ export const generateApiUrl = (
     if (titleItem.y !== undefined) p.set(`${T}_y`, titleItem.y.toString());
     if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
     if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
-    if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_al`, titleItem.textAlign);
+    if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_ta`, titleItem.textAlign);
     if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
     if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
     if (titleItem.shadow !== undefined && titleItem.shadow > 0) p.set(`${T}_sh`, titleItem.shadow.toString());
