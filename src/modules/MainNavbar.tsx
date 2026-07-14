@@ -29,7 +29,6 @@ interface MainNavbarProps {
 }
 
 const APP_LINKS: NavbarLink[] = [
-  { label: 'Build', href: '/build' },
   { label: 'Installation', href: '/installation' },
   { label: 'Docs', href: '/docs' },
   { label: 'FAQ', href: '/faq' },
@@ -219,24 +218,26 @@ const MainNavbar = memo<MainNavbarProps>(
             ))}
           </div>
 
-          <div
-            className="main-nav-search"
-            style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}
-          >
-            <SearchInput
-              ref={searchInputRef}
-              value={search?.value ?? ''}
-              onChange={(e) => search?.onChange?.(e.target.value)}
-              onActivate={search?.onActivate}
-              readOnly={search?.readOnly || !search?.onChange}
-              placeholder={search?.placeholder ?? 'Search…'}
-              style={{ width: 'min(440px,100%)' }}
-            />
-          </div>
+          {search ? (
+            <div
+              className="main-nav-search"
+              style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}
+            >
+              <SearchInput
+                ref={searchInputRef}
+                value={search.value}
+                onChange={(e) => search.onChange?.(e.target.value)}
+                onActivate={search.onActivate}
+                readOnly={search.readOnly || !search.onChange}
+                placeholder={search.placeholder ?? 'Search…'}
+                style={{ width: 'min(440px,100%)' }}
+              />
+            </div>
+          ) : null}
 
           <div
             className="main-nav-right"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto' }}
           >
             <a
               href="#"
@@ -280,6 +281,29 @@ const MainNavbar = memo<MainNavbarProps>(
               }}
             >
               <Github size={15} />
+            </a>
+
+            <a
+              href="/build"
+              className="nav-desktop-item syne-font"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'var(--film-amber)',
+                color: '#070706',
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                padding: '7px 12px',
+                borderRadius: 4,
+                flexShrink: 0,
+                boxShadow: '0 0 18px rgba(196,124,46,0.22)',
+              }}
+            >
+              Build
             </a>
 
             {rightActions}
@@ -355,12 +379,12 @@ const MainNavbar = memo<MainNavbarProps>(
               gap: 8,
             }}
           >
-            {!keepSearchOnMobile ? (
+            {search && !keepSearchOnMobile ? (
               <SearchInput
-                value={search?.value ?? ''}
-                onChange={(e) => search?.onChange?.(e.target.value)}
-                readOnly={search?.readOnly || !search?.onChange}
-                placeholder={search?.placeholder ?? 'Search…'}
+                value={search.value}
+                onChange={(e) => search.onChange?.(e.target.value)}
+                readOnly={search.readOnly || !search.onChange}
+                placeholder={search.placeholder ?? 'Search…'}
                 style={{ background: 'transparent', border: 'none', padding: 0, height: 'auto', width: '100%' }}
               />
             ) : null}
