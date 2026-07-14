@@ -2,7 +2,7 @@ import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { SprocketStrip } from './primitives';
 import { REEL_ITEMS, API } from '@/lib/dashboard/constants';
 
-const DESKTOP_REEL_CHUNKS = 3;
+const DESKTOP_REEL_CHUNKS = 2;
 const CHUNK_WIDTH = 4000;
 const MOSAIC_NATURAL_WIDTH = DESKTOP_REEL_CHUNKS * CHUNK_WIDTH;
 
@@ -140,7 +140,7 @@ DesktopStaticReel.displayName = 'DesktopStaticReel';
 // ─────────────────────────────────────────────────────────────────────────────
 // Mobile — 2-column poster grid (no parallax, no scroll-jacking)
 // ─────────────────────────────────────────────────────────────────────────────
-const MOBILE_REEL_VISIBLE = 8;
+const MOBILE_REEL_VISIBLE = 6;
 
 const PosterFallback = () => (
   <div
@@ -263,7 +263,7 @@ const MobilePosterGrid = memo(() => {
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && visibleCount < REEL_ITEMS.length) {
-          setVisibleCount((prev) => Math.min(prev + 8, REEL_ITEMS.length));
+          setVisibleCount((prev) => Math.min(prev + 6, REEL_ITEMS.length));
         }
       },
       { rootMargin: '400px' }

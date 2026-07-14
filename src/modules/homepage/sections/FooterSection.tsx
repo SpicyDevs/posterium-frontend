@@ -1,6 +1,6 @@
 // src/components/dashboard/sections/FooterSection.tsx
 import { memo } from 'react';
-import { Film, Github, ExternalLink } from 'lucide-react';
+import { Github, ExternalLink } from 'lucide-react';
 
 const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
@@ -31,15 +31,7 @@ export const FooterSection = memo(() => (
       {/* Brand block */}
       <div style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 7,
-            background: 'linear-gradient(140deg, #C47C2E, #D4A245)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 24px rgba(196,124,46,0.22), 0 4px 12px rgba(0,0,0,0.5)',
-            flexShrink: 0,
-          }}>
-            <Film size={18} color="#070706" strokeWidth={2.5} />
-          </div>
+          <img src="/posterium.svg" alt="Posterium" width={40} height={40} style={{ display: 'block', flexShrink: 0, borderRadius: 7, boxShadow: '0 0 24px rgba(196,124,46,0.22), 0 4px 12px rgba(0,0,0,0.5)' }} />
           <div>
             <div className="poster-font" style={{ fontSize: 'clamp(28px,4vw,44px)', color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 0.9 }}>
               POSTERIUM

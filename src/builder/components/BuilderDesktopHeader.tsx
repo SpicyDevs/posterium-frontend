@@ -73,16 +73,17 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
           className="flex items-center"
           style={{ textDecoration: 'none', flexShrink: 0 }}
         >
+          <img src="/posterium.svg" alt="" width={20} height={20} className="hidden sm:block" style={{ display: 'block' }} />
           <span
             className="poster-font select-none hidden sm:block"
             style={{
               fontSize: 18,
-              color: 'var(--film-cream)',
               letterSpacing: '0.12em',
               lineHeight: 'normal',
             }}
           >
-            POSTERIUM
+            <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
+            <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>IUM</span>
           </span>
           <span
             className="poster-font select-none sm:hidden"

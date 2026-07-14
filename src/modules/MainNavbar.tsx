@@ -171,17 +171,11 @@ const MainNavbar = memo<MainNavbarProps>(
     return (
       <>
         <nav aria-label="Main navigation" style={navStyle}>
-          <a href="/" className="main-nav-logo" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <span
-              className="poster-font"
-              style={{
-                fontSize: compactLogo ? 18 : 22,
-                color: 'var(--film-cream)',
-                letterSpacing: '0.12em',
-                lineHeight: 1,
-              }}
-            >
-              POSTERIUM
+          <a href="/" className="main-nav-logo" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/posterium.svg" alt="" width={compactLogo ? 20 : 24} height={compactLogo ? 20 : 24} style={{ display: 'block' }} />
+            <span className="poster-font" style={{ fontSize: compactLogo ? 18 : 22, letterSpacing: '0.12em', lineHeight: 1 }}>
+              <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
+              <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>IUM</span>
             </span>
           </a>
 
@@ -190,8 +184,11 @@ const MainNavbar = memo<MainNavbarProps>(
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: search ? 'flex-start' : 'center',
               gap: 0,
-              marginLeft: 8,
+              flex: search ? undefined : 1,
+              minWidth: 0,
+              marginLeft: search ? 8 : 0,
             }}
           >
             {links.map(({ label, href, external }) => (
@@ -244,6 +241,23 @@ const MainNavbar = memo<MainNavbarProps>(
               onClick={(event) => event.preventDefault()}
               aria-hidden="true"
               tabIndex={-1}
+              className="nav-desktop-item hover-cream"
+              style={{
+                color: 'rgba(200, 185, 155, 0.78)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '6px 8px',
+                borderRadius: 4,
+              }}
+            >
+              <Github size={15} />
+            </a>
+
+            <a
+              href="#"
+              onClick={(event) => event.preventDefault()}
+              aria-hidden="true"
+              tabIndex={-1}
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',
@@ -264,23 +278,6 @@ const MainNavbar = memo<MainNavbarProps>(
             >
               <Coffee size={12} className="shrink-0" />
               <span className="main-nav-bmc-text">Support</span>
-            </a>
-
-            <a
-              href="#"
-              onClick={(event) => event.preventDefault()}
-              aria-hidden="true"
-              tabIndex={-1}
-              className="nav-desktop-item hover-cream"
-              style={{
-                color: 'rgba(200, 185, 155, 0.78)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '6px 8px',
-                borderRadius: 4,
-              }}
-            >
-              <Github size={15} />
             </a>
 
             <a
