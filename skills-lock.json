@@ -7,6 +7,12 @@
       "skillPath": "skills/astro/SKILL.md",
       "computedHash": "ebefe26b231d32379c14e41a46c2de7b4b0184543bedab7febdabe4fb21fba4e"
     },
+    "avoid-ai-writing": {
+      "source": "conorbronsdon/avoid-ai-writing",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "d32cac4b2dfb98ff4c448d390e01541026f13b0ca605f8e63febe62c998ea25f"
+    },
     "cloudflare": {
       "source": "cloudflare/skills",
       "sourceType": "github",
