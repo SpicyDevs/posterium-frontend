@@ -65,6 +65,8 @@ import { usePosterHistory } from './usePosterHistory';
 import { useMobileBottomSheet } from './useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
+import { getWalkthroughState, saveWalkthroughState, saveBuilderMode, getBuilderMode } from './walkthroughStorage';
+import WalkthroughModal from './components/WalkthroughModal';
 
 const KeyboardShortcutsModal = lazy(() => import('./components/KeyboardShortcutsModal'));
 const ResetDialog = lazy(() => import('./components/ResetDialogue'));
@@ -2408,6 +2410,39 @@ const StudioLayout: React.FC<{
 
 // ── Root app ──────────────────────────────────────────────────────────────────
 const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
+  const [walkthroughDone, setWalkthroughDone] = useState(() => {
+    // Synchronous check — runs before first paint, prevents flash
+    if (typeof window === 'undefined') return false;
+    return getWalkthroughState();
+  });
+
+  const handleWalkthroughComplete = useCallback((mode: BuilderMode) => {
+    saveWalkthroughState();
+    saveBuilderMode(mode);
+    setWalkthroughDone(true);
+  }, []);
+
+  const handleWalkthroughDismiss = useCallback(() => {
+    // Transient dismiss — does NOT save completion state
+    setWalkthroughDone(true);
+  }, []);
+
+  const handleWalkthroughSkip = useCallback(() => {
+    saveWalkthroughState();
+    setWalkthroughDone(true);
+  }, []);
+
+  // Walkthrough not completed — show the onboarding wizard instead of builder
+  if (!walkthroughDone) {
+    return (
+      <WalkthroughModal
+        onComplete={handleWalkthroughComplete}
+        onDismiss={handleWalkthroughDismiss}
+        onSkip={handleWalkthroughSkip}
+      />
+    );
+  }
+
   const {
     state: config,
     setState: setConfig,
@@ -2511,7 +2546,7 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
         redo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        initialMode={initialMode}
+        initialMode={getBuilderMode() || initialMode}
       />
     </EditorProvider>
   );
