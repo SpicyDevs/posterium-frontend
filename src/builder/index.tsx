@@ -2432,17 +2432,6 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
     setWalkthroughDone(true);
   }, []);
 
-  // Walkthrough not completed — show the onboarding wizard instead of builder
-  if (!walkthroughDone) {
-    return (
-      <WalkthroughModal
-        onComplete={handleWalkthroughComplete}
-        onDismiss={handleWalkthroughDismiss}
-        onSkip={handleWalkthroughSkip}
-      />
-    );
-  }
-
   const {
     state: config,
     setState: setConfig,
@@ -2533,6 +2522,17 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
     }
 
   }, [handleLoadConfig, setConfig]);
+
+  // Walkthrough not completed — show the onboarding wizard instead of builder
+  if (!walkthroughDone) {
+    return (
+      <WalkthroughModal
+        onComplete={handleWalkthroughComplete}
+        onDismiss={handleWalkthroughDismiss}
+        onSkip={handleWalkthroughSkip}
+      />
+    );
+  }
 
   return (
     <EditorProvider>

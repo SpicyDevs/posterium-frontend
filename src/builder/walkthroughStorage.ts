@@ -1,5 +1,8 @@
 const WALKTHROUGH_KEY = 'posterium_walkthrough_state';
 const BUILDER_MODE_KEY = 'posterium_builder_mode';
+const INTEGRATIONS_KEY = 'posterium_walkthrough_integrations';
+const APIKEYS_KEY = 'posterium_walkthrough_apikeys';
+const PREFS_KEY = 'posterium_walkthrough_prefs';
 
 export function getWalkthroughState(): boolean {
   try {
@@ -29,5 +32,23 @@ export function getBuilderMode(): 'simple' | 'advanced' {
 export function saveBuilderMode(mode: 'simple' | 'advanced'): void {
   try {
     localStorage.setItem(BUILDER_MODE_KEY, mode);
+  } catch { /* */ }
+}
+
+export function saveIntegrations(ids: string[]): void {
+  try {
+    localStorage.setItem(INTEGRATIONS_KEY, JSON.stringify(ids));
+  } catch { /* */ }
+}
+
+export function saveApiKeys(keys: Record<string, string>): void {
+  try {
+    localStorage.setItem(APIKEYS_KEY, JSON.stringify(keys));
+  } catch { /* */ }
+}
+
+export function savePrefs(prefs: { sortBy: string; mediaType: string }): void {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
   } catch { /* */ }
 }
