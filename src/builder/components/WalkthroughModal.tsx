@@ -21,7 +21,6 @@ import {
   Download,
   Layout,
   Copy,
-  Search,
   Loader2,
   ImageOff,
   ExternalLink,
@@ -32,6 +31,7 @@ import SegmentedControl from '@/ui/SegmentedControl';
 import { FilmCorners } from '@/ui/primitives';
 import { generateApiUrl } from '@/builder/utils/url-generator';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
+import MediaSearchCombobox, { type SearchResult } from './ui/MediaSearchCombobox';
 import { DEFAULT_CONFIG } from '@/constants/badges';
 import {
   saveIntegrations,
@@ -57,15 +57,7 @@ const INTEGRATIONS: IntegrationDef[] = [
   { id: 'metahub', label: 'Metahub', icon: <Database size={16} />, description: 'Aggregated metadata' },
 ];
 
-interface SearchResultItem {
-  id: number;
-  title?: string;
-  name?: string;
-  poster_path: string;
-  release_date?: string;
-  first_air_date?: string;
-  media_type: 'movie' | 'tv';
-}
+// Re-using SearchResult from MediaSearchCombobox
 
 interface PosterSelection {
   tmdbId?: string;
@@ -191,6 +183,19 @@ const WalkthroughModal = memo<Props>(({ onComplete, onDismiss, onSkip }) => {
       setTimeout(() => setCopied(null), 2000);
     } catch { /* */ }
   }, [exportUrl]);
+
+  // Initialize default poster on mount
+  useEffect(() => {
+    const imdbId = DEFAULT_CONFIG.imdbId || 'tt9419884';
+    setPoster({
+      imdbId,
+      mediaType: 'movie' as const,
+      title: '',
+      year: '',
+      source: DEFAULT_CONFIG.source || 'tmdb',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -450,31 +455,11 @@ interface PosterPreviewPaneProps {
 
 const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange, compact }) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const resultsRef = useRef<HTMLDivElement>(null);
-
-  // Close results on click outside
-  useEffect(() => {
-    if (!showResults) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        resultsRef.current &&
-        !resultsRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
-      ) {
-        setShowResults(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showResults]);
 
   // Debounced search
   useEffect(() => {
@@ -485,7 +470,6 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
     }
     if (query.length < 2) {
       setResults([]);
-      setShowResults(false);
       return;
     }
 
@@ -500,12 +484,12 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
           signal: ctrl.signal,
         });
         if (!res.ok) return;
-        const data: SearchResultItem[] = await res.json();
-        const filtered = data.filter(
+        const data = await res.json();
+        const resultsArr: SearchResult[] = data.results ?? data;
+        const filtered = resultsArr.filter(
           (r) => r.poster_path && (r.media_type === 'movie' || r.media_type === 'tv'),
         );
         setResults(filtered);
-        setShowResults(filtered.length > 0);
       } catch {
         if (!ctrl.signal.aborted) setIsSearching(false);
       } finally {
@@ -521,11 +505,9 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
 
   const handleInputChange = useCallback((value: string) => {
     setQuery(value);
-    setShowResults(false);
     setImageLoaded(false);
     setImageError(false);
 
-    // Direct ID entry
     if (value.startsWith('tt') && value.length > 3) {
       onPosterChange({
         imdbId: value,
@@ -546,7 +528,8 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
   }, [onPosterChange]);
 
   const handleSelectResult = useCallback(
-    (item: SearchResultItem) => {
+    (item: SearchResult | null) => {
+      if (!item) return;
       onPosterChange({
         tmdbId: item.id.toString(),
         mediaType: item.media_type,
@@ -555,7 +538,6 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
         source: 'tmdb',
       });
       setQuery(item.title || item.name || '');
-      setShowResults(false);
       setImageLoaded(false);
       setImageError(false);
     },
@@ -569,8 +551,6 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
     return `${DEFAULT_API_BASE}/${type}/${id}.svg?source=${poster.source}&_t=${id}`;
   }, [poster]);
 
-  const paneHeight = compact ? 220 : 400;
-
   return (
     <div
       style={{
@@ -579,127 +559,27 @@ const PosterPreviewPane = memo<PosterPreviewPaneProps>(({ poster, onPosterChange
         border: '1px solid rgba(196,124,46,0.14)',
         background: 'rgba(14,13,11,0.72)',
         height: compact ? 'auto' : '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Search / ID input */}
-      <div style={{ padding: 12, position: 'relative' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            height: 36,
-            padding: '0 10px',
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-        >
-          {isSearching ? (
-            <Loader2 size={14} className="wt-spinner" style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }} />
-          ) : (
-            <Search size={14} style={{ color: 'var(--film-text-ghost)', flexShrink: 0 }} />
-          )}
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onFocus={() => { if (results.length > 0) setShowResults(true); }}
-            placeholder="Search or paste IMDb/TMDB ID..."
-            className="body-font"
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              fontSize: 11,
-              color: 'var(--film-cream)',
-              minWidth: 0,
-            }}
-          />
-        </div>
-
-        {/* Search results dropdown */}
-        {showResults && results.length > 0 && (
-          <div
-            ref={resultsRef}
-            style={{
-              position: 'absolute',
-              top: 52,
-              left: 12,
-              right: 12,
-              zIndex: 50,
-              borderRadius: 8,
-              overflow: 'hidden',
-              border: '1px solid rgba(196,124,46,0.18)',
-              background: 'rgba(18,17,14,0.98)',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.7)',
-              maxHeight: 220,
-              overflowY: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(196,124,46,0.12) transparent',
-            }}
-          >
-            {results.map((item) => {
-              const title = item.title || item.name || '';
-              const year = (item.release_date || item.first_air_date || '').split('-')[0];
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleSelectResult(item)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    width: '100%',
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontFamily: 'inherit',
-                    transition: 'background 0.1s',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(196,124,46,0.08)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <img
-                    src={item.poster_path}
-                    alt=""
-                    style={{ width: 32, height: 28, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="syne-font" style={{ fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>
-                      {title}
-                    </div>
-                    {year && (
-                      <div className="body-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}>
-                        {year}
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className="mono-font"
-                    style={{ fontSize: 8, color: 'var(--film-amber)', textTransform: 'uppercase', letterSpacing: '0.06em' }}
-                  >
-                    {item.media_type}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+      <div style={{ padding: 12 }}>
+        <MediaSearchCombobox
+          onQueryChange={handleInputChange}
+          results={results}
+          isSearching={isSearching}
+          onSelectResult={handleSelectResult}
+          placeholder="Search or paste IMDb/TMDB ID…"
+        />
       </div>
 
       {/* Poster image */}
       <div
         style={{
           position: 'relative',
-          aspectRatio: '2 / 3',
-          maxHeight: compact ? 160 : paneHeight - 80,
+          flex: 1,
+          minHeight: 0,
           margin: '0 12px 12px',
           borderRadius: 8,
           overflow: 'hidden',

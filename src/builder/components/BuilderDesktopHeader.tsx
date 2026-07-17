@@ -9,6 +9,7 @@ import {
   Download,
   ChevronDown,
   RotateCcw,
+  BookOpen,
 } from 'lucide-react';
 
 interface BuilderDesktopHeaderProps {
@@ -28,6 +29,7 @@ interface BuilderDesktopHeaderProps {
   setExportOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
   setIsResetOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
   setIsImportOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
+  onRerunWalkthrough: () => void;
 }
 
 const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
@@ -47,6 +49,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
   setExportOpen,
   setIsResetOpen,
   setIsImportOpen,
+  onRerunWalkthrough,
 }) => {
   if (isFullscreen) return null;
 
@@ -246,6 +249,13 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
             Reset
           </span>
         </button>
+
+        <ToolbarBtn
+          onClick={onRerunWalkthrough}
+          label="Walkthrough / Onboarding"
+        >
+          <BookOpen size={14} />
+        </ToolbarBtn>
       </div>
     </header>
   );

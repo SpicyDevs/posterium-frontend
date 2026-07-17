@@ -60,6 +60,7 @@ import {
   Type,
   ChevronDown,
   Search,
+  BookOpen,
 } from 'lucide-react';
 import { usePosterHistory } from './usePosterHistory';
 import { useMobileBottomSheet } from './useMobileBottomSheet';
@@ -955,6 +956,17 @@ const StudioLayout: React.FC<{
       shortcut: '⌘Y',
       action: redo,
     },
+    {
+      id: 'rerun-walkthrough',
+      label: 'Show Walkthrough / Re-run Onboarding',
+      category: 'File',
+      icon: <BookOpen size={13} />,
+      keywords: ['onboarding', 'tour', 'guide', 'help', 'start', 'welcome'],
+      action: () => {
+        localStorage.removeItem('posterium_walkthrough_state');
+        window.location.reload();
+      },
+    },
   ];
 
   const ctxBadgeSelected = ctxMenu.badgeId
@@ -1143,6 +1155,10 @@ const StudioLayout: React.FC<{
           setExportOpen={setExportOpen}
           setIsResetOpen={setIsResetOpen}
           setIsImportOpen={setIsImportOpen}
+          onRerunWalkthrough={() => {
+            localStorage.removeItem('posterium_walkthrough_state');
+            window.location.reload();
+          }}
         />
 
         {/* ── MOBILE BUILDER ── */}
@@ -1322,6 +1338,29 @@ const StudioLayout: React.FC<{
                   }}
                 >
                   <RotateCcw size={14} />
+                </button>
+
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('posterium_walkthrough_state');
+                    window.location.reload();
+                  }}
+                  aria-label="Re-run walkthrough"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(240,230,204,0.65)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <BookOpen size={14} />
                 </button>
 
                 <div
