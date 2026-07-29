@@ -62,20 +62,7 @@ const MiscStep = memo<MiscStepProps>(({ config, onChange }) => (
         </div>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <div
-          className="syne-font"
-          style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 12 }}
-        >
-          Source Priority
-        </div>
-        <ToggleRow
-          label="Textless poster"
-          sub="Use version without title/logo text overlay"
-          checked={config.textless}
-          onChange={(v) => onChange({ textless: v })}
-        />
-      </div>
+
     </div>
   </div>
 ));

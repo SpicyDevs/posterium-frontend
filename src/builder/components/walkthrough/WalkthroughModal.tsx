@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { X, Layout, Sliders } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { PosterConfig } from '@/types/poster';
 import { DEFAULT_CONFIG } from '@/constants/badges';
@@ -115,12 +115,12 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
 
   const handleSkip = useCallback(() => {
     if (stepRef.current >= STEPS.length - 1) return;
-    // Restore pre-step snapshot (discard changes from this step)
-    setConfig({ ...stepSnapshot });
     const nextStep = stepRef.current + 1;
-    setStepSnapshot({ ...config });
+    const reverted = { ...stepSnapshot };
+    setStepSnapshot(reverted);
+    setConfig(reverted);
     setStep(nextStep);
-  }, [stepSnapshot, config]);
+  }, [stepSnapshot]);
 
   const handleSkipWalkthrough = useCallback(() => {
     onSkip();
@@ -354,88 +354,36 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
                       <LayoutStep config={config} onChange={updateConfig} />
                     )}
                     {step === 6 && (
-                      <>
-                        <ExportStep config={config} />
-                        {/* Builder mode selection */}
-                        <div style={{ marginTop: 20, marginBottom: 8 }}>
-                          <div
-                            className="syne-font"
-                            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 12 }}
-                          >
-                            Builder Mode
-                          </div>
-                          <div style={{ display: 'flex', gap: 10 }}>
-                            {[
-                              { value: 'simple' as BuilderMode, label: 'Simple Builder', desc: 'Unified panels with source search, layers, and badge editing.' },
-                              { value: 'advanced' as BuilderMode, label: 'Advanced Builder', desc: 'Dedicated panel navigation for source, layers, badges, and selection.' },
-                            ].map((option) => {
-                              const active = builderMode === option.value;
-                              return (
-                                <button
-                                  key={option.value}
-                                  type="button"
-                                  onClick={() => setBuilderMode(option.value)}
-                                  style={{
-                                    flex: 1,
-                                    padding: '12px 14px',
-                                    borderRadius: 10,
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    transition: 'all 0.15s ease',
-                                    fontFamily: 'inherit',
-                                    background: active ? 'rgba(196,124,46,0.08)' : 'rgba(14,13,11,0.72)',
-                                    border: active
-                                      ? '1px solid rgba(196,124,46,0.35)'
-                                      : '1px solid rgba(196,124,46,0.14)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    if (!active) {
-                                      e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
-                                      e.currentTarget.style.background = 'rgba(24,22,18,0.6)';
-                                    }
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!active) {
-                                      e.currentTarget.style.borderColor = 'rgba(196,124,46,0.14)';
-                                      e.currentTarget.style.background = 'rgba(14,13,11,0.72)';
-                                    }
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                    {option.value === 'simple' ? <Layout size={14} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} /> : <Sliders size={14} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} />}
-                                    <span className="syne-font" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: active ? 'var(--film-cream)' : 'var(--film-text-label)' }}>
-                                      {option.label}
-                                    </span>
-                                  </div>
-                                  <span className="body-font" style={{ fontSize: 9, color: 'var(--film-text-ghost)', lineHeight: 1.3, display: 'block' }}>
-                                    {option.desc}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
+                      <ExportStep
+                        config={config}
+                        onChange={updateConfig}
+                        builderMode={builderMode}
+                        setBuilderMode={setBuilderMode}
+                      />
                     )}
                   </div>
                 </div>
 
-                {/* Right: live preview */}
-                <div
-                  style={{
-                    flex: '0 0 280px',
-                    maxWidth: 280,
-                  }}
-                  className="max-[800px]:hidden"
-                >
-                  <LiveWalkthroughPreview config={config} />
-                </div>
+                {/* Right: live preview — hidden on Export step (ExportStep has its own preview) */}
+                {step < STEPS.length - 1 && (
+                  <div
+                    style={{
+                      flex: '0 0 280px',
+                      maxWidth: 280,
+                    }}
+                    className="max-[800px]:hidden"
+                  >
+                    <LiveWalkthroughPreview config={config} />
+                  </div>
+                )}
               </div>
 
-              {/* Mobile live preview */}
-              <div className="min-[801px]:hidden" style={{ marginTop: 16, marginBottom: 8 }}>
-                <LiveWalkthroughPreview config={config} compact />
-              </div>
+              {/* Mobile live preview — hidden on Export step */}
+              {step < STEPS.length - 1 && (
+                <div className="min-[801px]:hidden" style={{ marginTop: 16, marginBottom: 8 }}>
+                  <LiveWalkthroughPreview config={config} compact />
+                </div>
+              )}
 
               {/* Bottom bar */}
               <WizardChrome

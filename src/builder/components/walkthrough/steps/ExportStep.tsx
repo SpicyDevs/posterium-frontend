@@ -1,5 +1,6 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { Copy, Download, Loader2, Check, ExternalLink } from 'lucide-react';
+import { Copy, Download, Loader2, Check, Layout, Sliders } from 'lucide-react';
+import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { ExtensionType, PosterConfig } from '@/types/poster';
 import { generateApiUrl } from '@/builder/utils/url-generator';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
@@ -9,6 +10,9 @@ import { StepTitle, StepSubtitle } from '../StepPrimitives';
 
 interface ExportStepProps {
   config: PosterConfig;
+  onChange: (updates: Partial<PosterConfig>) => void;
+  builderMode: BuilderMode;
+  setBuilderMode: (mode: BuilderMode) => void;
 }
 
 const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
@@ -18,7 +22,7 @@ const EXT_OPTIONS: { id: ExtensionType; label: string }[] = [
   { id: 'webp', label: 'WEBP' },
 ];
 
-const ExportStep = memo<ExportStepProps>(({ config }) => {
+const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBuilderMode }) => {
   const [copied, setCopied] = useState(false);
   const [aioCopied, setAioCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -80,7 +84,7 @@ const ExportStep = memo<ExportStepProps>(({ config }) => {
       </StepSubtitle>
 
       <div style={{ flex: 1, display: 'flex', gap: 20, minHeight: 0 }}>
-        {/* Left: export options */}
+        {/* Left: export options + builder mode */}
         <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div
             className="syne-font"
@@ -94,11 +98,7 @@ const ExportStep = memo<ExportStepProps>(({ config }) => {
               <button
                 key={ext.id}
                 type="button"
-                onClick={() => {
-                  const u = new URL(exportUrl || `${DEFAULT_API_BASE}/poster/{imdb_id}.${ext.id}`);
-                  // Extension is baked into the URL from generateApiUrl
-                  window.open(u.toString(), '_blank', 'noopener,noreferrer');
-                }}
+                onClick={() => onChange({ extension: ext.id })}
                 className="syne-font"
                 style={{
                   flex: 1,
@@ -110,9 +110,9 @@ const ExportStep = memo<ExportStepProps>(({ config }) => {
                   textTransform: 'uppercase',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
-                  background: config.extension === ext.id ? 'rgba(196,124,46,0.12)' : 'rgba(255,255,255,0.03)',
+                  background: config.extension === ext.id ? 'rgba(196,124,46,0.14)' : 'rgba(255,255,255,0.03)',
                   border: config.extension === ext.id
-                    ? '1px solid rgba(196,124,46,0.3)'
+                    ? '1px solid rgba(196,124,46,0.35)'
                     : '1px solid rgba(255,255,255,0.08)',
                   color: config.extension === ext.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
                 }}
@@ -151,16 +151,66 @@ const ExportStep = memo<ExportStepProps>(({ config }) => {
               label={aioCopied ? 'Copied' : 'Copy for AIO'}
               onClick={handleAioCopy}
             />
-            <ActionButton
-              disabled={!hasPoster}
-              icon={<ExternalLink size={12} />}
-              label="Open in Builder"
-              onClick={() => {
-                if (exportUrl) {
-                  window.open(`/build?url=${encodeURIComponent(exportUrl)}`, '_blank', 'noopener,noreferrer');
-                }
-              }}
-            />
+          </div>
+
+          {/* Builder mode selection — integrated into the export step */}
+          <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+            <div
+              className="syne-font"
+              style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
+            >
+              Builder Mode
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { value: 'simple' as BuilderMode, label: 'Simple Builder', desc: 'Unified panels with source search, layers, and badge editing.' },
+                { value: 'advanced' as BuilderMode, label: 'Advanced Builder', desc: 'Dedicated panel navigation for source, layers, badges, and selection.' },
+              ].map((option) => {
+                const active = builderMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setBuilderMode(option.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'inherit',
+                      background: active ? 'rgba(196,124,46,0.08)' : 'rgba(14,13,11,0.72)',
+                      border: active
+                        ? '1px solid rgba(196,124,46,0.35)'
+                        : '1px solid rgba(196,124,46,0.14)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
+                        e.currentTarget.style.background = 'rgba(24,22,18,0.6)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.borderColor = 'rgba(196,124,46,0.14)';
+                        e.currentTarget.style.background = 'rgba(14,13,11,0.72)';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      {option.value === 'simple' ? <Layout size={13} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} /> : <Sliders size={13} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} />}
+                      <span className="syne-font" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', color: active ? 'var(--film-cream)' : 'var(--film-text-label)' }}>
+                        {option.label}
+                      </span>
+                    </div>
+                    <span className="body-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', lineHeight: 1.3, display: 'block' }}>
+                      {option.desc}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
