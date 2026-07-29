@@ -66,8 +66,9 @@ import { usePosterHistory } from './usePosterHistory';
 import { useMobileBottomSheet } from './useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
+import type { ExamplePreset } from '@/modules/ExamplesPage';
 import { getWalkthroughState, saveWalkthroughState, saveBuilderMode, getBuilderMode } from './walkthroughStorage';
-import WalkthroughModal from './components/WalkthroughModal';
+import WalkthroughModal from './components/walkthrough/WalkthroughModal';
 
 const KeyboardShortcutsModal = lazy(() => import('./components/KeyboardShortcutsModal'));
 const ResetDialog = lazy(() => import('./components/ResetDialogue'));
@@ -2448,29 +2449,12 @@ const StudioLayout: React.FC<{
 };
 
 // ── Root app ──────────────────────────────────────────────────────────────────
-const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'simple' }) => {
-  const [walkthroughDone, setWalkthroughDone] = useState(() => {
-    // Synchronous check — runs before first paint, prevents flash
-    if (typeof window === 'undefined') return false;
-    return getWalkthroughState();
-  });
+interface BuilderAppProps {
+  initialMode?: BuilderMode;
+  presets?: ExamplePreset[];
+}
 
-  const handleWalkthroughComplete = useCallback((mode: BuilderMode) => {
-    saveWalkthroughState();
-    saveBuilderMode(mode);
-    setWalkthroughDone(true);
-  }, []);
-
-  const handleWalkthroughDismiss = useCallback(() => {
-    // Transient dismiss — does NOT save completion state
-    setWalkthroughDone(true);
-  }, []);
-
-  const handleWalkthroughSkip = useCallback(() => {
-    saveWalkthroughState();
-    setWalkthroughDone(true);
-  }, []);
-
+const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets = [] }) => {
   const {
     state: config,
     setState: setConfig,
@@ -2486,6 +2470,29 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
       return DEFAULT_CONFIG;
     }
   });
+
+  const [walkthroughDone, setWalkthroughDone] = useState(() => {
+    // Synchronous check — runs before first paint, prevents flash
+    if (typeof window === 'undefined') return false;
+    return getWalkthroughState();
+  });
+
+  const handleWalkthroughComplete = useCallback((mode: BuilderMode, walkthroughConfig: PosterConfig) => {
+    saveWalkthroughState();
+    saveBuilderMode(mode);
+    setConfig(walkthroughConfig);
+    setWalkthroughDone(true);
+  }, [setConfig]);
+
+  const handleWalkthroughDismiss = useCallback(() => {
+    // Transient dismiss — does NOT save completion state
+    setWalkthroughDone(true);
+  }, []);
+
+  const handleWalkthroughSkip = useCallback(() => {
+    saveWalkthroughState();
+    setWalkthroughDone(true);
+  }, []);
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
 
@@ -2569,6 +2576,7 @@ const BuilderApp: React.FC<{ initialMode?: BuilderMode }> = ({ initialMode = 'si
         onComplete={handleWalkthroughComplete}
         onDismiss={handleWalkthroughDismiss}
         onSkip={handleWalkthroughSkip}
+        presets={presets}
       />
     );
   }

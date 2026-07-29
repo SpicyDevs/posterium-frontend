@@ -1,5 +1,6 @@
 ---
 // src/pages/build.astro
+import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BuilderApp from '@/builder/index.tsx';
 import { SITE_CONFIG } from '@/constants/site';
@@ -9,6 +10,14 @@ import { APPLICATION_AGGREGATE_RATING, SOFTWARE_APPLICATION_FEATURES } from '@/s
 import '@/styles/global.css';
 
 const canonical = `${SITE_CONFIG.baseUrl}/build`;
+
+const examples = await getCollection('examples');
+const presets = examples.map((entry) => ({
+  id: entry.id,
+  title: entry.data.title,
+  description: entry.data.description,
+  query: entry.data.query,
+}));
 
 const seo: PageSEOMetadata = {
   title: 'Poster Builder - Drag & Drop Editor | Posterium',
@@ -44,6 +53,6 @@ const seo: PageSEOMetadata = {
       <p>Use our visual editor to search for TMDB, Fanart, or IMDb posters. Drag and drop glassmorphism rating badges onto the canvas. Adjust scale, corner radius, blur, and opacity. Export your final design instantly via a shareable API URL or download it as PNG, WebP, JPG, or SVG.</p>
     </div>
 
-    <BuilderApp client:only="react" />
+    <BuilderApp client:only="react" presets={presets} />
   </main>
 </BaseLayout>
