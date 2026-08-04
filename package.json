@@ -9,12 +9,14 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:worker": "tsc -p worker/tsconfig.json",
     "format": "prettier --write .",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy": "wrangler deploy --env production",
-    "release:staging": "npm run typecheck && npm run test && npm run build && npm run deploy:staging",
+    "deploy:staging": "wrangler deploy --env staging",
+    "release:staging": "npm run typecheck && npm run typecheck:worker && npm run test && npm run build && npm run deploy:staging",
     "cf:dev": "wrangler dev"
   },
   "dependencies": {

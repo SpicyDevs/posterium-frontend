@@ -254,10 +254,7 @@ const MainNavbar = memo<MainNavbarProps>(
             </a>
 
             <a
-              href="#"
-              onClick={(event) => event.preventDefault()}
-              aria-hidden="true"
-              tabIndex={-1}
+              href="/discord"
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',

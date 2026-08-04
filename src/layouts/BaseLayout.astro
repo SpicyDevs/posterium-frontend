@@ -40,116 +40,12 @@ const pageSeo = {
     <link rel="preload" href="/fonts/plus-jakarta-sans-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/fonts/fonts.css" />
 
-    <script is:inline>
-      (() => {
-        if (typeof navigator === 'undefined') return;
-
-        const modelContext = navigator.modelContext;
-        if (!modelContext || typeof modelContext.provideContext !== 'function') return;
-
-        const tools = [
-          {
-            name: 'open_builder',
-            description: 'Open the Posterium builder with optional title prefill.',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                title: { type: 'string', description: 'Optional title to prefill in the builder.' }
-              }
-            },
-            execute: async (input = {}) => {
-              const title = typeof input.title === 'string' ? input.title.trim() : '';
-              const target = title ? `/build?title=${encodeURIComponent(title)}` : '/build';
-              window.location.assign(target);
-              return { success: true, url: `${window.location.origin}${target}` };
-            }
-          },
-          {
-            name: 'open_examples',
-            description: 'Open the examples page with an optional search query.',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                query: { type: 'string', description: 'Optional examples search query.' }
-              }
-            },
-            execute: async (input = {}) => {
-              const query = typeof input.query === 'string' ? input.query.trim() : '';
-              const target = query ? `/examples?q=${encodeURIComponent(query)}` : '/examples';
-              window.location.assign(target);
-              return { success: true, url: `${window.location.origin}${target}` };
-            }
-          }
-        ];
-
-        Promise.resolve(
-          modelContext.provideContext({
-            server: {
-              name: 'Posterium Browser Context',
-              description: 'WebMCP context for poster generation and discovery actions.'
-            },
-            capabilities: {
-              tools: {}
-            },
-            tools
-          })
-        ).catch(() => {
-          // no-op: browser/agent compatibility can vary
-        });
-      })();
+    <script>
+      import '@/scripts/agent-context';
     </script>
 
-    <script is:inline>
-      (() => {
-        if ('performance' in window === false || 'PerformanceObserver' in window === false) return;
-        try {
-          const vitals = {};
-          const report = (metrics) => {
-            const data = { url: location.pathname, ...metrics };
-            try { navigator.sendBeacon?.('/api/vitals', JSON.stringify(data)); } catch {}
-          };
-          const obsLCP = new PerformanceObserver((list) => {
-            const entries = list.getEntries();
-            if (entries.length) {
-              vitals.lcp = entries[entries.length - 1].startTime;
-              report(vitals);
-            }
-          });
-          obsLCP.observe({ type: 'largest-contentful-paint', buffered: true });
-          const obsCLS = new PerformanceObserver((list) => {
-            let cls = 0;
-            for (const entry of list.getEntries()) {
-              if (!entry.hadRecentInput) cls += entry.value;
-            }
-            vitals.cls = cls;
-            report(vitals);
-          });
-          obsCLS.observe({ type: 'layout-shift', buffered: true });
-          const obsINP = new PerformanceObserver((list) => {
-            const entries = list.getEntries();
-            const last = entries[entries.length - 1];
-            if (last) {
-              vitals.inp = last.duration;
-              report(vitals);
-            }
-          });
-          obsINP.observe({ type: 'first-input', buffered: true });
-          if ('EventTiming' in PerformanceObserver.supportedEntryTypes) {
-            try {
-              const obs = new PerformanceObserver((list) => {
-                const entries = list.getEntries();
-                for (const e of entries) {
-                  if (e.duration > 0) {
-                    vitals.inp = Math.max(vitals.inp || 0, e.duration);
-                    report(vitals);
-                  }
-                }
-              });
-              obs.observe({ type: 'event', durationThreshold: 16 });
-            } catch {}
-          }
-        } catch {}
-      })();
+    <script>
+      import '@/scripts/web-vitals';
     </script>
 
     <slot name="head" />

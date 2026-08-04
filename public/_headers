@@ -8,6 +8,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-XSS-Protection: 1; mode=block
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 # Homepage discovery headers (agent-ready discoverability)
 /
@@ -23,7 +24,6 @@
   Link: <https://image.tmdb.org>; rel=preconnect
   Link: </.well-known/api-catalog>; rel="api-catalog"
   Link: </faq>; rel="service-doc"; type="text/html"
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org
 
 /404.html
   Cache-Control: public, max-age=0, must-revalidate
@@ -64,13 +64,13 @@
 
 # Static images
 /og-image.png
-  Content-Type: image/jpeg
+  Content-Type: image/png
   Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
 
-/icon-192.png
+/android-chrome-192x192.png
   Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
 
-/icon-512.png
+/android-chrome-512x512.png
   Cache-Control: public, max-age=604800, s-maxage=2592000, immutable
 
 /favicon.ico

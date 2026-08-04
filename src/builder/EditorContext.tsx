@@ -34,10 +34,6 @@ interface EditorContextType {
   setLiveYear: (year: string) => void;
   resolvedLogoSource: string | null;
   setResolvedLogoSource: (src: string | null) => void;
-  /** Direct poster image URL (TMDB/fanart/etc.) — set by LayerPanel when media loads.
-   *  Used by PreviewCanvas to show the raw poster without going through the SVG API. */
-  livePosterUrl: string | null;
-  setLivePosterUrl: (url: string | null) => void;
   fallbackEnabled: boolean;
   setFallbackEnabled: (v: boolean) => void;
 }
@@ -59,7 +55,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [liveTitle, setLiveTitle] = useState('');
   const [liveYear, setLiveYear] = useState('');
   const [resolvedLogoSource, setResolvedLogoSource] = useState<string | null>(null);
-  const [livePosterUrl, setLivePosterUrl] = useState<string | null>(null);
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
 
   const setActiveTab = useCallback((tab: TabType) => {
@@ -212,8 +207,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setLiveYear,
         resolvedLogoSource,
         setResolvedLogoSource,
-        livePosterUrl,
-        setLivePosterUrl,
         fallbackEnabled,
         setFallbackEnabled,
       }}

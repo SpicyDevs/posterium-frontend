@@ -37,6 +37,12 @@ const SliderRow: React.FC<SliderRowProps> = ({
     if (!isFocused.current) setInputText(formatValue ? formatValue(value) : `${value}`);
   }, [value, formatValue]);
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const commitInput = useCallback(
     (text: string) => {
       const raw = text.replace(unit, '').replace(/[^0-9.\-]/g, '');

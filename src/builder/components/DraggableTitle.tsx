@@ -13,6 +13,7 @@ interface Props {
   onContextMenu?: (e: React.MouseEvent) => void;
   dragOffsetX?: number;
   dragOffsetY?: number;
+  readOnly?: boolean;
 }
 
 const DraggableTitle: React.FC<Props> = ({
@@ -25,6 +26,7 @@ const DraggableTitle: React.FC<Props> = ({
   onContextMenu,
   dragOffsetX = 0,
   dragOffsetY = 0,
+  readOnly = false,
 }) => {
   const { liveTitle } = useEditor();
   const itemConfig = config.items.title;
@@ -185,7 +187,7 @@ const DraggableTitle: React.FC<Props> = ({
         }px ${itemConfig?.textShadowColor ?? '#000000'}`
       : 'none';
 
-  const verticalAnchor = itemConfig?.verticalAnchor ?? 'top';
+  const verticalAnchor = itemConfig?.verticalAnchor ?? (config.uiPreset === 'm' ? 'bottom' : 'top');
 
   const selectionDotSize = 14 * displayScale;
   const selectionDotInnerSize = 6 * displayScale;
@@ -195,15 +197,23 @@ const DraggableTitle: React.FC<Props> = ({
 
   return (
     <div
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
-      onClick={onClick}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onContextMenu?.(e);
-      }}
-      className="badge-item absolute select-none cursor-move"
+      onMouseDown={readOnly ? undefined : onMouseDown}
+      onTouchStart={readOnly ? undefined : onTouchStart}
+      onClick={readOnly ? undefined : onClick}
+      onContextMenu={
+        readOnly
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onContextMenu?.(e);
+            }
+      }
+      className={
+        readOnly
+          ? 'badge-item absolute select-none'
+          : 'badge-item absolute select-none cursor-move'
+      }
       style={{
         width: `${dynamicWidth}px`,
         height: `${contentHeight}px`,
@@ -211,7 +221,7 @@ const DraggableTitle: React.FC<Props> = ({
         top: `${y}px`,
         zIndex: 130,
         overflow: 'visible',
-        pointerEvents: 'auto',
+        pointerEvents: readOnly ? 'none' : 'auto',
         touchAction: 'none',
         transform: 'translateZ(0)',
       }}
@@ -219,7 +229,7 @@ const DraggableTitle: React.FC<Props> = ({
       <span
         style={{
           position: 'absolute',
-          left: verticalAnchor === 'bottom' ? 8 * displayScale : 8 * displayScale,
+          left: 8 * displayScale,
           right: 8 * displayScale,
           top: verticalAnchor === 'bottom' ? 'auto' : 8 * displayScale,
           bottom: verticalAnchor === 'bottom' ? 8 * displayScale : 'auto',
@@ -245,7 +255,7 @@ const DraggableTitle: React.FC<Props> = ({
         {truncatedTitle}
       </span>
 
-      {isSelected && (
+      {isSelected && !readOnly && (
         <div
           className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{

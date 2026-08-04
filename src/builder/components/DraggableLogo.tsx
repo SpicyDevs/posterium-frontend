@@ -15,6 +15,7 @@ interface Props {
   onSelect?: (multi: boolean) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   onLogoLoad?: (naturalW: number, naturalH: number) => void;
+  readOnly?: boolean;
 }
 
 const DraggableLogo: React.FC<Props> = ({
@@ -26,6 +27,7 @@ const DraggableLogo: React.FC<Props> = ({
   onSelect,
   onContextMenu,
   onLogoLoad,
+  readOnly = false,
 }) => {
   const { viewOptions } = useEditor();
   const lw = config.logoW,
@@ -142,28 +144,44 @@ const DraggableLogo: React.FC<Props> = ({
         />
       )}
       <div
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          startDrag(e.clientX, e.clientY);
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-          startDrag(e.touches[0].clientX, e.touches[0].clientY);
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (hasDraggedRef.current) return;
-          onSelect?.(e.shiftKey || e.ctrlKey || e.metaKey);
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onContextMenu?.(e);
-        }}
-        className="absolute select-none cursor-move"
+        onMouseDown={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startDrag(e.clientX, e.clientY);
+              }
+        }
+        onTouchStart={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.stopPropagation();
+                startDrag(e.touches[0].clientX, e.touches[0].clientY);
+              }
+        }
+        onMouseEnter={readOnly ? undefined : () => setIsHovered(true)}
+        onMouseLeave={readOnly ? undefined : () => setIsHovered(false)}
+        onClick={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.stopPropagation();
+                if (hasDraggedRef.current) return;
+                onSelect?.(e.shiftKey || e.ctrlKey || e.metaKey);
+              }
+        }
+        onContextMenu={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onContextMenu?.(e);
+              }
+        }
+        className={`absolute select-none ${readOnly ? '' : 'cursor-move'}`}
         style={{
           left: renderX,
           top: renderY,
@@ -173,13 +191,15 @@ const DraggableLogo: React.FC<Props> = ({
           overflow: 'visible',
           opacity: config.logoOpacity,
           touchAction: 'none',
-          outline: isSelected
-            ? '1.5px solid rgba(196,124,46,0.95)'
-            : isDragging
-            ? '1.5px dashed rgba(196,124,46,0.9)'
-            : isHovered
-              ? '1.5px dashed rgba(255,255,255,0.35)'
-              : '1.5px dashed rgba(255,255,255,0.12)',
+          outline: readOnly
+            ? 'none'
+            : isSelected
+              ? '1.5px solid rgba(196,124,46,0.95)'
+              : isDragging
+                ? '1.5px dashed rgba(196,124,46,0.9)'
+                : isHovered
+                  ? '1.5px dashed rgba(255,255,255,0.35)'
+                  : '1.5px dashed rgba(255,255,255,0.12)',
           outlineOffset: 3,
           transition: isDragging ? 'none' : 'outline-color 0.15s',
         }}
@@ -208,7 +228,7 @@ const DraggableLogo: React.FC<Props> = ({
             )}
           </div>
         )}
-        {isSelected && (
+        {isSelected && !readOnly && (
           <div
             className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
             style={{

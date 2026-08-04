@@ -11,8 +11,8 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H } from '../type
 import DraggableBadge from './DraggableBadge';
 import DraggableTitle from './DraggableTitle';
 import DraggableLogo from './DraggableLogo';
-import { DEFAULT_API_BASE } from '../utils/constants';
 import { calculateAutoPosition, getScale, snapToGridSize } from '../utils/positioning';
+import { generateCleanArtworkUrl, generateLogoUrl } from '../utils/url-generator';
 import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../EditorContext';
 import clsx from 'clsx';
@@ -265,24 +265,10 @@ const PreviewCanvas: React.FC<Props> = ({
     return () => window.removeEventListener('canvas-zoom', h);
   }, []);
 
-  const cleanPosterUrl = useMemo(() => {
-    const id = config.imdbId || config.tmdbId;
-    const type = config.imdbId ? 'poster' : config.mediaType;
-    const base = `${DEFAULT_API_BASE}/${type}/${id}.svg`;
-    const params = new URLSearchParams();
-    params.set('source', config.source);
-    if (config.textless) params.set('textless', '1');
-    if (config.ptype && config.ptype !== 'auto') params.set('ptype', config.ptype);
-    params.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
-    return `${base}?${params.toString()}`;
-  }, [
-    config.tmdbId,
-    config.imdbId,
-    config.source,
-    config.mediaType,
-    config.textless,
-    config.ptype,
-  ]);
+  const cleanPosterUrl = useMemo(
+    () => generateCleanArtworkUrl(config) ?? '',
+    [config.tmdbId, config.imdbId, config.source, config.mediaType, config.textless, config.ptype]
+  );
 
   const previewImageUrl = cleanPosterUrl;
 
@@ -307,17 +293,10 @@ const PreviewCanvas: React.FC<Props> = ({
     setImageError(true);
   };
 
-  const logoPreviewUrl = useMemo((): string | null => {
-    if (!config.logo) return null;
-    const id = config.imdbId || config.tmdbId;
-    if (!id) return null;
-    const type =
-      config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
-    const url = new URL(`${DEFAULT_API_BASE}/${type}/${id}/logo`);
-    if (config.logoSource) url.searchParams.set('source', config.logoSource);
-    url.searchParams.set('_t', config.logoSource || 'auto');
-    return url.toString();
-  }, [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]);
+  const logoPreviewUrl = useMemo(
+    () => generateLogoUrl(config),
+    [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]
+  );
 
   const handleLogoDragEnd = (dx: number, dy: number) => {
     const snap = (n: number) => (viewOptions?.snapToGrid ? snapToGridSize(n) : n);

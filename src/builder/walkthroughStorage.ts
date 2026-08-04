@@ -1,9 +1,20 @@
 const WALKTHROUGH_KEY = 'posterium_walkthrough_state';
 const BUILDER_MODE_KEY = 'posterium_builder_mode';
 
+export function clearWalkthroughState(): void {
+  try {
+    localStorage.removeItem(WALKTHROUGH_KEY);
+  } catch {
+    /* */ 
+  }
+}
+
 export function getWalkthroughState(): boolean {
   try {
-    return localStorage.getItem(WALKTHROUGH_KEY) !== null;
+    const raw = localStorage.getItem(WALKTHROUGH_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { completed?: boolean };
+    return parsed.completed === true;
   } catch {
     return false;
   }

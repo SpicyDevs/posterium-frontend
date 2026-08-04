@@ -28,6 +28,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   borderW: 0,
   icon: true,
   showText: true,
+  titleEnabled: true,
   iconType: 1,
   uiPreset: 'b',
   normalize: false,

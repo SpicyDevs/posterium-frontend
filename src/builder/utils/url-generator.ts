@@ -78,21 +78,47 @@ export const generateApiUrl = (
   if (config.logoMaxW !== null && config.logoMaxW !== undefined) p.set('lmw', config.logoMaxW.toString());
   if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
 
+  // Layout/preset params — only meaningful when positions are not frozen.
+  // When both are non-custom, per-badge x/y are omitted (auto-positioning
+  // applies on both the canvas and the backend render).
+  const layoutCustom = (config.layout ?? 'custom') === 'custom';
+  const presetCustom = (config.preset ?? 'custom') === 'custom';
+  const layoutAuto = layoutCustom && presetCustom;
+  if (!layoutCustom) p.set('l', config.layout!);
+  if (!presetCustom) p.set('pos', config.preset!);
+
   const titleItem = config.items?.title;
-  if (titleItem && (config.titleEnabled ?? false)) {
+  if (config.titleEnabled ?? false) {
     const T = 'T';
     p.set('ti', '1');
-    if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
-    if (titleItem.y !== undefined) p.set(`${T}_y`, titleItem.y.toString());
-    if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
-    if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
-    if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_ta`, titleItem.textAlign);
-    if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
-    if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
-    if (titleItem.shadow !== undefined && titleItem.shadow > 0) p.set(`${T}_sh`, titleItem.shadow.toString());
-    if (titleItem.lines !== undefined) p.set(`${T}_ln`, titleItem.lines);
-    const vaDefault = config.uiPreset === 'm' ? 'bottom' : 'top';
-    if (titleItem.verticalAnchor !== undefined && titleItem.verticalAnchor !== vaDefault) p.set(`${T}_va`, titleItem.verticalAnchor);
+    if (titleItem) {
+      if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
+      if (titleItem.y !== undefined) p.set(`${T}_y`, titleItem.y.toString());
+      if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
+      if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
+      if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_ta`, titleItem.textAlign);
+      if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
+      if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
+      if (titleItem.lines !== undefined) p.set(`${T}_ln`, titleItem.lines);
+      const vaDefault = config.uiPreset === 'm' ? 'bottom' : 'top';
+      if (titleItem.verticalAnchor !== undefined && titleItem.verticalAnchor !== vaDefault) p.set(`${T}_va`, titleItem.verticalAnchor);
+      // Modern typography controls (round-trip through the parser's T_* suffixes)
+      if (titleItem.textCharWidth !== undefined) p.set(`${T}_tw`, titleItem.textCharWidth.toString());
+      if (titleItem.textCharHeight !== undefined) p.set(`${T}_th`, titleItem.textCharHeight.toString());
+      if (titleItem.textWrapEnabled !== undefined && !titleItem.textWrapEnabled) p.set(`${T}_wr`, '0');
+      if (titleItem.textMaxChars !== undefined && titleItem.textMaxChars > 0) p.set(`${T}_mx`, titleItem.textMaxChars.toString());
+      if (titleItem.textLetterSpacing !== undefined && titleItem.textLetterSpacing !== 0) p.set(`${T}_ks`, titleItem.textLetterSpacing.toString());
+      if (titleItem.textLineHeight !== undefined && titleItem.textLineHeight !== 1.1) p.set(`${T}_lh`, titleItem.textLineHeight.toString());
+      if (titleItem.textShadowEnabled !== undefined) {
+        p.set(`${T}_se`, titleItem.textShadowEnabled ? '1' : '0');
+        if (titleItem.textShadowEnabled) {
+          if (titleItem.textShadowX !== undefined && titleItem.textShadowX !== 0) p.set(`${T}_sx`, titleItem.textShadowX.toString());
+          if (titleItem.textShadowY !== undefined && titleItem.textShadowY !== 2) p.set(`${T}_sy`, titleItem.textShadowY.toString());
+          if (titleItem.textShadowBlur !== undefined && titleItem.textShadowBlur !== 8) p.set(`${T}_sb`, titleItem.textShadowBlur.toString());
+          if (titleItem.textShadowColor !== undefined && titleItem.textShadowColor !== '#000000') p.set(`${T}_sv`, titleItem.textShadowColor);
+        }
+      }
+    }
   }
 
   if (config.sourcePriority && config.sourcePriority.length > 0) p.set('so', config.sourcePriority.join(','));
@@ -108,8 +134,10 @@ export const generateApiUrl = (
     const finalX = item.x !== undefined ? item.x : autoPos.x;
     const finalY = item.y !== undefined ? item.y : autoPos.y;
 
-    p.set(`${code}_x`, Math.round(finalX).toString());
-    p.set(`${code}_y`, Math.round(finalY).toString());
+    // When layout/preset are non-custom, positions are derived automatically —
+    // only emit explicit x/y for badges the user has moved off the auto spot.
+    if (layoutAuto || item.x !== undefined) p.set(`${code}_x`, Math.round(finalX).toString());
+    if (layoutAuto || item.y !== undefined) p.set(`${code}_y`, Math.round(finalY).toString());
 
     if (item.bg !== undefined && item.bg !== (config.bg ?? '')) p.set(`${code}_bg`, item.bg);
     if (item.txt !== undefined && item.txt !== (config.txt ?? '')) p.set(`${code}_tx`, item.txt);
@@ -175,15 +203,60 @@ export const generateApiUrl = (
     if (config.logoSource) p.set('logo_source', config.logoSource);
     if (config.logoX !== null && config.logoX !== undefined)
       p.set('logo_x', config.logoX.toString());
-    if (config.logoY !== DEFAULTS.logoY) p.set('logo_y', config.logoY.toString());
-    if (config.logoW !== DEFAULTS.logoW) p.set('logo_w', config.logoW.toString());
-    if (config.logoH !== DEFAULTS.logoH) p.set('logo_h', config.logoH.toString());
-    if (config.logoOpacity !== DEFAULTS.logoOpacity)
+    if (config.logoY !== undefined && config.logoY !== DEFAULTS.logoY)
+      p.set('logo_y', config.logoY.toString());
+    if (config.logoW !== undefined && config.logoW !== DEFAULTS.logoW)
+      p.set('logo_w', config.logoW.toString());
+    if (config.logoH !== undefined && config.logoH !== DEFAULTS.logoH)
+      p.set('logo_h', config.logoH.toString());
+    if (config.logoOpacity !== undefined && config.logoOpacity !== DEFAULTS.logoOpacity)
       p.set('logo_opacity', config.logoOpacity.toFixed(2));
-    if (config.logoShadow !== DEFAULTS.logoShadow) p.set('logo_sh', config.logoShadow.toString());
-    if (config.logoZ !== undefined && config.logoZ !== DEFAULTS.logoZ) p.set('lz', config.logoZ.toString());
+    if (config.logoShadow !== undefined && config.logoShadow !== DEFAULTS.logoShadow)
+      p.set('logo_sh', config.logoShadow.toString());
+    if (config.logoZ !== undefined && config.logoZ !== DEFAULTS.logoZ)
+      p.set('lz', config.logoZ.toString());
   }
 
   const queryString = p.toString();
   return `${cleanBase}${pathSegment}.${config.extension}${queryString ? '?' + queryString : ''}`;
+};
+
+/**
+ * URL for the raw poster artwork only (no badges/title/logo overlays).
+ * Used by the canvas and the walkthrough preview to render overlays client-side
+ * instead of fetching a fully-rendered poster from the API.
+ */
+export const generateCleanArtworkUrl = (
+  config: PosterConfig,
+  baseUrl: string = DEFAULT_API_BASE
+): string | null => {
+  const id = config.imdbId || config.tmdbId;
+  if (!id) return null;
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const type = config.imdbId ? 'poster' : config.mediaType;
+  const p = new URLSearchParams();
+  p.set('source', config.source);
+  if (config.textless) p.set('textless', '1');
+  if (config.ptype && config.ptype !== 'auto') p.set('ptype', config.ptype);
+  p.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
+  return `${cleanBase}/${type}/${id}.svg?${p.toString()}`;
+};
+
+/**
+ * URL for the title/studio logo overlay artwork.
+ */
+export const generateLogoUrl = (
+  config: PosterConfig,
+  baseUrl: string = DEFAULT_API_BASE
+): string | null => {
+  if (!config.logo) return null;
+  const id = config.imdbId || config.tmdbId;
+  if (!id) return null;
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const type =
+    config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
+  const url = new URL(`${cleanBase}/${type}/${id}/logo`);
+  if (config.logoSource) url.searchParams.set('source', config.logoSource);
+  url.searchParams.set('_t', config.logoSource || 'auto');
+  return url.toString();
 };

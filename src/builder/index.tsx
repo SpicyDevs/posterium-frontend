@@ -67,7 +67,13 @@ import { useMobileBottomSheet } from './useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
 import type { PaletteCommand } from './components/CommandPalette';
 import type { ExamplePreset } from '@/modules/ExamplesPage';
-import { getWalkthroughState, saveWalkthroughState, saveBuilderMode, getBuilderMode } from './walkthroughStorage';
+import {
+  clearWalkthroughState,
+  getWalkthroughState,
+  saveWalkthroughState,
+  saveBuilderMode,
+  getBuilderMode,
+} from './walkthroughStorage';
 import WalkthroughModal from './components/walkthrough/WalkthroughModal';
 
 const KeyboardShortcutsModal = lazy(() => import('./components/KeyboardShortcutsModal'));
@@ -964,7 +970,7 @@ const StudioLayout: React.FC<{
       icon: <BookOpen size={13} />,
       keywords: ['onboarding', 'tour', 'guide', 'help', 'start', 'welcome'],
       action: () => {
-        localStorage.removeItem('posterium_walkthrough_state');
+        clearWalkthroughState();
         window.location.reload();
       },
     },
@@ -1157,7 +1163,7 @@ const StudioLayout: React.FC<{
           setIsResetOpen={setIsResetOpen}
           setIsImportOpen={setIsImportOpen}
           onRerunWalkthrough={() => {
-            localStorage.removeItem('posterium_walkthrough_state');
+            clearWalkthroughState();
             window.location.reload();
           }}
         />
@@ -1343,7 +1349,7 @@ const StudioLayout: React.FC<{
 
                 <button
                   onClick={() => {
-                    localStorage.removeItem('posterium_walkthrough_state');
+                    clearWalkthroughState();
                     window.location.reload();
                   }}
                   aria-label="Re-run walkthrough"

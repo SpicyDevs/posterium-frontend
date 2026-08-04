@@ -34,8 +34,9 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       }
     }
 
-    const extension: ExtensionType =
-      match && match[3] ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType) : 'svg';
+    const extension: ExtensionType = match && match[3]
+      ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType)
+      : DEFAULT_CONFIG.extension;
 
     const p = url.searchParams;
     const isV3 = p.get('v') === '3';
@@ -176,6 +177,21 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             break;
           case 'va':
             items[badgeKey].verticalAnchor = value as 'top' | 'bottom';
+            break;
+          case 'mx':
+            items[badgeKey].textMaxChars = parseInt(value);
+            break;
+          case 'ks':
+            items[badgeKey].textLetterSpacing = parseFloat(value);
+            break;
+          case 'lh':
+            items[badgeKey].textLineHeight = parseFloat(value);
+            break;
+          case 'se':
+            items[badgeKey].textShadowEnabled = value === '1';
+            break;
+          case 'sb':
+            items[badgeKey].textShadowBlur = parseInt(value);
             break;
         }
       }
@@ -318,6 +334,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
             ? parseInt(p.get('logo_max_h')!)
             : null,
         items,
+        titleEnabled: p.get('ti') === '1' || p.get('title') === '1',
         logo: p.get('logo') === '1',
         logoSource,
         logoX: p.has('logo_x') ? parseInt(p.get('logo_x')!) : null,

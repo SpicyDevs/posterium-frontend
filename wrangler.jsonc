@@ -20,6 +20,9 @@
   },
 
   "env": {
+    "staging": {
+      "workers_dev": true
+    },
     "production": {
       "workers_dev": false,
       "routes": [

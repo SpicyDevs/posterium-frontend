@@ -1,34 +1,7 @@
-interface Env {
-  ASSETS: Fetcher;
-}
-
 const removeTagBlock = (input: string, tagName: string): string => {
-  const openTag = `<${tagName}`;
-  const closeTag = `</${tagName}>`;
-  const lowerInput = input.toLowerCase();
-
-  let cursor = 0;
-  let result = '';
-
-  while (cursor < input.length) {
-    const start = lowerInput.indexOf(openTag, cursor);
-
-    if (start === -1) {
-      result += input.slice(cursor);
-      break;
-    }
-
-    result += input.slice(cursor, start);
-
-    const end = lowerInput.indexOf(closeTag, start);
-    if (end === -1) {
-      break;
-    }
-
-    cursor = end + closeTag.length;
-  }
-
-  return result;
+  const block = new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}\\s*>`, 'gi');
+  const unterminated = new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*$`, 'gi');
+  return input.replace(block, '').replace(unterminated, '');
 };
 
 const stripHtmlTags = (input: string): string => input.replace(/<[^>]*>/g, ' ');

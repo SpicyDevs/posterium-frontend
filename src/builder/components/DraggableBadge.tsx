@@ -51,6 +51,7 @@ interface Props {
   value?: string;
   zIndex?: number;
   uniformFontSize?: number | null;
+  readOnly?: boolean;
 }
 
 const DraggableBadge: React.FC<Props> = ({
@@ -69,6 +70,7 @@ const DraggableBadge: React.FC<Props> = ({
   value,
   zIndex,
   uniformFontSize,
+  readOnly = false,
 }) => {
   const itemConfig = config.items[badgeId];
   const itemScale = itemConfig?.scale ?? config.scale ?? 1.0;
@@ -646,17 +648,25 @@ const DraggableBadge: React.FC<Props> = ({
 
   return (
     <div
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
-      onClick={onClick}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onContextMenu?.(badgeId, e);
-      }}
-      className="badge-item absolute select-none cursor-move"
+      onMouseDown={readOnly ? undefined : onMouseDown}
+      onTouchStart={readOnly ? undefined : onTouchStart}
+      onClick={readOnly ? undefined : onClick}
+      onMouseEnter={readOnly ? undefined : () => onHoverChange?.(true)}
+      onMouseLeave={readOnly ? undefined : () => onHoverChange?.(false)}
+      onContextMenu={
+        readOnly
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onContextMenu?.(badgeId, e);
+            }
+      }
+      className={
+        readOnly
+          ? 'badge-item absolute select-none'
+          : 'badge-item absolute select-none cursor-move'
+      }
       style={{
         width: `${width}px`,
         height: `${height}px`,
@@ -711,10 +721,10 @@ const DraggableBadge: React.FC<Props> = ({
         />
       )}
       {/* Label — rendered outside the clipping div so it shows outside badge bounds (suppressed when labelInside is active) */}
-      {!labelInside && labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
+      {(!labelInside || badgeId === 'age') && labelPos && <div style={labelStyle(labelPos)}>{labelText}</div>}
 
       {/* Selection dot */}
-      {isSelected && (
+      {isSelected && !readOnly && (
         <div
           className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{
