@@ -192,8 +192,9 @@ const DraggableTitle: React.FC<Props> = ({
   const selectionDotSize = 14 * displayScale;
   const selectionDotInnerSize = 6 * displayScale;
 
+  const titleYDefault = config.uiPreset === 'm' ? 657 : 100;
   const x = (itemConfig?.x ?? 25) + dragOffsetX;
-  const y = (itemConfig?.y ?? 100) + dragOffsetY;
+  const y = (itemConfig?.y ?? titleYDefault) + dragOffsetY;
 
   return (
     <div

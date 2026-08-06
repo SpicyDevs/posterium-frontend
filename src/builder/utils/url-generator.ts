@@ -1,6 +1,6 @@
 import type { PosterConfig, RatingType } from '../types';
 import { DEFAULT_API_BASE, V3_KEY_TO_CODE, isApiRatingKey, DEFAULTS } from './constants';
-import { calculateAutoPosition } from './positioning';
+import { calculateAutoPosition, getScale } from './positioning';
 
 export const generateApiUrl = (
   config: PosterConfig,
@@ -40,8 +40,9 @@ export const generateApiUrl = (
   if (config.radius !== DEFAULTS.radius) p.set('ra', config.radius.toString());
   if (config.shadow !== DEFAULTS.shadow) p.set('sh', config.shadow.toString());
 
+  const sizeScale = getScale(config.size);
   const globalScale = config.scale ?? 1.0;
-  if (globalScale !== DEFAULTS.scale) p.set('sc', globalScale.toFixed(3));
+  if (globalScale * sizeScale !== DEFAULTS.scale) p.set('sc', (globalScale * sizeScale).toFixed(3));
 
   if ((config.borderW ?? 0) > 0) p.set('bw', config.borderW!.toString());
   if (config.borderC) p.set('bc', config.borderC);
@@ -93,7 +94,8 @@ export const generateApiUrl = (
     p.set('ti', '1');
     if (titleItem) {
       if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
-      if (titleItem.y !== undefined) p.set(`${T}_y`, titleItem.y.toString());
+      const titleYDefault = config.uiPreset === 'm' ? 657 : 100;
+      if (titleItem.y !== undefined && titleItem.y !== titleYDefault) p.set(`${T}_y`, titleItem.y.toString());
       if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
       if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
       if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_ta`, titleItem.textAlign);
@@ -109,6 +111,8 @@ export const generateApiUrl = (
       if (titleItem.textMaxChars !== undefined && titleItem.textMaxChars > 0) p.set(`${T}_mx`, titleItem.textMaxChars.toString());
       if (titleItem.textLetterSpacing !== undefined && titleItem.textLetterSpacing !== 0) p.set(`${T}_ks`, titleItem.textLetterSpacing.toString());
       if (titleItem.textLineHeight !== undefined && titleItem.textLineHeight !== 1.1) p.set(`${T}_lh`, titleItem.textLineHeight.toString());
+      const titleDisplayScale = (titleItem.scale ?? config.scale ?? 1.0) * sizeScale;
+      if (titleDisplayScale !== 1.0) p.set(`${T}_sc`, titleDisplayScale.toFixed(3));
       if (titleItem.textShadowEnabled !== undefined) {
         p.set(`${T}_se`, titleItem.textShadowEnabled ? '1' : '0');
         if (titleItem.textShadowEnabled) {
@@ -152,13 +156,16 @@ export const generateApiUrl = (
     if (item.shadowX !== undefined && item.shadowX !== 0) p.set(`${code}_sx`, item.shadowX.toString());
     if (item.shadowY !== undefined && item.shadowY !== (config.shadowY ?? 2)) p.set(`${code}_sy`, item.shadowY.toString());
     if (item.shadowColor !== undefined && item.shadowColor !== '#000000') p.set(`${code}_sv`, item.shadowColor);
-    if (item.shadowOpacity !== undefined && item.shadowOpacity !== 0.35) p.set(`${code}_sw`, item.shadowOpacity.toString());
+    const effShadow = item.shadow ?? config.shadow ?? DEFAULTS.shadow;
+    const effShadowOpacity = Math.min(0.65, effShadow * 0.025 + 0.2);
+    if (item.shadowOpacity !== undefined && item.shadowOpacity !== effShadowOpacity) p.set(`${code}_sw`, item.shadowOpacity.toString());
 
     const itemIcon = item.icon ?? config.icon ?? true;
     if (itemIcon !== (config.icon ?? true)) p.set(`${code}_ic`, itemIcon ? '1' : '0');
 
     if (item.scale !== undefined && item.scale !== (config.scale ?? 1.0))
-      p.set(`${code}_sc`, item.scale.toFixed(3));
+      p.set(`${code}_sc`, (item.scale * sizeScale).toFixed(3));
+    if (item.textSize !== undefined) p.set(`${code}_sz`, item.textSize.toString());
 
     if ((item.borderW ?? 0) > 0 && (item.borderW ?? 0) !== (config.borderW ?? 0))
       p.set(`${code}_bw`, item.borderW!.toString());

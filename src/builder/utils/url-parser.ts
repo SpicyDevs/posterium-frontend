@@ -63,6 +63,15 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           continue;
         }
 
+        // T_sx/T_sy/T_sv are title text-shadow params, not per-badge shadow offsets
+        if (code === 'T' && (suffix === 'sx' || suffix === 'sy' || suffix === 'sv')) {
+          if (!items.title) items.title = {};
+          if (suffix === 'sx') items.title.textShadowX = parseInt(value);
+          else if (suffix === 'sy') items.title.textShadowY = parseInt(value);
+          else items.title.textShadowColor = value.startsWith('#') ? value : `#${value}`;
+          continue;
+        }
+
         switch (suffix) {
           case 'x':
             items[badgeKey].x = parseInt(value);

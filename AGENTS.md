@@ -29,7 +29,7 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 ## Codebase Structure
 
 | Directory | Purpose |
-|---|---|
+| --- | --- |
 | `src/pages/` | Astro page routes (`.astro`) |
 | `src/builder/` | Drag-and-drop poster editor React SPA at `/build` |
 | `src/modules/` | React page modules (DocsLayout, ExamplesPage, etc.) |
@@ -72,7 +72,7 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 The repo exposes machine-readable discovery endpoints in `public/.well-known/`:
 
 | Resource | Path |
-|---|---|
+| --- | --- |
 | MCP server card | `.well-known/mcp/server-card.json` |
 | Agent skills index | `.well-known/agent-skills/index.json` |
 | API catalog linkset | `.well-known/api-catalog` |

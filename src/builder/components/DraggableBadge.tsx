@@ -14,6 +14,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { RatingType, PosterConfig } from '../types';
 import { BASE_BADGE_W, BASE_BADGE_H } from '../types';
 import { getScale } from '../utils/positioning';
+import { pickFontSize } from '../utils/typography';
 import { BADGE_ICONS } from '@/constants/badges';
 
 // ── Preset defaults (mirrors backend presets/badge.js and presets/minimal.js) ──
@@ -261,7 +262,9 @@ const DraggableBadge: React.FC<Props> = ({
   const borderWidth = itemConfig?.borderW ?? config.borderW ?? 0;
   const borderColor = itemConfig?.borderC ?? config.borderC ?? '#ffffff';
   const txtColor = itemConfig?.txt || config.txt || '#ffffff';
-  const textSize = Math.max(8, itemConfig?.textSize ?? 28) * displayScale;
+  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : '')).toString().trim() || (badgeId === 'year' ? '2026' : '')).trim();
+  const autoTextSize = pickFontSize(rawTextForSizing, showIcon && iconPos !== 'center', badgeId === 'runtime');
+  const textSize = Math.max(8, itemConfig?.textSize ?? autoTextSize) * displayScale;
   const textWeight = Math.max(100, Math.min(900, itemConfig?.textWeight ?? 800));
   const textLetterSpacing = (itemConfig?.textLetterSpacing ?? 0) * displayScale;
   const textLineHeight = itemConfig?.textLineHeight ?? 1.1;
@@ -276,7 +279,6 @@ const DraggableBadge: React.FC<Props> = ({
             itemConfig.textShadowBlur ?? 8
           }px ${itemConfig.textShadowColor ?? '#000000'}`
         : 'none';
-  const rawTextForSizing = ((value ?? (badgeId === 'year' ? '2026' : '')).toString().trim() || (badgeId === 'year' ? '2026' : '')).trim();
   const width = badgeId === 'year'
     ? Math.max(
         baseWidth,
