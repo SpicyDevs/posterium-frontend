@@ -32,7 +32,7 @@ Beyond the user-facing editor, this repository serves as an **AI Agent discovery
 
 - **Progressive Web App (PWA)** — Auto-registering service worker via `@vite-pwa/astro` with runtime caching strategies for TMDB images (CacheFirst), Google Fonts (CacheFirst, 1 year), and the Posterium API (NetworkFirst, 5s timeout). Offline-capable once pages are visited.
 
-- **Markdown Content Negotiation** — The Cloudflare Worker serving the built site inspects `Accept: text/markdown` headers and returns a clean Markdown representation of any HTML page — enabling LLMs and AI agents to consume site content as structured text without parsing HTML.
+- **Markdown Content Negotiation** — _(removed)_ The site is 100% static; HTML pages are served as-is with no runtime conversion.
 
 - **Static-First Deployment** — Full static output via `astro build`. Zero server-side rendering at runtime. Deployed to Cloudflare Workers + Assets for global edge delivery with sub-50ms TTFB.
 
@@ -40,22 +40,22 @@ Beyond the user-facing editor, this repository serves as an **AI Agent discovery
 
 ## Tech Stack & Architecture
 
-| Layer | Technology |
-|---|---|
-| Framework | Astro 5 (`@astrojs/react`, `@astrojs/sitemap`) |
-| UI Runtime | React 19, TypeScript 5 (strict mode) |
-| Styling | Tailwind CSS v4, PostCSS, Autoprefixer |
-| State / Interactions | Headless UI React, @hello-pangea/dnd, clsx, Lucide React |
-| Charts | Recharts (analytics dashboard) |
-| Bundler | Vite (Astro-internal) with manual chunking (react-vendor, icons, headlessui, dnd) |
-| Testing | Vitest 4 (node environment) |
-| PWA | @vite-pwa/astro (Workbox runtime caching) |
-| Compression | astro-compress (HTML/CSS/JS/SVG) |
-| Formatting | Prettier (single quotes, trailing commas es5, printWidth 100) |
-| Content Collections | Astro content (FAQ, install, examples, docs — YAML + Zod validation) |
-| Identity & Discovery | OAuth 2.0, JWKS, MCP protocol, Agent Skills draft spec |
-| Deployment | Cloudflare Workers + Assets, Wrangler 4 |
-| API Backend | `https://api.posterium.xyz` (separate service) |
+| Layer                | Technology                                                                        |
+| -------------------- | --------------------------------------------------------------------------------- |
+| Framework            | Astro 5 (`@astrojs/react`, `@astrojs/sitemap`)                                    |
+| UI Runtime           | React 19, TypeScript 5 (strict mode)                                              |
+| Styling              | Tailwind CSS v4, PostCSS, Autoprefixer                                            |
+| State / Interactions | Headless UI React, @hello-pangea/dnd, clsx, Lucide React                          |
+| Charts               | Recharts (analytics dashboard)                                                    |
+| Bundler              | Vite (Astro-internal) with manual chunking (react-vendor, icons, headlessui, dnd) |
+| Testing              | Vitest 4 (node environment)                                                       |
+| PWA                  | @vite-pwa/astro (Workbox runtime caching)                                         |
+| Compression          | astro-compress (HTML/CSS/JS/SVG)                                                  |
+| Formatting           | Prettier (single quotes, trailing commas es5, printWidth 100)                     |
+| Content Collections  | Astro content (FAQ, install, examples, docs — YAML + Zod validation)              |
+| Identity & Discovery | OAuth 2.0, JWKS, MCP protocol, Agent Skills draft spec                            |
+| Deployment           | Cloudflare Workers + Assets, Wrangler 4                                           |
+| API Backend          | `https://api.posterium.xyz` (separate service)                                    |
 
 ### Directory Layout
 
@@ -90,8 +90,6 @@ posterium-frontend/
 │   ├── seo/                      # SEO components, JSON-LD schema builders
 │   ├── layouts/                  # Astro layouts (BaseLayout, DocsLayout)
 │   └── styles/                   # Global CSS (Tailwind + custom properties)
-├── worker/
-│   └── index.ts                  # Cloudflare Worker: static assets + markdown negotiation
 ├── astro.config.mjs
 ├── wrangler.jsonc
 ├── vitest.config.ts
@@ -134,16 +132,16 @@ npm run preview      # preview the production build locally
 
 ### Useful Commands
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start Astro dev server (HMR) |
-| `npm run build` | Static build → `dist/` |
-| `npm run preview` | Preview production build locally |
-| `npm run typecheck` | Run `tsc --noEmit` (strict mode) |
-| `npm run test` | Run Vitest test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run format` | Format all files with Prettier |
-| `npm run clean` | Remove `dist/` directory |
+| Command              | Purpose                          |
+| -------------------- | -------------------------------- |
+| `npm run dev`        | Start Astro dev server (HMR)     |
+| `npm run build`      | Static build → `dist/`           |
+| `npm run preview`    | Preview production build locally |
+| `npm run typecheck`  | Run `tsc --noEmit` (strict mode) |
+| `npm run test`       | Run Vitest test suite            |
+| `npm run test:watch` | Run tests in watch mode          |
+| `npm run format`     | Format all files with Prettier   |
+| `npm run clean`      | Remove `dist/` directory         |
 
 ### Custom API Endpoint
 
@@ -176,10 +174,18 @@ The **`api-catalog`** file (RFC 9264 `application/linkset+json`) is the entry po
       "anchor": "https://posterium.xyz/",
       "item": [
         { "href": "…/.well-known/oauth-authorization-server", "rel": "authorization_server" },
-        { "href": "…/.well-known/oauth-protected-resource",  "rel": "oauth-protected-resource" },
-        { "href": "…/.well-known/mcp/server-card.json",       "rel": "service-desc", "type": "application/json" },
-        { "href": "…/.well-known/agent-skills/index.json",    "rel": "service-doc",  "type": "application/json" },
-        { "href": "…/faq",                                    "rel": "service-doc",  "type": "text/html" }
+        { "href": "…/.well-known/oauth-protected-resource", "rel": "oauth-protected-resource" },
+        {
+          "href": "…/.well-known/mcp/server-card.json",
+          "rel": "service-desc",
+          "type": "application/json"
+        },
+        {
+          "href": "…/.well-known/agent-skills/index.json",
+          "rel": "service-doc",
+          "type": "application/json"
+        },
+        { "href": "…/faq", "rel": "service-doc", "type": "text/html" }
       ]
     }
   ]
@@ -192,10 +198,10 @@ In addition, the homepage and `index.html` emit `Link` headers pointing to the `
 
 **`.well-known/mcp/server-card.json`** — Implements the Model Context Protocol `2025-03-26` draft. Advertises two tools:
 
-| Tool | Description |
-|---|---|
-| `open_builder` | Open the Posterium builder with optional title prefill |
-| `open_examples` | Browse examples, optionally filtered by query |
+| Tool            | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| `open_builder`  | Open the Posterium builder with optional title prefill |
+| `open_examples` | Browse examples, optionally filtered by query          |
 
 MCP-compatible clients discover this automatically by resolving `https://posterium.xyz/.well-known/mcp/server-card.json`.
 
@@ -203,20 +209,20 @@ MCP-compatible clients discover this automatically by resolving `https://posteri
 
 **`.well-known/agent-skills/index.json`** — Defines structured skills per the Agent Skills draft specification (`version: 0.2.0`):
 
-| Skill ID | Description | Input | Output |
-|---|---|---|---|
+| Skill ID          | Description                                             | Input                          | Output    |
+| ----------------- | ------------------------------------------------------- | ------------------------------ | --------- |
 | `poster.generate` | Generate a Posterium builder link with prefilled values | `{ title, year?, mediaType? }` | `{ url }` |
-| `poster.examples` | Browse the gallery of poster examples | `{ query? }` | `{ url }` |
+| `poster.examples` | Browse the gallery of poster examples                   | `{ query? }`                   | `{ url }` |
 
 Each skill declares a typed `input_schema` and `output_schema`, enabling agents to validate parameters before invocation.
 
 ### OAuth & JWKS
 
-| Endpoint | Purpose |
-|---|---|
+| Endpoint                     | Purpose                                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
 | `oauth-authorization-server` | OAuth 2.0 Authorization Server metadata (issuer, JWKS URI, supported grants/scopes, PKCE S256) |
-| `oauth-protected-resource` | Protected resource metadata pointing to `https://api.posterium.xyz` |
-| `jwks.json` | JSON Web Key Set for token signature verification |
+| `oauth-protected-resource`   | Protected resource metadata pointing to `https://api.posterium.xyz`                            |
+| `jwks.json`                  | JSON Web Key Set for token signature verification                                              |
 
 ### Extending the Agent Catalog
 
@@ -240,7 +246,7 @@ npm run build              # astro build → dist/
 npm run deploy             # wrangler deploy --env production
 ```
 
-The Wrangler configuration (`wrangler.jsonc`) mounts `dist/` as static assets with `run_worker_first: true` — every request passes through the Worker before hitting the static asset cache, enabling content negotiation.
+The Wrangler configuration (`wrangler.jsonc`) mounts `dist/` as **static assets only** — no Worker script, no `run_worker_first`. Every request is served directly from Cloudflare's edge asset layer.
 
 ### Security Headers
 
@@ -254,13 +260,13 @@ The `public/_headers` file configures Cloudflare to emit security and discovery 
 
 ### Caching Strategy
 
-| Resource | Cache Policy |
-|---|---|
-| `index.html`, `404.html` | `max-age=0, must-revalidate` |
-| `/assets/*` (hashed) | `max-age=31536000, immutable`, CORS `*` allowed |
+| Resource                              | Cache Policy                                                     |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `index.html`, `404.html`              | `max-age=0, s-maxage=300, stale-while-revalidate=86400`          |
+| `/assets/*` (hashed)                  | `max-age=31536000, immutable`, CORS `*` allowed                  |
 | Static images (`og-image.png`, icons) | `max-age=604800, s-maxage=2592000, stale-while-revalidate=86400` |
-| Sitemaps, robots.txt | `max-age=0` (sitemaps), `max-age=3600` (robots) |
-| `.well-known/*` | Respective `Content-Type` set; no aggressive caching |
+| Sitemaps, robots.txt                  | `max-age=3600, s-maxage=86400, stale-while-revalidate=86400`     |
+| `.well-known/*`                       | `max-age=300, s-maxage=1800`                                     |
 
 ### Redirects
 
@@ -269,7 +275,7 @@ The `public/_headers` file configures Cloudflare to emit security and discovery 
 
 ### Content Negotiation
 
-The Worker (`worker/index.ts`) checks `Accept: text/markdown` on every request. When present, HTML pages are converted to clean Markdown (scripts and styles stripped, headings extracted, whitespace normalized) and returned with `Content-Type: text/markdown` plus an `x-markdown-tokens` estimate header. This enables LLMs and AI agents to consume page content as structured text.
+Removed — the Worker no longer exists. The site serves pre-built HTML only.
 
 ---
 

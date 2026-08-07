@@ -1,4 +1,4 @@
-# public/_headers — Cloudflare Pages HTTP response headers
+# public/_headers — Cloudflare Workers static assets response headers
 
 # Universal security headers
 /*
@@ -18,32 +18,41 @@
 
 # HTML entry — never cache stale
 /index.html
-  Cache-Control: public, max-age=0, must-revalidate
   Link: <https://api.posterium.xyz>; rel=preconnect
   Link: <https://api.themoviedb.org>; rel=preconnect
   Link: <https://image.tmdb.org>; rel=preconnect
   Link: </.well-known/api-catalog>; rel="api-catalog"
   Link: </faq>; rel="service-doc"; type="text/html"
 
-/404.html
-  Cache-Control: public, max-age=0, must-revalidate
+# All pre-rendered HTML pages: browser revalidates (fresh UX),
+# edge caches 5 min and revalidates in background (no TTFB round-trip)
+/*.html
+  Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=86400
 
-# Hashed static assets (JS, CSS, fonts)
-/assets/*
+# Hashed static assets (JS, CSS, fonts) — Astro emits these under /_astro/
+/_astro/*
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
   Access-Control-Allow-Origin: *
 
+# Service worker — must never be cached by the CDN; browsers must revalidate
+# it on every visit so updates are picked up promptly
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 # Sitemaps / robots (FIXED: applying to Astro's generated filenames)
 /*sitemap*.xml
   Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
 
 # Well-known discovery resources
+/.well-known/*
+  Cache-Control: public, max-age=300, s-maxage=1800
+
 /.well-known/api-catalog
   Content-Type: application/linkset+json; charset=utf-8
 
@@ -79,4 +88,4 @@
 # Web manifest
 /manifest.webmanifest
   Content-Type: application/manifest+json
-  Cache-Control: public, max-age=86400, must-revalidate
+  Cache-Control: public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400

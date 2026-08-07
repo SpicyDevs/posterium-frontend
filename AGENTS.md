@@ -5,7 +5,7 @@
 - **Astro 5** static site with React 19 islands
 - Tailwind CSS v4 (`@tailwindcss/postcss`), PostCSS
 - TypeScript strict (`noUnusedLocals`, `noUnusedParameters`)
-- Cloudflare Worker (`worker/index.ts`) serves `dist/` as static assets + markdown content negotiation
+- Cloudflare Workers **static assets** serve `dist/` directly — no Worker script, no dynamic logic (100% static)
 - Testing: Vitest v4, config at `vitest.config.ts`
 
 ## Commands
@@ -20,7 +20,7 @@ npm run test         # vitest run
 npm run test:watch   # vitest
 npm run clean        # rm -rf dist
 npm run deploy       # wrangler deploy --env production
-npm run cf:dev       # wrangler dev (local worker)
+npm run cf:dev       # wrangler dev (local static preview)
 
 # Full CI-like pipeline (note: deploy:staging is not a standalone script):
 npm run release:staging   # typecheck → test → build → deploy:staging
@@ -28,23 +28,24 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 
 ## Codebase Structure
 
-| Directory | Purpose |
-| --- | --- |
-| `src/pages/` | Astro page routes (`.astro`) |
-| `src/builder/` | Drag-and-drop poster editor React SPA at `/build` |
-| `src/modules/` | React page modules (DocsLayout, ExamplesPage, etc.) |
-| `src/ui/` | Shared React/Astro UI primitives |
-| `src/components/` | Shared components (AnalyticsDashboard, TestBenchmark) |
-| `src/constants/` | Site config (`site.ts`), badge definitions (`badges.ts`) |
-| `src/types/` | TypeScript type definitions, re-exported from `builder/types.ts` |
-| `src/content/` | Astro content collections (faq, install, examples, docs) — YAML + Zod |
-| `src/lib/` | Utilities, remark plugin, tests |
-| `src/seo/` | SEO components, JSON-LD schema builders |
-| `src/layouts/` | Astro layouts (BaseLayout, DocsLayout) |
-| `src/styles/` | Global CSS (Tailwind + custom vars) |
+| Directory             | Purpose                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/pages/`          | Astro page routes (`.astro`)                                                                                 |
+| `src/builder/`        | Drag-and-drop poster editor React SPA at `/build`                                                            |
+| `src/modules/`        | React page modules (DocsLayout, ExamplesPage, etc.)                                                          |
+| `src/ui/`             | Shared React/Astro UI primitives                                                                             |
+| `src/components/`     | Shared components (AnalyticsDashboard, TestBenchmark)                                                        |
+| `src/constants/`      | Site config (`site.ts`), badge definitions (`badges.ts`)                                                     |
+| `src/types/`          | TypeScript type definitions, re-exported from `builder/types.ts`                                             |
+| `src/content/`        | Astro content collections (faq, install, examples, docs) — YAML + Zod                                        |
+| `src/lib/`            | Utilities, remark plugin, tests                                                                              |
+| `src/seo/`            | SEO components, JSON-LD schema builders                                                                      |
+| `src/layouts/`        | Astro layouts (BaseLayout, DocsLayout)                                                                       |
+| `src/styles/`         | Global CSS (Tailwind + custom vars)                                                                          |
 | `public/.well-known/` | **Agent discovery enclave** — MCP server card, OAuth metadata, JWKS, agent skills index, API catalog linkset |
-| `scripts/` | Node scripts (`reel.mjs`, `validate-faq-jsonld.mjs`) |
-| `worker/` | Cloudflare Worker (static assets + `Accept: text/markdown` → HTML-to-markdown) |
+| `scripts/`            | Node scripts (`reel.mjs`, `validate-faq-jsonld.mjs`)                                                         |
+| `public/_headers`     | Cloudflare static assets response headers (caching + security)                                               |
+| `public/_redirects`   | Cloudflare static asset redirects                                                                            |
 
 ## Key Details
 
@@ -71,22 +72,20 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 
 The repo exposes machine-readable discovery endpoints in `public/.well-known/`:
 
-| Resource | Path |
-| --- | --- |
-| MCP server card | `.well-known/mcp/server-card.json` |
-| Agent skills index | `.well-known/agent-skills/index.json` |
-| API catalog linkset | `.well-known/api-catalog` |
-| OAuth AS metadata | `.well-known/oauth-authorization-server` |
-| OAuth RS metadata | `.well-known/oauth-protected-resource` |
-| JWKS public keys | `.well-known/jwks.json` |
+| Resource            | Path                                     |
+| ------------------- | ---------------------------------------- |
+| MCP server card     | `.well-known/mcp/server-card.json`       |
+| Agent skills index  | `.well-known/agent-skills/index.json`    |
+| API catalog linkset | `.well-known/api-catalog`                |
+| OAuth AS metadata   | `.well-known/oauth-authorization-server` |
+| OAuth RS metadata   | `.well-known/oauth-protected-resource`   |
+| JWKS public keys    | `.well-known/jwks.json`                  |
 
 All served as static files from `public/`. To extend: edit the JSON in `public/.well-known/`, update `_headers` for custom Content-Types if needed.
 
 ## Deployment
 
 - Static build to `dist/`
-- Cloudflare Worker (`worker/index.ts`) serves `dist/` — all requests pass through worker first (`run_worker_first: true`)
-- Worker checks `Accept: text/markdown` header; when present, converts HTML to Markdown and returns with `Content-Type: text/markdown` + `x-markdown-tokens` estimate
-- Deploy: `wrangler deploy --env production` (custom domain `posterium.xyz`)
+- Cloudflare Workers **Static Assets** (via `wrangler.jsonc` `assets.directory`) serve `dist/` directly — no Worker script, no `run_worker_first`
 - Security headers in `public/_headers`: CSP, HSTS, XFO DENY, referrer policy, permissions
 - Redirects in `public/_redirects`: `/sitemap.xml → /sitemap-index.xml`, `/builder → /build`
