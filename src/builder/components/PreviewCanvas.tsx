@@ -13,7 +13,7 @@ import DraggableTitle from './DraggableTitle';
 import DraggableLogo from './DraggableLogo';
 import { calculateAutoPosition, getScale, snapToGridSize } from '../utils/positioning';
 import { generateCleanArtworkUrl, generateLogoUrl } from '../utils/url-generator';
-import { Loader2, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
+import { LoaderCircle, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../EditorContext';
 import clsx from 'clsx';
 
@@ -602,7 +602,7 @@ const PreviewCanvas: React.FC<Props> = ({
       >
         {isImageLoading && !imageError && (
           <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center pointer-events-none">
-            <Loader2 className="animate-spin text-[#C47C2E]" size={40} />
+            <LoaderCircle className="animate-spin text-[#C47C2E]" size={40} />
           </div>
         )}
         {imageError && (

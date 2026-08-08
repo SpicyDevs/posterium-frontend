@@ -2,9 +2,9 @@
 
 ## Stack
 
-- **Astro 5** static site with React 19 islands
-- Tailwind CSS v4 (`@tailwindcss/postcss`), PostCSS
-- TypeScript strict (`noUnusedLocals`, `noUnusedParameters`)
+- **Astro 7** static site with React 19 islands
+- Tailwind CSS v4 via `@tailwindcss/vite` plugin (no PostCSS chain; `postcss.config.mjs` deleted)
+- TypeScript 7 strict (`noUnusedLocals`, `noUnusedParameters`)
 - Cloudflare Workers **static assets** serve `dist/` directly — no Worker script, no dynamic logic (100% static)
 - Testing: Vitest v4, config at `vitest.config.ts`
 
@@ -63,7 +63,9 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 - **URL style**: no trailing slashes (`trailingSlash: 'never'`, `format: 'file'`)
 - **Prettier**: single quotes, trailing commas es5, printWidth 100, semicolons
 - **Custom remark plugin**: `src/lib/remark-require-image-alt.mjs` enforces alt text on markdown images
-- **PWA**: auto-registering via `@vite-pwa/astro` with runtime caching (TMDB CacheFirst, Google Fonts CacheFirst 1y, Posterium API NetworkFirst 5s)
+- **Astro config**: `markdown.processor = unified({ remarkPlugins: [remarkGfm, remarkRequireImageAlt] })` (from `@astrojs/markdown-remark`); `oxc: { target: 'es2022' }` replaces old `esbuild` block; sitemap `namespaces: { news: false, xhtml: false, video: false }` (image kept for sitemap enhancer)
+- **PWA**: manifest + virtual modules via `VitePWA` in `vite.plugins` (not Astro integration — `@vite-pwa/astro` is gone, incompatible with Astro 7). Service worker is built by custom `workboxSW()` integration hook (`astro:build:done`, `generateSW` from `workbox-build`) because vite-plugin-pwa's own `closeBundle` skips SW generation on Astro 7 multi-environment builds (`ctx.viteConfig.build.ssr` check). Runtime caching: TMDB CacheFirst, Google Fonts CacheFirst 1y, Posterium API NetworkFirst 5s; `navigateFallback: '/404.html'`; `sourcemap: false`. Register via `src/scripts/pwa-register.ts` in BaseLayout
+- **Prefetch**: built-in Astro prefetch enabled via config `prefetch: { prefetchAll: true, defaultStrategy: 'hover' }` (no `@astrojs/prefetch` — deprecated since 3.5). Module ships as part of the page chunk; respects data-saver/slow-connection.
 - **Vite manual chunks**: `react-vendor`, `icons` (lucide-react), `headlessui`, `dnd`
 - **Custom sitemap integration** (`imageSitemapEnhancer` in `astro.config.mjs`) adds `<image:image>` tags per content collection
 - **astro-compress**: minifies HTML/CSS/JS/SVG on build

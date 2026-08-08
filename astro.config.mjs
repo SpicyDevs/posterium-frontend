@@ -2,7 +2,10 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import compress from 'astro-compress';
 import sitemap from '@astrojs/sitemap';
-import AstroPWA from '@vite-pwa/astro';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+import { generateSW } from 'workbox-build';
+import { unified } from '@astrojs/markdown-remark';
 import remarkGfm from 'remark-gfm';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -128,93 +131,17 @@ const imageSitemapEnhancer = () => ({
   },
 });
 
-export default defineConfig({
-  site: 'https://posterium.xyz',
-  output: 'static',
-  trailingSlash: 'never', // Enforce no trailing slashes
-  build: {
-    format: 'file', // Generates about.html instead of about/index.html to prevent host-level redirects
-  },
-  prefetch: {
-    prefetchAll: false,
-    defaultStrategy: 'hover',
-  },
-  markdown: {
-    remarkPlugins: [remarkGfm, remarkRequireImageAlt],
-  },
-  integrations: [
-    react(),
-    sitemap({
-      filter: (page) => !page.includes('/admin'),
-      serialize(item) {
-        // Aggressively strip trailing slash from every URL in the sitemap
-        item.url = item.url.replace(/\/$/, '');
-        const pathname = new URL(item.url).pathname || '/';
-        const collectionEntry = Object.values(collectionSitemapData).find(
-          (entry) => pathname === entry.route || (pathname.startsWith(entry.route + '/'))
-        );
-
-        item.lastmod = collectionEntry?.lastmod ?? new Date().toISOString();
-        item.changefreq = 'weekly';
-
-        if (pathname === '/') {
-          item.priority = 1.0;
-        } else if (pathname === '/build') {
-          item.priority = 0.9;
-        } else if (collectionEntry && collectionEntry.count > 0) {
-          item.priority = collectionEntry.priority;
-          item.changefreq = collectionEntry.route === '/faq' ? 'monthly' : 'weekly';
-        } else {
-          item.priority = 0.55;
-          item.changefreq = 'monthly';
-        }
-
-        return item;
-      },
-    }),
-    AstroPWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      manifest: {
-        name: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
-        short_name: 'Posterium',
-        description:
-          'Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.',
-        start_url: '/build', // Removed trailing slash here as well
-        display: 'standalone',
-        background_color: '#0a0a0a',
-        theme_color: '#0a0a0a',
-        icons: [
-          { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
-        ],
-        shortcuts: [
-          {
-            name: 'Try Builder',
-            short_name: 'Builder',
-            description: 'Open the Posterium drag-and-drop poster builder.',
-            url: '/build',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
-          },
-          {
-            name: 'Examples',
-            short_name: 'Examples',
-            description: 'Browse Posterium poster examples and presets.',
-            url: '/examples',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
-          },
-          {
-            name: 'FAQ',
-            short_name: 'FAQ',
-            description: 'Read frequently asked questions about Posterium.',
-            url: '/faq',
-            icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
-          },
-        ],
-      },
-      workbox: {
+const workboxSW = () => ({
+  name: 'workbox-sw',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const outDir = fileURLToPath(dir);
+      const { count, size, warnings } = await generateSW({
+        globDirectory: outDir,
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        swDest: path.join(outDir, 'sw.js'),
+        sourcemap: false,
+        navigateFallback: '/404.html',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/image\.tmdb\.org\/.*/i,
@@ -260,6 +187,62 @@ export default defineConfig({
             },
           },
         ],
+      });
+      if (warnings.length > 0) {
+        console.warn('[workbox] SW generation warnings:', warnings);
+      }
+      console.log(`[workbox] Generated sw.js precaching ${count} files`);
+    },
+  },
+});
+
+export default defineConfig({
+  site: 'https://posterium.xyz',
+  output: 'static',
+  trailingSlash: 'never', // Enforce no trailing slashes
+  build: {
+    format: 'file', // Generates about.html instead of about/index.html to prevent host-level redirects
+  },
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'hover',
+  },
+  markdown: {
+    processor: unified({ remarkPlugins: [remarkGfm, remarkRequireImageAlt] }),
+  },
+  integrations: [
+    react(),
+    sitemap({
+      filter: (page) => !page.includes('/admin'),
+      namespaces: {
+        news: false,
+        xhtml: false,
+        video: false,
+      },
+      serialize(item) {
+        // Aggressively strip trailing slash from every URL in the sitemap
+        item.url = item.url.replace(/\/$/, '');
+        const pathname = new URL(item.url).pathname || '/';
+        const collectionEntry = Object.values(collectionSitemapData).find(
+          (entry) => pathname === entry.route || (pathname.startsWith(entry.route + '/'))
+        );
+
+        item.lastmod = collectionEntry?.lastmod ?? new Date().toISOString();
+        item.changefreq = 'weekly';
+
+        if (pathname === '/') {
+          item.priority = 1.0;
+        } else if (pathname === '/build') {
+          item.priority = 0.9;
+        } else if (collectionEntry && collectionEntry.count > 0) {
+          item.priority = collectionEntry.priority;
+          item.changefreq = collectionEntry.route === '/faq' ? 'monthly' : 'weekly';
+        } else {
+          item.priority = 0.55;
+          item.changefreq = 'monthly';
+        }
+
+        return item;
       },
     }),
     compress({
@@ -279,16 +262,61 @@ export default defineConfig({
       Image: false,
     }),
     imageSitemapEnhancer(),
+    workboxSW(),
   ],
   vite: {
+    plugins: [
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        injectRegister: false,
+        manifest: {
+          name: 'Posterium: Dynamic Posters with Ratings, Genres & Cast Info',
+          short_name: 'Posterium',
+          description:
+            'Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.',
+          start_url: '/build', // Removed trailing slash here as well
+          display: 'standalone',
+          background_color: '#0a0a0a',
+          theme_color: '#0a0a0a',
+          icons: [
+            { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+            { src: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+          ],
+          shortcuts: [
+            {
+              name: 'Try Builder',
+              short_name: 'Builder',
+              description: 'Open the Posterium drag-and-drop poster builder.',
+              url: '/build',
+              icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'Examples',
+              short_name: 'Examples',
+              description: 'Browse Posterium poster examples and presets.',
+              url: '/examples',
+              icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'FAQ',
+              short_name: 'FAQ',
+              description: 'Read frequently asked questions about Posterium.',
+              url: '/faq',
+              icons: [{ src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' }],
+            },
+          ],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
     },
-    esbuild: {
+    oxc: {
       target: 'es2022',
-      legalComments: 'none',
     },
     build: {
       chunkSizeWarningLimit: 400,

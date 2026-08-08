@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { Copy, Download, Loader2, Check, Layout, Sliders } from 'lucide-react';
+import { Copy, Download, LoaderCircle, Check, Layout, Sliders } from 'lucide-react';
 import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { ExtensionType, PosterConfig } from '@/types/poster';
 import { generateApiUrl } from '@/builder/utils/url-generator';
@@ -138,7 +138,7 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
             />
             <ActionButton
               disabled={!hasPoster}
-              icon={downloading ? <Loader2 size={12} style={{ animation: 'wt-spin 0.8s linear infinite' }} /> : <Download size={12} />}
+              icon={downloading ? <LoaderCircle size={12} style={{ animation: 'wt-spin 0.8s linear infinite' }} /> : <Download size={12} />}
               label={downloading ? '...' : 'Download'}
               onClick={handleDownload}
               amber

@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Coffee, Github, Menu, X } from 'lucide-react';
+import { Coffee, Menu, X } from 'lucide-react';
+import GithubIcon from '@/ui/GithubIcon';
 import SearchInput from '@/ui/SearchInput';
 
 export interface NavbarLink {
@@ -250,7 +251,7 @@ const MainNavbar = memo<MainNavbarProps>(
                 borderRadius: 4,
               }}
             >
-              <Github size={15} />
+              <GithubIcon size={15} />
             </a>
 
             <a

@@ -1,5 +1,5 @@
 import { Combobox } from '@headlessui/react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, LoaderCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 export interface SearchResult {
@@ -53,7 +53,7 @@ const MediaSearchCombobox: React.FC<MediaSearchComboboxProps> = ({
         >
           <div className="pl-3" style={{ color: 'var(--film-text-dim)', flexShrink: 0 }}>
             {isSearching ? (
-              <Loader2
+              <LoaderCircle
                 size={12}
                 className="animate-spin"
                 style={{ color: 'var(--film-amber)' }}

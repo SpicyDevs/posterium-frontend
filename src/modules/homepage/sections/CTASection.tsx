@@ -1,7 +1,8 @@
 // src/components/dashboard/sections/CTASection.tsx
 // Change: Link → <a href="/build">. No Router import.
 import { memo } from 'react';
-import { ArrowRight, Github, Star } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
+import GithubIcon from '@/ui/GithubIcon';
 import { useInView } from '@/lib/dashboard/hooks/index';
 
 const STRIPE_INDICES = Array.from({ length: 28 }, (_, i) => i);
@@ -191,7 +192,7 @@ export const CTASection = memo(() => {
               background: 'rgba(255,255,255,0.025)',
             }}
           >
-            <Github size={13} /> Star Project{' '}
+            <GithubIcon size={13} /> Star Project{' '}
             <Star size={10} color="var(--film-amber)" fill="var(--film-amber)" />
           </a>
         </div>

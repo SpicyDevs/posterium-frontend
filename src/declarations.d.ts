@@ -1,6 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-var */
 
+declare module 'virtual:pwa-register' {
+  export interface RegisterSWOptions {
+    immediate?: boolean;
+    onNeedRefresh?: () => void;
+    onOfflineReady?: () => void;
+    onRegisteredSW?: (
+      swScriptUrl: string,
+      registration: ServiceWorkerRegistration | undefined
+    ) => void;
+    onRegisterError?: (error: unknown) => void;
+  }
+  export function registerSW(options?: RegisterSWOptions): (reloadPage?: boolean) => Promise<void>;
+}
+
 declare module 'astro:content' {
   export function getCollection(collection: string): Promise<any[]>;
   export function getEntryBySlug(...args: any[]): Promise<any>;
@@ -31,6 +45,11 @@ declare module 'astro:middleware' {
 declare module 'astro/loaders' {
   export function glob(opts: { pattern: string | string[]; base?: string }): any;
   export function file(path: string, opts?: any): any;
+}
+
+declare module '*.css' {
+  const stylesheet: unknown;
+  export default stylesheet;
 }
 
 interface ImportMeta {

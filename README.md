@@ -263,7 +263,7 @@ The `public/_headers` file configures Cloudflare to emit security and discovery 
 | Resource                              | Cache Policy                                                     |
 | ------------------------------------- | ---------------------------------------------------------------- |
 | `index.html`, `404.html`              | `max-age=0, s-maxage=300, stale-while-revalidate=86400`          |
-| `/assets/*` (hashed)                  | `max-age=31536000, immutable`, CORS `*` allowed                  |
+| `/_astro/*` (hashed)                  | `max-age=31536000, immutable`, CORS `*` allowed                  |
 | Static images (`og-image.png`, icons) | `max-age=604800, s-maxage=2592000, stale-while-revalidate=86400` |
 | Sitemaps, robots.txt                  | `max-age=3600, s-maxage=86400, stale-while-revalidate=86400`     |
 | `.well-known/*`                       | `max-age=300, s-maxage=1800`                                     |

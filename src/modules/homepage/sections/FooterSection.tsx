@@ -1,6 +1,7 @@
 // src/components/dashboard/sections/FooterSection.tsx
 import { memo } from 'react';
-import { Github, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import GithubIcon from '@/ui/GithubIcon';
 
 const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
@@ -104,7 +105,7 @@ export const FooterSection = memo(() => (
 
         {/* GitHub */}
         <a href="https://github.com/SpicyDevs/posterium-frontend" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(196,124,46,0.35)', textDecoration: 'none', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.18s' }}>
-          <Github size={12} />
+          <GithubIcon size={12} />
           Open Source
         </a>
       </div>
