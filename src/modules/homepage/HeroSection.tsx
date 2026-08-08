@@ -2,6 +2,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FilmCorners } from './primitives';
 import { API } from '@/lib/dashboard/constants';
+import { HERO_POSTER_SRCS } from '@/generated/homePosters';
 
 interface HeroPoster {
   id: string; type: 'movie' | 'tv'; title: string;
@@ -22,7 +23,9 @@ const TOTAL = HERO_POSTERS.length;
 function getPosterSrc(p: HeroPoster) {
   return `${API}/${p.type}/${p.id}.webp?r=${p.r}&source=tmdb&blur=${p.blur}&alpha=${p.alpha}&rad=${p.rad}&${p.pos}`;
 }
-const POSTER_SRCS = HERO_POSTERS.map(getPosterSrc);
+const POSTER_SRCS = HERO_POSTERS.map(
+  (p) => HERO_POSTER_SRCS[p.id] ?? getPosterSrc(p),
+);
 
 
 

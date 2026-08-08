@@ -43,7 +43,7 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 | `src/layouts/`        | Astro layouts (BaseLayout, DocsLayout)                                                                       |
 | `src/styles/`         | Global CSS (Tailwind + custom vars)                                                                          |
 | `public/.well-known/` | **Agent discovery enclave** — MCP server card, OAuth metadata, JWKS, agent skills index, API catalog linkset |
-| `scripts/`            | Node scripts (`reel.mjs`, `validate-faq-jsonld.mjs`)                                                         |
+| `scripts/`            | Node scripts (`reel.mjs`, `fetch-home-posters.mjs`, `validate-faq-jsonld.mjs`)                                               |
 | `public/_headers`     | Cloudflare static assets response headers (caching + security)                                               |
 | `public/_redirects`   | Cloudflare static asset redirects                                                                            |
 
@@ -66,6 +66,7 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 - **Astro config**: `markdown.processor = unified({ remarkPlugins: [remarkGfm, remarkRequireImageAlt] })` (from `@astrojs/markdown-remark`); `oxc: { target: 'es2022' }` replaces old `esbuild` block; sitemap `namespaces: { news: false, xhtml: false, video: false }` (image kept for sitemap enhancer)
 - **PWA**: manifest + virtual modules via `VitePWA` in `vite.plugins` (not Astro integration — `@vite-pwa/astro` is gone, incompatible with Astro 7). Service worker is built by custom `workboxSW()` integration hook (`astro:build:done`, `generateSW` from `workbox-build`) because vite-plugin-pwa's own `closeBundle` skips SW generation on Astro 7 multi-environment builds (`ctx.viteConfig.build.ssr` check). Runtime caching: TMDB CacheFirst, Google Fonts CacheFirst 1y, Posterium API NetworkFirst 5s; `navigateFallback: '/404.html'`; `sourcemap: false`. Register via `src/scripts/pwa-register.ts` in BaseLayout
 - **Prefetch**: built-in Astro prefetch enabled via config `prefetch: { prefetchAll: true, defaultStrategy: 'hover' }` (no `@astrojs/prefetch` — deprecated since 3.5). Module ships as part of the page chunk; respects data-saver/slow-connection.
+- **Homepage poster pre-download**: `scripts/fetch-home-posters.mjs` fetch-based script mirrors `reel.mjs` — downloads the 6 hero posters + 22 mobile-reel posters from the poster API with the exact runtime params, writes them to `public/images/home-posters/` and regenerates `src/generated/homePosters.ts` (URL map consumed by `HeroSection.tsx` & `FilmReelSection.tsx`). Run manually before deploying (Cloudflare build is a pure `astro build`). Env: `FORCE=1` refresh all, `SKIP=1` map-only, `PUBLIC_API_URL` override. Homepage loads posters statically — zero runtime API calls.
 - **Vite manual chunks**: `react-vendor`, `icons` (lucide-react), `headlessui`, `dnd`
 - **Custom sitemap integration** (`imageSitemapEnhancer` in `astro.config.mjs`) adds `<image:image>` tags per content collection
 - **astro-compress**: minifies HTML/CSS/JS/SVG on build

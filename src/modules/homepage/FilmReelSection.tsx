@@ -1,6 +1,7 @@
 import { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { SprocketStrip } from './primitives';
 import { REEL_ITEMS, API } from '@/lib/dashboard/constants';
+import { REEL_POSTER_SRCS } from '@/generated/homePosters';
 
 const DESKTOP_REEL_CHUNKS = 2;
 const CHUNK_WIDTH = 4000;
@@ -163,7 +164,9 @@ const PosterCard = memo<{ item: (typeof REEL_ITEMS)[0]; visible: boolean }>(
     const [errored, setErrored] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
-    const posterSrc = `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=12&alpha=0.35&rad=6`;
+    const posterSrc =
+      REEL_POSTER_SRCS[item.id] ??
+      `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=12&alpha=0.35&rad=6`;
 
     return (
       <div
