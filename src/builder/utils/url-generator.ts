@@ -243,7 +243,7 @@ export const generateCleanArtworkUrl = (
   const type = config.imdbId ? 'poster' : config.mediaType;
   const p = new URLSearchParams();
   p.set('source', config.source);
-  if (config.textless) p.set('textless', '1');
+  if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('ptype', config.ptype);
   p.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
   return `${cleanBase}/${type}/${id}.svg?${p.toString()}`;
