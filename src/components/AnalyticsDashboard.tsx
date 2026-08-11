@@ -12,7 +12,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  ComposedChart,
+  ComposedChart, Line,
 } from 'recharts';
 import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';

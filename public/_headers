@@ -8,7 +8,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-XSS-Protection: 1; mode=block
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.posterium.xyz https://api.themoviedb.org https://image.tmdb.org https://us-r-vercel.vercel.app https://r-netlify.netlify.app https://r-cf.spicydevs.xyz https://wsrv.nl https://euc-r-render.onrender.com https://cloudflareinsights.com https://static.cloudflareinsights.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 # Homepage discovery headers (agent-ready discoverability)
 /
