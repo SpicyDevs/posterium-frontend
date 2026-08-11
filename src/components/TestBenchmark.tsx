@@ -1,12 +1,14 @@
 // src/components/admin/TestBenchmark.tsx
 //
-// v4 — Full redesign:
-//   • Detailed health parsing: icon cache, font, workers, queue, uptime, version
-//   • POST URL-SVG vs POST B64-SVG side-by-side comparison with delta annotation
-//   • GET rasterisation moved to bottom (slowest, URL-fetch path)
-//   • HTTP nodes benchmarked via CF Worker /proxy endpoint
-//   • Icon cache status prominently shown per node
-//   • Comprehensive timing analytics + payload size analysis
+// v5 — Fleet-accurate + production-LB aware:
+//   • NODES registry matches rasterise/assets/nodes.config.js (washington,
+//     ohio, midas, germany, danbot, wsrv, france, render_eu) with real tiers
+//   • Production LB ladder test: POSTs the B64-SVG to r-cf.spicydevs.xyz with
+//     X-Fallback-Image-Url set, reports attempts/source/wall/colo, follows
+//     302 fallback redirects (fallback protection — nodes must not be skipped)
+//   • Cache-bust toggle: unique cb param = fresh renders (cf-cache-status
+//     shown on the SVG fetches); fixed cb = tier cache HIT on re-runs
+//   • wsrv special-cased (output= param, no /health endpoint)
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import MainNavbar from '@/modules/MainNavbar';
@@ -14,7 +16,8 @@ import { AmberTag } from '@/ui/primitives';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
 const API_BASE      = DEFAULT_API_BASE;
-const CF_PROXY_BASE = 'https://r-cf.spicydevs.xyz/proxy';
+const LB_BASE       = 'https://r-cf.spicydevs.xyz';
+const CF_PROXY_BASE = `${LB_BASE}/proxy`;
 const TIMEOUT_MS    = 14_000;
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -28,16 +31,17 @@ const C = {
   char:   'var(--film-char)', border: 'var(--film-border)',
 };
 
-// ── Node registry ─────────────────────────────────────────────────────────────
+// ── Node registry — mirrors rasterise/assets/nodes.config.js ──────────────────
+// health:false nodes have no /health endpoint (wsrv) and are skipped.
 const NODES = [
-  { id:'fr1',       label:'FR 1',    url:'http://fr1.spaceify.eu:25980',      path:'',               tier:2, tag:'spaceify', region:'France',        http:true,  color:'#2dd4bf' },
-  { id:'de20',      label:'DE 20',   url:'http://de20.spaceify.eu:26100',     path:'',               tier:2, tag:'spaceify', region:'Germany',       http:true,  color:'#60a5fa' },
-  { id:'de2',       label:'DE 2',    url:'http://node-3.midas.host:25108',    path:'',               tier:2, tag:'midas',    region:'Germany',       http:true,  color:'#4ade80' },
-  { id:'euc',       label:'EUC',     url:'https://euc-r-render.onrender.com', path:'',               tier:3, tag:'render',   region:'EU Central',    http:false, color:'#fb923c' },
-  { id:'usw',       label:'US East', url:'https://us-r-vercel.vercel.app',    path:'/api/rasterize', tier:1, tag:'vercel',   region:'Virginia, US',  http:false, color:'#a78bfa' },
-  { id:'ohio',      label:'Ohio',    url:'https://r-netlify.netlify.app',     path:'/api/rasterize', tier:1, tag:'netlify',  region:'Ohio, US',      http:false, color:'#f472b6' },
-  { id:'london',    label:'London',  url:'https://uk-r-vercel.vercel.app',    path:'/api/rasterize', tier:1, tag:'vercel',   region:'London, UK',    http:false, color:'#c47c2e' },
-  { id:'cf_worker', label:'CF Edge', url:'https://r-cf.spicydevs.xyz',       path:'',               tier:0, tag:'worker',   region:'Global (WASM)', http:false, color:'#facc15' },
+  { id:'washington', label:'US East (Vercel)',     url:'https://us-r-vercel.vercel.app',     path:'/api/rasterize', tier:1, tag:'vercel',   region:'Virginia, US', http:false, color:'#a78bfa', health:true },
+  { id:'ohio',       label:'US Central (Netlify)', url:'https://r-netlify.netlify.app',      path:'/api/rasterize', tier:1, tag:'netlify',  region:'Ohio, US',     http:false, color:'#f472b6', health:true },
+  { id:'midas',      label:'DE 2 (Midas)',         url:'http://node-3.midas.host:25108',    path:'',               tier:1, tag:'midas',    region:'Germany',      http:true,  color:'#4ade80', health:true },
+  { id:'germany',    label:'DE 20 (Spaceify)',     url:'http://de20.spaceify.eu:26100',     path:'',               tier:1, tag:'spaceify', region:'Germany',      http:true,  color:'#60a5fa', health:true },
+  { id:'danbot',     label:'DanBot EU',            url:'http://dono-01.danbot.host:1751',   path:'',               tier:1, tag:'danbot',   region:'EU',           http:true,  color:'#fb923c', health:true },
+  { id:'wsrv',       label:'wsrv.nl (CDN)',        url:'https://wsrv.nl',                   path:'',               tier:1, tag:'wsrv',     region:'Global (CDN)', http:false, color:'#facc15', health:false },
+  { id:'france',     label:'FR 1 (Spaceify)',      url:'http://fr1.spaceify.eu:25980',      path:'',               tier:2, tag:'spaceify', region:'France',       http:true,  color:'#2dd4bf', health:true },
+  { id:'render_eu',  label:'EUC (Render)',         url:'https://euc-r-render.onrender.com', path:'',               tier:2, tag:'render',   region:'EU Central',   http:false, color:'#fb923c', health:true },
 ] as const;
 
 const EXAMPLES = [
@@ -49,9 +53,20 @@ const EXAMPLES = [
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface FetchResult { ok:boolean; ms:number; status:number; note:string; imageUrl:string|null; fallback?:string|null }
+interface FetchResult {
+  ok:boolean; ms:number; status:number; note:string; imageUrl:string|null;
+  fallback?:string|null;
+  attempts?:number|null; rasterSource?:string|null; wallMs?:number|null;
+  colo?:string|null; cacheStatus?:string|null;
+}
+interface LbResult {
+  ok:boolean; ms:number; status:number; note:string; imageUrl:string|null;
+  attempts:number|null; rasterSource:string|null; wallMs:number|null;
+  colo:string|null; cacheStatus:string|null; fallback:string|null;
+}
 interface HealthData {
   reachable: boolean;
+  skipped?: boolean;
   status?: string; version?: string; node?: string;
   activeJobs?: number; queuedJobs?: number; workerCount?: number;
   pendingRespawns?: number; uptime?: number; maxConcurrent?: number;
@@ -70,6 +85,9 @@ interface NodeResult {
 interface Benchmark {
   inputType:string; rawId:string; queryParams:string; format:string;
   svgUrlRef:string; svgUrlB64:string; urlKb:number; b64Kb:number;
+  svgRefCacheStatus:string|null; svgB64CacheStatus:string|null;
+  bustCache:boolean;
+  lb: LbResult;
   nodes: NodeResult[];
   summary: { fastestMs:number|null; fastestLabel:string|null; successCount:number };
   timestamp: string;
@@ -100,17 +118,27 @@ async function fetchWithImage(url:string, opts:RequestInit={}): Promise<FetchRes
     const res = await fetch(url, { ...opts, signal: ac.signal });
     clearTimeout(tm);
     const ms = Math.round(performance.now() - t0);
+    // LB/node diagnostics headers (absent on plain node responses)
+    const cacheStatus   = res.headers.get('cf-cache-status');
+    const rasterSource  = res.headers.get('x-raster-source');
+    const attemptsRaw   = res.headers.get('x-attempt-count');
+    const wallMsRaw     = res.headers.get('x-wall-ms');
+    const colo          = res.headers.get('x-cf-colo');
+    const renderFb      = res.headers.get('x-render-fallback');
+    const attempts      = attemptsRaw ? parseInt(attemptsRaw, 10) || null : null;
+    const wallMs        = wallMsRaw ? parseInt(wallMsRaw, 10) || null : null;
+    const meta = { cacheStatus, rasterSource, attempts, wallMs, colo, fallback: renderFb || null };
     if (!res.ok) {
       await res.body?.cancel().catch(()=>{});
-      return { ok:false, ms, status:res.status, note:`HTTP ${res.status}`, imageUrl:null };
+      return { ok:false, ms, status:res.status, note:`HTTP ${res.status}`, imageUrl:null, ...meta };
     }
     const ct = res.headers.get('content-type') || '';
     if (!ct.startsWith('image/')) {
       const txt = await res.text();
-      return { ok:false, ms, status:res.status, note:`Non-image (${ct.split(';')[0]}): ${txt.slice(0,80)}`, imageUrl:null };
+      return { ok:false, ms, status:res.status, note:`Non-image (${ct.split(';')[0]}): ${txt.slice(0,80)}`, imageUrl:null, ...meta };
     }
     const buf = await res.arrayBuffer();
-    return { ok:true, ms, status:res.status, note:'', imageUrl: URL.createObjectURL(new Blob([buf],{type:ct})) };
+    return { ok:true, ms, status:res.status, note:'', imageUrl: URL.createObjectURL(new Blob([buf],{type:ct})), ...meta };
   } catch(e:any) {
     return { ok:false, ms:Math.round(performance.now()-t0), status:0,
       note: e.name==='AbortError' ? `Timeout ${TIMEOUT_MS}ms` : e.message, imageUrl:null };
@@ -118,6 +146,8 @@ async function fetchWithImage(url:string, opts:RequestInit={}): Promise<FetchRes
 }
 
 async function fetchHealth(node: typeof NODES[number]): Promise<HealthData> {
+  if (node.health === false)
+    return { reachable:false, skipped:true, error:'no /health endpoint' };
   const healthTarget = proxyUrl(node, `${node.url}/health`);
   try {
     const res = await fetch(healthTarget, { signal: AbortSignal.timeout(5_000) });
@@ -133,9 +163,12 @@ async function benchNode(
   node: typeof NODES[number],
   urlSvg:string, b64Svg:string, svgUrlRef:string, format:string,
 ): Promise<NodeResult> {
-  const base       = `${node.url}${node.path}?format=${format}`;
+  // wsrv.nl uses output= (not format=) and has no /api/rasterize path.
+  const isWsrv     = node.id === 'wsrv';
+  const queryParam = isWsrv ? 'output' : 'format';
+  const base       = `${node.url}${node.path}?${queryParam}=${format}`;
   const postTarget = proxyUrl(node, base);
-  const getRasterTarget = proxyUrl(node, `${node.url}${node.path}?format=${format}&url=${encodeURIComponent(svgUrlRef)}`);
+  const getRasterTarget = proxyUrl(node, `${node.url}${node.path}?${queryParam}=${format}&url=${encodeURIComponent(svgUrlRef)}`);
   const headers    = { 'Content-Type':'image/svg+xml', 'X-Format':format };
 
   const [health, postUrl, postB64, getRaster] = await Promise.all([
@@ -153,11 +186,81 @@ async function benchNode(
   return { ...node, health, postUrl, postB64, getRaster };
 }
 
+// Production LB ladder test — verifies the single → pair → serial fallback
+// chain AND the hard-wall redirect: X-Fallback-Image-Url is the original
+// poster, so a total node failure must 302 to it (fallback protection),
+// never a bare 502.
+async function benchLb(
+  b64Svg:string, inputType:string, rawId:string, qs:string, format:string,
+): Promise<LbResult> {
+  const posterUrl = `${API_BASE}/${inputType}/${rawId}.png?${qs}`;
+  const t0 = performance.now();
+  try {
+    const res = await fetch(LB_BASE, {
+      method:'POST',
+      headers: {
+        'Content-Type':'image/svg+xml',
+        'X-Format':format,
+        'X-Poster-Url':posterUrl,
+        'X-Fallback-Image-Url':posterUrl,
+        'X-Input-Type':inputType,
+      },
+      body: b64Svg,
+      redirect:'manual',
+      signal: AbortSignal.timeout(20_000),
+    });
+    const ms = Math.round(performance.now() - t0);
+    const attemptsRaw = res.headers.get('x-attempt-count');
+    const wallMsRaw   = res.headers.get('x-wall-ms');
+    const attempts    = attemptsRaw ? parseInt(attemptsRaw, 10) || null : null;
+    const wallMs      = wallMsRaw ? parseInt(wallMsRaw, 10) || null : null;
+    const colo        = res.headers.get('x-cf-colo');
+    const cacheStatus = res.headers.get('cf-cache-status');
+
+    if (res.status === 302) {
+      // Fallback protection fired: follow the redirect to the original poster.
+      const loc = res.headers.get('location') || posterUrl;
+      const img = await fetchWithImage(loc);
+      return {
+        ok: img.ok, ms, status:302,
+        note: img.ok ? 'All nodes exhausted → redirected to original poster' : `302 → ${loc.slice(0,80)}`,
+        imageUrl: img.imageUrl,
+        attempts, rasterSource:null, wallMs, colo,
+        cacheStatus: img.cacheStatus ?? null, fallback: img.ok ? 'poster fallback' : null,
+      };
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(()=> '');
+      return { ok:false, ms, status:res.status, note:txt.slice(0,120) || `HTTP ${res.status}`,
+        imageUrl:null, attempts, rasterSource:null, wallMs, colo, cacheStatus, fallback:null };
+    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.startsWith('image/')) {
+      const txt = await res.text();
+      return { ok:false, ms, status:res.status, note:`Non-image (${ct.split(';')[0]}): ${txt.slice(0,80)}`,
+        imageUrl:null, attempts, rasterSource:res.headers.get('x-raster-source'), wallMs, colo, cacheStatus, fallback:null };
+    }
+    const buf = await res.arrayBuffer();
+    return {
+      ok:true, ms, status:res.status, note:'Ladder served a raster',
+      imageUrl: URL.createObjectURL(new Blob([buf],{type:ct})),
+      attempts, rasterSource:res.headers.get('x-raster-source'), wallMs, colo, cacheStatus, fallback:null,
+    };
+  } catch(e:any) {
+    return { ok:false, ms:Math.round(performance.now()-t0), status:0,
+      note: e.name==='AbortError' ? 'Timeout 20s' : e.message,
+      imageUrl:null, attempts:null, rasterSource:null, wallMs:null, colo:null,
+      cacheStatus:null, fallback:null };
+  }
+}
+
 async function runBenchmark(
-  inputType:string, rawId:string, params:string, format:string,
+  inputType:string, rawId:string, params:string, format:string, bustCache:boolean,
   onStep:(s:string)=>void,
 ): Promise<Benchmark> {
-  const cb = Date.now();
+  // bustCache=true: unique cb per run → fresh renders, tier cache MISS.
+  // bustCache=false: fixed cb → repeat runs hit the Workers Cache (HIT shown).
+  const cb = bustCache ? Date.now() : 'fixed';
   const qs = `${params ? params+'&' : ''}cb=${cb}`;
   const svgUrlRef = `${API_BASE}/${inputType}/${rawId}.svg?${qs}&no_embed=1`;
   const svgUrlB64 = `${API_BASE}/${inputType}/${rawId}.svg?${qs}`;
@@ -171,9 +274,17 @@ async function runBenchmark(
   const b64Svg = b64Res?.ok ? await b64Res.text() : '';
   const urlKb  = urlSvg ? Math.round(new Blob([urlSvg]).size/1024) : 0;
   const b64Kb  = b64Svg ? Math.round(new Blob([b64Svg]).size/1024) : 0;
+  const svgRefCacheStatus = urlRes?.ok ? urlRes.headers.get('cf-cache-status') : null;
+  const svgB64CacheStatus = b64Res?.ok ? b64Res.headers.get('cf-cache-status') : null;
 
   onStep('Benchmarking all nodes in parallel…');
   const nodes = await Promise.all(NODES.map(n => benchNode(n, urlSvg, b64Svg, svgUrlRef, format)));
+
+  onStep('Testing production LB ladder…');
+  const lb = b64Svg
+    ? await benchLb(b64Svg, inputType, rawId, qs, format)
+    : { ok:false, ms:0, status:0, note:'SVG unavailable', imageUrl:null, attempts:null,
+        rasterSource:null, wallMs:null, colo:null, cacheStatus:null, fallback:null };
 
   const allMs = nodes.flatMap(n =>
     [n.postUrl, n.postB64].filter(r => r.ok).map(r => r.ms)
@@ -186,7 +297,8 @@ async function runBenchmark(
   return {
     inputType, rawId, queryParams:params, format,
     svgUrlRef, svgUrlB64: svgUrlB64.replace(`&cb=${cb}`,''),
-    urlKb, b64Kb, nodes,
+    urlKb, b64Kb, svgRefCacheStatus, svgB64CacheStatus, bustCache,
+    lb, nodes,
     summary: { fastestMs, fastestLabel, successCount: nodes.filter(n=>n.postUrl.ok||n.postB64.ok).length },
     timestamp: new Date().toISOString(),
   };
@@ -303,6 +415,9 @@ function PosterCell({ result, label, badge }:{ result:FetchResult; label:string;
           {result.ok ? `${result.ms}ms` : 'FAIL'}
         </Pill>
         {result.ok && <Pill color={C.ghost}>HTTP {result.status}</Pill>}
+        {result.cacheStatus && (
+          <Pill color={result.cacheStatus === 'HIT' ? C.green : C.orange}>{result.cacheStatus}</Pill>
+        )}
         {result.fallback && <Pill color="#f59e0b">wsrv fallback</Pill>}
       </div>
     </div>
@@ -334,7 +449,9 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
           </div>
           <div style={{ display:'flex', gap:4, alignItems:'center', flexWrap:'wrap', justifyContent:'flex-end' }}>
             <Pill color={node.color}>{node.tag}</Pill>
-            {!reachable && <Pill color={C.red}>offline</Pill>}
+            <Pill color={node.tier === 1 ? C.blue : C.purple}>T{node.tier}</Pill>
+            {h.skipped && <Pill color={C.ghost}>no health</Pill>}
+            {!reachable && !h.skipped && <Pill color={C.red}>offline</Pill>}
           </div>
         </div>
 
@@ -520,11 +637,11 @@ function HealthGrid({ nodes }:{ nodes:NodeResult[] }) {
             borderLeft:`3px solid ${n.color}`, borderRadius:7 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
               <span style={{ ...MONO, fontSize:10, fontWeight:700, color:'var(--film-cream)' }}>{n.label}</span>
-              <StatusDot ok={h.reachable} />
+              {h.skipped ? <Pill color={C.ghost}>no health</Pill> : <StatusDot ok={h.reachable} />}
             </div>
-            {!h.reachable ? (
+            {!h.reachable && !h.skipped && (
               <span style={{ ...MONO, fontSize:7, color:C.red }}>{h.error?.slice(0,60)}</span>
-            ) : (
+            )}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'3px 8px' }}>
                 {[
                   { l:'Status',   v: h.status || 'ok',            c: h.status==='ok' ? C.green : C.orange },
@@ -556,7 +673,6 @@ function HealthGrid({ nodes }:{ nodes:NodeResult[] }) {
                   </div>
                 ))}
               </div>
-            )}
           </div>
         );
       })}
@@ -607,13 +723,14 @@ function TimingBars({ nodes }:{ nodes:NodeResult[] }) {
 }
 
 // Search form
-function SearchForm({ onRun }:{ onRun:(t:string,i:string,p:string,f:string)=>void }) {
+function SearchForm({ onRun }:{ onRun:(t:string,i:string,p:string,f:string,bust:boolean)=>void }) {
   const [type,   setType]   = useState('movie');
   const [id,     setId]     = useState('');
   const [params, setParams] = useState('r=imdb,rt');
   const [format, setFormat] = useState('png');
+  const [bustCache, setBustCache] = useState(true);
 
-  const run = () => id.trim() && onRun(type, id.trim(), params.trim(), format);
+  const run = () => id.trim() && onRun(type, id.trim(), params.trim(), format, bustCache);
   const base: React.CSSProperties = {
     width:'100%', height:38, padding:'0 12px', boxSizing:'border-box',
     background:'var(--film-char)', border:'1px solid rgba(255,255,255,0.12)',
@@ -653,6 +770,12 @@ function SearchForm({ onRun }:{ onRun:(t:string,i:string,p:string,f:string)=>voi
         opacity:id.trim()?1:0.5 }}>
         Run Benchmark
       </button>
+      <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', ...MONO, fontSize:9, color:C.ghost }}>
+        <input type="checkbox" checked={bustCache} onChange={e=>setBustCache(e.target.checked)}
+          style={{ accentColor:C.amber, cursor:'pointer' }} />
+        Cache-bust (unique cb → fresh renders, tier cache MISS)
+        {!bustCache && <span style={{ color:C.orange }}>— off: re-runs hit the Workers Cache (HIT)</span>}
+      </label>
       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
         {EXAMPLES.map(ex=>(
           <button key={ex.id} onClick={()=>{ setType(ex.type); setId(ex.id); setParams(ex.params); }}
@@ -711,9 +834,68 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           </code>
         )}
         <Pill color={C.ghost}>{bench.format.toUpperCase()}</Pill>
+        <Pill color={bench.svgRefCacheStatus === 'HIT' ? C.green : C.orange}>
+          SVG ref: {bench.svgRefCacheStatus ?? '—'}
+        </Pill>
+        <Pill color={bench.svgB64CacheStatus === 'HIT' ? C.green : C.orange}>
+          SVG b64: {bench.svgB64CacheStatus ?? '—'}
+        </Pill>
         <button onClick={onRerun} style={{ marginLeft:'auto', padding:'5px 12px', background:C.amber,
           border:'none', borderRadius:6, color:'#070706', fontSize:10, cursor:'pointer',
           ...SYNE, fontWeight:700 }}>↻ Re-run</button>
+      </div>
+
+      {/* LB Ladder — production fallback-protection test */}
+      <div style={{ background:C.char, border:`1px solid ${bench.lb.ok ? C.border : 'rgba(248,113,113,0.25)'}`,
+        borderRadius:8, overflow:'hidden' }}>
+        <div style={{ padding:'8px 12px', borderBottom:`1px solid rgba(255,255,255,0.05)`,
+          display:'flex', alignItems:'center', gap:8, flexWrap:'wrap',
+          ...SYNE, fontSize:8, fontWeight:700, letterSpacing:'0.14em',
+          textTransform:'uppercase', color:C.amber }}>
+          Production LB Ladder
+          <Pill color={C.ghost}>r-cf.spicydevs.xyz</Pill>
+          <Pill color={bench.lb.ok ? C.green : C.red}>{bench.lb.ok ? 'SERVED' : 'FAILED'}</Pill>
+          {bench.lb.fallback && <Pill color="#f59e0b">fallback fired</Pill>}
+        </div>
+        <div style={{ padding:12, display:'flex', gap:14, flexWrap:'wrap' }}>
+          <div style={{ flex:'0 0 110px', position:'relative', aspectRatio:'2/3', borderRadius:6,
+            overflow:'hidden', background:'#0a0a09', border:`1px solid ${C.border}` }}>
+            {bench.lb.imageUrl ? (
+              <>
+                <img src={bench.lb.imageUrl} alt="LB"
+                  style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                <div style={{ position:'absolute', bottom:3, right:3, ...MONO, fontSize:8, fontWeight:700,
+                  color:msColor(bench.lb.ms), background:'rgba(0,0,0,0.9)', padding:'2px 4px', borderRadius:2 }}>
+                  {bench.lb.ms}ms
+                </div>
+              </>
+            ) : (
+              <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center',
+                justifyContent:'center', color:C.red, fontSize:14 }}>✗</div>
+            )}
+          </div>
+          <div style={{ flex:1, minWidth:220, display:'flex', flexDirection:'column', gap:6 }}>
+            {bench.lb.note && (
+              <span style={{ ...MONO, fontSize:8, color: bench.lb.ok ? C.green : C.red }}>
+                {bench.lb.note}
+              </span>
+            )}
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+              <Pill color={C.blue}>attempts: {bench.lb.attempts ?? '—'}</Pill>
+              <Pill color={C.purple}>wall: {bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—'}</Pill>
+              <Pill color={C.gold}>source: {bench.lb.rasterSource ?? '—'}</Pill>
+              <Pill color={C.teal}>colo: {bench.lb.colo ?? '—'}</Pill>
+              {bench.lb.cacheStatus && (
+                <Pill color={bench.lb.cacheStatus === 'HIT' ? C.green : C.orange}>cf: {bench.lb.cacheStatus}</Pill>
+              )}
+            </div>
+            <span style={{ ...MONO, fontSize:7, color:C.ghost, lineHeight:1.6 }}>
+              POSTs the B64-SVG through the live load balancer with X-Fallback-Image-Url set. Verifies the
+              single → pair → serial ladder and the 5s hard wall: if every node fails you should get a 302
+              to the original poster instead of a 502 — nodes are never skipped, just demoted.
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Quick stat row */}
@@ -722,11 +904,9 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           { l:'Fastest POST', v: fmtMs(bench.summary.fastestMs), c: msColor(bench.summary.fastestMs) },
           { l:'Best Node',    v: bench.summary.fastestLabel ?? '—', c: C.gold },
           { l:'Nodes OK',     v: `${bench.summary.successCount}/${NODES.length}`, c:'var(--film-cream)' },
-          { l:'URL-SVG',      v: bench.urlKb ? `${bench.urlKb}KB` : '—', c:C.green },
-          { l:'B64-SVG',      v: bench.b64Kb ? `${bench.b64Kb}KB` : '—', c:C.orange },
-          { l:'B64 overhead', v: bench.urlKb && bench.b64Kb
-              ? `+${bench.b64Kb-bench.urlKb}KB` : '—',
-            c: (bench.b64Kb-bench.urlKb) > 10 ? C.orange : C.ghost },
+          { l:'LB Attempts',  v: bench.lb.attempts != null ? String(bench.lb.attempts) : '—', c: C.blue },
+          { l:'LB Wall',      v: bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—', c: C.purple },
+          { l:'LB Source',    v: bench.lb.rasterSource ?? '—', c: C.gold },
         ].map(({ l, v, c }) => (
           <div key={l} style={{ padding:'10px 12px', background:C.char,
             border:`1px solid ${C.border}`, borderRadius:8 }}>
@@ -794,6 +974,21 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
                 </tr>
               </thead>
               <tbody>
+                <tr style={{ background:'rgba(255,255,255,0.01)', borderBottom:`1px solid rgba(255,255,255,0.025)` }}>
+                  <td style={{ padding:'5px 12px', color:C.amber, fontWeight:700, borderLeft:`2px solid ${C.gold}` }}>LB LADDER</td>
+                  <td style={{ padding:'5px 12px', color:C.teal, fontSize:8 }}>worker</td>
+                  <td style={{ padding:'5px 12px', color:C.ghost }}>POST B64-SVG</td>
+                  <td style={{ padding:'5px 12px' }}>
+                    <span style={{ color:bench.lb.ok?C.green:C.red, fontWeight:700 }}>{bench.lb.ok?'✓ OK':'✗ FAIL'}</span>
+                  </td>
+                  <td style={{ padding:'5px 12px', color:bench.lb.ok?msColor(bench.lb.ms):C.ghost, fontWeight:bench.lb.ok?700:400 }}>
+                    {bench.lb.ok ? `${bench.lb.ms}ms` : '—'}
+                  </td>
+                  <td style={{ padding:'5px 12px', color:C.ghost, maxWidth:280,
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {bench.lb.note || `HTTP ${bench.lb.status}`}
+                  </td>
+                </tr>
                 {bench.nodes.flatMap(n => [
                   { node:n.label, color:n.color, via: n.http?'proxy':'direct', mode:'POST URL-SVG', ...n.postUrl },
                   { node:n.label, color:n.color, via: n.http?'proxy':'direct', mode:'POST B64-SVG', ...n.postB64 },
@@ -845,6 +1040,7 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
         Completed {new Date(bench.timestamp).toLocaleTimeString()} ·
         client-side timing via performance.now() ·
         HTTP nodes routed via CF proxy ·
+        {bench.bustCache ? 'cache-busted (fresh renders)' : 'fixed cb — tier cache HIT expected'} ·
         Icons embedded server-side (v9 — no node icon-cache dependency)
       </div>
     </div>
@@ -858,7 +1054,7 @@ export default function TestBenchmark() {
   const [bench,   setBench]   = useState<Benchmark|null>(null);
   const [step,    setStep]    = useState('');
   const [error,   setError]   = useState('');
-  const [lastRun, setLastRun] = useState<{type:string;id:string;params:string;format:string}|null>(null);
+  const [lastRun, setLastRun] = useState<{type:string;id:string;params:string;format:string;bust:boolean}|null>(null);
   const blobUrls = useRef<string[]>([]);
 
   const cleanupBlobs = useCallback(() => {
@@ -868,17 +1064,18 @@ export default function TestBenchmark() {
 
   useEffect(() => () => cleanupBlobs(), [cleanupBlobs]);
 
-  const go = useCallback(async (type:string, id:string, params:string, format:string) => {
+  const go = useCallback(async (type:string, id:string, params:string, format:string, bust:boolean) => {
     cleanupBlobs();
     setMode('loading');
     setError('');
     setBench(null);
-    setLastRun({ type, id, params, format });
+    setLastRun({ type, id, params, format, bust });
     try {
-      const result = await runBenchmark(type, id, params, format, setStep);
+      const result = await runBenchmark(type, id, params, format, bust, setStep);
       blobUrls.current = result.nodes.flatMap(n =>
         [n.postUrl.imageUrl, n.postB64.imageUrl, n.getRaster.imageUrl]
       ).filter(Boolean) as string[];
+      if (result.lb.imageUrl) blobUrls.current.push(result.lb.imageUrl);
       setBench(result);
       setMode('results');
     } catch(e:any) {
@@ -903,8 +1100,8 @@ export default function TestBenchmark() {
           {mode==='loading'
             ? `TESTING · ${lastRun?.type}/${lastRun?.id}`
             : mode==='results'
-              ? 'POST URL · POST B64 · GET raster · node health'
-              : 'HTTP nodes via CF proxy · icons embedded server-side (v9)'}
+              ? 'POST URL · POST B64 · GET raster · LB ladder · node health'
+              : 'nodes via CF proxy · LB ladder test · cache-bust toggle'}
         </span>
         {mode === 'results' && (
           <button onClick={() => { setMode('search'); setBench(null); }}
@@ -928,11 +1125,12 @@ export default function TestBenchmark() {
         {mode === 'search' && (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
             <div>
-              <AmberTag style={{ marginBottom:8 }}>Client-Side Node Benchmark v4</AmberTag>
+              <AmberTag style={{ marginBottom:8 }}>Client-Side Node Benchmark v5</AmberTag>
               <p className="body-font" style={{ fontSize:13, color:'var(--film-text-dim)', maxWidth:620, lineHeight:1.7 }}>
-                Benchmarks all rasterizer nodes with <strong>POST URL-SVG</strong> and <strong>POST B64-SVG</strong> side-by-side,
-                plus <strong>GET ?url=</strong> at the bottom (slowest path). HTTP nodes routed via CF proxy.
-                Icons are now embedded server-side before dispatching — nodes no longer need icon-cache network access.
+                Benchmarks all 8 fleet nodes (<strong>POST URL-SVG</strong> vs <strong>POST B64-SVG</strong>, plus <strong>GET ?url=</strong>),
+                then pushes the same SVG through the <strong>production LB ladder</strong> (r-cf.spicydevs.xyz) to verify
+                fallback protection — with <strong>cache-busting</strong> for fresh renders and cf-cache-status surfaced on every fetch.
+                HTTP nodes are routed via the restricted CF /proxy. Icons are embedded server-side — nodes never need icon-cache network access.
               </p>
             </div>
             <SearchForm onRun={go} />
@@ -945,7 +1143,7 @@ export default function TestBenchmark() {
 
         {mode === 'results' && bench && (
           <ResultsView bench={bench} onBack={() => { setMode('search'); setBench(null); }}
-            onRerun={() => lastRun && go(lastRun.type, lastRun.id, lastRun.params, lastRun.format)} />
+            onRerun={() => lastRun && go(lastRun.type, lastRun.id, lastRun.params, lastRun.format, lastRun.bust)} />
         )}
       </main>
     </div>

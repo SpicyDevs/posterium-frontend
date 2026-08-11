@@ -166,7 +166,7 @@ const PERIODS: Record<string, { label: string; short: string }> = {
 
 const TABS = [
   'overview', 'nodes', 'traffic', 'fallbacks',
-  'requests', 'devices', 'diagnostics', 'db', 'errors', 'breakdown', 'wall-time', 'svg',
+  'requests', 'devices', 'diagnostics', 'db', 'errors', 'breakdown', 'wall-time', 'svg', 'workers',
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -914,6 +914,34 @@ export default function AnalyticsDashboard() {
     BYPASS:      { label: 'BYPASS — not cacheable',    color: CH.ghost },
   };
 
+  // ── Workers platform metrics (official GraphQL Analytics API) ──────────────
+  const workersMetrics = data?.workers_metrics ?? null;
+  const wmScripts = Object.entries(workersMetrics?.scripts ?? {}).map(([script, s]: any) => ({
+    script,
+    requests: num(s.requests),
+    errors: num(s.errors),
+    subrequests: num(s.subrequests),
+    errorRatePct: num(s.error_rate_pct),
+    avgCpuMs: s.avg_cpu_ms ?? null,
+    byStatus: s.by_status ?? {},
+    series: (s.series ?? []).map((x: any) => ({
+      ts: String(x.ts), requests: num(x.requests), errors: num(x.errors),
+    })),
+  }));
+  const workersSeries = useMemo(() => {
+    const byTs = new Map<string, { bucket: string; backend?: number; rasterize?: number }>();
+    for (const s of wmScripts) {
+      for (const p of s.series) {
+        const e = byTs.get(p.ts) ?? { bucket: p.ts };
+        e[s.script] = (e[s.script] ?? 0) + p.requests;
+        byTs.set(p.ts, e);
+      }
+    }
+    return [...byTs.values()]
+      .sort((a, b) => a.bucket.localeCompare(b.bucket))
+      .map(e => ({ bucket: fmtBucket(e.bucket), ...e }));
+  }, [wmScripts]);
+
   const presetAllRows = useMemo(() =>
     (data?.data?.req_preset_breakdown?.data ?? []).map((r: any) => ({
       preset: String(r.preset || '(default)'), requests: num(r.requests),
@@ -1080,6 +1108,7 @@ export default function AnalyticsDashboard() {
               : t === 'devices'  ? '★ Devices'
               : t === 'diagnostics' ? '⚙ Diagnostics'
               : t === 'db'       ? '★ DB'
+              : t === 'workers'  ? '★ Workers'
               : t}
           </button>
         ))}
@@ -2550,6 +2579,77 @@ export default function AnalyticsDashboard() {
           </div>
         )}
 
+        {tab === 'workers' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div className="dash-stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))' }}>
+              {wmScripts.length === 0 ? (
+                <Card title="Workers Platform Metrics" tag="GraphQL Analytics" fullWidth>
+                  {loading ? <Skel h={120} /> : (
+                    <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 20 }}>
+                      No workers metrics — confirm CF_API_TOKEN has Account Analytics read permission and worker names match (posterium-backend, rasterize).
+                    </div>
+                  )}
+                </Card>
+              ) : wmScripts.map((s) => (
+                <Card key={s.script} title={s.script} tag="Cloudflare GraphQL">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 26, fontWeight: 700, color: 'var(--film-cream)' }}>{fmtNum(s.requests)}</span>
+                      <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginBottom: 3 }}>invocations</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <StatCard label="Error Rate" value={fmtPct(s.errorRatePct)} color={s.errorRatePct > 5 ? CH.red : s.errorRatePct > 1 ? CH.yellow : CH.green} />
+                      <StatCard label="Errors" value={fmtNum(s.errors)} color={s.errors > 0 ? CH.red : CH.green} />
+                      <StatCard label="Subrequests" value={fmtNum(s.subrequests)} color={CH.blue} />
+                      <StatCard label="Avg CPU" value={s.avgCpuMs != null ? `${s.avgCpuMs.toFixed(1)}ms` : '—'} color={CH.purple} />
+                    </div>
+                    {Object.keys(s.byStatus).length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
+                        {Object.entries(s.byStatus).map(([st, c]) => (
+                          <div key={st} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: CH.ghost, textTransform: 'capitalize' }}>{st}</span>
+                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: CH.gold, fontWeight: 700 }}>{fmtNum(c as number)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <Card title="Invocations Over Time" tag={`per ${workersMetrics?.bucket === 'datetimeHour' ? 'hour' : 'day'} · official CF metrics`}>
+              {loading ? <Skel h={200} /> : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={workersSeries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                    <defs>
+                      <linearGradient id="gWrk" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CH.blue} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CH.blue} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gWrk2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CH.green} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CH.green} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <Tooltip content={<FilmTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
+                    <Area type="monotone" dataKey="backend" name="posterium-backend" stroke={CH.blue} fill="url(#gWrk)" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="rasterize" name="rasterize" stroke={CH.green} fill="url(#gWrk2)" strokeWidth={2} dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+            <Card title="About this tab">
+              <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 10, lineHeight: 1.7 }}>
+                Platform metrics pulled live from the official Cloudflare GraphQL Analytics API (workersInvocationsAdaptiveGroups) — the same numbers shown in the CF dashboard. Every other tab reads our own Analytics Engine datasets (raster_metrics + request_analytics).
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{
           marginTop: 24, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -2557,7 +2657,7 @@ export default function AnalyticsDashboard() {
           flexWrap: 'wrap', gap: 8,
         }}>
           <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
-            POSTERIUM · raster_metrics + request_analytics + D1 · v5
+            POSTERIUM · raster_metrics + request_analytics + D1 + GraphQL · v6
           </span>
           <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
             {lastFetch ? `Updated ${lastFetch.toLocaleTimeString()}` : ''} · {pLabel}{live ? ' · LIVE ↻' : ''}
