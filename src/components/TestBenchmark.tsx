@@ -17,6 +17,7 @@ import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
 const API_BASE      = DEFAULT_API_BASE;
 const LB_BASE       = `${API_BASE}/admin/nodes/benchmark`;
+const CF_PROXY_BASE = `${API_BASE}/admin/nodes/benchmark`;
 const TIMEOUT_MS    = 14_000;
 
 // ── Palette ───────────────────────────────────────────────────────────────────
