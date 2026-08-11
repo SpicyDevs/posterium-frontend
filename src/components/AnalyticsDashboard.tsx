@@ -37,14 +37,13 @@ const PIE_COLORS = [
   CH.purple, CH.teal, CH.red, CH.pink,
 ];
 
-// HTTPS-only nodes we can poll from the browser
+// HTTPS-only nodes we can poll from the browser. Current fleet (nodeRegistry):
+// midas/germany/danbot/france are plain-HTTP (mixed content blocks browser
+// fetch), wsrv exposes no /health — so only the three below are reachable.
 const LIVE_HEALTH_NODES = [
-  { id: 'washington', label: 'US East', url: 'https://us-r-vercel.vercel.app' },
-  { id: 'london',     label: 'London',  url: 'https://uk-r-vercel.vercel.app' },
-  { id: 'tokyo',      label: 'Tokyo',   url: 'https://jp-r-vercel.vercel.app' },
-  { id: 'mumbai',     label: 'Mumbai',  url: 'https://rasterize-node.vercel.app' },
-  { id: 'ohio',       label: 'Ohio',    url: 'https://r-netlify.netlify.app' },
-  { id: 'render_eu',  label: 'EUC',     url: 'https://euc-r-render.onrender.com' },
+  { id: 'washington', label: 'US East · Vercel',   url: 'https://us-r-vercel.vercel.app' },
+  { id: 'ohio',       label: 'US Central · Netlify', url: 'https://r-netlify.netlify.app' },
+  { id: 'render_eu',  label: 'EUC · Render',       url: 'https://euc-r-render.onrender.com' },
 ];
 
 function nodeColor(n: string) {
@@ -53,17 +52,20 @@ function nodeColor(n: string) {
     mumbai: CH.red, germany: CH.teal, france: CH.purple,
     wsrv: CH.orange, 'render-eu': CH.pink, ohio: CH.purple,
     'cf-binding': CH.gold, render_eu: CH.pink,
+    midas: CH.blue, danbot: CH.orange,
   };
   return MAP[n] ?? CH.ghost;
 }
 function nodeLabel(n: string) {
   const MAP: Record<string, string> = {
-    washington: 'Washington · Vercel', ohio: 'Ohio · Netlify',
+    washington: 'US East · Vercel', ohio: 'US Central · Netlify',
+    midas: 'DE 2 · Midas', germany: 'DE 20 · Spaceify',
+    danbot: 'DanBot EU', wsrv: 'wsrv.nl (CDN)',
+    france: 'FR 1 · Spaceify', render_eu: 'EUC · Render',
+    // Legacy aliases — historical AE rows may still reference them.
     london: 'London · Vercel', tokyo: 'Tokyo · Vercel',
-    mumbai: 'Mumbai · Vercel', germany: 'Germany · Spaceify',
-    france: 'France · Spaceify', wsrv: 'wsrv.nl',
-    'render-eu': 'EU Central · Render', 'cf-binding': 'CF Binding',
-    render_eu: 'EU Central · Render',
+    mumbai: 'Mumbai · Vercel', 'render-eu': 'EU Central · Render',
+    'cf-binding': 'CF Binding',
   };
   return MAP[n] ?? n;
 }
@@ -888,8 +890,29 @@ export default function AnalyticsDashboard() {
     (data?.data?.suggested_tuned_limits?.data ?? []).map((r: any) => ({
       node: String(r.node ?? ''), total_attempts: num(r.total_attempts),
       success_rate_pct: num(r.success_rate_pct), avg_ms: nullableNum(r.avg_ms),
-      p95_inflight: num(r.p95_inflight), cpu_proxy_ms: num(r.cpu_proxy_ms),
+      max_inflight: num(r.max_inflight), cpu_proxy_ms: num(r.cpu_proxy_ms),
     })), [data]);
+
+  // Raw cf-cache-status distribution — surfaces non-HIT/MISS statuses
+  // (REVALIDATED/STALE/…) that the hit-rate queries silently exclude.
+  const cacheStatusRows = useMemo(() =>
+    (data?.data?.req_cache_status_breakdown?.data ?? []).map((r: any) => ({
+      status: String(r.status ?? ''), requests: num(r.requests),
+    })), [data]);
+  const totalCacheStatusReqs = useMemo(
+    () => cacheStatusRows.reduce((s, r) => s + r.requests, 0),
+    [cacheStatusRows],
+  );
+
+  const STATUS_META: Record<string, { label: string; color: string }> = {
+    HIT:         { label: 'HIT — served from cache',   color: CH.green },
+    MISS:        { label: 'MISS — origin rendered',    color: CH.orange },
+    REVALIDATED: { label: 'REVALIDATED — fresh recheck', color: CH.blue },
+    STALE:       { label: 'STALE — stale-if-error/wait', color: CH.yellow },
+    UPDATING:    { label: 'UPDATING — revalidation',   color: CH.purple },
+    EXPIRED:     { label: 'EXPIRED — re-render',       color: CH.red },
+    BYPASS:      { label: 'BYPASS — not cacheable',    color: CH.ghost },
+  };
 
   const presetAllRows = useMemo(() =>
     (data?.data?.req_preset_breakdown?.data ?? []).map((r: any) => ({
@@ -1454,6 +1477,37 @@ export default function AnalyticsDashboard() {
                 </ResponsiveContainer>
               )}
             </Card>
+            <Card title="Cache Status Breakdown" tag="cf-cache-status">
+              {loading ? <Skel h={200} /> : cacheStatusRows.length === 0 ? (
+                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>
+                  No cache status data — requires worker.js logging the real cf-cache-status header.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {cacheStatusRows.map(r => {
+                    const meta = STATUS_META[r.status] ?? { label: r.status, color: CH.ghost };
+                    const pct = totalCacheStatusReqs > 0 ? (r.requests / totalCacheStatusReqs) * 100 : 0;
+                    return (
+                      <div key={r.status}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
+                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>{meta.label}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: meta.color, fontWeight: 700 }}>{fmtPct(pct)}</span>
+                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                          </div>
+                        </div>
+                        <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', background: meta.color, opacity: 0.75, width: `${pct}%`, borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
             <Card title="Top Requested Posters" tag={`top ${topIds.length}`}>
               {loading ? <Skel h={320} /> : topIds.length === 0 ? (
                 <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>
@@ -1945,7 +1999,7 @@ export default function AnalyticsDashboard() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 500 }}>
                     <thead>
                       <tr>
-                        {['Node','Attempts','Success Rate','Avg Latency','p95 Inflight','CPU Proxy'].map(h => (
+                        {['Node','Attempts','Success Rate','Avg Latency','Max Inflight','CPU Proxy'].map(h => (
                           <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' ? 'left' : 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
                         ))}
                       </tr>
@@ -1957,7 +2011,7 @@ export default function AnalyticsDashboard() {
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.ghost }}>{fmtNum(r.total_attempts)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: rateColor(r.success_rate_pct) }}>{fmtPct(r.success_rate_pct)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.blue }}>{r.p95_inflight}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.blue }}>{r.max_inflight}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.cpu_proxy_ms) }}>{fmtMs(r.cpu_proxy_ms)}</td>
                         </tr>
                       ))}
@@ -2334,7 +2388,7 @@ export default function AnalyticsDashboard() {
             </div>
             {!wallStats || !num(wallStats.total_requests) ? (
               <div style={{ padding: 20, color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, background: 'var(--film-char)', borderRadius: 8, border: '1px solid var(--film-border)' }}>
-                No wall time data yet. Requires writeWallTime() calls in the poster handler.
+                No wall time data yet — REQUEST_ANALYTICS rows carry wall ms (double2) + success flag (double3) for every poster request.
               </div>
             ) : (
               <>

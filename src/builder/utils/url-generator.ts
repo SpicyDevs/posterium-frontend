@@ -245,7 +245,10 @@ export const generateCleanArtworkUrl = (
   p.set('source', config.source);
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
   if (config.ptype && config.ptype !== 'auto') p.set('ptype', config.ptype);
-  p.set('_t', `${id}-${config.source}-${config.textless}-${config.ptype}`);
+  // No `_t` cache-buster: every render-affecting option (source/tl/ptype) is
+  // already a real query param, so a config change always yields a different
+  // URL. Keeping the URL space clean avoids lingering Workers Cache entries
+  // for the same artwork rendered under different `_t` values.
   return `${cleanBase}/${type}/${id}.svg?${p.toString()}`;
 };
 
@@ -264,6 +267,7 @@ export const generateLogoUrl = (
     config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
   const url = new URL(`${cleanBase}/${type}/${id}/logo`);
   if (config.logoSource) url.searchParams.set('source', config.logoSource);
-  url.searchParams.set('_t', config.logoSource || 'auto');
+  // No `_t` cache-buster — `source` already varies the URL, so the Workers
+  // Cache key stays stable per logo artwork (see generateCleanArtworkUrl).
   return url.toString();
 };
