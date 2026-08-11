@@ -31,6 +31,7 @@ interface Props {
   onSelect: (id: RatingType, multi: boolean) => void;
   panelMode?: 'source' | 'layers';
   hideTabs?: boolean;
+  detailLevel?: 'simple' | 'advanced';
 }
 
 interface SearchResult {
@@ -66,6 +67,7 @@ const LayerPanel: React.FC<Props> = ({
   onSelect,
   panelMode,
   hideTabs = false,
+  detailLevel = 'advanced',
 }) => {
   const {
     setBatchSelection,
@@ -458,6 +460,7 @@ const LayerPanel: React.FC<Props> = ({
           setActiveTab={setActiveTab}
           enableBadges={enableBadges}
           disableBadges={disableBadges}
+          detailLevel={detailLevel}
         />
       )}
 

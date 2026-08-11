@@ -298,6 +298,7 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
         preset: (p.get('pos') as PosterConfig['preset']) || 'custom',
         posterBlur: getNum('pb', 'bg_blur', DEFAULTS.posterBlur),
         grayscale: p.get('gs') === '1',
+        logoGrayscale: p.get('lg') === '1',
         scale: getFloat('sc', 'g_scale', DEFAULTS.scale),
         borderW: p.has('bw') ? parseInt(p.get('bw')!) : DEFAULTS.borderW,
         borderC: p.has('bc')

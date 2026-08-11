@@ -40,6 +40,7 @@ export const DEFAULTS = {
   icon: true,
   posterBlur: 0,
   grayscale: false,
+  logoGrayscale: false,
   logoY: 630,
   logoW: 380,
   logoH: 100,

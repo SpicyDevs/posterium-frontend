@@ -14,6 +14,7 @@ export const DEFAULT_CONFIG: PosterConfig = {
   extension: 'png',
   posterBlur: 0,
   grayscale: false,
+  logoGrayscale: false,
   layout: 'custom',
   preset: 'custom',
   blur: 0,

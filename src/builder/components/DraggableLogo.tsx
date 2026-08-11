@@ -215,7 +215,10 @@ const DraggableLogo: React.FC<Props> = ({
               onLogoLoad?.(img.naturalWidth, img.naturalHeight);
             }}
             className="w-full h-full object-contain pointer-events-none relative z-10"
-            style={{ userSelect: 'none', filter: dropShadow }}
+            style={{
+              userSelect: 'none',
+              filter: `${dropShadow}${config.logoGrayscale ? ' grayscale(1)' : ''}`,
+            }}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 rounded relative z-10">

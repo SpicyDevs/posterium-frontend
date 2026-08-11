@@ -84,6 +84,7 @@ export interface PosterConfig {
   extension: ExtensionType;
   posterBlur: number;
   grayscale: boolean;
+  logoGrayscale: boolean;
   layout: LayoutType;
   preset: PresetType;
   blur: number;

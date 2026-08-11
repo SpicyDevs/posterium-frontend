@@ -52,6 +52,7 @@ export const generateApiUrl = (
 
   if (config.posterBlur > DEFAULTS.posterBlur) p.set('pb', config.posterBlur.toString());
   if (config.grayscale) p.set('gs', '1');
+  if (config.logoGrayscale) p.set('lg', '1');
 
   if (config.uiPreset && config.uiPreset !== 'b') p.set('p', config.uiPreset);
 

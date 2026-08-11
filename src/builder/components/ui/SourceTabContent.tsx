@@ -26,6 +26,35 @@ interface Props {
   setActiveTab: (tab: 'source' | 'layers' | 'badges' | 'logo' | 'selection') => void;
   enableBadges: () => void;
   disableBadges: (opts?: { persistPreference?: boolean }) => void;
+  detailLevel?: 'simple' | 'advanced';
+}
+
+const GRAYSCALE_MODES = [
+  { id: 'off', label: 'Off' },
+  { id: 'poster', label: 'Poster' },
+  { id: 'icons', label: 'Icons' },
+  { id: 'both', label: 'Both' },
+  { id: 'logo', label: 'Logo' },
+] as const;
+
+function grayscaleMode(config: PosterConfig): string {
+  const poster = config.grayscale;
+  const icons = (config.iconType ?? 1) === 3;
+  const logo = config.logoGrayscale;
+  if (poster && icons) return 'both';
+  if (poster) return 'poster';
+  if (icons) return 'icons';
+  if (logo) return 'logo';
+  return 'off';
+}
+
+function applyGrayscaleMode(config: PosterConfig, setConfig: Props['setConfig'], mode: string) {
+  setConfig({
+    ...config,
+    grayscale: mode === 'poster' || mode === 'both',
+    iconType: mode === 'icons' || mode === 'both' ? 3 : 1,
+    logoGrayscale: mode === 'logo',
+  });
 }
 
 const SourceTabContent: React.FC<Props> = ({
@@ -47,6 +76,7 @@ const SourceTabContent: React.FC<Props> = ({
   setActiveTab,
   enableBadges,
   disableBadges,
+  detailLevel = 'advanced',
 }) => {
   return (
     <div className="space-y-4 px-1">
@@ -302,12 +332,35 @@ const SourceTabContent: React.FC<Props> = ({
         unit="px"
         onChange={(v) => updateConfig('posterBlur', v)}
       />
-      <ToggleRow
-        label="Grayscale"
-        sub="Desaturate poster image"
-        checked={config.grayscale}
-        onChange={(v) => updateConfig('grayscale', v)}
-      />
+      {detailLevel === 'simple' ? (
+        <SegmentedRow
+          label="Grayscale"
+          value={grayscaleMode(config)}
+          onChange={(v) => applyGrayscaleMode(config, setConfig, v)}
+          options={GRAYSCALE_MODES.map((o) => ({ id: o.id, label: o.label }))}
+        />
+      ) : (
+        <div className="space-y-2">
+          <ToggleRow
+            label="Grayscale Poster"
+            sub="Desaturate poster image"
+            checked={config.grayscale}
+            onChange={(v) => updateConfig('grayscale', v)}
+          />
+          <ToggleRow
+            label="Grayscale Icons"
+            sub="Monochrome badge icons"
+            checked={(config.iconType ?? 1) === 3}
+            onChange={(v) => updateConfig('iconType', v ? 3 : 1)}
+          />
+          <ToggleRow
+            label="Grayscale Logo"
+            sub="Desaturate title art logo"
+            checked={config.logoGrayscale}
+            onChange={(v) => updateConfig('logoGrayscale', v)}
+          />
+        </div>
+      )}
 
       {/* Logo overlay */}
       <div className="pt-5">
