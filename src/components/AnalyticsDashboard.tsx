@@ -23,6 +23,7 @@ const POSTER_API = DEFAULT_API_BASE;
 const AUTH_KEY = 'posterium_analytics_auth_v4';
 const CONFIG_KEY = 'posterium_dash_config_v4';
 const CORRECT_PW = 'admin123';
+const ADMIN_API_PASS = 'Aayush1234';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const CH = {
@@ -534,8 +535,8 @@ export default function AnalyticsDashboard() {
   const fetchNodeHealth = useCallback(async () => {
     setHealthLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/nodes/health?pass=${encodeURIComponent(pw)}`, {
-        headers: { 'X-Admin-Token': pw },
+      const res = await fetch(`${API_BASE}/admin/nodes/health?pass=${encodeURIComponent(ADMIN_API_PASS)}`, {
+        headers: { 'X-Admin-Token': ADMIN_API_PASS },
         signal: AbortSignal.timeout(6000),
       });
       if (res.ok) {
@@ -547,7 +548,7 @@ export default function AnalyticsDashboard() {
     } finally {
       setHealthLoading(false);
     }
-  }, [pw]);
+  }, []);
 
   useEffect(() => { if (authed) fetchNodeHealth(); }, [authed, fetchNodeHealth]);
   useEffect(() => {

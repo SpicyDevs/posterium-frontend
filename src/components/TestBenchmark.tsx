@@ -93,6 +93,7 @@ interface Benchmark {
   lb: LbResult;
   nodes: NodeResult[];
   summary: { fastestMs:number|null; fastestLabel:string|null; successCount:number };
+  serverNote: string;
   timestamp: string;
 }
 
@@ -287,6 +288,7 @@ async function runBenchmark(
     svgRefCacheStatus, svgB64CacheStatus, bustCache,
     lb, nodes,
     summary: { fastestMs, fastestLabel, successCount: nodes.filter(n=>n.postUrl.ok||n.postB64.ok).length },
+    serverNote,
     timestamp: new Date().toISOString(),
   };
 }
@@ -832,6 +834,15 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           ...SYNE, fontWeight:700 }}>↻ Re-run</button>
       </div>
 
+      {/* Server-side benchmark partial failure banner */}
+      {bench.serverNote && (
+        <div style={{ padding:'8px 12px', borderRadius:8,
+          background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)',
+          color:'#fbbf24', fontSize:10, ...MONO }}>
+          ⚠ server-side benchmark partially failed — {bench.serverNote}. Node cards below show fallback state.
+        </div>
+      )}
+
       {/* LB Ladder — production fallback-protection test */}
       <div style={{ background:C.char, border:`1px solid ${bench.lb.ok ? C.border : 'rgba(248,113,113,0.25)'}`,
         borderRadius:8, overflow:'hidden' }}>
@@ -891,7 +902,9 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
         {[
           { l:'Fastest POST', v: fmtMs(bench.summary.fastestMs), c: msColor(bench.summary.fastestMs) },
           { l:'Best Node',    v: bench.summary.fastestLabel ?? '—', c: C.gold },
-          { l:'Nodes OK',     v: `${bench.summary.successCount}/${NODES.length}`, c:'var(--film-cream)' },
+          { l:'Nodes OK',     v: `${bench.summary.successCount}/${NODES.length}`,
+            c: bench.summary.successCount === 0 ? C.red
+              : bench.summary.successCount < NODES.length ? C.yellow : C.green },
           { l:'LB Attempts',  v: bench.lb.attempts != null ? String(bench.lb.attempts) : '—', c: C.blue },
           { l:'LB Wall',      v: bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—', c: C.purple },
           { l:'LB Source',    v: bench.lb.rasterSource ?? '—', c: C.gold },
@@ -1043,6 +1056,7 @@ export default function TestBenchmark() {
   const [step,    setStep]    = useState('');
   const [error,   setError]   = useState('');
   const [lastRun, setLastRun] = useState<{type:string;id:string;params:string;format:string;bust:boolean}|null>(null);
+  const [updateReady, setUpdateReady] = useState(false);
   const blobUrls = useRef<string[]>([]);
 
   const cleanupBlobs = useCallback(() => {
@@ -1051,6 +1065,27 @@ export default function TestBenchmark() {
   }, []);
 
   useEffect(() => () => cleanupBlobs(), [cleanupBlobs]);
+
+  // Stale-bundle hint: surface a reload toast when a new service-worker build is waiting.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    let removeUpdateFound: (() => void) | undefined;
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'SKIP_WAITING') setUpdateReady(true);
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (!reg) return;
+      if (reg.waiting) { setUpdateReady(true); return; }
+      const onUpdate = () => { if (reg.waiting) setUpdateReady(true); };
+      reg.addEventListener('updatefound', onUpdate);
+      removeUpdateFound = () => reg.removeEventListener('updatefound', onUpdate);
+    });
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', onMessage);
+      removeUpdateFound?.();
+    };
+  }, []);
 
   const go = useCallback(async (type:string, id:string, params:string, format:string, bust:boolean) => {
     cleanupBlobs();
@@ -1137,6 +1172,16 @@ export default function TestBenchmark() {
             onRerun={() => lastRun && go(lastRun.type, lastRun.id, lastRun.params, lastRun.format, lastRun.bust)} />
         )}
       </main>
+
+      {updateReady && (
+        <button onClick={() => window.location.reload()}
+          style={{ position:'fixed', right:16, bottom:16, zIndex:80,
+            padding:'10px 16px', background:C.amber, border:'none', borderRadius:8,
+            color:'#070706', fontSize:11, cursor:'pointer', ...SYNE, fontWeight:700,
+            boxShadow:'0 8px 24px rgba(0,0,0,0.45)' }}>
+          New version available — tap to reload
+        </button>
+      )}
     </div>
   );
 }
