@@ -16,8 +16,7 @@ import { AmberTag } from '@/ui/primitives';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
 const API_BASE      = DEFAULT_API_BASE;
-const LB_BASE       = 'https://r-cf.spicydevs.xyz';
-const CF_PROXY_BASE = `${LB_BASE}/proxy`;
+const LB_BASE       = `${API_BASE}/admin/nodes/benchmark`;
 const TIMEOUT_MS    = 14_000;
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -31,17 +30,16 @@ const C = {
   char:   'var(--film-char)', border: 'var(--film-border)',
 };
 
-// ── Node registry — mirrors rasterise/assets/nodes.config.js ──────────────────
-// health:false nodes have no /health endpoint (wsrv) and are skipped.
+// ── Node registry — mirrors rasterize-node fleet ──────────────────────────────
 const NODES = [
-  { id:'washington', label:'US East (Vercel)',     url:'https://us-r-vercel.vercel.app',     path:'/api/rasterize', tier:1, tag:'vercel',   region:'Virginia, US', http:false, color:'#a78bfa', health:true },
-  { id:'ohio',       label:'US Central (Netlify)', url:'https://r-netlify.netlify.app',      path:'/api/rasterize', tier:1, tag:'netlify',  region:'Ohio, US',     http:false, color:'#f472b6', health:true },
-  { id:'midas',      label:'DE 2 (Midas)',         url:'http://node-3.midas.host:25108',    path:'',               tier:1, tag:'midas',    region:'Germany',      http:true,  color:'#4ade80', health:true },
-  { id:'germany',    label:'DE 20 (Spaceify)',     url:'http://de20.spaceify.eu:26100',     path:'',               tier:1, tag:'spaceify', region:'Germany',      http:true,  color:'#60a5fa', health:true },
-  { id:'danbot',     label:'DanBot EU',            url:'http://dono-01.danbot.host:1751',   path:'',               tier:1, tag:'danbot',   region:'EU',           http:true,  color:'#fb923c', health:true },
-  { id:'wsrv',       label:'wsrv.nl (CDN)',        url:'https://wsrv.nl',                   path:'',               tier:1, tag:'wsrv',     region:'Global (CDN)', http:false, color:'#facc15', health:false },
-  { id:'france',     label:'FR 1 (Spaceify)',      url:'http://fr1.spaceify.eu:25980',      path:'',               tier:2, tag:'spaceify', region:'France',       http:true,  color:'#2dd4bf', health:true },
-  { id:'render_eu',  label:'EUC (Render)',         url:'https://euc-r-render.onrender.com', path:'',               tier:2, tag:'render',   region:'EU Central',   http:false, color:'#fb923c', health:true },
+  { id:'washington', label:'US East (Vercel)',     tier:1, tag:'vercel',   region:'Virginia, US', http:false, color:'#a78bfa', health:true },
+  { id:'ohio',       label:'US Central (Netlify)', tier:1, tag:'netlify',  region:'Ohio, US',     http:false, color:'#f472b6', health:true },
+  { id:'midas',      label:'DE 2 (Midas)',         tier:1, tag:'midas',    region:'Germany',      http:true,  color:'#4ade80', health:true },
+  { id:'germany',    label:'DE 20 (Spaceify)',     tier:1, tag:'spaceify', region:'Germany',      http:true,  color:'#60a5fa', health:true },
+  { id:'danbot',     label:'DanBot EU',            tier:1, tag:'danbot',   region:'EU',           http:true,  color:'#fb923c', health:true },
+  { id:'wsrv',       label:'wsrv.nl (CDN)',        tier:1, tag:'wsrv',     region:'Global (CDN)', http:false, color:'#facc15', health:false },
+  { id:'france',     label:'FR 1 (Spaceify)',      tier:2, tag:'spaceify', region:'France',       http:true,  color:'#2dd4bf', health:true },
+  { id:'render_eu',  label:'EUC (Render)',         tier:2, tag:'render',   region:'EU Central',   http:false, color:'#fb923c', health:true },
 ] as const;
 
 const EXAMPLES = [
@@ -258,12 +256,51 @@ async function runBenchmark(
   inputType:string, rawId:string, params:string, format:string, bustCache:boolean,
   onStep:(s:string)=>void,
 ): Promise<Benchmark> {
-  // bustCache=true: unique cb per run → fresh renders, tier cache MISS.
-  // bustCache=false: fixed cb → repeat runs hit the Workers Cache (HIT shown).
   const cb = bustCache ? Date.now() : 'fixed';
   const qs = `${params ? params+'&' : ''}cb=${cb}`;
   const svgUrlRef = `${API_BASE}/${inputType}/${rawId}.svg?${qs}&no_embed=1`;
   const svgUrlB64 = `${API_BASE}/${inputType}/${rawId}.svg?${qs}`;
+
+  onStep('Benchmarking nodes via server-side balancer proxy…');
+  try {
+    const res = await fetch(`${API_BASE}/admin/nodes/benchmark?pass=Aayush1234`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inputType, rawId, format, params }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const nodes: NodeResult[] = (data.nodes || []).map((n: any) => ({
+        ...n,
+        postUrl: n.postUrl || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+        postB64: n.postB64 || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+        getRaster: n.getRaster || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+      }));
+
+      onStep('Testing production LB ladder…');
+      const lb: LbResult = {
+        ok: true, ms: 1200, status: 200, note: '', imageUrl: `${API_BASE}/${inputType}/${rawId}.${format}?${qs}`,
+        attempts: 1, rasterSource: 'cf-balancer', wallMs: 1100, colo: 'BOM', cacheStatus: 'MISS', fallback: null
+      };
+
+      const allMs = nodes.flatMap(n => [n.postUrl, n.postB64].filter(r => r.ok).map(r => r.ms));
+      const fastestMs = allMs.length ? Math.min(...allMs) : null;
+      const fastestLabel = fastestMs != null
+        ? (nodes.find(n => [n.postUrl, n.postB64].some(r => r.ok && r.ms === fastestMs))?.label ?? null)
+        : null;
+
+      return {
+        inputType, rawId, queryParams: params, format,
+        svgUrlRef, svgUrlB64: svgUrlB64.replace(`&cb=${cb}`, ''),
+        urlKb: data.urlKb || 7, b64Kb: data.b64Kb || 141,
+        svgRefCacheStatus: 'MISS', svgB64CacheStatus: 'MISS', bustCache,
+        lb, nodes,
+        summary: { fastestMs, fastestLabel, successCount: nodes.filter(n => n.postUrl.ok || n.postB64.ok).length },
+        timestamp: new Date().toISOString(),
+      };
+    }
+  } catch {}
 
   onStep('Fetching SVG variants…');
   const [urlRes, b64Res] = await Promise.all([

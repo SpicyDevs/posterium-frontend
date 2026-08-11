@@ -37,13 +37,10 @@ const PIE_COLORS = [
   CH.purple, CH.teal, CH.red, CH.pink,
 ];
 
-// HTTPS-only nodes we can poll from the browser. Current fleet (nodeRegistry):
-// midas/germany/danbot/france are plain-HTTP (mixed content blocks browser
-// fetch), wsrv exposes no /health — so only the three below are reachable.
 const LIVE_HEALTH_NODES = [
-  { id: 'washington', label: 'US East · Vercel',   url: 'https://us-r-vercel.vercel.app' },
-  { id: 'ohio',       label: 'US Central · Netlify', url: 'https://r-netlify.netlify.app' },
-  { id: 'render_eu',  label: 'EUC · Render',       url: 'https://euc-r-render.onrender.com' },
+  { id: 'washington', label: 'US East · Vercel' },
+  { id: 'ohio',       label: 'US Central · Netlify' },
+  { id: 'render_eu',  label: 'EUC · Render' },
 ];
 
 function nodeColor(n: string) {
@@ -536,23 +533,21 @@ export default function AnalyticsDashboard() {
 
   const fetchNodeHealth = useCallback(async () => {
     setHealthLoading(true);
-    const results = await Promise.allSettled(
-      LIVE_HEALTH_NODES.map(async n => {
-        try {
-          const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
-          return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
-        } catch (e: any) {
-          return [n.id, { error: e?.name === 'AbortError' ? 'Timeout 4s' : 'Offline / Blocked' }] as const;
-        }
-      })
-    );
-    setNodeHealth(Object.fromEntries(
-      results.map((r, i) =>
-        r.status === 'fulfilled' && r.value ? r.value : [LIVE_HEALTH_NODES[i].id, { error: 'Offline / Blocked' }]
-      )
-    ));
-    setHealthLoading(false);
-  }, []);
+    try {
+      const res = await fetch(`${API_BASE}/admin/nodes/health?pass=${encodeURIComponent(pw)}`, {
+        headers: { 'X-Admin-Token': pw },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.health) setNodeHealth(json.health);
+      }
+    } catch {
+      /* keep fallback state */
+    } finally {
+      setHealthLoading(false);
+    }
+  }, [pw]);
 
   useEffect(() => { if (authed) fetchNodeHealth(); }, [authed, fetchNodeHealth]);
   useEffect(() => {
