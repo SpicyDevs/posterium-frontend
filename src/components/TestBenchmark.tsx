@@ -1,11 +1,16 @@
 // src/components/admin/TestBenchmark.tsx
 //
-// v5 — Fleet-accurate + production-LB aware:
+// v6 — Server-side fleet benchmark + real LB ladder:
 //   • NODES registry matches rasterise/assets/nodes.config.js (washington,
 //     ohio, midas, germany, danbot, wsrv, france, render_eu) with real tiers
-//   • Production LB ladder test: POSTs the B64-SVG to r-cf.spicydevs.xyz with
-//     X-Fallback-Image-Url set, reports attempts/source/wall/colo, follows
-//     302 fallback redirects (fallback protection — nodes must not be skipped)
+//   • Node bench runs entirely server-side (POST /admin/nodes/benchmark) —
+//     browsers cannot reach the fleet directly (mixed-content http nodes,
+//     opaque cross-origin 302s, CORS), so no client-side node probes
+//   • Health merged from GET /admin/nodes/health (server-side probes)
+//   • Production LB ladder test: POST /admin/nodes/lb relays the same SVG
+//     through the RASTERIZER service binding (Worker B) with
+//     X-Fallback-Image-Url set; reports attempts/source/wall/colo, and the
+//     X-Fallback-Fired header when the 302 original-poster fallback fired
 //   • Cache-bust toggle: unique cb param = fresh renders (cf-cache-status
 //     shown on the SVG fetches); fixed cb = tier cache HIT on re-runs
 //   • wsrv special-cased (output= param, no /health endpoint)
@@ -15,10 +20,9 @@ import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
 
-const API_BASE      = DEFAULT_API_BASE;
-const LB_BASE       = `${API_BASE}/admin/nodes/benchmark`;
-const CF_PROXY_BASE = `${API_BASE}/admin/nodes/benchmark`;
-const TIMEOUT_MS    = 14_000;
+const API_BASE   = DEFAULT_API_BASE;
+const LB_BASE    = `${API_BASE}/admin/nodes/lb?pass=Aayush1234`;
+const TIMEOUT_MS = 25_000;
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
@@ -33,14 +37,14 @@ const C = {
 
 // ── Node registry — mirrors rasterize-node fleet ──────────────────────────────
 const NODES = [
-  { id:'washington', label:'US East (Vercel)',     tier:1, tag:'vercel',   region:'Virginia, US', http:false, color:'#a78bfa', health:true },
-  { id:'ohio',       label:'US Central (Netlify)', tier:1, tag:'netlify',  region:'Ohio, US',     http:false, color:'#f472b6', health:true },
-  { id:'midas',      label:'DE 2 (Midas)',         tier:1, tag:'midas',    region:'Germany',      http:true,  color:'#4ade80', health:true },
-  { id:'germany',    label:'DE 20 (Spaceify)',     tier:1, tag:'spaceify', region:'Germany',      http:true,  color:'#60a5fa', health:true },
-  { id:'danbot',     label:'DanBot EU',            tier:1, tag:'danbot',   region:'EU',           http:true,  color:'#fb923c', health:true },
-  { id:'wsrv',       label:'wsrv.nl (CDN)',        tier:1, tag:'wsrv',     region:'Global (CDN)', http:false, color:'#facc15', health:false },
-  { id:'france',     label:'FR 1 (Spaceify)',      tier:2, tag:'spaceify', region:'France',       http:true,  color:'#2dd4bf', health:true },
-  { id:'render_eu',  label:'EUC (Render)',         tier:2, tag:'render',   region:'EU Central',   http:false, color:'#fb923c', health:true },
+  { id:'washington', label:'US East (Vercel)',     tier:1, tag:'vercel',   region:'Virginia, US', url:'https://us-r-vercel.vercel.app',     path:'/api/rasterize', http:false, color:'#a78bfa', health:true },
+  { id:'ohio',       label:'US Central (Netlify)', tier:1, tag:'netlify',  region:'Ohio, US',     url:'https://r-netlify.netlify.app',      path:'/api/rasterize', http:false, color:'#f472b6', health:true },
+  { id:'midas',      label:'DE 2 (Midas)',         tier:1, tag:'midas',    region:'Germany',      url:'http://node-3.midas.host:25108',     path:'',               http:true,  color:'#4ade80', health:true },
+  { id:'germany',    label:'DE 20 (Spaceify)',     tier:1, tag:'spaceify', region:'Germany',      url:'http://de20.spaceify.eu:26100',      path:'',               http:true,  color:'#60a5fa', health:true },
+  { id:'danbot',     label:'DanBot EU',            tier:1, tag:'danbot',   region:'EU',           url:'http://dono-01.danbot.host:1751',    path:'',               http:true,  color:'#fb923c', health:true },
+  { id:'wsrv',       label:'wsrv.nl (CDN)',        tier:1, tag:'wsrv',     region:'Global (CDN)', url:'https://wsrv.nl',                    path:'',               http:false, color:'#facc15', health:false },
+  { id:'france',     label:'FR 1 (Spaceify)',      tier:2, tag:'spaceify', region:'France',       url:'http://fr1.spaceify.eu:25980',       path:'',               http:true,  color:'#2dd4bf', health:true },
+  { id:'render_eu',  label:'EUC (Render)',         tier:2, tag:'render',   region:'EU Central',   url:'https://euc-r-render.onrender.com',  path:'',               http:false, color:'#fb923c', health:true },
 ] as const;
 
 const EXAMPLES = [
@@ -104,11 +108,6 @@ const msColor = (ms:number|null) => {
   return C.red;
 };
 
-function proxyUrl(node: typeof NODES[number], targetUrl:string): string {
-  if (!node.http) return targetUrl;
-  return `${CF_PROXY_BASE}?url=${encodeURIComponent(targetUrl)}`;
-}
-
 async function fetchWithImage(url:string, opts:RequestInit={}): Promise<FetchResult> {
   const t0 = performance.now();
   try {
@@ -124,9 +123,13 @@ async function fetchWithImage(url:string, opts:RequestInit={}): Promise<FetchRes
     const wallMsRaw     = res.headers.get('x-wall-ms');
     const colo          = res.headers.get('x-cf-colo');
     const renderFb      = res.headers.get('x-render-fallback');
+    const fbFired       = res.headers.get('x-fallback-fired');
     const attempts      = attemptsRaw ? parseInt(attemptsRaw, 10) || null : null;
     const wallMs        = wallMsRaw ? parseInt(wallMsRaw, 10) || null : null;
-    const meta = { cacheStatus, rasterSource, attempts, wallMs, colo, fallback: renderFb || null };
+    const meta = {
+      cacheStatus, rasterSource, attempts, wallMs, colo,
+      fallback: renderFb || (fbFired ? 'poster fallback' : null),
+    };
     if (!res.ok) {
       await res.body?.cancel().catch(()=>{});
       return { ok:false, ms, status:res.status, note:`HTTP ${res.status}`, imageUrl:null, ...meta };
@@ -144,113 +147,52 @@ async function fetchWithImage(url:string, opts:RequestInit={}): Promise<FetchRes
   }
 }
 
-async function fetchHealth(node: typeof NODES[number]): Promise<HealthData> {
-  if (node.health === false)
-    return { reachable:false, skipped:true, error:'no /health endpoint' };
-  const healthTarget = proxyUrl(node, `${node.url}/health`);
+// Server-side fleet health —  backend probes every node (/admin/nodes/health),
+// browsers can't reach the raw fleet directly (mixed-content http nodes, CORS).
+async function fetchFleetHealth(): Promise<Record<string, HealthData>> {
   try {
-    const res = await fetch(healthTarget, { signal: AbortSignal.timeout(5_000) });
-    if (!res.ok) return { reachable:false, error:`HTTP ${res.status}` };
-    const data = await res.json();
-    return { reachable:true, ...data };
-  } catch(e:any) {
-    return { reachable:false, error: e.message };
-  }
-}
-
-async function benchNode(
-  node: typeof NODES[number],
-  urlSvg:string, b64Svg:string, svgUrlRef:string, format:string,
-): Promise<NodeResult> {
-  // wsrv.nl uses output= (not format=) and has no /api/rasterize path.
-  const isWsrv     = node.id === 'wsrv';
-  const queryParam = isWsrv ? 'output' : 'format';
-  const base       = `${node.url}${node.path}?${queryParam}=${format}`;
-  const postTarget = proxyUrl(node, base);
-  const getRasterTarget = proxyUrl(node, `${node.url}${node.path}?${queryParam}=${format}&url=${encodeURIComponent(svgUrlRef)}`);
-  const headers    = { 'Content-Type':'image/svg+xml', 'X-Format':format };
-
-  const [health, postUrl, postB64, getRaster] = await Promise.all([
-    fetchHealth(node),
-    urlSvg && !isWsrv
-      ? fetchWithImage(postTarget, { method:'POST', body:urlSvg, headers })
-      : Promise.resolve({ ok:false, ms:0, status:0, note: isWsrv ? 'GET-only CDN (no POST endpoint)' : 'SVG unavailable', imageUrl:null }),
-    b64Svg && !isWsrv
-      ? fetchWithImage(postTarget, { method:'POST', body:b64Svg, headers })
-      : Promise.resolve({ ok:false, ms:0, status:0, note: isWsrv ? 'GET-only CDN (no POST endpoint)' : 'SVG unavailable', imageUrl:null }),
-    // GET rasterisation — last, slowest path
-    fetchWithImage(getRasterTarget),
-  ]);
-
-  return { ...node, health, postUrl, postB64, getRaster };
-}
-
-// Production LB ladder test — verifies the single → pair → serial fallback
-// chain AND the hard-wall redirect: X-Fallback-Image-Url is the original
-// poster, so a total node failure must 302 to it (fallback protection),
-// never a bare 502.
-async function benchLb(
-  b64Svg:string, inputType:string, rawId:string, qs:string, format:string,
-): Promise<LbResult> {
-  const posterUrl = `${API_BASE}/${inputType}/${rawId}.png?${qs}`;
-  const t0 = performance.now();
-  try {
-    const res = await fetch(LB_BASE, {
-      method:'POST',
-      headers: {
-        'Content-Type':'image/svg+xml',
-        'X-Format':format,
-        'X-Poster-Url':posterUrl,
-        'X-Fallback-Image-Url':posterUrl,
-        'X-Input-Type':inputType,
-      },
-      body: b64Svg,
-      redirect:'manual',
-      signal: AbortSignal.timeout(20_000),
+    const res = await fetch(`${API_BASE}/admin/nodes/health?pass=Aayush1234`, {
+      headers: { 'X-Admin-Token': 'Aayush1234' },
+      signal: AbortSignal.timeout(10_000),
     });
-    const ms = Math.round(performance.now() - t0);
-    const attemptsRaw = res.headers.get('x-attempt-count');
-    const wallMsRaw   = res.headers.get('x-wall-ms');
-    const attempts    = attemptsRaw ? parseInt(attemptsRaw, 10) || null : null;
-    const wallMs      = wallMsRaw ? parseInt(wallMsRaw, 10) || null : null;
-    const colo        = res.headers.get('x-cf-colo');
-    const cacheStatus = res.headers.get('cf-cache-status');
-
-    if (res.status === 302) {
-      // Fallback protection fired: follow the redirect to the original poster.
-      const loc = res.headers.get('location') || posterUrl;
-      const img = await fetchWithImage(loc);
-      return {
-        ok: img.ok, ms, status:302,
-        note: img.ok ? 'All nodes exhausted → redirected to original poster' : `302 → ${loc.slice(0,80)}`,
-        imageUrl: img.imageUrl,
-        attempts, rasterSource:null, wallMs, colo,
-        cacheStatus: img.cacheStatus ?? null, fallback: img.ok ? 'poster fallback' : null,
-      };
-    }
-    if (!res.ok) {
-      const txt = await res.text().catch(()=> '');
-      return { ok:false, ms, status:res.status, note:txt.slice(0,120) || `HTTP ${res.status}`,
-        imageUrl:null, attempts, rasterSource:null, wallMs, colo, cacheStatus, fallback:null };
-    }
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.startsWith('image/')) {
-      const txt = await res.text();
-      return { ok:false, ms, status:res.status, note:`Non-image (${ct.split(';')[0]}): ${txt.slice(0,80)}`,
-        imageUrl:null, attempts, rasterSource:res.headers.get('x-raster-source'), wallMs, colo, cacheStatus, fallback:null };
-    }
-    const buf = await res.arrayBuffer();
-    return {
-      ok:true, ms, status:res.status, note:'Ladder served a raster',
-      imageUrl: URL.createObjectURL(new Blob([buf],{type:ct})),
-      attempts, rasterSource:res.headers.get('x-raster-source'), wallMs, colo, cacheStatus, fallback:null,
-    };
-  } catch(e:any) {
-    return { ok:false, ms:Math.round(performance.now()-t0), status:0,
-      note: e.name==='AbortError' ? 'Timeout 20s' : e.message,
-      imageUrl:null, attempts:null, rasterSource:null, wallMs:null, colo:null,
-      cacheStatus:null, fallback:null };
+    if (!res.ok) return {};
+    const data = await res.json();
+    return (data.health || {}) as Record<string, HealthData>;
+  } catch {
+    return {};
   }
+}
+
+// Production LB ladder test via the backend relay (/admin/nodes/lb): the
+// backend re-fetches the fresh SVG + original poster URL, POSTs them to
+// Worker B through the RASTERIZER service binding with X-Fallback-Image-Url
+// set, and streams back the raster — or, when the whole fleet fails, the
+// original poster with X-Fallback-Fired: 1 (fallback protection, never 502).
+async function benchLb(
+  inputType:string, rawId:string, params:string, format:string,
+): Promise<LbResult> {
+  const r = await fetchWithImage(LB_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputType, rawId, format, params }),
+  });
+  return {
+    ok: r.ok,
+    ms: r.ms,
+    status: r.status,
+    note: r.ok
+      ? (r.fallback
+          ? 'All nodes exhausted → served original poster (fallback protection OK)'
+          : 'Ladder served a raster')
+      : r.note.slice(0, 120) || `HTTP ${r.status}`,
+    imageUrl: r.imageUrl,
+    attempts: r.attempts ?? null,
+    rasterSource: r.rasterSource ?? null,
+    wallMs: r.wallMs ?? null,
+    colo: r.colo ?? null,
+    cacheStatus: r.cacheStatus ?? null,
+    fallback: r.fallback ?? null,
+  };
 }
 
 async function runBenchmark(
@@ -262,7 +204,26 @@ async function runBenchmark(
   const svgUrlRef = `${API_BASE}/${inputType}/${rawId}.svg?${qs}&no_embed=1`;
   const svgUrlB64 = `${API_BASE}/${inputType}/${rawId}.svg?${qs}`;
 
-  onStep('Benchmarking nodes via server-side balancer proxy…');
+  onStep('Fetching SVG variants…');
+  const [urlRes, b64Res] = await Promise.all([
+    fetch(svgUrlRef, { signal:AbortSignal.timeout(8_000) }).catch(()=>null),
+    fetch(svgUrlB64, { signal:AbortSignal.timeout(8_000) }).catch(()=>null),
+  ]);
+  const svgRefCacheStatus = urlRes?.ok ? urlRes.headers.get('cf-cache-status') : null;
+  const svgB64CacheStatus = b64Res?.ok ? b64Res.headers.get('cf-cache-status') : null;
+  const urlSvg  = urlRes?.ok ? await urlRes.text() : '';
+  const b64Svg  = b64Res?.ok ? await b64Res.text() : '';
+  const urlKb   = urlSvg ? Math.round(new Blob([urlSvg]).size/1024) : 0;
+  const b64Kb   = b64Svg ? Math.round(new Blob([b64Svg]).size/1024) : 0;
+
+  onStep('Probing fleet health server-side…');
+  const healthMap = await fetchFleetHealth();
+
+  onStep('Benchmarking nodes via server-side balancer…');
+  let nodes: NodeResult[] = [];
+  let serverNote = '';
+  let serverUrlKb: number | undefined;
+  let serverB64Kb: number | undefined;
   try {
     const res = await fetch(`${API_BASE}/admin/nodes/benchmark?pass=Aayush1234`, {
       method: 'POST',
@@ -272,57 +233,44 @@ async function runBenchmark(
     });
     if (res.ok) {
       const data = await res.json();
-      const nodes: NodeResult[] = (data.nodes || []).map((n: any) => ({
-        ...n,
-        postUrl: n.postUrl || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
-        postB64: n.postB64 || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
-        getRaster: n.getRaster || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
-      }));
-
-      onStep('Testing production LB ladder…');
-      const lb: LbResult = {
-        ok: true, ms: 1200, status: 200, note: '', imageUrl: `${API_BASE}/${inputType}/${rawId}.${format}?${qs}`,
-        attempts: 1, rasterSource: 'cf-balancer', wallMs: 1100, colo: 'BOM', cacheStatus: 'MISS', fallback: null
-      };
-
-      const allMs = nodes.flatMap(n => [n.postUrl, n.postB64].filter(r => r.ok).map(r => r.ms));
-      const fastestMs = allMs.length ? Math.min(...allMs) : null;
-      const fastestLabel = fastestMs != null
-        ? (nodes.find(n => [n.postUrl, n.postB64].some(r => r.ok && r.ms === fastestMs))?.label ?? null)
-        : null;
-
-      return {
-        inputType, rawId, queryParams: params, format,
-        svgUrlRef, svgUrlB64: svgUrlB64.replace(`&cb=${cb}`, ''),
-        urlKb: data.urlKb || 7, b64Kb: data.b64Kb || 141,
-        svgRefCacheStatus: 'MISS', svgB64CacheStatus: 'MISS', bustCache,
-        lb, nodes,
-        summary: { fastestMs, fastestLabel, successCount: nodes.filter(n => n.postUrl.ok || n.postB64.ok).length },
-        timestamp: new Date().toISOString(),
-      };
+      serverUrlKb = data.urlKb;
+      serverB64Kb = data.b64Kb;
+      nodes = (data.nodes || []).map((n: any): NodeResult => {
+        const reg = NODES.find(x => x.id === n.id);
+        return {
+          ...n,
+          url: reg?.url ?? n.url ?? '',
+          http: reg?.http ?? false,
+          health: healthMap[n.id] ?? { reachable: false, error: 'no health data' },
+          postUrl: n.postUrl || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+          postB64: n.postB64 || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+          getRaster: n.getRaster || { ok: false, ms: 0, status: 0, note: 'Unavailable', imageUrl: null },
+        };
+      });
+    } else {
+      serverNote = `benchmark: HTTP ${res.status}`;
     }
-  } catch {}
+  } catch(e:any) {
+    serverNote = `benchmark: ${e.message}`;
+  }
 
-  onStep('Fetching SVG variants…');
-  const [urlRes, b64Res] = await Promise.all([
-    fetch(svgUrlRef, { signal:AbortSignal.timeout(8_000) }).catch(()=>null),
-    fetch(svgUrlB64, { signal:AbortSignal.timeout(8_000) }).catch(()=>null),
-  ]);
-  const urlSvg = urlRes?.ok ? await urlRes.text() : '';
-  const b64Svg = b64Res?.ok ? await b64Res.text() : '';
-  const urlKb  = urlSvg ? Math.round(new Blob([urlSvg]).size/1024) : 0;
-  const b64Kb  = b64Svg ? Math.round(new Blob([b64Svg]).size/1024) : 0;
-  const svgRefCacheStatus = urlRes?.ok ? urlRes.headers.get('cf-cache-status') : null;
-  const svgB64CacheStatus = b64Res?.ok ? b64Res.headers.get('cf-cache-status') : null;
+  // Fallback: no server-side bench available — still show health + LB ladder.
+  if (!nodes.length) {
+    nodes = NODES.map((n): NodeResult => ({
+      id: n.id, label: n.label, url: n.url, tier: n.tier, tag: n.tag,
+      region: n.region, http: n.http, color: n.color,
+      health: healthMap[n.id]
+        ?? (n.health
+            ? { reachable: false, error: serverNote || 'unreachable' }
+            : { reachable: false, skipped: true, error: 'no /health endpoint' }),
+      postUrl:   { ok: false, ms: 0, status: 0, note: serverNote || 'server-side benchmark unavailable', imageUrl: null },
+      postB64:   { ok: false, ms: 0, status: 0, note: serverNote || 'server-side benchmark unavailable', imageUrl: null },
+      getRaster: { ok: false, ms: 0, status: 0, note: serverNote || 'server-side benchmark unavailable', imageUrl: null },
+    }));
+  }
 
-  onStep('Benchmarking all nodes in parallel…');
-  const nodes = await Promise.all(NODES.map(n => benchNode(n, urlSvg, b64Svg, svgUrlRef, format)));
-
-  onStep('Testing production LB ladder…');
-  const lb = b64Svg
-    ? await benchLb(b64Svg, inputType, rawId, qs, format)
-    : { ok:false, ms:0, status:0, note:'SVG unavailable', imageUrl:null, attempts:null,
-        rasterSource:null, wallMs:null, colo:null, cacheStatus:null, fallback:null };
+  onStep('Testing production LB ladder (via Worker B relay)…');
+  const lb = await benchLb(inputType, rawId, params, format);
 
   const allMs = nodes.flatMap(n =>
     [n.postUrl, n.postB64].filter(r => r.ok).map(r => r.ms)
@@ -334,8 +282,9 @@ async function runBenchmark(
 
   return {
     inputType, rawId, queryParams:params, format,
-    svgUrlRef, svgUrlB64: svgUrlB64.replace(`&cb=${cb}`,''),
-    urlKb, b64Kb, svgRefCacheStatus, svgB64CacheStatus, bustCache,
+    svgUrlRef, svgUrlB64,
+    urlKb: serverUrlKb ?? urlKb, b64Kb: serverB64Kb ?? b64Kb,
+    svgRefCacheStatus, svgB64CacheStatus, bustCache,
     lb, nodes,
     summary: { fastestMs, fastestLabel, successCount: nodes.filter(n=>n.postUrl.ok||n.postB64.ok).length },
     timestamp: new Date().toISOString(),
@@ -482,7 +431,7 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
             </div>
             <div style={{ ...MONO, fontSize:7, color:C.ghost, marginTop:1 }}>
               {node.region}
-              {node.http && <span style={{ color:C.teal, marginLeft:5 }}>· via proxy</span>}
+              <span style={{ color:C.teal, marginLeft:5 }}>· server-side probe</span>
             </div>
           </div>
           <div style={{ display:'flex', gap:4, alignItems:'center', flexWrap:'wrap', justifyContent:'flex-end' }}>
@@ -891,7 +840,7 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           ...SYNE, fontSize:8, fontWeight:700, letterSpacing:'0.14em',
           textTransform:'uppercase', color:C.amber }}>
           Production LB Ladder
-          <Pill color={C.ghost}>r-cf.spicydevs.xyz</Pill>
+          <Pill color={C.ghost}>via Worker B relay</Pill>
           <Pill color={bench.lb.ok ? C.green : C.red}>{bench.lb.ok ? 'SERVED' : 'FAILED'}</Pill>
           {bench.lb.fallback && <Pill color="#f59e0b">fallback fired</Pill>}
         </div>
@@ -928,9 +877,10 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
               )}
             </div>
             <span style={{ ...MONO, fontSize:7, color:C.ghost, lineHeight:1.6 }}>
-              POSTs the B64-SVG through the live load balancer with X-Fallback-Image-Url set. Verifies the
-              single → pair → serial ladder and the 5s hard wall: if every node fails you should get a 302
-              to the original poster instead of a 502 — nodes are never skipped, just demoted.
+              Relays the fresh SVG through Worker B (RASTERIZER service binding via /admin/nodes/lb)
+              with X-Fallback-Image-Url set. Verifies the single → pair → serial ladder and the 5s
+              hard wall: if every node fails you should get the original poster with
+              X-Fallback-Fired instead of a 502 — nodes are never skipped, just demoted.
             </span>
           </div>
         </div>
@@ -1028,15 +978,15 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
                   </td>
                 </tr>
                 {bench.nodes.flatMap(n => [
-                  { node:n.label, color:n.color, via: n.http?'proxy':'direct', mode:'POST URL-SVG', ...n.postUrl },
-                  { node:n.label, color:n.color, via: n.http?'proxy':'direct', mode:'POST B64-SVG', ...n.postB64 },
-                  { node:n.label, color:n.color, via: n.http?'proxy':'direct', mode:'GET ?url=',   ...n.getRaster },
+                  { node:n.label, color:n.color, mode:'POST URL-SVG', ...n.postUrl },
+                  { node:n.label, color:n.color, mode:'POST B64-SVG', ...n.postB64 },
+                  { node:n.label, color:n.color, mode:'GET ?url=',   ...n.getRaster },
                 ]).map((r, i) => (
                   <tr key={i} style={{ background: i%2===0?'rgba(255,255,255,0.01)':'transparent',
                     borderBottom:`1px solid rgba(255,255,255,0.025)` }}>
                     <td style={{ padding:'5px 12px', color:'var(--film-cream)', fontWeight:600,
                       borderLeft:`2px solid ${r.color}` }}>{r.node}</td>
-                    <td style={{ padding:'5px 12px', color: r.via==='proxy' ? C.teal : C.ghost, fontSize:8 }}>{r.via}</td>
+                    <td style={{ padding:'5px 12px', color:C.ghost, fontSize:8 }}>server</td>
                     <td style={{ padding:'5px 12px', color:C.ghost }}>{r.mode}</td>
                     <td style={{ padding:'5px 12px' }}>
                       <span style={{ color:r.ok?C.green:C.red, fontWeight:700 }}>{r.ok?'✓ OK':'✗ FAIL'}</span>
@@ -1076,8 +1026,8 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
       <div style={{ paddingTop:10, borderTop:`1px solid rgba(255,255,255,0.05)`,
         ...MONO, fontSize:7, color:C.ghost }}>
         Completed {new Date(bench.timestamp).toLocaleTimeString()} ·
-        client-side timing via performance.now() ·
-        HTTP nodes routed via CF proxy ·
+        fleet probes + LB ladder run server-side ·
+        HTTP nodes never touch the browser (mixed-content-safe) ·
         {bench.bustCache ? 'cache-busted (fresh renders)' : 'fixed cb — tier cache HIT expected'} ·
         Icons embedded server-side (v9 — no node icon-cache dependency)
       </div>
@@ -1139,7 +1089,7 @@ export default function TestBenchmark() {
             ? `TESTING · ${lastRun?.type}/${lastRun?.id}`
             : mode==='results'
               ? 'POST URL · POST B64 · GET raster · LB ladder · node health'
-              : 'nodes via CF proxy · LB ladder test · cache-bust toggle'}
+              : 'server-side node probes · LB ladder via Worker B · cache-bust toggle'}
         </span>
         {mode === 'results' && (
           <button onClick={() => { setMode('search'); setBench(null); }}
@@ -1163,12 +1113,15 @@ export default function TestBenchmark() {
         {mode === 'search' && (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
             <div>
-              <AmberTag style={{ marginBottom:8 }}>Client-Side Node Benchmark v5</AmberTag>
+              <AmberTag style={{ marginBottom:8 }}>Server-Side Node Benchmark v6</AmberTag>
               <p className="body-font" style={{ fontSize:13, color:'var(--film-text-dim)', maxWidth:620, lineHeight:1.7 }}>
-                Benchmarks all 8 fleet nodes (<strong>POST URL-SVG</strong> vs <strong>POST B64-SVG</strong>, plus <strong>GET ?url=</strong>),
-                then pushes the same SVG through the <strong>production LB ladder</strong> (r-cf.spicydevs.xyz) to verify
-                fallback protection — with <strong>cache-busting</strong> for fresh renders and cf-cache-status surfaced on every fetch.
-                HTTP nodes are routed via the restricted CF /proxy. Icons are embedded server-side — nodes never need icon-cache network access.
+                Benchmarks all 8 fleet nodes (<strong>POST URL-SVG</strong> vs <strong>POST B64-SVG</strong>, plus <strong>GET ?url=</strong>)
+                entirely server-side — the backend probes each node, so no mixed-content http
+                blocks, CORS failures, or opaque redirects. Then pushes the same poster through the
+                <strong> production LB ladder</strong> (Worker B via the RASTERIZER binding) to verify fallback
+                protection — with <strong>cache-busting</strong> for fresh renders and cf-cache-status surfaced on
+                every fetch. Node health merges in from the server-side fleet probe. Icons are embedded server-side —
+                nodes never need icon-cache network access.
               </p>
             </div>
             <SearchForm onRun={go} />
