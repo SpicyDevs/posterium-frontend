@@ -538,13 +538,17 @@ export default function AnalyticsDashboard() {
     setHealthLoading(true);
     const results = await Promise.allSettled(
       LIVE_HEALTH_NODES.map(async n => {
-        const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
-        return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
+        try {
+          const res = await fetch(`${n.url}/health`, { signal: AbortSignal.timeout(4000) });
+          return [n.id, res.ok ? await res.json() : { error: `HTTP ${res.status}` }] as const;
+        } catch (e: any) {
+          return [n.id, { error: e?.name === 'AbortError' ? 'Timeout 4s' : 'Offline / Blocked' }] as const;
+        }
       })
     );
     setNodeHealth(Object.fromEntries(
       results.map((r, i) =>
-        r.status === 'fulfilled' ? r.value : [LIVE_HEALTH_NODES[i].id, { error: 'unreachable' }]
+        r.status === 'fulfilled' && r.value ? r.value : [LIVE_HEALTH_NODES[i].id, { error: 'Offline / Blocked' }]
       )
     ));
     setHealthLoading(false);

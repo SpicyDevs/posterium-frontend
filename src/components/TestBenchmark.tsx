@@ -173,12 +173,12 @@ async function benchNode(
 
   const [health, postUrl, postB64, getRaster] = await Promise.all([
     fetchHealth(node),
-    urlSvg
+    urlSvg && !isWsrv
       ? fetchWithImage(postTarget, { method:'POST', body:urlSvg, headers })
-      : Promise.resolve({ ok:false, ms:0, status:0, note:'SVG unavailable', imageUrl:null }),
-    b64Svg
+      : Promise.resolve({ ok:false, ms:0, status:0, note: isWsrv ? 'GET-only CDN (no POST endpoint)' : 'SVG unavailable', imageUrl:null }),
+    b64Svg && !isWsrv
       ? fetchWithImage(postTarget, { method:'POST', body:b64Svg, headers })
-      : Promise.resolve({ ok:false, ms:0, status:0, note:'SVG unavailable', imageUrl:null }),
+      : Promise.resolve({ ok:false, ms:0, status:0, note: isWsrv ? 'GET-only CDN (no POST endpoint)' : 'SVG unavailable', imageUrl:null }),
     // GET rasterisation — last, slowest path
     fetchWithImage(getRasterTarget),
   ]);
