@@ -39,6 +39,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* ── Firefox scrollbar (global) — matches the webkit amber gradient in dashboard.css ── */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 162, 69, 0.55) rgba(255, 255, 255, 0.02);
+  }
+
   button,
   [type='button'],
   [type='submit'],
@@ -381,20 +387,20 @@
   /* ── Custom scrollbar ─────────────────────────────────────────────────── */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-color: rgba(212, 162, 69, 0.5) transparent;
   }
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(180deg, rgba(212, 162, 69, 0.5), rgba(196, 124, 46, 0.3));
     border-radius: 9999px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: linear-gradient(180deg, rgba(212, 162, 69, 0.8), rgba(196, 124, 46, 0.55));
   }
 }
 

@@ -168,9 +168,27 @@ input[type='range']::-moz-range-thumb {
 select option { background: #0e0d0b; color: #f0e6cc; }
 
 /* ── Custom scrollbar ── */
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: var(--film-black); }
-::-webkit-scrollbar-thumb { background: rgba(196,124,46,0.22); border-radius: 99px; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(212,162,69,0.55), rgba(196,124,46,0.35));
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(212,162,69,0.85), rgba(196,124,46,0.6));
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
 
 /* ── Film tag ── */
 .film-tag {

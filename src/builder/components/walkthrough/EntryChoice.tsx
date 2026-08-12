@@ -1,8 +1,8 @@
 import { memo } from 'react';
-import { BookOpen, Layout, Sliders } from 'lucide-react';
+import { BookOpen, Layout, Sliders, Grid3x3 } from 'lucide-react';
 
 interface EntryChoiceProps {
-  onChoose: (choice: 'walkthrough' | 'simple' | 'advanced') => void;
+  onChoose: (choice: 'walkthrough' | 'simple' | 'advanced' | 'community') => void;
 }
 
 const OPTIONS = [
@@ -23,6 +23,12 @@ const OPTIONS = [
     icon: <Sliders size={18} />,
     title: 'Advanced Builder',
     description: 'Full panel navigation with dedicated source, layers, badges, and selection panels.',
+  },
+  {
+    id: 'community' as const,
+    icon: <Grid3x3 size={18} />,
+    title: 'Community Presets',
+    description: 'Start from a curated example gallery and jump straight into the builder.',
   },
 ];
 

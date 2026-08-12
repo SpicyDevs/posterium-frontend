@@ -147,6 +147,15 @@ const MainNavbar = memo<MainNavbarProps>(
       wasMenuOpenRef.current = menuOpen;
     }, [menuOpen]);
 
+    const chromeVisible = visible || !revealOnScroll;
+    const chromeFadeStyle: React.CSSProperties = {
+      opacity: chromeVisible ? 1 : 0,
+      transform: chromeVisible ? 'translateY(0)' : 'translateY(-6px)',
+      pointerEvents: chromeVisible ? 'auto' : 'none',
+      transition:
+        'opacity 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1)',
+    };
+
     const navStyle: React.CSSProperties = {
       position: fixed ? 'fixed' : 'relative',
       top: 0,
@@ -162,9 +171,9 @@ const MainNavbar = memo<MainNavbarProps>(
       backdropFilter: scrolled || !revealOnScroll ? 'blur(24px) saturate(1.3)' : 'none',
       borderBottom:
         scrolled || !revealOnScroll ? '1px solid rgba(196,124,46,0.1)' : '1px solid transparent',
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-      pointerEvents: visible ? 'all' : 'none',
+      opacity: 1,
+      transform: 'none',
+      pointerEvents: 'all',
       transition:
         'opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1), background 0.35s ease, border-color 0.35s ease',
     };
@@ -172,7 +181,11 @@ const MainNavbar = memo<MainNavbarProps>(
     return (
       <>
         <nav aria-label="Main navigation" style={navStyle}>
-          <a href="/" className="main-nav-logo" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <a
+            href="/"
+            className="main-nav-logo"
+            style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, ...chromeFadeStyle }}
+          >
             <img src="/posterium.svg" alt="" width={compactLogo ? 20 : 24} height={compactLogo ? 20 : 24} style={{ display: 'block' }} />
             <span className="poster-font" style={{ fontSize: compactLogo ? 18 : 22, letterSpacing: '0.12em', lineHeight: 1 }}>
               <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
@@ -235,7 +248,7 @@ const MainNavbar = memo<MainNavbarProps>(
 
           <div
             className="main-nav-right"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto', ...chromeFadeStyle }}
           >
             <a
               href="#"

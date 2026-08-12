@@ -4,8 +4,6 @@ import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { ExtensionType, PosterConfig } from '@/types/poster';
 import { generateApiUrl } from '@/builder/utils/url-generator';
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
-import { ProgressiveImage } from '@/ui/ProgressiveImage';
-import { FilmCorners } from '@/ui/primitives';
 import { StepTitle, StepSubtitle } from '../StepPrimitives';
 
 interface ExportStepProps {
@@ -30,14 +28,6 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
   const exportUrl = useMemo(() => {
     try {
       return generateApiUrl(config, DEFAULT_API_BASE);
-    } catch {
-      return '';
-    }
-  }, [config]);
-
-  const posterPreviewUrl = useMemo(() => {
-    try {
-      return generateApiUrl({ ...config, extension: 'webp' }, DEFAULT_API_BASE);
     } catch {
       return '';
     }
@@ -83,15 +73,13 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
         Your poster is ready. Choose an export format and copy the URL or download.
       </StepSubtitle>
 
-      <div style={{ flex: 1, display: 'flex', gap: 20, minHeight: 0 }}>
-        {/* Left: export options + builder mode */}
-        <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div
-            className="syne-font"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
-          >
-            Format
-          </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div
+          className="syne-font"
+          style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
+        >
+          Format
+        </div>
 
           <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
             {EXT_OPTIONS.map((ext) => (
@@ -213,101 +201,7 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
             </div>
           </div>
         </div>
-
-        {/* Right: large final preview */}
-        <div
-          style={{
-            flex: '1 1 50%',
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-          className="max-[800px]:hidden"
-        >
-          <div
-            className="syne-font"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
-          >
-            Final Preview
-          </div>
-          <div
-            style={{
-              flex: 1,
-              borderRadius: 12,
-              overflow: 'hidden',
-              border: '1px solid rgba(196,124,46,0.14)',
-              background: 'rgba(14,13,11,0.72)',
-              position: 'relative',
-              minHeight: 200,
-            }}
-          >
-            {posterPreviewUrl ? (
-              <>
-                <ProgressiveImage
-                  src={posterPreviewUrl}
-                  alt="Final poster preview"
-                  containerStyle={{ width: '100%', height: '100%' }}
-                  imageStyle={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-                <FilmCorners />
-              </>
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: 'var(--film-text-ghost)',
-                  fontSize: 11,
-                }}
-              >
-                Search for a poster to see preview
-              </div>
-            )}
-          </div>
-        </div>
       </div>
-
-      {/* Mobile preview */}
-      <div className="min-[801px]:hidden" style={{ marginTop: 12 }}>
-        <div
-          style={{
-            borderRadius: 12,
-            overflow: 'hidden',
-            border: '1px solid rgba(196,124,46,0.14)',
-            background: 'rgba(14,13,11,0.72)',
-            height: 180,
-            position: 'relative',
-          }}
-        >
-          {posterPreviewUrl ? (
-            <>
-              <ProgressiveImage
-                src={posterPreviewUrl}
-                alt="Final poster preview"
-                containerStyle={{ width: '100%', height: '100%' }}
-                imageStyle={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-              <FilmCorners />
-            </>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                color: 'var(--film-text-ghost)',
-                fontSize: 11,
-              }}
-            >
-              Search for a poster to see preview
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 });
 

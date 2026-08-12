@@ -4,7 +4,6 @@ import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { PosterConfig } from '@/types/poster';
 import { DEFAULT_CONFIG } from '@/constants/badges';
 import EntryChoice from './EntryChoice';
-import BranchChoice from './BranchChoice';
 import CommunityPresetsStep from './CommunityPresetsStep';
 import LiveWalkthroughPreview from './LiveWalkthroughPreview';
 import WizardChrome from './WizardChrome';
@@ -41,8 +40,9 @@ const STEPS = [
 ];
 
 const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, onSkip, presets = [] }) => {
-  const [entryChoice, setEntryChoice] = useState<'walkthrough' | 'simple' | 'advanced' | null>(null);
-  const [branch, setBranch] = useState<'guided' | 'community' | null>(null);
+  const [entryChoice, setEntryChoice] = useState<
+    'walkthrough' | 'simple' | 'advanced' | 'community' | null
+  >(null);
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState<PosterConfig>(() => ({ ...DEFAULT_CONFIG }));
   const [stepSnapshot, setStepSnapshot] = useState<PosterConfig>({ ...DEFAULT_CONFIG });
@@ -52,7 +52,7 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
 
   // Handle entry choice
   const handleEntryChoice = useCallback(
-    (choice: 'walkthrough' | 'simple' | 'advanced') => {
+    (choice: 'walkthrough' | 'simple' | 'advanced' | 'community') => {
       if (choice === 'simple') {
         onComplete('simple', { ...DEFAULT_CONFIG });
         return;
@@ -61,30 +61,20 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
         onComplete('advanced', { ...DEFAULT_CONFIG });
         return;
       }
-      setEntryChoice('walkthrough');
-    },
-    [onComplete],
-  );
-
-  // Handle branch choice
-  const handleBranchChoice = useCallback(
-    (chosen: 'guided' | 'community') => {
-      setBranch(chosen);
-      if (chosen === 'guided') {
-        setStep(0);
-        setStepSnapshot({ ...config });
+      if (choice === 'community') {
+        setEntryChoice('community');
+        return;
       }
+      // 'walkthrough' → go straight into the guided step wizard
+      setEntryChoice('walkthrough');
+      setStep(0);
+      setStepSnapshot({ ...config });
     },
-    [config],
+    [onComplete, config],
   );
 
   const handleBackToEntry = useCallback(() => {
     setEntryChoice(null);
-  }, []);
-
-  const handleBackToBranch = useCallback(() => {
-    setBranch(null);
-    setStep(0);
   }, []);
 
   // Community presets: pick one and go straight to builder
@@ -161,7 +151,7 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
     };
   }, [entryChoice, onDismiss]);
 
-  const isGuided = branch === 'guided';
+  const isGuided = entryChoice === 'walkthrough';
   const currentStep = STEPS[step];
   const isFirstStep = step === 0;
   const isLastStep = step === STEPS.length - 1;
@@ -228,9 +218,9 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
         <div
           style={{
             width: '100%',
-            maxWidth: entryChoice === null || branch === null ? 520 : 960,
+            maxWidth: entryChoice === null || entryChoice === 'community' ? 520 : 960,
             margin: '0 auto',
-            padding: entryChoice === null || branch === null ? '40px 24px 24px' : '40px 24px 24px',
+            padding: '40px 24px 24px',
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -241,17 +231,12 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
             <EntryChoice onChoose={handleEntryChoice} />
           )}
 
-          {/* Branch choice screen */}
-          {entryChoice === 'walkthrough' && branch === null && (
-            <BranchChoice onChoose={handleBranchChoice} onBack={handleBackToEntry} />
-          )}
-
           {/* Community presets screen */}
-          {entryChoice === 'walkthrough' && branch === 'community' && (
+          {entryChoice === 'community' && (
             <>
               <button
                 type="button"
-                onClick={handleBackToBranch}
+                onClick={handleBackToEntry}
                 style={{
                   alignSelf: 'flex-start',
                   background: 'none',
@@ -364,26 +349,22 @@ const WalkthroughModal = memo<WalkthroughModalProps>(({ onComplete, onDismiss, o
                   </div>
                 </div>
 
-                {/* Right: live preview — hidden on Export step (ExportStep has its own preview) */}
-                {step < STEPS.length - 1 && (
-                  <div
-                    style={{
-                      flex: '0 0 280px',
-                      maxWidth: 280,
-                    }}
-                    className="max-[800px]:hidden"
-                  >
-                    <LiveWalkthroughPreview config={config} />
-                  </div>
-                )}
+                {/* Right: live preview — shared across all steps */}
+                <div
+                  style={{
+                    flex: '0 0 280px',
+                    maxWidth: 280,
+                  }}
+                  className="max-[800px]:hidden"
+                >
+                  <LiveWalkthroughPreview config={config} />
+                </div>
               </div>
 
-              {/* Mobile live preview — hidden on Export step */}
-              {step < STEPS.length - 1 && (
-                <div className="min-[801px]:hidden" style={{ marginTop: 16, marginBottom: 8 }}>
-                  <LiveWalkthroughPreview config={config} compact />
-                </div>
-              )}
+              {/* Mobile live preview */}
+              <div className="min-[801px]:hidden" style={{ marginTop: 16, marginBottom: 8 }}>
+                <LiveWalkthroughPreview config={config} compact />
+              </div>
 
               {/* Bottom bar */}
               <WizardChrome
