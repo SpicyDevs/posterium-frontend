@@ -5,7 +5,6 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { generateSW } from 'workbox-build';
-import { unified } from '@astrojs/markdown-remark';
 import remarkGfm from 'remark-gfm';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -208,7 +207,7 @@ export default defineConfig({
     defaultStrategy: 'hover',
   },
   markdown: {
-    processor: unified({ remarkPlugins: [remarkGfm, remarkRequireImageAlt] }),
+    remarkPlugins: [remarkGfm, remarkRequireImageAlt],
   },
   integrations: [
     react(),
