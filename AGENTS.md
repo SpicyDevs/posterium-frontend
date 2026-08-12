@@ -2,9 +2,9 @@
 
 ## Stack
 
-- **Astro 6** static site with React 19 islands
+- **Astro 7** static site with React 19 islands
 - Tailwind CSS v4 via `@tailwindcss/vite` plugin (no PostCSS chain; `postcss.config.mjs` deleted)
-- TypeScript 5.9 strict (`noUnusedLocals`, `noUnusedParameters`)
+- TypeScript 7 strict (`noUnusedLocals`, `noUnusedParameters`)
 - Cloudflare Workers **static assets** serve `dist/` directly — no Worker script, no dynamic logic (100% static)
 - Testing: Vitest v4, config at `vitest.config.ts`
 
@@ -63,8 +63,8 @@ npm run release:staging   # typecheck → test → build → deploy:staging
 - **URL style**: no trailing slashes (`trailingSlash: 'never'`, `format: 'file'`)
 - **Prettier**: single quotes, trailing commas es5, printWidth 100, semicolons
 - **Custom remark plugin**: `src/lib/remark-require-image-alt.mjs` enforces alt text on markdown images
-- **Astro config**: `markdown.remarkPlugins = [remarkGfm, remarkRequireImageAlt]`; `vite.oxc: { target: 'es2022' }` (passes through astro 6's vite schema untouched); sitemap `namespaces: { news: false, xhtml: false, video: false }` (image kept for sitemap enhancer)
-- **PWA**: manifest + virtual modules via `VitePWA` in `vite.plugins` (not Astro integration — `@vite-pwa/astro` is gone, incompatible with Astro 6). Service worker is built by custom `workboxSW()` integration hook (`astro:build:done`, `generateSW` from `workbox-build`) because vite-plugin-pwa's own `closeBundle` skips SW generation on Astro 6 multi-environment builds (`ctx.viteConfig.build.ssr` check). Runtime caching: TMDB CacheFirst, Google Fonts CacheFirst 1y, Posterium API NetworkFirst 5s; `navigateFallback: '/404.html'`; `sourcemap: false`. Register via `src/scripts/pwa-register.ts` in BaseLayout
+- **Astro config**: `markdown.processor = unified({ remarkPlugins: [remarkGfm, remarkRequireImageAlt] })` (from `@astrojs/markdown-remark`); `oxc: { target: 'es2022' }` replaces old `esbuild` block; sitemap `namespaces: { news: false, xhtml: false, video: false }` (image kept for sitemap enhancer)
+- **PWA**: manifest + virtual modules via `VitePWA` in `vite.plugins` (not Astro integration — `@vite-pwa/astro` is gone, incompatible with Astro 7). Service worker is built by custom `workboxSW()` integration hook (`astro:build:done`, `generateSW` from `workbox-build`) because vite-plugin-pwa's own `closeBundle` skips SW generation on Astro 7 multi-environment builds (`ctx.viteConfig.build.ssr` check). Runtime caching: TMDB CacheFirst, Google Fonts CacheFirst 1y, Posterium API NetworkFirst 5s; `navigateFallback: '/404.html'`; `sourcemap: false`. Register via `src/scripts/pwa-register.ts` in BaseLayout
 - **Prefetch**: built-in Astro prefetch enabled via config `prefetch: { prefetchAll: true, defaultStrategy: 'hover' }` (no `@astrojs/prefetch` — deprecated since 3.5). Module ships as part of the page chunk; respects data-saver/slow-connection.
 - **Homepage poster pre-download**: `scripts/fetch-home-posters.mjs` fetch-based script mirrors `reel.mjs` — downloads the 6 hero posters + 22 mobile-reel posters from the poster API with the exact runtime params, writes them to `public/images/home-posters/` and regenerates `src/generated/homePosters.ts` (URL map consumed by `HeroSection.tsx` & `FilmReelSection.tsx`). Run manually before deploying (Cloudflare build is a pure `astro build`). Env: `FORCE=1` refresh all, `SKIP=1` map-only, `PUBLIC_API_URL` override. Homepage loads posters statically — zero runtime API calls.
 - **Vite manual chunks**: `react-vendor`, `icons` (lucide-react), `headlessui`, `dnd`
