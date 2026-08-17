@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-17T00:00:00Z",
+  "title": "Design System: Posterium",
+  "extensions": {
+    "colorMeta": {
+      "projector-amber": { "role": "primary", "displayName": "Projector Amber", "canonical": "oklch(64.9% 0.127 63.7)", "tonalRamp": ["oklch(15.0% 0.127 63.7)", "oklch(26.4% 0.127 63.7)", "oklch(37.9% 0.127 63.7)", "oklch(49.3% 0.127 63.7)", "oklch(60.7% 0.127 63.7)", "oklch(72.1% 0.127 63.7)", "oklch(83.6% 0.127 63.7)", "oklch(95.0% 0.127 63.7)"] },
+      "dusk-gold": { "role": "secondary", "displayName": "Dusk Gold", "canonical": "oklch(74.2% 0.124 80.2)", "tonalRamp": ["oklch(15.0% 0.124 80.2)", "oklch(26.4% 0.124 80.2)", "oklch(37.9% 0.124 80.2)", "oklch(49.3% 0.124 80.2)", "oklch(60.7% 0.124 80.2)", "oklch(72.1% 0.124 80.2)", "oklch(83.6% 0.124 80.2)", "oklch(95.0% 0.124 80.2)"] },
+      "curtain-red": { "role": "tertiary", "displayName": "Curtain Red", "canonical": "oklch(47.6% 0.173 29.0)", "tonalRamp": ["oklch(15.0% 0.173 29.0)", "oklch(26.4% 0.173 29.0)", "oklch(37.9% 0.173 29.0)", "oklch(49.3% 0.173 29.0)", "oklch(60.7% 0.173 29.0)", "oklch(72.1% 0.173 29.0)", "oklch(83.6% 0.173 29.0)", "oklch(95.0% 0.173 29.0)"] },
+      "cinema-black": { "role": "neutral", "displayName": "Cinema Black", "canonical": "oklch(12.8% 0.003 106.8)", "tonalRamp": ["oklch(15.0% 0.003 106.8)", "oklch(26.4% 0.003 106.8)", "oklch(37.9% 0.003 106.8)", "oklch(49.3% 0.003 106.8)", "oklch(60.7% 0.003 106.8)", "oklch(72.1% 0.003 106.8)", "oklch(83.6% 0.003 106.8)", "oklch(95.0% 0.003 106.8)"] },
+      "velvet-umber": { "role": "neutral", "displayName": "Velvet Umber", "canonical": "oklch(15.9% 0.004 84.6)", "tonalRamp": ["oklch(15.0% 0.004 84.6)", "oklch(26.4% 0.004 84.6)", "oklch(37.9% 0.004 84.6)", "oklch(49.3% 0.004 84.6)", "oklch(60.7% 0.004 84.6)", "oklch(72.1% 0.004 84.6)", "oklch(83.6% 0.004 84.6)", "oklch(95.0% 0.004 84.6)"] },
+      "celluloid-umber": { "role": "neutral", "displayName": "Celluloid Umber", "canonical": "oklch(20.1% 0.008 84.6)", "tonalRamp": ["oklch(15.0% 0.008 84.6)", "oklch(26.4% 0.008 84.6)", "oklch(37.9% 0.008 84.6)", "oklch(49.3% 0.008 84.6)", "oklch(60.7% 0.008 84.6)", "oklch(72.1% 0.008 84.6)", "oklch(83.6% 0.008 84.6)", "oklch(95.0% 0.008 84.6)"] },
+      "char-umber": { "role": "neutral", "displayName": "Char Umber", "canonical": "oklch(24.3% 0.015 95.6)", "tonalRamp": ["oklch(15.0% 0.015 95.6)", "oklch(26.4% 0.015 95.6)", "oklch(37.9% 0.015 95.6)", "oklch(49.3% 0.015 95.6)", "oklch(60.7% 0.015 95.6)", "oklch(72.1% 0.015 95.6)", "oklch(83.6% 0.015 95.6)", "oklch(95.0% 0.015 95.6)"] },
+      "dust-umber": { "role": "neutral", "displayName": "Dust Umber", "canonical": "oklch(37.1% 0.016 75.1)", "tonalRamp": ["oklch(15.0% 0.016 75.1)", "oklch(26.4% 0.016 75.1)", "oklch(37.9% 0.016 75.1)", "oklch(49.3% 0.016 75.1)", "oklch(60.7% 0.016 75.1)", "oklch(72.1% 0.016 75.1)", "oklch(83.6% 0.016 75.1)", "oklch(95.0% 0.016 75.1)"] },
+      "screen-cream": { "role": "neutral", "displayName": "Screen Cream", "canonical": "oklch(92.6% 0.036 89.4)", "tonalRamp": ["oklch(15.0% 0.036 89.4)", "oklch(26.4% 0.036 89.4)", "oklch(37.9% 0.036 89.4)", "oklch(49.3% 0.036 89.4)", "oklch(60.7% 0.036 89.4)", "oklch(72.1% 0.036 89.4)", "oklch(83.6% 0.036 89.4)", "oklch(95.0% 0.036 89.4)"] },
+      "reel-pale": { "role": "neutral", "displayName": "Reel Pale", "canonical": "oklch(88.4% 0.065 91.8)", "tonalRamp": ["oklch(15.0% 0.065 91.8)", "oklch(26.4% 0.065 91.8)", "oklch(37.9% 0.065 91.8)", "oklch(49.3% 0.065 91.8)", "oklch(60.7% 0.065 91.8)", "oklch(72.1% 0.065 91.8)", "oklch(83.6% 0.065 91.8)", "oklch(95.0% 0.065 91.8)"] },
+      "reel-white": { "role": "neutral", "displayName": "Reel White", "canonical": "oklch(97.4% 0.014 88.7)", "tonalRamp": ["oklch(15.0% 0.014 88.7)", "oklch(26.4% 0.014 88.7)", "oklch(37.9% 0.014 88.7)", "oklch(49.3% 0.014 88.7)", "oklch(60.7% 0.014 88.7)", "oklch(72.1% 0.014 88.7)", "oklch(83.6% 0.014 88.7)", "oklch(95.0% 0.014 88.7)"] },
+      "lobby-silver": { "role": "neutral", "displayName": "Lobby Silver", "canonical": "oklch(73.4% 0.024 84.6)", "tonalRamp": ["oklch(15.0% 0.024 84.6)", "oklch(26.4% 0.024 84.6)", "oklch(37.9% 0.024 84.6)", "oklch(49.3% 0.024 84.6)", "oklch(60.7% 0.024 84.6)", "oklch(72.1% 0.024 84.6)", "oklch(83.6% 0.024 84.6)", "oklch(95.0% 0.024 84.6)"] },
+      "text-body": { "role": "neutral", "displayName": "Body Text", "canonical": "rgba(230, 218, 196, 0.92)" },
+      "text-label": { "role": "neutral", "displayName": "Label Text", "canonical": "rgba(212, 198, 172, 0.82)" },
+      "text-dim": { "role": "neutral", "displayName": "Dim Text", "canonical": "rgba(206, 193, 170, 0.82)" },
+      "text-ghost": { "role": "neutral", "displayName": "Ghost Text", "canonical": "rgba(178, 166, 146, 0.58)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero wordmark only. Bebas Neue, all-caps, line-height 0.84." },
+      "headline": { "displayName": "Headline", "purpose": "Section and prose headings. Syne 700, letter-spacing 0.02em." },
+      "title": { "displayName": "Title", "purpose": "Sub-headings and panel titles. Syne 600, uppercase, 0.07em." },
+      "body": { "displayName": "Body", "purpose": "UI copy in Plus Jakarta Sans; sentence case." },
+      "prose": { "displayName": "Prose", "purpose": "Markdown content in DM Sans; links dusk-gold, code reel-pale." },
+      "label": { "displayName": "Label", "purpose": "JetBrains Mono microlabels, 8-9px, uppercase, 0.12em." },
+      "button-label": { "displayName": "Button Label", "purpose": "Syne 700 11px uppercase chrome on buttons." },
+      "tag-label": { "displayName": "Tag Label", "purpose": "Syne 700 9px uppercase stamp text on amber tags." }
+    },
+    "shadows": [
+      { "name": "light-source", "value": "0 0 26px rgba(196,124,46,0.2), 0 4px 16px rgba(0,0,0,0.42)", "purpose": "Primary CTAs at rest — amber glow as light source." },
+      { "name": "light-source-hover", "value": "0 0 44px rgba(196,124,46,0.4), 0 8px 28px rgba(0,0,0,0.52)", "purpose": "Primary CTA hover — the beam widens." },
+      { "name": "stage", "value": "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)", "purpose": "Featured posters and showcases — the artifact on the pedestal." }
+    ],
+    "motion": [
+      { "name": "exhale", "value": "cubic-bezier(0.16,1,0.3,1)", "purpose": "Hover lifts, film-frame rise, carousel dot morph — the slow exhale." },
+      { "name": "fade-fast", "value": "opacity 0.15s ease", "purpose": "Button state changes." },
+      { "name": "fade", "value": "opacity 0.18-0.28s ease", "purpose": "Color fades on nav links and hairlines." },
+      { "name": "film-frame-hover", "value": "transform 0.38s cubic-bezier(0.16,1,0.3,1)", "purpose": "Poster cards lift translateY(-8px) scale(1.05) with z-index jump." },
+      { "name": "iris", "value": "clip-path 0.55-0.7s cubic-bezier(0.4,0,0.6,1)", "purpose": "Mobile poster peek iris close/open cycle." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "960px" },
+      { "name": "md", "value": "820px" },
+      { "name": "sm", "value": "768px" },
+      { "name": "xs", "value": "640px" },
+      { "name": "xxs", "value": "600px" },
+      { "name": "tiny", "value": "540px" },
+      { "name": "micro", "value": "500px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The amber light source — the one standard amber fill. Main CTAs.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Open Builder <svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; border-radius: 4px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; transition: opacity 0.15s ease, box-shadow 0.3s ease, transform 0.25s ease; } .ds-btn-primary { background: #c47c2e; color: #070706; border: 1px solid rgba(196,124,46,0.25); padding: 12px 24px; box-shadow: 0 0 26px rgba(196,124,46,0.2), 0 4px 16px rgba(0,0,0,0.42); } .ds-btn-primary:hover { box-shadow: 0 0 44px rgba(196,124,46,0.4), 0 8px 28px rgba(0,0,0,0.52); transform: translateY(-2px); } .ds-btn-primary:active { transform: translateY(0); } .ds-btn-primary:focus-visible { outline: 2px solid #c47c2e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Glass-well alternative — quiet, hairlined, warms on hover.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Installation Guide</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; border-radius: 4px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; transition: border-color 0.2s ease, color 0.2s ease, background 0.15s ease; } .ds-btn-secondary { background: rgba(255,255,255,0.03); color: #b0a898; border: 1px solid rgba(255,255,255,0.08); padding: 11px 20px; } .ds-btn-secondary:hover { border-color: rgba(196,124,46,0.32); color: #f0e6cc; } .ds-btn-secondary:focus-visible { outline: 2px solid #c47c2e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Bare chrome link-button — transparent, label-toned, warms on hover.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\">View Docs</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; border-radius: 4px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; transition: color 0.18s ease; } .ds-btn-ghost { background: transparent; color: rgba(212,198,172,0.82); border: 1px solid transparent; padding: 8px 14px; } .ds-btn-ghost:hover { color: #f0e6cc; } .ds-btn-ghost:focus-visible { outline: 2px solid #c47c2e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Amber Tag",
+      "kind": "chip",
+      "refersTo": "tag-amber",
+      "description": "The ticket stamp — 2px radius, 10% amber fill, wide-tracked uppercase.",
+      "html": "<span class=\"ds-tag\">FREE API</span>",
+      "css": ".ds-tag { display: inline-block; background: rgba(196,124,46,0.1); border: 1px solid rgba(196,124,46,0.28); color: #c47c2e; font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Glass well with a dim placeholder — focus is a 2px amber outline, never a glow.",
+      "html": "<label class=\"ds-search\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"text\" placeholder=\"Search\"></label>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: rgba(206,193,170,0.82); font-family: 'Plus Jakarta Sans', sans-serif; } .ds-search svg { flex-shrink: 0; } .ds-search input { flex: 1; background: transparent; border: none; outline: none; color: #f0e6cc; font-size: 11px; letter-spacing: 0.02em; font-family: inherit; } .ds-search input::placeholder { color: rgba(206,193,170,0.82); } .ds-search:focus-within { outline: 2px solid #c47c2e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Velvet panel — celluloid umber at 60%, hairline amber border, no shadow at rest.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Live Ratings</div><p class=\"ds-card-body\">IMDb, Rotten Tomatoes, Metacritic and more baked into your artwork.</p></div>",
+      "css": ".ds-card { border-radius: 10px; border: 1px solid rgba(196,124,46,0.14); background: rgba(24,22,18,0.6); padding: 14px; overflow: hidden; } .ds-card-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.07em; text-transform: uppercase; color: #f0e6cc; margin-bottom: 6px; } .ds-card-body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; line-height: 1.65; color: rgba(230,218,196,0.92); margin: 0; }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Chrome navigation — Syne uppercase, label tone, slow warm fade on hover.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">Installation</a><a href=\"#\">Docs</a><a href=\"#\" class=\"ds-nav-active\">FAQ</a><a href=\"#\">Examples</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 22px; } .ds-nav a { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; color: rgba(212,198,172,0.82); transition: color 0.18s ease; } .ds-nav a:hover { color: #f0e6cc; } .ds-nav .ds-nav-active { color: #c47c2e; }"
+    },
+    {
+      "name": "Film Frame",
+      "kind": "custom",
+      "refersTo": "card-elevated",
+      "description": "The signature showcase — 2:3 poster, amber corner brackets, stage shadow, mono caption bar.",
+      "html": "<figure class=\"ds-frame\"><div class=\"ds-frame-corner ds-frame-tl\"></div><div class=\"ds-frame-corner ds-frame-tr\"></div><div class=\"ds-frame-corner ds-frame-bl\"></div><div class=\"ds-frame-corner ds-frame-br\"></div><div class=\"ds-frame-art\"></div><figcaption>THE DARK KNIGHT</figcaption></figure>",
+      "css": ".ds-frame { position: relative; width: 200px; aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; background: linear-gradient(160deg,#1c1914 0%,#0f0e0c 100%); border: 1px solid rgba(196,124,46,0.18); box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(196,124,46,0.08); margin: 0; transition: transform 0.38s cubic-bezier(0.16,1,0.3,1); } .ds-frame:hover { transform: translateY(-8px) scale(1.05); } .ds-frame-art { position: absolute; inset: 0; background: radial-gradient(ellipse 90% 60% at 50% 20%, rgba(196,124,46,0.22) 0%, transparent 60%), linear-gradient(180deg, rgba(7,7,6,0) 60%, rgba(7,7,6,0.9) 100%); } .ds-frame-corner { position: absolute; width: 10px; height: 10px; border: 1.5px solid rgba(196,124,46,0.4); } .ds-frame-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; } .ds-frame-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; } .ds-frame-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; } .ds-frame-br { bottom: 8px; right: 8px; border-left: none; border-top: none; } .ds-frame figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 28px 12px 12px; background: linear-gradient(to top, rgba(7,7,6,0.9) 0%, transparent 100%); font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(196,124,46,0.65); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Projection Booth",
+    "overview": "Posterium is a dark room built around one beam of projector amber. The interface is a cinema interior after the lights go down: near-black velvet surfaces, hairline amber edges where surfaces meet, and color deployed the way a projectionist uses a light source — sparingly, pointedly, and always where the eye should land next. Nothing here glows for decoration; everything that glows is something you can press, read, or watch change.\n\nThe aesthetic philosophy is restrained, precision cinema. Density is real but ordered: the system leans on tiny exact details — 2px ticket-stamp tags, sprocket-hole perforations, corner brackets, 8px mono microlabels — so the surfaces stay quiet while the details carry the theater. Postures are theatrical only where the product is the theater: the hero wordmark (a two-tone POSTER/IUM with an amber-stroked second half), the film-frame carousels, the floating poster reels. Everything else stays disciplined, because the primary job of most screens is Operate: scan, adjust, ship a URL.\n\nThe typographic voice is a poster house meets Swiss precision. Bebas Neue delivers condensed, all-caps display; Syne carries headings and chrome with wide tracking; Plus Jakarta Sans and DM Sans handle reading; JetBrains Mono stamps microlabels and captions.",
+    "keyCharacteristics": [
+      "Near-black amber-tinted neutrals only — no pure grays, no blues, no cold whites",
+      "Amber is the sole light source; gold is its hot reflection, red is the alarm",
+      "Hairline amber borders (0.08–0.28 alpha) define surfaces; fills are rare",
+      "All-caps chrome typography with wide tracking; sentence-case body copy",
+      "Cinema artifacts (sprockets, corners, stamps) as precision details, never decoration",
+      "Shadows mean light: glow on interactive elements, deep darkness under posters"
+    ],
+    "rules": [
+      { "name": "The Light-Source Rule", "body": "Projector Amber covers a small fraction of any screen. Its rarity is its power: a screen full of amber is a screen that points at nothing.", "section": "colors" },
+      { "name": "The Hairline Rule", "body": "Amber appears most often at 0.08–0.28 alpha as a border or glow, never as a mid-opacity fill. When a surface needs more amber, increase the light (glow, hover), not the fill.", "section": "colors" },
+      { "name": "The No-Cold-Colors Rule", "body": "No blues, no pure grays, no cold whites. Every neutral leans warm; every bright text carries a hint of cream or gold.", "section": "colors" },
+      { "name": "The Showtime Rule", "body": "All chrome text — buttons, nav links, tags, panel titles, microlabels — is uppercase with wide tracking. Sentence case appears only in reading copy. Uppercase is the interface's voice; lowercase is its content.", "section": "typography" },
+      { "name": "The Microlabel Rule", "body": "Mono microlabels stay at 8–9px with 0.12em tracking. Never enlarge them; scale their container instead.", "section": "typography" },
+      { "name": "The Shadow-as-Light Rule", "body": "Shadows are reserved for light sources (interactive amber elements) and stages (showcased posters). Ordinary surfaces — cards, panels, nav — carry no drop shadow; their depth comes from tone and hairlines.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do start every surface on cinema-black and climb through velvet/celluloid umbers for hierarchy.",
+      "Do use amber as a light source: CTAs, active states, focus rings, glows — and keep it rare.",
+      "Do stamp micro-elements (tags, dots, sprockets) at 2–3px radius; they read as punched.",
+      "Do set chrome text (buttons, nav, tags, microlabels) in uppercase Syne or 8–9px JetBrains Mono with wide tracking.",
+      "Do keep reading copy in sentence case in DM Sans / Plus Jakarta Sans.",
+      "Do give hover states an exhale: 0.18–0.38s, cubic-bezier(0.16,1,0.3,1) for lifts.",
+      "Do respect prefers-reduced-motion — durations collapse to 0.01ms.",
+      "Do hairline every surface junction at 0.08–0.28 alpha rather than filling."
+    ],
+    "donts": [
+      "Don't use drop shadows on ordinary cards or panels — tone and hairlines do that work.",
+      "Don't use cold colors (blues, pure grays, cold whites) anywhere — the room is warm-lit.",
+      "Don't enlarge microlabels; scale their container instead.",
+      "Don't set body copy in Bebas Neue, Syne, or uppercase.",
+      "Don't make amber fills compete — the primary CTA is the only standard amber fill at rest.",
+      "Don't introduce new corner radii between 2px and 4px, or between 8px and 10px — the economy is punched vs. housed."
+    ]
+  }
+}
