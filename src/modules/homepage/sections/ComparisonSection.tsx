@@ -16,7 +16,7 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { feature: 'Rating Sources', sub: 'Supported platforms', ours: '12 live sources - IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1-3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
+  { feature: 'Rating Sources', sub: 'How many sources', ours: '20+ live sources - IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1-3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
   { feature: 'Score Freshness', sub: 'When ratings update', ours: 'Live on every request', theirs: 'Cached or manual refresh', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Delivery', sub: 'How posters are served', ours: 'Edge URL - auto-updates everywhere', theirs: 'Static downloads (scores get stale)', ourStatus: 'win', theirStatus: 'loss' },
   { feature: 'Visual Editor', sub: 'Customizing layouts', ours: 'Drag-and-drop with live preview', theirs: 'Forms or code-only', ourStatus: 'win', theirStatus: 'partial' },
@@ -126,7 +126,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
 
           {/* Others */}
           <div role="gridcell" className="comp-cell-others" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="comp-label-theirs" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(122,117,110,0.4)' }}>Others</span>
+            <span className="comp-label-theirs" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(122,117,110,0.4)' }}>Preset Services</span>
             <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ marginTop: 2 }}>{getIcon(row.theirStatus)}</span>
               <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.theirStatus), lineHeight: 1.45 }}>
@@ -193,7 +193,7 @@ export const ComparisonSection = memo(() => {
             <div className="comp-sep" style={{ background: 'rgba(255,255,255,0.06)' }} aria-hidden="true" />
             <div role="columnheader" className="comp-cell-others" style={{ padding: '13px clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(122,117,110,0.28)', flexShrink: 0 }} />
-              <span className="syne-font" style={{ fontSize: 11, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Others</span>
+              <span className="syne-font" style={{ fontSize: 11, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Preset Services</span>
             </div>
           </div>
 

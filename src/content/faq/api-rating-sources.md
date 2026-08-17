@@ -4,7 +4,7 @@ question: Which rating sources are supported?
 order: 1
 ---
 
-Twelve sources, last count:
+20+ sources — here's the core set:
 
 - IMDb
 - Rotten Tomatoes

@@ -250,12 +250,12 @@ const HeroSection = memo(() => (
           <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
         </h1>
         <div style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
-<p className="syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 480, lineHeight: 1.7, marginBottom: 36 }}>
-          Live ratings baked right into your posters.{' '}
+<p className="syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 520, lineHeight: 1.7, marginBottom: 36 }}>
+          For Plex, Jellyfin & Stremio: posters with live{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong>,{' '}
-          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>
-          {' - '}a dozen sources, one URL. Zero configuration.
+          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong> and{' '}
+          <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Metacritic</strong>{' '}
+          scores. 20+ sources, one URL. Zero configuration, no account.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <a href="/build" aria-label="Open Movie Poster Builder" className="glow-cta syne-font" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--film-amber)', color: '#070706', fontWeight: 700, fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', textDecoration: 'none', padding: '12px 24px', borderRadius: 4 }}>
@@ -265,11 +265,31 @@ const HeroSection = memo(() => (
             Installation Guide
           </a>
         </div>
-        <div style={{ display: 'flex', gap: 24, marginTop: 40 }}>
-          <div>
-            <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>10+</div>
-            <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>Rating sources</div>
-          </div>
+        <div style={{ display: 'flex', gap: 0, marginTop: 40, flexWrap: 'wrap' }}>
+          {[
+            ['1', 'Pick a title', 'Movie · TV · Anime'],
+            ['2', 'Drag the badges', 'Pixel-perfect'],
+            ['3', 'Paste the URL', 'Live in Plex'],
+          ].map(([n, label, sub], i) => (
+            <div
+              key={n}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                paddingRight: 22,
+                marginRight: 22,
+                borderRight: i < 2 ? '1px solid rgba(196,124,46,0.14)' : 'none',
+                marginBottom: 10,
+              }}
+            >
+              <span className="poster-font" style={{ fontSize: 32, color: 'var(--film-amber)', lineHeight: 1, letterSpacing: '0.04em' }}>{n}</span>
+              <div>
+                <div className="syne-font" style={{ fontSize: 10, fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</div>
+                <div className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>{sub}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       <div className="hero-poster-right" aria-label="Poster showcase">

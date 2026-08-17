@@ -290,7 +290,7 @@ export interface Stat {
   unit?: string;
 }
 export const STATS: Stat[] = [
-  { value: '10+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more', unit: 'src' },
+  { value: '20+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more', unit: 'src' },
   { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP', unit: 'fmt' },
 ];
 
@@ -333,7 +333,7 @@ export const FEATURES: Feature[] = [
     size: 'small',
     icon: '◉',
     hint: '?r=imdb,rt,meta,tmdb,letterboxd',
-    desc: 'Twelve sources. IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, AniList, Douban, and more. Scores are fetched live on every request. When someone loads your Plex library, the poster reflects what the rating sites show that second. Not a cached score from three months ago. That 8.6 is the real 8.6.',
+    desc: '20+ sources. IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, AniList, Douban, and more. Scores are fetched live on every request. When someone loads your Plex library, the poster reflects what the rating sites show that second. Not a cached score from three months ago. That 8.6 is the real 8.6.',
   },
   {
     title: 'Movies, TV & Anime',

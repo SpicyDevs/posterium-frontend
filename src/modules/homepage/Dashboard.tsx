@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
         <MainNavbar
           revealOnScroll
           sectionLinks={[
-            { label: 'Reel', href: '#reel' },
+            { label: 'Gallery', href: '#reel' },
             { label: 'Features', href: '#combined' },
             { label: 'Integrations', href: '#integrations' },
           ]}

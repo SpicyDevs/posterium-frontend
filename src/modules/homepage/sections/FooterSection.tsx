@@ -7,7 +7,7 @@ const FOOTER_LINKS = [
   ['Poster Builder', '/build'],
   ['Project Repo', 'https://github.com/SpicyDevs/posterium-frontend', true],
   ['MIT License', '/LICENSE', false],
-  ['API Docs', '#combined'],
+  ['API Docs', '/docs'],
   ['FAQ', '/faq'],
 ] as const;
 
