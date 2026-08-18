@@ -1,5 +1,21 @@
 // src/lib/dashboard/constants.ts
 import { DEFAULT_API_BASE } from '@/builder/utils/constants';
+import {
+  Bot,
+  Clapperboard,
+  ClipboardList,
+  FileOutput,
+  Frame,
+  Globe,
+  Layers,
+  MonitorPlay,
+  Move,
+  Palette,
+  Star,
+  Workflow,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 
 export const API = DEFAULT_API_BASE;
 
@@ -299,7 +315,7 @@ export interface Feature {
   desc: string;
   tag: string;
   size: 'large' | 'medium' | 'small';
-  icon: string;
+  icon: LucideIcon;
   hint: string;
 }
 export const FEATURES: Feature[] = [
@@ -307,7 +323,7 @@ export const FEATURES: Feature[] = [
     title: 'Drag-Drop Editor',
     tag: 'Editor',
     size: 'large',
-    icon: '⌖',
+    icon: Move,
     hint: '?imdb_x=310&imdb_y=20',
     desc: 'Grab a badge, drop it wherever. No coordinate math to fiddle with. Select a few at once and shift them together. Keyboard arrows for pixel-perfect nudges when you are that close. Full undo/redo stack. Try something wild, hit undo if it looks bad. Every badge has its own blur, opacity, corner radius, shadow, and border controls. Or tweak them globally. Your call.',
   },
@@ -315,7 +331,7 @@ export const FEATURES: Feature[] = [
     title: 'Instant API URL',
     tag: 'API',
     size: 'medium',
-    icon: '⚡',
+    icon: Zap,
     hint: '?r=imdb,rt&source=tmdb',
     desc: 'One URL gives you a finished poster with live scores baked in. No headers to set. No keys to rotate. No sign-up page to stare at. Paste the link into any img tag, Discord embed, Notion page, or HTML template. It loads in a browser. It loads in Plex. It loads in a Discord bot. That is the whole integration.',
   },
@@ -323,7 +339,7 @@ export const FEATURES: Feature[] = [
     title: 'Multiple Sources',
     tag: 'Posters',
     size: 'medium',
-    icon: '⊞',
+    icon: Layers,
     hint: '?source=tmdb|fanart|imdb',
     desc: 'Four backends, one URL. TMDB, Fanart.tv, Metahub, IMDb. Posterium tries each one and serves the best-looking artwork it finds. If a source is down or missing the title, it moves to the next without you lifting a finger. Textless variants are included where available. You never get a broken image or a generic placeholder.',
   },
@@ -331,7 +347,7 @@ export const FEATURES: Feature[] = [
     title: 'Live Ratings',
     tag: 'Data',
     size: 'small',
-    icon: '◉',
+    icon: Star,
     hint: '?r=imdb,rt,meta,tmdb,letterboxd',
     desc: '20+ sources. IMDb, Rotten Tomatoes, Metacritic, TMDB, Letterboxd, MAL, AniList, Douban, and more. Scores are fetched live on every request. When someone loads your Plex library, the poster reflects what the rating sites show that second. Not a cached score from three months ago. That 8.6 is the real 8.6.',
   },
@@ -339,7 +355,7 @@ export const FEATURES: Feature[] = [
     title: 'Movies, TV & Anime',
     tag: 'Content',
     size: 'small',
-    icon: '▣',
+    icon: Clapperboard,
     hint: '?type=movie|tv|anime',
     desc: 'TMDB IDs for movies and TV, MAL IDs for anime, AniList IDs too. Just drop the ID in and the right poster appears. Badge styles auto-detect what kind of media you are working with. No manual toggle between movie mode and TV mode. It figures it out.',
   },
@@ -347,7 +363,7 @@ export const FEATURES: Feature[] = [
     title: 'Any Export Format',
     tag: 'Output',
     size: 'small',
-    icon: '◫',
+    icon: FileOutput,
     hint: '/movie/155.svg|.png|.jpg|.webp',
     desc: 'SVG exports stay crisp at any zoom. Perfect for print, Figma mockups, or retina displays. PNG and JPG for platforms that block SVGs entirely. WebP when file size matters more. Pick your format from the export menu and get a URL back. No download button hunting.',
   },
@@ -355,7 +371,7 @@ export const FEATURES: Feature[] = [
     title: 'Textless Posters',
     tag: 'Design',
     size: 'small',
-    icon: '◻',
+    icon: Frame,
     hint: '?textless=1',
     desc: 'Some posters look better without the title slapped on top. Add `textless=1` to your URL and the artwork text drops out. Leaves you with just the image and your rating badges. Popular for Plex home screens, gallery walls, and anyone who wants their poster grid to feel like a film festival lineup.',
   },
@@ -363,14 +379,14 @@ export const FEATURES: Feature[] = [
     title: 'Plex & Jellyfin Ready',
     tag: 'Servers',
     size: 'medium',
-    icon: '▤',
+    icon: MonitorPlay,
     hint: 'Paste URL → Plex poster field',
     desc: 'Open the item in Plex or Jellyfin, paste the Posterium URL into the custom artwork field, and you are done. Every time that poster loads, the scores refresh from the source. No cron jobs, no right-click save-as, no uploading files. Just a URL that stays current on its own.',
   },
 ];
 
 export interface UseCase {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   desc: string;
   tags: string[];
@@ -383,7 +399,7 @@ export interface UseCase {
 }
 export const USE_CASES: UseCase[] = [
   {
-    icon: '🖥️',
+    icon: MonitorPlay,
     rotateHint: -0.8,
     title: 'Plex & Jellyfin',
     tags: ['Media Servers', 'Plex', 'Jellyfin', 'Emby'],
@@ -395,7 +411,7 @@ export const USE_CASES: UseCase[] = [
     previewPositions: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86',
   },
   {
-    icon: '🤖',
+    icon: Bot,
     rotateHint: 0.6,
     title: 'Discord Bots',
     tags: ['Discord', 'Bots', 'Embeds'],
@@ -407,7 +423,7 @@ export const USE_CASES: UseCase[] = [
     previewPositions: 'imdb_x=10&imdb_y=12&rt_x=10&rt_y=86&meta_x=10&meta_y=160',
   },
   {
-    icon: '📋',
+    icon: ClipboardList,
     rotateHint: -0.4,
     title: 'Notion & Obsidian',
     tags: ['Notion', 'Obsidian', 'Databases'],
@@ -419,7 +435,7 @@ export const USE_CASES: UseCase[] = [
     previewPositions: 'imdb_x=10&imdb_y=12',
   },
   {
-    icon: '🌐',
+    icon: Globe,
     rotateHint: 1.0,
     title: 'Personal Websites',
     tags: ['Web', 'Blogs', 'Reviews'],
@@ -431,7 +447,7 @@ export const USE_CASES: UseCase[] = [
     previewPositions: 'imdb_x=310&imdb_y=12&rt_x=310&rt_y=86&meta_x=310&meta_y=160',
   },
   {
-    icon: '⚙️',
+    icon: Workflow,
     rotateHint: -0.6,
     title: 'Make · Zapier · n8n',
     tags: ['Automation', 'Make', 'Zapier'],
@@ -443,7 +459,7 @@ export const USE_CASES: UseCase[] = [
     previewPositions: 'imdb_x=310&imdb_y=12&rt_x=310&rt_y=86',
   },
   {
-    icon: '🎨',
+    icon: Palette,
     rotateHint: 0.9,
     title: 'Print & Design',
     tags: ['Print', 'SVG', 'Art', 'Design'],

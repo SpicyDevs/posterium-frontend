@@ -32,12 +32,12 @@ export const FooterSection = memo(() => (
       {/* Brand block */}
       <div style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,64px) 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-          <img src="/posterium.svg" alt="Posterium" width={40} height={40} style={{ display: 'block', flexShrink: 0, borderRadius: 7, boxShadow: '0 0 24px rgba(196,124,46,0.22), 0 4px 12px rgba(0,0,0,0.5)' }} />
+          <img src="/posterium.svg" alt="Posterium" width={40} height={40} style={{ display: 'block', flexShrink: 0, borderRadius: 7, boxShadow: '0 0 24px rgba(196,124,46,0.22), 0 4px 12px rgba(7,7,6,0.5)' }} />
           <div>
             <div className="poster-font" style={{ fontSize: 'clamp(28px,4vw,44px)', color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 0.9 }}>
               POSTERIUM
             </div>
-            <div className="mono-font" style={{ fontSize: 7, color: 'rgba(196,124,46,0.4)', letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 4 }}>
+            <div className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.4)', letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 4 }}>
               Free Poster API · MIT License
             </div>
           </div>

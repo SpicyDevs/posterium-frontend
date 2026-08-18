@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { FilmCorners } from './primitives';
 import { API } from '@/lib/dashboard/constants';
 import { HERO_POSTER_SRCS } from '@/generated/homePosters';
@@ -123,6 +123,7 @@ MobilePosterPeek.displayName = 'MobilePosterPeek';
 const CyclingPoster = memo(() => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [loaded,  setLoaded]  = useState<Record<number, boolean>>({});
   const [failed,  setFailed]  = useState<Record<number, boolean>>({});
 
@@ -130,6 +131,7 @@ const CyclingPoster = memo(() => {
   const failedRef   = useRef<Record<number, boolean>>({});
   const activeIdxRef  = useRef(0);
   const transRef    = useRef(false);
+  const pausedRef   = useRef(false);
   const swapTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const guardTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -139,6 +141,7 @@ const CyclingPoster = memo(() => {
   const imgRefs     = useRef<(HTMLImageElement | null)[]>([]);
 
   useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -171,6 +174,7 @@ const CyclingPoster = memo(() => {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearTimeout(intervalRef.current);
     const tick = () => {
+      if (pausedRef.current) { intervalRef.current = setTimeout(tick, 500); return; }
       if (!isVisRef.current) { intervalRef.current = null; return; }
       const next = (activeIdxRef.current + 1) % TOTAL;
       if (transRef.current || !ready(next)) {
@@ -178,16 +182,16 @@ const CyclingPoster = memo(() => {
         return;
       }
       goTo(next);
-      intervalRef.current = setTimeout(tick, 4500);
+      intervalRef.current = setTimeout(tick, 5000);
     };
-    intervalRef.current = setTimeout(tick, 4500);
+    intervalRef.current = setTimeout(tick, 5000);
   }, [goTo, ready]);
 
   useEffect(() => {
-    if (!loaded[0]) return;
+    if (!loaded[0] && !failed[0]) return;
     restartInterval();
     return () => { if (intervalRef.current) clearTimeout(intervalRef.current); finish(); };
-  }, [finish, loaded, restartInterval]);
+  }, [finish, loaded, failed, restartInterval]);
 
   const onLoad  = useCallback((i: number) => { if (loadedRef.current[i]) return; loadedRef.current = {...loadedRef.current, [i]: true}; setLoaded(p => ({...p, [i]: true})); }, []);
   const onError = useCallback((i: number) => { if (failedRef.current[i]) return; failedRef.current = {...failedRef.current, [i]: true}; setFailed(p => ({...p, [i]: true})); }, []);
@@ -197,12 +201,25 @@ const CyclingPoster = memo(() => {
   }, [onLoad]);
 
   return (
-    <div ref={sectionRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+    <div
+      ref={sectionRef}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured poster gallery"
+      aria-live="off"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setPaused(false); }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
+    >
       <div style={{ position: 'relative', width: 'clamp(200px,26vw,320px)', aspectRatio: '2/3', borderRadius: 6, overflow: 'hidden', background: '#111009', border: '1px solid rgba(196,124,46,0.18)', boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06), 0 0 60px rgba(196,124,46,0.08)' }}>
         <FilmCorners />
         {HERO_POSTERS.map((p, i) => (
           <img key={p.id} ref={el => { imgRefs.current[i] = el; }}
             src={POSTER_SRCS[i]} alt={`Poster for ${p.title} with live rating badges`}
+            role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${TOTAL}`}
+            aria-hidden={i !== activeIdx}
             loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i < 2 ? 'high' : 'auto'}
             decoding={i === 0 ? 'sync' : 'async'} onLoad={() => onLoad(i)} onError={() => onError(i)}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: i === activeIdx ? 1 : 0, willChange: transitioning ? 'opacity' : 'auto', transition: 'opacity 0.35s ease', pointerEvents: 'none' }}
@@ -212,7 +229,13 @@ const CyclingPoster = memo(() => {
           <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(110deg,#151310 25%,#1e1b16 50%,#151310 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.6s linear infinite' }} />
         )}
         {failed[activeIdx] && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'grid', placeItems: 'center', background: '#14120f', color: 'rgba(196,124,46,0.65)', fontSize: 24 }}>🎞</div>
+          <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'grid', placeItems: 'center', background: '#14120f' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(196,124,46,0.55)" strokeWidth="1.1" strokeLinecap="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="1.5" />
+              <path d="M3 8h3M6 12H3M3 16h3M18 8h3M21 12h-3M18 16h3" />
+              <rect x="7.5" y="8.5" width="9" height="7" rx="1" />
+            </svg>
+          </div>
         )}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2, padding: '28px 12px 12px', background: 'linear-gradient(to top, rgba(7,7,6,0.9) 0%, transparent 100%)', opacity: transitioning ? 0 : 1, transition: 'opacity 0.25s ease' }}>
           <span className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.65)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{HERO_POSTERS[activeIdx].title}</span>
@@ -222,10 +245,19 @@ const CyclingPoster = memo(() => {
         <button onClick={() => { goTo((activeIdxRef.current - 1 + TOTAL) % TOTAL); restartInterval(); }} aria-label="Previous poster" className="carousel-icon-btn" style={{ justifyContent: 'center' }}><ChevronLeft size={12} /></button>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {HERO_POSTERS.map((_, i) => (
-            <button key={i} onClick={() => { goTo(i); restartInterval(); }} aria-label={`Go to poster ${i + 1}`} style={{ border: 'none', cursor: 'pointer', padding: 0, background: i === activeIdx ? 'var(--film-amber)' : 'rgba(196,124,46,0.25)', width: i === activeIdx ? 20 : 6, height: 6, borderRadius: 3, transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)', flexShrink: 0 }} />
+            <button key={i} onClick={() => { goTo(i); restartInterval(); }} aria-label={`Go to poster ${i + 1}`} aria-current={i === activeIdx ? 'true' : undefined} style={{ border: 'none', cursor: 'pointer', padding: 0, background: i === activeIdx ? 'var(--film-amber)' : 'rgba(196,124,46,0.25)', width: i === activeIdx ? 20 : 6, height: 6, borderRadius: 3, transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)', flexShrink: 0 }} />
           ))}
         </div>
         <button onClick={() => { goTo((activeIdxRef.current + 1) % TOTAL); restartInterval(); }} aria-label="Next poster" className="carousel-icon-btn" style={{ justifyContent: 'center' }}><ChevronRight size={12} /></button>
+        <button
+          onClick={() => setPaused((p) => !p)}
+          aria-label={paused ? 'Resume rotation' : 'Pause rotation'}
+          aria-pressed={paused}
+          className="carousel-icon-btn"
+          style={{ justifyContent: 'center' }}
+        >
+          {paused ? <Play size={10} /> : <Pause size={10} />}
+        </button>
       </div>
     </div>
   );
@@ -250,7 +282,7 @@ const HeroSection = memo(() => (
           <span aria-hidden="true" style={{ color: 'transparent', WebkitTextStroke: '2px var(--film-amber)', display: 'block' }}>IUM</span>
         </h1>
         <div style={{ width: 120, height: 1, background: 'linear-gradient(90deg, var(--film-amber), transparent)', margin: '24px 0 24px', opacity: 0.6 }} />
-<p className="syne-font" style={{ fontSize: 'clamp(13px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 520, lineHeight: 1.7, marginBottom: 36 }}>
+<p className="syne-font" style={{ fontSize: 'clamp(14px,1.4vw,16px)', color: 'var(--film-silver)', fontWeight: 400, maxWidth: 520, lineHeight: 1.7, marginBottom: 36 }}>
           For Plex, Jellyfin & Stremio: posters with live{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>IMDb</strong>,{' '}
           <strong style={{ color: 'var(--film-cream)', fontWeight: 600 }}>Rotten Tomatoes</strong> and{' '}

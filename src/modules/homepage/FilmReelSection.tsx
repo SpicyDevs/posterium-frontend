@@ -126,11 +126,11 @@ const DesktopStaticReel = memo(() => {
           <SprocketStrip count={48} />
         </div>
         <div style={{ flexShrink: 0, padding: '7px 48px', borderTop: '1px solid rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="mono-font" style={{ fontSize: 7, color: 'var(--film-text-ghost)', letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0 }}>Gallery</span>
+          <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0 }}>Gallery</span>
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 99, overflow: 'hidden' }}>
             <div ref={progressFillRef} style={{ height: '100%', width: '0%', borderRadius: 99, background: 'linear-gradient(90deg, var(--film-amber), #D4A245)', transition: 'none' }} />
           </div>
-          <span className="mono-font" style={{ fontSize: 7, color: 'var(--film-text-ghost)', flexShrink: 0, letterSpacing: '0.1em' }}>{REEL_ITEMS.length} frames</span>
+          <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', flexShrink: 0, letterSpacing: '0.1em' }}>{REEL_ITEMS.length} frames</span>
         </div>
       </div>
     </div>

@@ -20,21 +20,21 @@ export const useInView = (
   const disabled = opts.disabled ?? false;
 
   const ref = useRef<HTMLDivElement>(null);
-  const [vis, setVis] = useState(disabled);
+  const [vis, setVis] = useState(true);
 
   useEffect(() => {
     if (disabled) return;
     const el = ref.current;
     if (!el) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setVis(true);
-      return;
-    }
+    if (typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setVis(true);
           obs.unobserve(entry.target);
+        } else {
+          setVis(false);
         }
       },
       { threshold, rootMargin: margin }

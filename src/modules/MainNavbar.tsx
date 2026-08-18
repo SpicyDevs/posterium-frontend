@@ -47,7 +47,7 @@ const MainNavbar = memo<MainNavbarProps>(
     keepSearchOnMobile = false,
     showMobileBuildCta = false,
   }) => {
-    const [visible, setVisible] = useState(!revealOnScroll);
+    const [visible, setVisible] = useState(true);
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -213,7 +213,7 @@ const MainNavbar = memo<MainNavbarProps>(
                 rel={external ? 'noreferrer' : undefined}
                 className="hover-cream"
                 style={{
-                  color: 'rgba(224, 210, 180, 0.88)',
+                  color: 'var(--film-text-label)',
                   fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: '0.1em',
@@ -257,7 +257,7 @@ const MainNavbar = memo<MainNavbarProps>(
               tabIndex={-1}
               className="nav-desktop-item hover-cream"
               style={{
-                color: 'rgba(200, 185, 155, 0.78)',
+                color: 'var(--film-text-dim)',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '6px 8px',

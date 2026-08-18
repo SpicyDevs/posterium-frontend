@@ -74,7 +74,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
             borderBottom: '1px solid rgba(255,255,255,0.04)',
           }}>
             <div style={{ gridColumn: 'span 5', padding: '8px clamp(14px,2.5vw,28px)' }}>
-              <span className="mono-font" style={{ fontSize: 7, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+              <span className="mono-font" style={{ fontSize: 8, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
                 Where we fall short
               </span>
             </div>
@@ -113,7 +113,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
             background: row.ourStatus === 'win' ? 'rgba(196,124,46,0.025)' : 'transparent',
             display: 'flex', flexDirection: 'column', gap: 6,
           }}>
-            <span className="comp-label-ours" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-amber)', opacity: 0.5 }}>Posterium</span>
+            <span className="comp-label-ours" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-amber)', opacity: 0.5 }}>Posterium</span>
             <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ marginTop: 2 }}>{getIcon(row.ourStatus)}</span>
               <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.ourStatus), lineHeight: 1.45 }}>
@@ -126,7 +126,7 @@ const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; i
 
           {/* Others */}
           <div role="gridcell" className="comp-cell-others" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="comp-label-theirs" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(122,117,110,0.4)' }}>Preset Services</span>
+            <span className="comp-label-theirs" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(122,117,110,0.4)' }}>Preset Services</span>
             <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ marginTop: 2 }}>{getIcon(row.theirStatus)}</span>
               <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.theirStatus), lineHeight: 1.45 }}>

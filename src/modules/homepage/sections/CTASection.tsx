@@ -70,7 +70,7 @@ export const CTASection = memo(() => {
             <span
               className="mono-font"
               style={{
-                fontSize: 7,
+                fontSize: 8,
                 color: 'rgba(122,117,110,0.4)',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',

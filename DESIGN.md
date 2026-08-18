@@ -18,6 +18,10 @@ colors:
   text-label: "rgba(212, 198, 172, 0.82)"
   text-dim: "rgba(206, 193, 170, 0.82)"
   text-ghost: "rgba(178, 166, 146, 0.58)"
+  text-muted: "rgba(122, 117, 110, 0.5)"
+  text-faint: "rgba(110, 104, 96, 0.6)"
+  glass: "rgba(255, 255, 255, 0.04)"
+  brass: "rgba(180, 150, 80, 0.55)"
 typography:
   display:
     fontFamily: "'Bebas Neue', 'Arial Narrow', sans-serif"
@@ -65,8 +69,36 @@ typography:
     fontWeight: 700
     letterSpacing: "0.14em"
     textTransform: "uppercase"
+  scale:
+    micro: "8px"
+    stamp: "9px"
+    chrome: "10px"
+    chrome-md: "11px"
+    chrome-lg: "12px"
+    chrome-xl: "13px"
+    body-lg: "15px"
+    body-2xl: "17px"
+    logo: "18px"
+    lead-xl: "22px"
+    display-xs: "28px"
+    display-sm: "32px"
+    display-md: "34px"
+    display-lg: "36px"
+    display-xl: "38px"
+    display-2xl: "40px"
+    display-3xl: "44px"
+    display-4xl: "52px"
+    display-5xl: "60px"
+    display-6xl: "64px"
+    stat: "56px"
+    stat-xl: "96px"
+    display-7xl: "72px"
+    display-8xl: "160px"
+    display-9xl: "168px"
+    display-10xl: "180px"
 rounded:
   stamp: "2px"
+  stamp-md: "3px"
   button: "4px"
   poster: "6px"
   field: "8px"
@@ -195,12 +227,17 @@ One warm world: black-and-umber neutrals carrying a single amber light source, w
 
 ### Hierarchy
 
+The scale is a tiny-chrome cinema system: display type carries the voice, chrome runs 10–13px, microlabels floor at 8px, and nothing below 8px ships. Steps: micro 8 / stamp 9 / chrome 10–13 / body 14 / body-lg 15 / title 16 / prose 17 / logo 18 / headline 20 / display 28–160.
+
 - **Display** (400, clamp(88px,13vw,200px), 0.84): Hero wordmark only. Line-height 0.84 is intentional — tight as a marquee.
+- **Display secondary** (700, 28–160px): Section headers (36–72px), stat numerals (56–96px), CTA display (60–160px), footer titles (28–44px). One marquee voice, sized to surface authority.
 - **Headline** (700, 20px, 1.2): Section and prose headings. Letter-spacing 0.02em.
 - **Title** (600, 16px, uppercase, 0.07em): Sub-headings, panel titles, uppercase calls inside content.
 - **Body** (400, 14px, 1.65): UI copy, cards, descriptions. Max line length ~65–75ch in prose.
+- **Body large** (400, 15px): Feature descriptions and lead copy under display type.
 - **Prose** (400, 14px, 1.65): Markdown content — DM Sans, with links in dusk-gold and code in reel-pale on glass wells.
-- **Label** (400, 8–9px, uppercase, 0.12em): Microlabels, captions, badge subtext, film-frame title bars — the projectionist's clipboard voice.
+- **Chrome** (700, 10–13px, uppercase, 0.08–0.14em): Nav links, button labels, table cells, feature names — the interface voice.
+- **Label** (400, 8–9px, uppercase, 0.12em): Microlabels, captions, badge subtext, film-frame title bars — the projectionist's clipboard voice. 8px is the floor; 7px never ships.
 
 ### Named Rules
 

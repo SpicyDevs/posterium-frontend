@@ -6,22 +6,18 @@ import { ProgressiveImage } from '@/ui/ProgressiveImage';
 import { SectionHeader } from '@/modules/homepage/SectionHeader';
 
 const FEATURE_TUPLES = [
-  ['Drag-Drop Editor', '⌖', '155', 'movie', 'imdb,rt,meta,tmdb', 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244'],
-  ['Instant API URL', '⚡', '27205', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
-  ['Multiple Sources', '⊞', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
-  ['Live Ratings', '◉', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
-  ['Movies, TV & Anime', '▣', '238', 'movie', 'imdb,meta', 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88'],
-  ['Any Export Format', '◫', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
-  ['Textless Posters', '◻', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
-  ['Plex & Jellyfin Ready', '▤', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
+  ['Drag-Drop Editor', '155', 'movie', 'imdb,rt,meta,tmdb', 'imdb_x=310&imdb_y=22&rt_x=310&rt_y=96&meta_x=310&meta_y=170&tmdb_x=310&tmdb_y=244'],
+  ['Instant API URL', '27205', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
+  ['Multiple Sources', '872585', 'movie', 'rt,meta', 'rt_x=14&rt_y=14&meta_x=310&meta_y=14'],
+  ['Live Ratings', '1396', 'tv', 'imdb', 'imdb_x=14&imdb_y=14'],
+  ['Movies, TV & Anime', '238', 'movie', 'imdb,meta', 'imdb_x=14&imdb_y=14&meta_x=14&meta_y=88'],
+  ['Any Export Format', '475557', 'movie', 'rt', 'rt_x=14&rt_y=14'],
+  ['Textless Posters', '157336', 'movie', 'imdb', 'imdb_x=310&imdb_y=14'],
+  ['Plex & Jellyfin Ready', '680', 'movie', 'imdb,rt', 'imdb_x=14&imdb_y=14&rt_x=14&rt_y=88'],
 ] as const;
 
-const ICON_MAP: Record<string, string> = Object.fromEntries(
-  FEATURE_TUPLES.map(([title, icon]) => [title, icon])
-);
-
 const FEATURE_SRCS: Record<string, string> = Object.fromEntries(
-  FEATURE_TUPLES.map(([title, , id, type, r, pos]) => [
+  FEATURE_TUPLES.map(([title, id, type, r, pos]) => [
     title,
     `${API}/${type}/${id}.webp?r=${r}&source=tmdb&blur=7&alpha=0.43&rad=10&${pos}`,
   ])
@@ -90,11 +86,11 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
               }}
             >
               <span style={{
-                fontSize: 13, fontFamily: 'monospace', lineHeight: 1, flexShrink: 0,
-                color: isActive ? 'var(--film-amber)' : 'rgba(196,185,165,0.5)',
+                display: 'flex', alignItems: 'center', flexShrink: 0,
+                color: isActive ? 'var(--film-amber)' : 'var(--film-text-ghost)',
                 transition: 'color 0.18s',
               }}>
-                {ICON_MAP[feat.title] ?? '◆'}
+                <feat.icon size={13} strokeWidth={1.6} aria-hidden="true" />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="syne-font" style={{
@@ -106,15 +102,15 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
                   {feat.title}
                 </div>
                 <div className="mono-font" style={{
-                  fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1,
-                  color: isActive ? 'rgba(214,156,84,0.7)' : 'rgba(196,185,165,0.38)',
+                  fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1,
+                  color: isActive ? 'var(--film-gold)' : 'var(--film-text-ghost)',
                   transition: 'color 0.18s',
                 }}>
                   {feat.tag}
                 </div>
               </div>
               {isActive && (
-                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#36A240', boxShadow: '0 0 5px rgba(54,162,64,0.55)', flexShrink: 0 }} />
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--film-amber)', boxShadow: '0 0 5px rgba(196,124,46,0.55)', flexShrink: 0 }} />
               )}
             </button>
           );
@@ -141,8 +137,8 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
             </span>
             <div>
               <span className="mono-font" style={{
-                fontSize: 7, letterSpacing: '0.16em', textTransform: 'uppercase',
-                color: 'rgba(214,156,84,0.75)', background: 'rgba(196,124,46,0.06)',
+                fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase',
+                color: 'var(--film-gold)', background: 'rgba(196,124,46,0.06)',
                 border: '1px solid rgba(196,124,46,0.12)', borderRadius: 2, padding: '2px 7px',
                 display: 'block', marginBottom: 5,
               }}>
@@ -156,7 +152,7 @@ const FeaturesPane = memo<{ vis: boolean }>(({ vis }) => {
 
           {/* API hint — the real useful bit */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(14,13,11,0.9)', border: '1px solid rgba(196,124,46,0.1)', borderRadius: 3, padding: '8px 14px', maxWidth: '100%', overflow: 'hidden' }}>
-            <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,124,46,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', flexShrink: 0 }}>API</span>
+            <span className="mono-font" style={{ fontSize: 8, color: 'rgba(196,124,46,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', flexShrink: 0 }}>API</span>
             <code className="mono-font" style={{ fontSize: 9, color: 'rgba(240,230,204,0.8)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {f.hint}
             </code>
@@ -185,7 +181,9 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
         transform: vis ? 'translateY(0)' : 'translateY(14px)',
         transition: `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`,
       }}>
-        <div style={{ fontSize: 'clamp(16px,2vw,20px)', marginBottom: 10, lineHeight: 1 }}>{uc.icon}</div>
+        <div style={{ color: 'var(--film-amber)', marginBottom: 10, lineHeight: 1, opacity: 0.85 }}>
+          <uc.icon size={20} strokeWidth={1.6} aria-hidden="true" />
+        </div>
         <h3 className="syne-font" style={{ fontSize: 'clamp(10px,1.4vw,12px)', fontWeight: 800, color: 'var(--film-cream)', marginBottom: 6, margin: '0 0 6px' }}>
           {uc.title}
         </h3>
@@ -193,7 +191,7 @@ const IntegrationsPane = memo<{ vis: boolean }>(({ vis }) => (
           {uc.desc}
         </p>
         {uc.codeSnippet && (
-          <code className="integrations-code mono-font" style={{ fontSize: 'clamp(7px,0.9vw,8px)', color: 'rgba(196,124,46,0.5)', letterSpacing: '0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(196,124,46,0.04)', border: '1px solid rgba(196,124,46,0.08)', borderRadius: 3, padding: '4px 8px' }}>
+          <code className="integrations-code mono-font" style={{ fontSize: 'clamp(8px,0.9vw,9px)', color: 'rgba(196,124,46,0.5)', letterSpacing: '0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(196,124,46,0.04)', border: '1px solid rgba(196,124,46,0.08)', borderRadius: 3, padding: '4px 8px' }}>
             {uc.codeSnippet}
           </code>
         )}
@@ -237,7 +235,7 @@ export const CombinedSection = memo(() => {
                   <button key={t} onClick={() => setTab(t)} className="syne-font" style={{
                     background: active ? 'rgba(196,124,46,0.12)' : 'transparent',
                     border: active ? '1px solid rgba(196,124,46,0.28)' : '1px solid transparent',
-                    borderRadius: 3, color: active ? 'var(--film-amber)' : 'rgba(196,185,165,0.6)',
+                    borderRadius: 3, color: active ? 'var(--film-amber)' : 'var(--film-text-dim)',
                     cursor: 'pointer', padding: '6px 16px', fontSize: 9, fontWeight: 700,
                     letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'all 0.2s',
                   }}>
@@ -255,10 +253,10 @@ export const CombinedSection = memo(() => {
         borderTop: '1px solid rgba(255,255,255,0.03)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
       }}>
-        <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.45)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+        <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
           {tab === 'features' ? `${FEATURES.length} features · MIT license · Open source` : `${USE_CASES.length} integrations · CORS open · Open source`}
         </span>
-        <span className="mono-font" style={{ fontSize: 7, color: 'rgba(196,185,165,0.4)', letterSpacing: '0.1em' }}>© SPICYDEVS</span>
+        <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.1em' }}>© SPICYDEVS</span>
       </div>
     </section>
   );

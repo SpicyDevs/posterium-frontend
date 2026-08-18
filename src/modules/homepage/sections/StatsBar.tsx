@@ -8,8 +8,8 @@ import { useInView, useCounter } from '@/lib/dashboard/hooks/index';
 const PANEL_ACCENTS = [
   { border: 'rgba(196,124,46,0.25)', glow: 'rgba(196,124,46,0.06)' },
   { border: 'rgba(168,32,24,0.22)', glow: 'rgba(168,32,24,0.05)' },
-  { border: 'rgba(60,100,200,0.2)', glow: 'rgba(60,100,200,0.05)' },
-  { border: 'rgba(54,162,64,0.22)', glow: 'rgba(54,162,64,0.05)' },
+  { border: 'rgba(212,162,69,0.2)', glow: 'rgba(212,162,69,0.05)' },
+  { border: 'rgba(240,230,204,0.14)', glow: 'rgba(240,230,204,0.03)' },
 ];
 
 const BORDER_BRIGHT = PANEL_ACCENTS.map(({ border }) =>
