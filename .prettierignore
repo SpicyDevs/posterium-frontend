@@ -1,4 +1,20 @@
-node_modules
-dist
-build
-coverage
+# Dependencies
+node_modules/
+
+# Build / generated output
+dist/
+.astro/
+pkg/
+
+# Agent / AI tooling
+.agents/
+.impeccable/
+skills/
+**/skills/
+
+# Agent / project instruction files
+**/AGENTS.md
+
+# Generated metadata
+package-lock.json
+skills-lock.json
