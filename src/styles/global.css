@@ -39,6 +39,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  :focus-visible {
+    outline: 2px solid var(--film-amber);
+    outline-offset: 2px;
+  }
+
   /* ── Firefox scrollbar (global) — matches the webkit amber gradient in dashboard.css ── */
   html {
     scrollbar-width: thin;
@@ -322,7 +327,7 @@
   }
 
   .prose blockquote {
-    border-left: 3px solid var(--film-amber);
+    border-left: 1px solid var(--film-amber);
     padding-left: 14px;
     margin: 0 0 12px;
     color: var(--film-text-label);

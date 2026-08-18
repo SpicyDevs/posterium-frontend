@@ -174,7 +174,7 @@ export const ComparisonSection = memo(() => {
         }}>
           {/* Sticky column headers */}
           <div role="row" className="comp-header" style={{
-            position: 'sticky', top: 52, zIndex: 10,
+            position: 'sticky', top: 56, zIndex: 10,
             display: 'grid', gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
             borderBottom: '1px solid rgba(196,124,46,0.22)',
             background: 'rgba(10,9,8,0.96)', backdropFilter: 'blur(20px)',

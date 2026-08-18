@@ -97,7 +97,7 @@ const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>
           </div>
           <div
             className="body-font"
-            style={{ fontSize: 10, color: 'rgba(110,104,96,0.6)', lineHeight: 1.4 }}
+            style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.4 }}
           >
             {stat.sub}
           </div>

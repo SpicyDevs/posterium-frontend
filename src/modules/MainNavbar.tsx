@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Coffee, Menu, X } from 'lucide-react';
-import GithubIcon from '@/ui/GithubIcon';
 import SearchInput from '@/ui/SearchInput';
 
 export interface NavbarLink {
@@ -250,25 +249,8 @@ const MainNavbar = memo<MainNavbarProps>(
             className="main-nav-right"
             style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto', ...chromeFadeStyle }}
           >
-            <a
-              href="#"
-              onClick={(event) => event.preventDefault()}
-              aria-hidden="true"
-              tabIndex={-1}
-              className="nav-desktop-item hover-cream"
-              style={{
-                color: 'var(--film-text-dim)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '6px 8px',
-                borderRadius: 4,
-              }}
-            >
-              <GithubIcon size={15} />
-            </a>
-
-            <a
-              href="/discord"
+<a
+            href="/discord"
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',
