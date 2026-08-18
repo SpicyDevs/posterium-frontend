@@ -104,6 +104,7 @@ rounded:
   field: "8px"
   card: "10px"
   panel: "12px"
+  panel-lg: "16px"
   pill: "9999px"
 spacing:
   xs: "4px"

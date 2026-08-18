@@ -12,6 +12,9 @@ const CombinedSection = lazy(() =>
 const ComparisonSection = lazy(() =>
   import('./sections/ComparisonSection').then((m) => ({ default: m.ComparisonSection }))
 );
+const PlexProofSection = lazy(() =>
+  import('./sections/PlexProofSection').then((m) => ({ default: m.PlexProofSection }))
+);
 const CTASection = lazy(() =>
   import('./sections/CTASection').then((m) => ({ default: m.CTASection }))
 );
@@ -99,6 +102,12 @@ const Dashboard: React.FC = () => {
           <ContentSection intrinsicH={900}>
             <Suspense fallback={null}>
               <ComparisonSection />
+            </Suspense>
+          </ContentSection>
+
+          <ContentSection intrinsicH={640}>
+            <Suspense fallback={null}>
+              <PlexProofSection />
             </Suspense>
           </ContentSection>
 
