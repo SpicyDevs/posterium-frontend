@@ -306,7 +306,12 @@ export interface Stat {
   unit?: string;
 }
 export const STATS: Stat[] = [
-  { value: '20+', label: 'Rating Sources', sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more', unit: 'src' },
+  {
+    value: '20+',
+    label: 'Rating Sources',
+    sub: 'IMDb · RT · Meta · TMDB · Letterboxd · more',
+    unit: 'src',
+  },
   { value: '4', label: 'Export Formats', sub: 'SVG · PNG · JPG · WebP', unit: 'fmt' },
 ];
 
@@ -475,5 +480,3 @@ export const API_PARAMS = [
   { p: 'ptype', d: 'Poster selection strategy', e: 'top1 | best | random' },
   { p: 'download', d: 'Force file download header', e: '(no value)' },
 ] as const;
-
-

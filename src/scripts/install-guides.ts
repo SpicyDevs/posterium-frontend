@@ -56,9 +56,7 @@ interface GuideData {
 
     // ── Notify the React TOC island ──────────────────────────────────────
     const headings = headingsByGuide[guideId] ?? [];
-    window.dispatchEvent(
-      new CustomEvent('posterium:guide-change', { detail: { headings } })
-    );
+    window.dispatchEvent(new CustomEvent('posterium:guide-change', { detail: { headings } }));
 
     // Update URL hash without triggering a scroll jump
     history.replaceState(null, '', `#${guideId}`);

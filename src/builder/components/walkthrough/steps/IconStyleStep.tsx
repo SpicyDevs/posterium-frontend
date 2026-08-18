@@ -16,9 +16,7 @@ const ICON_STYLE_OPTIONS = [
 const IconStyleStep = memo<IconStyleStepProps>(({ iconType, onChange }) => (
   <div>
     <StepTitle>Icon Style</StepTitle>
-    <StepSubtitle>
-      Choose how rating badge icons should appear across all badges.
-    </StepSubtitle>
+    <StepSubtitle>Choose how rating badge icons should appear across all badges.</StepSubtitle>
 
     <div style={{ maxWidth: 320 }}>
       <SegmentedRow

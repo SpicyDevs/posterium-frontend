@@ -35,21 +35,37 @@ const BranchChoice = memo<BranchChoiceProps>(({ onChoose, onBack }) => (
         fontSize: 11,
         transition: 'color 0.15s',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--film-text-label)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--film-text-ghost)'; }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.color = 'var(--film-text-label)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.color = 'var(--film-text-ghost)';
+      }}
     >
       <ChevronLeft size={14} /> Back
     </button>
 
     <h1
       className="poster-font"
-      style={{ fontSize: 32, fontWeight: 400, color: 'var(--film-cream)', marginBottom: 8, textAlign: 'center' }}
+      style={{
+        fontSize: 32,
+        fontWeight: 400,
+        color: 'var(--film-cream)',
+        marginBottom: 8,
+        textAlign: 'center',
+      }}
     >
       How would you like to start?
     </h1>
     <p
       className="body-font"
-      style={{ fontSize: 13, color: 'var(--film-text-dim)', marginBottom: 32, textAlign: 'center', maxWidth: 400 }}
+      style={{
+        fontSize: 13,
+        color: 'var(--film-text-dim)',
+        marginBottom: 32,
+        textAlign: 'center',
+        maxWidth: 400,
+      }}
     >
       Configure every detail step by step, or browse community presets.
     </p>
@@ -91,17 +107,37 @@ const BranchChoice = memo<BranchChoiceProps>(({ onChoose, onBack }) => (
       >
         <div
           style={{
-            width: 40, height: 40, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(196,124,46,0.1)', border: '1px solid rgba(196,124,46,0.2)', flexShrink: 0, color: 'var(--film-amber)',
+            width: 40,
+            height: 40,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(196,124,46,0.1)',
+            border: '1px solid rgba(196,124,46,0.2)',
+            flexShrink: 0,
+            color: 'var(--film-amber)',
           }}
         >
           <Wand2 size={18} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="syne-font" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--film-cream)', marginBottom: 3 }}>
+          <div
+            className="syne-font"
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: 'var(--film-cream)',
+              marginBottom: 3,
+            }}
+          >
             Guided Setup
           </div>
-          <div className="body-font" style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}>
+          <div
+            className="body-font"
+            style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}
+          >
             Configure every aspect of your poster one step at a time.
           </div>
         </div>
@@ -135,17 +171,37 @@ const BranchChoice = memo<BranchChoiceProps>(({ onChoose, onBack }) => (
       >
         <div
           style={{
-            width: 40, height: 40, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(196,124,46,0.1)', border: '1px solid rgba(196,124,46,0.2)', flexShrink: 0, color: 'var(--film-amber)',
+            width: 40,
+            height: 40,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(196,124,46,0.1)',
+            border: '1px solid rgba(196,124,46,0.2)',
+            flexShrink: 0,
+            color: 'var(--film-amber)',
           }}
         >
           <Grid3x3 size={18} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="syne-font" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--film-cream)', marginBottom: 3 }}>
+          <div
+            className="syne-font"
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: 'var(--film-cream)',
+              marginBottom: 3,
+            }}
+          >
             Community Presets
           </div>
-          <div className="body-font" style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}>
+          <div
+            className="body-font"
+            style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}
+          >
             Start from a curated example gallery and jump straight into the builder.
           </div>
         </div>

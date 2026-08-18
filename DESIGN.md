@@ -1,182 +1,182 @@
 ---
 name: Posterium
-description: "The Projection Booth — a dark-room cinema interface where projector amber lights the work"
+description: 'The Projection Booth — a dark-room cinema interface where projector amber lights the work'
 colors:
-  projector-amber: "#c47c2e"
-  dusk-gold: "#d4a245"
-  curtain-red: "#a82018"
-  cinema-black: "#070706"
-  velvet-umber: "#0e0d0b"
-  celluloid-umber: "#181612"
-  char-umber: "#222018"
-  dust-umber: "#453f37"
-  screen-cream: "#f0e6cc"
-  reel-pale: "#e8d8a8"
-  reel-white: "#faf6ec"
-  lobby-silver: "#b0a898"
-  text-body: "rgba(230, 218, 196, 0.92)"
-  text-label: "rgba(212, 198, 172, 0.82)"
-  text-dim: "rgba(206, 193, 170, 0.82)"
-  text-ghost: "rgba(178, 166, 146, 0.58)"
-  text-muted: "rgba(122, 117, 110, 0.5)"
-  text-faint: "rgba(110, 104, 96, 0.6)"
-  glass: "rgba(255, 255, 255, 0.04)"
-  brass: "rgba(180, 150, 80, 0.55)"
-  void-black: "rgba(0, 0, 0, 0.2)"
-  danger: "rgba(248, 113, 113, 0.85)"
-  warn: "rgba(250, 204, 21, 0.9)"
-  viz-gold: "#e8c15a"
-  viz-ember: "#e07b39"
-  viz-rust: "#b4522b"
-  viz-brick: "#a8391f"
-  viz-rose: "#d98e7a"
-  viz-tan: "#9c7a4a"
-  viz-ochre: "#b8863b"
-  brand-imdb: "#F5C518"
-  brand-tmdb: "#01b4e4"
-  brand-meta: "#FFBD3F"
-  brand-letterboxd: "#00e054"
-  brand-mal: "#2e51a2"
-  brand-anilist: "#02a9ff"
-  brand-rt-fresh: "#FA320A"
-  brand-rt-rotten: "#0AC855"
-  brand-popcorn-fresh: "#DB382A"
-  brand-popcorn-rotten: "#129B47"
+  projector-amber: '#c47c2e'
+  dusk-gold: '#d4a245'
+  curtain-red: '#a82018'
+  cinema-black: '#070706'
+  velvet-umber: '#0e0d0b'
+  celluloid-umber: '#181612'
+  char-umber: '#222018'
+  dust-umber: '#453f37'
+  screen-cream: '#f0e6cc'
+  reel-pale: '#e8d8a8'
+  reel-white: '#faf6ec'
+  lobby-silver: '#b0a898'
+  text-body: 'rgba(230, 218, 196, 0.92)'
+  text-label: 'rgba(212, 198, 172, 0.82)'
+  text-dim: 'rgba(206, 193, 170, 0.82)'
+  text-ghost: 'rgba(178, 166, 146, 0.58)'
+  text-muted: 'rgba(122, 117, 110, 0.5)'
+  text-faint: 'rgba(110, 104, 96, 0.6)'
+  glass: 'rgba(255, 255, 255, 0.04)'
+  brass: 'rgba(180, 150, 80, 0.55)'
+  void-black: 'rgba(0, 0, 0, 0.2)'
+  danger: 'rgba(248, 113, 113, 0.85)'
+  warn: 'rgba(250, 204, 21, 0.9)'
+  viz-gold: '#e8c15a'
+  viz-ember: '#e07b39'
+  viz-rust: '#b4522b'
+  viz-brick: '#a8391f'
+  viz-rose: '#d98e7a'
+  viz-tan: '#9c7a4a'
+  viz-ochre: '#b8863b'
+  brand-imdb: '#F5C518'
+  brand-tmdb: '#01b4e4'
+  brand-meta: '#FFBD3F'
+  brand-letterboxd: '#00e054'
+  brand-mal: '#2e51a2'
+  brand-anilist: '#02a9ff'
+  brand-rt-fresh: '#FA320A'
+  brand-rt-rotten: '#0AC855'
+  brand-popcorn-fresh: '#DB382A'
+  brand-popcorn-rotten: '#129B47'
 typography:
   display:
     fontFamily: "'Bebas Neue', 'Arial Narrow', sans-serif"
-    fontSize: "clamp(88px, 13vw, 200px)"
+    fontSize: 'clamp(88px, 13vw, 200px)'
     fontWeight: 400
     lineHeight: 0.84
-    letterSpacing: "0.03em"
+    letterSpacing: '0.03em'
   headline:
     fontFamily: "'Syne', sans-serif"
-    fontSize: "20px"
+    fontSize: '20px'
     fontWeight: 700
     lineHeight: 1.2
-    letterSpacing: "0.02em"
+    letterSpacing: '0.02em'
   title:
     fontFamily: "'Syne', sans-serif"
-    fontSize: "16px"
+    fontSize: '16px'
     fontWeight: 600
-    letterSpacing: "0.07em"
-    textTransform: "uppercase"
+    letterSpacing: '0.07em'
+    textTransform: 'uppercase'
   body:
     fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif"
-    fontSize: "14px"
+    fontSize: '14px'
     fontWeight: 400
     lineHeight: 1.65
   prose:
     fontFamily: "'DM Sans', sans-serif"
-    fontSize: "14px"
+    fontSize: '14px'
     fontWeight: 400
     lineHeight: 1.65
   label:
     fontFamily: "'JetBrains Mono', monospace"
-    fontSize: "9px"
+    fontSize: '9px'
     fontWeight: 400
-    letterSpacing: "0.12em"
-    textTransform: "uppercase"
+    letterSpacing: '0.12em'
+    textTransform: 'uppercase'
   button-label:
     fontFamily: "'Syne', sans-serif"
-    fontSize: "11px"
+    fontSize: '11px'
     fontWeight: 700
-    letterSpacing: "0.08em"
-    textTransform: "uppercase"
+    letterSpacing: '0.08em'
+    textTransform: 'uppercase'
   tag-label:
     fontFamily: "'Syne', sans-serif"
-    fontSize: "9px"
+    fontSize: '9px'
     fontWeight: 700
-    letterSpacing: "0.14em"
-    textTransform: "uppercase"
+    letterSpacing: '0.14em'
+    textTransform: 'uppercase'
   scale:
-    micro: "8px"
-    stamp: "9px"
-    chrome: "10px"
-    chrome-md: "11px"
-    chrome-lg: "12px"
-    chrome-xl: "13px"
-    body-lg: "15px"
-    body-2xl: "17px"
-    logo: "18px"
-    lead-xl: "22px"
-    display-xs: "28px"
-    display-sm: "32px"
-    display-md: "34px"
-    display-lg: "36px"
-    display-xl: "38px"
-    display-2xl: "40px"
-    display-3xl: "44px"
-    display-4xl: "52px"
-    display-5xl: "60px"
-    display-6xl: "64px"
-    stat: "56px"
-    stat-xl: "96px"
-    display-7xl: "72px"
-    display-8xl: "160px"
-    display-9xl: "168px"
-    display-10xl: "180px"
+    micro: '8px'
+    stamp: '9px'
+    chrome: '10px'
+    chrome-md: '11px'
+    chrome-lg: '12px'
+    chrome-xl: '13px'
+    body-lg: '15px'
+    body-2xl: '17px'
+    logo: '18px'
+    lead-xl: '22px'
+    display-xs: '28px'
+    display-sm: '32px'
+    display-md: '34px'
+    display-lg: '36px'
+    display-xl: '38px'
+    display-2xl: '40px'
+    display-3xl: '44px'
+    display-4xl: '52px'
+    display-5xl: '60px'
+    display-6xl: '64px'
+    stat: '56px'
+    stat-xl: '96px'
+    display-7xl: '72px'
+    display-8xl: '160px'
+    display-9xl: '168px'
+    display-10xl: '180px'
 rounded:
-  stamp: "2px"
-  stamp-md: "3px"
-  button: "4px"
-  poster: "6px"
-  field: "8px"
-  card: "10px"
-  panel: "12px"
-  panel-lg: "16px"
-  pill: "9999px"
+  stamp: '2px'
+  stamp-md: '3px'
+  button: '4px'
+  poster: '6px'
+  field: '8px'
+  card: '10px'
+  panel: '12px'
+  panel-lg: '16px'
+  pill: '9999px'
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  xl: "20px"
-  "2xl": "24px"
-  "3xl": "32px"
+  xs: '4px'
+  sm: '8px'
+  md: '12px'
+  lg: '16px'
+  xl: '20px'
+  '2xl': '24px'
+  '3xl': '32px'
 components:
   button-primary:
-    backgroundColor: "{colors.projector-amber}"
-    textColor: "{colors.cinema-black}"
-    typography: "{typography.button-label}"
-    rounded: "{rounded.button}"
-    padding: "12px 24px"
+    backgroundColor: '{colors.projector-amber}'
+    textColor: '{colors.cinema-black}'
+    typography: '{typography.button-label}'
+    rounded: '{rounded.button}'
+    padding: '12px 24px'
   button-primary-hover:
-    backgroundColor: "{colors.projector-amber}"
-    textColor: "{colors.cinema-black}"
-    typography: "{typography.button-label}"
-    rounded: "{rounded.button}"
-    padding: "12px 24px"
+    backgroundColor: '{colors.projector-amber}'
+    textColor: '{colors.cinema-black}'
+    typography: '{typography.button-label}'
+    rounded: '{rounded.button}'
+    padding: '12px 24px'
   button-secondary:
-    backgroundColor: "rgba(255, 255, 255, 0.03)"
-    textColor: "{colors.screen-cream}"
-    typography: "{typography.button-label}"
-    rounded: "{rounded.button}"
-    padding: "11px 20px"
+    backgroundColor: 'rgba(255, 255, 255, 0.03)'
+    textColor: '{colors.screen-cream}'
+    typography: '{typography.button-label}'
+    rounded: '{rounded.button}'
+    padding: '11px 20px'
   button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.text-label}"
-    typography: "{typography.button-label}"
-    rounded: "{rounded.button}"
-    padding: "8px 14px"
+    backgroundColor: 'transparent'
+    textColor: '{colors.text-label}'
+    typography: '{typography.button-label}'
+    rounded: '{rounded.button}'
+    padding: '8px 14px'
   tag-amber:
-    backgroundColor: "rgba(196, 124, 46, 0.1)"
-    textColor: "{colors.projector-amber}"
-    typography: "{typography.tag-label}"
-    rounded: "{rounded.stamp}"
-    padding: "3px 9px"
+    backgroundColor: 'rgba(196, 124, 46, 0.1)'
+    textColor: '{colors.projector-amber}'
+    typography: '{typography.tag-label}'
+    rounded: '{rounded.stamp}'
+    padding: '3px 9px'
   input-search:
-    backgroundColor: "rgba(255, 255, 255, 0.03)"
-    textColor: "{colors.screen-cream}"
-    typography: "{typography.body}"
-    rounded: "{rounded.field}"
-    height: "34px"
-    padding: "0 10px"
+    backgroundColor: 'rgba(255, 255, 255, 0.03)'
+    textColor: '{colors.screen-cream}'
+    typography: '{typography.body}'
+    rounded: '{rounded.field}'
+    height: '34px'
+    padding: '0 10px'
   card-default:
-    backgroundColor: "rgba(24, 22, 18, 0.6)"
-    textColor: "{colors.text-body}"
-    rounded: "{rounded.card}"
-    padding: "{spacing.md}"
+    backgroundColor: 'rgba(24, 22, 18, 0.6)'
+    textColor: '{colors.text-body}'
+    rounded: '{rounded.card}'
+    padding: '{spacing.md}'
 ---
 
 # Design System: Posterium
@@ -187,7 +187,7 @@ components:
 
 Posterium is a dark room built around one beam of projector amber. The interface is a cinema interior after the lights go down: near-black velvet surfaces, hairline amber edges where surfaces meet, and color deployed the way a projectionist uses a light source — sparingly, pointedly, and always where the eye should land next. Nothing here glows for decoration; everything that glows is something you can press, read, or watch change.
 
-The aesthetic philosophy is *restrained, precision cinema*. Density is real but ordered: the system leans on tiny exact details — 2px ticket-stamp tags, sprocket-hole perforations, corner brackets, 8px mono microlabels — so the surfaces stay quiet while the details carry the theater. Postures are theatrical only where the product is the theater: the hero wordmark (a two-tone POSTER/IUM with an amber-stroked second half), the film-frame carousels, the floating poster reels. Everything else stays disciplined, because the primary job of most screens is Operate: scan, adjust, ship a URL.
+The aesthetic philosophy is _restrained, precision cinema_. Density is real but ordered: the system leans on tiny exact details — 2px ticket-stamp tags, sprocket-hole perforations, corner brackets, 8px mono microlabels — so the surfaces stay quiet while the details carry the theater. Postures are theatrical only where the product is the theater: the hero wordmark (a two-tone POSTER/IUM with an amber-stroked second half), the film-frame carousels, the floating poster reels. Everything else stays disciplined, because the primary job of most screens is Operate: scan, adjust, ship a URL.
 
 The typographic voice is a poster house meets Swiss precision. Bebas Neue delivers condensed, all-caps display; Syne carries headings and chrome with wide tracking; Plus Jakarta Sans and DM Sans handle reading; JetBrains Mono stamps microlabels and captions.
 

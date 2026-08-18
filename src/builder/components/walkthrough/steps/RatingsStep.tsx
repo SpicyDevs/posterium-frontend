@@ -18,7 +18,7 @@ const RatingsStep = memo<RatingsStepProps>(({ ratings, onChange }) => {
         onChange([...ratings, id]);
       }
     },
-    [ratings, onChange],
+    [ratings, onChange]
   );
 
   return (
@@ -66,9 +66,7 @@ const RatingsStep = memo<RatingsStepProps>(({ ratings, onChange }) => {
                   : 'rgba(255,255,255,0.03)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = active
-                  ? 'rgba(196,124,46,0.06)'
-                  : 'transparent';
+                e.currentTarget.style.background = active ? 'rgba(196,124,46,0.06)' : 'transparent';
               }}
             >
               <div

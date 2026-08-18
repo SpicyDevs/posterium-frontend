@@ -88,7 +88,7 @@ const MediaSearchCombobox: React.FC<MediaSearchComboboxProps> = ({
                 className={({ active }) =>
                   clsx(
                     'flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors',
-                    active && 'bg-[rgba(196,124,46,0.08)]',
+                    active && 'bg-[rgba(196,124,46,0.08)]'
                   )
                 }
               >

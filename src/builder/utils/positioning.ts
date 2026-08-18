@@ -1,12 +1,5 @@
 import type { PosterConfig, RatingType } from '../types';
-import {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  BASE_BADGE_W,
-  BASE_BADGE_H,
-  GAP,
-  PADDING,
-} from '../types';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, BASE_BADGE_W, BASE_BADGE_H, GAP, PADDING } from '../types';
 
 export const getScale = (size: string): number => (size === 'sm' ? 0.8 : size === 'lg' ? 1.2 : 1.0);
 export const SNAP_GRID_SIZE = 10;
@@ -77,7 +70,8 @@ export const calculateAutoPosition = (
     let rowOffsetY = 0;
     for (const row of rows) {
       if (index >= row.start && index < row.end) {
-        const precedingW = dims.slice(row.start, index).reduce((sum, d) => sum + d.w, 0) + (index - row.start) * GAP;
+        const precedingW =
+          dims.slice(row.start, index).reduce((sum, d) => sum + d.w, 0) + (index - row.start) * GAP;
 
         let baseX: number;
         if (config.preset.includes('l')) baseX = PADDING;

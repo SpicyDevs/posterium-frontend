@@ -10,7 +10,8 @@ const OPTIONS = [
     id: 'walkthrough' as const,
     icon: <BookOpen size={18} />,
     title: 'Guided Walkthrough',
-    description: 'Step-by-step poster builder. Choose a poster source, theme, ratings, and export format.',
+    description:
+      'Step-by-step poster builder. Choose a poster source, theme, ratings, and export format.',
   },
   {
     id: 'simple' as const,
@@ -22,7 +23,8 @@ const OPTIONS = [
     id: 'advanced' as const,
     icon: <Sliders size={18} />,
     title: 'Advanced Builder',
-    description: 'Full panel navigation with dedicated source, layers, badges, and selection panels.',
+    description:
+      'Full panel navigation with dedicated source, layers, badges, and selection panels.',
   },
   {
     id: 'community' as const,
@@ -45,13 +47,25 @@ const EntryChoice = memo<EntryChoiceProps>(({ onChoose }) => (
   >
     <h1
       className="poster-font"
-      style={{ fontSize: 36, fontWeight: 400, color: 'var(--film-cream)', marginBottom: 8, textAlign: 'center' }}
+      style={{
+        fontSize: 36,
+        fontWeight: 400,
+        color: 'var(--film-cream)',
+        marginBottom: 8,
+        textAlign: 'center',
+      }}
     >
       Welcome to Posterium
     </h1>
     <p
       className="body-font"
-      style={{ fontSize: 13, color: 'var(--film-text-dim)', marginBottom: 32, textAlign: 'center', maxWidth: 400 }}
+      style={{
+        fontSize: 13,
+        color: 'var(--film-text-dim)',
+        marginBottom: 32,
+        textAlign: 'center',
+        maxWidth: 400,
+      }}
     >
       Choose how you'd like to start building your poster.
     </p>
@@ -122,7 +136,10 @@ const EntryChoice = memo<EntryChoiceProps>(({ onChoose }) => (
             >
               {opt.title}
             </div>
-            <div className="body-font" style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}>
+            <div
+              className="body-font"
+              style={{ fontSize: 10, color: 'var(--film-text-ghost)', lineHeight: 1.3 }}
+            >
               {opt.description}
             </div>
           </div>

@@ -5,7 +5,7 @@ export function clearWalkthroughState(): void {
   try {
     localStorage.removeItem(WALKTHROUGH_KEY);
   } catch {
-    /* */ 
+    /* */
   }
 }
 
@@ -24,21 +24,27 @@ export function saveWalkthroughState(): void {
   try {
     localStorage.setItem(
       WALKTHROUGH_KEY,
-      JSON.stringify({ completed: true, completedAt: new Date().toISOString() }),
+      JSON.stringify({ completed: true, completedAt: new Date().toISOString() })
     );
-  } catch { /* private browsing */ }
+  } catch {
+    /* private browsing */
+  }
 }
 
 export function getBuilderMode(): 'simple' | 'advanced' {
   try {
     const saved = localStorage.getItem(BUILDER_MODE_KEY);
     if (saved === 'simple' || saved === 'advanced') return saved;
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
   return 'simple';
 }
 
 export function saveBuilderMode(mode: 'simple' | 'advanced'): void {
   try {
     localStorage.setItem(BUILDER_MODE_KEY, mode);
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 }

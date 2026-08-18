@@ -71,50 +71,50 @@ const FaqSearch = memo<FaqSearchProps>(({ items }) => {
   }, [filteredIds, matchCount]);
 
   return (
-      <div
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 400,
+      }}
+    >
+      <SearchInput
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onActivate={() => setIsActive(true)}
+        onBlur={() => setIsActive(false)}
+        placeholder="Search FAQs..."
         style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: 400,
+          height: 38,
+          padding: '0 12px',
+          border: isActive ? '1px solid rgba(196,124,46,0.4)' : '1px solid rgba(255,255,255,0.08)',
+          transition: 'border-color 0.15s ease',
         }}
-      >
-        <SearchInput
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onActivate={() => setIsActive(true)}
-          onBlur={() => setIsActive(false)}
-          placeholder="Search FAQs..."
+      />
+      {search && (
+        <button
+          type="button"
+          onClick={() => setSearch('')}
           style={{
-            height: 38,
-            padding: '0 12px',
-            border: isActive ? '1px solid rgba(196,124,46,0.4)' : '1px solid rgba(255,255,255,0.08)',
-            transition: 'border-color 0.15s ease',
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'none',
+            border: 'none',
+            padding: 4,
+            cursor: 'pointer',
+            color: 'var(--film-text-dim)',
+            display: 'flex',
+            alignItems: 'center',
+            zIndex: 1,
           }}
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch('')}
-            style={{
-              position: 'absolute',
-              right: 8,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              padding: 4,
-              cursor: 'pointer',
-              color: 'var(--film-text-dim)',
-              display: 'flex',
-              alignItems: 'center',
-              zIndex: 1,
-            }}
-            aria-label="Clear search"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+          aria-label="Clear search"
+        >
+          <X size={14} />
+        </button>
+      )}
+    </div>
   );
 });
 

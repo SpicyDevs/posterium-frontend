@@ -43,21 +43,14 @@ const PreviewBody = memo<LiveWalkthroughPreviewProps>(({ config, compact }) => {
     return () => ro.disconnect();
   }, []);
 
-  const artworkUrl = useMemo(() => generateCleanArtworkUrl(config), [
-    config.tmdbId,
-    config.imdbId,
-    config.source,
-    config.mediaType,
-    config.textless,
-    config.ptype,
-  ]);
-  const logoUrl = useMemo(() => generateLogoUrl(config), [
-    config.logo,
-    config.tmdbId,
-    config.imdbId,
-    config.mediaType,
-    config.logoSource,
-  ]);
+  const artworkUrl = useMemo(
+    () => generateCleanArtworkUrl(config),
+    [config.tmdbId, config.imdbId, config.source, config.mediaType, config.textless, config.ptype]
+  );
+  const logoUrl = useMemo(
+    () => generateLogoUrl(config),
+    [config.logo, config.tmdbId, config.imdbId, config.mediaType, config.logoSource]
+  );
 
   const hasIds = Boolean(config.imdbId || config.tmdbId);
 
@@ -155,14 +148,8 @@ const PreviewBody = memo<LiveWalkthroughPreviewProps>(({ config, compact }) => {
               {config.ratings.map((id: RatingType, index: number) => {
                 const auto = calculateAutoPosition(id, index, config.ratings.length, config);
                 const iCfg = config.items[id];
-                const x =
-                  iCfg?.x !== undefined && isFinite(iCfg.x)
-                    ? iCfg.x
-                    : auto.x;
-                const y =
-                  iCfg?.y !== undefined && isFinite(iCfg.y)
-                    ? iCfg.y
-                    : auto.y;
+                const x = iCfg?.x !== undefined && isFinite(iCfg.x) ? iCfg.x : auto.x;
+                const y = iCfg?.y !== undefined && isFinite(iCfg.y) ? iCfg.y : auto.y;
                 return (
                   <DraggableBadge
                     key={id}

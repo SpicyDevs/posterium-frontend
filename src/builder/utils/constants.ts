@@ -2,7 +2,7 @@ import type { RatingType } from '../types';
 
 const envApiUrl =
   typeof import.meta !== 'undefined' &&
-  (import.meta as any).env?.PUBLIC_API_URL as string | undefined;
+  ((import.meta as any).env?.PUBLIC_API_URL as string | undefined);
 export const DEFAULT_API_BASE = envApiUrl || 'https://api.posterium.xyz';
 
 export const V3_KEY_TO_CODE: Partial<Record<RatingType, string>> & { title?: string } = {
@@ -25,7 +25,17 @@ export const V3_CODE_TO_KEY: Record<string, RatingType> = Object.fromEntries(
 );
 
 export const API_RATING_KEYS: RatingType[] = [
-  'imdb', 'rt', 'rt_popcorn', 'letterboxd', 'meta', 'tmdb', 'mal', 'anilist', 'age', 'runtime', 'year',
+  'imdb',
+  'rt',
+  'rt_popcorn',
+  'letterboxd',
+  'meta',
+  'tmdb',
+  'mal',
+  'anilist',
+  'age',
+  'runtime',
+  'year',
 ];
 
 export const isApiRatingKey = (k: RatingType): boolean => API_RATING_KEYS.includes(k);

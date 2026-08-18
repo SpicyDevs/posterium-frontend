@@ -70,15 +70,19 @@ export const generateApiUrl = (
     p.set('ls', config.labelSize.toString());
   if (config.labelColor) p.set('lc', config.labelColor);
 
-  if (config.decimals !== undefined && config.decimals !== DEFAULTS.decimals) p.set('dc', config.decimals.toString());
+  if (config.decimals !== undefined && config.decimals !== DEFAULTS.decimals)
+    p.set('dc', config.decimals.toString());
   if (config.forceDecimals) p.set('fd', '1');
-  if (config.outOfSize !== undefined && config.outOfSize !== DEFAULTS.outOfSize) p.set('os', config.outOfSize.toString());
+  if (config.outOfSize !== undefined && config.outOfSize !== DEFAULTS.outOfSize)
+    p.set('os', config.outOfSize.toString());
   if (config.outOfColor) p.set('oc', config.outOfColor);
   if (config.uniform) p.set('ub', '1');
   if (config.iconPos && config.iconPos !== DEFAULTS.iconPos) p.set('ip', config.iconPos);
   if (config.labelInside) p.set('li', '1');
-  if (config.logoMaxW !== null && config.logoMaxW !== undefined) p.set('lmw', config.logoMaxW.toString());
-  if (config.logoMaxH !== null && config.logoMaxH !== undefined) p.set('lmh', config.logoMaxH.toString());
+  if (config.logoMaxW !== null && config.logoMaxW !== undefined)
+    p.set('lmw', config.logoMaxW.toString());
+  if (config.logoMaxH !== null && config.logoMaxH !== undefined)
+    p.set('lmh', config.logoMaxH.toString());
 
   // Layout/preset params — only meaningful when positions are not frozen.
   // When both are non-custom, per-badge x/y are omitted (auto-positioning
@@ -96,37 +100,55 @@ export const generateApiUrl = (
     if (titleItem) {
       if (titleItem.x !== undefined) p.set(`${T}_x`, titleItem.x.toString());
       const titleYDefault = config.uiPreset === 'm' ? 657 : 100;
-      if (titleItem.y !== undefined && titleItem.y !== titleYDefault) p.set(`${T}_y`, titleItem.y.toString());
-      if (titleItem.textSize !== undefined && titleItem.textSize !== 48) p.set(`${T}_sz`, titleItem.textSize.toString());
-      if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff') p.set(`${T}_tx`, titleItem.txt);
-      if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left') p.set(`${T}_ta`, titleItem.textAlign);
-      if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450) p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
-      if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800) p.set(`${T}_wt`, titleItem.textWeight.toString());
+      if (titleItem.y !== undefined && titleItem.y !== titleYDefault)
+        p.set(`${T}_y`, titleItem.y.toString());
+      if (titleItem.textSize !== undefined && titleItem.textSize !== 48)
+        p.set(`${T}_sz`, titleItem.textSize.toString());
+      if (titleItem.txt !== undefined && titleItem.txt !== '#ffffff')
+        p.set(`${T}_tx`, titleItem.txt);
+      if (titleItem.textAlign !== undefined && titleItem.textAlign !== 'left')
+        p.set(`${T}_ta`, titleItem.textAlign);
+      if (titleItem.textBoxWidth !== undefined && titleItem.textBoxWidth !== 450)
+        p.set(`${T}_wd`, titleItem.textBoxWidth.toString());
+      if (titleItem.textWeight !== undefined && titleItem.textWeight !== 800)
+        p.set(`${T}_wt`, titleItem.textWeight.toString());
       if (titleItem.lines !== undefined) p.set(`${T}_ln`, titleItem.lines);
       const vaDefault = config.uiPreset === 'm' ? 'bottom' : 'top';
-      if (titleItem.verticalAnchor !== undefined && titleItem.verticalAnchor !== vaDefault) p.set(`${T}_va`, titleItem.verticalAnchor);
+      if (titleItem.verticalAnchor !== undefined && titleItem.verticalAnchor !== vaDefault)
+        p.set(`${T}_va`, titleItem.verticalAnchor);
       // Modern typography controls (round-trip through the parser's T_* suffixes)
-      if (titleItem.textCharWidth !== undefined) p.set(`${T}_tw`, titleItem.textCharWidth.toString());
-      if (titleItem.textCharHeight !== undefined) p.set(`${T}_th`, titleItem.textCharHeight.toString());
-      if (titleItem.textWrapEnabled !== undefined && !titleItem.textWrapEnabled) p.set(`${T}_wr`, '0');
-      if (titleItem.textMaxChars !== undefined && titleItem.textMaxChars > 0) p.set(`${T}_mx`, titleItem.textMaxChars.toString());
-      if (titleItem.textLetterSpacing !== undefined && titleItem.textLetterSpacing !== 0) p.set(`${T}_ks`, titleItem.textLetterSpacing.toString());
-      if (titleItem.textLineHeight !== undefined && titleItem.textLineHeight !== 1.1) p.set(`${T}_lh`, titleItem.textLineHeight.toString());
+      if (titleItem.textCharWidth !== undefined)
+        p.set(`${T}_tw`, titleItem.textCharWidth.toString());
+      if (titleItem.textCharHeight !== undefined)
+        p.set(`${T}_th`, titleItem.textCharHeight.toString());
+      if (titleItem.textWrapEnabled !== undefined && !titleItem.textWrapEnabled)
+        p.set(`${T}_wr`, '0');
+      if (titleItem.textMaxChars !== undefined && titleItem.textMaxChars > 0)
+        p.set(`${T}_mx`, titleItem.textMaxChars.toString());
+      if (titleItem.textLetterSpacing !== undefined && titleItem.textLetterSpacing !== 0)
+        p.set(`${T}_ks`, titleItem.textLetterSpacing.toString());
+      if (titleItem.textLineHeight !== undefined && titleItem.textLineHeight !== 1.1)
+        p.set(`${T}_lh`, titleItem.textLineHeight.toString());
       const titleDisplayScale = (titleItem.scale ?? config.scale ?? 1.0) * sizeScale;
       if (titleDisplayScale !== 1.0) p.set(`${T}_sc`, titleDisplayScale.toFixed(3));
       if (titleItem.textShadowEnabled !== undefined) {
         p.set(`${T}_se`, titleItem.textShadowEnabled ? '1' : '0');
         if (titleItem.textShadowEnabled) {
-          if (titleItem.textShadowX !== undefined && titleItem.textShadowX !== 0) p.set(`${T}_sx`, titleItem.textShadowX.toString());
-          if (titleItem.textShadowY !== undefined && titleItem.textShadowY !== 2) p.set(`${T}_sy`, titleItem.textShadowY.toString());
-          if (titleItem.textShadowBlur !== undefined && titleItem.textShadowBlur !== 8) p.set(`${T}_sb`, titleItem.textShadowBlur.toString());
-          if (titleItem.textShadowColor !== undefined && titleItem.textShadowColor !== '#000000') p.set(`${T}_sv`, titleItem.textShadowColor);
+          if (titleItem.textShadowX !== undefined && titleItem.textShadowX !== 0)
+            p.set(`${T}_sx`, titleItem.textShadowX.toString());
+          if (titleItem.textShadowY !== undefined && titleItem.textShadowY !== 2)
+            p.set(`${T}_sy`, titleItem.textShadowY.toString());
+          if (titleItem.textShadowBlur !== undefined && titleItem.textShadowBlur !== 8)
+            p.set(`${T}_sb`, titleItem.textShadowBlur.toString());
+          if (titleItem.textShadowColor !== undefined && titleItem.textShadowColor !== '#000000')
+            p.set(`${T}_sv`, titleItem.textShadowColor);
         }
       }
     }
   }
 
-  if (config.sourcePriority && config.sourcePriority.length > 0) p.set('so', config.sourcePriority.join(','));
+  if (config.sourcePriority && config.sourcePriority.length > 0)
+    p.set('so', config.sourcePriority.join(','));
   if (config.malId) p.set('mid', config.malId);
   if (config.font) p.set('fn', config.font);
 
@@ -154,12 +176,16 @@ export const generateApiUrl = (
     if (eff(item.alpha, config.alpha)) p.set(`${code}_al`, item.alpha!.toString());
     if (eff(item.radius, config.radius)) p.set(`${code}_ra`, item.radius!.toString());
     if (eff(item.shadow, config.shadow)) p.set(`${code}_sh`, item.shadow!.toString());
-    if (item.shadowX !== undefined && item.shadowX !== 0) p.set(`${code}_sx`, item.shadowX.toString());
-    if (item.shadowY !== undefined && item.shadowY !== (config.shadowY ?? 2)) p.set(`${code}_sy`, item.shadowY.toString());
-    if (item.shadowColor !== undefined && item.shadowColor !== '#000000') p.set(`${code}_sv`, item.shadowColor);
+    if (item.shadowX !== undefined && item.shadowX !== 0)
+      p.set(`${code}_sx`, item.shadowX.toString());
+    if (item.shadowY !== undefined && item.shadowY !== (config.shadowY ?? 2))
+      p.set(`${code}_sy`, item.shadowY.toString());
+    if (item.shadowColor !== undefined && item.shadowColor !== '#000000')
+      p.set(`${code}_sv`, item.shadowColor);
     const effShadow = item.shadow ?? config.shadow ?? DEFAULTS.shadow;
     const effShadowOpacity = Math.min(0.65, effShadow * 0.025 + 0.2);
-    if (item.shadowOpacity !== undefined && item.shadowOpacity !== effShadowOpacity) p.set(`${code}_sw`, item.shadowOpacity.toString());
+    if (item.shadowOpacity !== undefined && item.shadowOpacity !== effShadowOpacity)
+      p.set(`${code}_sw`, item.shadowOpacity.toString());
 
     const itemIcon = item.icon ?? config.icon ?? true;
     if (itemIcon !== (config.icon ?? true)) p.set(`${code}_ic`, itemIcon ? '1' : '0');
@@ -203,7 +229,6 @@ export const generateApiUrl = (
       p.set(`${code}_ip`, item.iconPos);
     if (item.labelInside !== undefined && item.labelInside !== (config.labelInside ?? false))
       p.set(`${code}_li`, item.labelInside ? '1' : '0');
-
   });
 
   if (config.logo) {
@@ -264,8 +289,7 @@ export const generateLogoUrl = (
   const id = config.imdbId || config.tmdbId;
   if (!id) return null;
   const cleanBase = baseUrl.replace(/\/$/, '');
-  const type =
-    config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
+  const type = config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
   const url = new URL(`${cleanBase}/${type}/${id}/logo`);
   if (config.logoSource) url.searchParams.set('source', config.logoSource);
   // No `_t` cache-buster — `source` already varies the URL, so the Workers

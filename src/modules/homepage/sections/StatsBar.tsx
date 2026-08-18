@@ -56,7 +56,13 @@ const StatPanel = memo<{ stat: (typeof STATS)[0]; index: number; vis: boolean }>
           }}
         />
 
-        <div style={{ opacity: vis ? 1 : 0, transform: vis ? 'translateY(0)' : 'translateY(8px)', transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s` }}>
+        <div
+          style={{
+            opacity: vis ? 1 : 0,
+            transform: vis ? 'translateY(0)' : 'translateY(8px)',
+            transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
+          }}
+        >
           {/* Empty space where metadata was */}
         </div>
 

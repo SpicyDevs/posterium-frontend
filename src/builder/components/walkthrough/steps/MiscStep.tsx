@@ -33,7 +33,14 @@ const MiscStep = memo<MiscStepProps>(({ config, onChange }) => (
       <div style={{ marginBottom: 20 }}>
         <div
           className="syne-font"
-          style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 12 }}
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--film-text-ghost)',
+            marginBottom: 12,
+          }}
         >
           Title &amp; Logo
         </div>
@@ -61,8 +68,6 @@ const MiscStep = memo<MiscStepProps>(({ config, onChange }) => (
           )}
         </div>
       </div>
-
-
     </div>
   </div>
 ));

@@ -39,7 +39,9 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
       await navigator.clipboard.writeText(exportUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
   }, [exportUrl]);
 
   const handleDownload = useCallback(() => {
@@ -49,7 +51,9 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
       const u = new URL(exportUrl);
       u.searchParams.set('download', '');
       window.open(u.toString(), '_blank', 'noopener,noreferrer');
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
     setTimeout(() => setDownloading(false), 800);
   }, [exportUrl]);
 
@@ -61,7 +65,9 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
       await navigator.clipboard.writeText(safe);
       setAioCopied(true);
       setTimeout(() => setAioCopied(false), 2000);
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
   }, [exportUrl]);
 
   const hasPoster = Boolean(config.imdbId || config.tmdbId);
@@ -76,132 +82,195 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <div
           className="syne-font"
-          style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--film-text-ghost)',
+            marginBottom: 10,
+          }}
         >
           Format
         </div>
 
-          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-            {EXT_OPTIONS.map((ext) => (
-              <button
-                key={ext.id}
-                type="button"
-                onClick={() => onChange({ extension: ext.id })}
-                className="syne-font"
-                style={{
-                  flex: 1,
-                  height: 34,
-                  borderRadius: 6,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  background: config.extension === ext.id ? 'rgba(196,124,46,0.14)' : 'rgba(255,255,255,0.03)',
-                  border: config.extension === ext.id
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+          {EXT_OPTIONS.map((ext) => (
+            <button
+              key={ext.id}
+              type="button"
+              onClick={() => onChange({ extension: ext.id })}
+              className="syne-font"
+              style={{
+                flex: 1,
+                height: 34,
+                borderRadius: 6,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                background:
+                  config.extension === ext.id ? 'rgba(196,124,46,0.14)' : 'rgba(255,255,255,0.03)',
+                border:
+                  config.extension === ext.id
                     ? '1px solid rgba(196,124,46,0.35)'
                     : '1px solid rgba(255,255,255,0.08)',
-                  color: config.extension === ext.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
-                }}
-              >
-                {ext.label}
-              </button>
-            ))}
-          </div>
+                color: config.extension === ext.id ? 'var(--film-pale)' : 'var(--film-text-dim)',
+              }}
+            >
+              {ext.label}
+            </button>
+          ))}
+        </div>
 
+        <div
+          className="syne-font"
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--film-text-ghost)',
+            marginBottom: 10,
+          }}
+        >
+          Actions
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
+          <ActionButton
+            disabled={!hasPoster}
+            icon={copied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
+            label={copied ? 'Copied' : 'Copy URL'}
+            onClick={handleCopyUrl}
+          />
+          <ActionButton
+            disabled={!hasPoster}
+            icon={
+              downloading ? (
+                <LoaderCircle size={12} style={{ animation: 'wt-spin 0.8s linear infinite' }} />
+              ) : (
+                <Download size={12} />
+              )
+            }
+            label={downloading ? '...' : 'Download'}
+            onClick={handleDownload}
+            amber
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <ActionButton
+            disabled={!hasPoster}
+            icon={aioCopied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
+            label={aioCopied ? 'Copied' : 'Copy for AIO'}
+            onClick={handleAioCopy}
+          />
+        </div>
+
+        {/* Builder mode selection — integrated into the export step */}
+        <div style={{ marginTop: 'auto', paddingTop: 16 }}>
           <div
             className="syne-font"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--film-text-ghost)',
+              marginBottom: 10,
+            }}
           >
-            Actions
+            Builder Mode
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
-            <ActionButton
-              disabled={!hasPoster}
-              icon={copied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
-              label={copied ? 'Copied' : 'Copy URL'}
-              onClick={handleCopyUrl}
-            />
-            <ActionButton
-              disabled={!hasPoster}
-              icon={downloading ? <LoaderCircle size={12} style={{ animation: 'wt-spin 0.8s linear infinite' }} /> : <Download size={12} />}
-              label={downloading ? '...' : 'Download'}
-              onClick={handleDownload}
-              amber
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <ActionButton
-              disabled={!hasPoster}
-              icon={aioCopied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
-              label={aioCopied ? 'Copied' : 'Copy for AIO'}
-              onClick={handleAioCopy}
-            />
-          </div>
-
-          {/* Builder mode selection — integrated into the export step */}
-          <div style={{ marginTop: 'auto', paddingTop: 16 }}>
-            <div
-              className="syne-font"
-              style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 10 }}
-            >
-              Builder Mode
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[
-                { value: 'simple' as BuilderMode, label: 'Simple Builder', desc: 'Unified panels with source search, layers, and badge editing.' },
-                { value: 'advanced' as BuilderMode, label: 'Advanced Builder', desc: 'Dedicated panel navigation for source, layers, badges, and selection.' },
-              ].map((option) => {
-                const active = builderMode === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setBuilderMode(option.value)}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              {
+                value: 'simple' as BuilderMode,
+                label: 'Simple Builder',
+                desc: 'Unified panels with source search, layers, and badge editing.',
+              },
+              {
+                value: 'advanced' as BuilderMode,
+                label: 'Advanced Builder',
+                desc: 'Dedicated panel navigation for source, layers, badges, and selection.',
+              },
+            ].map((option) => {
+              const active = builderMode === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setBuilderMode(option.value)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'inherit',
+                    background: active ? 'rgba(196,124,46,0.08)' : 'rgba(14,13,11,0.72)',
+                    border: active
+                      ? '1px solid rgba(196,124,46,0.35)'
+                      : '1px solid rgba(196,124,46,0.14)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
+                      e.currentTarget.style.background = 'rgba(24,22,18,0.6)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = 'rgba(196,124,46,0.14)';
+                      e.currentTarget.style.background = 'rgba(14,13,11,0.72)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    {option.value === 'simple' ? (
+                      <Layout
+                        size={13}
+                        style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
+                      />
+                    ) : (
+                      <Sliders
+                        size={13}
+                        style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }}
+                      />
+                    )}
+                    <span
+                      className="syne-font"
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        color: active ? 'var(--film-cream)' : 'var(--film-text-label)',
+                      }}
+                    >
+                      {option.label}
+                    </span>
+                  </div>
+                  <span
+                    className="body-font"
                     style={{
-                      flex: 1,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.15s ease',
-                      fontFamily: 'inherit',
-                      background: active ? 'rgba(196,124,46,0.08)' : 'rgba(14,13,11,0.72)',
-                      border: active
-                        ? '1px solid rgba(196,124,46,0.35)'
-                        : '1px solid rgba(196,124,46,0.14)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
-                        e.currentTarget.style.background = 'rgba(24,22,18,0.6)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.borderColor = 'rgba(196,124,46,0.14)';
-                        e.currentTarget.style.background = 'rgba(14,13,11,0.72)';
-                      }
+                      fontSize: 8,
+                      color: 'var(--film-text-ghost)',
+                      lineHeight: 1.3,
+                      display: 'block',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                      {option.value === 'simple' ? <Layout size={13} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} /> : <Sliders size={13} style={{ color: active ? 'var(--film-amber)' : 'var(--film-text-dim)' }} />}
-                      <span className="syne-font" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', color: active ? 'var(--film-cream)' : 'var(--film-text-label)' }}>
-                        {option.label}
-                      </span>
-                    </div>
-                    <span className="body-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', lineHeight: 1.3, display: 'block' }}>
-                      {option.desc}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {option.desc}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
+    </div>
   );
 });
 

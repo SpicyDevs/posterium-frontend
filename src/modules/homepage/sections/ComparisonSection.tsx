@@ -16,34 +16,153 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { feature: 'Rating Sources', sub: 'How many sources', ours: '20+ live sources - IMDb, RT, Meta, Letterboxd, MAL & more', theirs: '1-3 basic sources', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Score Freshness', sub: 'When ratings update', ours: 'Live on every request', theirs: 'Cached or manual refresh', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Delivery', sub: 'How posters are served', ours: 'Edge URL - auto-updates everywhere', theirs: 'Static downloads (scores get stale)', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Visual Editor', sub: 'Customizing layouts', ours: 'Drag-and-drop with live preview', theirs: 'Forms or code-only', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Textless & Logos', sub: 'Clean artwork', ours: 'Auto-fetch textless + inject vector logos', theirs: 'Requires Photoshop or static upload', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Fallback Sources', sub: 'When TMDB fails', ours: 'Cascade: Fanart → Metahub → IMDb', theirs: 'Poster breaks or shows blank', ourStatus: 'win', theirStatus: 'loss' },
-  { feature: 'Export Formats', sub: 'Vector and raster', ours: 'SVG, WebP, PNG, JPG', theirs: 'PNG/JPG only', ourStatus: 'win', theirStatus: 'partial' },
-  { feature: 'Pricing', sub: 'Cost to generate', ours: '100% free, MIT open source', theirs: 'Paid tiers or credit limits', ourStatus: 'win', theirStatus: 'loss' },
+  {
+    feature: 'Rating Sources',
+    sub: 'How many sources',
+    ours: '20+ live sources - IMDb, RT, Meta, Letterboxd, MAL & more',
+    theirs: '1-3 basic sources',
+    ourStatus: 'win',
+    theirStatus: 'partial',
+  },
+  {
+    feature: 'Score Freshness',
+    sub: 'When ratings update',
+    ours: 'Live on every request',
+    theirs: 'Cached or manual refresh',
+    ourStatus: 'win',
+    theirStatus: 'loss',
+  },
+  {
+    feature: 'Delivery',
+    sub: 'How posters are served',
+    ours: 'Edge URL - auto-updates everywhere',
+    theirs: 'Static downloads (scores get stale)',
+    ourStatus: 'win',
+    theirStatus: 'loss',
+  },
+  {
+    feature: 'Visual Editor',
+    sub: 'Customizing layouts',
+    ours: 'Drag-and-drop with live preview',
+    theirs: 'Forms or code-only',
+    ourStatus: 'win',
+    theirStatus: 'partial',
+  },
+  {
+    feature: 'Textless & Logos',
+    sub: 'Clean artwork',
+    ours: 'Auto-fetch textless + inject vector logos',
+    theirs: 'Requires Photoshop or static upload',
+    ourStatus: 'win',
+    theirStatus: 'loss',
+  },
+  {
+    feature: 'Fallback Sources',
+    sub: 'When TMDB fails',
+    ours: 'Cascade: Fanart → Metahub → IMDb',
+    theirs: 'Poster breaks or shows blank',
+    ourStatus: 'win',
+    theirStatus: 'loss',
+  },
+  {
+    feature: 'Export Formats',
+    sub: 'Vector and raster',
+    ours: 'SVG, WebP, PNG, JPG',
+    theirs: 'PNG/JPG only',
+    ourStatus: 'win',
+    theirStatus: 'partial',
+  },
+  {
+    feature: 'Pricing',
+    sub: 'Cost to generate',
+    ours: '100% free, MIT open source',
+    theirs: 'Paid tiers or credit limits',
+    ourStatus: 'win',
+    theirStatus: 'loss',
+  },
   // Honest Posterium limitations
-  { feature: 'Generation Speed', sub: 'First request latency', ours: '80-400 ms on cold edge start', theirs: 'Instant (pre-rendered cache)', ourStatus: 'partial', theirStatus: 'win', isOurDrawback: true },
-  { feature: 'Custom Artwork', sub: 'Upload your own image', ours: 'Not supported - URL-based only', theirs: 'Some support custom uploads', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
-  { feature: 'Offline / Local', sub: 'Network dependency', ours: 'Requires internet connection', theirs: 'Local library support varies', ourStatus: 'loss', theirStatus: 'partial', isOurDrawback: true },
+  {
+    feature: 'Generation Speed',
+    sub: 'First request latency',
+    ours: '80-400 ms on cold edge start',
+    theirs: 'Instant (pre-rendered cache)',
+    ourStatus: 'partial',
+    theirStatus: 'win',
+    isOurDrawback: true,
+  },
+  {
+    feature: 'Custom Artwork',
+    sub: 'Upload your own image',
+    ours: 'Not supported - URL-based only',
+    theirs: 'Some support custom uploads',
+    ourStatus: 'loss',
+    theirStatus: 'partial',
+    isOurDrawback: true,
+  },
+  {
+    feature: 'Offline / Local',
+    sub: 'Network dependency',
+    ours: 'Requires internet connection',
+    theirs: 'Local library support varies',
+    ourStatus: 'loss',
+    theirStatus: 'partial',
+    isOurDrawback: true,
+  },
 ];
 
 const WIN_ICON = (
-  <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ filter: 'drop-shadow(0px 0px 3px rgba(196,124,46,0.5))', flexShrink: 0 }}>
-    <circle cx="6" cy="6" r="5.5" stroke="rgba(196,124,46,0.7)" strokeWidth="1" fill="rgba(196,124,46,0.12)" />
-    <path d="M3.5 6l2 2 3-3" stroke="#E0A458" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 12 12"
+    fill="none"
+    aria-hidden="true"
+    style={{ filter: 'drop-shadow(0px 0px 3px rgba(196,124,46,0.5))', flexShrink: 0 }}
+  >
+    <circle
+      cx="6"
+      cy="6"
+      r="5.5"
+      stroke="rgba(196,124,46,0.7)"
+      strokeWidth="1"
+      fill="rgba(196,124,46,0.12)"
+    />
+    <path
+      d="M3.5 6l2 2 3-3"
+      stroke="#E0A458"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 const LOSS_ICON = (
-  <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 12 12"
+    fill="none"
+    aria-hidden="true"
+    style={{ flexShrink: 0 }}
+  >
     <circle cx="6" cy="6" r="5.5" stroke="rgba(122,117,110,0.25)" strokeWidth="0.8" />
-    <path d="M4 4l4 4M8 4l-4 4" stroke="rgba(122,117,110,0.4)" strokeWidth="1.2" strokeLinecap="round" />
+    <path
+      d="M4 4l4 4M8 4l-4 4"
+      stroke="rgba(122,117,110,0.4)"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 const PARTIAL_ICON = (
-  <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 12 12"
+    fill="none"
+    aria-hidden="true"
+    style={{ flexShrink: 0 }}
+  >
     <circle cx="6" cy="6" r="5.5" stroke="rgba(180,150,80,0.38)" strokeWidth="0.8" />
     <path d="M3.5 6h5" stroke="rgba(180,150,80,0.55)" strokeWidth="1.4" strokeLinecap="round" />
   </svg>
@@ -61,84 +180,183 @@ function getTextColor(s: Status) {
   return 'rgba(122,117,110,0.55)';
 }
 
-const CompRow = memo<{ row: Row; index: number; vis: boolean; isLast: boolean; isFirstDrawback: boolean }>(
-  ({ row, index, vis, isLast, isFirstDrawback }) => {
-    const delay = `${index * 0.025}s`;
+const CompRow = memo<{
+  row: Row;
+  index: number;
+  vis: boolean;
+  isLast: boolean;
+  isFirstDrawback: boolean;
+}>(({ row, index, vis, isLast, isFirstDrawback }) => {
+  const delay = `${index * 0.025}s`;
 
-    return (
-      <>
-        {isFirstDrawback && (
-          <div role="row" style={{
-            display: 'grid',
-            gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
-            borderBottom: '1px solid rgba(255,255,255,0.04)',
-          }}>
-            <div style={{ gridColumn: 'span 5', padding: '8px clamp(14px,2.5vw,28px)' }}>
-              <span className="mono-font" style={{ fontSize: 8, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                Where we fall short
-              </span>
-            </div>
-          </div>
-        )}
+  return (
+    <>
+      {isFirstDrawback && (
         <div
-          className="comp-row"
           role="row"
           style={{
             display: 'grid',
             gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
-            borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.035)',
-            opacity: vis ? 1 : 0,
-            transform: vis ? 'translateY(0)' : 'translateY(8px)',
-            transition: `opacity 0.45s ease ${delay}, transform 0.45s ease ${delay}`,
-            background: row.isOurDrawback ? 'rgba(255,255,255,0.008)' : 'transparent',
+            borderBottom: '1px solid rgba(255,255,255,0.04)',
           }}
         >
-          {/* Feature label */}
-          <div role="gridcell" className="comp-cell-feature" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)' }}>
-            <div className="syne-font" style={{ fontSize: 'clamp(11px,1.3vw,13px)', fontWeight: 700, color: 'rgba(230,220,198,0.9)', marginBottom: row.sub ? 3 : 0, letterSpacing: '0.02em' }}>
-              {row.feature}
-            </div>
-            {row.sub && (
-              <div className="mono-font" style={{ fontSize: 'clamp(8px,0.9vw,9px)', color: 'rgba(122,117,110,0.45)', letterSpacing: '0.06em' }}>
-                {row.sub}
-              </div>
-            )}
-          </div>
-
-          <div className="comp-sep" style={{ background: 'rgba(196,124,46,0.08)' }} aria-hidden="true" />
-
-          {/* Posterium */}
-          <div role="gridcell" className="comp-cell-posterium" style={{
-            padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)',
-            background: row.ourStatus === 'win' ? 'rgba(196,124,46,0.025)' : 'transparent',
-            display: 'flex', flexDirection: 'column', gap: 6,
-          }}>
-            <span className="comp-label-ours" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--film-amber)', opacity: 0.5 }}>Posterium</span>
-            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ marginTop: 2 }}>{getIcon(row.ourStatus)}</span>
-              <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.ourStatus), lineHeight: 1.45 }}>
-                {row.ours}
-              </span>
-            </span>
-          </div>
-
-          <div className="comp-sep" style={{ background: 'rgba(255,255,255,0.025)' }} aria-hidden="true" />
-
-          {/* Others */}
-          <div role="gridcell" className="comp-cell-others" style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="comp-label-theirs" aria-hidden="true" style={{ display: 'none', fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(122,117,110,0.4)' }}>Preset Services</span>
-            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ marginTop: 2 }}>{getIcon(row.theirStatus)}</span>
-              <span className="body-font" style={{ fontSize: 'clamp(11px,1.2vw,12px)', color: getTextColor(row.theirStatus), lineHeight: 1.45 }}>
-                {row.theirs}
-              </span>
+          <div style={{ gridColumn: 'span 5', padding: '8px clamp(14px,2.5vw,28px)' }}>
+            <span
+              className="mono-font"
+              style={{
+                fontSize: 8,
+                color: 'rgba(122,117,110,0.5)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Where we fall short
             </span>
           </div>
         </div>
-      </>
-    );
-  }
-);
+      )}
+      <div
+        className="comp-row"
+        role="row"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
+          borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.035)',
+          opacity: vis ? 1 : 0,
+          transform: vis ? 'translateY(0)' : 'translateY(8px)',
+          transition: `opacity 0.45s ease ${delay}, transform 0.45s ease ${delay}`,
+          background: row.isOurDrawback ? 'rgba(255,255,255,0.008)' : 'transparent',
+        }}
+      >
+        {/* Feature label */}
+        <div
+          role="gridcell"
+          className="comp-cell-feature"
+          style={{ padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)' }}
+        >
+          <div
+            className="syne-font"
+            style={{
+              fontSize: 'clamp(11px,1.3vw,13px)',
+              fontWeight: 700,
+              color: 'rgba(230,220,198,0.9)',
+              marginBottom: row.sub ? 3 : 0,
+              letterSpacing: '0.02em',
+            }}
+          >
+            {row.feature}
+          </div>
+          {row.sub && (
+            <div
+              className="mono-font"
+              style={{
+                fontSize: 'clamp(8px,0.9vw,9px)',
+                color: 'rgba(122,117,110,0.45)',
+                letterSpacing: '0.06em',
+              }}
+            >
+              {row.sub}
+            </div>
+          )}
+        </div>
+
+        <div
+          className="comp-sep"
+          style={{ background: 'rgba(196,124,46,0.08)' }}
+          aria-hidden="true"
+        />
+
+        {/* Posterium */}
+        <div
+          role="gridcell"
+          className="comp-cell-posterium"
+          style={{
+            padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)',
+            background: row.ourStatus === 'win' ? 'rgba(196,124,46,0.025)' : 'transparent',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}
+        >
+          <span
+            className="comp-label-ours"
+            aria-hidden="true"
+            style={{
+              display: 'none',
+              fontFamily: "'JetBrains Mono',monospace",
+              fontSize: 8,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--film-amber)',
+              opacity: 0.5,
+            }}
+          >
+            Posterium
+          </span>
+          <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ marginTop: 2 }}>{getIcon(row.ourStatus)}</span>
+            <span
+              className="body-font"
+              style={{
+                fontSize: 'clamp(11px,1.2vw,12px)',
+                color: getTextColor(row.ourStatus),
+                lineHeight: 1.45,
+              }}
+            >
+              {row.ours}
+            </span>
+          </span>
+        </div>
+
+        <div
+          className="comp-sep"
+          style={{ background: 'rgba(255,255,255,0.025)' }}
+          aria-hidden="true"
+        />
+
+        {/* Others */}
+        <div
+          role="gridcell"
+          className="comp-cell-others"
+          style={{
+            padding: 'clamp(12px,2vw,18px) clamp(14px,2.5vw,28px)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}
+        >
+          <span
+            className="comp-label-theirs"
+            aria-hidden="true"
+            style={{
+              display: 'none',
+              fontFamily: "'JetBrains Mono',monospace",
+              fontSize: 8,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'rgba(122,117,110,0.4)',
+            }}
+          >
+            Preset Services
+          </span>
+          <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ marginTop: 2 }}>{getIcon(row.theirStatus)}</span>
+            <span
+              className="body-font"
+              style={{
+                fontSize: 'clamp(11px,1.2vw,12px)',
+                color: getTextColor(row.theirStatus),
+                lineHeight: 1.45,
+              }}
+            >
+              {row.theirs}
+            </span>
+          </span>
+        </div>
+      </div>
+    </>
+  );
+});
 CompRow.displayName = 'CompRow';
 
 const firstDrawbackIdx = ROWS.findIndex((r) => r.isOurDrawback);
@@ -151,54 +369,158 @@ export const ComparisonSection = memo(() => {
       id="comparison"
       ref={ref}
       aria-label="Feature Comparison"
-      style={{ background: 'var(--film-black)', borderTop: '1px solid rgba(196,124,46,0.07)', paddingBottom: 'clamp(48px,6vw,80px)' }}
+      style={{
+        background: 'var(--film-black)',
+        borderTop: '1px solid rgba(196,124,46,0.07)',
+        paddingBottom: 'clamp(48px,6vw,80px)',
+      }}
     >
       <div style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.6s ease' }}>
         <SectionHeader
           tag="Head-to-head"
-          title={<>THE SPEC<br /><span style={{ color: 'var(--film-amber)' }}>SHEET</span></>}
+          title={
+            <>
+              THE SPEC
+              <br />
+              <span style={{ color: 'var(--film-amber)' }}>SHEET</span>
+            </>
+          }
           description="We lay it all out. The wins, the trade-offs, the stuff we just don't do yet."
           padding="clamp(48px,6vw,80px) clamp(20px,5vw,64px) clamp(24px,3vw,36px)"
         />
       </div>
 
       <div style={{ padding: '0 clamp(16px,4vw,64px)', maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{
-          background: 'linear-gradient(180deg, rgba(14,13,11,0.7) 0%, rgba(10,9,8,0.9) 100%)',
-          border: '1px solid rgba(196,124,46,0.12)',
-          borderRadius: 16,
-          boxShadow: '0 16px 40px -12px rgba(0,0,0,0.45)',
-          opacity: vis ? 1 : 0,
-          transform: vis ? 'translateY(0)' : 'translateY(16px)',
-          transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s',
-        }}>
+        <div
+          style={{
+            background: 'linear-gradient(180deg, rgba(14,13,11,0.7) 0%, rgba(10,9,8,0.9) 100%)',
+            border: '1px solid rgba(196,124,46,0.12)',
+            borderRadius: 16,
+            boxShadow: '0 16px 40px -12px rgba(0,0,0,0.45)',
+            opacity: vis ? 1 : 0,
+            transform: vis ? 'translateY(0)' : 'translateY(16px)',
+            transition:
+              'opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s',
+          }}
+        >
           {/* Sticky column headers */}
-          <div role="row" className="comp-header" style={{
-            position: 'sticky', top: 56, zIndex: 10,
-            display: 'grid', gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
-            borderBottom: '1px solid rgba(196,124,46,0.22)',
-            background: 'rgba(10,9,8,0.96)', backdropFilter: 'blur(20px)',
-            borderTopLeftRadius: 16, borderTopRightRadius: 16,
-          }}>
-            <div role="columnheader" className="comp-cell-feature" style={{ padding: '13px clamp(14px,2.5vw,28px)' }}>
-              <span className="mono-font" style={{ fontSize: 9, color: 'rgba(200,190,170,0.45)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          <div
+            role="row"
+            className="comp-header"
+            style={{
+              position: 'sticky',
+              top: 56,
+              zIndex: 10,
+              display: 'grid',
+              gridTemplateColumns: '1.5fr 1px 1.2fr 1px 1.1fr',
+              borderBottom: '1px solid rgba(196,124,46,0.22)',
+              background: 'rgba(10,9,8,0.96)',
+              backdropFilter: 'blur(20px)',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+            }}
+          >
+            <div
+              role="columnheader"
+              className="comp-cell-feature"
+              style={{ padding: '13px clamp(14px,2.5vw,28px)' }}
+            >
+              <span
+                className="mono-font"
+                style={{
+                  fontSize: 9,
+                  color: 'rgba(200,190,170,0.45)',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 Feature
               </span>
             </div>
-            <div className="comp-sep" style={{ background: 'rgba(196,124,46,0.18)' }} aria-hidden="true" />
-            <div role="columnheader" className="comp-cell-posterium" style={{ padding: '13px clamp(14px,2.5vw,28px)', background: 'rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--film-amber)', boxShadow: '0 0 8px rgba(196,124,46,0.7)', flexShrink: 0 }} />
-              <span className="syne-font" style={{ fontSize: 11, color: 'var(--film-amber)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 800 }}>Posterium</span>
+            <div
+              className="comp-sep"
+              style={{ background: 'rgba(196,124,46,0.18)' }}
+              aria-hidden="true"
+            />
+            <div
+              role="columnheader"
+              className="comp-cell-posterium"
+              style={{
+                padding: '13px clamp(14px,2.5vw,28px)',
+                background: 'rgba(196,124,46,0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: 'var(--film-amber)',
+                  boxShadow: '0 0 8px rgba(196,124,46,0.7)',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                className="syne-font"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--film-amber)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                }}
+              >
+                Posterium
+              </span>
             </div>
-            <div className="comp-sep" style={{ background: 'rgba(255,255,255,0.06)' }} aria-hidden="true" />
-            <div role="columnheader" className="comp-cell-others" style={{ padding: '13px clamp(14px,2.5vw,28px)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(122,117,110,0.28)', flexShrink: 0 }} />
-              <span className="syne-font" style={{ fontSize: 11, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Preset Services</span>
+            <div
+              className="comp-sep"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+              aria-hidden="true"
+            />
+            <div
+              role="columnheader"
+              className="comp-cell-others"
+              style={{
+                padding: '13px clamp(14px,2.5vw,28px)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: 'rgba(122,117,110,0.28)',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                className="syne-font"
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(122,117,110,0.5)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                Preset Services
+              </span>
             </div>
           </div>
 
           {/* Rows */}
-          <div role="grid" aria-label="Feature comparison data" style={{ borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: 'hidden' }}>
+          <div
+            role="grid"
+            aria-label="Feature comparison data"
+            style={{ borderBottomLeftRadius: 16, borderBottomRightRadius: 16, overflow: 'hidden' }}
+          >
             {ROWS.map((row, i) => (
               <CompRow
                 key={row.feature}
@@ -214,13 +536,19 @@ export const ComparisonSection = memo(() => {
       </div>
 
       {/* Legend */}
-      <div style={{
-        maxWidth: '1400px', margin: '0 auto',
-        padding: '18px clamp(16px,4vw,64px) 0',
-        display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-        opacity: vis ? 1 : 0,
-        transition: 'opacity 0.6s ease 0.5s',
-      }}>
+      <div
+        style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '18px clamp(16px,4vw,64px) 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 20,
+          flexWrap: 'wrap',
+          opacity: vis ? 1 : 0,
+          transition: 'opacity 0.6s ease 0.5s',
+        }}
+      >
         {[
           { icon: WIN_ICON, label: 'Supported', color: 'rgba(196,124,46,0.65)' },
           { icon: PARTIAL_ICON, label: 'Partial', color: 'rgba(180,150,80,0.5)' },
@@ -228,7 +556,9 @@ export const ComparisonSection = memo(() => {
         ].map(({ icon, label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             {icon}
-            <span className="mono-font" style={{ fontSize: 9, color, letterSpacing: '0.08em' }}>{label}</span>
+            <span className="mono-font" style={{ fontSize: 9, color, letterSpacing: '0.08em' }}>
+              {label}
+            </span>
           </div>
         ))}
       </div>

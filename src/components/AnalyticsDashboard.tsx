@@ -10,9 +10,21 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  ComposedChart, Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ComposedChart,
+  Line,
 } from 'recharts';
 import MainNavbar from '@/modules/MainNavbar';
 import { AmberTag } from '@/ui/primitives';
@@ -27,64 +39,94 @@ const ADMIN_API_PASS = 'Aayush1234';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const CH = {
-  amber: '#c47c2e', gold: '#e8c15a', ember: '#e07b39', rust: '#b4522b',
-  brick: '#a8391f', rose: '#d98e7a', tan: '#9c7a4a', ochre: '#b8863b',
+  amber: '#c47c2e',
+  gold: '#e8c15a',
+  ember: '#e07b39',
+  rust: '#b4522b',
+  brick: '#a8391f',
+  rose: '#d98e7a',
+  tan: '#9c7a4a',
+  ochre: '#b8863b',
   cream: '#f0e6cc',
-  green: '#e8c15a', red: 'rgba(248,113,113,0.85)', orange: '#e07b39',
+  green: '#e8c15a',
+  red: 'rgba(248,113,113,0.85)',
+  orange: '#e07b39',
   yellow: '#c47c2e',
-  ghost: 'rgba(140,130,112,0.45)', dim: 'rgba(180,168,148,0.65)',
+  ghost: 'rgba(140,130,112,0.45)',
+  dim: 'rgba(180,168,148,0.65)',
 };
 const PIE_COLORS = [
-  CH.amber, CH.tan, CH.green, CH.yellow, CH.orange,
-  CH.rose, CH.rust, CH.red, CH.brick,
+  CH.amber,
+  CH.tan,
+  CH.green,
+  CH.yellow,
+  CH.orange,
+  CH.rose,
+  CH.rust,
+  CH.red,
+  CH.brick,
 ];
 
 const LIVE_HEALTH_NODES = [
   { id: 'washington', label: 'US East · Vercel' },
-  { id: 'ohio',       label: 'US Central · Netlify' },
-  { id: 'render_eu',  label: 'EUC · Render' },
+  { id: 'ohio', label: 'US Central · Netlify' },
+  { id: 'render_eu', label: 'EUC · Render' },
 ];
 
 function nodeColor(n: string) {
   const MAP: Record<string, string> = {
-    washington: CH.tan, london: CH.green, tokyo: CH.yellow,
-    mumbai: CH.red, germany: CH.rust, france: CH.rose,
-    wsrv: CH.orange, 'render-eu': CH.brick, ohio: CH.rose,
-    'cf-binding': CH.gold, render_eu: CH.brick,
-    midas: CH.tan, danbot: CH.orange,
+    washington: CH.tan,
+    london: CH.green,
+    tokyo: CH.yellow,
+    mumbai: CH.red,
+    germany: CH.rust,
+    france: CH.rose,
+    wsrv: CH.orange,
+    'render-eu': CH.brick,
+    ohio: CH.rose,
+    'cf-binding': CH.gold,
+    render_eu: CH.brick,
+    midas: CH.tan,
+    danbot: CH.orange,
   };
   return MAP[n] ?? CH.ghost;
 }
 function nodeLabel(n: string) {
   const MAP: Record<string, string> = {
-    washington: 'US East · Vercel', ohio: 'US Central · Netlify',
-    midas: 'DE 2 · Midas', germany: 'DE 20 · Spaceify',
-    danbot: 'DanBot EU', wsrv: 'wsrv.nl (CDN)',
-    france: 'FR 1 · Spaceify', render_eu: 'EUC · Render',
+    washington: 'US East · Vercel',
+    ohio: 'US Central · Netlify',
+    midas: 'DE 2 · Midas',
+    germany: 'DE 20 · Spaceify',
+    danbot: 'DanBot EU',
+    wsrv: 'wsrv.nl (CDN)',
+    france: 'FR 1 · Spaceify',
+    render_eu: 'EUC · Render',
     // Legacy aliases — historical AE rows may still reference them.
-    london: 'London · Vercel', tokyo: 'Tokyo · Vercel',
-    mumbai: 'Mumbai · Vercel', 'render-eu': 'EU Central · Render',
+    london: 'London · Vercel',
+    tokyo: 'Tokyo · Vercel',
+    mumbai: 'Mumbai · Vercel',
+    'render-eu': 'EU Central · Render',
     'cf-binding': 'CF Binding',
   };
   return MAP[n] ?? n;
 }
 
 const LANE_META: Record<string, { label: string; color: string }> = {
-  geo:            { label: 'Primary (geo)',     color: CH.green },
-  binding:        { label: 'CF Binding',        color: CH.rust },
-  'geo-fallback': { label: 'Tier 1 Fallback',   color: CH.yellow },
-  'geo-t2':       { label: 'Tier 2 Fallback',   color: CH.orange },
-  'wsrv-fallback':{ label: 'wsrv (fallback)',   color: CH.ochre },
-  'geo-t3':       { label: 'Tier 3 Fallback',   color: CH.red },
-  'wsrv-t3':      { label: 'wsrv (Tier 3)',     color: CH.ochre },
-  bulk:           { label: 'Bulk',              color: CH.tan },
+  geo: { label: 'Primary (geo)', color: CH.green },
+  binding: { label: 'CF Binding', color: CH.rust },
+  'geo-fallback': { label: 'Tier 1 Fallback', color: CH.yellow },
+  'geo-t2': { label: 'Tier 2 Fallback', color: CH.orange },
+  'wsrv-fallback': { label: 'wsrv (fallback)', color: CH.ochre },
+  'geo-t3': { label: 'Tier 3 Fallback', color: CH.red },
+  'wsrv-t3': { label: 'wsrv (Tier 3)', color: CH.ochre },
+  bulk: { label: 'Bulk', color: CH.tan },
 };
 
 const DEVICE_META: Record<string, { label: string; icon: string; color: string }> = {
-  desktop: { label: 'Desktop',  icon: '🖥️', color: CH.tan },
-  mobile:  { label: 'Mobile',   icon: '📱', color: CH.green },
-  tablet:  { label: 'Tablet',   icon: '📲', color: CH.yellow },
-  tv:      { label: 'Smart TV', icon: '📺', color: CH.rose },
+  desktop: { label: 'Desktop', icon: '🖥️', color: CH.tan },
+  mobile: { label: 'Mobile', icon: '📱', color: CH.green },
+  tablet: { label: 'Tablet', icon: '📲', color: CH.yellow },
+  tv: { label: 'Smart TV', icon: '📺', color: CH.rose },
 };
 
 // ── Number helpers ────────────────────────────────────────────────────────────
@@ -108,10 +150,12 @@ function fmtNum(n: number) {
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
   return String(Math.round(n));
 }
-function fmtPct(n: number) { return `${n.toFixed(1)}%`; }
+function fmtPct(n: number) {
+  return `${n.toFixed(1)}%`;
+}
 function msColor(ms: number | null) {
   if (ms === null) return CH.ghost;
-  if (ms < 500)  return CH.green;
+  if (ms < 500) return CH.green;
   if (ms < 1200) return CH.yellow;
   if (ms < 3000) return CH.orange;
   return CH.red;
@@ -123,9 +167,18 @@ function rateColor(pct: number) {
   return CH.red;
 }
 function healthScore(successPct: number, avgMs: number | null) {
-  const latScore = avgMs === null ? 100
-    : avgMs < 500  ? 100 : avgMs < 1000 ? 80
-    : avgMs < 2000 ? 55  : avgMs < 4000 ? 30 : 10;
+  const latScore =
+    avgMs === null
+      ? 100
+      : avgMs < 500
+        ? 100
+        : avgMs < 1000
+          ? 80
+          : avgMs < 2000
+            ? 55
+            : avgMs < 4000
+              ? 30
+              : 10;
   return Math.round(successPct * 0.6 + latScore * 0.4);
 }
 
@@ -137,7 +190,9 @@ function fmtBucket(s: string, granularity: string) {
     if (granularity === 'hour')
       return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, '0')}h`;
     return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
-  } catch { return s.slice(0, 13); }
+  } catch {
+    return s.slice(0, 13);
+  }
 }
 
 function relTime(iso: string) {
@@ -152,24 +207,39 @@ function relTime(iso: string) {
 // ── Period config ─────────────────────────────────────────────────────────────
 const PERIODS: Record<string, { label: string; short: string }> = {
   '15m': { label: '15 Minutes', short: '15M' },
-  '1h':  { label: '1 Hour',     short: '1H' },
-  '3h':  { label: '3 Hours',    short: '3H' },
-  '6h':  { label: '6 Hours',    short: '6H' },
-  '12h': { label: '12 Hours',   short: '12H' },
-  '24h': { label: '24 Hours',   short: '24H' },
-  '2d':  { label: '2 Days',     short: '2D' },
-  '7d':  { label: '7 Days',     short: '7D' },
-  '14d': { label: '14 Days',    short: '14D' },
-  '30d': { label: '30 Days',    short: '30D' },
+  '1h': { label: '1 Hour', short: '1H' },
+  '3h': { label: '3 Hours', short: '3H' },
+  '6h': { label: '6 Hours', short: '6H' },
+  '12h': { label: '12 Hours', short: '12H' },
+  '24h': { label: '24 Hours', short: '24H' },
+  '2d': { label: '2 Days', short: '2D' },
+  '7d': { label: '7 Days', short: '7D' },
+  '14d': { label: '14 Days', short: '14D' },
+  '30d': { label: '30 Days', short: '30D' },
 };
 
 const TABS = [
-  'overview', 'nodes', 'traffic', 'fallbacks',
-  'requests', 'devices', 'diagnostics', 'db', 'errors', 'breakdown', 'wall-time', 'svg', 'workers',
+  'overview',
+  'nodes',
+  'traffic',
+  'fallbacks',
+  'requests',
+  'devices',
+  'diagnostics',
+  'db',
+  'errors',
+  'breakdown',
+  'wall-time',
+  'svg',
+  'workers',
 ] as const;
 type Tab = (typeof TABS)[number];
 
-interface DashConfig { period: string; alertRate: number; alertMs: number; }
+interface DashConfig {
+  period: string;
+  alertRate: number;
+  alertMs: number;
+}
 
 function loadCfg(): DashConfig {
   try {
@@ -179,29 +249,47 @@ function loadCfg(): DashConfig {
   return { period: '24h', alertRate: 90, alertMs: 2000 };
 }
 function saveCfg(c: DashConfig) {
-  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch {}
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  } catch {}
 }
 
 // ── Recharts shared components ────────────────────────────────────────────────
 const FilmTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: 'var(--film-dark)', border: '1px solid var(--film-border)',
-      borderRadius: 8, padding: '10px 14px', fontFamily: 'JetBrains Mono, monospace',
-      fontSize: 11, boxShadow: '0 8px 32px rgba(0,0,0,0.7)', minWidth: 150,
-    }}>
+    <div
+      style={{
+        background: 'var(--film-dark)',
+        border: '1px solid var(--film-border)',
+        borderRadius: 8,
+        padding: '10px 14px',
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: 11,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+        minWidth: 150,
+      }}
+    >
       {label && <div style={{ color: CH.amber, marginBottom: 6, fontWeight: 700 }}>{label}</div>}
       {payload.map((p: any, i: number) => (
-        <div key={i} style={{
-          color: p.color ?? CH.cream, marginBottom: 3,
-          display: 'flex', justifyContent: 'space-between', gap: 12,
-        }}>
+        <div
+          key={i}
+          style={{
+            color: p.color ?? CH.cream,
+            marginBottom: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
           <span style={{ color: CH.dim }}>{p.name}</span>
           <strong>
             {typeof p.value === 'number'
-              ? p.value > 10000 ? fmtNum(p.value)
-                : p.value % 1 !== 0 ? p.value.toFixed(1) : p.value
+              ? p.value > 10000
+                ? fmtNum(p.value)
+                : p.value % 1 !== 0
+                  ? p.value.toFixed(1)
+                  : p.value
               : p.value}
           </strong>
         </div>
@@ -211,89 +299,201 @@ const FilmTooltip = ({ active, payload, label }: any) => {
 };
 
 const Skel = ({ h = 80 }: { h?: number }) => (
-  <div style={{
-    height: h, borderRadius: 6,
-    background: 'linear-gradient(110deg,var(--film-dark) 25%,var(--film-char) 50%,var(--film-dark) 75%)',
-    backgroundSize: '200% 100%', animation: 'shimmer 1.8s linear infinite',
-  }} />
+  <div
+    style={{
+      height: h,
+      borderRadius: 6,
+      background:
+        'linear-gradient(110deg,var(--film-dark) 25%,var(--film-char) 50%,var(--film-dark) 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.8s linear infinite',
+    }}
+  />
 );
 
 const Gauge = ({ value, size = 44 }: { value: number; size?: number }) => {
-  const r = size / 2 - 5, circ = 2 * Math.PI * r;
+  const r = size / 2 - 5,
+    circ = 2 * Math.PI * r;
   const fill = Math.max(0, Math.min(value / 100, 1)) * circ;
   const color = value >= 90 ? CH.green : value >= 70 ? CH.yellow : value >= 40 ? CH.orange : CH.red;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={4} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={4}
-        strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
-        transform={`rotate(-90 ${size/2} ${size/2})`}
-        style={{ transition: 'stroke-dasharray 0.6s ease' }} />
-      <text x={size/2} y={size/2+4} textAnchor="middle" fill={color} fontSize={9}
-        fontWeight="700" fontFamily="JetBrains Mono, monospace">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="rgba(255,255,255,0.07)"
+        strokeWidth={4}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={4}
+        strokeDasharray={`${fill} ${circ}`}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+      />
+      <text
+        x={size / 2}
+        y={size / 2 + 4}
+        textAnchor="middle"
+        fill={color}
+        fontSize={9}
+        fontWeight="700"
+        fontFamily="JetBrains Mono, monospace"
+      >
         {fmtPct(value)}
       </text>
     </svg>
   );
 };
 
-const StatCard = ({ label, value, sub, color = CH.amber, alert }: {
-  label: string; value: string | number; sub?: string; color?: string; alert?: boolean;
+const StatCard = ({
+  label,
+  value,
+  sub,
+  color = CH.amber,
+  alert,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+  alert?: boolean;
 }) => (
-  <div style={{
-    padding: '14px 16px', background: 'var(--film-char)',
-    border: '1px solid var(--film-border)', borderRadius: 10,
-    display: 'flex', flexDirection: 'column', gap: 5,
-    position: 'relative', overflow: 'hidden',
-  }}>
-    <div style={{
-      position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-      background: `linear-gradient(90deg, ${alert ? CH.red : color}, transparent)`,
-    }} />
+  <div
+    style={{
+      padding: '14px 16px',
+      background: 'var(--film-char)',
+      border: '1px solid var(--film-border)',
+      borderRadius: 10,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 5,
+      position: 'relative',
+      overflow: 'hidden',
+    }}
+  >
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 2,
+        background: `linear-gradient(90deg, ${alert ? CH.red : color}, transparent)`,
+      }}
+    />
     {alert && (
-      <div style={{
-        position: 'absolute', top: 8, right: 8, width: 6, height: 6,
-        borderRadius: '50%', background: CH.red, boxShadow: `0 0 6px ${CH.red}`,
-        animation: 'pulse-dot 2s ease-in-out infinite',
-      }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: CH.red,
+          boxShadow: `0 0 6px ${CH.red}`,
+          animation: 'pulse-dot 2s ease-in-out infinite',
+        }}
+      />
     )}
-    <span style={{
-      fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost,
-      letterSpacing: '0.16em', textTransform: 'uppercase' as const,
-    }}>{label}</span>
-    <span className="poster-font" style={{ fontSize: 36, color, lineHeight: 1, letterSpacing: '0.04em' }}>
+    <span
+      style={{
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: 8,
+        color: CH.ghost,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase' as const,
+      }}
+    >
+      {label}
+    </span>
+    <span
+      className="poster-font"
+      style={{ fontSize: 36, color, lineHeight: 1, letterSpacing: '0.04em' }}
+    >
       {value}
     </span>
     {sub && (
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, lineHeight: 1.5 }}>
+      <span
+        style={{
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: 8,
+          color: CH.ghost,
+          lineHeight: 1.5,
+        }}
+      >
         {sub}
       </span>
     )}
   </div>
 );
 
-const Card = ({ title, tag, children, noPad, fullWidth }: {
-  title: string; tag?: string; children: React.ReactNode; noPad?: boolean; fullWidth?: boolean;
+const Card = ({
+  title,
+  tag,
+  children,
+  noPad,
+  fullWidth,
+}: {
+  title: string;
+  tag?: string;
+  children: React.ReactNode;
+  noPad?: boolean;
+  fullWidth?: boolean;
 }) => (
-  <div style={{
-    background: 'var(--film-mid)', border: '1px solid var(--film-border)',
-    borderRadius: 10, overflow: 'hidden', gridColumn: fullWidth ? '1 / -1' : undefined,
-  }}>
-    <div style={{
-      padding: '9px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'rgba(196,124,46,0.025)',
-    }}>
-      <span className="syne-font" style={{
-        fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
-        textTransform: 'uppercase' as const, color: CH.amber,
-      }}>{title}</span>
+  <div
+    style={{
+      background: 'var(--film-mid)',
+      border: '1px solid var(--film-border)',
+      borderRadius: 10,
+      overflow: 'hidden',
+      gridColumn: fullWidth ? '1 / -1' : undefined,
+    }}
+  >
+    <div
+      style={{
+        padding: '9px 14px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'rgba(196,124,46,0.025)',
+      }}
+    >
+      <span
+        className="syne-font"
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase' as const,
+          color: CH.amber,
+        }}
+      >
+        {title}
+      </span>
       {tag && (
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost,
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 3, padding: '2px 6px',
-        }}>{tag}</span>
+        <span
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 7,
+            color: CH.ghost,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 3,
+            padding: '2px 6px',
+          }}
+        >
+          {tag}
+        </span>
       )}
     </div>
     <div style={noPad ? undefined : { padding: 14 }}>{children}</div>
@@ -308,39 +508,103 @@ const NodeCard = ({ row, latRow, alertRate, alertMs }: any) => {
   const hc = health === 'healthy' ? CH.green : health === 'degraded' ? CH.yellow : CH.red;
   const alertMs_ = avgMs !== null && avgMs > alertMs;
   return (
-    <div style={{
-      padding: '12px 14px', background: 'var(--film-char)',
-      border: '1px solid var(--film-border)', borderRadius: 8,
-      borderLeft: `1px solid ${nodeColor(row.node)}`, position: 'relative',
-    }}>
+    <div
+      style={{
+        padding: '12px 14px',
+        background: 'var(--film-char)',
+        border: '1px solid var(--film-border)',
+        borderRadius: 8,
+        borderLeft: `1px solid ${nodeColor(row.node)}`,
+        position: 'relative',
+      }}
+    >
       {alertMs_ && (
-        <div style={{
-          position: 'absolute', top: 8, right: 8, width: 6, height: 6,
-          borderRadius: '50%', background: CH.red, boxShadow: `0 0 6px ${CH.red}`,
-          animation: 'pulse-dot 2s ease-in-out infinite',
-        }} />
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: CH.red,
+            boxShadow: `0 0 6px ${CH.red}`,
+            animation: 'pulse-dot 2s ease-in-out infinite',
+          }}
+        />
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 8,
+        }}
+      >
         <div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 600 }}>
+          <div
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 10,
+              color: 'var(--film-cream)',
+              fontWeight: 600,
+            }}
+          >
             {nodeLabel(row.node).split(' ·')[0]}
           </div>
           <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: hc, textTransform: 'uppercase' as const }}>{health}</span>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>· {score}/100</span>
+            <span
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 7,
+                color: hc,
+                textTransform: 'uppercase' as const,
+              }}
+            >
+              {health}
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost }}>
+              · {score}/100
+            </span>
           </div>
         </div>
         <Gauge value={pct} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
         {[
-          { l: 'Avg',  v: fmtMs(avgMs), c: alertMs_ ? CH.red : msColor(avgMs) },
-          { l: 'Wins', v: fmtNum(num(row.race_wins)), c: num(row.race_wins) > 0 ? CH.gold : CH.ghost },
-          { l: 'Fails',v: fmtNum(num(row.failures)),  c: num(row.failures) > 0 ? CH.red : CH.ghost },
-        ].map(m => (
+          { l: 'Avg', v: fmtMs(avgMs), c: alertMs_ ? CH.red : msColor(avgMs) },
+          {
+            l: 'Wins',
+            v: fmtNum(num(row.race_wins)),
+            c: num(row.race_wins) > 0 ? CH.gold : CH.ghost,
+          },
+          {
+            l: 'Fails',
+            v: fmtNum(num(row.failures)),
+            c: num(row.failures) > 0 ? CH.red : CH.ghost,
+          },
+        ].map((m) => (
           <div key={m.l}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, marginBottom: 1 }}>{m.l}</div>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: m.c, fontWeight: 700 }}>{m.v}</div>
+            <div
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 7,
+                color: CH.ghost,
+                marginBottom: 1,
+              }}
+            >
+              {m.l}
+            </div>
+            <div
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 12,
+                color: m.c,
+                fontWeight: 700,
+              }}
+            >
+              {m.v}
+            </div>
           </div>
         ))}
       </div>
@@ -361,12 +625,15 @@ const LatDist = ({ row }: { row: any }) => {
     { n: num(row.under_2s) - num(row.under_1s), c: CH.orange, l: '<2s' },
     { n: num(row.under_4s) - num(row.under_2s), c: CH.red, l: '<4s' },
     { n: Math.max(0, total - num(row.under_4s)), c: '#7f1d1d', l: '>4s' },
-  ].filter(s => s.n > 0);
+  ].filter((s) => s.n > 0);
   return (
     <div style={{ display: 'flex', height: 5, borderRadius: 2, overflow: 'hidden', gap: 1 }}>
       {segs.map((s, i) => (
-        <div key={i} title={`${s.l}: ${Math.round((s.n / total) * 100)}%`}
-          style={{ flex: s.n / total, background: s.c, minWidth: 2 }} />
+        <div
+          key={i}
+          title={`${s.l}: ${Math.round((s.n / total) * 100)}%`}
+          style={{ flex: s.n / total, background: s.c, minWidth: 2 }}
+        />
       ))}
     </div>
   );
@@ -376,62 +643,142 @@ const LatDist = ({ row }: { row: any }) => {
 // FIX: Removed dead/broken nodeHealth state and useEffects that referenced
 // `authed` and `live` — which are out of scope here. Health polling now lives
 // in the AnalyticsDashboard parent component where those vars actually exist.
-const PosterThumb = ({ id, type, hits, hitRate }: {
-  id: string; type: string; hits: number; hitRate: number;
+const PosterThumb = ({
+  id,
+  type,
+  hits,
+  hitRate,
+}: {
+  id: string;
+  type: string;
+  hits: number;
+  hitRate: number;
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const src = `${POSTER_API}/${type}/${id}.svg?source=tmdb`;
   return (
     // FIX: was hardcoded to the /test/ dev route — links to the real poster endpoint
-    <a href={`${POSTER_API}/${type}/${id}.png`} target="_blank" rel="noreferrer"
-      style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{
-        position: 'relative', aspectRatio: '2/3', borderRadius: 6, overflow: 'hidden',
-        border: '1px solid var(--film-border)', background: '#111009',
-      }}>
+    <a
+      href={`${POSTER_API}/${type}/${id}.png`}
+      target="_blank"
+      rel="noreferrer"
+      style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}
+    >
+      <div
+        style={{
+          position: 'relative',
+          aspectRatio: '2/3',
+          borderRadius: 6,
+          overflow: 'hidden',
+          border: '1px solid var(--film-border)',
+          background: '#111009',
+        }}
+      >
         {!loaded && !errored && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
-            backgroundSize: '200% 100%', animation: 'shimmer 1.8s linear infinite',
-          }} />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(110deg,#111009 25%,#1a1712 50%,#111009 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.8s linear infinite',
+            }}
+          />
         )}
         {errored ? (
-          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 20 }}>🎞</div>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'grid',
+              placeItems: 'center',
+              fontSize: 20,
+            }}
+          >
+            🎞
+          </div>
         ) : (
-          <img src={src} alt={id} loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: loaded ? 1 : 0, transition: 'opacity 0.3s' }}
-            onLoad={() => setLoaded(true)} onError={() => setErrored(true)} />
+          <img
+            src={src}
+            alt={id}
+            loading="lazy"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+              opacity: loaded ? 1 : 0,
+              transition: 'opacity 0.3s',
+            }}
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+          />
         )}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '16px 6px 4px',
-          background: 'linear-gradient(to top,rgba(0,0,0,0.9),transparent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '16px 6px 4px',
+            background: 'linear-gradient(to top,rgba(0,0,0,0.9),transparent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 8,
+              color: CH.gold,
+              fontWeight: 700,
+            }}
+          >
             {fmtNum(hits)}
           </span>
-          <span style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: rateColor(hitRate),
-            background: 'rgba(0,0,0,0.7)', padding: '1px 4px', borderRadius: 2,
-          }}>
+          <span
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 7,
+              color: rateColor(hitRate),
+              background: 'rgba(0,0,0,0.7)',
+              padding: '1px 4px',
+              borderRadius: 2,
+            }}
+          >
             {fmtPct(hitRate)} cache
           </span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace', fontSize: 7,
-          color: type === 'movie' ? CH.tan : type === 'tv' ? CH.green : CH.rose,
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 2, padding: '1px 4px', textTransform: 'uppercase' as const,
-        }}>{type}</span>
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.dim,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
-        }}>{id}</span>
+        <span
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 7,
+            color: type === 'movie' ? CH.tan : type === 'tv' ? CH.green : CH.rose,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 2,
+            padding: '1px 4px',
+            textTransform: 'uppercase' as const,
+          }}
+        >
+          {type}
+        </span>
+        <span
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 8,
+            color: CH.dim,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap' as const,
+          }}
+        >
+          {id}
+        </span>
       </div>
     </a>
   );
@@ -444,7 +791,9 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
   const [shake, setShake] = useState(false);
   const submit = () => {
     if (pw === CORRECT_PW) {
-      try { localStorage.setItem(AUTH_KEY, '1'); } catch {}
+      try {
+        localStorage.setItem(AUTH_KEY, '1');
+      } catch {}
       onAuth();
     } else {
       setErr('Incorrect password');
@@ -454,59 +803,124 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
     }
   };
   return (
-    <div style={{
-      minHeight: '100dvh', background: 'var(--film-black)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px',
-    }}>
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--film-black)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+      }}
+    >
       <style>{`
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
       `}</style>
-      <div style={{
-        width: '100%', maxWidth: 360, background: 'var(--film-mid)',
-        border: '1px solid var(--film-border)', borderRadius: 12, overflow: 'hidden',
-        animation: shake ? 'shake 0.4s ease' : 'none',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
-      }}>
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 360,
+          background: 'var(--film-mid)',
+          border: '1px solid var(--film-border)',
+          borderRadius: 12,
+          overflow: 'hidden',
+          animation: shake ? 'shake 0.4s ease' : 'none',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
+        }}
+      >
+        <div
+          style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        >
           <AmberTag style={{ marginBottom: 8 }}>Posterium Analytics</AmberTag>
-          <div className="poster-font" style={{ fontSize: 28, color: 'var(--film-cream)', letterSpacing: '0.06em' }}>
+          <div
+            className="poster-font"
+            style={{ fontSize: 28, color: 'var(--film-cream)', letterSpacing: '0.06em' }}
+          >
             Dashboard v5
           </div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, marginTop: 4 }}>
+          <div
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 8,
+              color: CH.ghost,
+              marginTop: 4,
+            }}
+          >
             raster_metrics + request_analytics + D1
           </div>
         </div>
         <div style={{ padding: '20px 24px' }}>
-          <label style={{
-            display: 'block', fontFamily: 'JetBrains Mono, monospace', fontSize: 8,
-            color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, marginBottom: 6,
-          }}>Admin Password</label>
-          <input type="password" value={pw}
-            onChange={e => { setPw(e.target.value); setErr(''); }}
-            onKeyDown={e => e.key === 'Enter' && submit()}
-            placeholder="Enter password" autoFocus
+          <label
             style={{
-              width: '100%', height: 40, padding: '0 12px',
+              display: 'block',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 8,
+              color: CH.ghost,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase' as const,
+              marginBottom: 6,
+            }}
+          >
+            Admin Password
+          </label>
+          <input
+            type="password"
+            value={pw}
+            onChange={(e) => {
+              setPw(e.target.value);
+              setErr('');
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+            placeholder="Enter password"
+            autoFocus
+            style={{
+              width: '100%',
+              height: 40,
+              padding: '0 12px',
               background: 'var(--film-char)',
               border: `1px solid ${err ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: 7, color: 'var(--film-cream)', fontSize: 13,
-              fontFamily: 'JetBrains Mono, monospace', outline: 'none', boxSizing: 'border-box' as const,
-            }} />
+              borderRadius: 7,
+              color: 'var(--film-cream)',
+              fontSize: 13,
+              fontFamily: 'JetBrains Mono, monospace',
+              outline: 'none',
+              boxSizing: 'border-box' as const,
+            }}
+          />
           {err && (
-            <div style={{ marginTop: 5, fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.red }}>
+            <div
+              style={{
+                marginTop: 5,
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 8,
+                color: CH.red,
+              }}
+            >
               ✕ {err}
             </div>
           )}
-          <button onClick={submit} style={{
-            width: '100%', height: 40, marginTop: 14,
-            background: `linear-gradient(90deg,${CH.amber},${CH.gold})`,
-            color: '#070706', border: 'none', borderRadius: 7, cursor: 'pointer',
-            fontSize: 11, fontWeight: 800, letterSpacing: '0.12em',
-            textTransform: 'uppercase' as const, fontFamily: 'Syne, sans-serif',
-          }}>Enter Dashboard</button>
+          <button
+            onClick={submit}
+            style={{
+              width: '100%',
+              height: 40,
+              marginTop: 14,
+              background: `linear-gradient(90deg,${CH.amber},${CH.gold})`,
+              color: '#070706',
+              border: 'none',
+              borderRadius: 7,
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase' as const,
+              fontFamily: 'Syne, sans-serif',
+            }}
+          >
+            Enter Dashboard
+          </button>
         </div>
       </div>
     </div>
@@ -516,7 +930,11 @@ const AuthScreen = ({ onAuth }: { onAuth: () => void }) => {
 // ── Main dashboard ────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
   const [authed, setAuthed] = useState(() => {
-    try { return localStorage.getItem(AUTH_KEY) === '1'; } catch { return false; }
+    try {
+      return localStorage.getItem(AUTH_KEY) === '1';
+    } catch {
+      return false;
+    }
   });
   const [cfg, setCfg] = useState<DashConfig>(loadCfg);
   const [data, setData] = useState<Record<string, any> | null>(null);
@@ -536,10 +954,13 @@ export default function AnalyticsDashboard() {
   const fetchNodeHealth = useCallback(async () => {
     setHealthLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/nodes/health?pass=${encodeURIComponent(ADMIN_API_PASS)}`, {
-        headers: { 'X-Admin-Token': ADMIN_API_PASS },
-        signal: AbortSignal.timeout(6000),
-      });
+      const res = await fetch(
+        `${API_BASE}/admin/nodes/health?pass=${encodeURIComponent(ADMIN_API_PASS)}`,
+        {
+          headers: { 'X-Admin-Token': ADMIN_API_PASS },
+          signal: AbortSignal.timeout(6000),
+        }
+      );
       if (res.ok) {
         const json = await res.json();
         if (json.health) setNodeHealth(json.health);
@@ -551,7 +972,9 @@ export default function AnalyticsDashboard() {
     }
   }, []);
 
-  useEffect(() => { if (authed) fetchNodeHealth(); }, [authed, fetchNodeHealth]);
+  useEffect(() => {
+    if (authed) fetchNodeHealth();
+  }, [authed, fetchNodeHealth]);
   useEffect(() => {
     if (!live) return;
     const iv = setInterval(fetchNodeHealth, 30_000);
@@ -564,224 +987,369 @@ export default function AnalyticsDashboard() {
     saveCfg(c);
   };
 
-  const fetchData = useCallback(async (p?: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`${API_BASE}/analytics?period=${p ?? cfg.period}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
-      setLastFetch(new Date());
-    } catch (e: any) {
-      setError(e.message ?? 'Fetch failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [cfg.period]);
-
-  useEffect(() => { if (authed) fetchData(); }, [authed]);
+  const fetchData = useCallback(
+    async (p?: string) => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await fetch(`${API_BASE}/analytics?period=${p ?? cfg.period}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        setData(json);
+        setLastFetch(new Date());
+      } catch (e: any) {
+        setError(e.message ?? 'Fetch failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cfg.period]
+  );
 
   useEffect(() => {
-    if (liveIntervalRef.current) { clearInterval(liveIntervalRef.current); liveIntervalRef.current = null; }
+    if (authed) fetchData();
+  }, [authed]);
+
+  useEffect(() => {
+    if (liveIntervalRef.current) {
+      clearInterval(liveIntervalRef.current);
+      liveIntervalRef.current = null;
+    }
     if (!live || !authed) return;
-    liveIntervalRef.current = setInterval(() => { fetchData(); setLiveCount(c => c + 1); }, 10_000);
-    return () => { if (liveIntervalRef.current) clearInterval(liveIntervalRef.current); };
+    liveIntervalRef.current = setInterval(() => {
+      fetchData();
+      setLiveCount((c) => c + 1);
+    }, 10_000);
+    return () => {
+      if (liveIntervalRef.current) clearInterval(liveIntervalRef.current);
+    };
   }, [live, authed, fetchData]);
 
   const granularity = data?.granularity ?? 'hour';
   const mkBucket = useCallback((s: string) => fmtBucket(s, granularity), [granularity]);
 
   // ── Derived data — raster metrics ────────────────────────────────────────
-  const nodeRows = useMemo(() =>
-    (data?.data?.node_performance?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''),
-      total_attempts: num(r.total_attempts), successes: num(r.successes),
-      failures: num(r.failures), success_rate_pct: num(r.success_rate_pct),
-      avg_ms: nullableNum(r.avg_ms), race_wins: num(r.race_wins),
-    })), [data]);
+  const nodeRows = useMemo(
+    () =>
+      (data?.data?.node_performance?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        total_attempts: num(r.total_attempts),
+        successes: num(r.successes),
+        failures: num(r.failures),
+        success_rate_pct: num(r.success_rate_pct),
+        avg_ms: nullableNum(r.avg_ms),
+        race_wins: num(r.race_wins),
+      })),
+    [data]
+  );
 
-  const computeVsWallRows = useMemo(() =>
-    (data?.data?.node_compute_vs_wall?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''),
-      avg_wall_ms: nullableNum(r.avg_wall_ms),
-      avg_compute_ms: nullableNum(r.avg_compute_ms),
-      avg_network_overhead_ms: nullableNum(r.avg_network_overhead_ms),
-      samples: num(r.samples),
-    })), [data]);
+  const computeVsWallRows = useMemo(
+    () =>
+      (data?.data?.node_compute_vs_wall?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        avg_wall_ms: nullableNum(r.avg_wall_ms),
+        avg_compute_ms: nullableNum(r.avg_compute_ms),
+        avg_network_overhead_ms: nullableNum(r.avg_network_overhead_ms),
+        samples: num(r.samples),
+      })),
+    [data]
+  );
 
   const globalRow = useMemo(() => {
     const raw = data?.data?.global_summary?.data?.[0];
     if (raw && num(raw.total_attempts) > 0)
       return {
-        total_attempts: num(raw.total_attempts), successes: num(raw.successes),
-        failures: num(raw.failures), race_wins: num(raw.race_wins),
-        success_rate_pct: num(raw.success_rate_pct), avg_ms: nullableNum(raw.avg_ms),
+        total_attempts: num(raw.total_attempts),
+        successes: num(raw.successes),
+        failures: num(raw.failures),
+        race_wins: num(raw.race_wins),
+        success_rate_pct: num(raw.success_rate_pct),
+        avg_ms: nullableNum(raw.avg_ms),
       };
     const total = nodeRows.reduce((s, r) => s + r.total_attempts, 0);
-    const succ  = nodeRows.reduce((s, r) => s + r.successes, 0);
+    const succ = nodeRows.reduce((s, r) => s + r.successes, 0);
     return {
-      total_attempts: total, successes: succ,
+      total_attempts: total,
+      successes: succ,
       failures: nodeRows.reduce((s, r) => s + r.failures, 0),
       race_wins: nodeRows.reduce((s, r) => s + r.race_wins, 0),
-      success_rate_pct: total > 0 ? (succ / total) * 100 : 0, avg_ms: null,
+      success_rate_pct: total > 0 ? (succ / total) * 100 : 0,
+      avg_ms: null,
     };
   }, [data, nodeRows]);
 
-  const trafficData = useMemo(() =>
-    (data?.data?.traffic_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), attempts: num(r.attempts),
-      successes: num(r.successes), failures: num(r.failures), avg_ms: num(r.avg_ms),
-    })), [data, mkBucket]);
+  const trafficData = useMemo(
+    () =>
+      (data?.data?.traffic_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        attempts: num(r.attempts),
+        successes: num(r.successes),
+        failures: num(r.failures),
+        avg_ms: num(r.avg_ms),
+      })),
+    [data, mkBucket]
+  );
 
-  const latencyRows = useMemo(() =>
-    (data?.data?.latency_percentiles?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), total_success: num(r.total_success),
-      avg_ms: nullableNum(r.avg_ms), under_500ms: num(r.under_500ms),
-      under_1s: num(r.under_1s), under_2s: num(r.under_2s), under_4s: num(r.under_4s),
-    })), [data]);
+  const latencyRows = useMemo(
+    () =>
+      (data?.data?.latency_percentiles?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        total_success: num(r.total_success),
+        avg_ms: nullableNum(r.avg_ms),
+        under_500ms: num(r.under_500ms),
+        under_1s: num(r.under_1s),
+        under_2s: num(r.under_2s),
+        under_4s: num(r.under_4s),
+      })),
+    [data]
+  );
 
-  const svgSummary    = useMemo(() => (data?.data?.svg_summary?.data ?? [])[0] ?? null, [data]);
-  const svgTimeseries = useMemo(() =>
-    (data?.data?.svg_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), requests: num(r.requests),
-      hits: num(r.hits), misses: num(r.misses),
-    })), [data, mkBucket]);
-  const svgPresetRows = useMemo(() =>
-    (data?.data?.svg_preset_breakdown?.data ?? []).map((r: any) => ({
-      preset: String(r.preset ?? ''), requests: num(r.requests), cache_hits: num(r.cache_hits),
-    })), [data]);
-  const svgTopIds = useMemo(() =>
-    (data?.data?.svg_top_ids?.data ?? []).map((r: any) => ({
-      id: String(r.id ?? ''), type: String(r.type ?? 'movie'),
-      hits: num(r.hits), hit_rate_pct: num(r.hit_rate_pct),
-    })), [data]);
-  const svgRatingCombos = useMemo(() =>
-    (data?.data?.svg_ratings_combos?.data ?? []).map((r: any) => ({
-      r_param: String(r.r_param ?? ''), requests: num(r.requests),
-    })), [data]);
+  const svgSummary = useMemo(() => (data?.data?.svg_summary?.data ?? [])[0] ?? null, [data]);
+  const svgTimeseries = useMemo(
+    () =>
+      (data?.data?.svg_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        requests: num(r.requests),
+        hits: num(r.hits),
+        misses: num(r.misses),
+      })),
+    [data, mkBucket]
+  );
+  const svgPresetRows = useMemo(
+    () =>
+      (data?.data?.svg_preset_breakdown?.data ?? []).map((r: any) => ({
+        preset: String(r.preset ?? ''),
+        requests: num(r.requests),
+        cache_hits: num(r.cache_hits),
+      })),
+    [data]
+  );
+  const svgTopIds = useMemo(
+    () =>
+      (data?.data?.svg_top_ids?.data ?? []).map((r: any) => ({
+        id: String(r.id ?? ''),
+        type: String(r.type ?? 'movie'),
+        hits: num(r.hits),
+        hit_rate_pct: num(r.hit_rate_pct),
+      })),
+    [data]
+  );
+  const svgRatingCombos = useMemo(
+    () =>
+      (data?.data?.svg_ratings_combos?.data ?? []).map((r: any) => ({
+        r_param: String(r.r_param ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
   const svgVsRaster = useMemo(() => {
     const rows = data?.data?.svg_vs_raster?.data ?? [];
     const row = rows[0];
     if (!row) return [];
     const val = (v: any) => num(v ?? 0);
     return [
-      { category: 'SVG',    requests: val(row.svg_requests),    cache_hits: val(row.svg_cache_hits) },
-      { category: 'JSON',   requests: val(row.json_requests),   cache_hits: val(row.json_cache_hits) },
-      { category: 'Raster', requests: val(row.raster_requests), cache_hits: val(row.raster_cache_hits) },
+      { category: 'SVG', requests: val(row.svg_requests), cache_hits: val(row.svg_cache_hits) },
+      { category: 'JSON', requests: val(row.json_requests), cache_hits: val(row.json_cache_hits) },
+      {
+        category: 'Raster',
+        requests: val(row.raster_requests),
+        cache_hits: val(row.raster_cache_hits),
+      },
     ];
   }, [data]);
 
-  const failRows = useMemo(() =>
-    (data?.data?.recent_failures?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), error: String(r.error ?? ''),
-      status_code: num(r.status_code), timestamp: String(r.timestamp ?? ''),
-    })), [data]);
+  const failRows = useMemo(
+    () =>
+      (data?.data?.recent_failures?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        error: String(r.error ?? ''),
+        status_code: num(r.status_code),
+        timestamp: String(r.timestamp ?? ''),
+      })),
+    [data]
+  );
 
-  const recentAttemptsRows = useMemo(() =>
-    (data?.data?.recent_attempts_detail?.data ?? []).map((r: any) => ({
-      timestamp: String(r.timestamp ?? ''),
-      node: String(r.node ?? ''),
-      format: String(r.format ?? ''),
-      input_type: String(r.input_type ?? ''),
-      colo: String(r.colo ?? ''),
-      outcome: String(r.outcome ?? ''),
-      error: String(r.error ?? ''),
-      lane: String(r.lane ?? ''),
-      was_winner: String(r.was_winner ?? ''),
-      wall_ms: nullableNum(r.wall_ms),
-      http_status: num(r.http_status),
-      inflight_at_start: num(r.inflight_at_start),
-      payload_kb: nullableNum(r.payload_kb),
-      node_score: nullableNum(r.node_score),
-      compute_ms: nullableNum(r.compute_ms),
-    })), [data]);
+  const recentAttemptsRows = useMemo(
+    () =>
+      (data?.data?.recent_attempts_detail?.data ?? []).map((r: any) => ({
+        timestamp: String(r.timestamp ?? ''),
+        node: String(r.node ?? ''),
+        format: String(r.format ?? ''),
+        input_type: String(r.input_type ?? ''),
+        colo: String(r.colo ?? ''),
+        outcome: String(r.outcome ?? ''),
+        error: String(r.error ?? ''),
+        lane: String(r.lane ?? ''),
+        was_winner: String(r.was_winner ?? ''),
+        wall_ms: nullableNum(r.wall_ms),
+        http_status: num(r.http_status),
+        inflight_at_start: num(r.inflight_at_start),
+        payload_kb: nullableNum(r.payload_kb),
+        node_score: nullableNum(r.node_score),
+        compute_ms: nullableNum(r.compute_ms),
+      })),
+    [data]
+  );
 
-  const fallbackTierRows = useMemo(() =>
-    (data?.data?.fallback_tiers?.data ?? [])
-      .filter((r: any) => r.lane && r.lane !== 'wall')
-      .map((r: any) => ({
-        lane: String(r.lane), attempts: num(r.attempts), successes: num(r.successes),
-        success_rate_pct: num(r.success_rate_pct), avg_ms: nullableNum(r.avg_ms),
-        wins: num(r.wins), win_rate_pct: num(r.win_rate_pct),
-      })), [data]);
+  const fallbackTierRows = useMemo(
+    () =>
+      (data?.data?.fallback_tiers?.data ?? [])
+        .filter((r: any) => r.lane && r.lane !== 'wall')
+        .map((r: any) => ({
+          lane: String(r.lane),
+          attempts: num(r.attempts),
+          successes: num(r.successes),
+          success_rate_pct: num(r.success_rate_pct),
+          avg_ms: nullableNum(r.avg_ms),
+          wins: num(r.wins),
+          win_rate_pct: num(r.win_rate_pct),
+        })),
+    [data]
+  );
 
-  const fallbackTimeseries = useMemo(() =>
-    (data?.data?.fallback_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), primary_hits: num(r.primary_hits),
-      t1_fallbacks: num(r.t1_fallbacks), t2_fallbacks: num(r.t2_fallbacks),
-      t3_fallbacks: num(r.t3_fallbacks),
-    })), [data, mkBucket]);
+  const fallbackTimeseries = useMemo(
+    () =>
+      (data?.data?.fallback_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        primary_hits: num(r.primary_hits),
+        t1_fallbacks: num(r.t1_fallbacks),
+        t2_fallbacks: num(r.t2_fallbacks),
+        t3_fallbacks: num(r.t3_fallbacks),
+      })),
+    [data, mkBucket]
+  );
 
   const wallStats = useMemo(() => (data?.data?.wall_time_stats?.data ?? [])[0] ?? null, [data]);
-  const wallTimeseries = useMemo(() =>
-    (data?.data?.wall_time_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), requests: num(r.requests), avg_wall_ms: num(r.avg_wall_ms),
-    })), [data, mkBucket]);
+  const wallTimeseries = useMemo(
+    () =>
+      (data?.data?.wall_time_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        requests: num(r.requests),
+        avg_wall_ms: num(r.avg_wall_ms),
+      })),
+    [data, mkBucket]
+  );
 
-  const formatRows = useMemo(() =>
-    (data?.data?.format_breakdown?.data ?? []).map((r: any) => ({
-      format: String(r.format ?? '?'), attempts: num(r.attempts),
-      successes: num(r.successes), avg_ms: nullableNum(r.avg_ms),
-    })), [data]);
+  const formatRows = useMemo(
+    () =>
+      (data?.data?.format_breakdown?.data ?? []).map((r: any) => ({
+        format: String(r.format ?? '?'),
+        attempts: num(r.attempts),
+        successes: num(r.successes),
+        avg_ms: nullableNum(r.avg_ms),
+      })),
+    [data]
+  );
 
-  const coloRows = useMemo(() =>
-    (data?.data?.colo_breakdown?.data ?? []).map((r: any) => ({
-      colo: String(r.colo ?? ''), attempts: num(r.attempts),
-      successes: num(r.successes), avg_ms: nullableNum(r.avg_ms),
-    })), [data]);
+  const coloRows = useMemo(
+    () =>
+      (data?.data?.colo_breakdown?.data ?? []).map((r: any) => ({
+        colo: String(r.colo ?? ''),
+        attempts: num(r.attempts),
+        successes: num(r.successes),
+        avg_ms: nullableNum(r.avg_ms),
+      })),
+    [data]
+  );
 
   const reqSummary = useMemo(() => (data?.data?.req_summary?.data ?? [])[0] ?? null, [data]);
-  const topIds = useMemo(() =>
-    (data?.data?.req_top_ids?.data ?? []).map((r: any) => ({
-      id: String(r.id ?? ''), type: String(r.type ?? 'movie'),
-      hits: num(r.hits), hit_rate_pct: num(r.hit_rate_pct),
-    })), [data]);
-  const deviceRows = useMemo(() =>
-    (data?.data?.req_device_breakdown?.data ?? []).map((r: any) => ({
-      device: String(r.device ?? ''), requests: num(r.requests), cache_hits: num(r.cache_hits),
-    })), [data]);
-  const countryRows = useMemo(() =>
-    (data?.data?.req_country_breakdown?.data ?? []).map((r: any) => ({
-      country: String(r.country ?? ''), requests: num(r.requests), cache_hits: num(r.cache_hits),
-    })), [data]);
-  const reqTimeseries = useMemo(() =>
-    (data?.data?.req_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), requests: num(r.requests),
-      hits: num(r.hits), misses: num(r.misses),
-    })), [data, mkBucket]);
-  const cacheTimeseries = useMemo(() =>
-    (data?.data?.req_cache_timeseries?.data ?? []).map((r: any) => ({
-      bucket: mkBucket(r.bucket ?? ''), total: num(r.total),
-      hits: num(r.hits), hit_rate_pct: num(r.hit_rate_pct),
-    })), [data, mkBucket]);
-  const reqFormatRows = useMemo(() =>
-    (data?.data?.req_format_breakdown?.data ?? []).map((r: any) => ({
-      format: String(r.format ?? ''), requests: num(r.requests),
-    })), [data]);
-  const reqTypeRows = useMemo(() =>
-    (data?.data?.req_type_breakdown?.data ?? []).map((r: any) => ({
-      type: String(r.type ?? ''), requests: num(r.requests),
-    })), [data]);
-  const topRatings = useMemo(() =>
-    (data?.data?.req_top_ratings?.data ?? []).map((r: any) => ({
-      r_param: String(r.r_param ?? ''), requests: num(r.requests),
-    })), [data]);
+  const topIds = useMemo(
+    () =>
+      (data?.data?.req_top_ids?.data ?? []).map((r: any) => ({
+        id: String(r.id ?? ''),
+        type: String(r.type ?? 'movie'),
+        hits: num(r.hits),
+        hit_rate_pct: num(r.hit_rate_pct),
+      })),
+    [data]
+  );
+  const deviceRows = useMemo(
+    () =>
+      (data?.data?.req_device_breakdown?.data ?? []).map((r: any) => ({
+        device: String(r.device ?? ''),
+        requests: num(r.requests),
+        cache_hits: num(r.cache_hits),
+      })),
+    [data]
+  );
+  const countryRows = useMemo(
+    () =>
+      (data?.data?.req_country_breakdown?.data ?? []).map((r: any) => ({
+        country: String(r.country ?? ''),
+        requests: num(r.requests),
+        cache_hits: num(r.cache_hits),
+      })),
+    [data]
+  );
+  const reqTimeseries = useMemo(
+    () =>
+      (data?.data?.req_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        requests: num(r.requests),
+        hits: num(r.hits),
+        misses: num(r.misses),
+      })),
+    [data, mkBucket]
+  );
+  const cacheTimeseries = useMemo(
+    () =>
+      (data?.data?.req_cache_timeseries?.data ?? []).map((r: any) => ({
+        bucket: mkBucket(r.bucket ?? ''),
+        total: num(r.total),
+        hits: num(r.hits),
+        hit_rate_pct: num(r.hit_rate_pct),
+      })),
+    [data, mkBucket]
+  );
+  const reqFormatRows = useMemo(
+    () =>
+      (data?.data?.req_format_breakdown?.data ?? []).map((r: any) => ({
+        format: String(r.format ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
+  const reqTypeRows = useMemo(
+    () =>
+      (data?.data?.req_type_breakdown?.data ?? []).map((r: any) => ({
+        type: String(r.type ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
+  const topRatings = useMemo(
+    () =>
+      (data?.data?.req_top_ratings?.data ?? []).map((r: any) => ({
+        r_param: String(r.r_param ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
 
   const dbStats = useMemo(() => data?.db_stats ?? null, [data]);
 
   // ── Derived data — previously-unused queries analytics.js already returns ──
-  const winRateRows = useMemo(() =>
-    (data?.data?.win_rate?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), wins: num(r.wins),
-      successes: num(r.successes), win_rate_pct: num(r.win_rate_pct),
-    })), [data]);
+  const winRateRows = useMemo(
+    () =>
+      (data?.data?.win_rate?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        wins: num(r.wins),
+        successes: num(r.successes),
+        win_rate_pct: num(r.win_rate_pct),
+      })),
+    [data]
+  );
 
-  const errorBreakdownRows = useMemo(() =>
-    (data?.data?.error_breakdown?.data ?? []).map((r: any) => ({
-      error: String(r.error ?? ''), node: String(r.node ?? ''),
-      occurrences: num(r.occurrences), status_code: num(r.status_code),
-    })), [data]);
+  const errorBreakdownRows = useMemo(
+    () =>
+      (data?.data?.error_breakdown?.data ?? []).map((r: any) => ({
+        error: String(r.error ?? ''),
+        node: String(r.node ?? ''),
+        occurrences: num(r.occurrences),
+        status_code: num(r.status_code),
+      })),
+    [data]
+  );
 
   const errorHeatmap = useMemo(() => {
     const raw = data?.data?.error_heatmap?.data ?? [];
@@ -796,34 +1364,51 @@ export default function AnalyticsDashboard() {
     });
     const rows = Array.from(map.values())
       .sort((a, b) => a._raw.localeCompare(b._raw))
-      .map(r => ({ ...r, bucket: mkBucket(r._raw) }));
+      .map((r) => ({ ...r, bucket: mkBucket(r._raw) }));
     return { rows, nodes: Array.from(nodeSet) };
   }, [data, mkBucket]);
 
-  const typeBreakdownRows = useMemo(() =>
-    (data?.data?.type_breakdown?.data ?? []).map((r: any) => ({
-      input_type: String(r.input_type ?? ''), attempts: num(r.attempts),
-      successes: num(r.successes), avg_ms: nullableNum(r.avg_ms),
-    })), [data]);
+  const typeBreakdownRows = useMemo(
+    () =>
+      (data?.data?.type_breakdown?.data ?? []).map((r: any) => ({
+        input_type: String(r.input_type ?? ''),
+        attempts: num(r.attempts),
+        successes: num(r.successes),
+        avg_ms: nullableNum(r.avg_ms),
+      })),
+    [data]
+  );
 
-  const scoreAccuracyRows = useMemo(() =>
-    (data?.data?.node_score_vs_actual?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), avg_score_at_selection: nullableNum(r.avg_score_at_selection),
-      avg_actual_ms: nullableNum(r.avg_actual_ms), score_error_ms: num(r.score_error_ms),
-      samples: num(r.samples),
-    })), [data]);
+  const scoreAccuracyRows = useMemo(
+    () =>
+      (data?.data?.node_score_vs_actual?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        avg_score_at_selection: nullableNum(r.avg_score_at_selection),
+        avg_actual_ms: nullableNum(r.avg_actual_ms),
+        score_error_ms: num(r.score_error_ms),
+        samples: num(r.samples),
+      })),
+    [data]
+  );
 
-  const posterSourceRows = useMemo(() =>
-    (data?.data?.req_poster_source?.data ?? []).map((r: any) => ({
-      poster_source: String(r.poster_source || '(unknown)'), type: String(r.type ?? ''),
-      requests: num(r.requests), cache_hits: num(r.cache_hits), hit_rate_pct: num(r.hit_rate_pct),
-    })), [data]);
+  const posterSourceRows = useMemo(
+    () =>
+      (data?.data?.req_poster_source?.data ?? []).map((r: any) => ({
+        poster_source: String(r.poster_source || '(unknown)'),
+        type: String(r.type ?? ''),
+        requests: num(r.requests),
+        cache_hits: num(r.cache_hits),
+        hit_rate_pct: num(r.hit_rate_pct),
+      })),
+    [data]
+  );
 
   const posterSourceAgg = useMemo(() => {
     const m = new Map<string, { requests: number; cache_hits: number }>();
-    posterSourceRows.forEach(r => {
+    posterSourceRows.forEach((r) => {
       const cur = m.get(r.poster_source) ?? { requests: 0, cache_hits: 0 };
-      cur.requests += r.requests; cur.cache_hits += r.cache_hits;
+      cur.requests += r.requests;
+      cur.cache_hits += r.cache_hits;
       m.set(r.poster_source, cur);
     });
     return Array.from(m.entries())
@@ -837,7 +1422,9 @@ export default function AnalyticsDashboard() {
       raw.set(num(r.hour_utc), { requests: num(r.requests), hits: num(r.hits) });
     });
     return Array.from({ length: 24 }, (_, h) => ({
-      hour: h, requests: raw.get(h)?.requests ?? 0, hits: raw.get(h)?.hits ?? 0,
+      hour: h,
+      requests: raw.get(h)?.requests ?? 0,
+      hits: raw.get(h)?.hits ?? 0,
     }));
   }, [data]);
 
@@ -850,69 +1437,108 @@ export default function AnalyticsDashboard() {
     return DOW_LABELS.map((label, i) => ({ label, requests: raw.get(i + 1) ?? 0 }));
   }, [data]);
 
-  const slaRows = useMemo(() =>
-    (data?.data?.raster_latency_sla?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), successes: num(r.successes),
-      under_300ms: num(r.under_300ms), under_800ms: num(r.under_800ms),
-      under_1500ms: num(r.under_1500ms), under_3000ms: num(r.under_3000ms),
-      avg_ms: nullableNum(r.avg_ms), avg_inflight: num(r.avg_inflight), max_inflight: num(r.max_inflight),
-    })), [data]);
+  const slaRows = useMemo(
+    () =>
+      (data?.data?.raster_latency_sla?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        successes: num(r.successes),
+        under_300ms: num(r.under_300ms),
+        under_800ms: num(r.under_800ms),
+        under_1500ms: num(r.under_1500ms),
+        under_3000ms: num(r.under_3000ms),
+        avg_ms: nullableNum(r.avg_ms),
+        avg_inflight: num(r.avg_inflight),
+        max_inflight: num(r.max_inflight),
+      })),
+    [data]
+  );
 
-  const cpuProxyRows = useMemo(() =>
-    (data?.data?.raster_cpu_proxy?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), avg_ms: nullableNum(r.avg_ms), avg_inflight: num(r.avg_inflight),
-      cpu_proxy_ms: num(r.cpu_proxy_ms), samples: num(r.samples), success_rate_pct: num(r.success_rate_pct),
-    })), [data]);
+  const cpuProxyRows = useMemo(
+    () =>
+      (data?.data?.raster_cpu_proxy?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        avg_ms: nullableNum(r.avg_ms),
+        avg_inflight: num(r.avg_inflight),
+        cpu_proxy_ms: num(r.cpu_proxy_ms),
+        samples: num(r.samples),
+        success_rate_pct: num(r.success_rate_pct),
+      })),
+    [data]
+  );
 
-  const payloadRows = useMemo(() =>
-    (data?.data?.raster_payload_size?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), avg_payload_kb: num(r.avg_payload_kb), max_payload_kb: num(r.max_payload_kb),
-      over_100kb: num(r.over_100kb), over_50kb: num(r.over_50kb),
-    })), [data]);
+  const payloadRows = useMemo(
+    () =>
+      (data?.data?.raster_payload_size?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        avg_payload_kb: num(r.avg_payload_kb),
+        max_payload_kb: num(r.max_payload_kb),
+        over_100kb: num(r.over_100kb),
+        over_50kb: num(r.over_50kb),
+      })),
+    [data]
+  );
 
-  const geoRoutingRows = useMemo(() =>
-    (data?.data?.raster_geo_routing?.data ?? []).map((r: any) => ({
-      colo: String(r.colo ?? ''), node: String(r.node ?? ''), attempts: num(r.attempts),
-      successes: num(r.successes), avg_ms: nullableNum(r.avg_ms), wins: num(r.wins),
-    })), [data]);
+  const geoRoutingRows = useMemo(
+    () =>
+      (data?.data?.raster_geo_routing?.data ?? []).map((r: any) => ({
+        colo: String(r.colo ?? ''),
+        node: String(r.node ?? ''),
+        attempts: num(r.attempts),
+        successes: num(r.successes),
+        avg_ms: nullableNum(r.avg_ms),
+        wins: num(r.wins),
+      })),
+    [data]
+  );
 
   const geoRoutingGrouped = useMemo(() => {
     const m = new Map<string, typeof geoRoutingRows>();
-    geoRoutingRows.forEach(r => {
+    geoRoutingRows.forEach((r) => {
       if (!m.has(r.colo)) m.set(r.colo, []);
       m.get(r.colo)!.push(r);
     });
     return Array.from(m.entries()).map(([colo, rows]) => ({
-      colo, rows: [...rows].sort((a, b) => b.wins - a.wins || b.attempts - a.attempts),
+      colo,
+      rows: [...rows].sort((a, b) => b.wins - a.wins || b.attempts - a.attempts),
     }));
   }, [geoRoutingRows]);
 
-  const tunedLimitsRows = useMemo(() =>
-    (data?.data?.suggested_tuned_limits?.data ?? []).map((r: any) => ({
-      node: String(r.node ?? ''), total_attempts: num(r.total_attempts),
-      success_rate_pct: num(r.success_rate_pct), avg_ms: nullableNum(r.avg_ms),
-      max_inflight: num(r.max_inflight), cpu_proxy_ms: num(r.cpu_proxy_ms),
-    })), [data]);
+  const tunedLimitsRows = useMemo(
+    () =>
+      (data?.data?.suggested_tuned_limits?.data ?? []).map((r: any) => ({
+        node: String(r.node ?? ''),
+        total_attempts: num(r.total_attempts),
+        success_rate_pct: num(r.success_rate_pct),
+        avg_ms: nullableNum(r.avg_ms),
+        max_inflight: num(r.max_inflight),
+        cpu_proxy_ms: num(r.cpu_proxy_ms),
+      })),
+    [data]
+  );
 
   // Raw cf-cache-status distribution — surfaces non-HIT/MISS statuses
   // (REVALIDATED/STALE/…) that the hit-rate queries silently exclude.
-  const cacheStatusRows = useMemo(() =>
-    (data?.data?.req_cache_status_breakdown?.data ?? []).map((r: any) => ({
-      status: String(r.status ?? ''), requests: num(r.requests),
-    })), [data]);
+  const cacheStatusRows = useMemo(
+    () =>
+      (data?.data?.req_cache_status_breakdown?.data ?? []).map((r: any) => ({
+        status: String(r.status ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
   const totalCacheStatusReqs = useMemo(
     () => cacheStatusRows.reduce((s, r) => s + r.requests, 0),
-    [cacheStatusRows],
+    [cacheStatusRows]
   );
 
   const STATUS_META: Record<string, { label: string; color: string }> = {
-    HIT:         { label: 'HIT — served from cache',   color: CH.green },
-    MISS:        { label: 'MISS — origin rendered',    color: CH.orange },
+    HIT: { label: 'HIT — served from cache', color: CH.green },
+    MISS: { label: 'MISS — origin rendered', color: CH.orange },
     REVALIDATED: { label: 'REVALIDATED — fresh recheck', color: CH.tan },
-    STALE:       { label: 'STALE — stale-if-error/wait', color: CH.yellow },
-    UPDATING:    { label: 'UPDATING — revalidation',   color: CH.rose },
-    EXPIRED:     { label: 'EXPIRED — re-render',       color: CH.red },
-    BYPASS:      { label: 'BYPASS — not cacheable',    color: CH.ghost },
+    STALE: { label: 'STALE — stale-if-error/wait', color: CH.yellow },
+    UPDATING: { label: 'UPDATING — revalidation', color: CH.rose },
+    EXPIRED: { label: 'EXPIRED — re-render', color: CH.red },
+    BYPASS: { label: 'BYPASS — not cacheable', color: CH.ghost },
   };
 
   // ── Workers platform metrics (official GraphQL Analytics API) ──────────────
@@ -926,7 +1552,9 @@ export default function AnalyticsDashboard() {
     avgCpuMs: s.avg_cpu_ms ?? null,
     byStatus: s.by_status ?? {},
     series: (s.series ?? []).map((x: any) => ({
-      ts: String(x.ts), requests: num(x.requests), errors: num(x.errors),
+      ts: String(x.ts),
+      requests: num(x.requests),
+      errors: num(x.errors),
     })),
   }));
   const workersSeries = useMemo(() => {
@@ -940,45 +1568,74 @@ export default function AnalyticsDashboard() {
     }
     return [...byTs.values()]
       .sort((a, b) => a.bucket.localeCompare(b.bucket))
-      .map(e => ({ bucket: fmtBucket(e.bucket), ...e }));
+      .map((e) => ({ bucket: fmtBucket(e.bucket), ...e }));
   }, [wmScripts]);
 
-  const presetAllRows = useMemo(() =>
-    (data?.data?.req_preset_breakdown?.data ?? []).map((r: any) => ({
-      preset: String(r.preset || '(default)'), requests: num(r.requests),
-    })), [data]);
+  const presetAllRows = useMemo(
+    () =>
+      (data?.data?.req_preset_breakdown?.data ?? []).map((r: any) => ({
+        preset: String(r.preset || '(default)'),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
 
-  const fallbackRateRows = useMemo(() =>
-    (data?.data?.req_poster_fallback_rate?.data ?? []).map((r: any) => ({
-      type: String(r.type ?? ''), requested_source: String(r.requested_source ?? ''),
-      served_source: String(r.served_source ?? ''), requested_variant: String(r.requested_variant ?? ''),
-      served_variant: String(r.served_variant ?? ''), fallback_count: num(r.fallback_count),
-    })), [data]);
+  const fallbackRateRows = useMemo(
+    () =>
+      (data?.data?.req_poster_fallback_rate?.data ?? []).map((r: any) => ({
+        type: String(r.type ?? ''),
+        requested_source: String(r.requested_source ?? ''),
+        served_source: String(r.served_source ?? ''),
+        requested_variant: String(r.requested_variant ?? ''),
+        served_variant: String(r.served_variant ?? ''),
+        fallback_count: num(r.fallback_count),
+      })),
+    [data]
+  );
 
-  const reqGeoBreakdownRows = useMemo(() =>
-    (data?.data?.req_geo_breakdown?.data ?? []).map((r: any) => ({
-      colo: String(r.colo ?? ''), country: String(r.country ?? ''), requests: num(r.requests),
-    })), [data]);
+  const reqGeoBreakdownRows = useMemo(
+    () =>
+      (data?.data?.req_geo_breakdown?.data ?? []).map((r: any) => ({
+        colo: String(r.colo ?? ''),
+        country: String(r.country ?? ''),
+        requests: num(r.requests),
+      })),
+    [data]
+  );
 
   // FIX: query_errors from the backend was previously discarded entirely —
   // if an AE SQL query fails, the dashboard silently rendered empty charts
   // with no indication anything was wrong.
   const queryErrorEntries = useMemo(() => Object.entries(data?.query_errors ?? {}), [data]);
 
-  const alertNodes = useMemo(() =>
-    nodeRows.filter(r =>
-      r.total_attempts > 0 &&
-      (r.success_rate_pct < cfg.alertRate || (r.avg_ms !== null && r.avg_ms > cfg.alertMs))
-    ), [nodeRows, cfg]);
+  const alertNodes = useMemo(
+    () =>
+      nodeRows.filter(
+        (r) =>
+          r.total_attempts > 0 &&
+          (r.success_rate_pct < cfg.alertRate || (r.avg_ms !== null && r.avg_ms > cfg.alertMs))
+      ),
+    [nodeRows, cfg]
+  );
 
   const pLabel = PERIODS[cfg.period]?.label ?? cfg.period;
-  const totalDeviceReqs = useMemo(() => deviceRows.reduce((s, r) => s + r.requests, 0), [deviceRows]);
+  const totalDeviceReqs = useMemo(
+    () => deviceRows.reduce((s, r) => s + r.requests, 0),
+    [deviceRows]
+  );
 
   if (!authed) return <AuthScreen onAuth={() => setAuthed(true)} />;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--film-black)', color: 'var(--film-cream)', paddingTop: 56 }}>
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--film-black)',
+        color: 'var(--film-cream)',
+        paddingTop: 56,
+      }}
+    >
       <style>{`
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -1008,156 +1665,350 @@ export default function AnalyticsDashboard() {
       <MainNavbar fixed={true} compactLogo />
 
       {/* ── Sticky controls ───────────────────────────────────────────── */}
-      <div className="dash-controls-bar" style={{
-        position: 'sticky', top: 56, zIndex: 40,
-        background: 'rgba(7,7,6,0.97)', backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--film-border)',
-        padding: '0 16px', display: 'flex', alignItems: 'center',
-        gap: 10, flexWrap: 'wrap', minHeight: 48,
-      }}>
+      <div
+        className="dash-controls-bar"
+        style={{
+          position: 'sticky',
+          top: 56,
+          zIndex: 40,
+          background: 'rgba(7,7,6,0.97)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--film-border)',
+          padding: '0 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+          minHeight: 48,
+        }}
+      >
         {/* Live indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: loading ? CH.yellow : error ? CH.red : live ? CH.green : CH.ghost,
-            boxShadow: live ? `0 0 8px ${CH.green}` : 'none',
-            animation: live ? 'live-pulse 1.5s ease-in-out infinite' : loading ? 'pulse-dot 1s ease-in-out infinite' : 'none',
-          }} />
-          <span className="dash-live-label" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.12em' }}>
-            {loading ? 'LOADING' : error ? 'ERROR' : live ? `LIVE · ${liveCount > 0 ? `${liveCount} polls` : '10s'}` : 'IDLE'}
+          <div
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: loading ? CH.yellow : error ? CH.red : live ? CH.green : CH.ghost,
+              boxShadow: live ? `0 0 8px ${CH.green}` : 'none',
+              animation: live
+                ? 'live-pulse 1.5s ease-in-out infinite'
+                : loading
+                  ? 'pulse-dot 1s ease-in-out infinite'
+                  : 'none',
+            }}
+          />
+          <span
+            className="dash-live-label"
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 7,
+              color: CH.ghost,
+              letterSpacing: '0.12em',
+            }}
+          >
+            {loading
+              ? 'LOADING'
+              : error
+                ? 'ERROR'
+                : live
+                  ? `LIVE · ${liveCount > 0 ? `${liveCount} polls` : '10s'}`
+                  : 'IDLE'}
           </span>
           {alertNodes.length > 0 && (
-            <span style={{
-              background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)',
-              color: CH.red, fontSize: 7, fontFamily: 'Syne, sans-serif', fontWeight: 700,
-              padding: '2px 7px', borderRadius: 3, letterSpacing: '0.08em',
-            }}>⚠ {alertNodes.length}</span>
+            <span
+              style={{
+                background: 'rgba(248,113,113,0.15)',
+                border: '1px solid rgba(248,113,113,0.3)',
+                color: CH.red,
+                fontSize: 7,
+                fontFamily: 'Syne, sans-serif',
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 3,
+                letterSpacing: '0.08em',
+              }}
+            >
+              ⚠ {alertNodes.length}
+            </span>
           )}
           {queryErrorEntries.length > 0 && (
-            <span style={{
-              background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)',
-              color: CH.yellow, fontSize: 7, fontFamily: 'Syne, sans-serif', fontWeight: 700,
-              padding: '2px 7px', borderRadius: 3, letterSpacing: '0.08em',
-            }}>⚠ {queryErrorEntries.length} queries</span>
+            <span
+              style={{
+                background: 'rgba(250,204,21,0.15)',
+                border: '1px solid rgba(250,204,21,0.3)',
+                color: CH.yellow,
+                fontSize: 7,
+                fontFamily: 'Syne, sans-serif',
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 3,
+                letterSpacing: '0.08em',
+              }}
+            >
+              ⚠ {queryErrorEntries.length} queries
+            </span>
           )}
         </div>
 
         {/* Live toggle */}
-        <button onClick={() => setLive(v => !v)} style={{
-          background: live ? 'rgba(232,193,90,0.15)' : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${live ? 'rgba(232,193,90,0.4)' : 'rgba(255,255,255,0.07)'}`,
-          color: live ? CH.green : CH.ghost, borderRadius: 6, padding: '4px 10px',
-          fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif', cursor: 'pointer',
-          letterSpacing: '0.1em', flexShrink: 0,
-        }}>{live ? '⬤ LIVE' : '○ LIVE'}</button>
+        <button
+          onClick={() => setLive((v) => !v)}
+          style={{
+            background: live ? 'rgba(232,193,90,0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${live ? 'rgba(232,193,90,0.4)' : 'rgba(255,255,255,0.07)'}`,
+            color: live ? CH.green : CH.ghost,
+            borderRadius: 6,
+            padding: '4px 10px',
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: 'Syne, sans-serif',
+            cursor: 'pointer',
+            letterSpacing: '0.1em',
+            flexShrink: 0,
+          }}
+        >
+          {live ? '⬤ LIVE' : '○ LIVE'}
+        </button>
 
         {/* Period selector — scrollable on mobile */}
         <div className="dash-period-scroller" style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            display: 'flex', gap: 1, padding: 3,
-            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 7,
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 1,
+              padding: 3,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 7,
+            }}
+          >
             {Object.entries(PERIODS).map(([k, v]) => (
-              <button key={k} onClick={() => { updateCfg({ period: k }); fetchData(k); }} style={{
-                padding: '3px 8px', borderRadius: 4, border: 'none', cursor: 'pointer',
-                fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif',
-                textTransform: 'uppercase' as const, flexShrink: 0,
-                background: cfg.period === k ? 'rgba(196,124,46,0.18)' : 'transparent',
-                color: cfg.period === k ? CH.amber : CH.ghost,
-              }}>{v.short}</button>
+              <button
+                key={k}
+                onClick={() => {
+                  updateCfg({ period: k });
+                  fetchData(k);
+                }}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  fontFamily: 'Syne, sans-serif',
+                  textTransform: 'uppercase' as const,
+                  flexShrink: 0,
+                  background: cfg.period === k ? 'rgba(196,124,46,0.18)' : 'transparent',
+                  color: cfg.period === k ? CH.amber : CH.ghost,
+                }}
+              >
+                {v.short}
+              </button>
             ))}
           </div>
         </div>
 
-        <button onClick={() => fetchData()} disabled={loading} style={{
-          height: 28, padding: '0 12px',
-          background: loading ? 'rgba(196,124,46,0.3)' : CH.amber,
-          color: '#070706', border: 'none', borderRadius: 6, cursor: 'pointer',
-          fontSize: 11, fontWeight: 800, fontFamily: 'Syne, sans-serif',
-          opacity: loading ? 0.7 : 1, flexShrink: 0,
-        }}>{loading ? '…' : '↻'}</button>
+        <button
+          onClick={() => fetchData()}
+          disabled={loading}
+          style={{
+            height: 28,
+            padding: '0 12px',
+            background: loading ? 'rgba(196,124,46,0.3)' : CH.amber,
+            color: '#070706',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 800,
+            fontFamily: 'Syne, sans-serif',
+            opacity: loading ? 0.7 : 1,
+            flexShrink: 0,
+          }}
+        >
+          {loading ? '…' : '↻'}
+        </button>
 
-        <button onClick={() => {
-          try { localStorage.removeItem(AUTH_KEY); } catch {}
-          setAuthed(false); setData(null);
-        }} style={{
-          height: 28, padding: '0 10px', background: 'transparent', color: CH.ghost,
-          border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, cursor: 'pointer',
-          fontSize: 9, fontFamily: 'Syne, sans-serif', textTransform: 'uppercase' as const,
-          marginLeft: 'auto', flexShrink: 0,
-        }}>Logout</button>
+        <button
+          onClick={() => {
+            try {
+              localStorage.removeItem(AUTH_KEY);
+            } catch {}
+            setAuthed(false);
+            setData(null);
+          }}
+          style={{
+            height: 28,
+            padding: '0 10px',
+            background: 'transparent',
+            color: CH.ghost,
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 9,
+            fontFamily: 'Syne, sans-serif',
+            textTransform: 'uppercase' as const,
+            marginLeft: 'auto',
+            flexShrink: 0,
+          }}
+        >
+          Logout
+        </button>
       </div>
 
       {/* ── Tab bar ─────────────────────────────────────────────────────── */}
-      <nav className="dash-tab-bar" style={{
-        background: 'var(--film-dark)', borderBottom: '1px solid rgba(255,255,255,0.05)',
-        padding: '0 16px', display: 'flex', overflowX: 'auto', gap: 0,
-        scrollbarWidth: 'none' as const,
-      }}>
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            padding: '11px 12px', background: 'transparent', border: 'none', cursor: 'pointer',
-            color: tab === t ? CH.amber : CH.ghost, fontSize: 11, fontWeight: 600,
-            fontFamily: 'Syne, sans-serif',
-            borderBottom: tab === t ? `2px solid ${CH.amber}` : '2px solid transparent',
-            marginBottom: -1, whiteSpace: 'nowrap' as const, textTransform: 'capitalize' as const,
-          }}>
-            {t === 'wall-time' ? 'Wall Time'
-              : t === 'fallbacks' ? 'Fallbacks'
-              : t === 'requests' ? '★ Requests'
-              : t === 'devices'  ? '★ Devices'
-              : t === 'diagnostics' ? '⚙ Diagnostics'
-              : t === 'db'       ? '★ DB'
-              : t === 'workers'  ? '★ Workers'
-              : t}
+      <nav
+        className="dash-tab-bar"
+        style={{
+          background: 'var(--film-dark)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          padding: '0 16px',
+          display: 'flex',
+          overflowX: 'auto',
+          gap: 0,
+          scrollbarWidth: 'none' as const,
+        }}
+      >
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              padding: '11px 12px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: tab === t ? CH.amber : CH.ghost,
+              fontSize: 11,
+              fontWeight: 600,
+              fontFamily: 'Syne, sans-serif',
+              borderBottom: tab === t ? `2px solid ${CH.amber}` : '2px solid transparent',
+              marginBottom: -1,
+              whiteSpace: 'nowrap' as const,
+              textTransform: 'capitalize' as const,
+            }}
+          >
+            {t === 'wall-time'
+              ? 'Wall Time'
+              : t === 'fallbacks'
+                ? 'Fallbacks'
+                : t === 'requests'
+                  ? '★ Requests'
+                  : t === 'devices'
+                    ? '★ Devices'
+                    : t === 'diagnostics'
+                      ? '⚙ Diagnostics'
+                      : t === 'db'
+                        ? '★ DB'
+                        : t === 'workers'
+                          ? '★ Workers'
+                          : t}
           </button>
         ))}
       </nav>
 
       {error && (
-        <div style={{
-          margin: '16px 16px 0', padding: '10px 14px', borderRadius: 8,
-          background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)',
-          color: CH.red, fontSize: 11, fontFamily: 'JetBrains Mono, monospace',
-        }}>✕ {error}</div>
+        <div
+          style={{
+            margin: '16px 16px 0',
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'rgba(248,113,113,0.07)',
+            border: '1px solid rgba(248,113,113,0.2)',
+            color: CH.red,
+            fontSize: 11,
+            fontFamily: 'JetBrains Mono, monospace',
+          }}
+        >
+          ✕ {error}
+        </div>
       )}
 
       {queryErrorEntries.length > 0 && (
-        <div style={{
-          margin: '16px 16px 0', padding: '10px 14px', borderRadius: 8,
-          background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.2)',
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        }}>
-          <span style={{ color: CH.yellow, fontFamily: 'JetBrains Mono, monospace', fontSize: 7, fontWeight: 700 }}>
+        <div
+          style={{
+            margin: '16px 16px 0',
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'rgba(250,204,21,0.06)',
+            border: '1px solid rgba(250,204,21,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span
+            style={{
+              color: CH.yellow,
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 7,
+              fontWeight: 700,
+            }}
+          >
             ⚠ {queryErrorEntries.length} QUERY{queryErrorEntries.length > 1 ? 'IES' : ''} FAILED
           </span>
           {queryErrorEntries.map(([k, msg]) => (
-            <span key={k} title={String(msg)} style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: 'var(--film-cream)',
-              background: 'rgba(250,204,21,0.1)', padding: '2px 8px', borderRadius: 3, cursor: 'help',
-            }}>{k}</span>
+            <span
+              key={k}
+              title={String(msg)}
+              style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 7,
+                color: 'var(--film-cream)',
+                background: 'rgba(250,204,21,0.1)',
+                padding: '2px 8px',
+                borderRadius: 3,
+                cursor: 'help',
+              }}
+            >
+              {k}
+            </span>
           ))}
         </div>
       )}
 
       <main className="dash-main" style={{ padding: 16, maxWidth: 1400, margin: '0 auto' }}>
-
         {/* ══ OVERVIEW ════════════════════════════════════════════════════ */}
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {alertNodes.length > 0 && !loading && (
-              <div style={{
-                padding: '10px 16px', borderRadius: 8,
-                background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.22)',
-                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-              }}>
-                <span style={{ color: CH.red, fontFamily: 'JetBrains Mono, monospace', fontSize: 7, fontWeight: 700 }}>⚠ ALERTS</span>
-                {alertNodes.map(n => (
-                  <span key={n.node} style={{
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: 'var(--film-cream)',
-                    background: 'rgba(248,113,113,0.1)', padding: '2px 8px', borderRadius: 3,
-                  }}>
+              <div
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  background: 'rgba(248,113,113,0.07)',
+                  border: '1px solid rgba(248,113,113,0.22)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span
+                  style={{
+                    color: CH.red,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 7,
+                    fontWeight: 700,
+                  }}
+                >
+                  ⚠ ALERTS
+                </span>
+                {alertNodes.map((n) => (
+                  <span
+                    key={n.node}
+                    style={{
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 7,
+                      color: 'var(--film-cream)',
+                      background: 'rgba(248,113,113,0.1)',
+                      padding: '2px 8px',
+                      borderRadius: 3,
+                    }}
+                  >
                     {nodeLabel(n.node).split(' ·')[0]} —{' '}
                     {n.success_rate_pct < cfg.alertRate ? `rate ${fmtPct(n.success_rate_pct)}` : ''}
                     {n.avg_ms && n.avg_ms > cfg.alertMs ? ` ${fmtMs(n.avg_ms)}` : ''}
@@ -1165,22 +2016,68 @@ export default function AnalyticsDashboard() {
                 ))}
               </div>
             )}
-            <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-              {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
+            <div
+              className="dash-stat-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading ? (
+                Array(6)
+                  .fill(0)
+                  .map((_, i) => <Skel key={i} h={90} />)
+              ) : (
                 <>
-                  <StatCard label="Raster Attempts" value={fmtNum(globalRow.total_attempts)} sub={pLabel} />
-                  <StatCard label="Race Wins" value={fmtNum(globalRow.race_wins)} sub="Posters served" color={CH.gold} />
-                  <StatCard label="Success Rate" value={fmtPct(globalRow.success_rate_pct)} sub="of raster attempts" color={rateColor(globalRow.success_rate_pct)} />
-                  <StatCard label="Failures" value={fmtNum(globalRow.failures)} sub="rasterizer" color={globalRow.failures > 50 ? CH.red : 'var(--film-cream)'} alert={globalRow.failures > 50} />
-                  <StatCard label="User Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.rust} />
-                  <StatCard label="Cache Hit Rate" value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'} sub="Edge cache" color={rateColor(num(reqSummary?.hit_rate_pct))} />
+                  <StatCard
+                    label="Raster Attempts"
+                    value={fmtNum(globalRow.total_attempts)}
+                    sub={pLabel}
+                  />
+                  <StatCard
+                    label="Race Wins"
+                    value={fmtNum(globalRow.race_wins)}
+                    sub="Posters served"
+                    color={CH.gold}
+                  />
+                  <StatCard
+                    label="Success Rate"
+                    value={fmtPct(globalRow.success_rate_pct)}
+                    sub="of raster attempts"
+                    color={rateColor(globalRow.success_rate_pct)}
+                  />
+                  <StatCard
+                    label="Failures"
+                    value={fmtNum(globalRow.failures)}
+                    sub="rasterizer"
+                    color={globalRow.failures > 50 ? CH.red : 'var(--film-cream)'}
+                    alert={globalRow.failures > 50}
+                  />
+                  <StatCard
+                    label="User Requests"
+                    value={fmtNum(num(reqSummary?.total_requests))}
+                    sub={pLabel}
+                    color={CH.rust}
+                  />
+                  <StatCard
+                    label="Cache Hit Rate"
+                    value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'}
+                    sub="Edge cache"
+                    color={rateColor(num(reqSummary?.hit_rate_pct))}
+                  />
                 </>
               )}
             </div>
             <Card title="Rasterizer Traffic" tag={pLabel}>
-              {loading ? <Skel h={200} /> : (
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={trafficData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={trafficData}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <defs>
                       <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.amber} stopOpacity={0.3} />
@@ -1188,21 +2085,69 @@ export default function AnalyticsDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="attempts" name="Raster Attempts" stroke={CH.amber} fill="url(#gA)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="failures" name="Failures" stroke={CH.red} strokeWidth={1.5} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="attempts"
+                      name="Raster Attempts"
+                      stroke={CH.amber}
+                      fill="url(#gA)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="failures"
+                      name="Failures"
+                      stroke={CH.red}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
-            <div className="dash-node-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 10 }}>
-              {loading ? Array(4).fill(0).map((_, i) => <Skel key={i} h={120} />)
-                : nodeRows.map(row => (
-                  <NodeCard key={row.node} row={row} latRow={latencyRows.find(r => r.node === row.node)} alertRate={cfg.alertRate} alertMs={cfg.alertMs} />
-                ))}
+            <div
+              className="dash-node-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading
+                ? Array(4)
+                    .fill(0)
+                    .map((_, i) => <Skel key={i} h={120} />)
+                : nodeRows.map((row) => (
+                    <NodeCard
+                      key={row.node}
+                      row={row}
+                      latRow={latencyRows.find((r) => r.node === row.node)}
+                      alertRate={cfg.alertRate}
+                      alertMs={cfg.alertMs}
+                    />
+                  ))}
             </div>
           </div>
         )}
@@ -1212,50 +2157,150 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Card title="Node Performance" tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={300} /> : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 540 }}>
+                {loading ? (
+                  <Skel h={300} />
+                ) : (
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 11,
+                      minWidth: 540,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Node','Health','Attempts','Success Rate','Avg Latency','Wins','Score'].map(h => (
-                          <th key={h} style={{
-                            padding: '7px 12px', textAlign: h === 'Node' || h === 'Health' ? 'left' : 'right',
-                            fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost,
-                            letterSpacing: '0.16em', textTransform: 'uppercase' as const,
-                            borderBottom: '1px solid rgba(255,255,255,0.05)',
-                          }}>{h}</th>
+                        {[
+                          'Node',
+                          'Health',
+                          'Attempts',
+                          'Success Rate',
+                          'Avg Latency',
+                          'Wins',
+                          'Score',
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: h === 'Node' || h === 'Health' ? 'left' : 'right',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {nodeRows.map((row, i) => {
                         const pct = row.success_rate_pct;
-                        const health = pct >= cfg.alertRate ? 'healthy' : pct >= 10 ? 'degraded' : 'down';
-                        const hc = health === 'healthy' ? CH.green : health === 'degraded' ? CH.yellow : CH.red;
+                        const health =
+                          pct >= cfg.alertRate ? 'healthy' : pct >= 10 ? 'degraded' : 'down';
+                        const hc =
+                          health === 'healthy'
+                            ? CH.green
+                            : health === 'degraded'
+                              ? CH.yellow
+                              : CH.red;
                         const score = healthScore(pct, row.avg_ms);
                         return (
-                          <tr key={row.node} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                          <tr
+                            key={row.node}
+                            style={{
+                              background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent',
+                              borderBottom: '1px solid rgba(255,255,255,0.03)',
+                            }}
+                          >
                             <td style={{ padding: '9px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: nodeColor(row.node) }} />
-                                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 600 }}>
+                                <div
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: nodeColor(row.node),
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontFamily: 'JetBrains Mono,monospace',
+                                    fontSize: 10,
+                                    color: 'var(--film-cream)',
+                                    fontWeight: 600,
+                                  }}
+                                >
                                   {nodeLabel(row.node)}
                                 </span>
                               </div>
                             </td>
                             <td style={{ padding: '9px 12px' }}>
-                              <span style={{
-                                fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: hc,
-                                textTransform: 'uppercase' as const, background: `${hc}18`,
-                                padding: '2px 6px', borderRadius: 3,
-                              }}>{health}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 7,
+                                  color: hc,
+                                  textTransform: 'uppercase' as const,
+                                  background: `${hc}18`,
+                                  padding: '2px 6px',
+                                  borderRadius: 3,
+                                }}
+                              >
+                                {health}
+                              </span>
                             </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: 'var(--film-cream)' }}>{fmtNum(row.total_attempts)}</td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right' }}><Gauge value={pct} size={36} /></td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', color: msColor(row.avg_ms), fontFamily: 'JetBrains Mono,monospace', fontWeight: 700 }}>{fmtMs(row.avg_ms)}</td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', color: row.race_wins > 0 ? CH.gold : CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontWeight: 700 }}>
+                            <td
+                              style={{
+                                padding: '9px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 11,
+                                color: 'var(--film-cream)',
+                              }}
+                            >
+                              {fmtNum(row.total_attempts)}
+                            </td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                              <Gauge value={pct} size={36} />
+                            </td>
+                            <td
+                              style={{
+                                padding: '9px 12px',
+                                textAlign: 'right',
+                                color: msColor(row.avg_ms),
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtMs(row.avg_ms)}
+                            </td>
+                            <td
+                              style={{
+                                padding: '9px 12px',
+                                textAlign: 'right',
+                                color: row.race_wins > 0 ? CH.gold : CH.ghost,
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontWeight: 700,
+                              }}
+                            >
                               {row.race_wins > 0 ? `⚡${fmtNum(row.race_wins)}` : '—'}
                             </td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono,monospace', fontWeight: 700, color: score >= 80 ? CH.green : score >= 60 ? CH.yellow : CH.red }}>{score}</td>
+                            <td
+                              style={{
+                                padding: '9px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontWeight: 700,
+                                color: score >= 80 ? CH.green : score >= 60 ? CH.yellow : CH.red,
+                              }}
+                            >
+                              {score}
+                            </td>
                           </tr>
                         );
                       })}
@@ -1265,45 +2310,157 @@ export default function AnalyticsDashboard() {
               </div>
             </Card>
 
-            <Card title="Live Node Health" tag={healthLoading ? 'refreshing…' : `${Object.keys(nodeHealth).length} nodes · 30s`}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10 }}>
-                {LIVE_HEALTH_NODES.map(n => {
+            <Card
+              title="Live Node Health"
+              tag={healthLoading ? 'refreshing…' : `${Object.keys(nodeHealth).length} nodes · 30s`}
+            >
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
+                  gap: 10,
+                }}
+              >
+                {LIVE_HEALTH_NODES.map((n) => {
                   const h = nodeHealth[n.id];
-                  if (!h) return (
-                    <div key={n.id} style={{ padding: '12px 14px', background: 'var(--film-char)', border: '1px solid var(--film-border)', borderRadius: 8, opacity: 0.4 }}>
-                      <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: CH.ghost }}>{n.label}</div>
-                      <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginTop: 4 }}>not yet fetched</div>
-                    </div>
-                  );
+                  if (!h)
+                    return (
+                      <div
+                        key={n.id}
+                        style={{
+                          padding: '12px 14px',
+                          background: 'var(--film-char)',
+                          border: '1px solid var(--film-border)',
+                          borderRadius: 8,
+                          opacity: 0.4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 10,
+                            color: CH.ghost,
+                          }}
+                        >
+                          {n.label}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 8,
+                            color: CH.ghost,
+                            marginTop: 4,
+                          }}
+                        >
+                          not yet fetched
+                        </div>
+                      </div>
+                    );
                   const isErr = !!h.error;
                   const statusC = isErr ? CH.red : h.status === 'ok' ? CH.green : CH.yellow;
                   return (
-                    <div key={n.id} style={{
-                      padding: '12px 14px', background: 'var(--film-char)',
-                      border: `1px solid ${isErr ? 'rgba(248,113,113,0.2)' : 'var(--film-border)'}`,
-                      borderLeft: `1px solid ${statusC}`, borderRadius: 8,
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, fontWeight: 700, color: 'var(--film-cream)' }}>{n.label}</span>
-                        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: statusC, textTransform: 'uppercase' as const }}>
+                    <div
+                      key={n.id}
+                      style={{
+                        padding: '12px 14px',
+                        background: 'var(--film-char)',
+                        border: `1px solid ${isErr ? 'rgba(248,113,113,0.2)' : 'var(--film-border)'}`,
+                        borderLeft: `1px solid ${statusC}`,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: 'var(--film-cream)',
+                          }}
+                        >
+                          {n.label}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 8,
+                            color: statusC,
+                            textTransform: 'uppercase' as const,
+                          }}
+                        >
                           {isErr ? 'down' : h.status}
                         </span>
                       </div>
                       {isErr ? (
-                        <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.red }}>{h.error}</div>
+                        <div
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 8,
+                            color: CH.red,
+                          }}
+                        >
+                          {h.error}
+                        </div>
                       ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+                        <div
+                          style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}
+                        >
                           {[
-                            { l: 'Active',  v: h.activeJobs ?? '—',   c: num(h.activeJobs) > 0 ? CH.yellow : CH.ghost },
-                            { l: 'Queue',   v: h.queuedJobs ?? '—',   c: num(h.queuedJobs) > 0 ? CH.orange : CH.ghost },
-                            { l: 'Workers', v: h.workerCount ?? '—',  c: CH.tan },
-                            { l: 'Uptime',  v: h.uptime ? `${Math.floor(h.uptime / 3600)}h` : '—', c: CH.rust },
-                            { l: 'Icons',   v: h.iconCache?.loaded ? `✓${h.iconCache.iconCount}` : '✗', c: h.iconCache?.loaded ? CH.green : CH.red },
-                            { l: 'Font',    v: h.fontDefault ? 'loaded' : '—', c: h.fontDefault ? CH.green : CH.ghost },
+                            {
+                              l: 'Active',
+                              v: h.activeJobs ?? '—',
+                              c: num(h.activeJobs) > 0 ? CH.yellow : CH.ghost,
+                            },
+                            {
+                              l: 'Queue',
+                              v: h.queuedJobs ?? '—',
+                              c: num(h.queuedJobs) > 0 ? CH.orange : CH.ghost,
+                            },
+                            { l: 'Workers', v: h.workerCount ?? '—', c: CH.tan },
+                            {
+                              l: 'Uptime',
+                              v: h.uptime ? `${Math.floor(h.uptime / 3600)}h` : '—',
+                              c: CH.rust,
+                            },
+                            {
+                              l: 'Icons',
+                              v: h.iconCache?.loaded ? `✓${h.iconCache.iconCount}` : '✗',
+                              c: h.iconCache?.loaded ? CH.green : CH.red,
+                            },
+                            {
+                              l: 'Font',
+                              v: h.fontDefault ? 'loaded' : '—',
+                              c: h.fontDefault ? CH.green : CH.ghost,
+                            },
                           ].map(({ l, v, c }) => (
                             <div key={l}>
-                              <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, marginBottom: 1 }}>{l}</div>
-                              <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: c, fontWeight: 700 }}>{String(v)}</div>
+                              <div
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 7,
+                                  color: CH.ghost,
+                                  marginBottom: 1,
+                                }}
+                              >
+                                {l}
+                              </div>
+                              <div
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 10,
+                                  color: c,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {String(v)}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1312,32 +2469,97 @@ export default function AnalyticsDashboard() {
                   );
                 })}
               </div>
-              <div style={{ marginTop: 10, fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  fontFamily: 'JetBrains Mono,monospace',
+                  fontSize: 7,
+                  color: CH.ghost,
+                }}
+              >
                 Spaceify (HTTP) nodes excluded — browser cannot reach HTTP from HTTPS.
               </div>
             </Card>
 
             <Card title="Race Win Rate by Node" tag={pLabel}>
-              {loading ? <Skel h={160} /> : winRateRows.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No race-win data yet.</div>
+              {loading ? (
+                <Skel h={160} />
+              ) : winRateRows.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 16,
+                  }}
+                >
+                  No race-win data yet.
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[...winRateRows].sort((a, b) => b.win_rate_pct - a.win_rate_pct).map(r => (
-                    <div key={r.node}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>
-                          {nodeLabel(r.node).split(' ·')[0]}
-                        </span>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold }}>{fmtNum(r.wins)} wins</span>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(r.win_rate_pct), fontWeight: 700 }}>{fmtPct(r.win_rate_pct)}</span>
+                  {[...winRateRows]
+                    .sort((a, b) => b.win_rate_pct - a.win_rate_pct)
+                    .map((r) => (
+                      <div key={r.node}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 3,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: 'var(--film-cream)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {nodeLabel(r.node).split(' ·')[0]}
+                          </span>
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 8,
+                                color: CH.gold,
+                              }}
+                            >
+                              {fmtNum(r.wins)} wins
+                            </span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 8,
+                                color: rateColor(r.win_rate_pct),
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtPct(r.win_rate_pct)}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            height: 4,
+                            borderRadius: 2,
+                            background: 'rgba(255,255,255,0.06)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              background: nodeColor(r.node),
+                              width: `${r.win_rate_pct}%`,
+                              borderRadius: 2,
+                            }}
+                          />
                         </div>
                       </div>
-                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: nodeColor(r.node), width: `${r.win_rate_pct}%`, borderRadius: 2 }} />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </Card>
@@ -1348,9 +2570,14 @@ export default function AnalyticsDashboard() {
         {tab === 'traffic' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Card title="Rasterizer Attempts Over Time" tag={pLabel}>
-              {loading ? <Skel h={240} /> : (
+              {loading ? (
+                <Skel h={240} />
+              ) : (
                 <ResponsiveContainer width="100%" height={240}>
-                  <ComposedChart data={trafficData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={trafficData}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <defs>
                       <linearGradient id="gA2" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.amber} stopOpacity={0.25} />
@@ -1358,21 +2585,65 @@ export default function AnalyticsDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="attempts" name="Attempts" stroke={CH.amber} fill="url(#gA2)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="successes" name="Successes" stroke={CH.green} strokeWidth={1.5} dot={false} />
-                    <Line type="monotone" dataKey="failures" name="Failures" stroke={CH.red} strokeWidth={1.5} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="attempts"
+                      name="Attempts"
+                      stroke={CH.amber}
+                      fill="url(#gA2)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="successes"
+                      name="Successes"
+                      stroke={CH.green}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="failures"
+                      name="Failures"
+                      stroke={CH.red}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
             <Card title="User Requests Over Time" tag={pLabel}>
-              {loading ? <Skel h={200} /> : (
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={reqTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={reqTimeseries}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <defs>
                       <linearGradient id="gReq" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.rust} stopOpacity={0.25} />
@@ -1380,13 +2651,52 @@ export default function AnalyticsDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="requests" name="Total" stroke={CH.rust} fill="url(#gReq)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="hits" name="Cache Hits" stroke={CH.green} strokeWidth={1.5} dot={false} />
-                    <Line type="monotone" dataKey="misses" name="Cache Misses" stroke={CH.orange} strokeWidth={1.5} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="requests"
+                      name="Total"
+                      stroke={CH.rust}
+                      fill="url(#gReq)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="hits"
+                      name="Cache Hits"
+                      stroke={CH.green}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="misses"
+                      name="Cache Misses"
+                      stroke={CH.orange}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
@@ -1397,50 +2707,164 @@ export default function AnalyticsDashboard() {
         {/* ══ FALLBACKS ════════════════════════════════════════════════════ */}
         {tab === 'fallbacks' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10 }}>
-              {loading ? Array(4).fill(0).map((_, i) => <Skel key={i} h={90} />) : (() => {
-                const primary = fallbackTierRows.filter(r => r.lane === 'geo' || r.lane === 'binding');
-                const t1fb    = fallbackTierRows.filter(r => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback');
-                const t2fb    = fallbackTierRows.filter(r => r.lane === 'geo-t2');
-                const t3fb    = fallbackTierRows.filter(r => r.lane === 'geo-t3' || r.lane === 'wsrv-t3');
-                const total   = fallbackTierRows.reduce((s, r) => s + r.attempts, 0);
-                const pct = (n: number) => total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '—';
-                const pN = primary.reduce((s, r) => s + r.attempts, 0);
-                const t1N = t1fb.reduce((s, r) => s + r.attempts, 0);
-                const t2N = t2fb.reduce((s, r) => s + r.attempts, 0);
-                const t3N = t3fb.reduce((s, r) => s + r.attempts, 0);
-                return (
-                  <>
-                    <StatCard label="Primary (T1)" value={fmtNum(pN)} sub={pct(pN)} color={CH.green} />
-                    <StatCard label="T1 Fallback" value={fmtNum(t1N)} sub={pct(t1N)} color={t1N > pN * 0.1 ? CH.yellow : CH.dim} />
-                    <StatCard label="T2 Fallback" value={fmtNum(t2N)} sub={pct(t2N)} color={t2N > 0 ? CH.orange : CH.dim} alert={t2N > pN * 0.05} />
-                    <StatCard label="T3 Fallback" value={fmtNum(t3N)} sub={pct(t3N)} color={t3N > 0 ? CH.red : CH.dim} alert={t3N > 0} />
-                  </>
-                );
-              })()}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading
+                ? Array(4)
+                    .fill(0)
+                    .map((_, i) => <Skel key={i} h={90} />)
+                : (() => {
+                    const primary = fallbackTierRows.filter(
+                      (r) => r.lane === 'geo' || r.lane === 'binding'
+                    );
+                    const t1fb = fallbackTierRows.filter(
+                      (r) => r.lane === 'geo-fallback' || r.lane === 'wsrv-fallback'
+                    );
+                    const t2fb = fallbackTierRows.filter((r) => r.lane === 'geo-t2');
+                    const t3fb = fallbackTierRows.filter(
+                      (r) => r.lane === 'geo-t3' || r.lane === 'wsrv-t3'
+                    );
+                    const total = fallbackTierRows.reduce((s, r) => s + r.attempts, 0);
+                    const pct = (n: number) =>
+                      total > 0 ? `${((n / total) * 100).toFixed(1)}%` : '—';
+                    const pN = primary.reduce((s, r) => s + r.attempts, 0);
+                    const t1N = t1fb.reduce((s, r) => s + r.attempts, 0);
+                    const t2N = t2fb.reduce((s, r) => s + r.attempts, 0);
+                    const t3N = t3fb.reduce((s, r) => s + r.attempts, 0);
+                    return (
+                      <>
+                        <StatCard
+                          label="Primary (T1)"
+                          value={fmtNum(pN)}
+                          sub={pct(pN)}
+                          color={CH.green}
+                        />
+                        <StatCard
+                          label="T1 Fallback"
+                          value={fmtNum(t1N)}
+                          sub={pct(t1N)}
+                          color={t1N > pN * 0.1 ? CH.yellow : CH.dim}
+                        />
+                        <StatCard
+                          label="T2 Fallback"
+                          value={fmtNum(t2N)}
+                          sub={pct(t2N)}
+                          color={t2N > 0 ? CH.orange : CH.dim}
+                          alert={t2N > pN * 0.05}
+                        />
+                        <StatCard
+                          label="T3 Fallback"
+                          value={fmtNum(t3N)}
+                          sub={pct(t3N)}
+                          color={t3N > 0 ? CH.red : CH.dim}
+                          alert={t3N > 0}
+                        />
+                      </>
+                    );
+                  })()}
             </div>
             <Card title="Lane Breakdown" tag={pLabel}>
-              {loading ? <Skel h={200} /> : fallbackTierRows.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>No fallback data yet.</div>
+              {loading ? (
+                <Skel h={200} />
+              ) : fallbackTierRows.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono,monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 24,
+                  }}
+                >
+                  No fallback data yet.
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {fallbackTierRows.map(row => {
+                  {fallbackTierRows.map((row) => {
                     const meta = LANE_META[row.lane] ?? { label: row.lane, color: CH.ghost };
                     const total = fallbackTierRows.reduce((s, r) => s + r.attempts, 0) || 1;
                     return (
-                      <div key={row.lane} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
+                      <div
+                        key={row.lane}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+                      >
+                        <div
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: meta.color,
+                            flexShrink: 0,
+                          }}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>{meta.label}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}
+                            >
+                              {meta.label}
+                            </span>
                             <div style={{ display: 'flex', gap: 10 }}>
-                              {row.avg_ms && <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: msColor(row.avg_ms) }}>{fmtMs(row.avg_ms)}</span>}
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: rateColor(row.success_rate_pct) }}>{fmtPct(row.success_rate_pct)} ok</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(row.attempts)}</span>
+                              {row.avg_ms && (
+                                <span
+                                  style={{
+                                    fontFamily: 'JetBrains Mono,monospace',
+                                    fontSize: 8,
+                                    color: msColor(row.avg_ms),
+                                  }}
+                                >
+                                  {fmtMs(row.avg_ms)}
+                                </span>
+                              )}
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: rateColor(row.success_rate_pct),
+                                }}
+                              >
+                                {fmtPct(row.success_rate_pct)} ok
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(row.attempts)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: meta.color, opacity: 0.7, width: `${(row.attempts / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: meta.color,
+                                opacity: 0.7,
+                                width: `${(row.attempts / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -1450,18 +2874,72 @@ export default function AnalyticsDashboard() {
               )}
             </Card>
             <Card title="Fallback Escalation Over Time" tag={pLabel}>
-              {loading ? <Skel h={200} /> : (
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={fallbackTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <AreaChart
+                    data={fallbackTimeseries}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="primary_hits" name="Primary" stroke={CH.green} fill="rgba(74,222,128,0.1)" strokeWidth={1.5} dot={false} />
-                    <Area type="monotone" dataKey="t1_fallbacks" name="T1 Fallback" stroke={CH.yellow} fill="rgba(250,204,21,0.08)" strokeWidth={1.5} dot={false} />
-                    <Area type="monotone" dataKey="t2_fallbacks" name="T2 Fallback" stroke={CH.orange} fill="rgba(251,146,60,0.1)" strokeWidth={1.5} dot={false} />
-                    <Area type="monotone" dataKey="t3_fallbacks" name="T3 Fallback" stroke={CH.red} fill="rgba(248,113,113,0.1)" strokeWidth={1.5} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="primary_hits"
+                      name="Primary"
+                      stroke={CH.green}
+                      fill="rgba(74,222,128,0.1)"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="t1_fallbacks"
+                      name="T1 Fallback"
+                      stroke={CH.yellow}
+                      fill="rgba(250,204,21,0.08)"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="t2_fallbacks"
+                      name="T2 Fallback"
+                      stroke={CH.orange}
+                      fill="rgba(251,146,60,0.1)"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="t3_fallbacks"
+                      name="T3 Fallback"
+                      stroke={CH.red}
+                      fill="rgba(248,113,113,0.1)"
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -1474,63 +2952,222 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>User Request Analytics</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
-                Poster API calls from end users — cache performance, top content, rating badge usage, format split.
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
+                Poster API calls from end users — cache performance, top content, rating badge
+                usage, format split.
               </p>
             </div>
-            <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-              {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
+            <div
+              className="dash-stat-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading ? (
+                Array(6)
+                  .fill(0)
+                  .map((_, i) => <Skel key={i} h={90} />)
+              ) : (
                 <>
-                  <StatCard label="Total Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.rust} />
-                  <StatCard label="Cache Hits" value={fmtNum(num(reqSummary?.cache_hits))} sub="Edge cache" color={CH.green} />
-                  <StatCard label="Hit Rate" value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'} sub="Cache efficiency" color={rateColor(num(reqSummary?.hit_rate_pct))} />
-                  <StatCard label="Movies" value={fmtNum(num(reqSummary?.movie_requests))} sub="of requests" color={CH.tan} />
-                  <StatCard label="TV Shows" value={fmtNum(num(reqSummary?.tv_requests))} sub="of requests" color={CH.green} />
-                  <StatCard label="Anime" value={fmtNum(num(reqSummary?.anime_requests))} sub="of requests" color={CH.rose} />
+                  <StatCard
+                    label="Total Requests"
+                    value={fmtNum(num(reqSummary?.total_requests))}
+                    sub={pLabel}
+                    color={CH.rust}
+                  />
+                  <StatCard
+                    label="Cache Hits"
+                    value={fmtNum(num(reqSummary?.cache_hits))}
+                    sub="Edge cache"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Hit Rate"
+                    value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'}
+                    sub="Cache efficiency"
+                    color={rateColor(num(reqSummary?.hit_rate_pct))}
+                  />
+                  <StatCard
+                    label="Movies"
+                    value={fmtNum(num(reqSummary?.movie_requests))}
+                    sub="of requests"
+                    color={CH.tan}
+                  />
+                  <StatCard
+                    label="TV Shows"
+                    value={fmtNum(num(reqSummary?.tv_requests))}
+                    sub="of requests"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Anime"
+                    value={fmtNum(num(reqSummary?.anime_requests))}
+                    sub="of requests"
+                    color={CH.rose}
+                  />
                 </>
               )}
             </div>
             <Card title="Cache Performance Over Time" tag={pLabel}>
-              {loading ? <Skel h={200} /> : (
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={cacheTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={cacheTimeseries}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis yAxisId="left" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} tickFormatter={v => `${v}%`} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                      tickFormatter={(v) => `${v}%`}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Bar yAxisId="left" dataKey="total" name="Total Requests" fill="rgba(196,124,46,0.2)" radius={[2,2,0,0]} />
-                    <Bar yAxisId="left" dataKey="hits" name="Cache Hits" fill="rgba(74,222,128,0.35)" radius={[2,2,0,0]} />
-                    <Line yAxisId="right" type="monotone" dataKey="hit_rate_pct" name="Hit Rate %" stroke={CH.green} strokeWidth={2} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="total"
+                      name="Total Requests"
+                      fill="rgba(196,124,46,0.2)"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="hits"
+                      name="Cache Hits"
+                      fill="rgba(74,222,128,0.35)"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="hit_rate_pct"
+                      name="Hit Rate %"
+                      stroke={CH.green}
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
             <Card title="Cache Status Breakdown" tag="cf-cache-status">
-              {loading ? <Skel h={200} /> : cacheStatusRows.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>
+              {loading ? (
+                <Skel h={200} />
+              ) : cacheStatusRows.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono,monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 16,
+                  }}
+                >
                   No cache status data — requires worker.js logging the real cf-cache-status header.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {cacheStatusRows.map(r => {
+                  {cacheStatusRows.map((r) => {
                     const meta = STATUS_META[r.status] ?? { label: r.status, color: CH.ghost };
-                    const pct = totalCacheStatusReqs > 0 ? (r.requests / totalCacheStatusReqs) * 100 : 0;
+                    const pct =
+                      totalCacheStatusReqs > 0 ? (r.requests / totalCacheStatusReqs) * 100 : 0;
                     return (
                       <div key={r.status}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 4,
+                          }}
+                        >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
-                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>{meta.label}</span>
+                            <div
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                background: meta.color,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              className="syne-font"
+                              style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}
+                            >
+                              {meta.label}
+                            </span>
                           </div>
                           <div style={{ display: 'flex', gap: 10 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: meta.color, fontWeight: 700 }}>{fmtPct(pct)}</span>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: meta.color,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtPct(pct)}
+                            </span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: CH.gold,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtNum(r.requests)}
+                            </span>
                           </div>
                         </div>
-                        <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: meta.color, opacity: 0.75, width: `${pct}%`, borderRadius: 2 }} />
+                        <div
+                          style={{
+                            height: 5,
+                            borderRadius: 2,
+                            background: 'rgba(255,255,255,0.06)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              background: meta.color,
+                              opacity: 0.75,
+                              width: `${pct}%`,
+                              borderRadius: 2,
+                            }}
+                          />
                         </div>
                       </div>
                     );
@@ -1539,95 +3176,324 @@ export default function AnalyticsDashboard() {
               )}
             </Card>
             <Card title="Top Requested Posters" tag={`top ${topIds.length}`}>
-              {loading ? <Skel h={320} /> : topIds.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>
+              {loading ? (
+                <Skel h={320} />
+              ) : topIds.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono,monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 24,
+                  }}
+                >
                   No poster request data yet. Check your REQUEST_ANALYTICS dataset.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 12 }}>
-                  {topIds.map(row => <PosterThumb key={`${row.type}-${row.id}`} id={row.id} type={row.type} hits={row.hits} hitRate={row.hit_rate_pct} />)}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))',
+                    gap: 12,
+                  }}
+                >
+                  {topIds.map((row) => (
+                    <PosterThumb
+                      key={`${row.type}-${row.id}`}
+                      id={row.id}
+                      type={row.type}
+                      hits={row.hits}
+                      hitRate={row.hit_rate_pct}
+                    />
+                  ))}
                 </div>
               )}
             </Card>
-            <div className="dash-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            <div
+              className="dash-2col"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="Top Rating Combos (?r=)">
-                {loading ? <Skel h={200} /> : (
+                {loading ? (
+                  <Skel h={200} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {topRatings.slice(0, 10).map((r, i) => {
                       const max = topRatings[0]?.requests || 1;
                       return (
                         <div key={r.r_param}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <code style={{
-                              fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: CH.amber,
-                              background: 'rgba(196,124,46,0.08)', border: '1px solid rgba(196,124,46,0.14)',
-                              borderRadius: 3, padding: '1px 5px',
-                            }}>{r.r_param}</code>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <code
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 9,
+                                color: CH.amber,
+                                background: 'rgba(196,124,46,0.08)',
+                                border: '1px solid rgba(196,124,46,0.14)',
+                                borderRadius: 3,
+                                padding: '1px 5px',
+                              }}
+                            >
+                              {r.r_param}
+                            </code>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: CH.gold,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtNum(r.requests)}
+                            </span>
                           </div>
-                          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%` }} />
+                          <div
+                            style={{
+                              height: 3,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / max) * 100}%`,
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
-                    {topRatings.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>No data</div>}
+                    {topRatings.length === 0 && (
+                      <div
+                        style={{
+                          color: CH.ghost,
+                          fontFamily: 'JetBrains Mono,monospace',
+                          fontSize: 11,
+                        }}
+                      >
+                        No data
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
               <Card title="Format Distribution">
-                {loading ? <Skel h={200} /> : (
+                {loading ? (
+                  <Skel h={200} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {reqFormatRows.map((r, i) => {
                       const total = reqFormatRows.reduce((s, x) => s + x.requests, 0) || 1;
                       return (
                         <div key={r.format}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: CH.amber, letterSpacing: '0.08em' }}>{r.format.toUpperCase()}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: CH.amber,
+                                letterSpacing: '0.08em',
+                              }}
+                            >
+                              {r.format.toUpperCase()}
+                            </span>
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(r.requests)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.dim }}>{fmtPct((r.requests / total) * 100)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(r.requests)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.dim,
+                                }}
+                              >
+                                {fmtPct((r.requests / total) * 100)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
-                    {reqFormatRows.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>No data</div>}
+                    {reqFormatRows.length === 0 && (
+                      <div
+                        style={{
+                          color: CH.ghost,
+                          fontFamily: 'JetBrains Mono,monospace',
+                          fontSize: 11,
+                        }}
+                      >
+                        No data
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
             </div>
             <Card title="Top Countries" tag={`top ${countryRows.length}`}>
-              {loading ? <Skel h={200} /> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 6 }}>
+              {loading ? (
+                <Skel h={200} />
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))',
+                    gap: 6,
+                  }}
+                >
                   {countryRows.slice(0, 20).map((r, i) => {
                     const max = countryRows[0]?.requests || 1;
                     const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                     return (
-                      <div key={r.country} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700, minWidth: 28 }}>{r.country}</span>
+                      <div
+                        key={r.country}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '6px 0',
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 10,
+                            color: 'var(--film-cream)',
+                            fontWeight: 700,
+                            minWidth: 28,
+                          }}
+                        >
+                          {r.country}
+                        </span>
                         <div style={{ flex: 1 }}>
-                          <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%` }} />
+                          <div
+                            style={{
+                              height: 4,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / max) * 100}%`,
+                              }}
+                            />
                           </div>
                         </div>
-                        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, minWidth: 36, textAlign: 'right' }}>{fmtNum(r.requests)}</span>
-                        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: rateColor(hitPct), minWidth: 30, textAlign: 'right' }}>{fmtPct(hitPct)}</span>
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 8,
+                            color: CH.ghost,
+                            minWidth: 36,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {fmtNum(r.requests)}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 7,
+                            color: rateColor(hitPct),
+                            minWidth: 30,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {fmtPct(hitPct)}
+                        </span>
                       </div>
                     );
                   })}
-                  {countryRows.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, gridColumn: '1/-1', textAlign: 'center', padding: 16 }}>No country data</div>}
+                  {countryRows.length === 0 && (
+                    <div
+                      style={{
+                        color: CH.ghost,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        fontSize: 11,
+                        gridColumn: '1/-1',
+                        textAlign: 'center',
+                        padding: 16,
+                      }}
+                    >
+                      No country data
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
 
-            <div className="dash-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            <div
+              className="dash-2col"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="Poster Source Distribution">
-                {loading ? <Skel h={180} /> : posterSourceAgg.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No source data yet.</div>
+                {loading ? (
+                  <Skel h={180} />
+                ) : posterSourceAgg.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No source data yet.
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {posterSourceAgg.map((r, i) => {
@@ -1635,15 +3501,62 @@ export default function AnalyticsDashboard() {
                       const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                       return (
                         <div key={r.poster_source}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.poster_source}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: 'var(--film-cream)',
+                                textTransform: 'capitalize' as const,
+                              }}
+                            >
+                              {r.poster_source}
+                            </span>
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(hitPct) }}>{fmtPct(hitPct)} cache</span>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: rateColor(hitPct),
+                                }}
+                              >
+                                {fmtPct(hitPct)} cache
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: CH.gold,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {fmtNum(r.requests)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 4,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / max) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -1652,20 +3565,71 @@ export default function AnalyticsDashboard() {
                 )}
               </Card>
               <Card title="Preset Usage (All Formats)">
-                {loading ? <Skel h={180} /> : presetAllRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No preset data yet.</div>
+                {loading ? (
+                  <Skel h={180} />
+                ) : presetAllRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No preset data yet.
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {presetAllRows.map((r, i) => {
                       const total = presetAllRows.reduce((s, x) => s + x.requests, 0) || 1;
                       return (
                         <div key={r.preset}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.preset}</span>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)} · {fmtPct((r.requests / total) * 100)}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: 'var(--film-cream)',
+                                textTransform: 'capitalize' as const,
+                              }}
+                            >
+                              {r.preset}
+                            </span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 8,
+                                color: CH.gold,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {fmtNum(r.requests)} · {fmtPct((r.requests / total) * 100)}
+                            </span>
                           </div>
-                          <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 4,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -1676,32 +3640,94 @@ export default function AnalyticsDashboard() {
             </div>
 
             <Card title="Hourly Traffic Pattern" tag="UTC">
-              {loading ? <Skel h={180} /> : (
+              {loading ? (
+                <Skel h={180} />
+              ) : (
                 <ResponsiveContainer width="100%" height={180}>
-                  <ComposedChart data={hourlyHeatmapRows} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={hourlyHeatmapRows}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="hour" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} tickFormatter={h => `${h}h`} />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="hour"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(h) => `${h}h`}
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Bar dataKey="requests" name="Requests" fill="rgba(196,124,46,0.35)" radius={[2,2,0,0]} />
-                    <Bar dataKey="hits" name="Cache Hits" fill="rgba(74,222,128,0.35)" radius={[2,2,0,0]} />
+                    <Bar
+                      dataKey="requests"
+                      name="Requests"
+                      fill="rgba(196,124,46,0.35)"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="hits"
+                      name="Cache Hits"
+                      fill="rgba(74,222,128,0.35)"
+                      radius={[2, 2, 0, 0]}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
 
             <Card title="Day-of-Week Pattern">
-              {loading ? <Skel h={140} /> : (
+              {loading ? (
+                <Skel h={140} />
+              ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {dowHeatmapRows.map((r, i) => {
-                    const max = Math.max(...dowHeatmapRows.map(x => x.requests), 1);
+                    const max = Math.max(...dowHeatmapRows.map((x) => x.requests), 1);
                     return (
                       <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)', minWidth: 32 }}>{r.label}</span>
-                        <div style={{ flex: 1, height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%`, borderRadius: 2 }} />
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: 9,
+                            color: 'var(--film-cream)',
+                            minWidth: 32,
+                          }}
+                        >
+                          {r.label}
+                        </span>
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 5,
+                            borderRadius: 2,
+                            background: 'rgba(255,255,255,0.06)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              background: PIE_COLORS[i % PIE_COLORS.length],
+                              width: `${(r.requests / max) * 100}%`,
+                              borderRadius: 2,
+                            }}
+                          />
                         </div>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost, minWidth: 40, textAlign: 'right' }}>{fmtNum(r.requests)}</span>
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: 8,
+                            color: CH.ghost,
+                            minWidth: 40,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {fmtNum(r.requests)}
+                        </span>
                       </div>
                     );
                   })}
@@ -1711,26 +3737,129 @@ export default function AnalyticsDashboard() {
 
             <Card title="Fallback Events" tag={`${fallbackRateRows.length} combos`} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={160} /> : fallbackRateRows.length === 0 ? (
-                  <div style={{ color: CH.green, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>✓ No poster fallbacks recorded this period</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : fallbackRateRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.green,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    ✓ No poster fallbacks recorded this period
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 560 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 560,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Type','Requested Source','Served Source','Requested Variant','Served Variant','Count'].map(h => (
-                          <th key={h} style={{ padding: '7px 10px', textAlign: h === 'Count' ? 'right' : 'left', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.12em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {[
+                          'Type',
+                          'Requested Source',
+                          'Served Source',
+                          'Requested Variant',
+                          'Served Variant',
+                          'Count',
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 10px',
+                              textAlign: h === 'Count' ? 'right' : 'left',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {fallbackRateRows.map((r, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.type}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.dim }}>{r.requested_source || '—'}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.orange }}>{r.served_source || '—'}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.dim }}>{r.requested_variant || '—'}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.orange }}>{r.served_variant || '—'}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.fallback_count)}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent',
+                            borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: 'var(--film-cream)',
+                              textTransform: 'capitalize' as const,
+                            }}
+                          >
+                            {r.type}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.dim,
+                            }}
+                          >
+                            {r.requested_source || '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.orange,
+                            }}
+                          >
+                            {r.served_source || '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.dim,
+                            }}
+                          >
+                            {r.requested_variant || '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.orange,
+                            }}
+                          >
+                            {r.served_variant || '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.gold,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {fmtNum(r.fallback_count)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1741,23 +3870,92 @@ export default function AnalyticsDashboard() {
 
             <Card title="Geo Breakdown" tag="colo × country" noPad>
               <div style={{ overflowX: 'auto', padding: 14, maxHeight: 320, overflowY: 'auto' }}>
-                {loading ? <Skel h={160} /> : reqGeoBreakdownRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No geo data yet.</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : reqGeoBreakdownRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No geo data yet.
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 360 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 360,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Colo','Country','Requests'].map(h => (
-                          <th key={h} style={{ padding: '7px 10px', textAlign: h === 'Requests' ? 'right' : 'left', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.12em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {['Colo', 'Country', 'Requests'].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 10px',
+                              textAlign: h === 'Requests' ? 'right' : 'left',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {reqGeoBreakdownRows.map((r, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)', fontWeight: 700 }}>{r.colo}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.dim }}>{r.country}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? 'rgba(255,255,255,0.012)' : 'transparent',
+                            borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: 'var(--film-cream)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {r.colo}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.dim,
+                            }}
+                          >
+                            {r.country}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 10px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.gold,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {fmtNum(r.requests)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1773,32 +3971,85 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>Device Analytics</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
                 Device type breakdown inferred from User-Agent headers.
               </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10 }}>
-              {loading ? Array(4).fill(0).map((_, i) => <Skel key={i} h={90} />) :
-                ['desktop','mobile','tablet','tv'].map(dev => {
-                  const row  = deviceRows.find(r => r.device === dev);
-                  const meta = DEVICE_META[dev];
-                  const reqs = row?.requests ?? 0;
-                  const pct  = totalDeviceReqs > 0 ? (reqs / totalDeviceReqs) * 100 : 0;
-                  return <StatCard key={dev} label={`${meta.icon} ${meta.label}`} value={fmtNum(reqs)} sub={`${fmtPct(pct)} of traffic`} color={meta.color} />;
-                })}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading
+                ? Array(4)
+                    .fill(0)
+                    .map((_, i) => <Skel key={i} h={90} />)
+                : ['desktop', 'mobile', 'tablet', 'tv'].map((dev) => {
+                    const row = deviceRows.find((r) => r.device === dev);
+                    const meta = DEVICE_META[dev];
+                    const reqs = row?.requests ?? 0;
+                    const pct = totalDeviceReqs > 0 ? (reqs / totalDeviceReqs) * 100 : 0;
+                    return (
+                      <StatCard
+                        key={dev}
+                        label={`${meta.icon} ${meta.label}`}
+                        value={fmtNum(reqs)}
+                        sub={`${fmtPct(pct)} of traffic`}
+                        color={meta.color}
+                      />
+                    );
+                  })}
             </div>
-            <div className="dash-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            <div
+              className="dash-2col"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="Device Distribution">
-                {loading ? <Skel h={260} /> : deviceRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>
+                {loading ? (
+                  <Skel h={260} />
+                ) : deviceRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono,monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 24,
+                    }}
+                  >
                     No device data yet. Deploy worker.js v3 to enable detection.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <ResponsiveContainer width="100%" height={180}>
                       <PieChart>
-                        <Pie data={deviceRows} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="requests" nameKey="device" paddingAngle={2}>
-                          {deviceRows.map((r, i) => <Cell key={r.device} fill={DEVICE_META[r.device]?.color ?? PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        <Pie
+                          data={deviceRows}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          dataKey="requests"
+                          nameKey="device"
+                          paddingAngle={2}
+                        >
+                          {deviceRows.map((r, i) => (
+                            <Cell
+                              key={r.device}
+                              fill={
+                                DEVICE_META[r.device]?.color ?? PIE_COLORS[i % PIE_COLORS.length]
+                              }
+                            />
+                          ))}
                         </Pie>
                         <Tooltip formatter={(v: any, n: any) => [fmtNum(v), n]} />
                       </PieChart>
@@ -1806,39 +4057,108 @@ export default function AnalyticsDashboard() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {/* FIX: Array.prototype.sort() mutates in place — was corrupting the
                           memoized deviceRows array on every render. Sort a copy instead. */}
-                      {[...deviceRows].sort((a, b) => b.requests - a.requests).map(r => {
-                        const meta = DEVICE_META[r.device] ?? { label: r.device, icon: '?', color: CH.ghost };
-                        const pct  = totalDeviceReqs > 0 ? (r.requests / totalDeviceReqs) * 100 : 0;
-                        const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
-                        return (
-                          <div key={r.device} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 14 }}>{meta.icon}</span>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)' }}>{meta.label}</span>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                  <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: meta.color, fontWeight: 700 }}>{fmtPct(pct)}</span>
-                                  <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: rateColor(hitPct) }}>{fmtPct(hitPct)} cache</span>
+                      {[...deviceRows]
+                        .sort((a, b) => b.requests - a.requests)
+                        .map((r) => {
+                          const meta = DEVICE_META[r.device] ?? {
+                            label: r.device,
+                            icon: '?',
+                            color: CH.ghost,
+                          };
+                          const pct =
+                            totalDeviceReqs > 0 ? (r.requests / totalDeviceReqs) * 100 : 0;
+                          const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
+                          return (
+                            <div
+                              key={r.device}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                            >
+                              <span style={{ fontSize: 14 }}>{meta.icon}</span>
+                              <div style={{ flex: 1 }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 2,
+                                  }}
+                                >
+                                  <span
+                                    className="syne-font"
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      color: 'var(--film-cream)',
+                                    }}
+                                  >
+                                    {meta.label}
+                                  </span>
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <span
+                                      style={{
+                                        fontFamily: 'JetBrains Mono,monospace',
+                                        fontSize: 8,
+                                        color: meta.color,
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      {fmtPct(pct)}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontFamily: 'JetBrains Mono,monospace',
+                                        fontSize: 8,
+                                        color: rateColor(hitPct),
+                                      }}
+                                    >
+                                      {fmtPct(hitPct)} cache
+                                    </span>
+                                  </div>
+                                </div>
+                                <div
+                                  style={{
+                                    height: 4,
+                                    borderRadius: 2,
+                                    background: 'rgba(255,255,255,0.06)',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      background: meta.color,
+                                      width: `${pct}%`,
+                                      borderRadius: 2,
+                                    }}
+                                  />
                                 </div>
                               </div>
-                              <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', background: meta.color, width: `${pct}%`, borderRadius: 2 }} />
-                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
                 )}
               </Card>
               <Card title="Media Type by Requests">
-                {loading ? <Skel h={260} /> : (
+                {loading ? (
+                  <Skel h={260} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <ResponsiveContainer width="100%" height={180}>
                       <PieChart>
-                        <Pie data={reqTypeRows} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="requests" nameKey="type" paddingAngle={2}>
-                          {reqTypeRows.map((r, i) => <Cell key={r.type} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        <Pie
+                          data={reqTypeRows}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          dataKey="requests"
+                          nameKey="type"
+                          paddingAngle={2}
+                        >
+                          {reqTypeRows.map((r, i) => (
+                            <Cell key={r.type} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                          ))}
                         </Pie>
                         <Tooltip formatter={(v: any, n: any) => [fmtNum(v), n]} />
                       </PieChart>
@@ -1847,21 +4167,80 @@ export default function AnalyticsDashboard() {
                       {reqTypeRows.map((r, i) => {
                         const total = reqTypeRows.reduce((s, x) => s + x.requests, 0) || 1;
                         return (
-                          <div key={r.type} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                          <div
+                            key={r.type}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                          >
+                            <div
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                flexShrink: 0,
+                              }}
+                            />
                             <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                <span className="syne-font" style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.type}</span>
-                                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: PIE_COLORS[i % PIE_COLORS.length], fontWeight: 700 }}>{fmtPct((r.requests / total) * 100)}</span>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  marginBottom: 2,
+                                }}
+                              >
+                                <span
+                                  className="syne-font"
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    color: 'var(--film-cream)',
+                                    textTransform: 'capitalize' as const,
+                                  }}
+                                >
+                                  {r.type}
+                                </span>
+                                <span
+                                  style={{
+                                    fontFamily: 'JetBrains Mono,monospace',
+                                    fontSize: 8,
+                                    color: PIE_COLORS[i % PIE_COLORS.length],
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {fmtPct((r.requests / total) * 100)}
+                                </span>
                               </div>
-                              <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%` }} />
+                              <div
+                                style={{
+                                  height: 3,
+                                  borderRadius: 2,
+                                  background: 'rgba(255,255,255,0.06)',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: '100%',
+                                    background: PIE_COLORS[i % PIE_COLORS.length],
+                                    width: `${(r.requests / total) * 100}%`,
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>
                         );
                       })}
-                      {reqTypeRows.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>No data</div>}
+                      {reqTypeRows.length === 0 && (
+                        <div
+                          style={{
+                            color: CH.ghost,
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 11,
+                          }}
+                        >
+                          No data
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1875,34 +4254,129 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>Rasterizer Diagnostics</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
-                Node-tuning signals — score prediction accuracy, latency SLAs, CPU load estimate, payload size, geo routing preference, and suggested concurrency limits.
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
+                Node-tuning signals — score prediction accuracy, latency SLAs, CPU load estimate,
+                payload size, geo routing preference, and suggested concurrency limits.
               </p>
             </div>
 
             <Card title="Node Score Prediction Accuracy" tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={160} /> : scoreAccuracyRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No scoring data yet.</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : scoreAccuracyRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No scoring data yet.
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 460 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 460,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Node','Predicted','Actual','Error','Samples'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' ? 'left' : 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {['Node', 'Predicted', 'Actual', 'Error', 'Samples'].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: h === 'Node' ? 'left' : 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {scoreAccuracyRows.map(r => (
-                        <tr key={r.node} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.tan }}>{fmtMs(r.avg_score_at_selection)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_actual_ms) }}>{fmtMs(r.avg_actual_ms)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: Math.abs(r.score_error_ms) < 200 ? CH.green : Math.abs(r.score_error_ms) < 500 ? CH.yellow : CH.red }}>
-                            {r.score_error_ms > 0 ? '+' : ''}{fmtMs(r.score_error_ms)}
+                      {scoreAccuracyRows.map((r) => (
+                        <tr
+                          key={r.node}
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                        >
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: 'var(--film-cream)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {nodeLabel(r.node).split(' ·')[0]}
                           </td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.ghost }}>{fmtNum(r.samples)}</td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.tan,
+                            }}
+                          >
+                            {fmtMs(r.avg_score_at_selection)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: msColor(r.avg_actual_ms),
+                            }}
+                          >
+                            {fmtMs(r.avg_actual_ms)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color:
+                                Math.abs(r.score_error_ms) < 200
+                                  ? CH.green
+                                  : Math.abs(r.score_error_ms) < 500
+                                    ? CH.yellow
+                                    : CH.red,
+                            }}
+                          >
+                            {r.score_error_ms > 0 ? '+' : ''}
+                            {fmtMs(r.score_error_ms)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {fmtNum(r.samples)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1912,11 +4386,23 @@ export default function AnalyticsDashboard() {
             </Card>
 
             <Card title="Latency SLA by Node" tag={pLabel}>
-              {loading ? <Skel h={220} /> : slaRows.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No SLA data yet.</div>
+              {loading ? (
+                <Skel h={220} />
+              ) : slaRows.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 16,
+                  }}
+                >
+                  No SLA data yet.
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {slaRows.map(r => {
+                  {slaRows.map((r) => {
                     const total = r.successes || 1;
                     const segs = [
                       { n: r.under_300ms, c: CH.green, l: '<300ms' },
@@ -1924,19 +4410,62 @@ export default function AnalyticsDashboard() {
                       { n: r.under_1500ms - r.under_800ms, c: CH.orange, l: '<1.5s' },
                       { n: r.under_3000ms - r.under_1500ms, c: CH.red, l: '<3s' },
                       { n: Math.max(0, total - r.under_3000ms), c: '#7f1d1d', l: '>3s' },
-                    ].filter(s => s.n > 0);
+                    ].filter((s) => s.n > 0);
                     return (
                       <div key={r.node}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</span>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 4,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: 'var(--film-cream)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {nodeLabel(r.node).split(' ·')[0]}
+                          </span>
                           <div style={{ display: 'flex', gap: 10 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)} avg</span>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>inflight {r.avg_inflight.toFixed(1)}/{fmtNum(r.max_inflight)}</span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 8,
+                                color: msColor(r.avg_ms),
+                              }}
+                            >
+                              {fmtMs(r.avg_ms)} avg
+                            </span>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 8,
+                                color: CH.ghost,
+                              }}
+                            >
+                              inflight {r.avg_inflight.toFixed(1)}/{fmtNum(r.max_inflight)}
+                            </span>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', height: 8, borderRadius: 3, overflow: 'hidden', gap: 1 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            height: 8,
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                            gap: 1,
+                          }}
+                        >
                           {segs.map((s, i) => (
-                            <div key={i} title={`${s.l}: ${Math.round((s.n / total) * 100)}%`} style={{ flex: s.n / total, background: s.c, minWidth: 2 }} />
+                            <div
+                              key={i}
+                              title={`${s.l}: ${Math.round((s.n / total) * 100)}%`}
+                              style={{ flex: s.n / total, background: s.c, minWidth: 2 }}
+                            />
                           ))}
                         </div>
                       </div>
@@ -1946,25 +4475,90 @@ export default function AnalyticsDashboard() {
               )}
             </Card>
 
-            <div className="dash-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            <div
+              className="dash-2col"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="CPU Proxy (Serial Load Estimate)">
-                {loading ? <Skel h={180} /> : cpuProxyRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No data yet.</div>
+                {loading ? (
+                  <Skel h={180} />
+                ) : cpuProxyRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No data yet.
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {cpuProxyRows.map(r => {
-                      const max = Math.max(...cpuProxyRows.map(x => x.cpu_proxy_ms), 1);
+                    {cpuProxyRows.map((r) => {
+                      const max = Math.max(...cpuProxyRows.map((x) => x.cpu_proxy_ms), 1);
                       return (
                         <div key={r.node}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color: 'var(--film-cream)',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {nodeLabel(r.node).split(' ·')[0]}
+                            </span>
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(r.success_rate_pct) }}>{fmtPct(r.success_rate_pct)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: msColor(r.cpu_proxy_ms), fontWeight: 700 }}>{fmtMs(r.cpu_proxy_ms)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: rateColor(r.success_rate_pct),
+                                }}
+                              >
+                                {fmtPct(r.success_rate_pct)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: msColor(r.cpu_proxy_ms),
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {fmtMs(r.cpu_proxy_ms)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: nodeColor(r.node), width: `${(r.cpu_proxy_ms / max) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 4,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: nodeColor(r.node),
+                                width: `${(r.cpu_proxy_ms / max) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -1973,17 +4567,71 @@ export default function AnalyticsDashboard() {
                 )}
               </Card>
               <Card title="Payload Size by Node">
-                {loading ? <Skel h={180} /> : payloadRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No payload data yet.</div>
+                {loading ? (
+                  <Skel h={180} />
+                ) : payloadRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No payload data yet.
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {payloadRows.map(r => (
-                      <div key={r.node} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</span>
+                    {payloadRows.map((r) => (
+                      <div
+                        key={r.node}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '6px 0',
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: 10,
+                            color: 'var(--film-cream)',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {nodeLabel(r.node).split(' ·')[0]}
+                        </span>
                         <div style={{ display: 'flex', gap: 10 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.tan }}>{r.avg_payload_kb.toFixed(1)}kb avg</span>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>{r.max_payload_kb.toFixed(0)}kb max</span>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: r.over_100kb > 0 ? CH.red : CH.ghost }}>{fmtNum(r.over_100kb)} &gt;100kb</span>
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 8,
+                              color: CH.tan,
+                            }}
+                          >
+                            {r.avg_payload_kb.toFixed(1)}kb avg
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.max_payload_kb.toFixed(0)}kb max
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 8,
+                              color: r.over_100kb > 0 ? CH.red : CH.ghost,
+                            }}
+                          >
+                            {fmtNum(r.over_100kb)} &gt;100kb
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -1993,56 +4641,247 @@ export default function AnalyticsDashboard() {
             </div>
 
             <Card title="Geo Routing Preference" tag="colo → node" noPad>
-              <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 400, overflowY: 'auto' }}>
-                {loading ? <Skel h={200} /> : geoRoutingGrouped.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No geo routing data yet.</div>
-                ) : geoRoutingGrouped.map(({ colo, rows }) => (
-                  <div key={colo}>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.amber, fontWeight: 700, marginBottom: 6, letterSpacing: '0.1em' }}>{colo}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {rows.map(r => {
-                        const max = rows[0]?.wins || rows[0]?.attempts || 1;
-                        const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
-                        return (
-                          <div key={r.node} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: nodeColor(r.node), flexShrink: 0 }} />
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)', minWidth: 90 }}>{nodeLabel(r.node).split(' ·')[0]}</span>
-                            <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                              <div style={{ height: '100%', background: nodeColor(r.node), width: `${((r.wins || r.attempts) / max) * 100}%` }} />
-                            </div>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.gold, minWidth: 40, textAlign: 'right' }}>{fmtNum(r.wins)}w</span>
-                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: rateColor(rate), minWidth: 32, textAlign: 'right' }}>{fmtPct(rate)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+              <div
+                style={{
+                  padding: 14,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  maxHeight: 400,
+                  overflowY: 'auto',
+                }}
+              >
+                {loading ? (
+                  <Skel h={200} />
+                ) : geoRoutingGrouped.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No geo routing data yet.
                   </div>
-                ))}
+                ) : (
+                  geoRoutingGrouped.map(({ colo, rows }) => (
+                    <div key={colo}>
+                      <div
+                        style={{
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 9,
+                          color: CH.amber,
+                          fontWeight: 700,
+                          marginBottom: 6,
+                          letterSpacing: '0.1em',
+                        }}
+                      >
+                        {colo}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {rows.map((r) => {
+                          const max = rows[0]?.wins || rows[0]?.attempts || 1;
+                          const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
+                          return (
+                            <div
+                              key={r.node}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                            >
+                              <div
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: nodeColor(r.node),
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 9,
+                                  color: 'var(--film-cream)',
+                                  minWidth: 90,
+                                }}
+                              >
+                                {nodeLabel(r.node).split(' ·')[0]}
+                              </span>
+                              <div
+                                style={{
+                                  flex: 1,
+                                  height: 4,
+                                  borderRadius: 2,
+                                  background: 'rgba(255,255,255,0.06)',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: '100%',
+                                    background: nodeColor(r.node),
+                                    width: `${((r.wins || r.attempts) / max) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 7,
+                                  color: CH.gold,
+                                  minWidth: 40,
+                                  textAlign: 'right',
+                                }}
+                              >
+                                {fmtNum(r.wins)}w
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 7,
+                                  color: rateColor(rate),
+                                  minWidth: 32,
+                                  textAlign: 'right',
+                                }}
+                              >
+                                {fmtPct(rate)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 
             <Card title="Suggested Tuned Limits" tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={160} /> : tunedLimitsRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>Not enough samples yet (needs &gt;50 attempts/node).</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : tunedLimitsRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    Not enough samples yet (needs &gt;50 attempts/node).
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 500 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 500,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Node','Attempts','Success Rate','Avg Latency','Max Inflight','CPU Proxy'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' ? 'left' : 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {[
+                          'Node',
+                          'Attempts',
+                          'Success Rate',
+                          'Avg Latency',
+                          'Max Inflight',
+                          'CPU Proxy',
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: h === 'Node' ? 'left' : 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {tunedLimitsRows.map(r => (
-                        <tr key={r.node} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.ghost }}>{fmtNum(r.total_attempts)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: rateColor(r.success_rate_pct) }}>{fmtPct(r.success_rate_pct)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.tan }}>{r.max_inflight}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.cpu_proxy_ms) }}>{fmtMs(r.cpu_proxy_ms)}</td>
+                      {tunedLimitsRows.map((r) => (
+                        <tr
+                          key={r.node}
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                        >
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: 'var(--film-cream)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {nodeLabel(r.node).split(' ·')[0]}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {fmtNum(r.total_attempts)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: rateColor(r.success_rate_pct),
+                            }}
+                          >
+                            {fmtPct(r.success_rate_pct)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: msColor(r.avg_ms),
+                            }}
+                          >
+                            {fmtMs(r.avg_ms)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.tan,
+                            }}
+                          >
+                            {r.max_inflight}
+                          </td>
+                          <td
+                            style={{
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: msColor(r.cpu_proxy_ms),
+                            }}
+                          >
+                            {fmtMs(r.cpu_proxy_ms)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2053,45 +4892,223 @@ export default function AnalyticsDashboard() {
 
             <Card title={`Recent Attempts (${recentAttemptsRows.length})`} tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
-                {loading ? <Skel h={200} /> : recentAttemptsRows.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: CH.green }}>✓ No attempt data in this period</div>
+                {loading ? (
+                  <Skel h={200} />
+                ) : recentAttemptsRows.length === 0 ? (
+                  <div
+                    style={{
+                      padding: 20,
+                      textAlign: 'center',
+                      fontFamily: 'JetBrains Mono,monospace',
+                      fontSize: 11,
+                      color: CH.green,
+                    }}
+                  >
+                    ✓ No attempt data in this period
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 600 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 600,
+                    }}
+                  >
                     <thead>
                       <tr style={{ background: 'var(--film-mid)', position: 'sticky', top: 0 }}>
-                        {['Time','Node','Format','Input','Colo','Outcome','Wall','Compute','Status','Inflight','KB','Error'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {[
+                          'Time',
+                          'Node',
+                          'Format',
+                          'Input',
+                          'Colo',
+                          'Outcome',
+                          'Wall',
+                          'Compute',
+                          'Status',
+                          'Inflight',
+                          'KB',
+                          'Error',
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: 'left',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentAttemptsRows.slice(0, 100).map((r, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.025)' }}>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, whiteSpace: 'nowrap' as const }}>{relTime(r.timestamp)}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                            borderBottom: '1px solid rgba(255,255,255,0.025)',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                              whiteSpace: 'nowrap' as const,
+                            }}
+                          >
+                            {relTime(r.timestamp)}
+                          </td>
                           <td style={{ padding: '6px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: nodeColor(r.node) }} />
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: 'var(--film-cream)' }}>{nodeLabel(r.node).split(' ')[0]}</span>
+                              <div
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: nodeColor(r.node),
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 9,
+                                  color: 'var(--film-cream)',
+                                }}
+                              >
+                                {nodeLabel(r.node).split(' ')[0]}
+                              </span>
                             </div>
                           </td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{r.format}</td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{r.input_type}</td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{r.colo}</td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.format}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.input_type}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.colo}
+                          </td>
                           <td style={{ padding: '6px 12px' }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: r.outcome === 'success' ? CH.green : CH.red, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '1px 5px' }}>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: r.outcome === 'success' ? CH.green : CH.red,
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 3,
+                                padding: '1px 5px',
+                              }}
+                            >
                               {r.outcome}
                             </span>
                           </td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: r.wall_ms !== null ? msColor(r.wall_ms) : CH.ghost }}>{r.wall_ms !== null ? fmtMs(r.wall_ms) : '—'}</td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: r.compute_ms !== null ? msColor(r.compute_ms) : CH.ghost }}>{r.compute_ms !== null ? fmtMs(r.compute_ms) : '—'}</td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: r.wall_ms !== null ? msColor(r.wall_ms) : CH.ghost,
+                            }}
+                          >
+                            {r.wall_ms !== null ? fmtMs(r.wall_ms) : '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: r.compute_ms !== null ? msColor(r.compute_ms) : CH.ghost,
+                            }}
+                          >
+                            {r.compute_ms !== null ? fmtMs(r.compute_ms) : '—'}
+                          </td>
                           <td style={{ padding: '6px 12px' }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: r.http_status >= 400 ? CH.red : r.http_status === 0 ? CH.orange : CH.green, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '1px 5px' }}>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color:
+                                  r.http_status >= 400
+                                    ? CH.red
+                                    : r.http_status === 0
+                                      ? CH.orange
+                                      : CH.green,
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 3,
+                                padding: '1px 5px',
+                              }}
+                            >
                               {r.http_status === 0 ? 'TIMEOUT' : r.http_status}
                             </span>
                           </td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{r.inflight_at_start}</td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{r.payload_kb !== null ? `${r.payload_kb.toFixed(1)}kb` : '—'}</td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.dim, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{r.error || '—'}</td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.inflight_at_start}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.payload_kb !== null ? `${r.payload_kb.toFixed(1)}kb` : '—'}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.dim,
+                              maxWidth: 200,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap' as const,
+                            }}
+                          >
+                            {r.error || '—'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2102,41 +5119,172 @@ export default function AnalyticsDashboard() {
 
             <Card title="Compute vs Wall Time" tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={160} /> : computeVsWallRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No compute timing data available.</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : computeVsWallRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No compute timing data available.
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 500 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 500,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Node','Avg Wall','Avg Compute','Overhead','Samples'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Node' ? 'left' : 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {['Node', 'Avg Wall', 'Avg Compute', 'Overhead', 'Samples'].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: h === 'Node' ? 'left' : 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {computeVsWallRows.map(r => {
+                      {computeVsWallRows.map((r) => {
                         const maxMs = Math.max(r.avg_wall_ms ?? 0, r.avg_compute_ms ?? 0, 1);
                         return (
-                          <tr key={r.node} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                            <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_wall_ms) }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-                                <div style={{ width: 60, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${((r.avg_wall_ms ?? 0) / maxMs) * 100}%`, background: CH.tan, borderRadius: 3 }} />
+                          <tr
+                            key={r.node}
+                            style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                          >
+                            <td
+                              style={{
+                                padding: '8px 12px',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color: 'var(--film-cream)',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {nodeLabel(r.node).split(' ·')[0]}
+                            </td>
+                            <td
+                              style={{
+                                padding: '8px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color: msColor(r.avg_wall_ms),
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  justifyContent: 'flex-end',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 60,
+                                    height: 6,
+                                    background: 'rgba(255,255,255,0.06)',
+                                    borderRadius: 3,
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      width: `${((r.avg_wall_ms ?? 0) / maxMs) * 100}%`,
+                                      background: CH.tan,
+                                      borderRadius: 3,
+                                    }}
+                                  />
                                 </div>
                                 <span>{fmtMs(r.avg_wall_ms)}</span>
                               </div>
                             </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_compute_ms) }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-                                <div style={{ width: 60, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${((r.avg_compute_ms ?? 0) / maxMs) * 100}%`, background: CH.green, borderRadius: 3 }} />
+                            <td
+                              style={{
+                                padding: '8px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color: msColor(r.avg_compute_ms),
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  justifyContent: 'flex-end',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 60,
+                                    height: 6,
+                                    background: 'rgba(255,255,255,0.06)',
+                                    borderRadius: 3,
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      width: `${((r.avg_compute_ms ?? 0) / maxMs) * 100}%`,
+                                      background: CH.green,
+                                      borderRadius: 3,
+                                    }}
+                                  />
                                 </div>
                                 <span>{fmtMs(r.avg_compute_ms)}</span>
                               </div>
                             </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: r.avg_network_overhead_ms !== null ? msColor(r.avg_network_overhead_ms) : CH.ghost }}>{r.avg_network_overhead_ms !== null ? fmtMs(r.avg_network_overhead_ms) : '—'}</td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.ghost }}>{fmtNum(r.samples)}</td>
+                            <td
+                              style={{
+                                padding: '8px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color:
+                                  r.avg_network_overhead_ms !== null
+                                    ? msColor(r.avg_network_overhead_ms)
+                                    : CH.ghost,
+                              }}
+                            >
+                              {r.avg_network_overhead_ms !== null
+                                ? fmtMs(r.avg_network_overhead_ms)
+                                : '—'}
+                            </td>
+                            <td
+                              style={{
+                                padding: '8px 12px',
+                                textAlign: 'right',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 10,
+                                color: CH.ghost,
+                              }}
+                            >
+                              {fmtNum(r.samples)}
+                            </td>
                           </tr>
                         );
                       })}
@@ -2153,69 +5301,272 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>Database Statistics</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
-                Live D1 database metrics — cached entries, unique IDs, media type distribution, and cache freshness.
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
+                Live D1 database metrics — cached entries, unique IDs, media type distribution, and
+                cache freshness.
               </p>
             </div>
             {dbStats?.error ? (
-              <div style={{ padding: 16, borderRadius: 8, background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)', color: CH.red, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 8,
+                  background: 'rgba(248,113,113,0.07)',
+                  border: '1px solid rgba(248,113,113,0.2)',
+                  color: CH.red,
+                  fontFamily: 'JetBrains Mono,monospace',
+                  fontSize: 11,
+                }}
+              >
                 D1 query error: {dbStats.error}
               </div>
             ) : !dbStats ? (
-              <div style={{ padding: 24, borderRadius: 8, background: 'var(--film-char)', border: '1px solid var(--film-border)', color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center' }}>
+              <div
+                style={{
+                  padding: 24,
+                  borderRadius: 8,
+                  background: 'var(--film-char)',
+                  border: '1px solid var(--film-border)',
+                  color: CH.ghost,
+                  fontFamily: 'JetBrains Mono,monospace',
+                  fontSize: 11,
+                  textAlign: 'center',
+                }}
+              >
                 {loading ? 'Querying D1…' : 'No DB stats — POSTER_CACHE binding may not be set.'}
               </div>
             ) : (
               <>
-                <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-                  <StatCard label="Total Entries" value={fmtNum(num(dbStats.totals?.total_entries))} sub="poster_cache rows" color={CH.amber} />
-                  <StatCard label="Unique IMDb IDs" value={fmtNum(num(dbStats.totals?.unique_imdb))} sub="with IMDb ref" color={CH.gold} />
-                  <StatCard label="Unique TMDB IDs" value={fmtNum(num(dbStats.totals?.unique_tmdb))} sub="TMDB movies/TV" color={CH.tan} />
-                  <StatCard label="Unique MAL IDs" value={fmtNum(num(dbStats.totals?.unique_mal))} sub="anime entries" color={CH.rose} />
-                  <StatCard label="Updated 24h" value={fmtNum(num(dbStats.cacheAge?.updated_24h))} sub="fresh entries" color={CH.green} />
-                  <StatCard label="Updated 7d" value={fmtNum(num(dbStats.cacheAge?.updated_7d))} sub="recent entries" color={CH.rust} />
+                <div
+                  className="dash-stat-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+                    gap: 10,
+                  }}
+                >
+                  <StatCard
+                    label="Total Entries"
+                    value={fmtNum(num(dbStats.totals?.total_entries))}
+                    sub="poster_cache rows"
+                    color={CH.amber}
+                  />
+                  <StatCard
+                    label="Unique IMDb IDs"
+                    value={fmtNum(num(dbStats.totals?.unique_imdb))}
+                    sub="with IMDb ref"
+                    color={CH.gold}
+                  />
+                  <StatCard
+                    label="Unique TMDB IDs"
+                    value={fmtNum(num(dbStats.totals?.unique_tmdb))}
+                    sub="TMDB movies/TV"
+                    color={CH.tan}
+                  />
+                  <StatCard
+                    label="Unique MAL IDs"
+                    value={fmtNum(num(dbStats.totals?.unique_mal))}
+                    sub="anime entries"
+                    color={CH.rose}
+                  />
+                  <StatCard
+                    label="Updated 24h"
+                    value={fmtNum(num(dbStats.cacheAge?.updated_24h))}
+                    sub="fresh entries"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Updated 7d"
+                    value={fmtNum(num(dbStats.cacheAge?.updated_7d))}
+                    sub="recent entries"
+                    color={CH.rust}
+                  />
                 </div>
                 <Card title="Entries by Media Type">
-                  {loading ? <Skel h={160} /> : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 10 }}>
+                  {loading ? (
+                    <Skel h={160} />
+                  ) : (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))',
+                        gap: 10,
+                      }}
+                    >
                       {(dbStats.byType ?? []).map((r: any, i: number) => {
-                        const total = (dbStats.byType ?? []).reduce((s: number, x: any) => s + num(x.count), 0) || 1;
+                        const total =
+                          (dbStats.byType ?? []).reduce(
+                            (s: number, x: any) => s + num(x.count),
+                            0
+                          ) || 1;
                         return (
-                          <div key={r.type} style={{ padding: '12px 14px', background: 'var(--film-char)', border: '1px solid var(--film-border)', borderRadius: 8 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                              <span className="syne-font" style={{ fontSize: 13, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.type}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: PIE_COLORS[i % PIE_COLORS.length], fontWeight: 700 }}>{fmtPct((num(r.count) / total) * 100)}</span>
+                          <div
+                            key={r.type}
+                            style={{
+                              padding: '12px 14px',
+                              background: 'var(--film-char)',
+                              border: '1px solid var(--film-border)',
+                              borderRadius: 8,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                marginBottom: 8,
+                              }}
+                            >
+                              <span
+                                className="syne-font"
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: 'var(--film-cream)',
+                                  textTransform: 'capitalize' as const,
+                                }}
+                              >
+                                {r.type}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 10,
+                                  color: PIE_COLORS[i % PIE_COLORS.length],
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {fmtPct((num(r.count) / total) * 100)}
+                              </span>
                             </div>
-                            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 20, color: PIE_COLORS[i % PIE_COLORS.length], fontWeight: 700, marginBottom: 8 }}>{fmtNum(num(r.count))}</div>
-                            <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                              <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(num(r.count) / total) * 100}%`, borderRadius: 2 }} />
+                            <div
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 20,
+                                color: PIE_COLORS[i % PIE_COLORS.length],
+                                fontWeight: 700,
+                                marginBottom: 8,
+                              }}
+                            >
+                              {fmtNum(num(r.count))}
+                            </div>
+                            <div
+                              style={{
+                                height: 4,
+                                borderRadius: 2,
+                                background: 'rgba(255,255,255,0.06)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  height: '100%',
+                                  background: PIE_COLORS[i % PIE_COLORS.length],
+                                  width: `${(num(r.count) / total) * 100}%`,
+                                  borderRadius: 2,
+                                }}
+                              />
                             </div>
                           </div>
                         );
                       })}
-                      {(dbStats.byType ?? []).length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>No type data</div>}
+                      {(dbStats.byType ?? []).length === 0 && (
+                        <div
+                          style={{
+                            color: CH.ghost,
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 11,
+                          }}
+                        >
+                          No type data
+                        </div>
+                      )}
                     </div>
                   )}
                 </Card>
                 <Card title="Cache Freshness">
-                  {loading ? <Skel h={120} /> : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 10 }}>
+                  {loading ? (
+                    <Skel h={120} />
+                  ) : (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))',
+                        gap: 10,
+                      }}
+                    >
                       {[
                         { label: 'Updated 24h', key: 'updated_24h', color: CH.green },
-                        { label: 'Updated 7d',  key: 'updated_7d',  color: CH.yellow },
+                        { label: 'Updated 7d', key: 'updated_7d', color: CH.yellow },
                         { label: 'Updated 30d', key: 'updated_30d', color: CH.orange },
-                      ].map(band => {
+                      ].map((band) => {
                         const total = num(dbStats.totals?.total_entries) || 1;
                         const count = num(dbStats.cacheAge?.[band.key]);
                         const freshPct = (count / total) * 100;
                         return (
-                          <div key={band.key} style={{ padding: '12px 14px', background: 'var(--film-char)', border: '1px solid var(--film-border)', borderRadius: 8 }}>
-                            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginBottom: 4, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{band.label}</div>
-                            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 22, color: band.color, fontWeight: 700, marginBottom: 6 }}>{fmtNum(count)}</div>
-                            <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 }}>
-                              <div style={{ height: '100%', background: band.color, transform: `scaleX(${freshPct / 100})`, transformOrigin: 'left', borderRadius: 2, transition: 'transform 0.5s ease' }} />
+                          <div
+                            key={band.key}
+                            style={{
+                              padding: '12px 14px',
+                              background: 'var(--film-char)',
+                              border: '1px solid var(--film-border)',
+                              borderRadius: 8,
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: CH.ghost,
+                                marginBottom: 4,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase' as const,
+                              }}
+                            >
+                              {band.label}
                             </div>
-                            <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>{freshPct.toFixed(1)}% fresh · {fmtNum(total - count)} older</div>
+                            <div
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 22,
+                                color: band.color,
+                                fontWeight: 700,
+                                marginBottom: 6,
+                              }}
+                            >
+                              {fmtNum(count)}
+                            </div>
+                            <div
+                              style={{
+                                height: 5,
+                                borderRadius: 2,
+                                background: 'rgba(255,255,255,0.06)',
+                                overflow: 'hidden',
+                                marginBottom: 4,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  height: '100%',
+                                  background: band.color,
+                                  transform: `scaleX(${freshPct / 100})`,
+                                  transformOrigin: 'left',
+                                  borderRadius: 2,
+                                  transition: 'transform 0.5s ease',
+                                }}
+                              />
+                            </div>
+                            <div
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 7,
+                                color: CH.ghost,
+                              }}
+                            >
+                              {freshPct.toFixed(1)}% fresh · {fmtNum(total - count)} older
+                            </div>
                           </div>
                         );
                       })}
@@ -2232,29 +5583,118 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Card title="Error Breakdown" tag={`${errorBreakdownRows.length} distinct`} noPad>
               <div style={{ overflowX: 'auto', padding: 14 }}>
-                {loading ? <Skel h={160} /> : errorBreakdownRows.length === 0 ? (
-                  <div style={{ color: CH.green, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>✓ No errors in this period</div>
+                {loading ? (
+                  <Skel h={160} />
+                ) : errorBreakdownRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.green,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    ✓ No errors in this period
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 460 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 460,
+                    }}
+                  >
                     <thead>
                       <tr>
-                        {['Error','Node','Occurrences','Avg Status'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Occurrences' || h === 'Avg Status' ? 'right' : 'left', fontFamily: 'JetBrains Mono, monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {['Error', 'Node', 'Occurrences', 'Avg Status'].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign:
+                                h === 'Occurrences' || h === 'Avg Status' ? 'right' : 'left',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {errorBreakdownRows.map((r, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(248,113,113,0.025)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.025)' }}>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.dim, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{r.error}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? 'rgba(248,113,113,0.025)' : 'transparent',
+                            borderBottom: '1px solid rgba(255,255,255,0.025)',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.dim,
+                              maxWidth: 280,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap' as const,
+                            }}
+                          >
+                            {r.error}
+                          </td>
                           <td style={{ padding: '6px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: nodeColor(r.node) }} />
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--film-cream)' }}>{nodeLabel(r.node).split(' ')[0]}</span>
+                              <div
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: nodeColor(r.node),
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 9,
+                                  color: 'var(--film-cream)',
+                                }}
+                              >
+                                {nodeLabel(r.node).split(' ')[0]}
+                              </span>
                             </div>
                           </td>
-                          <td style={{ padding: '6px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.red, fontWeight: 700 }}>{fmtNum(r.occurrences)}</td>
-                          <td style={{ padding: '6px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.ghost }}>{r.status_code || '—'}</td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 10,
+                              color: CH.red,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {fmtNum(r.occurrences)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              textAlign: 'right',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.ghost,
+                            }}
+                          >
+                            {r.status_code || '—'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2266,34 +5706,123 @@ export default function AnalyticsDashboard() {
             <Card title={`Recent Failures (${failRows.length})`} tag={pLabel} noPad>
               <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
                 {loading ? (
-                  <div style={{ padding: 14 }}><Skel h={200} /></div>
+                  <div style={{ padding: 14 }}>
+                    <Skel h={200} />
+                  </div>
                 ) : failRows.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: CH.green }}>✓ No failures in this period</div>
+                  <div
+                    style={{
+                      padding: 20,
+                      textAlign: 'center',
+                      fontFamily: 'JetBrains Mono,monospace',
+                      fontSize: 11,
+                      color: CH.green,
+                    }}
+                  >
+                    ✓ No failures in this period
+                  </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, minWidth: 460 }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 10,
+                      minWidth: 460,
+                    }}
+                  >
                     <thead>
                       <tr style={{ background: 'var(--film-mid)', position: 'sticky', top: 0 }}>
-                        {['Time','Node','Status','Error'].map(h => (
-                          <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost, letterSpacing: '0.16em', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                        {['Time', 'Node', 'Status', 'Error'].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: '7px 12px',
+                              textAlign: 'left',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 7,
+                              color: CH.ghost,
+                              letterSpacing: '0.16em',
+                              textTransform: 'uppercase' as const,
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {failRows.slice(0, 100).map((r, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(248,113,113,0.025)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.025)' }}>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, whiteSpace: 'nowrap' as const }}>{relTime(r.timestamp)}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? 'rgba(248,113,113,0.025)' : 'transparent',
+                            borderBottom: '1px solid rgba(255,255,255,0.025)',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.ghost,
+                              whiteSpace: 'nowrap' as const,
+                            }}
+                          >
+                            {relTime(r.timestamp)}
+                          </td>
                           <td style={{ padding: '6px 12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: nodeColor(r.node) }} />
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: 'var(--film-cream)' }}>{nodeLabel(r.node).split(' ')[0]}</span>
+                              <div
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: nodeColor(r.node),
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 9,
+                                  color: 'var(--film-cream)',
+                                }}
+                              >
+                                {nodeLabel(r.node).split(' ')[0]}
+                              </span>
                             </div>
                           </td>
                           <td style={{ padding: '6px 12px' }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: r.status_code === 0 ? CH.orange : CH.red, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '1px 5px' }}>
-                              {r.status_code === 0 ? 'TIMEOUT' : `HTTP ${Math.round(r.status_code)}`}
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 8,
+                                color: r.status_code === 0 ? CH.orange : CH.red,
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 3,
+                                padding: '1px 5px',
+                              }}
+                            >
+                              {r.status_code === 0
+                                ? 'TIMEOUT'
+                                : `HTTP ${Math.round(r.status_code)}`}
                             </span>
                           </td>
-                          <td style={{ padding: '6px 12px', fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.dim, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{r.error}</td>
+                          <td
+                            style={{
+                              padding: '6px 12px',
+                              fontFamily: 'JetBrains Mono,monospace',
+                              fontSize: 8,
+                              color: CH.dim,
+                              maxWidth: 300,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap' as const,
+                            }}
+                          >
+                            {r.error}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2303,18 +5832,56 @@ export default function AnalyticsDashboard() {
             </Card>
 
             <Card title="Failures Over Time by Node" tag={pLabel}>
-              {loading ? <Skel h={200} /> : errorHeatmap.rows.length === 0 ? (
-                <div style={{ color: CH.green, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>✓ No failures to chart</div>
+              {loading ? (
+                <Skel h={200} />
+              ) : errorHeatmap.rows.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.green,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 16,
+                  }}
+                >
+                  ✓ No failures to chart
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={errorHeatmap.rows} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <BarChart
+                    data={errorHeatmap.rows}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
-                    {errorHeatmap.nodes.map(n => (
-                      <Bar key={n} dataKey={n} name={nodeLabel(n).split(' ·')[0]} stackId="fail" fill={nodeColor(n)} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    {errorHeatmap.nodes.map((n) => (
+                      <Bar
+                        key={n}
+                        dataKey={n}
+                        name={nodeLabel(n).split(' ·')[0]}
+                        stackId="fail"
+                        fill={nodeColor(n)}
+                      />
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
@@ -2326,23 +5893,77 @@ export default function AnalyticsDashboard() {
         {/* ══ BREAKDOWN ═══════════════════════════════════════════════════ */}
         {tab === 'breakdown' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="Raster Format Distribution">
-                {loading ? <Skel h={180} /> : (
+                {loading ? (
+                  <Skel h={180} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {formatRows.map((r, i) => {
                       const total = formatRows.reduce((s, x) => s + x.attempts, 0) || 1;
                       return (
                         <div key={r.format}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: CH.amber, letterSpacing: '0.08em' }}>{r.format.toUpperCase()}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: CH.amber,
+                                letterSpacing: '0.08em',
+                              }}
+                            >
+                              {r.format.toUpperCase()}
+                            </span>
                             <div style={{ display: 'flex', gap: 10 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(r.attempts)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(r.attempts)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: msColor(r.avg_ms),
+                                }}
+                              >
+                                {fmtMs(r.avg_ms)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.attempts / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.attempts / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -2351,8 +5972,20 @@ export default function AnalyticsDashboard() {
                 )}
               </Card>
               <Card title="Rasterizer Input Type">
-                {loading ? <Skel h={180} /> : typeBreakdownRows.length === 0 ? (
-                  <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No type data</div>
+                {loading ? (
+                  <Skel h={180} />
+                ) : typeBreakdownRows.length === 0 ? (
+                  <div
+                    style={{
+                      color: CH.ghost,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: 11,
+                      textAlign: 'center',
+                      padding: 16,
+                    }}
+                  >
+                    No type data
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {typeBreakdownRows.map((r, i) => {
@@ -2360,16 +5993,70 @@ export default function AnalyticsDashboard() {
                       const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
                       return (
                         <div key={r.input_type}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: CH.amber, textTransform: 'capitalize' as const }}>{r.input_type}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: CH.amber,
+                                textTransform: 'capitalize' as const,
+                              }}
+                            >
+                              {r.input_type}
+                            </span>
                             <div style={{ display: 'flex', gap: 10 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: rateColor(rate) }}>{fmtPct(rate)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(r.attempts)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: rateColor(rate),
+                                }}
+                              >
+                                {fmtPct(rate)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: msColor(r.avg_ms),
+                                }}
+                              >
+                                {fmtMs(r.avg_ms)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(r.attempts)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.attempts / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.attempts / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -2378,28 +6065,92 @@ export default function AnalyticsDashboard() {
                 )}
               </Card>
               <Card title="Top Datacenters (Rasterizer)">
-                {loading ? <Skel h={180} /> : (
+                {loading ? (
+                  <Skel h={180} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {coloRows.map((r, _i) => {
                       const rate = r.attempts > 0 ? (r.successes / r.attempts) * 100 : 0;
-                      const maxA = Math.max(...coloRows.map(c => c.attempts), 1);
+                      const maxA = Math.max(...coloRows.map((c) => c.attempts), 1);
                       return (
                         <div key={r.colo}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: 'var(--film-cream)', fontWeight: 700 }}>{r.colo}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono,monospace',
+                                fontSize: 11,
+                                color: 'var(--film-cream)',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {r.colo}
+                            </span>
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: rateColor(rate) }}>{fmtPct(rate)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(r.attempts)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: rateColor(rate),
+                                }}
+                              >
+                                {fmtPct(rate)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: msColor(r.avg_ms),
+                                }}
+                              >
+                                {fmtMs(r.avg_ms)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(r.attempts)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: rateColor(rate), width: `${(r.attempts / maxA) * 100}%` }} />
+                          <div
+                            style={{
+                              height: 3,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: rateColor(rate),
+                                width: `${(r.attempts / maxA) * 100}%`,
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
-                    {!coloRows.length && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11 }}>No colo data</div>}
+                    {!coloRows.length && (
+                      <div
+                        style={{
+                          color: CH.ghost,
+                          fontFamily: 'JetBrains Mono,monospace',
+                          fontSize: 11,
+                        }}
+                      >
+                        No colo data
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -2412,35 +6163,140 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>Request-Level Wall Time</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
-                End-to-end latency from poster handler — SVG generation + rasterization + response time.
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
+                End-to-end latency from poster handler — SVG generation + rasterization + response
+                time.
               </p>
             </div>
             {!wallStats || !num(wallStats.total_requests) ? (
-              <div style={{ padding: 20, color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, background: 'var(--film-char)', borderRadius: 8, border: '1px solid var(--film-border)' }}>
-                No wall time data yet — REQUEST_ANALYTICS rows carry wall ms (double2) + success flag (double3) for every poster request.
+              <div
+                style={{
+                  padding: 20,
+                  color: CH.ghost,
+                  fontFamily: 'JetBrains Mono,monospace',
+                  fontSize: 11,
+                  background: 'var(--film-char)',
+                  borderRadius: 8,
+                  border: '1px solid var(--film-border)',
+                }}
+              >
+                No wall time data yet — REQUEST_ANALYTICS rows carry wall ms (double2) + success
+                flag (double3) for every poster request.
               </div>
             ) : (
               <>
-                <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-                  <StatCard label="Total Requests" value={fmtNum(num(wallStats.total_requests))} sub={pLabel} />
-                  <StatCard label="Avg Wall Time" value={fmtMs(nullableNum(wallStats.avg_wall_ms))} sub="End-to-end" color={msColor(nullableNum(wallStats.avg_wall_ms))} />
-                  <StatCard label="Under 500ms" value={fmtPct(num(wallStats.total_requests) > 0 ? (num(wallStats.under_500ms) / num(wallStats.total_requests)) * 100 : 0)} sub="fastest" color={CH.green} />
-                  <StatCard label="Under 1s" value={fmtPct(num(wallStats.total_requests) > 0 ? (num(wallStats.under_1s) / num(wallStats.total_requests)) * 100 : 0)} sub="cumulative" color={CH.yellow} />
-                  <StatCard label="Under 2s" value={fmtPct(num(wallStats.total_requests) > 0 ? (num(wallStats.under_2s) / num(wallStats.total_requests)) * 100 : 0)} sub="cumulative" color={CH.orange} />
-                  <StatCard label="SVG Requests" value={fmtNum(num(wallStats.svg_requests))} sub="format split" />
+                <div
+                  className="dash-stat-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+                    gap: 10,
+                  }}
+                >
+                  <StatCard
+                    label="Total Requests"
+                    value={fmtNum(num(wallStats.total_requests))}
+                    sub={pLabel}
+                  />
+                  <StatCard
+                    label="Avg Wall Time"
+                    value={fmtMs(nullableNum(wallStats.avg_wall_ms))}
+                    sub="End-to-end"
+                    color={msColor(nullableNum(wallStats.avg_wall_ms))}
+                  />
+                  <StatCard
+                    label="Under 500ms"
+                    value={fmtPct(
+                      num(wallStats.total_requests) > 0
+                        ? (num(wallStats.under_500ms) / num(wallStats.total_requests)) * 100
+                        : 0
+                    )}
+                    sub="fastest"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Under 1s"
+                    value={fmtPct(
+                      num(wallStats.total_requests) > 0
+                        ? (num(wallStats.under_1s) / num(wallStats.total_requests)) * 100
+                        : 0
+                    )}
+                    sub="cumulative"
+                    color={CH.yellow}
+                  />
+                  <StatCard
+                    label="Under 2s"
+                    value={fmtPct(
+                      num(wallStats.total_requests) > 0
+                        ? (num(wallStats.under_2s) / num(wallStats.total_requests)) * 100
+                        : 0
+                    )}
+                    sub="cumulative"
+                    color={CH.orange}
+                  />
+                  <StatCard
+                    label="SVG Requests"
+                    value={fmtNum(num(wallStats.svg_requests))}
+                    sub="format split"
+                  />
                 </div>
                 <Card title="Wall Time Over Time" tag={pLabel}>
                   <ResponsiveContainer width="100%" height={200}>
-                    <ComposedChart data={wallTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                    <ComposedChart
+                      data={wallTimeseries}
+                      margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                      <YAxis yAxisId="left" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={50} tickFormatter={v => fmtMs(v)} />
+                      <XAxis
+                        dataKey="bucket"
+                        tick={{ fill: CH.ghost, fontSize: 8 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        tick={{ fill: CH.ghost, fontSize: 8 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={42}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fill: CH.ghost, fontSize: 8 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={50}
+                        tickFormatter={(v) => fmtMs(v)}
+                      />
                       <Tooltip content={<FilmTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                      <Bar yAxisId="left" dataKey="requests" name="Requests" fill="rgba(196,124,46,0.25)" radius={[2,2,0,0]} />
-                      <Line yAxisId="right" type="monotone" dataKey="avg_wall_ms" name="Avg Wall ms" stroke={CH.tan} strokeWidth={2} dot={false} />
+                      <Legend
+                        wrapperStyle={{
+                          fontSize: 9,
+                          fontFamily: 'JetBrains Mono,monospace',
+                          paddingTop: 8,
+                        }}
+                      />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="requests"
+                        name="Requests"
+                        fill="rgba(196,124,46,0.25)"
+                        radius={[2, 2, 0, 0]}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="avg_wall_ms"
+                        name="Avg Wall ms"
+                        stroke={CH.tan}
+                        strokeWidth={2}
+                        dot={false}
+                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </Card>
@@ -2454,79 +6310,263 @@ export default function AnalyticsDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ padding: '6px 0' }}>
               <AmberTag>SVG Request Analytics</AmberTag>
-              <p className="body-font" style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}>
-                SVG poster requests specifically — cache efficiency, preset distribution, and top requested titles as vector output.
+              <p
+                className="body-font"
+                style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8 }}
+              >
+                SVG poster requests specifically — cache efficiency, preset distribution, and top
+                requested titles as vector output.
               </p>
             </div>
-            <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-              {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
+            <div
+              className="dash-stat-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+                gap: 10,
+              }}
+            >
+              {loading ? (
+                Array(6)
+                  .fill(0)
+                  .map((_, i) => <Skel key={i} h={90} />)
+              ) : (
                 <>
-                  <StatCard label="SVG Requests" value={fmtNum(num(svgSummary?.total_svg_requests))} sub={pLabel} color={CH.tan} />
-                  <StatCard label="Cache Hits" value={fmtNum(num(svgSummary?.cache_hits))} sub="Edge cache" color={CH.green} />
-                  <StatCard label="Hit Rate" value={svgSummary ? fmtPct(num(svgSummary.hit_rate_pct)) : '—'} sub="SVG cache efficiency" color={rateColor(num(svgSummary?.hit_rate_pct))} />
-                  <StatCard label="Movies" value={fmtNum(num(svgSummary?.movie_svgs))} sub="SVG requests" color={CH.tan} />
-                  <StatCard label="TV Shows" value={fmtNum(num(svgSummary?.tv_svgs))} sub="SVG requests" color={CH.green} />
-                  <StatCard label="Anime" value={fmtNum(num(svgSummary?.anime_svgs))} sub="SVG requests" color={CH.rose} />
+                  <StatCard
+                    label="SVG Requests"
+                    value={fmtNum(num(svgSummary?.total_svg_requests))}
+                    sub={pLabel}
+                    color={CH.tan}
+                  />
+                  <StatCard
+                    label="Cache Hits"
+                    value={fmtNum(num(svgSummary?.cache_hits))}
+                    sub="Edge cache"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Hit Rate"
+                    value={svgSummary ? fmtPct(num(svgSummary.hit_rate_pct)) : '—'}
+                    sub="SVG cache efficiency"
+                    color={rateColor(num(svgSummary?.hit_rate_pct))}
+                  />
+                  <StatCard
+                    label="Movies"
+                    value={fmtNum(num(svgSummary?.movie_svgs))}
+                    sub="SVG requests"
+                    color={CH.tan}
+                  />
+                  <StatCard
+                    label="TV Shows"
+                    value={fmtNum(num(svgSummary?.tv_svgs))}
+                    sub="SVG requests"
+                    color={CH.green}
+                  />
+                  <StatCard
+                    label="Anime"
+                    value={fmtNum(num(svgSummary?.anime_svgs))}
+                    sub="SVG requests"
+                    color={CH.rose}
+                  />
                 </>
               )}
             </div>
-            <div className="dash-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            <div
+              className="dash-2col"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
+                gap: 14,
+              }}
+            >
               <Card title="Format Distribution">
-                {loading ? <Skel h={180} /> : (
+                {loading ? (
+                  <Skel h={180} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {svgVsRaster.map((r, i) => {
-                      const total  = svgVsRaster.reduce((s, x) => s + x.requests, 0) || 1;
+                      const total = svgVsRaster.reduce((s, x) => s + x.requests, 0) || 1;
                       const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                       return (
                         <div key={r.category}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span className="syne-font" style={{ fontSize: 13, fontWeight: 700, color: CH.amber, letterSpacing: '0.06em' }}>{r.category}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: CH.amber,
+                                letterSpacing: '0.06em',
+                              }}
+                            >
+                              {r.category}
+                            </span>
                             <div style={{ display: 'flex', gap: 10 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(hitPct) }}>{fmtPct(hitPct)} cache</span>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>{fmtNum(r.requests)}</span>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: PIE_COLORS[i % PIE_COLORS.length] }}>{fmtPct((r.requests / total) * 100)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: rateColor(hitPct),
+                                }}
+                              >
+                                {fmtPct(hitPct)} cache
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: CH.ghost,
+                                }}
+                              >
+                                {fmtNum(r.requests)}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: PIE_COLORS[i % PIE_COLORS.length],
+                                }}
+                              >
+                                {fmtPct((r.requests / total) * 100)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 5,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
-                    {svgVsRaster.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 16 }}>No format data</div>}
+                    {svgVsRaster.length === 0 && (
+                      <div
+                        style={{
+                          color: CH.ghost,
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 11,
+                          textAlign: 'center',
+                          padding: 16,
+                        }}
+                      >
+                        No format data
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
               <Card title="SVG Preset Breakdown">
-                {loading ? <Skel h={180} /> : (
+                {loading ? (
+                  <Skel h={180} />
+                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {svgPresetRows.map((r, i) => {
-                      const total  = svgPresetRows.reduce((s, x) => s + x.requests, 0) || 1;
+                      const total = svgPresetRows.reduce((s, x) => s + x.requests, 0) || 1;
                       const hitPct = r.requests > 0 ? (r.cache_hits / r.requests) * 100 : 0;
                       return (
                         <div key={r.preset}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span className="syne-font" style={{ fontSize: 12, fontWeight: 700, color: 'var(--film-cream)', textTransform: 'capitalize' as const }}>{r.preset || 'badge'}</span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: 3,
+                            }}
+                          >
+                            <span
+                              className="syne-font"
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: 'var(--film-cream)',
+                                textTransform: 'capitalize' as const,
+                              }}
+                            >
+                              {r.preset || 'badge'}
+                            </span>
                             <div style={{ display: 'flex', gap: 8 }}>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: rateColor(hitPct) }}>{fmtPct(hitPct)} cached</span>
-                              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: rateColor(hitPct),
+                                }}
+                              >
+                                {fmtPct(hitPct)} cached
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono, monospace',
+                                  fontSize: 8,
+                                  color: CH.gold,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {fmtNum(r.requests)}
+                              </span>
                             </div>
                           </div>
-                          <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / total) * 100}%`, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              height: 4,
+                              borderRadius: 2,
+                              background: 'rgba(255,255,255,0.06)',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: '100%',
+                                background: PIE_COLORS[i % PIE_COLORS.length],
+                                width: `${(r.requests / total) * 100}%`,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
-                    {svgPresetRows.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>No preset data</div>}
+                    {svgPresetRows.length === 0 && (
+                      <div
+                        style={{
+                          color: CH.ghost,
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 11,
+                        }}
+                      >
+                        No preset data
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
             </div>
             <Card title="SVG Requests Over Time" tag={pLabel}>
-              {loading ? <Skel h={200} /> : (
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={svgTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={svgTimeseries}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <defs>
                       <linearGradient id="gSvg" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.tan} stopOpacity={0.25} />
@@ -2534,46 +6574,161 @@ export default function AnalyticsDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="requests" name="SVG Requests" stroke={CH.tan} fill="url(#gSvg)" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="hits" name="Cache Hits" stroke={CH.green} strokeWidth={1.5} dot={false} />
-                    <Line type="monotone" dataKey="misses" name="Cache Misses" stroke={CH.orange} strokeWidth={1.5} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="requests"
+                      name="SVG Requests"
+                      stroke={CH.tan}
+                      fill="url(#gSvg)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="hits"
+                      name="Cache Hits"
+                      stroke={CH.green}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="misses"
+                      name="Cache Misses"
+                      stroke={CH.orange}
+                      strokeWidth={1.5}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
             <Card title="Top Requested SVG Posters" tag={`top ${svgTopIds.length}`}>
-              {loading ? <Skel h={280} /> : svgTopIds.length === 0 ? (
-                <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textAlign: 'center', padding: 24 }}>
+              {loading ? (
+                <Skel h={280} />
+              ) : svgTopIds.length === 0 ? (
+                <div
+                  style={{
+                    color: CH.ghost,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: 11,
+                    textAlign: 'center',
+                    padding: 24,
+                  }}
+                >
                   No SVG request data — ensure blob3 = 'svg' is logged in REQUEST_ANALYTICS.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 12 }}>
-                  {svgTopIds.map(row => <PosterThumb key={`${row.type}-${row.id}`} id={row.id} type={row.type} hits={row.hits} hitRate={row.hit_rate_pct} />)}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))',
+                    gap: 12,
+                  }}
+                >
+                  {svgTopIds.map((row) => (
+                    <PosterThumb
+                      key={`${row.type}-${row.id}`}
+                      id={row.id}
+                      type={row.type}
+                      hits={row.hits}
+                      hitRate={row.hit_rate_pct}
+                    />
+                  ))}
                 </div>
               )}
             </Card>
             <Card title="Top Rating Combos in SVG Requests">
-              {loading ? <Skel h={160} /> : (
+              {loading ? (
+                <Skel h={160} />
+              ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {svgRatingCombos.slice(0, 10).map((r, i) => {
                     const max = svgRatingCombos[0]?.requests || 1;
                     return (
                       <div key={r.r_param}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                          <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: CH.amber, background: 'rgba(196,124,46,0.08)', border: '1px solid rgba(196,124,46,0.14)', borderRadius: 3, padding: '1px 5px' }}>{r.r_param}</code>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.gold, fontWeight: 700 }}>{fmtNum(r.requests)}</span>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 3,
+                          }}
+                        >
+                          <code
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 9,
+                              color: CH.amber,
+                              background: 'rgba(196,124,46,0.08)',
+                              border: '1px solid rgba(196,124,46,0.14)',
+                              borderRadius: 3,
+                              padding: '1px 5px',
+                            }}
+                          >
+                            {r.r_param}
+                          </code>
+                          <span
+                            style={{
+                              fontFamily: 'JetBrains Mono, monospace',
+                              fontSize: 8,
+                              color: CH.gold,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {fmtNum(r.requests)}
+                          </span>
                         </div>
-                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], width: `${(r.requests / max) * 100}%` }} />
+                        <div
+                          style={{
+                            height: 3,
+                            borderRadius: 2,
+                            background: 'rgba(255,255,255,0.06)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              background: PIE_COLORS[i % PIE_COLORS.length],
+                              width: `${(r.requests / max) * 100}%`,
+                            }}
+                          />
                         </div>
                       </div>
                     );
                   })}
-                  {svgRatingCombos.length === 0 && <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>No data</div>}
+                  {svgRatingCombos.length === 0 && (
+                    <div
+                      style={{
+                        color: CH.ghost,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 11,
+                      }}
+                    >
+                      No data
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
@@ -2582,46 +6737,141 @@ export default function AnalyticsDashboard() {
 
         {tab === 'workers' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <div className="dash-stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))' }}>
+            <div
+              className="dash-stat-grid"
+              style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))' }}
+            >
               {wmScripts.length === 0 ? (
                 <Card title="Workers Platform Metrics" tag="GraphQL Analytics" fullWidth>
-                  {loading ? <Skel h={120} /> : (
-                    <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 11, textAlign: 'center', padding: 20 }}>
-                      No workers metrics — confirm CF_API_TOKEN has Account Analytics read permission and worker names match (posterium-backend, rasterize).
+                  {loading ? (
+                    <Skel h={120} />
+                  ) : (
+                    <div
+                      style={{
+                        color: CH.ghost,
+                        fontFamily: 'JetBrains Mono,monospace',
+                        fontSize: 11,
+                        textAlign: 'center',
+                        padding: 20,
+                      }}
+                    >
+                      No workers metrics — confirm CF_API_TOKEN has Account Analytics read
+                      permission and worker names match (posterium-backend, rasterize).
                     </div>
                   )}
                 </Card>
-              ) : wmScripts.map((s) => (
-                <Card key={s.script} title={s.script} tag="Cloudflare GraphQL">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 26, fontWeight: 700, color: 'var(--film-cream)' }}>{fmtNum(s.requests)}</span>
-                      <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginBottom: 3 }}>invocations</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <StatCard label="Error Rate" value={fmtPct(s.errorRatePct)} color={s.errorRatePct > 5 ? CH.red : s.errorRatePct > 1 ? CH.yellow : CH.green} />
-                      <StatCard label="Errors" value={fmtNum(s.errors)} color={s.errors > 0 ? CH.red : CH.green} />
-                      <StatCard label="Subrequests" value={fmtNum(s.subrequests)} color={CH.tan} />
-                      <StatCard label="Avg CPU" value={s.avgCpuMs != null ? `${s.avgCpuMs.toFixed(1)}ms` : '—'} color={CH.rose} />
-                    </div>
-                    {Object.keys(s.byStatus).length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
-                        {Object.entries(s.byStatus).map(([st, c]) => (
-                          <div key={st} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: CH.ghost, textTransform: 'capitalize' }}>{st}</span>
-                            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: CH.gold, fontWeight: 700 }}>{fmtNum(c as number)}</span>
-                          </div>
-                        ))}
+              ) : (
+                wmScripts.map((s) => (
+                  <Card key={s.script} title={s.script} tag="Cloudflare GraphQL">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-end',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: 26,
+                            fontWeight: 700,
+                            color: 'var(--film-cream)',
+                          }}
+                        >
+                          {fmtNum(s.requests)}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'JetBrains Mono,monospace',
+                            fontSize: 8,
+                            color: CH.ghost,
+                            marginBottom: 3,
+                          }}
+                        >
+                          invocations
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <StatCard
+                          label="Error Rate"
+                          value={fmtPct(s.errorRatePct)}
+                          color={
+                            s.errorRatePct > 5 ? CH.red : s.errorRatePct > 1 ? CH.yellow : CH.green
+                          }
+                        />
+                        <StatCard
+                          label="Errors"
+                          value={fmtNum(s.errors)}
+                          color={s.errors > 0 ? CH.red : CH.green}
+                        />
+                        <StatCard
+                          label="Subrequests"
+                          value={fmtNum(s.subrequests)}
+                          color={CH.tan}
+                        />
+                        <StatCard
+                          label="Avg CPU"
+                          value={s.avgCpuMs != null ? `${s.avgCpuMs.toFixed(1)}ms` : '—'}
+                          color={CH.rose}
+                        />
+                      </div>
+                      {Object.keys(s.byStatus).length > 0 && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 5,
+                            borderTop: '1px solid rgba(255,255,255,0.05)',
+                            paddingTop: 10,
+                          }}
+                        >
+                          {Object.entries(s.byStatus).map(([st, c]) => (
+                            <div
+                              key={st}
+                              style={{ display: 'flex', justifyContent: 'space-between' }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 9,
+                                  color: CH.ghost,
+                                  textTransform: 'capitalize',
+                                }}
+                              >
+                                {st}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'JetBrains Mono,monospace',
+                                  fontSize: 9,
+                                  color: CH.gold,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {fmtNum(c as number)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
-            <Card title="Invocations Over Time" tag={`per ${workersMetrics?.bucket === 'datetimeHour' ? 'hour' : 'day'} · official CF metrics`}>
-              {loading ? <Skel h={200} /> : (
+            <Card
+              title="Invocations Over Time"
+              tag={`per ${workersMetrics?.bucket === 'datetimeHour' ? 'hour' : 'day'} · official CF metrics`}
+            >
+              {loading ? (
+                <Skel h={200} />
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={workersSeries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <ComposedChart
+                    data={workersSeries}
+                    margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                  >
                     <defs>
                       <linearGradient id="gWrk" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.tan} stopOpacity={0.25} />
@@ -2633,35 +6883,86 @@ export default function AnalyticsDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="bucket" tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
+                    <XAxis
+                      dataKey="bucket"
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: CH.ghost, fontSize: 8 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={42}
+                    />
                     <Tooltip content={<FilmTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="backend" name="posterium-backend" stroke={CH.tan} fill="url(#gWrk)" strokeWidth={2} dot={false} />
-                    <Area type="monotone" dataKey="rasterize" name="rasterize" stroke={CH.green} fill="url(#gWrk2)" strokeWidth={2} dot={false} />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 9,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        paddingTop: 8,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="backend"
+                      name="posterium-backend"
+                      stroke={CH.tan}
+                      fill="url(#gWrk)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="rasterize"
+                      name="rasterize"
+                      stroke={CH.green}
+                      fill="url(#gWrk2)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </ComposedChart>
                 </ResponsiveContainer>
               )}
             </Card>
             <Card title="About this tab">
-              <div style={{ color: CH.ghost, fontFamily: 'JetBrains Mono,monospace', fontSize: 10, lineHeight: 1.7 }}>
-                Platform metrics pulled live from the official Cloudflare GraphQL Analytics API (workersInvocationsAdaptiveGroups) — the same numbers shown in the CF dashboard. Every other tab reads our own Analytics Engine datasets (raster_metrics + request_analytics).
+              <div
+                style={{
+                  color: CH.ghost,
+                  fontFamily: 'JetBrains Mono,monospace',
+                  fontSize: 10,
+                  lineHeight: 1.7,
+                }}
+              >
+                Platform metrics pulled live from the official Cloudflare GraphQL Analytics API
+                (workersInvocationsAdaptiveGroups) — the same numbers shown in the CF dashboard.
+                Every other tab reads our own Analytics Engine datasets (raster_metrics +
+                request_analytics).
               </div>
             </Card>
           </div>
         )}
 
         {/* Footer */}
-        <div style={{
-          marginTop: 24, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.05)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          flexWrap: 'wrap', gap: 8,
-        }}>
+        <div
+          style={{
+            marginTop: 24,
+            paddingTop: 14,
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
           <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
             POSTERIUM · raster_metrics + request_analytics + D1 + GraphQL · v6
           </span>
           <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>
-            {lastFetch ? `Updated ${lastFetch.toLocaleTimeString()}` : ''} · {pLabel}{live ? ' · LIVE ↻' : ''}
+            {lastFetch ? `Updated ${lastFetch.toLocaleTimeString()}` : ''} · {pLabel}
+            {live ? ' · LIVE ↻' : ''}
           </span>
         </div>
       </main>

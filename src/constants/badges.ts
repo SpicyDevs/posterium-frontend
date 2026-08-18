@@ -162,7 +162,7 @@ let _iconsPromise: Promise<void> | null = null;
 
 export const fetchApiIcons = (): Promise<void> => {
   if (typeof window === 'undefined') return Promise.resolve(); // Safe SSR execution
-  
+
   if (!_iconsPromise) {
     _iconsPromise = fetch(`${DEFAULT_API_BASE}/data/icons`)
       .then((res) => {
@@ -172,7 +172,7 @@ export const fetchApiIcons = (): Promise<void> => {
       .then((payload) => {
         // Handle wrapper shapes ({ data: [...] } or array/object structure direct response)
         const data = payload?.data || payload;
-        
+
         if (Array.isArray(data)) {
           data.forEach((icon) => {
             const key = icon.id || icon.name;

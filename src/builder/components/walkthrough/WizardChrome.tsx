@@ -15,7 +15,17 @@ interface WizardChromeProps {
 }
 
 const WizardChrome = memo<WizardChromeProps>(
-  ({ step, totalSteps, isFirstStep, isLastStep, onBack, onSkip, onNext, onSkipWalkthrough, nextLabel }) => (
+  ({
+    step,
+    totalSteps,
+    isFirstStep,
+    isLastStep,
+    onBack,
+    onSkip,
+    onNext,
+    onSkipWalkthrough,
+    nextLabel,
+  }) => (
     <div
       style={{
         marginTop: 24,
@@ -42,8 +52,12 @@ const WizardChrome = memo<WizardChromeProps>(
           transition: 'color 0.15s',
           padding: '6px 0',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--film-text-label)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--film-text-ghost)'; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = 'var(--film-text-label)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = 'var(--film-text-ghost)';
+        }}
       >
         Skip walkthrough
       </button>
@@ -75,7 +89,12 @@ const WizardChrome = memo<WizardChromeProps>(
           </Button>
         )}
         {!isLastStep ? (
-          <Button variant="primary" size="sm" rightIcon={<ChevronRight size={12} />} onClick={onNext}>
+          <Button
+            variant="primary"
+            size="sm"
+            rightIcon={<ChevronRight size={12} />}
+            onClick={onNext}
+          >
             Next
           </Button>
         ) : (
@@ -90,7 +109,7 @@ const WizardChrome = memo<WizardChromeProps>(
         )}
       </div>
     </div>
-  ),
+  )
 );
 
 WizardChrome.displayName = 'WizardChrome';

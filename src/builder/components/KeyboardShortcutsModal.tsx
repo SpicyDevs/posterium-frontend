@@ -182,10 +182,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                   background: 'rgba(0,0,0,0.2)',
                 }}
               >
-                <DialogTitle
-                  as="div"
-                  style={{ display: 'flex', alignItems: 'center', gap: 12 }}
-                >
+                <DialogTitle as="div" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
                       width: 32,

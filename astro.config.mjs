@@ -112,7 +112,7 @@ const imageSitemapEnhancer = () => ({
 
         const pathname = new URL(locMatch[1]).pathname || '/';
         const collectionEntry = Object.values(collectionSitemapData).find(
-          (entry) => pathname === entry.route || (pathname.startsWith(entry.route + '/'))
+          (entry) => pathname === entry.route || pathname.startsWith(entry.route + '/')
         );
         const images = new Set(['/og-image.png', ...(collectionEntry?.images ?? [])]);
         const imageNodes = [...images]
@@ -224,7 +224,7 @@ export default defineConfig({
         item.url = item.url.replace(/\/$/, '');
         const pathname = new URL(item.url).pathname || '/';
         const collectionEntry = Object.values(collectionSitemapData).find(
-          (entry) => pathname === entry.route || (pathname.startsWith(entry.route + '/'))
+          (entry) => pathname === entry.route || pathname.startsWith(entry.route + '/')
         );
 
         item.lastmod = collectionEntry?.lastmod ?? new Date().toISOString();

@@ -13,7 +13,7 @@ Two audiences of roughly equal weight, in a self-hosted media world:
 1. **Media server owners** — hobbyists running Plex, Jellyfin, Emby, Kodi, or Stremio who want live rating badges (IMDb, RT, Metacritic, …) baked into their library's poster artwork. They paste a URL into a custom-poster field, once, and get self-updating artwork without creating an account or paying.
 2. **API consumers / developers** — people wiring Posterium URLs into Discord bots, static sites, Notion pages, and dashboards. They want a predictable URL contract, no signup, and broad rating-source coverage.
 
-Both share the job: *turn a title + rating sources into a shareable poster URL with zero friction.*
+Both share the job: _turn a title + rating sources into a shareable poster URL with zero friction._
 
 ## Product Purpose
 

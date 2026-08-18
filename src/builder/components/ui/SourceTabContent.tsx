@@ -299,7 +299,10 @@ const SourceTabContent: React.FC<Props> = ({
         >
           Badge Mode
         </p>
-        <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div
+          className="flex rounded-lg overflow-hidden"
+          style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+        >
           {[
             { id: 'b' as const, label: 'Badge' },
             { id: 'm' as const, label: 'Minimal' },
@@ -311,8 +314,12 @@ const SourceTabContent: React.FC<Props> = ({
               style={{
                 fontSize: 10,
                 fontWeight: 500,
-                background: (config.uiPreset ?? 'b') === opt.id ? 'rgba(196,124,46,0.25)' : 'transparent',
-                color: (config.uiPreset ?? 'b') === opt.id ? 'var(--film-amber)' : 'var(--film-text-dim)',
+                background:
+                  (config.uiPreset ?? 'b') === opt.id ? 'rgba(196,124,46,0.25)' : 'transparent',
+                color:
+                  (config.uiPreset ?? 'b') === opt.id
+                    ? 'var(--film-amber)'
+                    : 'var(--film-text-dim)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -411,10 +418,7 @@ const SourceTabContent: React.FC<Props> = ({
             label="Logo Source"
             value={String(config.logoSource ?? 'auto')}
             onChange={(v) =>
-              updateConfig(
-                'logoSource',
-                v === 'auto' ? null : (v as PosterConfig['logoSource'])
-              )
+              updateConfig('logoSource', v === 'auto' ? null : (v as PosterConfig['logoSource']))
             }
             options={logoSourceOptions}
           />
@@ -431,9 +435,7 @@ const SourceTabContent: React.FC<Props> = ({
           label="Title Layer"
           sub="Show title as draggable layer"
           checked={titleBadgeEnabled}
-          onChange={(v) =>
-            setConfig((prev) => ({ ...prev, titleEnabled: v }))
-          }
+          onChange={(v) => setConfig((prev) => ({ ...prev, titleEnabled: v }))}
         />
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -443,10 +445,7 @@ const SourceTabContent: React.FC<Props> = ({
             >
               <Badge size={11} /> Badges
             </p>
-            <p
-              className="body-font mt-0.5"
-              style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
-            >
+            <p className="body-font mt-0.5" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
               Show/hide all layers with badge behavior
             </p>
           </div>
@@ -470,8 +469,6 @@ const SourceTabContent: React.FC<Props> = ({
           </Switch>
         </div>
       </div>
-
-      
     </div>
   );
 };

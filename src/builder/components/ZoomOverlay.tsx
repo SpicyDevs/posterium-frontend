@@ -60,12 +60,12 @@ const ZoomOverlay = memo<{
           boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
         }}
       >
-          <BuilderSettingsPopover
-            isOpen={settingsOpen}
-            viewOptions={viewOptions}
-            onToggleViewOption={onToggleViewOption}
-            isMobile={isMobile}
-          />
+        <BuilderSettingsPopover
+          isOpen={settingsOpen}
+          viewOptions={viewOptions}
+          onToggleViewOption={onToggleViewOption}
+          isMobile={isMobile}
+        />
         {[
           { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
           { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },

@@ -41,20 +41,32 @@ const CommunityPresetsStep = memo<CommunityPresetsStepProps>(({ presets, onSelec
         ...preset,
         previewUrl: buildPreviewUrl(preset.query),
       })),
-    [presets],
+    [presets]
   );
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <h1
         className="poster-font"
-        style={{ fontSize: 32, fontWeight: 400, color: 'var(--film-cream)', margin: 0, lineHeight: 1.1 }}
+        style={{
+          fontSize: 32,
+          fontWeight: 400,
+          color: 'var(--film-cream)',
+          margin: 0,
+          lineHeight: 1.1,
+        }}
       >
         Community Presets
       </h1>
       <p
         className="body-font"
-        style={{ fontSize: 13, color: 'var(--film-text-dim)', marginTop: 8, marginBottom: 20, lineHeight: 1.5 }}
+        style={{
+          fontSize: 13,
+          color: 'var(--film-text-dim)',
+          marginTop: 8,
+          marginBottom: 20,
+          lineHeight: 1.5,
+        }}
       >
         Pick a preset to pre-fill the poster configuration, then jump into the builder.
       </p>
@@ -105,7 +117,10 @@ const CommunityPresetsStep = memo<CommunityPresetsStepProps>(({ presets, onSelec
             }}
           >
             <Plus size={24} />
-            <span className="syne-font" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>
+            <span
+              className="syne-font"
+              style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}
+            >
               Start Blank
             </span>
             <span className="body-font" style={{ fontSize: 9 }}>
@@ -147,8 +162,12 @@ const CommunityPresetsStep = memo<CommunityPresetsStepProps>(({ presets, onSelec
                 fallback={
                   <div
                     style={{
-                      width: '100%', height: '100%', display: 'grid', placeItems: 'center',
-                      color: 'var(--film-text-dim)', fontSize: 10,
+                      width: '100%',
+                      height: '100%',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'var(--film-text-dim)',
+                      fontSize: 10,
                     }}
                   >
                     Failed to load
@@ -168,13 +187,23 @@ const CommunityPresetsStep = memo<CommunityPresetsStepProps>(({ presets, onSelec
               >
                 <span
                   className="syne-font"
-                  style={{ fontSize: 9, fontWeight: 700, color: 'var(--film-cream)', letterSpacing: '0.04em' }}
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: 'var(--film-cream)',
+                    letterSpacing: '0.04em',
+                  }}
                 >
                   {preset.title}
                 </span>
                 <span
                   className="body-font"
-                  style={{ fontSize: 8, color: 'var(--film-text-dim)', marginTop: 2, lineHeight: 1.2 }}
+                  style={{
+                    fontSize: 8,
+                    color: 'var(--film-text-dim)',
+                    marginTop: 2,
+                    lineHeight: 1.2,
+                  }}
                 >
                   {preset.description}
                 </span>

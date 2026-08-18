@@ -155,10 +155,19 @@ const DraggableTitle: React.FC<Props> = ({
   const legacyHeightPx = itemConfig?.textBoxHeight;
   const legacyMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
   const legacyHeightLines =
-    legacyHeightPx && legacyHeightPx > 16 ? Math.max(1, Math.round(legacyHeightPx / 36)) : undefined;
+    legacyHeightPx && legacyHeightPx > 16
+      ? Math.max(1, Math.round(legacyHeightPx / 36))
+      : undefined;
   const titleCharHeight = Math.max(
     1,
-    Math.min(12, Math.round(itemConfig?.textCharHeight ?? legacyHeightLines ?? (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)))
+    Math.min(
+      12,
+      Math.round(
+        itemConfig?.textCharHeight ??
+          legacyHeightLines ??
+          (legacyMaxLinesRaw > 0 ? legacyMaxLinesRaw : 1)
+      )
+    )
   );
 
   const rawTitle = (liveTitle || 'Title').trim();
@@ -172,7 +181,10 @@ const DraggableTitle: React.FC<Props> = ({
     1,
     Math.floor((Math.max(dynamicWidth, 1) - 16 * displayScale) / approxCharPx)
   );
-  const titleEstimatedLines = Math.max(1, Math.ceil(Math.max(truncatedTitle.length, 1) / titleCharsPerLine));
+  const titleEstimatedLines = Math.max(
+    1,
+    Math.ceil(Math.max(truncatedTitle.length, 1) / titleCharsPerLine)
+  );
   const titleRenderedLines = wrapEnabled ? Math.min(titleEstimatedLines, titleCharHeight) : 1;
   const contentHeight = Math.max(
     32,
@@ -180,12 +192,11 @@ const DraggableTitle: React.FC<Props> = ({
   );
 
   const textShadowEnabled = itemConfig?.textShadowEnabled ?? false;
-  const textShadow =
-    textShadowEnabled
-      ? `${itemConfig?.textShadowX ?? 0}px ${itemConfig?.textShadowY ?? 2}px ${
-          itemConfig?.textShadowBlur ?? 8
-        }px ${itemConfig?.textShadowColor ?? '#000000'}`
-      : 'none';
+  const textShadow = textShadowEnabled
+    ? `${itemConfig?.textShadowX ?? 0}px ${itemConfig?.textShadowY ?? 2}px ${
+        itemConfig?.textShadowBlur ?? 8
+      }px ${itemConfig?.textShadowColor ?? '#000000'}`
+    : 'none';
 
   const verticalAnchor = itemConfig?.verticalAnchor ?? (config.uiPreset === 'm' ? 'bottom' : 'top');
 
@@ -211,9 +222,7 @@ const DraggableTitle: React.FC<Props> = ({
             }
       }
       className={
-        readOnly
-          ? 'badge-item absolute select-none'
-          : 'badge-item absolute select-none cursor-move'
+        readOnly ? 'badge-item absolute select-none' : 'badge-item absolute select-none cursor-move'
       }
       style={{
         width: `${dynamicWidth}px`,

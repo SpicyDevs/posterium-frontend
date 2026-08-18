@@ -51,7 +51,7 @@ const SourceStep = memo<SourceStepProps>(({ config, onChange }) => {
         const data = await res.json();
         const resultsArr: SearchResult[] = data.results ?? data;
         const filtered = resultsArr.filter(
-          (r) => r.poster_path && (r.media_type === 'movie' || r.media_type === 'tv'),
+          (r) => r.poster_path && (r.media_type === 'movie' || r.media_type === 'tv')
         );
         setResults(filtered);
       } catch {
@@ -76,7 +76,7 @@ const SourceStep = memo<SourceStepProps>(({ config, onChange }) => {
         onChange({ tmdbId: value, imdbId: config.imdbId });
       }
     },
-    [onChange, config.imdbId],
+    [onChange, config.imdbId]
   );
 
   const handleSelectResult = useCallback(
@@ -89,7 +89,7 @@ const SourceStep = memo<SourceStepProps>(({ config, onChange }) => {
       });
       setQuery(item.title || item.name || '');
     },
-    [onChange],
+    [onChange]
   );
 
   return (

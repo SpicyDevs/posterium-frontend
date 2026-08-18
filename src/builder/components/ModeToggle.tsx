@@ -18,11 +18,7 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => (
     {/* Dropdown variant — below 80rem (xl), uses SelectBox to match
        the builder's other dropdown styling exactly. */}
     <div className="xl:hidden w-[90px]">
-      <SelectBox
-        value={mode}
-        onChange={(v) => onChange(v as BuilderMode)}
-        options={MODE_OPTIONS}
-      />
+      <SelectBox value={mode} onChange={(v) => onChange(v as BuilderMode)} options={MODE_OPTIONS} />
     </div>
 
     {/* Segmented switcher — at 80rem (xl) and up, where there's enough

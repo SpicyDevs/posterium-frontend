@@ -183,12 +183,30 @@ const MainNavbar = memo<MainNavbarProps>(
           <a
             href="/"
             className="main-nav-logo"
-            style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, ...chromeFadeStyle }}
+            style={{
+              textDecoration: 'none',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              ...chromeFadeStyle,
+            }}
           >
-            <img src="/posterium.svg" alt="" width={compactLogo ? 20 : 24} height={compactLogo ? 20 : 24} style={{ display: 'block' }} />
-            <span className="poster-font" style={{ fontSize: compactLogo ? 18 : 22, letterSpacing: '0.12em', lineHeight: 1 }}>
+            <img
+              src="/posterium.svg"
+              alt=""
+              width={compactLogo ? 20 : 24}
+              height={compactLogo ? 20 : 24}
+              style={{ display: 'block' }}
+            />
+            <span
+              className="poster-font"
+              style={{ fontSize: compactLogo ? 18 : 22, letterSpacing: '0.12em', lineHeight: 1 }}
+            >
               <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
-              <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>IUM</span>
+              <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>
+                IUM
+              </span>
             </span>
           </a>
 
@@ -247,10 +265,17 @@ const MainNavbar = memo<MainNavbarProps>(
 
           <div
             className="main-nav-right"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto', ...chromeFadeStyle }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexShrink: 0,
+              marginLeft: 'auto',
+              ...chromeFadeStyle,
+            }}
           >
-<a
-            href="/discord"
+            <a
+              href="/discord"
               className="nav-desktop-item"
               style={{
                 display: 'inline-flex',
@@ -375,7 +400,13 @@ const MainNavbar = memo<MainNavbarProps>(
                 onChange={(e) => search.onChange?.(e.target.value)}
                 readOnly={search.readOnly || !search.onChange}
                 placeholder={search.placeholder ?? 'Search…'}
-                style={{ background: 'transparent', border: 'none', padding: 0, height: 'auto', width: '100%' }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  height: 'auto',
+                  width: '100%',
+                }}
               />
             ) : null}
 

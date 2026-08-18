@@ -16,13 +16,13 @@ If you built Posterium URL templates on an older version, here's what changed an
 
 ## Short-form aliases
 
-| Old     | New  |
-|---------|-----|
-| `blur`  | `bl` |
-| `alpha` | `al` |
-| `rad`   | `ra` |
-| `source`| `so` |
-| `preset`| `p`  |
+| Old      | New  |
+| -------- | ---- |
+| `blur`   | `bl` |
+| `alpha`  | `al` |
+| `rad`    | `ra` |
+| `source` | `so` |
+| `preset` | `p`  |
 
 ## Validation checklist
 

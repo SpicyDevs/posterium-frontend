@@ -9,16 +9,29 @@ if (!existsSync(FONTS_DIR)) mkdirSync(FONTS_DIR, { recursive: true });
 
 const FAMILIES = [
   { name: 'Bebas Neue', url: 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap' },
-  { name: 'Plus Jakarta Sans', url: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap' },
-  { name: 'Syne', url: 'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap' },
-  { name: 'DM Sans', url: 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap' },
-  { name: 'JetBrains Mono', url: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap' },
+  {
+    name: 'Plus Jakarta Sans',
+    url: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap',
+  },
+  {
+    name: 'Syne',
+    url: 'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap',
+  },
+  {
+    name: 'DM Sans',
+    url: 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap',
+  },
+  {
+    name: 'JetBrains Mono',
+    url: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap',
+  },
 ];
 
 // Known variable font families — all weights map to the same file
 const VARIABLE_FONTS = new Set(['DM Sans', 'JetBrains Mono']);
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const RANGE_LABELS = {
   'U+0000-00FF': 'latin',
@@ -64,7 +77,10 @@ function parseFontFace(css, familyHint) {
 }
 
 function slugify(name) {
-  return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 (async () => {

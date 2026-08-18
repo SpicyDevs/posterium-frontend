@@ -18,12 +18,7 @@ import LayerPanel from './components/LayerPanel';
 import Inspector from './components/Inspector';
 import AdvancedPanelNav, { type BuilderPanelId } from './components/AdvancedPanelNav';
 import ModeToggle, { type BuilderMode } from './components/ModeToggle';
-import {
-  SourcePanel,
-  LayersPanel,
-  BadgesPanel,
-  SelectionPanel,
-} from './components/panels';
+import { SourcePanel, LayersPanel, BadgesPanel, SelectionPanel } from './components/panels';
 import BuilderDesktopHeader from './components/BuilderDesktopHeader';
 import ZoomOverlay from './components/ZoomOverlay';
 import { EditorProvider, useEditor } from './EditorContext';
@@ -302,7 +297,11 @@ const StudioLayout: React.FC<{
           const boxH = Math.max(36, (ti.textSize ?? 48) * 1.5);
           next.items = {
             ...next.items,
-            title: { ...ti, x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)), y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)) },
+            title: {
+              ...ti,
+              x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)),
+              y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)),
+            },
           };
         }
         if (activeMinimal.includes('minimal-title')) {
@@ -311,7 +310,11 @@ const StudioLayout: React.FC<{
           const boxH = Math.max(36, (ti.textSize ?? 48) * 1.5);
           next.items = {
             ...next.items,
-            title: { ...ti, x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)), y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)) },
+            title: {
+              ...ti,
+              x: Math.max(0, Math.min(CANVAS_WIDTH - boxW, (ti.x ?? 25) + dx)),
+              y: Math.max(boxH, Math.min(CANVAS_HEIGHT, (ti.y ?? 100) + dy)),
+            },
           };
         }
         if (activeMinimal.includes('minimal-year')) {
@@ -1002,7 +1005,11 @@ const StudioLayout: React.FC<{
     detailLevel: advancedDetailLevel as 'simple' | 'advanced',
   };
 
-  const selectedCount = selectedIds.size + (selectedLogo ? 1 : 0) + (selectedTitle ? 1 : 0) + selectedMinimalElements.size;
+  const selectedCount =
+    selectedIds.size +
+    (selectedLogo ? 1 : 0) +
+    (selectedTitle ? 1 : 0) +
+    selectedMinimalElements.size;
   const selectedLabel = useMemo(() => {
     if (selectedCount === 0) return 'SELECT';
     if (selectedCount > 1) return `${selectedCount} LAYERS`;
@@ -1077,7 +1084,10 @@ const StudioLayout: React.FC<{
               <ResetDialog
                 isOpen={isResetOpen}
                 onClose={() => setIsResetOpen(false)}
-                onConfirm={() => { handleReset(); clearSelection(); }}
+                onConfirm={() => {
+                  handleReset();
+                  clearSelection();
+                }}
               />
             )}
             {isImportOpen && (
@@ -1100,21 +1110,41 @@ const StudioLayout: React.FC<{
                 onClose={closeCtxMenu}
                 isSelected={ctxBadgeSelected}
                 onBringToFront={(id) =>
-                  id === 'logo' ? moveLogoLayer('front') : id === 'title' ? null : moveLayer(id, 'front')
+                  id === 'logo'
+                    ? moveLogoLayer('front')
+                    : id === 'title'
+                      ? null
+                      : moveLayer(id, 'front')
                 }
                 onBringForward={(id) =>
-                  id === 'logo' ? moveLogoLayer('forward') : id === 'title' ? null : moveLayer(id, 'forward')
+                  id === 'logo'
+                    ? moveLogoLayer('forward')
+                    : id === 'title'
+                      ? null
+                      : moveLayer(id, 'forward')
                 }
                 onSendBackward={(id) =>
-                  id === 'logo' ? moveLogoLayer('back') : id === 'title' ? null : moveLayer(id, 'back')
+                  id === 'logo'
+                    ? moveLogoLayer('back')
+                    : id === 'title'
+                      ? null
+                      : moveLayer(id, 'back')
                 }
                 onSendToBack={(id) =>
-                  id === 'logo' ? moveLogoLayer('toback') : id === 'title' ? null : moveLayer(id, 'toback')
+                  id === 'logo'
+                    ? moveLogoLayer('toback')
+                    : id === 'title'
+                      ? null
+                      : moveLayer(id, 'toback')
                 }
                 onHide={hideLayer}
                 onShowAll={showAllBadges}
                 onSelect={(id) =>
-                  id === 'logo' ? handleLogoSelection(false) : id === 'title' ? handleTitleSelection(false) : handleSelectionOverride(id, false)
+                  id === 'logo'
+                    ? handleLogoSelection(false)
+                    : id === 'title'
+                      ? handleTitleSelection(false)
+                      : handleSelectionOverride(id, false)
                 }
                 onDeselect={() => clearSelection()}
                 onSelectAll={() => setBatchSelection(config.ratings)}
@@ -2468,7 +2498,7 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
     redo,
     canUndo,
     canRedo,
-    } = usePosterHistory(() => {
+  } = usePosterHistory(() => {
     try {
       const saved = localStorage.getItem(BUILDER_STORAGE_KEY);
       return saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
@@ -2483,12 +2513,15 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
     return getWalkthroughState();
   });
 
-  const handleWalkthroughComplete = useCallback((mode: BuilderMode, walkthroughConfig: PosterConfig) => {
-    saveWalkthroughState();
-    saveBuilderMode(mode);
-    setConfig(walkthroughConfig);
-    setWalkthroughDone(true);
-  }, [setConfig]);
+  const handleWalkthroughComplete = useCallback(
+    (mode: BuilderMode, walkthroughConfig: PosterConfig) => {
+      saveWalkthroughState();
+      saveBuilderMode(mode);
+      setConfig(walkthroughConfig);
+      setWalkthroughDone(true);
+    },
+    [setConfig]
+  );
 
   const handleWalkthroughDismiss = useCallback(() => {
     // Transient dismiss — does NOT save completion state
@@ -2572,7 +2605,6 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
       handleLoadConfig(urlParam);
       return;
     }
-
   }, [handleLoadConfig, setConfig]);
 
   // Walkthrough not completed — show the onboarding wizard instead of builder

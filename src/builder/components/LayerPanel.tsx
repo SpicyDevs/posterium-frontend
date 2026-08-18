@@ -1,15 +1,7 @@
 // src/components/builder/components/LayerPanel.tsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Switch } from '@headlessui/react';
-import {
-  Check,
-  Film,
-  Layers,
-  Tv,
-  Clapperboard,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { Check, Film, Layers, Tv, Clapperboard, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import clsx from 'clsx';
@@ -92,8 +84,7 @@ const LayerPanel: React.FC<Props> = ({
       setLocalMode(panelMode);
       return;
     }
-    if (activeTab === 'source' || activeTab === 'layers')
-      setLocalMode(activeTab);
+    if (activeTab === 'source' || activeTab === 'layers') setLocalMode(activeTab);
   }, [activeTab, panelMode]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -287,7 +278,9 @@ const LayerPanel: React.FC<Props> = ({
     [onSelect, setActiveTab, setConfig]
   );
 
-  const allVisible = config.ratings.filter((id) => id !== 'year').length === ALL_BADGES.filter((b) => b.id !== 'year').length;
+  const allVisible =
+    config.ratings.filter((id) => id !== 'year').length ===
+    ALL_BADGES.filter((b) => b.id !== 'year').length;
   const handleToggleAll = useCallback(() => {
     const badgeOnly = ALL_BADGES.filter((b) => b.id !== 'year');
     if (allVisible) {
@@ -306,12 +299,17 @@ const LayerPanel: React.FC<Props> = ({
   }, [allVisible, setConfig]);
 
   const allVisibleSelected =
-    config.ratings.length > 0 && config.ratings.filter((r) => r !== 'year').every((r) => selectedIds.has(r));
+    config.ratings.length > 0 &&
+    config.ratings.filter((r) => r !== 'year').every((r) => selectedIds.has(r));
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       setBatchSelection(
-        checked ? ALL_BADGES.filter((b) => b.id !== 'year' && config.ratings.includes(b.id)).map((b) => b.id) : []
+        checked
+          ? ALL_BADGES.filter((b) => b.id !== 'year' && config.ratings.includes(b.id)).map(
+              (b) => b.id
+            )
+          : []
       );
     },
     [setBatchSelection, config.ratings]
@@ -553,29 +551,35 @@ const LayerPanel: React.FC<Props> = ({
                           index={idx}
                         >
                           {(prov, snap) =>
-                            layer.kind === 'logo'
-                              ? <LogoLayerRow
-                                  isActive={true}
-                                  selectedLogo={selectedLogo}
-                                  logoEnabled={config.logo}
-                                  onEnable={() => { updateConfig('logo', true); handleLogoSelection(false); setActiveTab('selection'); }}
-                                  onDisable={() => updateConfig('logo', false)}
-                                  onSelect={(multi) => handleLogoSelection(multi)}
-                                  provided={prov}
-                                  isDraggingItem={snap.isDragging}
-                                />
-                              : <BadgeRow
-                                  badge={{ id: layer.id as RatingType, label: layer.label }}
-                                  isActive={true}
-                                  isSelected={selectedIds.has(layer.id as RatingType)}
-                                  ratingVal={fetchedData[layer.id as RatingType]}
-                                  iconKey={getIconKey(layer.id)}
-                                  fallbackEnabled={fallbackEnabled}
-                                  onSelect={onSelect}
-                                  handleToggleVisibility={handleToggleVisibility}
-                                  provided={prov}
-                                  isDraggingItem={snap.isDragging}
-                                />
+                            layer.kind === 'logo' ? (
+                              <LogoLayerRow
+                                isActive={true}
+                                selectedLogo={selectedLogo}
+                                logoEnabled={config.logo}
+                                onEnable={() => {
+                                  updateConfig('logo', true);
+                                  handleLogoSelection(false);
+                                  setActiveTab('selection');
+                                }}
+                                onDisable={() => updateConfig('logo', false)}
+                                onSelect={(multi) => handleLogoSelection(multi)}
+                                provided={prov}
+                                isDraggingItem={snap.isDragging}
+                              />
+                            ) : (
+                              <BadgeRow
+                                badge={{ id: layer.id as RatingType, label: layer.label }}
+                                isActive={true}
+                                isSelected={selectedIds.has(layer.id as RatingType)}
+                                ratingVal={fetchedData[layer.id as RatingType]}
+                                iconKey={getIconKey(layer.id)}
+                                fallbackEnabled={fallbackEnabled}
+                                onSelect={onSelect}
+                                handleToggleVisibility={handleToggleVisibility}
+                                provided={prov}
+                                isDraggingItem={snap.isDragging}
+                              />
+                            )
                           }
                         </Draggable>
                       ))}
@@ -694,13 +698,17 @@ const LayerPanel: React.FC<Props> = ({
               {!config.logo && (
                 <div className={clsx(inactiveBadges.length > 0 ? 'mt-2' : 'mt-5')}>
                   <LogoLayerRow
-                            isActive={false}
-                            selectedLogo={selectedLogo}
-                            logoEnabled={config.logo}
-                            onEnable={() => { updateConfig('logo', true); handleLogoSelection(false); setActiveTab('selection'); }}
-                            onDisable={() => updateConfig('logo', false)}
-                            onSelect={(multi) => handleLogoSelection(multi)}
-                          />
+                    isActive={false}
+                    selectedLogo={selectedLogo}
+                    logoEnabled={config.logo}
+                    onEnable={() => {
+                      updateConfig('logo', true);
+                      handleLogoSelection(false);
+                      setActiveTab('selection');
+                    }}
+                    onDisable={() => updateConfig('logo', false)}
+                    onSelect={(multi) => handleLogoSelection(multi)}
+                  />
                 </div>
               )}
             </DragDropContext>

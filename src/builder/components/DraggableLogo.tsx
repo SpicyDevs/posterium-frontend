@@ -109,7 +109,8 @@ const DraggableLogo: React.FC<Props> = ({
       ? `drop-shadow(0 ${config.logoShadow * 0.5}px ${config.logoShadow}px rgba(0,0,0,0.65))`
       : '';
   const defaultReadabilityShadow = 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))';
-  const dropShadow = `${defaultReadabilityShadow}${userDropShadow ? ` ${userDropShadow}` : ''}`.trim();
+  const dropShadow =
+    `${defaultReadabilityShadow}${userDropShadow ? ` ${userDropShadow}` : ''}`.trim();
   const startDrag = (mouseX: number, mouseY: number) => {
     setIsDragging(true);
     hasDraggedRef.current = false;

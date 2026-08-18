@@ -64,19 +64,21 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
       <div
         className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
         style={{
-          background:
-            'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
         }}
         aria-hidden="true"
       />
 
       <div className="flex items-center px-2 sm:px-3 shrink-0 gap-1 overflow-hidden max-lg:!w-auto">
-        <a
-          href="/"
-          className="flex items-center"
-          style={{ textDecoration: 'none', flexShrink: 0 }}
-        >
-          <img src="/posterium.svg" alt="" width={20} height={20} className="hidden sm:block" style={{ display: 'block' }} />
+        <a href="/" className="flex items-center" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          <img
+            src="/posterium.svg"
+            alt=""
+            width={20}
+            height={20}
+            className="hidden sm:block"
+            style={{ display: 'block' }}
+          />
           <span
             className="poster-font select-none hidden sm:block"
             style={{
@@ -86,7 +88,9 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
             }}
           >
             <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
-            <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>IUM</span>
+            <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}>
+              IUM
+            </span>
           </span>
           <span
             className="poster-font select-none sm:hidden"
@@ -250,10 +254,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
           </span>
         </button>
 
-        <ToolbarBtn
-          onClick={onRerunWalkthrough}
-          label="Walkthrough / Onboarding"
-        >
+        <ToolbarBtn onClick={onRerunWalkthrough} label="Walkthrough / Onboarding">
           <BookOpen size={14} />
         </ToolbarBtn>
       </div>

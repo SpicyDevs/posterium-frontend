@@ -37,9 +37,7 @@ const LayoutStep = memo<LayoutStepProps>(({ config, onChange }) => {
   return (
     <div>
       <StepTitle>Badge Layout</StepTitle>
-      <StepSubtitle>
-        Choose how rating badges are arranged on the poster.
-      </StepSubtitle>
+      <StepSubtitle>Choose how rating badges are arranged on the poster.</StepSubtitle>
 
       <div style={{ marginBottom: 24 }}>
         <SegmentedRow
@@ -54,14 +52,18 @@ const LayoutStep = memo<LayoutStepProps>(({ config, onChange }) => {
       <div style={{ marginBottom: 8 }}>
         <div
           className="syne-font"
-          style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--film-text-ghost)', marginBottom: 12 }}
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--film-text-ghost)',
+            marginBottom: 12,
+          }}
         >
           Position preset
         </div>
-        <AlignmentGrid
-          value={config.preset}
-          onChange={(v) => setLayoutPreset({ preset: v })}
-        />
+        <AlignmentGrid value={config.preset} onChange={(v) => setLayoutPreset({ preset: v })} />
       </div>
     </div>
   );

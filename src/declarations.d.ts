@@ -32,14 +32,10 @@ declare module 'astro:middleware' {
   import type { APIContext, MiddlewareNext } from 'astro';
   export type MiddlewareHandler = (
     context: APIContext,
-    next: MiddlewareNext,
+    next: MiddlewareNext
   ) => Promise<Response> | Response;
-  export function defineMiddleware(
-    fn: MiddlewareHandler,
-  ): MiddlewareHandler;
-  export function sequence(
-    ...handlers: MiddlewareHandler[]
-  ): MiddlewareHandler;
+  export function defineMiddleware(fn: MiddlewareHandler): MiddlewareHandler;
+  export function sequence(...handlers: MiddlewareHandler[]): MiddlewareHandler;
 }
 
 declare module 'astro/loaders' {

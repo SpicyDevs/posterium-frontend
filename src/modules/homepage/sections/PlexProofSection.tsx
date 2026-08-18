@@ -57,7 +57,8 @@ export const PlexProofSection = memo(() => {
             boxShadow: '0 16px 40px -12px rgba(0,0,0,0.45)',
             opacity: vis ? 1 : 0,
             transform: vis ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s',
+            transition:
+              'opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s',
           }}
         >
           {/* URL bar */}
@@ -85,7 +86,10 @@ export const PlexProofSection = memo(() => {
                   flexShrink: 0,
                 }}
               />
-              <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-amber)', letterSpacing: '0.14em' }}>
+              <span
+                className="mono-font"
+                style={{ fontSize: 8, color: 'var(--film-amber)', letterSpacing: '0.14em' }}
+              >
                 LIVE
               </span>
             </span>
@@ -108,7 +112,15 @@ export const PlexProofSection = memo(() => {
             >
               https://api.posterium.xyz/movie/155.svg?r=imdb,rt
             </code>
-            <span className="plex-proof-hint mono-font" style={{ fontSize: 8, color: 'rgba(122,117,110,0.5)', letterSpacing: '0.12em', flexShrink: 0 }}>
+            <span
+              className="plex-proof-hint mono-font"
+              style={{
+                fontSize: 8,
+                color: 'rgba(122,117,110,0.5)',
+                letterSpacing: '0.12em',
+                flexShrink: 0,
+              }}
+            >
               PASTE INTO CUSTOM ARTWORK FIELD
             </span>
           </div>
@@ -136,11 +148,14 @@ export const PlexProofSection = memo(() => {
                       borderRadius: 6,
                       overflow: 'hidden',
                       background: '#111009',
-                      border: p.live ? '1px solid rgba(196,124,46,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      border: p.live
+                        ? '1px solid rgba(196,124,46,0.4)'
+                        : '1px solid rgba(255,255,255,0.06)',
                       boxShadow: p.live
                         ? '0 18px 40px rgba(0,0,0,0.65), 0 0 34px rgba(196,124,46,0.14)'
                         : '0 10px 24px rgba(0,0,0,0.5)',
-                      transition: 'transform 0.38s cubic-bezier(0.16,1,0.3,1), box-shadow 0.38s cubic-bezier(0.16,1,0.3,1)',
+                      transition:
+                        'transform 0.38s cubic-bezier(0.16,1,0.3,1), box-shadow 0.38s cubic-bezier(0.16,1,0.3,1)',
                     }}
                   >
                     {p.live && <FilmCorners />}
@@ -149,11 +164,22 @@ export const PlexProofSection = memo(() => {
                       alt={`Poster for ${p.title} with live ${p.badges} rating badges`}
                       loading="lazy"
                       decoding="async"
-                      style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
                     />
                     {p.live && (
                       <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 2 }}>
-                        <AmberTag style={{ background: 'var(--film-amber)', color: '#070706', boxShadow: '0 0 14px rgba(196,124,46,0.45)' }}>
+                        <AmberTag
+                          style={{
+                            background: 'var(--film-amber)',
+                            color: '#070706',
+                            boxShadow: '0 0 14px rgba(196,124,46,0.45)',
+                          }}
+                        >
                           Live
                         </AmberTag>
                       </div>
@@ -174,7 +200,15 @@ export const PlexProofSection = memo(() => {
                   >
                     {p.title}
                   </div>
-                  <div className="mono-font" style={{ fontSize: 8, color: p.live ? 'var(--film-amber)' : 'rgba(122,117,110,0.4)', letterSpacing: '0.1em', marginTop: 1 }}>
+                  <div
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      color: p.live ? 'var(--film-amber)' : 'rgba(122,117,110,0.4)',
+                      letterSpacing: '0.1em',
+                      marginTop: 1,
+                    }}
+                  >
                     {p.badges}
                   </div>
                 </div>
@@ -192,10 +226,26 @@ export const PlexProofSection = memo(() => {
               gap: 12,
             }}
           >
-            <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.16em', flexShrink: 0 }}>
+            <span
+              className="mono-font"
+              style={{
+                fontSize: 8,
+                color: 'var(--film-text-ghost)',
+                letterSpacing: '0.16em',
+                flexShrink: 0,
+              }}
+            >
               Scores refresh on every load
             </span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 99, overflow: 'hidden' }}>
+            <div
+              style={{
+                flex: 1,
+                height: 1,
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: 99,
+                overflow: 'hidden',
+              }}
+            >
               <div
                 style={{
                   height: '100%',
@@ -205,7 +255,15 @@ export const PlexProofSection = memo(() => {
                 }}
               />
             </div>
-            <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', flexShrink: 0, letterSpacing: '0.1em' }}>
+            <span
+              className="mono-font"
+              style={{
+                fontSize: 8,
+                color: 'var(--film-text-ghost)',
+                flexShrink: 0,
+                letterSpacing: '0.1em',
+              }}
+            >
               6 titles · 1 URL
             </span>
           </div>
@@ -222,8 +280,9 @@ export const PlexProofSection = memo(() => {
             textAlign: 'center',
           }}
         >
-          Open any item in Plex or Jellyfin, paste the URL into the custom artwork field, and you're done.
-          The scores on that poster are fetched fresh the moment it loads — no cron jobs, no re-uploads.
+          Open any item in Plex or Jellyfin, paste the URL into the custom artwork field, and you're
+          done. The scores on that poster are fetched fresh the moment it loads — no cron jobs, no
+          re-uploads.
         </p>
       </div>
 

@@ -70,7 +70,17 @@ export function buildWebsiteSchema(): SchemaObject {
 }
 
 export function buildWebPageSchema(
-  meta: Pick<PageSEOMetadata, 'title' | 'description' | 'canonical' | 'ogImage' | 'ogImageAlt' | 'datePublished' | 'dateModified' | 'speakable'>
+  meta: Pick<
+    PageSEOMetadata,
+    | 'title'
+    | 'description'
+    | 'canonical'
+    | 'ogImage'
+    | 'ogImageAlt'
+    | 'datePublished'
+    | 'dateModified'
+    | 'speakable'
+  >
 ): SchemaObject {
   const schema: SchemaObject = {
     '@type': 'WebPage',
@@ -314,7 +324,9 @@ export function buildArticleOrTechArticleSchema(contentEntry: ArticleContentEntr
   };
 }
 
-export function buildItemListSchema(items: { name: string; url: string; description?: string }[]): SchemaObject {
+export function buildItemListSchema(
+  items: { name: string; url: string; description?: string }[]
+): SchemaObject {
   return {
     '@type': 'ItemList',
     itemListElement: items.map((item, index) => ({

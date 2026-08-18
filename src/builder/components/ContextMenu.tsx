@@ -146,11 +146,22 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          { id: 'hide', label: isLogo || isTitle ? 'Hide Layer' : 'Hide Badge', icon: <EyeOff size={12} />, shortcut: 'H' },
+          {
+            id: 'hide',
+            label: isLogo || isTitle ? 'Hide Layer' : 'Hide Badge',
+            icon: <EyeOff size={12} />,
+            shortcut: 'H',
+          },
           { id: 'showall', label: 'Show All Badges', icon: <Eye size={12} /> },
           {
             id: 'select',
-            label: isSelected ? (isLogo || isTitle ? 'Deselect Layer' : 'Deselect Badge') : isLogo || isTitle ? 'Select Layer' : 'Select Badge',
+            label: isSelected
+              ? isLogo || isTitle
+                ? 'Deselect Layer'
+                : 'Deselect Badge'
+              : isLogo || isTitle
+                ? 'Select Layer'
+                : 'Select Badge',
             icon: isSelected ? <Square size={12} /> : <MousePointer2 size={12} />,
           },
           { id: 'selectall', label: 'Select All', icon: <CheckSquare size={12} /> },
@@ -164,9 +175,16 @@ const ContextMenu: React.FC<Props> = memo(
       },
       {
         items: [
-          ...(!isLogo && onDuplicate ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }] : []),
+          ...(!isLogo && onDuplicate
+            ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }]
+            : []),
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
-          { id: 'delete', label: isLogo ? 'Hide Logo Layer' : isTitle ? 'Hide Title Layer' : 'Delete Badge', icon: <Trash2 size={12} />, danger: true },
+          {
+            id: 'delete',
+            label: isLogo ? 'Hide Logo Layer' : isTitle ? 'Hide Title Layer' : 'Delete Badge',
+            icon: <Trash2 size={12} />,
+            danger: true,
+          },
         ],
       },
     ];
@@ -275,17 +293,17 @@ const ContextMenu: React.FC<Props> = memo(
             {isLogo ? 'logo' : isTitle ? 'title' : id}
           </span>
           {isSelected && (
-              <span
-                className="mono-font"
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 9,
-                  color: 'rgba(196,124,46,0.65)',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                selected
-              </span>
+            <span
+              className="mono-font"
+              style={{
+                marginLeft: 'auto',
+                fontSize: 9,
+                color: 'rgba(196,124,46,0.65)',
+                letterSpacing: '0.1em',
+              }}
+            >
+              selected
+            </span>
           )}
         </div>
 

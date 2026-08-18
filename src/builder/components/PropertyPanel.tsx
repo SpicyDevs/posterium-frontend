@@ -50,8 +50,6 @@ const BADGE_DISPLAY_NAMES: Record<string, string> = {
   title: 'Title',
 };
 
-
-
 function resolveShadow(v: number | boolean | undefined, fallback: number): number {
   if (v === undefined) return fallback;
   if (typeof v === 'boolean') return v ? 6 : 0;
@@ -725,9 +723,7 @@ const PropertyPanel: React.FC<Props> = ({
   const commonTextLetterSpacing = (getCommonValue('textLetterSpacing', 0) ?? 0) as number;
   const commonTextLineHeight = (getCommonValue('textLineHeight', 1.1) ?? 1.1) as number;
   const commonTextAlign = (getCommonValue('textAlign', 'left') ?? 'left') as
-    | 'left'
-    | 'center'
-    | 'right';
+    'left' | 'center' | 'right';
   const commonTextCharWidth = (getCommonValue(
     'textCharWidth',
     DEFAULT_CONFIG.items.title?.textCharWidth ?? 24
@@ -1224,8 +1220,7 @@ const PropertyPanel: React.FC<Props> = ({
                 onChange={(v) =>
                   updateSelectedBadges({
                     labelPos: (v === 'none' ? undefined : (v as BadgeConfig['labelPos'])) as
-                      | BadgeConfig['labelPos']
-                      | undefined,
+                      BadgeConfig['labelPos'] | undefined,
                   })
                 }
               />

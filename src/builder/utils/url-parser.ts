@@ -34,9 +34,10 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
       }
     }
 
-    const extension: ExtensionType = match && match[3]
-      ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType)
-      : DEFAULT_CONFIG.extension;
+    const extension: ExtensionType =
+      match && match[3]
+        ? ((match[3] === 'jpeg' ? 'jpg' : match[3]) as ExtensionType)
+        : DEFAULT_CONFIG.extension;
 
     const p = url.searchParams;
     const isV3 = p.get('v') === '3';
@@ -355,13 +356,20 @@ export const parseUrlToConfig = (urlString: string): PosterConfig => {
           ? parseFloat(p.get('logo_opacity')!)
           : DEFAULTS.logoOpacity,
         logoShadow: p.has('logo_sh') ? parseInt(p.get('logo_sh')!) : DEFAULTS.logoShadow,
-        logoZ: p.has('lz') ? parseInt(p.get('lz')!) : (p.has('logo_z') ? parseInt(p.get('logo_z')!) : DEFAULTS.logoZ),
+        logoZ: p.has('lz')
+          ? parseInt(p.get('lz')!)
+          : p.has('logo_z')
+            ? parseInt(p.get('logo_z')!)
+            : DEFAULTS.logoZ,
         noEmbed: getBoolOrUndefined('ne', 'no_embed') ?? DEFAULTS.noEmbed,
         compressIcons: false,
         sourcePriority: (() => {
           const raw = p.get('so') ?? p.get('source_order');
           if (!raw) return undefined;
-          return raw.split(',').map((s) => s.trim()).filter(Boolean);
+          return raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
         })(),
         malId: p.get('mid') ?? p.get('mal_id') ?? undefined,
         font: p.get('fn') || p.get('font') || undefined,

@@ -17,10 +17,19 @@ const isInspectorTab = (value: string): value is InspectorTab =>
   value === 'badges' || value === 'selection';
 
 const Inspector: React.FC<Props> = memo(({ config, setConfig, detailLevel = 'simple' }) => {
-  const { activeTab, setActiveTab, selectedIds, selectedLogo, selectedTitle, selectedMinimalElements } =
-    useEditor();
+  const {
+    activeTab,
+    setActiveTab,
+    selectedIds,
+    selectedLogo,
+    selectedTitle,
+    selectedMinimalElements,
+  } = useEditor();
   const selectedCount =
-    selectedIds.size + (selectedLogo ? 1 : 0) + (selectedTitle ? 1 : 0) + selectedMinimalElements.size;
+    selectedIds.size +
+    (selectedLogo ? 1 : 0) +
+    (selectedTitle ? 1 : 0) +
+    selectedMinimalElements.size;
   const isMinimalPreset = (config.uiPreset ?? 'b') === 'm';
   const hasBadges = config.ratings.length > 0;
   const hasLogo = config.logo;

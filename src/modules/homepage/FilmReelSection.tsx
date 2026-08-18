@@ -11,7 +11,10 @@ const MOSAIC_NATURAL_WIDTH = DESKTOP_REEL_CHUNKS * CHUNK_WIDTH;
 function getAbsTop(el: HTMLElement): number {
   let t = 0;
   let cur: HTMLElement | null = el;
-  while (cur) { t += cur.offsetTop; cur = cur.offsetParent as HTMLElement | null; }
+  while (cur) {
+    t += cur.offsetTop;
+    cur = cur.offsetParent as HTMLElement | null;
+  }
   return t;
 }
 
@@ -51,7 +54,8 @@ const DesktopStaticReel = memo(() => {
     return () => {
       images.forEach((i) => i.removeEventListener('load', setHeight));
       window.removeEventListener('resize', setHeight);
-      clearTimeout(t1); clearTimeout(t2);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, [setHeight]);
 
@@ -94,43 +98,203 @@ const DesktopStaticReel = memo(() => {
   }, [setHeight]);
 
   return (
-    <div id="reel" ref={containerRef} role="region" aria-label="Film Reel Showcase" style={{ position: 'relative' }}>
-      <div style={{
-        position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden',
-        background: 'var(--film-dark)', display: 'flex', flexDirection: 'column',
-        touchAction: 'pan-y',
-      }}>
-        <div style={{ flexShrink: 0, padding: '14px 48px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(196,124,46,0.08)' }}>
+    <div
+      id="reel"
+      ref={containerRef}
+      role="region"
+      aria-label="Film Reel Showcase"
+      style={{ position: 'relative' }}
+    >
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          overflow: 'hidden',
+          background: 'var(--film-dark)',
+          display: 'flex',
+          flexDirection: 'column',
+          touchAction: 'pan-y',
+        }}
+      >
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '14px 48px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(196,124,46,0.08)',
+          }}
+        >
           <div>
-            <div className="poster-font" style={{ fontSize: 20, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}>THE GALLERY</div>
-            <div className="syne-font" style={{ fontSize: 8, color: 'var(--film-silver)', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2 }}>Scroll to browse</div>
+            <div
+              className="poster-font"
+              style={{
+                fontSize: 20,
+                color: 'var(--film-cream)',
+                letterSpacing: '0.08em',
+                lineHeight: 1,
+              }}
+            >
+              THE GALLERY
+            </div>
+            <div
+              className="syne-font"
+              style={{
+                fontSize: 8,
+                color: 'var(--film-silver)',
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                marginTop: 2,
+              }}
+            >
+              Scroll to browse
+            </div>
           </div>
-          <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.12em' }}>{REEL_ITEMS.length} titles</span>
+          <span
+            className="mono-font"
+            style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.12em' }}
+          >
+            {REEL_ITEMS.length} titles
+          </span>
         </div>
-        <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.045)' }}>
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderBottom: '1px solid rgba(255,255,255,0.045)',
+          }}
+        >
           <SprocketStrip count={48} />
         </div>
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-          <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 140, zIndex: 2, pointerEvents: 'none', background: 'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)' }} />
-          <div aria-hidden="true" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 200, zIndex: 2, pointerEvents: 'none', background: 'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)' }} />
-          <div ref={imgRef} style={{ display: 'flex', height: '100%', width: 'max-content', flexShrink: 0, willChange: 'transform', filter: 'sepia(0.18) saturate(0.72) brightness(0.9)' }}>
+        <div
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 140,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to right, var(--film-dark) 0%, rgba(14,13,11,0.88) 60%, transparent 100%)',
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 200,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(to left, var(--film-dark) 0%, rgba(14,13,11,0.9) 55%, transparent 100%)',
+            }}
+          />
+          <div
+            ref={imgRef}
+            style={{
+              display: 'flex',
+              height: '100%',
+              width: 'max-content',
+              flexShrink: 0,
+              willChange: 'transform',
+              filter: 'sepia(0.18) saturate(0.72) brightness(0.9)',
+            }}
+          >
             {Array.from({ length: DESKTOP_REEL_CHUNKS }).map((_, i) => (
               <picture key={i} style={{ display: 'block', height: '100%' }}>
                 <source srcSet={`/reel-mosaic-${i + 1}.webp`} type="image/webp" />
-                <img src={`/reel-mosaic-${i + 1}.jpg`} alt={i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''} style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }} loading="lazy" fetchPriority={i === 0 ? ('high' as any) : 'auto'} decoding="async" />
+                <img
+                  src={`/reel-mosaic-${i + 1}.jpg`}
+                  alt={
+                    i === 0 ? 'Collage of movie and TV show posters with IMDb rating badges' : ''
+                  }
+                  style={{ display: 'block', height: '100%', width: 'auto', maxWidth: 'none' }}
+                  loading="lazy"
+                  fetchPriority={i === 0 ? ('high' as any) : 'auto'}
+                  decoding="async"
+                />
               </picture>
             ))}
           </div>
         </div>
-        <div style={{ flexShrink: 0, background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.045)' }}>
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.015)',
+            borderTop: '1px solid rgba(255,255,255,0.045)',
+          }}
+        >
           <SprocketStrip count={48} />
         </div>
-        <div style={{ flexShrink: 0, padding: '7px 48px', borderTop: '1px solid rgba(196,124,46,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', letterSpacing: '0.18em', textTransform: 'uppercase', flexShrink: 0 }}>Gallery</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 99, overflow: 'hidden' }}>
-            <div ref={progressFillRef} style={{ height: '100%', width: '0%', borderRadius: 99, background: 'linear-gradient(90deg, var(--film-amber), #D4A245)', transition: 'none' }} />
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '7px 48px',
+            borderTop: '1px solid rgba(196,124,46,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <span
+            className="mono-font"
+            style={{
+              fontSize: 8,
+              color: 'var(--film-text-ghost)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              flexShrink: 0,
+            }}
+          >
+            Gallery
+          </span>
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: 99,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              ref={progressFillRef}
+              style={{
+                height: '100%',
+                width: '0%',
+                borderRadius: 99,
+                background: 'linear-gradient(90deg, var(--film-amber), #D4A245)',
+                transition: 'none',
+              }}
+            />
           </div>
-          <span className="mono-font" style={{ fontSize: 8, color: 'var(--film-text-ghost)', flexShrink: 0, letterSpacing: '0.1em' }}>{REEL_ITEMS.length} frames</span>
+          <span
+            className="mono-font"
+            style={{
+              fontSize: 8,
+              color: 'var(--film-text-ghost)',
+              flexShrink: 0,
+              letterSpacing: '0.1em',
+            }}
+          >
+            {REEL_ITEMS.length} frames
+          </span>
         </div>
       </div>
     </div>
@@ -147,113 +311,125 @@ const PosterFallback = () => (
   <div
     aria-hidden="true"
     style={{
-      position: 'absolute', inset: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       background: 'var(--film-char)',
       color: 'rgba(196,124,46,0.2)',
-      fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase',
+      fontSize: 10,
+      fontFamily: 'monospace',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
     }}
   >
     no poster
   </div>
 );
 
-const PosterCard = memo<{ item: (typeof REEL_ITEMS)[0]; visible: boolean }>(
-  ({ item, visible }) => {
-    const [hovered, setHovered] = useState(false);
-    const [errored, setErrored] = useState(false);
-    const [loaded, setLoaded] = useState(false);
+const PosterCard = memo<{ item: (typeof REEL_ITEMS)[0]; visible: boolean }>(({ item, visible }) => {
+  const [hovered, setHovered] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-    const posterSrc =
-      REEL_POSTER_SRCS[item.id] ??
-      `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=12&alpha=0.35&rad=6`;
+  const posterSrc =
+    REEL_POSTER_SRCS[item.id] ??
+    `${API}/${item.type}/${item.id}.webp?r=imdb,rt&source=tmdb&blur=12&alpha=0.35&rad=6`;
 
-    return (
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          position: 'relative',
-          borderRadius: 6,
-          overflow: 'hidden',
-          background: '#111009',
-          border: '1px solid rgba(196,124,46,0.12)',
-          boxShadow: hovered
-            ? '0 8px 28px rgba(0,0,0,0.6), 0 0 20px rgba(196,124,46,0.08)'
-            : '0 4px 12px rgba(0,0,0,0.4)',
-          transition: 'box-shadow 0.3s ease, transform 0.3s ease',
-          transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
-          aspectRatio: '2/3',
-        }}
-      >
-        {!visible ? null : errored ? (
-          <PosterFallback />
-        ) : (
-          <>
-            {!loaded && (
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(110deg, #111009 30%, #1a1814 50%, #111009 70%)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 1.5s ease-in-out infinite',
-                }}
-              />
-            )}
-            <picture>
-              <source srcSet={posterSrc} type="image/webp" />
-              <img
-                src={posterSrc}
-                alt={`${item.title} (${item.year}) — ${item.genre}`}
-                loading="lazy"
-                decoding="async"
-                onLoad={() => setLoaded(true)}
-                onError={() => setErrored(true)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  opacity: loaded ? 1 : 0,
-                  transition: 'opacity 0.25s ease',
-                }}
-              />
-            </picture>
-            {/* Hover overlay with metadata */}
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative',
+        borderRadius: 6,
+        overflow: 'hidden',
+        background: '#111009',
+        border: '1px solid rgba(196,124,46,0.12)',
+        boxShadow: hovered
+          ? '0 8px 28px rgba(0,0,0,0.6), 0 0 20px rgba(196,124,46,0.08)'
+          : '0 4px 12px rgba(0,0,0,0.4)',
+        transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+        aspectRatio: '2/3',
+      }}
+    >
+      {!visible ? null : errored ? (
+        <PosterFallback />
+      ) : (
+        <>
+          {!loaded && (
             <div
+              aria-hidden="true"
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to top, rgba(7,7,6,0.92) 0%, rgba(7,7,6,0.4) 50%, transparent 100%)',
-                opacity: hovered ? 1 : 0,
-                transition: 'opacity 0.28s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-                padding: 10,
-                pointerEvents: 'none',
+                background: 'linear-gradient(110deg, #111009 30%, #1a1814 50%, #111009 70%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 1.5s ease-in-out infinite',
+              }}
+            />
+          )}
+          <picture>
+            <source srcSet={posterSrc} type="image/webp" />
+            <img
+              src={posterSrc}
+              alt={`${item.title} (${item.year}) — ${item.genre}`}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setLoaded(true)}
+              onError={() => setErrored(true)}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: loaded ? 1 : 0,
+                transition: 'opacity 0.25s ease',
+              }}
+            />
+          </picture>
+          {/* Hover overlay with metadata */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(to top, rgba(7,7,6,0.92) 0%, rgba(7,7,6,0.4) 50%, transparent 100%)',
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.28s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              padding: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              className="syne-font"
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--film-cream)',
+                lineHeight: 1.2,
+                marginBottom: 2,
               }}
             >
-              <div
-                className="syne-font"
-                style={{ fontSize: 11, fontWeight: 700, color: 'var(--film-cream)', lineHeight: 1.2, marginBottom: 2 }}
-              >
-                {item.title}
-              </div>
-              <div
-                className="mono-font"
-                style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.06em' }}
-              >
-                {item.year} · {item.genre}
-              </div>
+              {item.title}
             </div>
-          </>
-        )}
-      </div>
-    );
-  }
-);
+            <div
+              className="mono-font"
+              style={{ fontSize: 8, color: 'var(--film-text-dim)', letterSpacing: '0.06em' }}
+            >
+              {item.year} · {item.genre}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+});
 PosterCard.displayName = 'PosterCard';
 
 const MobilePosterGrid = memo(() => {
@@ -298,13 +474,24 @@ const MobilePosterGrid = memo(() => {
         <div>
           <div
             className="poster-font"
-            style={{ fontSize: 18, color: 'var(--film-cream)', letterSpacing: '0.08em', lineHeight: 1 }}
+            style={{
+              fontSize: 18,
+              color: 'var(--film-cream)',
+              letterSpacing: '0.08em',
+              lineHeight: 1,
+            }}
           >
             THE GALLERY
           </div>
           <div
             className="syne-font"
-            style={{ fontSize: 8, color: 'var(--film-silver)', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 2 }}
+            style={{
+              fontSize: 8,
+              color: 'var(--film-silver)',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              marginTop: 2,
+            }}
           >
             Browse posters
           </div>

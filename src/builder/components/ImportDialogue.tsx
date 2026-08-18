@@ -112,10 +112,7 @@ const ImportDialog = memo<Props>(({ isOpen, onClose, onLoad, anchorRef }) => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Download
-            size={13}
-            style={{ color: 'var(--film-amber)', transform: 'rotate(180deg)' }}
-          />
+          <Download size={13} style={{ color: 'var(--film-amber)', transform: 'rotate(180deg)' }} />
           <span
             className="syne-font"
             style={{

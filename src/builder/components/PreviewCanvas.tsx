@@ -124,12 +124,10 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const getBadgeRect = (id: RatingType, index: number) => {
     const itemConfig = config.items[id];
-    const auto = calculateAutoPosition(
-      id,
-      index,
-      previewRatings.length,
-      { ...config, ratings: previewRatings }
-    );
+    const auto = calculateAutoPosition(id, index, previewRatings.length, {
+      ...config,
+      ratings: previewRatings,
+    });
     const x = itemConfig?.x ?? auto.x;
     const y = itemConfig?.y ?? auto.y;
     const { w, h } = getBadgeSize(id, itemConfig);
@@ -316,12 +314,8 @@ const PreviewCanvas: React.FC<Props> = ({
       if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
       return {
         ...prev,
-        logoX: Math.round(
-          Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))
-        ),
-        logoY: Math.round(
-          Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))
-        ),
+        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))),
+        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))),
       };
     });
   };
@@ -345,7 +339,10 @@ const PreviewCanvas: React.FC<Props> = ({
       setConfig((prev) => {
         const items = { ...prev.items };
         const imdbItem = { ...(items.imdb ?? { x: 340, y: 20 }) };
-        imdbItem.x = Math.max(0, Math.min(CANVAS_WIDTH - 140, Math.round((imdbItem.x ?? 340) + dx)));
+        imdbItem.x = Math.max(
+          0,
+          Math.min(CANVAS_WIDTH - 140, Math.round((imdbItem.x ?? 340) + dx))
+        );
         imdbItem.y = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((imdbItem.y ?? 20) + dy)));
         items.imdb = imdbItem;
         return { ...prev, items };
@@ -360,7 +357,10 @@ const PreviewCanvas: React.FC<Props> = ({
         const items = { ...prev.items };
         const yearItem = { ...(items.year ?? { x: 25, y: 683 }) };
         yearItem.x = Math.max(0, Math.min(CANVAS_WIDTH - 120, Math.round((yearItem.x ?? 25) + dx)));
-        yearItem.y = Math.max(0, Math.min(CANVAS_HEIGHT - 40, Math.round((yearItem.y ?? 683) + dy)));
+        yearItem.y = Math.max(
+          0,
+          Math.min(CANVAS_HEIGHT - 40, Math.round((yearItem.y ?? 683) + dy))
+        );
         items.year = yearItem;
         return { ...prev, items };
       });
@@ -369,11 +369,7 @@ const PreviewCanvas: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (
-      !isDraggingMinimalText &&
-      draggingMinimalRatingIndex === null &&
-      !draggingMinimalYear
-    )
+    if (!isDraggingMinimalText && draggingMinimalRatingIndex === null && !draggingMinimalYear)
       return;
     const onMM = (e: MouseEvent) => {
       if (isDraggingMinimalText && minimalTextStartRef.current) {
@@ -473,13 +469,22 @@ const PreviewCanvas: React.FC<Props> = ({
           ti.textBoxWidth && ti.textBoxWidth > 120
             ? Math.max(4, Math.round((ti.textBoxWidth - 16 * displayScale) / approxCharPx))
             : undefined;
-        const titleCharWidth = Math.max(4, Math.min(80, Math.round(ti.textCharWidth ?? legacyFromPx ?? 24)));
-        const dynamicWidth = Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale));
+        const titleCharWidth = Math.max(
+          4,
+          Math.min(80, Math.round(ti.textCharWidth ?? legacyFromPx ?? 24))
+        );
+        const dynamicWidth = Math.max(
+          120,
+          Math.round(titleCharWidth * approxCharPx + 16 * displayScale)
+        );
         const boxW = Math.max(120, ti.textBoxWidth ?? dynamicWidth);
         // Content height estimate matching DraggableTitle
         const textLineHeight = ti.textLineHeight ?? 1.1;
         const titleCharHeight = Math.max(1, Math.min(12, Math.round(ti.textCharHeight ?? 1)));
-        const estimatedHeight = Math.max(32, Math.ceil(titleCharHeight * textSize * textLineHeight + 16 * displayScale));
+        const estimatedHeight = Math.max(
+          32,
+          Math.ceil(titleCharHeight * textSize * textLineHeight + 16 * displayScale)
+        );
         const boxH = Math.max(36, estimatedHeight);
         ti.x = Math.max(1 - boxW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
         ti.y = Math.max(1 - boxH, Math.min(snap(startY + dy), CANVAS_HEIGHT - 1));
@@ -520,7 +525,8 @@ const PreviewCanvas: React.FC<Props> = ({
         let startY = newItems[targetId].y;
         if (startX === undefined) startX = 0;
         if (startY === undefined) startY = 0;
-        const baseScale = getScale(prev.size) * (prev.items?.[targetId]?.scale ?? prev.scale ?? 1.0);
+        const baseScale =
+          getScale(prev.size) * (prev.items?.[targetId]?.scale ?? prev.scale ?? 1.0);
         const badgeW = BASE_BADGE_W * baseScale;
         const badgeH = BASE_BADGE_H * baseScale;
         const clampedX = Math.max(1 - badgeW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
@@ -544,12 +550,10 @@ const PreviewCanvas: React.FC<Props> = ({
     const index = previewRatings.indexOf(tid);
     if (index === -1) return null;
 
-    const auto = calculateAutoPosition(
-      tid,
-      index,
-      previewRatings.length,
-      { ...config, ratings: previewRatings }
-    );
+    const auto = calculateAutoPosition(tid, index, previewRatings.length, {
+      ...config,
+      ratings: previewRatings,
+    });
     const iCfg = config.items[tid];
     let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
     let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
@@ -681,85 +685,87 @@ const PreviewCanvas: React.FC<Props> = ({
 
         {/* Badge overlays */}
         {previewRatings.map((id: RatingType, index: number) => {
-            const auto = calculateAutoPosition(
-              id,
-              index,
-              previewRatings.length,
-              { ...config, ratings: previewRatings }
-            );
-            const iCfg = config.items[id];
-            let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
-            let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
-            if (!isFinite(x)) x = auto.x;
-            if (!isFinite(y)) y = auto.y;
+          const auto = calculateAutoPosition(id, index, previewRatings.length, {
+            ...config,
+            ratings: previewRatings,
+          });
+          const iCfg = config.items[id];
+          let x = iCfg?.x !== undefined ? iCfg.x : auto.x;
+          let y = iCfg?.y !== undefined ? iCfg.y : auto.y;
+          if (!isFinite(x)) x = auto.x;
+          if (!isFinite(y)) y = auto.y;
 
-            let isObscuring = false;
-            if (hoveredBadgeId && hoveredBadgeId !== id) {
-              const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
-              if (hoveredIdx !== -1) isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
-            }
+          let isObscuring = false;
+          if (hoveredBadgeId && hoveredBadgeId !== id) {
+            const hoveredIdx = previewRatings.indexOf(hoveredBadgeId);
+            if (hoveredIdx !== -1)
+              isObscuring = checkOverlap(id, index, hoveredBadgeId, hoveredIdx);
+          }
 
-            if (dragSession) {
-              const isTarget = dragSession.id === id;
-              const isGroup = selectedIds.has(dragSession.id as RatingType) && selectedIds.has(id);
-              if (isTarget || isGroup) {
-                const { w: bW, h: bH } = getBadgeSize(id, iCfg);
-                // Preview clamp: at least 1px inside poster
-                let nextX = x + dragSession.dx;
-                let nextY = y + dragSession.dy;
-                if (viewOptions?.snapToGrid) {
-                  const centerX = nextX + bW / 2;
-                  const centerY = nextY + bH / 2;
-                  const middleX = CANVAS_WIDTH / 2;
-                  const middleY = CANVAS_HEIGHT / 2;
-                  if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE)
-                    nextX = middleX - bW / 2;
-                  if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE)
-                    nextY = middleY - bH / 2;
-                }
-                x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
-                y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
+          if (dragSession) {
+            const isTarget = dragSession.id === id;
+            const isGroup = selectedIds.has(dragSession.id as RatingType) && selectedIds.has(id);
+            if (isTarget || isGroup) {
+              const { w: bW, h: bH } = getBadgeSize(id, iCfg);
+              // Preview clamp: at least 1px inside poster
+              let nextX = x + dragSession.dx;
+              let nextY = y + dragSession.dy;
+              if (viewOptions?.snapToGrid) {
+                const centerX = nextX + bW / 2;
+                const centerY = nextY + bH / 2;
+                const middleX = CANVAS_WIDTH / 2;
+                const middleY = CANVAS_HEIGHT / 2;
+                if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - bW / 2;
+                if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - bH / 2;
               }
+              x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
+              y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
             }
+          }
 
-            // Uniform mode: compute shared font size across all badges
-            const uniformSize = config.uniform && config.ratings.length > 0
-              ? Math.min(...config.ratings.map(r => {
-                  const it = config.items[r];
-                  const v = liveRatings[r];
-                  const val = v ?? '';
-                  const hasIcon = it?.icon ?? config.icon ?? true;
-                  const len = String(val).length;
-                  if (hasIcon) { if (len > 8) return 17; if (len > 5) return 21; return 27; }
-                  if (len > 8) return 18; if (len > 5) return 22; return 28;
-                }))
+          // Uniform mode: compute shared font size across all badges
+          const uniformSize =
+            config.uniform && config.ratings.length > 0
+              ? Math.min(
+                  ...config.ratings.map((r) => {
+                    const it = config.items[r];
+                    const v = liveRatings[r];
+                    const val = v ?? '';
+                    const hasIcon = it?.icon ?? config.icon ?? true;
+                    const len = String(val).length;
+                    if (hasIcon) {
+                      if (len > 8) return 17;
+                      if (len > 5) return 21;
+                      return 27;
+                    }
+                    if (len > 8) return 18;
+                    if (len > 5) return 22;
+                    return 28;
+                  })
+                )
               : null;
 
-            return (
-              <DraggableBadge
-                key={id}
-                badgeId={id}
-                config={config}
-                uniformFontSize={uniformSize}
-                value={
-                  id === 'year'
-                    ? liveYear.replace(/\.0+$/, '')
-                    : liveRatings[id]
-                }
-                x={x}
-                y={y}
-                canvasScale={currentScale}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
-                isSelected={selectedIds.has(id)}
-                onSelect={onSelect}
-                onContextMenu={onContextMenu}
-                isObscuring={isObscuring}
-                onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
-                zIndex={100 + index}
-              />
-            );
-          })}
+          return (
+            <DraggableBadge
+              key={id}
+              badgeId={id}
+              config={config}
+              uniformFontSize={uniformSize}
+              value={id === 'year' ? liveYear.replace(/\.0+$/, '') : liveRatings[id]}
+              x={x}
+              y={y}
+              canvasScale={currentScale}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              isSelected={selectedIds.has(id)}
+              onSelect={onSelect}
+              onContextMenu={onContextMenu}
+              isObscuring={isObscuring}
+              onHoverChange={(hovered) => setHoveredBadgeId(hovered ? id : null)}
+              zIndex={100 + index}
+            />
+          );
+        })}
 
         {config.titleEnabled && (
           <DraggableTitle

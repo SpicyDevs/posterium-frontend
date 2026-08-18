@@ -125,7 +125,9 @@ const toCandidateLinks = (
   nodes: ContentNode[],
   limit: number
 ): RelatedContentLink[] => {
-  const contextTokens = toTokenSet(`${context.title} ${context.text} ${(context.keywords ?? []).join(' ')}`);
+  const contextTokens = toTokenSet(
+    `${context.title} ${context.text} ${(context.keywords ?? []).join(' ')}`
+  );
 
   return nodes
     .filter((node) => !(node.collection === context.collection && node.id === context.id))
