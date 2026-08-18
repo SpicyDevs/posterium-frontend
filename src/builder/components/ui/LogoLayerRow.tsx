@@ -95,7 +95,7 @@ const LogoLayerRow: React.FC<LogoLayerRowProps> = ({
         <button
           onClick={() => (logoEnabled ? onDisable() : onEnable())}
           className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-          style={{ color: logoEnabled ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+          style={{ color: logoEnabled ? 'var(--film-text-dim)' : 'rgba(110,104,96,0.6)' }}
           title={logoEnabled ? 'Hide layer' : 'Show layer'}
         >
           {logoEnabled ? <Eye size={13} /> : <EyeOff size={13} />}

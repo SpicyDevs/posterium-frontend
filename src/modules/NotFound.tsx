@@ -40,8 +40,8 @@ const NotFound: React.FC = () => {
   return (
     <div
       style={{
-        background: '#09090b',
-        color: '#e4e4e7',
+        background: 'var(--film-dark)',
+        color: 'var(--film-cream)',
         fontFamily: 'sans-serif',
         height: '100dvh',
         overflow: 'hidden',
@@ -50,15 +50,6 @@ const NotFound: React.FC = () => {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@700;800&display=swap');
-        .nf-container::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
-          background-size: 28px 28px;
-          pointer-events: none;
-          z-index: 0;
-        }
         .nf-orb {
           position: absolute;
           border-radius: 50%;
@@ -114,7 +105,7 @@ const NotFound: React.FC = () => {
         .nf-btn-secondary {
           display: inline-flex; align-items: center; gap: 6px;
           height: 40px; padding: 0 16px; border-radius: 10px;
-          background: transparent; color: #a1a1aa;
+          background: transparent; color: var(--film-text-dim);
           font-size: 12px; font-weight: 600; text-decoration: none;
           border: 1px solid rgba(255,255,255,0.07);
           transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.1s;
@@ -122,7 +113,7 @@ const NotFound: React.FC = () => {
           letter-spacing: 0.06em; text-transform: uppercase;
         }
         .nf-btn-secondary:hover {
-          color: #e4e4e7;
+          color: var(--film-cream);
           border-color: rgba(196,124,46,0.3);
           background: rgba(196,124,46,0.05);
           transform: translateY(-1px);
@@ -169,7 +160,7 @@ const NotFound: React.FC = () => {
           style={{
             fontSize: 'clamp(18px,3vw,22px)',
             fontWeight: 700,
-            color: '#e4e4e7',
+            color: 'var(--film-cream)',
             letterSpacing: '-0.02em',
             marginBottom: 10,
           }}
@@ -181,7 +172,7 @@ const NotFound: React.FC = () => {
           className="nf-p"
           style={{
             fontSize: 13,
-            color: '#71717a',
+            color: 'var(--film-text-dim)',
             lineHeight: 1.6,
             maxWidth: 340,
             margin: '0 auto 36px',
@@ -257,7 +248,7 @@ const NotFound: React.FC = () => {
             >
               Heads up
             </strong>
-            <span style={{ fontSize: 11, color: '#52525b' }}>
+            <span style={{ fontSize: 11, color: 'var(--film-text-ghost)' }}>
               Back to the main page in {remaining} second{remaining !== 1 ? 's' : ''}
             </span>
           </div>

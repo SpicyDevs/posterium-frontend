@@ -27,15 +27,16 @@ const ADMIN_API_PASS = 'Aayush1234';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const CH = {
-  amber: '#c47c2e', gold: '#d4a245', cream: '#f0e6cc',
-  green: '#4ade80', red: '#f87171', orange: '#fb923c',
-  yellow: '#facc15', blue: '#60a5fa', purple: '#a78bfa',
-  teal: '#2dd4bf', pink: '#f472b6',
+  amber: '#c47c2e', gold: '#e8c15a', ember: '#e07b39', rust: '#b4522b',
+  brick: '#a8391f', rose: '#d98e7a', tan: '#9c7a4a', ochre: '#b8863b',
+  cream: '#f0e6cc',
+  green: '#e8c15a', red: 'rgba(248,113,113,0.85)', orange: '#e07b39',
+  yellow: '#c47c2e',
   ghost: 'rgba(140,130,112,0.45)', dim: 'rgba(180,168,148,0.65)',
 };
 const PIE_COLORS = [
-  CH.amber, CH.blue, CH.green, CH.yellow, CH.orange,
-  CH.purple, CH.teal, CH.red, CH.pink,
+  CH.amber, CH.tan, CH.green, CH.yellow, CH.orange,
+  CH.rose, CH.rust, CH.red, CH.brick,
 ];
 
 const LIVE_HEALTH_NODES = [
@@ -46,11 +47,11 @@ const LIVE_HEALTH_NODES = [
 
 function nodeColor(n: string) {
   const MAP: Record<string, string> = {
-    washington: CH.blue, london: CH.green, tokyo: CH.yellow,
-    mumbai: CH.red, germany: CH.teal, france: CH.purple,
-    wsrv: CH.orange, 'render-eu': CH.pink, ohio: CH.purple,
-    'cf-binding': CH.gold, render_eu: CH.pink,
-    midas: CH.blue, danbot: CH.orange,
+    washington: CH.tan, london: CH.green, tokyo: CH.yellow,
+    mumbai: CH.red, germany: CH.rust, france: CH.rose,
+    wsrv: CH.orange, 'render-eu': CH.brick, ohio: CH.rose,
+    'cf-binding': CH.gold, render_eu: CH.brick,
+    midas: CH.tan, danbot: CH.orange,
   };
   return MAP[n] ?? CH.ghost;
 }
@@ -70,20 +71,20 @@ function nodeLabel(n: string) {
 
 const LANE_META: Record<string, { label: string; color: string }> = {
   geo:            { label: 'Primary (geo)',     color: CH.green },
-  binding:        { label: 'CF Binding',        color: CH.teal },
+  binding:        { label: 'CF Binding',        color: CH.rust },
   'geo-fallback': { label: 'Tier 1 Fallback',   color: CH.yellow },
   'geo-t2':       { label: 'Tier 2 Fallback',   color: CH.orange },
-  'wsrv-fallback':{ label: 'wsrv (fallback)',   color: CH.purple },
+  'wsrv-fallback':{ label: 'wsrv (fallback)',   color: CH.ochre },
   'geo-t3':       { label: 'Tier 3 Fallback',   color: CH.red },
-  'wsrv-t3':      { label: 'wsrv (Tier 3)',     color: '#dc2626' },
-  bulk:           { label: 'Bulk',              color: CH.blue },
+  'wsrv-t3':      { label: 'wsrv (Tier 3)',     color: CH.ochre },
+  bulk:           { label: 'Bulk',              color: CH.tan },
 };
 
 const DEVICE_META: Record<string, { label: string; icon: string; color: string }> = {
-  desktop: { label: 'Desktop',  icon: '🖥️', color: CH.blue },
+  desktop: { label: 'Desktop',  icon: '🖥️', color: CH.tan },
   mobile:  { label: 'Mobile',   icon: '📱', color: CH.green },
   tablet:  { label: 'Tablet',   icon: '📲', color: CH.yellow },
-  tv:      { label: 'Smart TV', icon: '📺', color: CH.purple },
+  tv:      { label: 'Smart TV', icon: '📺', color: CH.rose },
 };
 
 // ── Number helpers ────────────────────────────────────────────────────────────
@@ -310,7 +311,7 @@ const NodeCard = ({ row, latRow, alertRate, alertMs }: any) => {
     <div style={{
       padding: '12px 14px', background: 'var(--film-char)',
       border: '1px solid var(--film-border)', borderRadius: 8,
-      borderLeft: `3px solid ${nodeColor(row.node)}`, position: 'relative',
+      borderLeft: `1px solid ${nodeColor(row.node)}`, position: 'relative',
     }}>
       {alertMs_ && (
         <div style={{
@@ -423,7 +424,7 @@ const PosterThumb = ({ id, type, hits, hitRate }: {
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         <span style={{
           fontFamily: 'JetBrains Mono, monospace', fontSize: 7,
-          color: type === 'movie' ? CH.blue : type === 'tv' ? CH.green : CH.purple,
+          color: type === 'movie' ? CH.tan : type === 'tv' ? CH.green : CH.rose,
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: 2, padding: '1px 4px', textTransform: 'uppercase' as const,
         }}>{type}</span>
@@ -907,9 +908,9 @@ export default function AnalyticsDashboard() {
   const STATUS_META: Record<string, { label: string; color: string }> = {
     HIT:         { label: 'HIT — served from cache',   color: CH.green },
     MISS:        { label: 'MISS — origin rendered',    color: CH.orange },
-    REVALIDATED: { label: 'REVALIDATED — fresh recheck', color: CH.blue },
+    REVALIDATED: { label: 'REVALIDATED — fresh recheck', color: CH.tan },
     STALE:       { label: 'STALE — stale-if-error/wait', color: CH.yellow },
-    UPDATING:    { label: 'UPDATING — revalidation',   color: CH.purple },
+    UPDATING:    { label: 'UPDATING — revalidation',   color: CH.rose },
     EXPIRED:     { label: 'EXPIRED — re-render',       color: CH.red },
     BYPASS:      { label: 'BYPASS — not cacheable',    color: CH.ghost },
   };
@@ -1043,8 +1044,8 @@ export default function AnalyticsDashboard() {
 
         {/* Live toggle */}
         <button onClick={() => setLive(v => !v)} style={{
-          background: live ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${live ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.07)'}`,
+          background: live ? 'rgba(232,193,90,0.15)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${live ? 'rgba(232,193,90,0.4)' : 'rgba(255,255,255,0.07)'}`,
           color: live ? CH.green : CH.ghost, borderRadius: 6, padding: '4px 10px',
           fontSize: 9, fontWeight: 700, fontFamily: 'Syne, sans-serif', cursor: 'pointer',
           letterSpacing: '0.1em', flexShrink: 0,
@@ -1171,7 +1172,7 @@ export default function AnalyticsDashboard() {
                   <StatCard label="Race Wins" value={fmtNum(globalRow.race_wins)} sub="Posters served" color={CH.gold} />
                   <StatCard label="Success Rate" value={fmtPct(globalRow.success_rate_pct)} sub="of raster attempts" color={rateColor(globalRow.success_rate_pct)} />
                   <StatCard label="Failures" value={fmtNum(globalRow.failures)} sub="rasterizer" color={globalRow.failures > 50 ? CH.red : 'var(--film-cream)'} alert={globalRow.failures > 50} />
-                  <StatCard label="User Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.teal} />
+                  <StatCard label="User Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.rust} />
                   <StatCard label="Cache Hit Rate" value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'} sub="Edge cache" color={rateColor(num(reqSummary?.hit_rate_pct))} />
                 </>
               )}
@@ -1280,7 +1281,7 @@ export default function AnalyticsDashboard() {
                     <div key={n.id} style={{
                       padding: '12px 14px', background: 'var(--film-char)',
                       border: `1px solid ${isErr ? 'rgba(248,113,113,0.2)' : 'var(--film-border)'}`,
-                      borderLeft: `3px solid ${statusC}`, borderRadius: 8,
+                      borderLeft: `1px solid ${statusC}`, borderRadius: 8,
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, fontWeight: 700, color: 'var(--film-cream)' }}>{n.label}</span>
@@ -1295,8 +1296,8 @@ export default function AnalyticsDashboard() {
                           {[
                             { l: 'Active',  v: h.activeJobs ?? '—',   c: num(h.activeJobs) > 0 ? CH.yellow : CH.ghost },
                             { l: 'Queue',   v: h.queuedJobs ?? '—',   c: num(h.queuedJobs) > 0 ? CH.orange : CH.ghost },
-                            { l: 'Workers', v: h.workerCount ?? '—',  c: CH.blue },
-                            { l: 'Uptime',  v: h.uptime ? `${Math.floor(h.uptime / 3600)}h` : '—', c: CH.teal },
+                            { l: 'Workers', v: h.workerCount ?? '—',  c: CH.tan },
+                            { l: 'Uptime',  v: h.uptime ? `${Math.floor(h.uptime / 3600)}h` : '—', c: CH.rust },
                             { l: 'Icons',   v: h.iconCache?.loaded ? `✓${h.iconCache.iconCount}` : '✗', c: h.iconCache?.loaded ? CH.green : CH.red },
                             { l: 'Font',    v: h.fontDefault ? 'loaded' : '—', c: h.fontDefault ? CH.green : CH.ghost },
                           ].map(({ l, v, c }) => (
@@ -1374,8 +1375,8 @@ export default function AnalyticsDashboard() {
                   <ComposedChart data={reqTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="gReq" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={CH.teal} stopOpacity={0.25} />
-                        <stop offset="95%" stopColor={CH.teal} stopOpacity={0} />
+                        <stop offset="5%" stopColor={CH.rust} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CH.rust} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -1383,7 +1384,7 @@ export default function AnalyticsDashboard() {
                     <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
                     <Tooltip content={<FilmTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="requests" name="Total" stroke={CH.teal} fill="url(#gReq)" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="requests" name="Total" stroke={CH.rust} fill="url(#gReq)" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="hits" name="Cache Hits" stroke={CH.green} strokeWidth={1.5} dot={false} />
                     <Line type="monotone" dataKey="misses" name="Cache Misses" stroke={CH.orange} strokeWidth={1.5} dot={false} />
                   </ComposedChart>
@@ -1480,12 +1481,12 @@ export default function AnalyticsDashboard() {
             <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
               {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
                 <>
-                  <StatCard label="Total Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.teal} />
+                  <StatCard label="Total Requests" value={fmtNum(num(reqSummary?.total_requests))} sub={pLabel} color={CH.rust} />
                   <StatCard label="Cache Hits" value={fmtNum(num(reqSummary?.cache_hits))} sub="Edge cache" color={CH.green} />
                   <StatCard label="Hit Rate" value={reqSummary ? fmtPct(num(reqSummary.hit_rate_pct)) : '—'} sub="Cache efficiency" color={rateColor(num(reqSummary?.hit_rate_pct))} />
-                  <StatCard label="Movies" value={fmtNum(num(reqSummary?.movie_requests))} sub="of requests" color={CH.blue} />
+                  <StatCard label="Movies" value={fmtNum(num(reqSummary?.movie_requests))} sub="of requests" color={CH.tan} />
                   <StatCard label="TV Shows" value={fmtNum(num(reqSummary?.tv_requests))} sub="of requests" color={CH.green} />
-                  <StatCard label="Anime" value={fmtNum(num(reqSummary?.anime_requests))} sub="of requests" color={CH.purple} />
+                  <StatCard label="Anime" value={fmtNum(num(reqSummary?.anime_requests))} sub="of requests" color={CH.rose} />
                 </>
               )}
             </div>
@@ -1896,7 +1897,7 @@ export default function AnalyticsDashboard() {
                       {scoreAccuracyRows.map(r => (
                         <tr key={r.node} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                           <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.blue }}>{fmtMs(r.avg_score_at_selection)}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.tan }}>{fmtMs(r.avg_score_at_selection)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_actual_ms) }}>{fmtMs(r.avg_actual_ms)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: Math.abs(r.score_error_ms) < 200 ? CH.green : Math.abs(r.score_error_ms) < 500 ? CH.yellow : CH.red }}>
                             {r.score_error_ms > 0 ? '+' : ''}{fmtMs(r.score_error_ms)}
@@ -1980,7 +1981,7 @@ export default function AnalyticsDashboard() {
                       <div key={r.node} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                         <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--film-cream)', fontWeight: 700 }}>{nodeLabel(r.node).split(' ·')[0]}</span>
                         <div style={{ display: 'flex', gap: 10 }}>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.blue }}>{r.avg_payload_kb.toFixed(1)}kb avg</span>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.tan }}>{r.avg_payload_kb.toFixed(1)}kb avg</span>
                           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: CH.ghost }}>{r.max_payload_kb.toFixed(0)}kb max</span>
                           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: r.over_100kb > 0 ? CH.red : CH.ghost }}>{fmtNum(r.over_100kb)} &gt;100kb</span>
                         </div>
@@ -2040,7 +2041,7 @@ export default function AnalyticsDashboard() {
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.ghost }}>{fmtNum(r.total_attempts)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: rateColor(r.success_rate_pct) }}>{fmtPct(r.success_rate_pct)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_ms) }}>{fmtMs(r.avg_ms)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.blue }}>{r.max_inflight}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: CH.tan }}>{r.max_inflight}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.cpu_proxy_ms) }}>{fmtMs(r.cpu_proxy_ms)}</td>
                         </tr>
                       ))}
@@ -2121,7 +2122,7 @@ export default function AnalyticsDashboard() {
                             <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: msColor(r.avg_wall_ms) }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
                                 <div style={{ width: 60, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${((r.avg_wall_ms ?? 0) / maxMs) * 100}%`, background: CH.blue, borderRadius: 3 }} />
+                                  <div style={{ height: '100%', width: `${((r.avg_wall_ms ?? 0) / maxMs) * 100}%`, background: CH.tan, borderRadius: 3 }} />
                                 </div>
                                 <span>{fmtMs(r.avg_wall_ms)}</span>
                               </div>
@@ -2169,10 +2170,10 @@ export default function AnalyticsDashboard() {
                 <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
                   <StatCard label="Total Entries" value={fmtNum(num(dbStats.totals?.total_entries))} sub="poster_cache rows" color={CH.amber} />
                   <StatCard label="Unique IMDb IDs" value={fmtNum(num(dbStats.totals?.unique_imdb))} sub="with IMDb ref" color={CH.gold} />
-                  <StatCard label="Unique TMDB IDs" value={fmtNum(num(dbStats.totals?.unique_tmdb))} sub="TMDB movies/TV" color={CH.blue} />
-                  <StatCard label="Unique MAL IDs" value={fmtNum(num(dbStats.totals?.unique_mal))} sub="anime entries" color={CH.purple} />
+                  <StatCard label="Unique TMDB IDs" value={fmtNum(num(dbStats.totals?.unique_tmdb))} sub="TMDB movies/TV" color={CH.tan} />
+                  <StatCard label="Unique MAL IDs" value={fmtNum(num(dbStats.totals?.unique_mal))} sub="anime entries" color={CH.rose} />
                   <StatCard label="Updated 24h" value={fmtNum(num(dbStats.cacheAge?.updated_24h))} sub="fresh entries" color={CH.green} />
-                  <StatCard label="Updated 7d" value={fmtNum(num(dbStats.cacheAge?.updated_7d))} sub="recent entries" color={CH.teal} />
+                  <StatCard label="Updated 7d" value={fmtNum(num(dbStats.cacheAge?.updated_7d))} sub="recent entries" color={CH.rust} />
                 </div>
                 <Card title="Entries by Media Type">
                   {loading ? <Skel h={160} /> : (
@@ -2212,7 +2213,7 @@ export default function AnalyticsDashboard() {
                             <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: CH.ghost, marginBottom: 4, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{band.label}</div>
                             <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 22, color: band.color, fontWeight: 700, marginBottom: 6 }}>{fmtNum(count)}</div>
                             <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 }}>
-                              <div style={{ height: '100%', background: band.color, width: `${freshPct}%`, borderRadius: 2, transition: 'width 0.5s ease' }} />
+                              <div style={{ height: '100%', background: band.color, transform: `scaleX(${freshPct / 100})`, transformOrigin: 'left', borderRadius: 2, transition: 'transform 0.5s ease' }} />
                             </div>
                             <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 7, color: CH.ghost }}>{freshPct.toFixed(1)}% fresh · {fmtNum(total - count)} older</div>
                           </div>
@@ -2439,7 +2440,7 @@ export default function AnalyticsDashboard() {
                       <Tooltip content={<FilmTooltip />} />
                       <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono,monospace', paddingTop: 8 }} />
                       <Bar yAxisId="left" dataKey="requests" name="Requests" fill="rgba(196,124,46,0.25)" radius={[2,2,0,0]} />
-                      <Line yAxisId="right" type="monotone" dataKey="avg_wall_ms" name="Avg Wall ms" stroke={CH.blue} strokeWidth={2} dot={false} />
+                      <Line yAxisId="right" type="monotone" dataKey="avg_wall_ms" name="Avg Wall ms" stroke={CH.tan} strokeWidth={2} dot={false} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </Card>
@@ -2460,12 +2461,12 @@ export default function AnalyticsDashboard() {
             <div className="dash-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
               {loading ? Array(6).fill(0).map((_, i) => <Skel key={i} h={90} />) : (
                 <>
-                  <StatCard label="SVG Requests" value={fmtNum(num(svgSummary?.total_svg_requests))} sub={pLabel} color={CH.blue} />
+                  <StatCard label="SVG Requests" value={fmtNum(num(svgSummary?.total_svg_requests))} sub={pLabel} color={CH.tan} />
                   <StatCard label="Cache Hits" value={fmtNum(num(svgSummary?.cache_hits))} sub="Edge cache" color={CH.green} />
                   <StatCard label="Hit Rate" value={svgSummary ? fmtPct(num(svgSummary.hit_rate_pct)) : '—'} sub="SVG cache efficiency" color={rateColor(num(svgSummary?.hit_rate_pct))} />
-                  <StatCard label="Movies" value={fmtNum(num(svgSummary?.movie_svgs))} sub="SVG requests" color={CH.blue} />
+                  <StatCard label="Movies" value={fmtNum(num(svgSummary?.movie_svgs))} sub="SVG requests" color={CH.tan} />
                   <StatCard label="TV Shows" value={fmtNum(num(svgSummary?.tv_svgs))} sub="SVG requests" color={CH.green} />
-                  <StatCard label="Anime" value={fmtNum(num(svgSummary?.anime_svgs))} sub="SVG requests" color={CH.purple} />
+                  <StatCard label="Anime" value={fmtNum(num(svgSummary?.anime_svgs))} sub="SVG requests" color={CH.rose} />
                 </>
               )}
             </div>
@@ -2528,8 +2529,8 @@ export default function AnalyticsDashboard() {
                   <ComposedChart data={svgTimeseries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="gSvg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={CH.blue} stopOpacity={0.25} />
-                        <stop offset="95%" stopColor={CH.blue} stopOpacity={0} />
+                        <stop offset="5%" stopColor={CH.tan} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CH.tan} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -2537,7 +2538,7 @@ export default function AnalyticsDashboard() {
                     <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
                     <Tooltip content={<FilmTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="requests" name="SVG Requests" stroke={CH.blue} fill="url(#gSvg)" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="requests" name="SVG Requests" stroke={CH.tan} fill="url(#gSvg)" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="hits" name="Cache Hits" stroke={CH.green} strokeWidth={1.5} dot={false} />
                     <Line type="monotone" dataKey="misses" name="Cache Misses" stroke={CH.orange} strokeWidth={1.5} dot={false} />
                   </ComposedChart>
@@ -2600,8 +2601,8 @@ export default function AnalyticsDashboard() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <StatCard label="Error Rate" value={fmtPct(s.errorRatePct)} color={s.errorRatePct > 5 ? CH.red : s.errorRatePct > 1 ? CH.yellow : CH.green} />
                       <StatCard label="Errors" value={fmtNum(s.errors)} color={s.errors > 0 ? CH.red : CH.green} />
-                      <StatCard label="Subrequests" value={fmtNum(s.subrequests)} color={CH.blue} />
-                      <StatCard label="Avg CPU" value={s.avgCpuMs != null ? `${s.avgCpuMs.toFixed(1)}ms` : '—'} color={CH.purple} />
+                      <StatCard label="Subrequests" value={fmtNum(s.subrequests)} color={CH.tan} />
+                      <StatCard label="Avg CPU" value={s.avgCpuMs != null ? `${s.avgCpuMs.toFixed(1)}ms` : '—'} color={CH.rose} />
                     </div>
                     {Object.keys(s.byStatus).length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
@@ -2623,8 +2624,8 @@ export default function AnalyticsDashboard() {
                   <ComposedChart data={workersSeries} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="gWrk" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={CH.blue} stopOpacity={0.25} />
-                        <stop offset="95%" stopColor={CH.blue} stopOpacity={0} />
+                        <stop offset="5%" stopColor={CH.tan} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CH.tan} stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="gWrk2" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CH.green} stopOpacity={0.25} />
@@ -2636,7 +2637,7 @@ export default function AnalyticsDashboard() {
                     <YAxis tick={{ fill: CH.ghost, fontSize: 8 }} tickLine={false} axisLine={false} width={42} />
                     <Tooltip content={<FilmTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', paddingTop: 8 }} />
-                    <Area type="monotone" dataKey="backend" name="posterium-backend" stroke={CH.blue} fill="url(#gWrk)" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="backend" name="posterium-backend" stroke={CH.tan} fill="url(#gWrk)" strokeWidth={2} dot={false} />
                     <Area type="monotone" dataKey="rasterize" name="rasterize" stroke={CH.green} fill="url(#gWrk2)" strokeWidth={2} dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>

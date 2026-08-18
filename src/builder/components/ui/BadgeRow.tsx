@@ -158,7 +158,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
         <button
           onClick={() => handleToggleVisibility(badge.id, !isActive)}
           className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-          style={{ color: isActive ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+          style={{ color: isActive ? 'var(--film-text-dim)' : 'rgba(110,104,96,0.6)' }}
           title={isActive ? 'Hide badge' : 'Show badge'}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
@@ -167,7 +167,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.color = isActive
               ? 'var(--film-text-dim)'
-              : 'rgba(110,110,120,0.7)';
+              : 'rgba(110,104,96,0.6)';
             (e.currentTarget as HTMLElement).style.background = 'transparent';
           }}
         >

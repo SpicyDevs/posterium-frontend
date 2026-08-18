@@ -26,10 +26,12 @@ const TIMEOUT_MS = 25_000;
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
-  amber:  '#c47c2e', gold:   '#d4a245', cream: '#f0e6cc',
-  green:  '#4ade80', red:    '#f87171', orange:'#fb923c',
-  yellow: '#facc15', blue:   '#60a5fa', purple:'#a78bfa',
-  teal:   '#2dd4bf', pink:   '#f472b6', ghost: 'rgba(140,130,112,0.45)',
+  amber:  '#c47c2e', gold:   '#e8c15a', ember: '#e07b39', rust: '#b4522b',
+  brick:  '#a8391f', rose:   '#d98e7a', tan:   '#9c7a4a', ochre: '#b8863b',
+  cream:  '#f0e6cc',
+  green:  '#e8c15a', red:    'rgba(248,113,113,0.85)', orange:'#e07b39',
+  yellow: '#c47c2e',
+  ghost: 'rgba(140,130,112,0.45)',
   dim:    'rgba(180,168,148,0.65)',
   bg:     'var(--film-dark)',  mid:    'var(--film-mid)',
   char:   'var(--film-char)', border: 'var(--film-border)',
@@ -37,14 +39,14 @@ const C = {
 
 // ── Node registry — mirrors rasterize-node fleet ──────────────────────────────
 const NODES = [
-  { id:'washington', label:'US East (Vercel)',     tier:1, tag:'vercel',   region:'Virginia, US', url:'https://us-r-vercel.vercel.app',     path:'/api/rasterize', http:false, color:'#a78bfa', health:true },
-  { id:'ohio',       label:'US Central (Netlify)', tier:1, tag:'netlify',  region:'Ohio, US',     url:'https://r-netlify.netlify.app',      path:'/api/rasterize', http:false, color:'#f472b6', health:true },
-  { id:'midas',      label:'DE 2 (Midas)',         tier:1, tag:'midas',    region:'Germany',      url:'http://node-3.midas.host:25108',     path:'',               http:true,  color:'#4ade80', health:true },
-  { id:'germany',    label:'DE 20 (Spaceify)',     tier:1, tag:'spaceify', region:'Germany',      url:'http://de20.spaceify.eu:26100',      path:'',               http:true,  color:'#60a5fa', health:true },
-  { id:'danbot',     label:'DanBot EU',            tier:1, tag:'danbot',   region:'EU',           url:'http://dono-01.danbot.host:1751',    path:'',               http:true,  color:'#fb923c', health:true },
-  { id:'wsrv',       label:'wsrv.nl (CDN)',        tier:1, tag:'wsrv',     region:'Global (CDN)', url:'https://wsrv.nl',                    path:'',               http:false, color:'#facc15', health:false },
-  { id:'france',     label:'FR 1 (Spaceify)',      tier:2, tag:'spaceify', region:'France',       url:'http://fr1.spaceify.eu:25980',       path:'',               http:true,  color:'#2dd4bf', health:true },
-  { id:'render_eu',  label:'EUC (Render)',         tier:2, tag:'render',   region:'EU Central',   url:'https://euc-r-render.onrender.com',  path:'',               http:false, color:'#fb923c', health:true },
+  { id:'washington', label:'US East (Vercel)',     tier:1, tag:'vercel',   region:'Virginia, US', url:'https://us-r-vercel.vercel.app',     path:'/api/rasterize', http:false, color:'#e8c15a', health:true },
+  { id:'ohio',       label:'US Central (Netlify)', tier:1, tag:'netlify',  region:'Ohio, US',     url:'https://r-netlify.netlify.app',      path:'/api/rasterize', http:false, color:'#d98e7a', health:true },
+  { id:'midas',      label:'DE 2 (Midas)',         tier:1, tag:'midas',    region:'Germany',      url:'http://node-3.midas.host:25108',     path:'',               http:true,  color:'#e07b39', health:true },
+  { id:'germany',    label:'DE 20 (Spaceify)',     tier:1, tag:'spaceify', region:'Germany',      url:'http://de20.spaceify.eu:26100',      path:'',               http:true,  color:'#b4522b', health:true },
+  { id:'danbot',     label:'DanBot EU',            tier:1, tag:'danbot',   region:'EU',           url:'http://dono-01.danbot.host:1751',    path:'',               http:true,  color:'#c47c2e', health:true },
+  { id:'wsrv',       label:'wsrv.nl (CDN)',        tier:1, tag:'wsrv',     region:'Global (CDN)', url:'https://wsrv.nl',                    path:'',               http:false, color:'#b8863b', health:false },
+  { id:'france',     label:'FR 1 (Spaceify)',      tier:2, tag:'spaceify', region:'France',       url:'http://fr1.spaceify.eu:25980',       path:'',               http:true,  color:'#a8391f', health:true },
+  { id:'render_eu',  label:'EUC (Render)',         tier:2, tag:'render',   region:'EU Central',   url:'https://euc-r-render.onrender.com',  path:'',               http:false, color:'#9c7a4a', health:true },
 ] as const;
 
 const EXAMPLES = [
@@ -342,7 +344,7 @@ function WorkerStatus({ h }:{ h:HealthData }) {
   const busy = h.activeJobs ?? 0;
   const queue = h.queuedJobs ?? 0;
   const respawn = h.pendingRespawns ?? 0;
-  const color = respawn > 0 ? C.orange : busy > 0 ? C.yellow : C.teal;
+  const color = respawn > 0 ? C.orange : busy > 0 ? C.yellow : C.rust;
   const txt = [
     `${h.workerCount}w`,
     busy > 0 && `${busy} active`,
@@ -356,7 +358,7 @@ function UptimeStatus({ h }:{ h:HealthData }) {
   if (!h.uptime) return null;
   const hr = Math.floor(h.uptime/3600);
   const min = Math.floor((h.uptime%3600)/60);
-  return <Pill color={C.blue}>up {hr>0?`${hr}h ${min}m`:`${min}m`}</Pill>;
+  return <Pill color={C.tan}>up {hr>0?`${hr}h ${min}m`:`${min}m`}</Pill>;
 }
 
 // Compact image cell showing the poster + timing badge
@@ -376,7 +378,7 @@ function PosterCell({ result, label, badge }:{ result:FetchResult; label:string;
             <div style={{ position:'absolute', bottom:4, right:4, display:'flex', gap:3 }}>
               {result.fallback && (
                 <span style={{ ...MONO, fontSize:7, fontWeight:700,
-                  color:'#f59e0b', background:'rgba(0,0,0,0.85)',
+                  color:C.orange, background:'rgba(0,0,0,0.85)',
                   padding:'2px 5px', borderRadius:3 }}>
                   ⚠ {result.fallback}
                 </span>
@@ -407,7 +409,7 @@ function PosterCell({ result, label, badge }:{ result:FetchResult; label:string;
         {result.cacheStatus && (
           <Pill color={result.cacheStatus === 'HIT' ? C.green : C.orange}>{result.cacheStatus}</Pill>
         )}
-        {result.fallback && <Pill color="#f59e0b">wsrv fallback</Pill>}
+        {result.fallback && <Pill color={C.orange}>wsrv fallback</Pill>}
       </div>
     </div>
   );
@@ -422,7 +424,7 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
 
   return (
     <div style={{ background:C.char, border:`1px solid ${hasAny ? C.border : 'rgba(248,113,113,0.2)'}`,
-      borderLeft:`3px solid ${node.color}`, borderRadius:8, overflow:'hidden' }}>
+      borderLeft:`1px solid ${node.color}`, borderRadius:8, overflow:'hidden' }}>
 
       {/* Header */}
       <div style={{ padding:'10px 12px', borderBottom:`1px solid rgba(255,255,255,0.05)` }}>
@@ -433,12 +435,12 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
             </div>
             <div style={{ ...MONO, fontSize:7, color:C.ghost, marginTop:1 }}>
               {node.region}
-              <span style={{ color:C.teal, marginLeft:5 }}>· server-side probe</span>
+              <span style={{ color:C.rust, marginLeft:5 }}>· server-side probe</span>
             </div>
           </div>
           <div style={{ display:'flex', gap:4, alignItems:'center', flexWrap:'wrap', justifyContent:'flex-end' }}>
             <Pill color={node.color}>{node.tag}</Pill>
-            <Pill color={node.tier === 1 ? C.blue : C.purple}>T{node.tier}</Pill>
+            <Pill color={node.tier === 1 ? C.tan : C.rose}>T{node.tier}</Pill>
             {h.skipped && <Pill color={C.ghost}>no health</Pill>}
             {!reachable && !h.skipped && <Pill color={C.red}>offline</Pill>}
           </div>
@@ -467,8 +469,8 @@ function NodeCard({ node, urlKb, b64Kb }:{ node:NodeResult; urlKb:number; b64Kb:
         {/* Delta annotation */}
         {delta !== null && (
           <div style={{ marginTop:8, padding:'6px 8px', borderRadius:4,
-            background: Math.abs(delta) > 200 ? 'rgba(251,146,60,0.08)' : 'rgba(255,255,255,0.03)',
-            border:`1px solid ${Math.abs(delta) > 200 ? 'rgba(251,146,60,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+            background: Math.abs(delta) > 200 ? 'rgba(224,123,57,0.08)' : 'rgba(255,255,255,0.03)',
+            border:`1px solid ${Math.abs(delta) > 200 ? 'rgba(224,123,57,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
             <span style={{ ...MONO, fontSize:8, color: delta > 0 ? C.orange : C.green }}>
               B64 is {delta > 0 ? `+${delta}ms slower` : `${Math.abs(delta)}ms faster`} than URL-SVG
             </span>
@@ -534,7 +536,7 @@ function SummaryPanel({ bench }:{ bench:Benchmark }) {
   const max = (arr:number[]) => arr.length ? Math.max(...arr) : null;
 
   const rows = [
-    { label:'POST URL-SVG', ms:postMs, kb:bench.urlKb, color:C.blue },
+    { label:'POST URL-SVG', ms:postMs, kb:bench.urlKb, color:C.gold },
     { label:'POST B64-SVG', ms:b64Ms,  kb:bench.b64Kb, color:C.orange },
     { label:'GET ?url=',    ms:getMs,  kb:0,            color:C.ghost },
   ];
@@ -586,7 +588,7 @@ function SummaryPanel({ bench }:{ bench:Benchmark }) {
         {/* Overhead row */}
         {bench.urlKb > 0 && bench.b64Kb > 0 && (
           <div style={{ marginTop:10, padding:'6px 8px', borderRadius:4,
-            background:'rgba(251,146,60,0.05)', border:'1px solid rgba(251,146,60,0.15)' }}>
+            background:'rgba(224,123,57,0.05)', border:'1px solid rgba(224,123,57,0.15)' }}>
             <span style={{ ...MONO, fontSize:8, color:C.orange }}>
               B64 payload is {bench.b64Kb - bench.urlKb}KB larger (+{Math.round((bench.b64Kb/bench.urlKb-1)*100)}%)
             </span>
@@ -599,8 +601,8 @@ function SummaryPanel({ bench }:{ bench:Benchmark }) {
         {/* Fallback warning — excluded from clean averages */}
         {fallbackNodes.length > 0 && (
           <div style={{ marginTop:10, padding:'6px 8px', borderRadius:4,
-            background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)' }}>
-            <span style={{ ...MONO, fontSize:8, color:'#f59e0b' }}>
+            background:'rgba(224,123,57,0.08)', border:'1px solid rgba(224,123,57,0.2)' }}>
+            <span style={{ ...MONO, fontSize:8, color:C.orange }}>
               ⚠ {fallbackNodes.length} node{fallbackNodes.length > 1 ? 's' : ''} used wsrv fallback — excluded from averages
             </span>
             <span style={{ ...MONO, fontSize:7, color:C.ghost, marginLeft:8 }}>
@@ -623,7 +625,7 @@ function HealthGrid({ nodes }:{ nodes:NodeResult[] }) {
         return (
           <div key={n.id} style={{ padding:'10px 12px', background:C.char,
             border:`1px solid ${h.reachable ? C.border : 'rgba(248,113,113,0.2)'}`,
-            borderLeft:`3px solid ${n.color}`, borderRadius:7 }}>
+            borderLeft:`1px solid ${n.color}`, borderRadius:7 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
               <span style={{ ...MONO, fontSize:10, fontWeight:700, color:'var(--film-cream)' }}>{n.label}</span>
               {h.skipped ? <Pill color={C.ghost}>no health</Pill> : <StatusDot ok={h.reachable} />}
@@ -643,7 +645,7 @@ function HealthGrid({ nodes }:{ nodes:NodeResult[] }) {
                                     ? (h.fontReady ? (h.fontDefault?.split(',')[0]||'✓') : '✗')
                                     : (h.fontDefault ? h.fontDefault.split(',')[0] : h.fontFiles?.length ? '✓' : '—'),
                                   c: (h.fontReady ?? (h.fontDefault||h.fontFiles?.length)) ? C.green : C.red },
-                  { l:'Workers',  v: h.workerCount !== undefined ? String(h.workerCount) : '—', c: C.blue },
+                  { l:'Workers',  v: h.workerCount !== undefined ? String(h.workerCount) : '—', c: C.tan },
                   { l:'Active',   v: h.activeJobs  !== undefined ? String(h.activeJobs)  : '—',
                                   c: (h.activeJobs||0) > 0 ? C.yellow : C.ghost },
                   { l:'Queue',    v: h.queuedJobs  !== undefined ? String(h.queuedJobs)  : '—',
@@ -651,7 +653,7 @@ function HealthGrid({ nodes }:{ nodes:NodeResult[] }) {
                   { l:'Respawns', v: h.pendingRespawns !== undefined ? String(h.pendingRespawns) : '—',
                                   c: (h.pendingRespawns||0) > 0 ? C.red : C.ghost },
                   { l:'Uptime',   v: h.uptime ? (h.uptime>=3600 ? `${Math.floor(h.uptime/3600)}h` : `${Math.floor(h.uptime/60)}m`) : '—',
-                                  c: C.teal },
+                                  c: C.rust },
                   { l:'Max conc', v: h.maxConcurrent !== undefined ? String(h.maxConcurrent) : '—', c: C.ghost },
                   { l:'Node ID',  v: h.node || '—', c: C.dim },
                 ].map(({ l, v, c }) => (
@@ -685,7 +687,7 @@ function TimingBars({ nodes }:{ nodes:NodeResult[] }) {
             <span style={{ color:C.ghost, fontWeight:400, marginLeft:6 }}>{n.region}</span>
           </div>
           {[
-            { r:n.postUrl,   label:'POST URL', color:C.blue },
+            { r:n.postUrl,   label:'POST URL', color:C.tan },
             { r:n.postB64,   label:'POST B64', color:C.orange },
             { r:n.getRaster, label:'GET',       color:C.ghost },
           ].map(({ r, label }) => (
@@ -693,9 +695,10 @@ function TimingBars({ nodes }:{ nodes:NodeResult[] }) {
               <span style={{ ...MONO, fontSize:7, color:C.ghost, minWidth:54 }}>{label}</span>
               <div style={{ flex:1, height:8, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
                 {r.ok && (
-                  <div style={{ height:'100%', width:`${(r.ms/maxMs)*100}%`,
+                  <div style={{ height:'100%', transform:`scaleX(${r.ms/maxMs})`,
+                    transformOrigin:'left',
                     background:msColor(r.ms), borderRadius:2,
-                    transition:'width 0.5s ease' }} />
+                    transition:'transform 0.5s ease' }} />
                 )}
               </div>
               <span style={{ ...MONO, fontSize:8, fontWeight:700, minWidth:50, textAlign:'right',
@@ -837,8 +840,8 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
       {/* Server-side benchmark partial failure banner */}
       {bench.serverNote && (
         <div style={{ padding:'8px 12px', borderRadius:8,
-          background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)',
-          color:'#fbbf24', fontSize:10, ...MONO }}>
+          background:'rgba(224,123,57,0.08)', border:'1px solid rgba(224,123,57,0.25)',
+          color:C.orange, fontSize:10, ...MONO }}>
           ⚠ server-side benchmark partially failed — {bench.serverNote}. Node cards below show fallback state.
         </div>
       )}
@@ -853,7 +856,7 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           Production LB Ladder
           <Pill color={C.ghost}>via Worker B relay</Pill>
           <Pill color={bench.lb.ok ? C.green : C.red}>{bench.lb.ok ? 'SERVED' : 'FAILED'}</Pill>
-          {bench.lb.fallback && <Pill color="#f59e0b">fallback fired</Pill>}
+          {bench.lb.fallback && <Pill color={C.orange}>fallback fired</Pill>}
         </div>
         <div style={{ padding:12, display:'flex', gap:14, flexWrap:'wrap' }}>
           <div style={{ flex:'0 0 110px', position:'relative', aspectRatio:'2/3', borderRadius:6,
@@ -879,10 +882,10 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
               </span>
             )}
             <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-              <Pill color={C.blue}>attempts: {bench.lb.attempts ?? '—'}</Pill>
-              <Pill color={C.purple}>wall: {bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—'}</Pill>
+              <Pill color={C.tan}>attempts: {bench.lb.attempts ?? '—'}</Pill>
+              <Pill color={C.ochre}>wall: {bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—'}</Pill>
               <Pill color={C.gold}>source: {bench.lb.rasterSource ?? '—'}</Pill>
-              <Pill color={C.teal}>colo: {bench.lb.colo ?? '—'}</Pill>
+              <Pill color={C.rust}>colo: {bench.lb.colo ?? '—'}</Pill>
               {bench.lb.cacheStatus && (
                 <Pill color={bench.lb.cacheStatus === 'HIT' ? C.green : C.orange}>cf: {bench.lb.cacheStatus}</Pill>
               )}
@@ -905,8 +908,8 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
           { l:'Nodes OK',     v: `${bench.summary.successCount}/${NODES.length}`,
             c: bench.summary.successCount === 0 ? C.red
               : bench.summary.successCount < NODES.length ? C.yellow : C.green },
-          { l:'LB Attempts',  v: bench.lb.attempts != null ? String(bench.lb.attempts) : '—', c: C.blue },
-          { l:'LB Wall',      v: bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—', c: C.purple },
+          { l:'LB Attempts',  v: bench.lb.attempts != null ? String(bench.lb.attempts) : '—', c: C.tan },
+          { l:'LB Wall',      v: bench.lb.wallMs ? `${bench.lb.wallMs}ms` : '—', c: C.ochre },
           { l:'LB Source',    v: bench.lb.rasterSource ?? '—', c: C.gold },
         ].map(({ l, v, c }) => (
           <div key={l} style={{ padding:'10px 12px', background:C.char,
@@ -950,7 +953,7 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
             Render Timing
           </div>
           <div style={{ display:'flex', gap:12, marginBottom:12, flexWrap:'wrap' }}>
-            {[{ c:C.blue, k:'POST URL-SVG' },{ c:C.orange, k:'POST B64-SVG' },{ c:C.ghost, k:'GET ?url=' }].map(({ c, k }) => (
+            {[{ c:C.gold, k:'POST URL-SVG' },{ c:C.orange, k:'POST B64-SVG' },{ c:C.ghost, k:'GET ?url=' }].map(({ c, k }) => (
               <span key={k} style={{ display:'flex', alignItems:'center', gap:5, ...MONO, fontSize:8, color:C.ghost }}>
                 <span style={{ width:10, height:10, borderRadius:2, background:c, display:'inline-block' }} />
                 {k}
@@ -977,7 +980,7 @@ function ResultsView({ bench, onBack, onRerun }:{ bench:Benchmark; onBack:()=>vo
               <tbody>
                 <tr style={{ background:'rgba(255,255,255,0.01)', borderBottom:`1px solid rgba(255,255,255,0.025)` }}>
                   <td style={{ padding:'5px 12px', color:C.amber, fontWeight:700, borderLeft:`2px solid ${C.gold}` }}>LB LADDER</td>
-                  <td style={{ padding:'5px 12px', color:C.teal, fontSize:8 }}>worker</td>
+                  <td style={{ padding:'5px 12px', color:C.rust, fontSize:8 }}>worker</td>
                   <td style={{ padding:'5px 12px', color:C.ghost }}>POST B64-SVG</td>
                   <td style={{ padding:'5px 12px' }}>
                     <span style={{ color:bench.lb.ok?C.green:C.red, fontWeight:700 }}>{bench.lb.ok?'✓ OK':'✗ FAIL'}</span>

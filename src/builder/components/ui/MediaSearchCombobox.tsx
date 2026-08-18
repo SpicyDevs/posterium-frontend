@@ -120,9 +120,9 @@ const MediaSearchCombobox: React.FC<MediaSearchComboboxProps> = ({
                         textTransform: 'uppercase',
                         background:
                           item.media_type === 'tv'
-                            ? 'rgba(59,130,246,0.12)'
+                            ? 'rgba(180,82,43,0.12)'
                             : 'rgba(196,124,46,0.12)',
-                        color: item.media_type === 'tv' ? '#60a5fa' : 'var(--film-amber)',
+                        color: item.media_type === 'tv' ? '#b4522b' : 'var(--film-amber)',
                       }}
                     >
                       {item.media_type}

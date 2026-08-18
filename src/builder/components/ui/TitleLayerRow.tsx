@@ -93,7 +93,7 @@ const TitleLayerRow: React.FC<TitleLayerRowProps> = ({
         <button
           onClick={() => (isActive ? onDisable() : onEnable())}
           className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-          style={{ color: isActive ? 'var(--film-text-dim)' : 'rgba(110,110,120,0.7)' }}
+          style={{ color: isActive ? 'var(--film-text-dim)' : 'rgba(110,104,96,0.6)' }}
           title={isActive ? 'Hide layer' : 'Show layer'}
         >
           {isActive ? <Eye size={13} /> : <EyeOff size={13} />}

@@ -22,6 +22,26 @@ colors:
   text-faint: "rgba(110, 104, 96, 0.6)"
   glass: "rgba(255, 255, 255, 0.04)"
   brass: "rgba(180, 150, 80, 0.55)"
+  void-black: "rgba(0, 0, 0, 0.2)"
+  danger: "rgba(248, 113, 113, 0.85)"
+  warn: "rgba(250, 204, 21, 0.9)"
+  viz-gold: "#e8c15a"
+  viz-ember: "#e07b39"
+  viz-rust: "#b4522b"
+  viz-brick: "#a8391f"
+  viz-rose: "#d98e7a"
+  viz-tan: "#9c7a4a"
+  viz-ochre: "#b8863b"
+  brand-imdb: "#F5C518"
+  brand-tmdb: "#01b4e4"
+  brand-meta: "#FFBD3F"
+  brand-letterboxd: "#00e054"
+  brand-mal: "#2e51a2"
+  brand-anilist: "#02a9ff"
+  brand-rt-fresh: "#FA320A"
+  brand-rt-rotten: "#0AC855"
+  brand-popcorn-fresh: "#DB382A"
+  brand-popcorn-rotten: "#129B47"
 typography:
   display:
     fontFamily: "'Bebas Neue', 'Arial Narrow', sans-serif"
@@ -208,6 +228,11 @@ One warm world: black-and-umber neutrals carrying a single amber light source, w
 - **Lobby Silver** (#b0a898): Secondary text, subdued links, descriptions.
 - **Reel White** (#faf6ec): The brightest text and the dark-on-amber button text.
 - **Text roles**: body `rgba(230,218,196,0.92)`, label `rgba(212,198,172,0.82)`, dim `rgba(206,193,170,0.82)`, ghost `rgba(178,166,146,0.58)` — the reading ladder under screen-cream.
+- **Void Black** (`rgba(0,0,0,0.2)` family): The dark of the booth — scrims, drawer backdrops, inset wells, chip backgrounds, and shadow gradients. Every alpha of black rides this token.
+- **Danger** (`rgba(248,113,113,0.85)` family): The error/destructive signal — a warm rose that reads against the booth's black where curtain-red muddies. Error text, destructive icons, failed-state borders.
+- **Warn** (`rgba(250,204,21,0.9)` family): The caution signal — warm golden yellow for degraded states.
+- **Viz ramp** (`viz-gold` → `viz-ochre`): The warm-only data-viz palette for internal consoles (analytics, benchmark). Status semantics reuse the amber ladder: good = viz-gold, warn = projector-amber, slow = viz-ember, bad = danger. Node/identity hues come from the ramp — never blue, purple, teal, or pink, which sit outside this world.
+- **Brand-locked source colors** (`brand-*`): The exact official colors of third-party rating sources (IMDb, TMDB, Metacritic, Letterboxd, MAL, AniList, Rotten Tomatoes, Popcorn) rendered in badge artwork. These are the product's payload, not palette drift — they never tint the interface.
 
 ### Named Rules
 

@@ -120,7 +120,7 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
             <ActionButton
               disabled={!hasPoster}
-              icon={copied ? <Check size={12} style={{ color: '#34d399' }} /> : <Copy size={12} />}
+              icon={copied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
               label={copied ? 'Copied' : 'Copy URL'}
               onClick={handleCopyUrl}
             />
@@ -135,7 +135,7 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             <ActionButton
               disabled={!hasPoster}
-              icon={aioCopied ? <Check size={12} style={{ color: '#34d399' }} /> : <Copy size={12} />}
+              icon={aioCopied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
               label={aioCopied ? 'Copied' : 'Copy for AIO'}
               onClick={handleAioCopy}
             />

@@ -1050,7 +1050,7 @@ const StudioLayout: React.FC<{
         .builder-ui input, .builder-ui textarea, .builder-ui [contenteditable] {
           user-select: text; -webkit-user-select: text;
         }
-        .sidebar-transition { transition: width 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
+        .sidebar-transition { transition: opacity 0.2s ease; }
         .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
         .mobile-header-scroll::-webkit-scrollbar { display: none; }
       `}</style>
@@ -1507,7 +1507,7 @@ const StudioLayout: React.FC<{
                 left: 0,
                 right: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
-                background: '#111113',
+                background: 'var(--film-mid)',
                 overflow: 'hidden',
                 transition: isDraggingBottomPanel
                   ? 'none'
@@ -2318,7 +2318,7 @@ const StudioLayout: React.FC<{
             role="main"
             aria-label="Poster canvas"
             className="flex-1 relative overflow-hidden min-h-0"
-            style={{ background: '#111113' }}
+            style={{ background: 'var(--film-mid)' }}
             onClick={(e) => {
               if (e.target === e.currentTarget) clearSelection();
             }}
