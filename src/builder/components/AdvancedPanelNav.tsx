@@ -49,7 +49,10 @@ const AdvancedPanelNav: React.FC<Props> = memo(({ activePanel, onChange }) => (
             </span>
             <span className="min-w-0">
               <span className="block syne-font text-[12px] font-bold tracking-wide">{label}</span>
-              <span className="block text-[9px] truncate" style={{ color: 'var(--film-text-dim)' }}>
+              <span
+                className="block body-font text-[9px] truncate"
+                style={{ color: 'var(--film-text-dim)' }}
+              >
                 {description}
               </span>
             </span>

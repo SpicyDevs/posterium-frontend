@@ -142,7 +142,13 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
           <ActionButton
             disabled={!hasPoster}
-            icon={copied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
+            icon={
+              copied ? (
+                <Check size={12} style={{ color: 'var(--film-gold)' }} />
+              ) : (
+                <Copy size={12} />
+              )
+            }
             label={copied ? 'Copied' : 'Copy URL'}
             onClick={handleCopyUrl}
           />
@@ -163,7 +169,13 @@ const ExportStep = memo<ExportStepProps>(({ config, onChange, builderMode, setBu
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
           <ActionButton
             disabled={!hasPoster}
-            icon={aioCopied ? <Check size={12} style={{ color: '#e8c15a' }} /> : <Copy size={12} />}
+            icon={
+              aioCopied ? (
+                <Check size={12} style={{ color: 'var(--film-gold)' }} />
+              ) : (
+                <Copy size={12} />
+              )
+            }
             label={aioCopied ? 'Copied' : 'Copy for AIO'}
             onClick={handleAioCopy}
           />
@@ -309,7 +321,7 @@ const ActionButton = memo<ActionButtonProps>(({ disabled, icon, label, onClick, 
       transition: 'all 0.15s',
       background: amber ? 'var(--film-amber)' : 'rgba(255,255,255,0.03)',
       border: amber ? '1px solid rgba(196,124,46,0.3)' : '1px solid rgba(255,255,255,0.08)',
-      color: amber ? '#070706' : 'var(--film-text-dim)',
+      color: amber ? 'var(--film-black)' : 'var(--film-text-dim)',
     }}
   >
     {icon}

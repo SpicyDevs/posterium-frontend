@@ -178,7 +178,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(7,7,6,0.8)',
+        background: 'rgba(7,7,6,0.85)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'flex-start',
@@ -199,8 +199,8 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
           width: '100%',
           maxWidth: 560,
           margin: '0 16px',
-          background: 'rgba(14,13,11,0.96)',
-          border: '1px solid rgba(196,124,46,0.16)',
+          background: 'rgba(18,17,14,0.96)',
+          border: '1px solid rgba(196,124,46,0.22)',
           borderRadius: 12,
           boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.02)',
           overflow: 'hidden',
@@ -229,7 +229,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             autoComplete="off"
             spellCheck={false}
             aria-label="Search commands"
-            className="focus:outline-none syne-font"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
             style={{
               flex: 1,
               background: 'transparent',
@@ -243,30 +243,34 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             onClick={onClose}
             className="mono-font"
             style={{
-              background: 'transparent',
+              background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(196,124,46,0.12)',
-              borderRadius: 5,
-              color: 'rgba(140,130,112,0.6)',
+              borderRadius: 3,
+              color: 'rgba(196,124,46,0.7)',
               cursor: 'pointer',
-              padding: '4px 8px',
+              padding: '2px 6px',
               fontSize: 10,
+              lineHeight: 1.4,
+              userSelect: 'none',
               transition: 'all 0.2s',
               flexShrink: 0,
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 4,
+              minWidth: 20,
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.color = 'rgba(196,124,46,0.8)';
+              el.style.color = 'rgba(196,124,46,0.9)';
               el.style.borderColor = 'rgba(196,124,46,0.24)';
-              el.style.background = 'rgba(196,124,46,0.06)';
+              el.style.background = 'rgba(196,124,46,0.08)';
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.color = 'rgba(140,130,112,0.6)';
+              el.style.color = 'rgba(196,124,46,0.7)';
               el.style.borderColor = 'rgba(196,124,46,0.12)';
-              el.style.background = 'transparent';
+              el.style.background = 'rgba(255,255,255,0.03)';
             }}
           >
             <X size={12} />
@@ -290,7 +294,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               style={{
                 padding: '40px 20px',
                 textAlign: 'center',
-                color: 'rgba(140,130,112,0.65)',
+                color: 'var(--film-text-ghost)',
                 fontSize: 12,
               }}
             >
@@ -323,7 +327,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                         fontSize: 10,
                         fontWeight: 700,
                         letterSpacing: '0.14em',
-                        color: cat === 'Recent' ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.65)',
+                        color: cat === 'Recent' ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -368,12 +372,18 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
               <kbd
                 className="mono-font"
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 20,
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(196,124,46,0.12)',
                   borderRadius: 3,
-                  padding: '2px 5px',
+                  padding: '2px 6px',
                   fontSize: 10,
-                  color: 'rgba(196,124,46,0.65)',
+                  lineHeight: 1.4,
+                  color: 'rgba(196,124,46,0.7)',
+                  userSelect: 'none',
                 }}
               >
                 {key}
@@ -382,7 +392,7 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
                 className="syne-font"
                 style={{
                   fontSize: 10,
-                  color: 'rgba(140,130,112,0.65)',
+                  color: 'var(--film-text-ghost)',
                 }}
               >
                 {label}
@@ -390,12 +400,12 @@ const CommandPalette: React.FC<Props> = memo(({ isOpen, onClose, commands }) => 
             </div>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Command size={8} style={{ color: 'rgba(140,130,112,0.65)' }} />
+            <Command size={8} style={{ color: 'var(--film-text-ghost)' }} />
             <span
               className="mono-font"
               style={{
                 fontSize: 10,
-                color: 'rgba(140,130,112,0.65)',
+                color: 'var(--film-text-ghost)',
                 letterSpacing: '0.08em',
               }}
             >
@@ -459,7 +469,7 @@ const CommandItem = memo<{
         style={{
           display: 'block',
           fontSize: 11,
-          color: isActive ? 'var(--film-cream)' : 'rgba(240,230,204,0.65)',
+          color: isActive ? 'var(--film-cream)' : 'var(--film-text-label)',
           fontWeight: 600,
           transition: 'color 0.1s',
           whiteSpace: 'nowrap',
@@ -476,7 +486,7 @@ const CommandItem = memo<{
             display: 'block',
             fontSize: 10,
             marginTop: 2,
-            color: 'rgba(140,130,112,0.65)',
+            color: 'var(--film-text-dim)',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -490,7 +500,7 @@ const CommandItem = memo<{
       className="mono-font"
       style={{
         fontSize: 10,
-        color: 'rgba(140,130,112,0.65)',
+        color: 'var(--film-text-dim)',
         letterSpacing: '0.08em',
         flexShrink: 0,
       }}
@@ -501,12 +511,18 @@ const CommandItem = memo<{
       <kbd
         className="mono-font"
         style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 20,
+          padding: '2px 6px',
           background: 'rgba(255,255,255,0.03)',
-          border: `1px solid ${isActive ? 'rgba(196,124,46,0.2)' : 'rgba(196,124,46,0.08)'}`,
+          border: `1px solid ${isActive ? 'rgba(196,124,46,0.2)' : 'rgba(196,124,46,0.12)'}`,
           borderRadius: 3,
-          padding: '1px 4px',
           fontSize: 10,
-          color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(140,130,112,0.5)',
+          lineHeight: 1.4,
+          color: isActive ? 'rgba(196,124,46,0.7)' : 'rgba(196,124,46,0.55)',
+          userSelect: 'none',
           flexShrink: 0,
           transition: 'all 0.1s',
         }}

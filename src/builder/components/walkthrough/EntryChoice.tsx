@@ -48,7 +48,7 @@ const EntryChoice = memo<EntryChoiceProps>(({ onChoose }) => (
     <h1
       className="poster-font"
       style={{
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: 400,
         color: 'var(--film-cream)',
         marginBottom: 8,

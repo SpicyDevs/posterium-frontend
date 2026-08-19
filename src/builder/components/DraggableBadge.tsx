@@ -278,7 +278,7 @@ const DraggableBadge: React.FC<Props> = ({
     badgeId.toUpperCase();
   const labelSizeRaw = itemConfig?.labelSize ?? config.labelSize ?? 11;
   const labelSizeVal = labelSizeRaw * displayScale;
-  const labelColorVal = itemConfig?.labelColor ?? config.labelColor ?? '#a1a1aa';
+  const labelColorVal = itemConfig?.labelColor ?? config.labelColor ?? '#b0a898';
 
   // Background
   const rawBg = itemConfig?.bg ?? config.bg;

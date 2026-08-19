@@ -233,6 +233,7 @@ const LiveWalkthroughPreview = memo<LiveWalkthroughPreviewProps>(({ config, comp
         }}
       >
         <div
+          className="syne-font"
           style={{
             fontSize: 9,
             fontWeight: 700,
@@ -240,7 +241,6 @@ const LiveWalkthroughPreview = memo<LiveWalkthroughPreviewProps>(({ config, comp
             textTransform: 'uppercase',
             color: 'var(--film-text-ghost)',
             padding: '10px 12px 4px',
-            fontFamily: 'Syne, sans-serif',
           }}
         >
           Preview

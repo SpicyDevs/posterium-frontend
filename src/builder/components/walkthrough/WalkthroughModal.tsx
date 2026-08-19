@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import type { BuilderMode } from '@/builder/components/ModeToggle';
 import type { PosterConfig } from '@/types/poster';
 import { DEFAULT_CONFIG } from '@/constants/badges';
@@ -196,30 +196,28 @@ const WalkthroughModal = memo<WalkthroughModalProps>(
                 top: 16,
                 right: 16,
                 zIndex: 110,
-                width: 32,
-                height: 32,
-                borderRadius: 8,
+                width: 24,
+                height: 24,
+                borderRadius: 6,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(196,124,46,0.12)',
-                color: 'rgba(140,130,112,0.6)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--film-text-dim)',
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--film-cream)';
-                e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
+                e.currentTarget.style.color = 'var(--film-amber)';
                 e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
-                e.currentTarget.style.borderColor = 'rgba(196,124,46,0.12)';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                e.currentTarget.style.color = 'var(--film-text-dim)';
+                e.currentTarget.style.background = 'transparent';
               }}
             >
-              <X size={14} />
+              <X size={12} />
             </button>
           )}
 
@@ -265,7 +263,7 @@ const WalkthroughModal = memo<WalkthroughModalProps>(
                     e.currentTarget.style.color = 'var(--film-text-ghost)';
                   }}
                 >
-                  <X size={14} /> Back to choices
+                  <ChevronLeft size={14} /> Back to choices
                 </button>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <CommunityPresetsStep presets={presets} onSelectPreset={handleSelectPreset} />

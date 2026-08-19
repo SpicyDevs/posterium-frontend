@@ -262,7 +262,7 @@ const ExportMenu = memo<ExportMenuProps>(
             : 320,
           background: 'rgba(18,17,14,0.98)',
           border: '1px solid rgba(196,124,46,0.18)',
-          borderRadius: 14,
+          borderRadius: 12,
           boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(196,124,46,0.06)',
           overflow: 'hidden',
           animation: 'export-panel-in 0.18s cubic-bezier(0.16,1,0.3,1)',
@@ -278,13 +278,16 @@ const ExportMenu = memo<ExportMenuProps>(
 
         <div
           className="flex items-center justify-between px-4 py-3"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+          style={{
+            borderBottom: '1px solid rgba(196,124,46,0.08)',
+            background: 'rgba(0,0,0,0.2)',
+          }}
         >
           <div className="flex items-center gap-2">
             <Download size={13} style={{ color: 'var(--film-amber)' }} />
             <span
-              className="syne-font font-bold uppercase tracking-widest"
-              style={{ fontSize: 11, color: 'var(--film-cream)' }}
+              className="syne-font font-bold uppercase tracking-wider"
+              style={{ fontSize: 10, color: 'var(--film-cream)' }}
             >
               Export
             </span>
@@ -292,13 +295,17 @@ const ExportMenu = memo<ExportMenuProps>(
           <button
             onClick={onClose}
             aria-label="Close export menu"
-            className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+            className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
             style={{ color: 'var(--film-text-dim)' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = 'var(--film-amber)';
+              el.style.background = 'rgba(196,124,46,0.08)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--film-text-dim)';
+              const el = e.currentTarget as HTMLElement;
+              el.style.color = 'var(--film-text-dim)';
+              el.style.background = 'transparent';
             }}
           >
             <X size={12} />

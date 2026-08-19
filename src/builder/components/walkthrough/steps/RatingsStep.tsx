@@ -85,7 +85,7 @@ const RatingsStep = memo<RatingsStepProps>(({ ratings, onChange }) => {
                     : '1px solid rgba(255,255,255,0.1)',
                 }}
               >
-                {active && <Check size={10} style={{ color: '#070706' }} />}
+                {active && <Check size={10} style={{ color: 'var(--film-black)' }} />}
               </div>
 
               {iconData ? (

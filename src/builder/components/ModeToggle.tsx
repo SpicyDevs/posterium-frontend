@@ -38,7 +38,7 @@ const ModeToggle: React.FC<Props> = memo(({ mode, onChange }) => (
             aria-pressed={active}
             className="h-7 px-2.5 rounded-md syne-font text-[10px] font-bold uppercase tracking-wider transition-all"
             style={{
-              color: active ? '#070706' : 'var(--film-text-dim)',
+              color: active ? 'var(--film-black)' : 'var(--film-text-dim)',
               background: active ? 'var(--film-amber)' : 'transparent',
             }}
           >

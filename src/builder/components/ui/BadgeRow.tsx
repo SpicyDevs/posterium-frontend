@@ -77,7 +77,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
         <div
           {...provided?.dragHandleProps}
           onClick={(e) => e.stopPropagation()}
-          className="p-0.5 outline-none transition-colors shrink-0"
+          className="p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] transition-colors shrink-0"
           style={{ color: 'var(--film-text-dim)', cursor: 'grab' }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
@@ -100,7 +100,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
             borderColor: isSelected ? '#D4A245' : 'rgba(255,255,255,0.15)',
           }}
         >
-          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-[1px]" />}
+          {isSelected && <div className="w-1.5 h-1.5 bg-[var(--film-white)] rounded-[1px]" />}
         </div>
       </div>
 

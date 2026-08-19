@@ -39,7 +39,7 @@ const AlignmentGrid: React.FC<AlignmentGridProps> = ({ value, onChange }) => (
       >
         <div
           className="w-1.5 h-1.5 rounded-full mx-auto"
-          style={{ background: value === pos.id ? 'white' : 'rgba(180,168,148,0.68)' }}
+          style={{ background: value === pos.id ? 'var(--film-white)' : 'rgba(180,168,148,0.68)' }}
         />
       </button>
     ))}

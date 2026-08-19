@@ -354,17 +354,26 @@ const ContextMenu: React.FC<Props> = memo(
                 <span style={{ opacity: 0.7, flexShrink: 0, lineHeight: 0 }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{item.label}</span>
                 {item.shortcut && (
-                  <span
+                  <kbd
                     className="mono-font"
                     style={{
-                      fontSize: 9,
-                      color: 'var(--film-text-dim)',
-                      letterSpacing: '0.05em',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 20,
+                      padding: '2px 6px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(196,124,46,0.12)',
+                      borderRadius: 3,
+                      fontSize: 10,
+                      lineHeight: 1.4,
+                      color: 'rgba(196,124,46,0.7)',
+                      userSelect: 'none',
                       flexShrink: 0,
                     }}
                   >
                     {item.shortcut}
-                  </span>
+                  </kbd>
                 )}
               </button>
             ))}

@@ -41,7 +41,7 @@ function PanelTabsComponent<T extends string>({
             onClick={() => onChange(tab.id)}
             aria-pressed={isActive}
             className={clsx(
-              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none select-none capitalize syne-font',
+              'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] select-none capitalize syne-font',
               !isActive && 'hover:bg-[rgba(196,124,46,0.08)] hover:text-[var(--film-text-label)]'
             )}
             style={{
