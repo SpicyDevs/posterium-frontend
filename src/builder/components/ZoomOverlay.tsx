@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type MouseEvent } from 'react';
+import { memo, useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Maximize2, Minimize2, RotateCcw, Settings, ZoomIn, ZoomOut } from 'lucide-react';
 import type { ViewOptions } from '../EditorContext';
 import BuilderSettingsPopover from './BuilderSettingsPopover';
@@ -59,6 +59,90 @@ const ZoomOverlay = memo<{
     const btnSize = isMobile ? 44 : 32;
     const btnClass = 'flex items-center justify-center transition-all active:scale-90';
     const btnStyle = { ...buttonStyle, width: btnSize, height: btnSize, borderRadius: 8 };
+
+    // ── MOBILE: coherent floating control group ──
+    // One housing, one radius language (card 10px housing, punched 4px
+    // buttons), bottom-right thumb reach. Zoom in/out (magnifier ±), reset
+    // (rotate) and the settings gear are all self-evident glyphs, so they stay
+    // icon-only — labels would add noise, not clarity. The settings gear stays
+    // amber while its popover is open; outside clicks and Esc close it through
+    // onRequestClose.
+    if (isMobile) {
+      const mb = (ariaLabel: string, icon: ReactNode, action: () => void, active = false) => (
+        <button
+          key={ariaLabel}
+          onClick={action}
+          aria-label={ariaLabel}
+          aria-pressed={active}
+          className="flex items-center justify-center transition-all active:scale-90"
+          style={{
+            width: 44,
+            height: 48,
+            borderRadius: 4,
+            flexShrink: 0,
+            background: active ? 'rgba(196,124,46,0.1)' : 'transparent',
+            border: 'none',
+            color: active ? 'var(--film-amber)' : 'rgba(240,230,204,0.72)',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {icon}
+        </button>
+      );
+      return (
+        <div
+          className="fixed z-40 select-none"
+          style={{
+            bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))',
+            right: 12,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 0,
+            padding: 4,
+            borderRadius: 10,
+            background: 'rgba(14,13,11,0.72)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(196,124,46,0.2)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,124,46,0.05)',
+          }}
+        >
+          <BuilderSettingsPopover
+            isOpen={settingsOpen}
+            viewOptions={viewOptions}
+            onToggleViewOption={onToggleViewOption}
+            isMobile={isMobile}
+            onRequestClose={() => setSettingsOpen(false)}
+          />
+          {mb('Zoom out', <ZoomOut size={16} />, onZoomOut)}
+          {mb('Reset canvas view', <RotateCcw size={15} />, onResetView)}
+          {mb('Zoom in', <ZoomIn size={16} />, onZoomIn)}
+          <div
+            aria-hidden="true"
+            style={{
+              width: 1,
+              height: 30,
+              background: 'rgba(196,124,46,0.15)',
+              margin: '0 2px',
+              flexShrink: 0,
+            }}
+          />
+          {mb(
+            'View settings',
+            <Settings size={15} />,
+            () => setSettingsOpen((v) => !v),
+            settingsOpen
+          )}
+          {fsSupported &&
+            mb(
+              nativeFs ? 'Exit fullscreen' : 'Enter fullscreen',
+              nativeFs ? <Minimize2 size={15} /> : <Maximize2 size={15} />,
+              onToggleFullscreen
+            )}
+        </div>
+      );
+    }
 
     return (
       <div

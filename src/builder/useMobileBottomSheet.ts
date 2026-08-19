@@ -23,18 +23,22 @@ const INITIAL_REF: BottomSheetRef = {
 export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | null>) {
   const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  // Current snap position of the sheet (0 = 200px, 1 = mid, 2 = max) — surfaced
+  // for the handle's snap-affordance dots in the sheet chrome.
+  const [snapIndex, setSnapIndex] = useState(0);
   const dragRef = useRef<BottomSheetRef>({ ...INITIAL_REF });
 
   const getMaxHeight = useCallback(() => {
     if (typeof window === 'undefined') return 520;
-    // Header is 48px + safe-area-inset-top on notched phones (PWA standalone),
-    // nav 56px + safe-area-inset-bottom. The root exposes --sait so the sheet
-    // never overlaps the header when fully expanded in standalone mode.
+    // Mobile header is now TWO rows (identity bar + action bar) = 96px, plus
+    // safe-area-inset-top on notched phones (PWA standalone); nav is 56px +
+    // safe-area-inset-bottom. The root exposes --sait so the sheet never
+    // overlaps the header when fully expanded in standalone mode.
     const sait =
       parseFloat(
         getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--sait')
       ) || 0;
-    return Math.max(200, window.innerHeight - 48 - sait - 56 - 80);
+    return Math.max(200, window.innerHeight - 96 - sait - 56 - 80);
   }, [rootRef]);
 
   const getSnapPoints = useCallback(() => {
@@ -54,6 +58,7 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
     (targetHeight?: number) => {
       const points = getSnapPoints();
       setHeight(targetHeight ?? points[1]);
+      setSnapIndex(1);
       setBottomPanelOpen(true);
     },
     [getSnapPoints, setHeight]
@@ -61,6 +66,7 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
 
   const close = useCallback(() => {
     setHeight(0);
+    setSnapIndex(0);
     setBottomPanelOpen(false);
   }, [setHeight]);
 
@@ -123,6 +129,7 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
       close();
     } else {
       setHeight(target);
+      setSnapIndex(targetIndex);
     }
   }, [close, getSnapPoints, setHeight]);
 
@@ -131,6 +138,7 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
     setBottomPanelOpen,
     isDragging,
     setIsDragging,
+    snapIndex,
     open,
     close,
     beginDrag,

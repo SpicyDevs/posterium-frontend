@@ -57,6 +57,8 @@ import {
   Search,
   BookOpen,
   CopyPlus,
+  Import,
+  MoreHorizontal,
 } from 'lucide-react';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { usePosterHistory } from './usePosterHistory';
@@ -79,6 +81,152 @@ const ImportDialog = lazy(() => import('./components/ImportDialogue'));
 const ExportPopover = lazy(() => import('./components/ExportPopover'));
 const ContextMenu = lazy(() => import('./components/ContextMenu'));
 const CommandPalette = lazy(() => import('./components/CommandPalette'));
+
+// ── Mobile toolbar button ─────────────────────────────────────────────────────
+// The row-2 toolbar control. Icon-only by default — the glyph must be
+// self-evident (ui-design-aesthetics: distinctive, unambiguous iconography).
+// An optional caption is added ONLY where several similar glyphs sit close
+// together and would otherwise be ambiguous (the undo/redo mirrored pair).
+// Punched 4px radius (DESIGN two-radius economy: buttons are punched, not
+// housed), 44px+ touch target, active/danger/disabled states.
+function MobileToolButton({
+  icon,
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+  active = false,
+  caption,
+  btnRef,
+  style,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  active?: boolean;
+  caption?: string;
+  btnRef?: React.Ref<HTMLButtonElement>;
+  style?: React.CSSProperties;
+}) {
+  const color = disabled
+    ? 'rgba(140,130,112,0.25)'
+    : active
+      ? 'var(--film-amber)'
+      : danger
+        ? 'rgba(248,113,113,0.75)'
+        : 'rgba(240,230,204,0.7)';
+  return (
+    <button
+      ref={btnRef}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      className="flex items-center justify-center transition-all active:scale-90"
+      style={{
+        width: caption ? 52 : 44,
+        height: 44,
+        borderRadius: 4,
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: caption ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: caption ? 3 : 0,
+        background: active ? 'rgba(196,124,46,0.08)' : 'transparent',
+        border: 'none',
+        color,
+        cursor: disabled ? 'default' : 'pointer',
+        transition: 'color 0.15s, background 0.15s',
+        WebkitTapHighlightColor: 'transparent',
+        ...style,
+      }}
+    >
+      {icon}
+      {caption && (
+        <span
+          className="mono-font"
+          style={{
+            fontSize: 8,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {caption}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/* More-sheet row — label + mono caption + 48px touch target. */
+function MobileMoreRow({
+  icon,
+  label,
+  caption,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  caption: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%',
+        height: 48,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '0 8px',
+        borderRadius: 4,
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'var(--film-cream)',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <span style={{ color: 'rgba(196,124,46,0.7)', flexShrink: 0, display: 'flex' }}>{icon}</span>
+      <span
+        className="syne-font"
+        style={{
+          flex: 1,
+          textAlign: 'left',
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'var(--film-cream)',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="mono-font"
+        style={{
+          fontSize: 8,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: 'rgba(178,166,146,0.55)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: 120,
+        }}
+      >
+        {caption}
+      </span>
+    </button>
+  );
+}
 
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
@@ -129,6 +277,9 @@ const StudioLayout: React.FC<{
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  // "More" sheet — progressive disclosure for rare actions (mode, commands,
+  // tour, shortcuts). Only ever open on the mobile tree.
+  const [moreOpen, setMoreOpen] = useState(false);
   // Two physical Import buttons exist in the DOM at once (desktop header +
   // mobile toolbar) — the desktop tree / mobile tree are rendered
   // conditionally (see `isDesktop` below), but the header itself stays
@@ -177,6 +328,7 @@ const StudioLayout: React.FC<{
   const {
     bottomPanelOpen,
     isDragging: isDraggingBottomPanel,
+    snapIndex: bottomSheetSnap,
     open: openBottomPanelSheet,
     close: closeBottomPanel,
     beginDrag: beginBottomPanelDrag,
@@ -1347,26 +1499,24 @@ const StudioLayout: React.FC<{
               } as React.CSSProperties
             }
           >
-            {/* ── TOP HEADER BAR ── */}
-            {/* Height: 48px. Packs logo, mode switcher, a horizontally-scrollable
-               tool row (search / shortcuts / import / reset / undo / redo), an
-               optional context label, and the Export CTA — mirroring the
-               desktop/tablet header's feature set within mobile width. */}
+            {/* ── MOBILE HEADER — two rows (96px + safe-top) ── */}
+            {/* ROW 1: identity (wordmark + mode stamp) and the primary action
+               (Export). ROW 2: the toolbar — undo/redo are a mirrored glyph
+               pair and get microlabels; import/reset use self-evident glyphs
+               and stay icon-only. Rare actions live in the More sheet. */}
             <header
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 'calc(48px + env(safe-area-inset-top, 0px))',
+                height: 'calc(96px + env(safe-area-inset-top, 0px))',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
                 zIndex: 40,
                 background: 'rgba(7,7,6,0.97)',
                 borderBottom: '1px solid rgba(196,124,46,0.1)',
                 display: 'flex',
-                alignItems: 'center',
-                padding: '0 8px',
-                gap: 6,
+                flexDirection: 'column',
               }}
             >
               {/* Ambient gradient rule on header bottom — matches desktop header exactly */}
@@ -1384,289 +1534,261 @@ const StudioLayout: React.FC<{
                 }}
               />
 
-              {/* LEFT: Wordmark (compact) — 44px-tall hit area for touch */}
-              <a
-                href="/"
+              {/* ROW 1 — identity + primary action */}
+              <div
                 style={{
-                  textDecoration: 'none',
+                  height: 48,
                   flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  height: 44,
                   padding: '0 8px',
+                  gap: 8,
                 }}
               >
-                <span
-                  className="poster-font"
+                {/* Wordmark — home link, 44px hit area */}
+                <a
+                  href="/"
                   style={{
-                    fontSize: 16,
-                    color: 'var(--film-cream)',
-                    letterSpacing: '0.1em',
+                    textDecoration: 'none',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    height: 44,
+                    padding: '0 6px',
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: 'var(--film-amber)',
+                      boxShadow: '0 0 8px rgba(196,124,46,0.55)',
+                    }}
+                  />
+                  <span
+                    className="poster-font"
+                    style={{
+                      fontSize: 15,
+                      color: 'var(--film-cream)',
+                      letterSpacing: '0.1em',
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    P
+                  </span>
+                  <span
+                    className="syne-font max-[360px]:hidden"
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: '0.22em',
+                      color: 'rgba(240,230,204,0.85)',
+                      userSelect: 'none',
+                    }}
+                  >
+                    POSTERIUM
+                  </span>
+                </a>
+
+                {/* Mode stamp — passive ticket-stamp indicator; the toggle
+                   lives in the More sheet (progressive disclosure). */}
+                <span
+                  className="syne-font max-[380px]:hidden"
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(196,124,46,0.9)',
+                    background: 'rgba(196,124,46,0.1)',
+                    border: '1px solid rgba(196,124,46,0.28)',
+                    borderRadius: 2,
+                    padding: '3px 9px',
                     lineHeight: 1,
                     userSelect: 'none',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  P
+                  {builderMode === 'advanced' ? 'ADVANCED' : 'SIMPLE'}
                 </span>
-              </a>
 
-              {/* Builder mode — dropdown below 80rem (see ModeToggle.tsx) */}
-              <ModeToggle mode={builderMode} onChange={setBuilderMode} />
+                <div style={{ flex: 1 }} />
 
-              {/* Separator */}
+                {/* PRIMARY ACTION — Export */}
+                <button
+                  ref={exportBtnRefMobile}
+                  onClick={() => setExportOpen((v) => !v)}
+                  aria-label="Export poster"
+                  style={{
+                    height: 44,
+                    paddingInline: 16,
+                    borderRadius: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    background: exportOpen ? 'rgba(196,124,46,0.85)' : 'var(--film-amber)',
+                    color: '#070706',
+                    border: 'none',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    boxShadow: '0 0 20px rgba(196,124,46,0.25)',
+                  }}
+                >
+                  <Download size={13} />
+                  <span
+                    className="syne-font"
+                    style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
+                  >
+                    EXPORT
+                  </span>
+                </button>
+              </div>
+
+              {/* ROW 2 — toolbar: undo/redo pair (mirrored glyphs) labeled,
+                 import/reset self-evident glyphs, More pinned right. */}
               <div
-                aria-hidden="true"
-                style={{ width: 1, height: 16, background: 'rgba(196,124,46,0.14)', flexShrink: 0 }}
-              />
-
-              {/* Scrollable tool row — mirrors the desktop header's action buttons */}
-              <div
-                className="mobile-header-scroll"
                 style={{
-                  flex: 1,
-                  minWidth: 0,
+                  height: 48,
+                  flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
+                  padding: '0 8px',
                   gap: 2,
-                  overflowX: 'auto',
-                  WebkitOverflowScrolling: 'touch',
-                  scrollbarWidth: 'none',
                 }}
               >
-                <button
-                  onClick={() => setPaletteOpen((v) => !v)}
-                  aria-label="Search commands"
+                <div
+                  className="mobile-header-scroll"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
+                    flex: 1,
+                    minWidth: 0,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    background: paletteOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
-                    border: 'none',
-                    color: paletteOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
-                    cursor: 'pointer',
+                    gap: 2,
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'none',
                   }}
                 >
-                  <Search size={14} />
-                </button>
-
-                <button
-                  onClick={() => setShortcutsOpen((v) => !v)}
-                  aria-label="Keyboard shortcuts"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: shortcutsOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
-                    border: 'none',
-                    color: shortcutsOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Keyboard size={14} />
-                </button>
-
-                <button
-                  ref={importBtnRefMobile}
-                  onClick={() => setIsImportOpen(true)}
-                  aria-label="Import from URL"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: isImportOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
-                    border: 'none',
-                    color: isImportOpen ? 'var(--film-amber)' : 'rgba(240,230,204,0.65)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Download size={14} style={{ transform: 'rotate(180deg)' }} />
-                </button>
-
-                <button
-                  onClick={() => setIsResetOpen(true)}
-                  aria-label="Reset configuration"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(248,113,113,0.75)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <RotateCcw size={14} />
-                </button>
-
-                <button
-                  onClick={() => {
-                    clearWalkthroughState();
-                    window.location.reload();
-                  }}
-                  aria-label="Re-run walkthrough"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(240,230,204,0.65)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <BookOpen size={14} />
-                </button>
+                  <MobileToolButton
+                    icon={<Undo2 size={14} />}
+                    label="Undo"
+                    caption="Undo"
+                    onClick={undo}
+                    disabled={!canUndo}
+                  />
+                  <MobileToolButton
+                    icon={<Redo2 size={14} />}
+                    label="Redo"
+                    caption="Redo"
+                    onClick={redo}
+                    disabled={!canRedo}
+                  />
+                  <MobileToolButton
+                    icon={<Import size={16} />}
+                    label="Import from URL"
+                    onClick={() => setIsImportOpen(true)}
+                    active={isImportOpen}
+                    btnRef={importBtnRefMobile}
+                  />
+                  <MobileToolButton
+                    icon={<RotateCcw size={15} />}
+                    label="Reset configuration"
+                    danger
+                    onClick={() => setIsResetOpen(true)}
+                  />
+                </div>
 
                 <div
                   aria-hidden="true"
                   style={{
                     width: 1,
-                    height: 16,
+                    height: 20,
                     background: 'rgba(196,124,46,0.12)',
                     flexShrink: 0,
-                    margin: '0 2px',
+                    alignSelf: 'center',
+                    margin: '0 4px',
                   }}
                 />
 
-                <button
-                  onClick={undo}
-                  disabled={!canUndo}
-                  aria-label="Undo"
+                <MobileToolButton
+                  icon={<MoreHorizontal size={18} />}
+                  label="More actions"
+                  onClick={() => setMoreOpen(true)}
+                  active={moreOpen}
+                  style={{ width: 52 }}
+                />
+
+                {/* Context stamp — status of the editing surface (≥640px) */}
+                <div
+                  className="hidden sm:flex"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    color: canUndo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
-                    cursor: canUndo ? 'pointer' : 'default',
-                  }}
-                >
-                  <Undo2 size={14} />
-                </button>
-
-                <button
-                  onClick={redo}
-                  disabled={!canRedo}
-                  aria-label="Redo"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
+                    gap: 6,
                     flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    color: canRedo ? 'rgba(240,230,204,0.65)' : 'rgba(140,130,112,0.2)',
-                    cursor: canRedo ? 'pointer' : 'default',
+                    paddingLeft: 6,
+                    minWidth: 0,
                   }}
                 >
-                  <Redo2 size={14} />
-                </button>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      background:
+                        leftPanelOpen || rightPanelOpen || bottomPanelOpen
+                          ? 'rgba(196,124,46,0.9)'
+                          : 'rgba(196,124,46,0.3)',
+                      boxShadow:
+                        leftPanelOpen || rightPanelOpen || bottomPanelOpen
+                          ? '0 0 6px rgba(196,124,46,0.7)'
+                          : 'none',
+                      transition: 'background 0.15s',
+                    }}
+                  />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      fontWeight: 500,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      color:
+                        leftPanelOpen || rightPanelOpen || bottomPanelOpen
+                          ? 'rgba(196,124,46,0.8)'
+                          : 'rgba(178,166,146,0.5)',
+                    }}
+                  >
+                    {leftPanelOpen
+                      ? 'Layers'
+                      : rightPanelOpen
+                        ? selectedCount > 0
+                          ? selectedLabel
+                          : 'Inspector'
+                        : bottomPanelOpen
+                          ? bottomPanelTab === 'source'
+                            ? 'Source'
+                            : bottomPanelTab === 'layers'
+                              ? 'Layers'
+                              : 'Badges'
+                          : 'Builder'}
+                  </span>
+                </div>
               </div>
-
-              {/* Context label — only shown once there is room for it */}
-              <div
-                className="hidden sm:flex"
-                style={{
-                  minWidth: 0,
-                  maxWidth: 110,
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                  alignItems: 'center',
-                }}
-              >
-                <span
-                  className="mono-font"
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    color:
-                      leftPanelOpen || rightPanelOpen || bottomPanelOpen
-                        ? 'rgba(196,124,46,0.8)'
-                        : 'rgba(178,166,146,0.58)',
-                  }}
-                >
-                  {leftPanelOpen
-                    ? 'Layers'
-                    : rightPanelOpen
-                      ? selectedCount > 0
-                        ? selectedLabel
-                        : 'Inspector'
-                      : bottomPanelOpen
-                        ? bottomPanelTab === 'source'
-                          ? 'Source'
-                          : bottomPanelTab === 'layers'
-                            ? 'Layers'
-                            : 'Badges'
-                        : 'Builder'}
-                </span>
-              </div>
-
-              {/* RIGHT: Export CTA — amber filled, matches desktop export button style */}
-              <button
-                ref={exportBtnRefMobile}
-                onClick={() => setExportOpen((v) => !v)}
-                aria-label="Export poster"
-                style={{
-                  height: 44,
-                  paddingInline: 14,
-                  borderRadius: 8,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 5,
-                  background: exportOpen ? 'rgba(196,124,46,0.85)' : 'var(--film-amber)',
-                  color: '#070706',
-                  border: 'none',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-              >
-                <Download size={13} />
-                <span
-                  className="syne-font max-[60rem]:hidden"
-                  style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
-                >
-                  EXPORT
-                </span>
-              </button>
             </header>
 
             {/* ── CANVAS ── */}
-            {/* Top: 48px header + safe-area-inset-top (notch in PWA standalone).
-               Bottom: 56px (nav) + safe-area + var(--bph) (bottom sheet). */}
+            {/* Top: 96px (two-row header) + safe-area-inset-top (notch in PWA
+               standalone). Bottom: 56px (nav) + safe-area + var(--bph)
+               (bottom sheet). */}
             {/* Transition on bottom must match the bottom sheet transition duration exactly: 0.32s. */}
             <main
               id="main-canvas"
@@ -1674,7 +1796,7 @@ const StudioLayout: React.FC<{
               aria-label="Poster canvas"
               style={{
                 position: 'absolute',
-                top: 'calc(48px + env(safe-area-inset-top, 0px))',
+                top: 'calc(96px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 right: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
@@ -1799,7 +1921,7 @@ const StudioLayout: React.FC<{
 
             {/* ── LEFT PANEL DRAWER ── */}
             {/* Width: min(280px, 85vw). Slides in from left. */}
-            {/* Top: 48px (below header). Bottom: 56px (above nav) + safe-area-inset-bottom. */}
+            {/* Top: 96px (below two-row header). Bottom: 56px (above nav) + safe-area-inset-bottom. */}
             {/* Content: LayersPanel with hideTabs=true (no internal tab bar, takes full height). */}
             {/* CRITICAL: Use visibility:hidden NOT display:none so the panel stays mounted. */}
             <aside
@@ -1807,13 +1929,14 @@ const StudioLayout: React.FC<{
               aria-hidden={!leftPanelOpen}
               style={{
                 position: 'absolute',
-                top: 'calc(48px + env(safe-area-inset-top, 0px))',
+                top: 'calc(96px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 width: 'min(280px, 85vw)',
                 zIndex: 25,
                 background: 'var(--film-dark)',
                 borderRight: '1px solid rgba(196,124,46,0.18)',
+                borderRadius: '0 12px 12px 0',
                 boxShadow: '4px 0 40px rgba(0,0,0,0.7)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1834,6 +1957,23 @@ const StudioLayout: React.FC<{
                   background: 'linear-gradient(to left, rgba(196,124,46,0.03), transparent)',
                   pointerEvents: 'none',
                   zIndex: 0,
+                }}
+              />
+              {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: 7,
+                  transform: 'translateY(-50%)',
+                  width: 2,
+                  height: 28,
+                  borderRadius: 1,
+                  background: 'rgba(196,124,46,0.35)',
+                  boxShadow: '0 0 6px rgba(196,124,46,0.25)',
+                  pointerEvents: 'none',
+                  zIndex: 2,
                 }}
               />
               {/* Drawer header — matches desktop sidebar header style exactly */}
@@ -1864,6 +2004,24 @@ const StudioLayout: React.FC<{
                 >
                   Layers
                 </span>
+                {/* Layer count — mono microlabel stamp */}
+                <span
+                  className="mono-font"
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.1em',
+                    color: 'var(--film-amber)',
+                    background: 'rgba(196,124,46,0.1)',
+                    border: '1px solid rgba(196,124,46,0.22)',
+                    borderRadius: 2,
+                    padding: '2px 6px',
+                    lineHeight: 1,
+                    flexShrink: 0,
+                    userSelect: 'none',
+                  }}
+                >
+                  {Object.keys(config.items ?? {}).length}
+                </span>
                 {/* Close button — 44×44 tap target (fits the 44px drawer header) */}
                 <button
                   onClick={() => setLeftPanelOpen(false)}
@@ -1871,7 +2029,7 @@ const StudioLayout: React.FC<{
                   style={{
                     width: 44,
                     height: 44,
-                    borderRadius: 8,
+                    borderRadius: 4,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1945,13 +2103,14 @@ const StudioLayout: React.FC<{
               aria-hidden={!rightPanelOpen}
               style={{
                 position: 'absolute',
-                top: 'calc(48px + env(safe-area-inset-top, 0px))',
+                top: 'calc(96px + env(safe-area-inset-top, 0px))',
                 right: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 width: 'min(280px, 85vw)',
                 zIndex: 25,
                 background: 'var(--film-dark)',
                 borderLeft: '1px solid rgba(196,124,46,0.18)',
+                borderRadius: '12px 0 0 12px',
                 boxShadow: '-4px 0 40px rgba(0,0,0,0.7)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1971,6 +2130,23 @@ const StudioLayout: React.FC<{
                   background: 'linear-gradient(to right, rgba(196,124,46,0.03), transparent)',
                   pointerEvents: 'none',
                   zIndex: 0,
+                }}
+              />
+              {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: 7,
+                  transform: 'translateY(-50%)',
+                  width: 2,
+                  height: 28,
+                  borderRadius: 1,
+                  background: 'rgba(196,124,46,0.35)',
+                  boxShadow: '0 0 6px rgba(196,124,46,0.25)',
+                  pointerEvents: 'none',
+                  zIndex: 2,
                 }}
               />
               {/* Drawer header */}
@@ -2004,13 +2180,31 @@ const StudioLayout: React.FC<{
                 >
                   {selectedCount === 0 ? 'Inspector' : selectedLabel}
                 </span>
+                {/* Selection count — mono microlabel stamp */}
+                <span
+                  className="mono-font"
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.1em',
+                    color: 'var(--film-amber)',
+                    background: 'rgba(196,124,46,0.1)',
+                    border: '1px solid rgba(196,124,46,0.22)',
+                    borderRadius: 2,
+                    padding: '2px 6px',
+                    lineHeight: 1,
+                    flexShrink: 0,
+                    userSelect: 'none',
+                  }}
+                >
+                  {selectedCount}
+                </span>
                 <button
                   onClick={() => setRightPanelOpen(false)}
                   aria-label="Close inspector panel"
                   style={{
                     width: 44,
                     height: 44,
-                    borderRadius: 8,
+                    borderRadius: 4,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2072,7 +2266,8 @@ const StudioLayout: React.FC<{
             {/* ── BOTTOM SHEET PANEL ── */}
             {/* Position: above the bottom nav bar (56px + safe area). */}
             {/* Height: driven by CSS var --bph. Snaps to 200px / ~48vh / ~88vh. */}
-            {/* Contains: drag handle, tab bar, scrollable content. */}
+            {/* Contains: drag handle (with snap-position dots), segmented tab */}
+            {/* control, scrollable content. */}
             {/* IMPORTANT: All three tab contents must be rendered simultaneously with */}
             {/* display:none to avoid remounting and re-running effects on tab switch. */}
             <section
@@ -2086,7 +2281,7 @@ const StudioLayout: React.FC<{
                 height: 'var(--bph, 0px)',
                 background: 'var(--film-dark)',
                 borderTop: '1px solid rgba(196,124,46,0.2)',
-                borderRadius: '16px 16px 0 0',
+                borderRadius: '12px 12px 0 0',
                 boxShadow: '0 -8px 48px rgba(0,0,0,0.7)',
                 overflow: 'hidden',
                 display: 'flex',
@@ -2116,7 +2311,8 @@ const StudioLayout: React.FC<{
               />
 
               {/* DRAG HANDLE ZONE */}
-              {/* Height: 28px. Centered pill handle. Touch events initiate drag. */}
+              {/* Height: 30px. Pill + snap-position dots (affordance of the three
+                 sheet positions). Touch events initiate drag. */}
               {/* Dragging upward increases panel height, downward decreases. */}
               <div
                 onTouchStart={(e) => {
@@ -2130,12 +2326,14 @@ const StudioLayout: React.FC<{
                 }}
                 onTouchEnd={() => endBottomPanelDrag()}
                 style={{
-                  height: 28,
+                  height: 30,
                   flexShrink: 0,
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'center',
-                  paddingTop: 8,
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: 5,
+                  paddingTop: 7,
                   cursor: 'ns-resize',
                   touchAction: 'none',
                   position: 'relative',
@@ -2151,88 +2349,138 @@ const StudioLayout: React.FC<{
                     background: isDraggingBottomPanel
                       ? 'rgba(196,124,46,0.6)'
                       : 'rgba(255,255,255,0.18)',
+                    boxShadow: isDraggingBottomPanel ? '0 0 8px rgba(196,124,46,0.4)' : 'none',
                     transition: 'background 0.15s',
                   }}
                 />
+                {/* Snap dots — the sheet's three positions as a visual hint */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: 3,
+                        height: 3,
+                        borderRadius: 2,
+                        background:
+                          i === bottomSheetSnap ? 'rgba(196,124,46,0.8)' : 'rgba(255,255,255,0.13)',
+                        transition: 'background 0.2s',
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* TAB BAR */}
-              {/* Height: 40px. Three tabs. Active tab has bottom amber border 2px. */}
-              {/* Uses Syne font, 9px, bold, 0.1em tracking. Matches desktop PanelTabs aesthetic. */}
+              {/* SEGMENTED CONTROL — real tab control + section headers */}
+              {/* Housed control (8px) with punched segments (4px), per the DESIGN
+                 radius economy. Active segment carries the panel count as a
+                 mono stamp. */}
               <div
                 style={{
-                  height: 40,
+                  height: 44,
                   flexShrink: 0,
                   display: 'flex',
-                  alignItems: 'stretch',
-                  borderBottom: '1px solid rgba(196,124,46,0.08)',
-                  background: 'var(--film-mid)',
-                  position: 'relative',
-                  zIndex: 2,
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '2px 8px 6px',
                 }}
               >
-                {/* Close button — right of tab bar */}
-                {/* Width: 44px to meet minimum tap target. Chevron down icon. */}
+                <div
+                  role="tablist"
+                  aria-label="Editor panels"
+                  style={{
+                    flex: 1,
+                    height: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    padding: 3,
+                    borderRadius: 8,
+                    background: 'rgba(14,13,11,0.85)',
+                    border: '1px solid rgba(196,124,46,0.14)',
+                    minWidth: 0,
+                  }}
+                >
+                  {(
+                    [
+                      { id: 'source', label: 'Source' },
+                      { id: 'layers', label: 'Layers' },
+                      { id: 'badges', label: 'Badges' },
+                    ] as const
+                  ).map(({ id, label }) => {
+                    const active = bottomPanelTab === id;
+                    const count =
+                      id === 'layers'
+                        ? Object.keys(config.items ?? {}).length
+                        : id === 'badges'
+                          ? ALL_BADGES.length
+                          : 0;
+                    return (
+                      <button
+                        key={id}
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setBottomPanelTab(id)}
+                        style={{
+                          flex: 1,
+                          height: '100%',
+                          minWidth: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                          background: active ? 'rgba(196,124,46,0.14)' : 'transparent',
+                          border: active
+                            ? '1px solid rgba(196,124,46,0.3)'
+                            : '1px solid transparent',
+                          borderRadius: 4,
+                          fontFamily: 'Syne, sans-serif',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: active ? 'var(--film-cream)' : 'rgba(140,130,112,0.45)',
+                          cursor: 'pointer',
+                          transition: 'color 0.15s, background 0.15s',
+                        }}
+                      >
+                        {label}
+                        {count > 0 && (
+                          <span
+                            className="mono-font"
+                            style={{
+                              fontSize: 8,
+                              letterSpacing: '0.06em',
+                              color: active ? 'var(--film-amber)' : 'rgba(140,130,112,0.35)',
+                            }}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Close — 44px tap target, chevron down */}
                 <button
                   onClick={closeBottomPanel}
                   aria-label="Close editor panel"
                   style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
                     width: 44,
+                    height: 44,
+                    flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: 'transparent',
                     border: 'none',
+                    borderRadius: 4,
                     color: 'rgba(140,130,112,0.45)',
                     cursor: 'pointer',
-                    zIndex: 1,
                   }}
                 >
-                  <ChevronDown size={14} />
+                  <ChevronDown size={16} />
                 </button>
-
-                {/* Tab buttons — three equal-width buttons filling remaining space (minus 44px for close) */}
-                {(
-                  [
-                    { id: 'source', label: 'Source' },
-                    { id: 'layers', label: 'Layers' },
-                    { id: 'badges', label: 'Badges' },
-                  ] as const
-                ).map(({ id, label }) => {
-                  const active = bottomPanelTab === id;
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => setBottomPanelTab(id)}
-                      style={{
-                        flex: 1,
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: active
-                          ? '2px solid var(--film-amber)'
-                          : '2px solid transparent',
-                        fontFamily: 'Syne, sans-serif',
-                        fontSize: 9,
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: active ? 'var(--film-cream)' : 'rgba(140,130,112,0.45)',
-                        cursor: 'pointer',
-                        transition: 'color 0.15s, border-bottom-color 0.15s',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
               </div>
 
               {/* CONTENT AREA */}
@@ -2367,6 +2615,7 @@ const StudioLayout: React.FC<{
                     height: 2,
                     background: bottomPanelOpen ? 'var(--film-amber)' : 'transparent',
                     borderRadius: '0 0 2px 2px',
+                    boxShadow: bottomPanelOpen ? '0 0 8px rgba(196,124,46,0.5)' : 'none',
                     transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), background 0.15s',
                     '--active-tab-index':
                       bottomPanelTab === 'source' ? 0 : bottomPanelTab === 'layers' ? 1 : 2,
@@ -2430,7 +2679,14 @@ const StudioLayout: React.FC<{
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      <Icon size={20} />
+                      <Icon
+                        size={20}
+                        style={
+                          active
+                            ? { filter: 'drop-shadow(0 0 6px rgba(196,124,46,0.45))' }
+                            : undefined
+                        }
+                      />
                       <span
                         className="syne-font"
                         style={{
@@ -2448,6 +2704,156 @@ const StudioLayout: React.FC<{
                 })}
               </div>
             </nav>
+
+            {/* ── MORE SHEET ── (progressive disclosure: rare actions —
+               mode, commands, tour, shortcuts. Panel language: housed 12px
+               radius, velvet fill, warm shadow, hairlines.) */}
+            {moreOpen && (
+              <>
+                {/* Backdrop — tap to dismiss */}
+                <div
+                  aria-hidden="true"
+                  onClick={() => setMoreOpen(false)}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 44,
+                    background: 'rgba(0,0,0,0.45)',
+                    backdropFilter: 'blur(2px)',
+                  }}
+                />
+                <section
+                  aria-label="More actions"
+                  style={{
+                    position: 'absolute',
+                    left: 12,
+                    right: 12,
+                    bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+                    zIndex: 45,
+                    borderRadius: 12,
+                    background: 'rgba(14,13,11,0.94)',
+                    backdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(196,124,46,0.2)',
+                    boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 0 24px rgba(196,124,46,0.05)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Ambient gradient rule */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 1,
+                      background:
+                        'linear-gradient(90deg, transparent, rgba(196,124,46,0.25), transparent)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  {/* Header — microlabel + close (44px target) */}
+                  <div
+                    style={{
+                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 8px 0 16px',
+                      borderBottom: '1px solid rgba(196,124,46,0.08)',
+                    }}
+                  >
+                    <span
+                      className="mono-font"
+                      style={{
+                        fontSize: 8,
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                        color: 'rgba(196,124,46,0.65)',
+                      }}
+                    >
+                      More
+                    </span>
+                    <div style={{ flex: 1 }} />
+                    <button
+                      onClick={() => setMoreOpen(false)}
+                      aria-label="Close more actions"
+                      style={{
+                        width: 44,
+                        height: 44,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 4,
+                        color: 'rgba(140,130,112,0.55)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  {/* Rows — 48px, hairline separated */}
+                  <div style={{ padding: '6px 8px 8px' }}>
+                    {/* Mode — the toggle itself (ModeToggle renders a compact
+                       dropdown; safe to reuse inside the sheet) */}
+                    <div
+                      style={{
+                        height: 48,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '0 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      <Sliders size={15} style={{ color: 'rgba(196,124,46,0.7)', flexShrink: 0 }} />
+                      <span
+                        className="syne-font"
+                        style={{
+                          flex: 1,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color: 'var(--film-cream)',
+                        }}
+                      >
+                        Mode
+                      </span>
+                      <ModeToggle mode={builderMode} onChange={setBuilderMode} />
+                    </div>
+                    <MobileMoreRow
+                      icon={<Search size={15} />}
+                      label="Commands"
+                      caption="Search everything"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setPaletteOpen(true);
+                      }}
+                    />
+                    <MobileMoreRow
+                      icon={<BookOpen size={15} />}
+                      label="Re-run tour"
+                      caption="See the basics again"
+                      onClick={() => {
+                        clearWalkthroughState();
+                        window.location.reload();
+                      }}
+                    />
+                    <MobileMoreRow
+                      icon={<Keyboard size={15} />}
+                      label="Shortcuts"
+                      caption="Desktop keys"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setShortcutsOpen(true);
+                      }}
+                    />
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         )}
 
