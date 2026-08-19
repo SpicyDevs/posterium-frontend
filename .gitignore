@@ -8,3 +8,5 @@ dist/
 
 .playwright-mcp/
 .cortexkit/
+.agent-handoff/
+.agent-handoff/
