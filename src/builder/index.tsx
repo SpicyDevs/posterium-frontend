@@ -462,11 +462,13 @@ const StudioLayout: React.FC<{
     [setConfig, clearSelection, deleteBadge]
   );
 
-  // Duplicate badge(s): re-adds the badge on top of the stack with a +12px
-  // offset and selects the copy. History is recorded automatically through
-  // setConfig (usePosterHistory). The poster model keys badges by provider
-  // (one instance per badge type), so the copy shares the badge's item
-  // config — it lands above the original at the offset position.
+  // Duplicate badge(s): the poster model keys badges by provider — one
+  // instance per badge type — so "duplicate" never appends a second copy.
+  // Instead it re-adds the badge ON TOP of the stack (its ratings entry is
+  // moved to the end, the render order) at +12px from its current position
+  // and selects it. A badge that was never dragged has no items[id]; its
+  // rendered position is the auto-layout slot from calculateAutoPosition.
+  // History is recorded automatically through setConfig (usePosterHistory).
   const handleDuplicateBadge = useCallback(
     (ids: LayerTargetId[]) => {
       const badgeIds = ids.filter((id): id is RatingType => id !== 'logo' && id !== 'title');
@@ -474,13 +476,25 @@ const StudioLayout: React.FC<{
       setConfig((prev) => {
         const ni = { ...prev.items };
         for (const id of badgeIds) {
-          ni[id] = {
-            ...(prev.items[id] ?? {}),
-            x: (prev.items[id]?.x ?? 25) + 12,
-            y: (prev.items[id]?.y ?? 25) + 12,
-          };
+          const base = prev.items[id];
+          if (base) {
+            ni[id] = { ...base, x: (base.x ?? 25) + 12, y: (base.y ?? 25) + 12 };
+          } else {
+            // Never dragged — anchor to the badge's auto-layout slot.
+            const auto = calculateAutoPosition(
+              id,
+              Math.max(0, prev.ratings.indexOf(id)),
+              prev.ratings.length,
+              prev
+            );
+            ni[id] = { x: auto.x + 12, y: auto.y + 12 };
+          }
         }
-        return { ...prev, items: ni, ratings: [...prev.ratings, ...badgeIds] };
+        return {
+          ...prev,
+          items: ni,
+          ratings: [...prev.ratings.filter((r) => !badgeIds.includes(r)), ...badgeIds],
+        };
       });
       setBatchSelection(badgeIds);
     },
@@ -2719,35 +2733,31 @@ const BuilderAppInner: React.FC<BuilderAppProps> = ({ initialMode = 'simple', pr
   // Walkthrough not completed — show the onboarding wizard instead of builder
   if (!walkthroughDone) {
     return (
-      <ToastProvider>
-        <WalkthroughModal
-          initialConfig={config}
-          onComplete={handleWalkthroughComplete}
-          onDismiss={handleWalkthroughDismiss}
-          onSkip={handleWalkthroughSkip}
-          presets={presets}
-        />
-      </ToastProvider>
+      <WalkthroughModal
+        initialConfig={config}
+        onComplete={handleWalkthroughComplete}
+        onDismiss={handleWalkthroughDismiss}
+        onSkip={handleWalkthroughSkip}
+        presets={presets}
+      />
     );
   }
 
   return (
-    <ToastProvider>
-      <EditorProvider>
-        <StudioLayout
-          config={config}
-          setConfig={setConfig}
-          handleReset={handleReset}
-          baseUrl={baseUrl}
-          handleLoadConfig={handleLoadConfig}
-          undo={undo}
-          redo={redo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          initialMode={getBuilderMode() || initialMode}
-        />
-      </EditorProvider>
-    </ToastProvider>
+    <EditorProvider>
+      <StudioLayout
+        config={config}
+        setConfig={setConfig}
+        handleReset={handleReset}
+        baseUrl={baseUrl}
+        handleLoadConfig={handleLoadConfig}
+        undo={undo}
+        redo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        initialMode={getBuilderMode() || initialMode}
+      />
+    </EditorProvider>
   );
 };
 

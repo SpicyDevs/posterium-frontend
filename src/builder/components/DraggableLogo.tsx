@@ -228,7 +228,9 @@ const DraggableLogo: React.FC<Props> = ({
               logo
             </span>
             {imgError && logoUrl && (
-              <span className="text-[8px] text-red-400/50 font-mono leading-none">unavailable</span>
+              <span className="text-[8px] text-[rgba(248,113,113,0.5)] font-mono leading-none">
+                unavailable
+              </span>
             )}
           </div>
         )}
@@ -258,7 +260,7 @@ const DraggableLogo: React.FC<Props> = ({
           className="absolute pointer-events-none z-50"
           style={{ left: renderX, top: renderY - 28 }}
         >
-          <div className="px-2 py-1 rounded text-[10px] font-mono text-[#E8D8A8] bg-[#0d0d0f]/90 border border-[#C47C2E]/30 whitespace-nowrap shadow-lg">
+          <div className="px-2 py-1 rounded text-[10px] font-mono text-[#E8D8A8] bg-[#0e0d0b]/90 border border-[#C47C2E]/30 whitespace-nowrap shadow-lg">
             {Math.round(renderX)}, {Math.round(renderY)} · {lw}×{lh}
           </div>
         </div>

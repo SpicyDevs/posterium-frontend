@@ -12,23 +12,24 @@ interface Props {
   className?: string;
 }
 
+// Warm-only swatch ramp — every value maps to a DESIGN.md token (viz ramp + neutrals + brand)
 const PRESETS = [
   '#000000',
-  '#18181b',
-  '#27272a',
-  '#3f3f46',
+  '#0e0d0b', // velvet-umber
+  '#181612', // celluloid-umber
+  '#222018', // char-umber
   '#ffffff',
-  '#a1a1aa',
-  '#C47C2E',
-  '#D4A245',
-  '#f43f5e',
-  '#fb923c',
-  '#facc15',
-  '#34d399',
-  '#38bdf8',
-  '#c084fc',
-  '#f472b6',
-  '#84cc16',
+  '#453f37', // dust-umber
+  '#b0a898', // lobby-silver
+  '#C47C2E', // projector-amber
+  '#D4A245', // dusk-gold
+  '#e8c15a', // viz-gold
+  '#e07b39', // viz-ember
+  '#b4522b', // viz-rust
+  '#a8391f', // viz-brick
+  '#d98e7a', // viz-rose
+  '#9c7a4a', // viz-tan
+  '#b8863b', // viz-ochre
 ];
 
 const ColorPicker: React.FC<Props> = memo(
@@ -105,7 +106,7 @@ const ColorPicker: React.FC<Props> = memo(
             tabIndex={-1}
           />
           <div className="flex-1 relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] mono-font text-zinc-400 pointer-events-none">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] mono-font text-[var(--film-text-dim)] pointer-events-none">
               #
             </span>
             <input
@@ -116,15 +117,15 @@ const ColorPicker: React.FC<Props> = memo(
               maxLength={7}
               spellCheck={false}
               autoComplete="off"
-              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#111113] border border-white/8 hover:border-[#C47C2E]/35 text-[11px] mono-font text-zinc-300 uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
+              className="w-full h-8 pl-6 pr-3 rounded-lg bg-[#0e0d0b] border border-white/8 hover:border-[#C47C2E]/35 text-[11px] mono-font text-[var(--film-pale)] uppercase focus:outline-none focus-visible:border-[#C47C2E]/50 focus-visible:ring-1 focus-visible:ring-[#C47C2E]/30 transition-colors"
             />
           </div>
         </div>
         {showOpacity && onOpacityChange && (
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-zinc-400">Opacity</span>
-              <span className="text-[10px] mono-font text-zinc-400">
+              <span className="text-[10px] text-[var(--film-text-dim)]">Opacity</span>
+              <span className="text-[10px] mono-font text-[var(--film-text-dim)]">
                 {Math.round(opacity * 100)}%
               </span>
             </div>

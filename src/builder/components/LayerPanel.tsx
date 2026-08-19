@@ -1,7 +1,7 @@
 // src/components/builder/components/LayerPanel.tsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Switch } from '@headlessui/react';
-import { Check, Film, Layers, Tv, Clapperboard, Eye, EyeOff } from 'lucide-react';
+import { Check, Film, Layers, Tv, Clapperboard, Eye, EyeOff, Search } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import clsx from 'clsx';
@@ -90,19 +90,30 @@ const LayerPanel: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const [searchRetry, setSearchRetry] = useState(0);
+  const [ratingsError, setRatingsError] = useState(false);
+  const [badgeFilter, setBadgeFilter] = useState('');
 
   useEffect(() => {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       if (!searchQuery || searchQuery.length < 2) {
         setResults([]);
+        setSearchError(false);
         return;
       }
       setIsSearching(true);
+      setSearchError(false);
       try {
         const res = await fetch(`${DEFAULT_API_BASE}/search?q=${encodeURIComponent(searchQuery)}`, {
           signal: ctrl.signal,
         });
+        if (!res.ok) {
+          setResults([]);
+          setSearchError(true);
+          return;
+        }
         const data = await res.json();
         if (data.results)
           setResults(
@@ -110,8 +121,11 @@ const LayerPanel: React.FC<Props> = ({
               (i: SearchResult) => i.poster_path && ['movie', 'tv'].includes(i.media_type)
             )
           );
+        else setResults([]);
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') return;
+        setResults([]);
+        setSearchError(true);
       } finally {
         setIsSearching(false);
       }
@@ -120,12 +134,18 @@ const LayerPanel: React.FC<Props> = ({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [searchQuery]);
+  }, [searchQuery, searchRetry]);
 
   useEffect(() => {
     if (!searchQuery) {
       setResults([]);
+      setSearchError(false);
     }
+  }, [searchQuery]);
+
+  const handleRetrySearch = useCallback(() => {
+    if (searchQuery.trim().length < 2) return;
+    setSearchRetry((n) => n + 1);
   }, [searchQuery]);
 
   const [fetchedData, setFetchedData] = useState<Record<string, string>>({});
@@ -136,6 +156,7 @@ const LayerPanel: React.FC<Props> = ({
   useEffect(() => {
     if (!config.tmdbId && !config.imdbId) return;
     const ctrl = new AbortController();
+    setRatingsError(false);
     (async () => {
       try {
         const idPath = config.imdbId
@@ -144,7 +165,10 @@ const LayerPanel: React.FC<Props> = ({
         const res = await fetch(`${DEFAULT_API_BASE}${idPath}.json?source=${config.source}`, {
           signal: ctrl.signal,
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setRatingsError(true);
+          return;
+        }
         const data = await res.json();
         const merged: Record<string, string> = {};
         if (data.meta?.title) merged.title = data.meta.title;
@@ -181,6 +205,7 @@ const LayerPanel: React.FC<Props> = ({
         }
       } catch (e: unknown) {
         if (e instanceof Error && e.name === 'AbortError') return;
+        setRatingsError(true);
       }
     })();
     return () => ctrl.abort();
@@ -347,6 +372,11 @@ const LayerPanel: React.FC<Props> = ({
     return ia - ib;
   });
 
+  const matchesBadgeFilter = (label: string) =>
+    badgeFilter.trim() === '' || label.toLowerCase().includes(badgeFilter.trim().toLowerCase());
+  const filteredInactiveBadges = inactiveBadges.filter((b) => matchesBadgeFilter(b.label));
+  const matchedBadgeCount = ALL_BADGES.filter((b) => matchesBadgeFilter(b.label)).length;
+
   const handleDragEnd = useCallback(
     (result: DropResult) => {
       if (!result.destination) return;
@@ -447,6 +477,9 @@ const LayerPanel: React.FC<Props> = ({
           setSearchQuery={setSearchQuery}
           results={results}
           isSearching={isSearching}
+          searchError={searchError}
+          onRetrySearch={handleRetrySearch}
+          ratingsError={ratingsError}
           handleSelectMedia={handleSelectMedia}
           sourceOptions={sourceOptions}
           logoSourceOptions={logoSourceOptions}
@@ -512,6 +545,47 @@ const LayerPanel: React.FC<Props> = ({
                   Select all
                 </button>
               </div>
+            </div>
+
+            {ratingsError && config.ratings.length > 0 && (
+              <p className="mono-font mb-3" style={{ fontSize: 9, color: 'rgba(248,113,113,0.7)' }}>
+                Ratings unavailable — live values could not be loaded
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 relative">
+                <Search
+                  size={11}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: 'var(--film-text-dim)' }}
+                />
+                <input
+                  type="text"
+                  value={badgeFilter}
+                  onChange={(e) => setBadgeFilter(e.target.value)}
+                  placeholder="Filter badges…"
+                  className="w-full h-7 pl-6 pr-2 rounded-lg focus:outline-none transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: 11,
+                    color: 'var(--film-pale)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                  }}
+                />
+              </div>
+              <span
+                className="mono-font shrink-0"
+                style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
+              >
+                {matchedBadgeCount} of {ALL_BADGES.length}
+              </span>
             </div>
 
             <DragDropContext onDragEnd={handleDragEnd}>
@@ -632,7 +706,7 @@ const LayerPanel: React.FC<Props> = ({
                         }}
                         className={clsx(
                           'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none',
-                          fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+                          fallbackEnabled ? 'bg-[#C47C2E]' : 'bg-[rgba(69,63,55,0.8)]'
                         )}
                       >
                         <span
@@ -645,7 +719,14 @@ const LayerPanel: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {fallbackEnabled ? (
+                  {filteredInactiveBadges.length === 0 ? (
+                    <p
+                      className="body-font py-2 text-center"
+                      style={{ fontSize: 9, color: 'var(--film-text-dim)' }}
+                    >
+                      No badges match &ldquo;{badgeFilter.trim()}&rdquo;
+                    </p>
+                  ) : fallbackEnabled ? (
                     <Droppable droppableId="inactive">
                       {(provided) => (
                         <div
@@ -653,7 +734,7 @@ const LayerPanel: React.FC<Props> = ({
                           {...provided.droppableProps}
                           className="space-y-0.5"
                         >
-                          {inactiveBadges.map((badge, idx) => (
+                          {filteredInactiveBadges.map((badge, idx) => (
                             <Draggable key={badge.id} draggableId={`fb-${badge.id}`} index={idx}>
                               {(prov, snap) => (
                                 <BadgeRow
@@ -677,7 +758,7 @@ const LayerPanel: React.FC<Props> = ({
                     </Droppable>
                   ) : (
                     <div className="space-y-0.5">
-                      {inactiveBadges.map((badge) => (
+                      {filteredInactiveBadges.map((badge) => (
                         <React.Fragment key={badge.id}>
                           <BadgeRow
                             badge={badge}

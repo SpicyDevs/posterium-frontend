@@ -59,7 +59,7 @@ const TextInputRow: React.FC<TextInputRowProps> = ({
         style={{
           height: 28,
           paddingInline: 8,
-          borderRadius: 6,
+          borderRadius: 8,
           background: 'rgba(255,255,255,0.04)',
           border: `1px solid ${focused ? 'rgba(196,124,46,0.4)' : 'rgba(255,255,255,0.1)'}`,
           fontSize: 11,

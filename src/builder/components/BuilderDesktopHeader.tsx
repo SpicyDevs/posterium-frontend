@@ -108,7 +108,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
         <button
           onClick={() => setPaletteOpen(true)}
           title="Search commands (⌘K)"
-          className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-md transition-all pointer-events-auto"
+          className="hidden max-[750px]:flex items-center gap-2 h-8 w-[250px] max-[600px]:w-[100px] px-3 rounded-lg transition-all pointer-events-auto"
           style={{
             color: 'var(--film-text-dim)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -137,7 +137,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
       <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center gap-2 pointer-events-none px-1 sm:px-2">
         <button
           onClick={() => setPaletteOpen(true)}
-          className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-md transition-colors pointer-events-auto"
+          className="hidden min-[751px]:flex items-center gap-2 px-3 h-8 w-full max-w-[480px] max-[900px]:max-w-[380px] max-[800px]:max-w-[300px] rounded-lg transition-colors pointer-events-auto"
           style={{
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -186,7 +186,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
         <button
           ref={importBtnRef}
           onClick={() => setIsImportOpen(true)}
-          className="flex items-center gap-1.5 h-8 px-2.5 rounded-md transition-colors syne-font hidden sm:flex"
+          className="flex items-center gap-1.5 h-8 px-2.5 rounded transition-colors syne-font hidden sm:flex"
           style={{ color: 'var(--film-text-dim)' }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
@@ -206,7 +206,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
         <button
           ref={exportBtnRefDesktop}
           onClick={() => setExportOpen((v) => !v)}
-          className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded-lg ml-1 syne-font transition-all active:scale-95"
+          className="flex items-center gap-1.5 h-8 px-2 sm:px-3 rounded ml-1 syne-font transition-all active:scale-95"
           style={{
             background: exportOpen ? 'rgba(196,124,46,0.9)' : 'var(--film-amber)',
             color: '#070706',
@@ -246,7 +246,7 @@ const BuilderDesktopHeader: React.FC<BuilderDesktopHeaderProps> = ({
 
         <button
           onClick={() => setIsResetOpen(true)}
-          className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md transition-colors syne-font text-red-400/80 hover:text-red-300 hover:bg-red-500/10"
+          className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded transition-colors syne-font text-[rgba(248,113,113,0.8)] hover:text-[rgba(248,113,113,1)] hover:bg-[rgba(248,113,113,0.1)]"
         >
           <RotateCcw size={13} />
           <span className="text-[11px] font-bold uppercase tracking-wider hidden min-[1401px]:inline">

@@ -145,7 +145,7 @@ const SliderRow: React.FC<SliderRowProps> = ({
             width: 48,
             height: 22,
             paddingInline: 5,
-            borderRadius: 4,
+            borderRadius: 8,
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.1)',
             fontSize: 10,

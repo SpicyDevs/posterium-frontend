@@ -38,7 +38,7 @@ const BadgeRow: React.FC<BadgeRowProps> = ({
   }, []);
 
   const iconData = BADGE_ICONS[iconKey] || BADGE_ICONS[badge.id];
-  const iconColor = isActive ? (iconData?.color ?? 'var(--film-text-dim)') : 'rgba(74,74,82,0.6)';
+  const iconColor = isActive ? (iconData?.color ?? 'var(--film-text-dim)') : 'rgba(110,104,96,0.6)';
   const inactiveOpacity = fallbackEnabled ? 'opacity-70' : 'opacity-50';
 
   const handleCheckboxClick = (e: React.MouseEvent) => {

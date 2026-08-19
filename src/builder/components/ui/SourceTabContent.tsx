@@ -1,6 +1,6 @@
 import React from 'react';
 import { Switch } from '@headlessui/react';
-import { ImagePlay, Badge } from 'lucide-react';
+import { ImagePlay, Badge, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { SelectBox, ToggleRow, SegmentedRow, SliderRow } from './index';
 import MediaSearchCombobox, { type SearchResult } from './MediaSearchCombobox';
@@ -15,6 +15,9 @@ interface Props {
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
   results: SearchResult[];
   isSearching: boolean;
+  searchError?: boolean;
+  onRetrySearch?: () => void;
+  ratingsError?: boolean;
   handleSelectMedia: (item: SearchResult | null) => void;
   sourceOptions: Array<{ id: string; label: string }>;
   logoSourceOptions: Array<{ id: string; label: string }>;
@@ -62,9 +65,13 @@ const SourceTabContent: React.FC<Props> = ({
   setConfig,
   updateConfig,
   fetchedData,
+  searchQuery,
   setSearchQuery,
   results,
   isSearching,
+  searchError = false,
+  onRetrySearch,
+  ratingsError = false,
   handleSelectMedia,
   sourceOptions,
   logoSourceOptions,
@@ -119,15 +126,15 @@ const SourceTabContent: React.FC<Props> = ({
                     letterSpacing: '0.06em',
                     background:
                       config.mediaType === 'tv'
-                        ? 'rgba(59,130,246,0.12)'
+                        ? 'rgba(180,82,43,0.12)'
                         : config.mediaType === 'anime'
-                          ? 'rgba(168,85,247,0.12)'
+                          ? 'rgba(184,134,59,0.12)'
                           : 'rgba(196,124,46,0.12)',
                     color:
                       config.mediaType === 'tv'
-                        ? '#60a5fa'
+                        ? '#b4522b'
                         : config.mediaType === 'anime'
-                          ? '#c084fc'
+                          ? '#b8863b'
                           : 'var(--film-amber)',
                   }}
                 >
@@ -149,9 +156,9 @@ const SourceTabContent: React.FC<Props> = ({
               style={{
                 background:
                   config.mediaType === 'tv'
-                    ? 'rgba(59,130,246,0.08)'
+                    ? 'rgba(180,82,43,0.08)'
                     : config.mediaType === 'anime'
-                      ? 'rgba(168,85,247,0.08)'
+                      ? 'rgba(184,134,59,0.08)'
                       : 'rgba(196,124,46,0.08)',
               }}
             >
@@ -160,14 +167,19 @@ const SourceTabContent: React.FC<Props> = ({
                 style={{
                   color:
                     config.mediaType === 'tv'
-                      ? 'rgba(96,165,250,0.6)'
+                      ? 'rgba(180,82,43,0.6)'
                       : config.mediaType === 'anime'
-                        ? 'rgba(192,132,252,0.6)'
+                        ? 'rgba(184,134,59,0.6)'
                         : 'rgba(196,124,46,0.6)',
                 }}
               />
             </div>
           </div>
+          {ratingsError && (
+            <p className="mono-font mt-2" style={{ fontSize: 9, color: 'rgba(248,113,113,0.7)' }}>
+              Ratings unavailable — live badge values could not be loaded
+            </p>
+          )}
         </div>
       )}
 
@@ -186,6 +198,39 @@ const SourceTabContent: React.FC<Props> = ({
           onSelectResult={(item) => handleSelectMedia(item)}
           placeholder="Movie or TV show…"
         />
+        {searchError ? (
+          <div className="flex items-center justify-between gap-2 mt-2 px-1">
+            <p className="mono-font" style={{ fontSize: 9, color: 'rgba(248,113,113,0.8)' }}>
+              Search failed — check your connection
+            </p>
+            <button
+              type="button"
+              onClick={onRetrySearch}
+              className="mono-font inline-flex items-center gap-1 transition-colors"
+              style={{ fontSize: 9, color: 'var(--film-text-label)' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-cream)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = 'var(--film-text-label)';
+              }}
+            >
+              <RefreshCw size={9} /> Retry
+            </button>
+          </div>
+        ) : searchQuery.trim().length >= 2 && !isSearching && results.length === 0 ? (
+          <div className="mt-2 px-1">
+            <p className="mono-font" style={{ fontSize: 9, color: 'var(--film-text-dim)' }}>
+              No results for &ldquo;{searchQuery.trim()}&rdquo;
+            </p>
+            <p
+              className="body-font mt-0.5"
+              style={{ fontSize: 9, color: 'var(--film-text-ghost)' }}
+            >
+              Try a different title or check the spelling
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {/* Media type + ID */}
@@ -402,7 +447,7 @@ const SourceTabContent: React.FC<Props> = ({
             }}
             className={clsx(
               'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-              config.logo ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+              config.logo ? 'bg-[#C47C2E]' : 'bg-[rgba(69,63,55,0.8)]'
             )}
           >
             <span
@@ -457,7 +502,7 @@ const SourceTabContent: React.FC<Props> = ({
             }}
             className={clsx(
               'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E]',
-              badgesVisible ? 'bg-[#C47C2E]' : 'bg-zinc-700/80'
+              badgesVisible ? 'bg-[#C47C2E]' : 'bg-[rgba(69,63,55,0.8)]'
             )}
           >
             <span

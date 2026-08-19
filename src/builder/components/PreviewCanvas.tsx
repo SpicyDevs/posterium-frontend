@@ -575,10 +575,57 @@ const PreviewCanvas: React.FC<Props> = ({
     };
   }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
 
+  // Fresh-value refs so the pan-to-selection effect only re-runs on selection change.
+  const panRef = useRef(pan);
+  panRef.current = pan;
+  const scaleRef = useRef(currentScale);
+  scaleRef.current = currentScale;
+  const previewRatingsRef = useRef(previewRatings);
+  previewRatingsRef.current = previewRatings;
+  const getBadgeRectRef = useRef(getBadgeRect);
+  getBadgeRectRef.current = getBadgeRect;
+  const clampPanRef = useRef(clampPan);
+  clampPanRef.current = clampPan;
+  const dragSessionRef = useRef(dragSession);
+  dragSessionRef.current = dragSession;
+  const isPanningRef = useRef(isPanning);
+  isPanningRef.current = isPanning;
+
+  // Mobile: keep the most recently selected badge in view — pan the canvas if it sits offscreen.
+  useEffect(() => {
+    if (dragSessionRef.current || isPanningRef.current) return;
+    if (window.matchMedia('(min-width: 1024px)').matches) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const ids = Array.from(selectedIds);
+    const targetId = ids.length > 0 ? ids[ids.length - 1] : undefined;
+    if (!targetId) return;
+    const index = previewRatingsRef.current.indexOf(targetId);
+    if (index === -1) return;
+    const rect = getBadgeRectRef.current(targetId, index);
+    const { width: cw, height: ch } = container.getBoundingClientRect();
+    const scale = scaleRef.current;
+    const cx = cw / 2;
+    const cy = ch / 2;
+    const left = cx + panRef.current.x + (rect.x - CANVAS_WIDTH / 2) * scale;
+    const top = cy + panRef.current.y + (rect.y - CANVAS_HEIGHT / 2) * scale;
+    const right = left + rect.w * scale;
+    const bottom = top + rect.h * scale;
+    const margin = 16;
+    let dx = 0;
+    let dy = 0;
+    if (left < margin) dx = margin - left;
+    else if (right > cw - margin) dx = cw - margin - right;
+    if (top < margin) dy = margin - top;
+    else if (bottom > ch - margin) dy = ch - margin - bottom;
+    if (dx !== 0 || dy !== 0) setPan((p) => clampPanRef.current(p.x + dx, p.y + dy));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds]);
+
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#18181b] touch-none"
+      className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#181612] touch-none"
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -597,7 +644,7 @@ const PreviewCanvas: React.FC<Props> = ({
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${currentScale})`,
           transition: isPanning ? 'none' : 'transform 0.2s cubic-bezier(0,0,0.2,1)',
         }}
-        className="bg-[#0c0c0e] shadow-2xl relative shrink-0 ring-1 ring-white/10 group will-change-transform overflow-hidden"
+        className="bg-[#0e0d0b] shadow-2xl relative shrink-0 ring-1 ring-[rgba(196,124,46,0.2)] group will-change-transform overflow-hidden"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             clearSelection();
@@ -605,14 +652,25 @@ const PreviewCanvas: React.FC<Props> = ({
         }}
       >
         {isImageLoading && !imageError && (
-          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 z-40 bg-[rgba(14,13,11,0.8)] backdrop-blur flex items-center justify-center pointer-events-none">
             <LoaderCircle className="animate-spin text-[#C47C2E]" size={40} />
           </div>
         )}
         {imageError && (
-          <div className="absolute inset-0 z-40 bg-zinc-900/80 backdrop-blur flex flex-col items-center justify-center text-red-400 gap-2 pointer-events-none">
+          <div className="absolute inset-0 z-40 bg-[rgba(14,13,11,0.8)] backdrop-blur flex flex-col items-center justify-center text-[rgba(248,113,113,0.85)] gap-2 pointer-events-none">
             <AlertCircle size={32} />
             <span className="text-xs font-mono">Failed to load</span>
+          </div>
+        )}
+
+        {config.ratings.length === 0 && !config.logo && !config.titleEnabled && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+            <span
+              className="mono-font uppercase"
+              style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--film-text-ghost)' }}
+            >
+              Add badges from the Layers panel
+            </span>
           </div>
         )}
 
@@ -626,8 +684,8 @@ const PreviewCanvas: React.FC<Props> = ({
         )}
         {viewOptions?.showSafeArea && (
           <div className="absolute inset-0 z-30 pointer-events-none">
-            <div className="absolute inset-8 border border-red-500/30 border-dashed">
-              <div className="absolute top-2 left-2 text-[10px] text-red-500/50 font-mono uppercase">
+            <div className="absolute inset-8 border border-[rgba(248,113,113,0.3)] border-dashed">
+              <div className="absolute top-2 left-2 text-[10px] text-[rgba(248,113,113,0.5)] font-mono uppercase">
                 Safe Area
               </div>
             </div>
