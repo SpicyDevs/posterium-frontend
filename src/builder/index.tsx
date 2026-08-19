@@ -169,6 +169,7 @@ const StudioLayout: React.FC<{
     []
   );
   const mobileRootRef = useRef<HTMLDivElement>(null);
+  const mobileCanvasRef = useRef<HTMLElement>(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [bottomPanelTab, setBottomPanelTab] = useState<'source' | 'layers' | 'badges'>('source');
@@ -190,7 +191,6 @@ const StudioLayout: React.FC<{
     },
     [openBottomPanelSheet]
   );
-  const toggleFullscreen = useCallback(() => setIsFullscreen((v) => !v), []);
 
   useEffect(() => {
     if (['source', 'layers', 'badges', 'selection'].includes(activeTab)) {
@@ -216,6 +216,49 @@ const StudioLayout: React.FC<{
     return () => mq.removeEventListener('change', handle);
   }, []);
 
+  // Fullscreen canvas is a desktop concept. The mobile tree renders under
+  // `!isFullscreen && !isDesktop`, so flipping isFullscreen on a phone would
+  // unmount BOTH trees (the desktop tree is gated on isDesktop) and leave a
+  // blank screen — the "mobile fullscreen no-op". Guard at the source so no
+  // caller (palette command, F key) can ever hit that state on mobile.
+  const toggleFullscreen = useCallback(() => {
+    if (!isDesktop) return;
+    setIsFullscreen((v) => !v);
+  }, [isDesktop]);
+
+  // Mobile fullscreen instead uses the native element Fullscreen API on the
+  // canvas container, tracked locally — iOS Safari has no fullscreenEnabled,
+  // so ZoomOverlay hides the button there and this stays a safe no-op.
+  const handleMobileFullscreen = useCallback(() => {
+    const el = mobileCanvasRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    } else if (document.fullscreenEnabled) {
+      void el.requestFullscreen().catch(() => undefined);
+    }
+  }, []);
+
+  // Virtual-keyboard avoidance. iOS Safari only reports the keyboard via
+  // visualViewport (Android resizes the layout viewport thanks to
+  // interactive-widget=resizes-content in BaseLayout — there this delta stays
+  // ~0 and 100dvh already shrinks). When the keyboard is up, shrink the fixed
+  // shell to the visible viewport so header, nav, drawers and the bottom
+  // sheet stay reachable instead of hiding behind the keyboard. The 120px
+  // threshold skips URL-bar-collapse noise on scrollable pages.
+  const [kbInset, setKbInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const dh = window.innerHeight - vv.height;
+      setKbInset(dh > 120 ? dh : 0);
+    };
+    vv.addEventListener('resize', onResize);
+    onResize();
+    return () => vv.removeEventListener('resize', onResize);
+  }, []);
+
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -224,6 +267,12 @@ const StudioLayout: React.FC<{
   });
   const openCtxMenu = useCallback((badgeId: LayerTargetId, e: React.MouseEvent) => {
     e.preventDefault();
+    // Desktop-only surface. Android long-press dispatches `contextmenu` with
+    // button 0 — mobile has its own long-press additive-select gesture in
+    // DraggableBadge, so never open the desktop ContextMenu for touch. The
+    // native browser menu is already suppressed by DraggableBadge's own
+    // onContextMenu preventDefault; this gate stops the in-app menu instead.
+    if (e.nativeEvent.button !== 2) return;
     setCtxMenu({ visible: true, x: e.clientX, y: e.clientY, badgeId });
   }, []);
   const closeCtxMenu = useCallback(() => setCtxMenu((s) => ({ ...s, visible: false })), []);
@@ -1117,13 +1166,28 @@ const StudioLayout: React.FC<{
       </a>
 
       <style>{`
-        .builder-ui, .builder-ui * { user-select: none; -webkit-user-select: none; }
+        .builder-ui, .builder-ui * {
+          user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+        }
         .builder-ui input, .builder-ui textarea, .builder-ui [contenteditable] {
           user-select: text; -webkit-user-select: text;
         }
+        /* App-shell feel on touch: no tap flash, no double-tap zoom, no iOS
+           long-press callout on chrome surfaces (inputs keep text selection
+           above; the canvas/badges/sheet set their own touch-action). */
+        .builder-ui { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .sidebar-transition { transition: opacity 0.2s ease; }
         .sidebar-resizing .sidebar-transition { transition: opacity 0.2s ease !important; }
         .mobile-header-scroll::-webkit-scrollbar { display: none; }
+        /* Edge handles are 22px visual but must meet the 44px touch target:
+           an invisible pseudo-element extends the hit area inward. */
+        .mobile-edge-handle { position: relative; }
+        .mobile-edge-handle::after {
+          content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+          width: 44px; height: 64px;
+        }
+        .mobile-edge-handle--left::after { left: 0; }
+        .mobile-edge-handle--right::after { right: 0; }
       `}</style>
 
       <div
@@ -1272,11 +1336,14 @@ const StudioLayout: React.FC<{
               {
                 position: 'fixed',
                 inset: 0,
-                height: '100dvh',
+                height: kbInset > 0 ? `calc(100dvh - ${kbInset}px)` : '100dvh',
                 width: '100vw',
                 background: 'var(--film-black)',
                 overflow: 'hidden',
                 '--bph': '0px',
+                // Exposed for the bottom sheet max-height math (header grows
+                // by the notch in PWA standalone).
+                '--sait': 'env(safe-area-inset-top, 0px)',
               } as React.CSSProperties
             }
           >
@@ -1291,7 +1358,8 @@ const StudioLayout: React.FC<{
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 48,
+                height: 'calc(48px + env(safe-area-inset-top, 0px))',
+                paddingTop: 'env(safe-area-inset-top, 0px)',
                 zIndex: 40,
                 background: 'rgba(7,7,6,0.97)',
                 borderBottom: '1px solid rgba(196,124,46,0.1)',
@@ -1316,12 +1384,16 @@ const StudioLayout: React.FC<{
                 }}
               />
 
-              {/* LEFT: Wordmark (compact) */}
+              {/* LEFT: Wordmark (compact) — 44px-tall hit area for touch */}
               <a
                 href="/"
                 style={{
                   textDecoration: 'none',
                   flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: 44,
+                  padding: '0 8px',
                 }}
               >
                 <span
@@ -1365,8 +1437,8 @@ const StudioLayout: React.FC<{
                   onClick={() => setPaletteOpen((v) => !v)}
                   aria-label="Search commands"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1385,8 +1457,8 @@ const StudioLayout: React.FC<{
                   onClick={() => setShortcutsOpen((v) => !v)}
                   aria-label="Keyboard shortcuts"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1406,8 +1478,8 @@ const StudioLayout: React.FC<{
                   onClick={() => setIsImportOpen(true)}
                   aria-label="Import from URL"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1426,8 +1498,8 @@ const StudioLayout: React.FC<{
                   onClick={() => setIsResetOpen(true)}
                   aria-label="Reset configuration"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1449,8 +1521,8 @@ const StudioLayout: React.FC<{
                   }}
                   aria-label="Re-run walkthrough"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1481,8 +1553,8 @@ const StudioLayout: React.FC<{
                   disabled={!canUndo}
                   aria-label="Undo"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1502,8 +1574,8 @@ const StudioLayout: React.FC<{
                   disabled={!canRedo}
                   aria-label="Redo"
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     flexShrink: 0,
                     display: 'flex',
@@ -1555,7 +1627,9 @@ const StudioLayout: React.FC<{
                       : bottomPanelOpen
                         ? bottomPanelTab === 'source'
                           ? 'Source'
-                          : 'Badges'
+                          : bottomPanelTab === 'layers'
+                            ? 'Layers'
+                            : 'Badges'
                         : 'Builder'}
                 </span>
               </div>
@@ -1566,8 +1640,8 @@ const StudioLayout: React.FC<{
                 onClick={() => setExportOpen((v) => !v)}
                 aria-label="Export poster"
                 style={{
-                  height: 32,
-                  paddingInline: 12,
+                  height: 44,
+                  paddingInline: 14,
                   borderRadius: 8,
                   display: 'flex',
                   alignItems: 'center',
@@ -1591,14 +1665,16 @@ const StudioLayout: React.FC<{
             </header>
 
             {/* ── CANVAS ── */}
-            {/* Top: 48px (header). Bottom: 56px (nav) + safe-area + var(--bph) (bottom sheet). */}
+            {/* Top: 48px header + safe-area-inset-top (notch in PWA standalone).
+               Bottom: 56px (nav) + safe-area + var(--bph) (bottom sheet). */}
             {/* Transition on bottom must match the bottom sheet transition duration exactly: 0.32s. */}
             <main
               id="main-canvas"
+              ref={mobileCanvasRef}
               aria-label="Poster canvas"
               style={{
                 position: 'absolute',
-                top: 48,
+                top: 'calc(48px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 right: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
@@ -1629,7 +1705,7 @@ const StudioLayout: React.FC<{
               <ZoomOverlay
                 isFullscreen={false}
                 rightSidebarWidth={0}
-                onToggleFullscreen={() => {}}
+                onToggleFullscreen={handleMobileFullscreen}
                 onZoomIn={() => dispatchZoom(0.25)}
                 onZoomOut={() => dispatchZoom(-0.25)}
                 onResetView={dispatchResetView}
@@ -1645,6 +1721,7 @@ const StudioLayout: React.FC<{
             <button
               aria-label={leftPanelOpen ? 'Close layers panel' : 'Open layers panel'}
               aria-expanded={leftPanelOpen}
+              className="mobile-edge-handle mobile-edge-handle--left"
               onClick={() => setLeftPanelOpen((v) => !v)}
               style={{
                 position: 'absolute',
@@ -1675,6 +1752,7 @@ const StudioLayout: React.FC<{
             <button
               aria-label={rightPanelOpen ? 'Close inspector panel' : 'Open inspector panel'}
               aria-expanded={rightPanelOpen}
+              className="mobile-edge-handle mobile-edge-handle--right"
               onClick={() => setRightPanelOpen((v) => !v)}
               style={{
                 position: 'absolute',
@@ -1729,7 +1807,7 @@ const StudioLayout: React.FC<{
               aria-hidden={!leftPanelOpen}
               style={{
                 position: 'absolute',
-                top: 48,
+                top: 'calc(48px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 width: 'min(280px, 85vw)',
@@ -1786,13 +1864,13 @@ const StudioLayout: React.FC<{
                 >
                   Layers
                 </span>
-                {/* Close button — minimum 36×36 tap target */}
+                {/* Close button — 44×44 tap target (fits the 44px drawer header) */}
                 <button
                   onClick={() => setLeftPanelOpen(false)}
                   aria-label="Close layers panel"
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
@@ -1867,7 +1945,7 @@ const StudioLayout: React.FC<{
               aria-hidden={!rightPanelOpen}
               style={{
                 position: 'absolute',
-                top: 48,
+                top: 'calc(48px + env(safe-area-inset-top, 0px))',
                 right: 0,
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 width: 'min(280px, 85vw)',
@@ -1930,8 +2008,8 @@ const StudioLayout: React.FC<{
                   onClick={() => setRightPanelOpen(false)}
                   aria-label="Close inspector panel"
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
@@ -2613,6 +2691,17 @@ const BuilderAppInner: React.FC<BuilderAppProps> = ({ initialMode = 'simple', pr
   }, []);
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
+
+  // pwa-register.ts dispatches 'pwa-update-activated' ~900ms before reloading
+  // after a service-worker update installs. Surface it as a toast so an update
+  // landing mid-edit never reads as a crash (config is already safe in
+  // localStorage via autosave). Also informs standalone PWA users that the
+  // reload they're about to see is the new version, not a failure.
+  useEffect(() => {
+    const onUpdate = () => toast('New version installed — updating…', 'success');
+    window.addEventListener('pwa-update-activated', onUpdate);
+    return () => window.removeEventListener('pwa-update-activated', onUpdate);
+  }, [toast]);
 
   // Warm up the lazily-loaded overlays (keyboard shortcuts modal, reset/import
   // dialogs, export popover, context menu, command palette) once the builder

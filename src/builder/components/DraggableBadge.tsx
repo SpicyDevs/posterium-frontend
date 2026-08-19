@@ -200,6 +200,11 @@ const DraggableBadge: React.FC<Props> = ({
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // Two-finger pinch must reach the canvas container (PreviewCanvas tracks
+    // lastDist from its own touchstart) — a second finger landing on a badge
+    // should NOT claim the gesture or the pinch silently dies mid-gesture.
+    // Single-finger drags still stopPropagation below as before.
+    if (e.touches.length > 1) return;
     e.stopPropagation();
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
     // Long-press (~500ms, no movement beyond 6px) additively selects the badge

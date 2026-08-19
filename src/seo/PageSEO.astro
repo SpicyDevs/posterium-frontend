@@ -88,7 +88,8 @@ function safeStringify(obj: unknown): string {
 <meta name="twitter:image:alt" content={twitter.imageAlt} />
 
 <!-- PWA / mobile -->
-<meta name="theme-color" content={SITE_CONFIG.themeColor} />
+{/* Warm cinema-black per DESIGN.md (site.ts themeColor is cold #0a0a0a — update it there too) */}
+<meta name="theme-color" content="#070706" />
 <meta name="color-scheme" content="dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -96,7 +97,7 @@ function safeStringify(obj: unknown): string {
 <meta name="apple-mobile-web-app-title" content={SITE_CONFIG.name} />
 <meta name="application-name" content={SITE_CONFIG.name} />
 <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-<meta name="msapplication-TileColor" content={SITE_CONFIG.themeColor} />
+<meta name="msapplication-TileColor" content="#070706" />
 <meta name="msapplication-config" content="/browserconfig.xml" />
 
 <!-- Google site verification (optional, from env) -->

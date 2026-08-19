@@ -1,4 +1,4 @@
-import { memo, useState, type MouseEvent } from 'react';
+import { memo, useEffect, useState, type MouseEvent } from 'react';
 import { Maximize2, Minimize2, RotateCcw, Settings, ZoomIn, ZoomOut } from 'lucide-react';
 import type { ViewOptions } from '../EditorContext';
 import BuilderSettingsPopover from './BuilderSettingsPopover';
@@ -26,6 +26,20 @@ const ZoomOverlay = memo<{
     onToggleViewOption,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    // Native fullscreen (element Fullscreen API) is a mobile concept — the
+    // desktop `isFullscreen` state would unmount the mobile tree, so mobile
+    // uses requestFullscreen on the canvas container directly and tracks it
+    // here. Only surfaced where the API exists (Android Chrome; iOS Safari
+    // reports fullscreenEnabled=false, so the button hides there).
+    const [nativeFs, setNativeFs] = useState(false);
+    const [fsSupported, setFsSupported] = useState(false);
+    useEffect(() => {
+      if (typeof document === 'undefined') return;
+      setFsSupported(!!document.fullscreenEnabled);
+      const onFsChange = () => setNativeFs(!!document.fullscreenElement);
+      document.addEventListener('fullscreenchange', onFsChange);
+      return () => document.removeEventListener('fullscreenchange', onFsChange);
+    }, []);
     const buttonStyle = {
       color: 'var(--film-text-dim)',
       cursor: 'pointer',
@@ -40,6 +54,11 @@ const ZoomOverlay = memo<{
       e.currentTarget.style.color = color;
       e.currentTarget.style.background = 'transparent';
     };
+    // Primary mobile control — touch targets must be >=44px; radius stays on
+    // the established field token (8px) per DESIGN's radius economy.
+    const btnSize = isMobile ? 44 : 32;
+    const btnClass = 'flex items-center justify-center transition-all active:scale-90';
+    const btnStyle = { ...buttonStyle, width: btnSize, height: btnSize, borderRadius: 8 };
 
     return (
       <div
@@ -65,18 +84,24 @@ const ZoomOverlay = memo<{
           viewOptions={viewOptions}
           onToggleViewOption={onToggleViewOption}
           isMobile={isMobile}
+          onRequestClose={() => setSettingsOpen(false)}
         />
         {[
-          { icon: <ZoomIn size={15} />, label: 'Zoom In', action: onZoomIn },
-          { icon: <ZoomOut size={15} />, label: 'Zoom Out', action: onZoomOut },
-          { icon: <RotateCcw size={15} />, label: 'Reset Canvas View', action: onResetView },
+          { icon: <ZoomIn size={isMobile ? 17 : 15} />, label: 'Zoom In', action: onZoomIn },
+          { icon: <ZoomOut size={isMobile ? 17 : 15} />, label: 'Zoom Out', action: onZoomOut },
+          {
+            icon: <RotateCcw size={isMobile ? 17 : 15} />,
+            label: 'Reset Canvas View',
+            action: onResetView,
+          },
         ].map(({ icon, label, action }) => (
           <button
             key={label}
             onClick={action}
             title={label}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
-            style={buttonStyle}
+            aria-label={label}
+            className={btnClass}
+            style={btnStyle}
             onMouseEnter={onHover}
             onMouseLeave={(e) => onLeave(e)}
           >
@@ -91,9 +116,11 @@ const ZoomOverlay = memo<{
         <button
           onClick={() => setSettingsOpen((v) => !v)}
           title="Builder Settings"
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+          aria-label="Builder Settings"
+          aria-expanded={settingsOpen}
+          className={btnClass}
           style={{
-            ...buttonStyle,
+            ...btnStyle,
             color: settingsOpen ? 'var(--film-amber)' : 'var(--film-text-dim)',
             background: settingsOpen ? 'rgba(196,124,46,0.1)' : 'transparent',
           }}
@@ -102,23 +129,34 @@ const ZoomOverlay = memo<{
             onLeave(e, settingsOpen ? 'var(--film-amber)' : 'var(--film-text-dim)')
           }
         >
-          <Settings size={15} />
+          <Settings size={isMobile ? 17 : 15} />
         </button>
-        {!isMobile && (
+        {(!isMobile || fsSupported) && (
           <button
             onClick={onToggleFullscreen}
-            title={isFullscreen ? 'Exit Fullscreen (F or Esc)' : 'Enter Fullscreen (F)'}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+            title={
+              nativeFs
+                ? 'Exit Fullscreen (Esc)'
+                : isFullscreen
+                  ? 'Exit Fullscreen (F or Esc)'
+                  : 'Enter Fullscreen (F)'
+            }
+            aria-label={nativeFs || isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            className={btnClass}
             style={{
-              ...buttonStyle,
-              color: isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
+              ...btnStyle,
+              color: nativeFs || isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)',
             }}
             onMouseEnter={onHover}
             onMouseLeave={(e) =>
-              onLeave(e, isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)')
+              onLeave(e, nativeFs || isFullscreen ? 'rgba(196,124,46,0.7)' : 'var(--film-text-dim)')
             }
           >
-            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            {nativeFs || isFullscreen ? (
+              <Minimize2 size={isMobile ? 17 : 15} />
+            ) : (
+              <Maximize2 size={isMobile ? 17 : 15} />
+            )}
           </button>
         )}
       </div>

@@ -277,8 +277,8 @@ export default defineConfig({
             'Generate custom movie and TV posters with live rating badges from IMDb, Rotten Tomatoes, Metacritic, and MORE!.',
           start_url: '/build', // Removed trailing slash here as well
           display: 'standalone',
-          background_color: '#0a0a0a',
-          theme_color: '#0a0a0a',
+          background_color: '#070706',
+          theme_color: '#070706',
           icons: [
             { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
             { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },

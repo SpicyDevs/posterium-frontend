@@ -27,8 +27,15 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
 
   const getMaxHeight = useCallback(() => {
     if (typeof window === 'undefined') return 520;
-    return Math.max(200, window.innerHeight - 48 - 56 - 80);
-  }, []);
+    // Header is 48px + safe-area-inset-top on notched phones (PWA standalone),
+    // nav 56px + safe-area-inset-bottom. The root exposes --sait so the sheet
+    // never overlaps the header when fully expanded in standalone mode.
+    const sait =
+      parseFloat(
+        getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--sait')
+      ) || 0;
+    return Math.max(200, window.innerHeight - 48 - sait - 56 - 80);
+  }, [rootRef]);
 
   const getSnapPoints = useCallback(() => {
     const max = getMaxHeight();

@@ -445,3 +445,18 @@
     color: var(--film-cream) !important;
   }
 }
+
+/* ── Builder app shell (mobile PWA app feel) ───────────────────────────────
+   Scoped with body:has(.builder-ui) so these never touch the marketing pages.
+   The builder is a fixed 100dvh app shell — pull-to-refresh must not fight
+   the canvas, and toasts must float above the 56px bottom nav + home
+   indicator (Toast.tsx pins them at bottom-4, which the nav would cover). */
+@media (max-width: 1023px) {
+  body:has(.builder-ui) {
+    overscroll-behavior-y: none;
+  }
+
+  body:has(.builder-ui) [role='status'] {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
