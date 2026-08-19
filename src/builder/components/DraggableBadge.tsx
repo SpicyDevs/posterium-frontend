@@ -82,8 +82,12 @@ const DraggableBadge: React.FC<Props> = ({
   const baseHeight = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
+  const [longPressPulse, setLongPressPulse] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const hasDraggedRef = useRef(false);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressFiredRef = useRef(false);
+  const longPressOriginRef = useRef<{ x: number; y: number } | null>(null);
 
   const onDragEndRef = useRef(onDragEnd);
   const onSelectRef = useRef(onSelect);
@@ -98,11 +102,22 @@ const DraggableBadge: React.FC<Props> = ({
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
     hasDraggedRef.current = false;
+    longPressFiredRef.current = false;
     dragStartRef.current = { mouseX: clientX, mouseY: clientY };
   };
 
   const handleMove = (clientX: number, clientY: number) => {
     if (!dragStartRef.current) return;
+    // Movement beyond a small threshold (6 screen px) cancels a pending
+    // long-press so drags never trigger an accidental additive select.
+    if (longPressOriginRef.current) {
+      const dxPx = clientX - longPressOriginRef.current.x;
+      const dyPx = clientY - longPressOriginRef.current.y;
+      if (Math.abs(dxPx) > 6 || Math.abs(dyPx) > 6) {
+        if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
     const deltaX = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const deltaY = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
     if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
@@ -115,6 +130,10 @@ const DraggableBadge: React.FC<Props> = ({
 
   const handleEnd = (e: MouseEvent | TouchEvent) => {
     setIsDragging(false);
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
     if (!dragStartRef.current) return;
 
     const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
@@ -123,7 +142,7 @@ const DraggableBadge: React.FC<Props> = ({
     const dx = (clientX - dragStartRef.current.mouseX) / canvasScaleRef.current;
     const dy = (clientY - dragStartRef.current.mouseY) / canvasScaleRef.current;
 
-    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+    if (!longPressFiredRef.current && Math.abs(dx) < 2 && Math.abs(dy) < 2) {
       const isShift = 'shiftKey' in e ? e.shiftKey : false;
       const isCtrl = 'ctrlKey' in e ? e.ctrlKey : false;
       const isMeta = 'metaKey' in e ? e.metaKey : false;
@@ -166,6 +185,14 @@ const DraggableBadge: React.FC<Props> = ({
     };
   }, [isDragging]);
 
+  // Clear any pending long-press timer on unmount.
+  useEffect(
+    () => () => {
+      if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+    },
+    []
+  );
+
   const onMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -175,6 +202,20 @@ const DraggableBadge: React.FC<Props> = ({
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    // Long-press (~500ms, no movement beyond 6px) additively selects the badge
+    // — the mobile equivalent of shift-click. Only fires when the badge isn't
+    // already selected so it can never toggle a selection off. Drag behavior
+    // is untouched: any movement cancels the timer.
+    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+    longPressOriginRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      if (hasDraggedRef.current || isSelectedRef.current) return;
+      longPressFiredRef.current = true;
+      onSelectRef.current(badgeId, true);
+      setLongPressPulse(true);
+      window.setTimeout(() => setLongPressPulse(false), 220);
+    }, 500);
   };
 
   const onClick = (e: React.MouseEvent) => {
@@ -722,7 +763,8 @@ const DraggableBadge: React.FC<Props> = ({
         opacity: isObscuring ? 0.35 : 1,
         pointerEvents: isObscuring ? 'none' : 'auto',
         touchAction: 'none',
-        transform: 'translateZ(0)',
+        transform: longPressPulse ? 'translateZ(0) scale(1.06)' : 'translateZ(0)',
+        transition: 'transform 0.15s ease',
       }}
     >
       {/* Clip inner content to badge bounds (prevents icon/text from overflowing) */}

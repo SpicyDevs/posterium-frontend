@@ -209,21 +209,7 @@ const DraggableTitle: React.FC<Props> = ({
 
   return (
     <div
-      onMouseDown={readOnly ? undefined : onMouseDown}
-      onTouchStart={readOnly ? undefined : onTouchStart}
-      onClick={readOnly ? undefined : onClick}
-      onContextMenu={
-        readOnly
-          ? undefined
-          : (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onContextMenu?.(e);
-            }
-      }
-      className={
-        readOnly ? 'badge-item absolute select-none' : 'badge-item absolute select-none cursor-move'
-      }
+      className="badge-item absolute select-none"
       style={{
         width: `${dynamicWidth}px`,
         height: `${contentHeight}px`,
@@ -231,12 +217,26 @@ const DraggableTitle: React.FC<Props> = ({
         top: `${y}px`,
         zIndex: 130,
         overflow: 'visible',
-        pointerEvents: readOnly ? 'none' : 'auto',
-        touchAction: 'none',
+        // Hit area is confined to the text span below — the title box never
+        // intercepts clicks/drags aimed at badges or the canvas around it.
+        pointerEvents: 'none',
         transform: 'translateZ(0)',
       }}
     >
       <span
+        onMouseDown={readOnly ? undefined : onMouseDown}
+        onTouchStart={readOnly ? undefined : onTouchStart}
+        onClick={readOnly ? undefined : onClick}
+        onContextMenu={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onContextMenu?.(e);
+              }
+        }
+        className={readOnly ? 'select-none' : 'select-none cursor-move'}
         style={{
           position: 'absolute',
           left: 8 * displayScale,
@@ -259,7 +259,8 @@ const DraggableTitle: React.FC<Props> = ({
           display: wrapEnabled ? '-webkit-box' : 'inline-block',
           WebkitBoxOrient: wrapEnabled ? 'vertical' : undefined,
           WebkitLineClamp: wrapEnabled ? titleCharHeight : undefined,
-          pointerEvents: 'none',
+          pointerEvents: readOnly ? 'none' : 'auto',
+          touchAction: 'none',
         }}
       >
         {truncatedTitle}

@@ -176,7 +176,7 @@ const ContextMenu: React.FC<Props> = memo(
       {
         items: [
           ...(!isLogo && onDuplicate
-            ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} /> }]
+            ? [{ id: 'dup', label: 'Duplicate', icon: <Copy size={12} />, shortcut: '⌘⇧D' }]
             : []),
           { id: 'reset', label: 'Reset to Defaults', icon: <RotateCcw size={12} /> },
           {

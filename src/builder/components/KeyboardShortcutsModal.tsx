@@ -30,6 +30,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ['⇧+Click'], label: 'Multi-select badge' },
       { keys: ['⌘', 'A'], label: 'Select all badges' },
       { keys: ['⌘', 'D'], label: 'Deselect all' },
+      { keys: ['⌘', '⇧', 'D'], label: 'Duplicate selected badge' },
       { keys: ['Tab'], label: 'Cycle next badge' },
       { keys: ['⇧', 'Tab'], label: 'Cycle previous badge' },
       { keys: ['Del / ⌫'], label: 'Delete selected badges' },

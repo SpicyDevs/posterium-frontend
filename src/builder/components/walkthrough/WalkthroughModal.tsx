@@ -27,6 +27,9 @@ interface WalkthroughModalProps {
   onDismiss: () => void;
   onSkip: () => void;
   presets?: ExamplePreset[];
+  /** Config to seed the wizard with (e.g. a shared ?url= poster) so the
+   *  poster identity survives the walkthrough when only badges/theme change. */
+  initialConfig?: PosterConfig;
 }
 
 const STEPS = [
@@ -40,13 +43,17 @@ const STEPS = [
 ];
 
 const WalkthroughModal = memo<WalkthroughModalProps>(
-  ({ onComplete, onDismiss, onSkip, presets = [] }) => {
+  ({ onComplete, onDismiss, onSkip, presets = [], initialConfig }) => {
     const [entryChoice, setEntryChoice] = useState<
       'walkthrough' | 'simple' | 'advanced' | 'community' | null
     >(null);
     const [step, setStep] = useState(0);
-    const [config, setConfig] = useState<PosterConfig>(() => ({ ...DEFAULT_CONFIG }));
-    const [stepSnapshot, setStepSnapshot] = useState<PosterConfig>({ ...DEFAULT_CONFIG });
+    const [config, setConfig] = useState<PosterConfig>(() =>
+      initialConfig ? { ...initialConfig } : { ...DEFAULT_CONFIG }
+    );
+    const [stepSnapshot, setStepSnapshot] = useState<PosterConfig>(() =>
+      initialConfig ? { ...initialConfig } : { ...DEFAULT_CONFIG }
+    );
     const [builderMode, setBuilderMode] = useState<BuilderMode>('simple');
     const stepRef = useRef(step);
     stepRef.current = step;
@@ -55,11 +62,11 @@ const WalkthroughModal = memo<WalkthroughModalProps>(
     const handleEntryChoice = useCallback(
       (choice: 'walkthrough' | 'simple' | 'advanced' | 'community') => {
         if (choice === 'simple') {
-          onComplete('simple', { ...DEFAULT_CONFIG });
+          onComplete('simple', initialConfig ? { ...initialConfig } : { ...DEFAULT_CONFIG });
           return;
         }
         if (choice === 'advanced') {
-          onComplete('advanced', { ...DEFAULT_CONFIG });
+          onComplete('advanced', initialConfig ? { ...initialConfig } : { ...DEFAULT_CONFIG });
           return;
         }
         if (choice === 'community') {

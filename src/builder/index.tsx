@@ -56,7 +56,9 @@ import {
   ChevronDown,
   Search,
   BookOpen,
+  CopyPlus,
 } from 'lucide-react';
+import { ToastProvider, useToast } from './components/ui/Toast';
 import { usePosterHistory } from './usePosterHistory';
 import { useMobileBottomSheet } from './useMobileBottomSheet';
 import type { ContextMenuState, LayerTargetId } from './components/ContextMenu';
@@ -128,10 +130,11 @@ const StudioLayout: React.FC<{
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   // Two physical Import buttons exist in the DOM at once (desktop header +
-  // mobile toolbar) — only one is visible at a time via CSS (`lg:hidden` /
-  // `hidden lg:flex`), but both stay mounted. Give each its own ref and
-  // resolve to whichever is actually visible when the dialog needs to
-  // position itself, mirroring the Export button pattern below.
+  // mobile toolbar) — the desktop tree / mobile tree are rendered
+  // conditionally (see `isDesktop` below), but the header itself stays
+  // mounted and CSS-hidden on mobile, so both buttons can coexist. Give each
+  // its own ref and resolve to whichever is actually visible when the dialog
+  // needs to position itself, mirroring the Export button pattern below.
   const importBtnRefDesktop = useRef<HTMLButtonElement>(null);
   const importBtnRefMobile = useRef<HTMLButtonElement>(null);
   const importBtnRef = useMemo<React.RefObject<HTMLButtonElement | null>>(
@@ -145,8 +148,8 @@ const StudioLayout: React.FC<{
     []
   );
   // Two physical Export buttons exist in the DOM at once (desktop header +
-  // mobile toolbar) — only one is visible at a time via CSS (`lg:hidden` /
-  // `hidden lg:flex`), but both stay mounted. Using a single shared ref for
+  // mobile toolbar) — the trees render conditionally, but the header button
+  // stays mounted and display:none on mobile. Using a single shared ref for
   // both meant `.current` always ended up pointing at whichever button
   // rendered last (the mobile one), which is display:none on desktop and
   // therefore reports a zero-size rect at (0,0) — causing the export popover
@@ -459,6 +462,31 @@ const StudioLayout: React.FC<{
     [setConfig, clearSelection, deleteBadge]
   );
 
+  // Duplicate badge(s): re-adds the badge on top of the stack with a +12px
+  // offset and selects the copy. History is recorded automatically through
+  // setConfig (usePosterHistory). The poster model keys badges by provider
+  // (one instance per badge type), so the copy shares the badge's item
+  // config — it lands above the original at the offset position.
+  const handleDuplicateBadge = useCallback(
+    (ids: LayerTargetId[]) => {
+      const badgeIds = ids.filter((id): id is RatingType => id !== 'logo' && id !== 'title');
+      if (badgeIds.length === 0) return;
+      setConfig((prev) => {
+        const ni = { ...prev.items };
+        for (const id of badgeIds) {
+          ni[id] = {
+            ...(prev.items[id] ?? {}),
+            x: (prev.items[id]?.x ?? 25) + 12,
+            y: (prev.items[id]?.y ?? 25) + 12,
+          };
+        }
+        return { ...prev, items: ni, ratings: [...prev.ratings, ...badgeIds] };
+      });
+      setBatchSelection(badgeIds);
+    },
+    [setConfig, setBatchSelection]
+  );
+
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -520,6 +548,12 @@ const StudioLayout: React.FC<{
       if (mod && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         setBatchSelection(configRatingsRef.current);
+        return;
+      }
+      if (mod && e.shiftKey && e.key.toLowerCase() === 'd') {
+        // Duplicate the selected badges (⌘⇧D) — must run before plain ⌘D.
+        e.preventDefault();
+        handleDuplicateBadge(Array.from(selectedIdsRef.current));
         return;
       }
       if (mod && e.key.toLowerCase() === 'd') {
@@ -659,6 +693,7 @@ const StudioLayout: React.FC<{
     selectedLogo,
     selectedMinimalElements,
     isDesktop,
+    handleDuplicateBadge,
   ]);
 
   // ── Panel widths ──────────────────────────────────────────────────────────
@@ -842,6 +877,15 @@ const StudioLayout: React.FC<{
       action: () => Array.from(selectedIds).forEach((id) => hideBadge(id as RatingType)),
     },
     {
+      id: 'duplicate-badge',
+      label: 'Duplicate Badge',
+      category: 'Layers & Selection',
+      icon: <CopyPlus size={13} />,
+      shortcut: '⌘⇧D',
+      keywords: ['duplicate', 'clone', 'copy badge'],
+      action: () => handleDuplicateBadge(Array.from(selectedIds)),
+    },
+    {
       id: 'layer-front',
       label: 'Bring to Front',
       category: 'Layers & Selection',
@@ -1011,7 +1055,7 @@ const StudioLayout: React.FC<{
     (selectedTitle ? 1 : 0) +
     selectedMinimalElements.size;
   const selectedLabel = useMemo(() => {
-    if (selectedCount === 0) return 'SELECT';
+    if (selectedCount === 0) return 'NOTHING SELECTED';
     if (selectedCount > 1) return `${selectedCount} LAYERS`;
     if (selectedLogo) return 'LOGO';
     if (selectedTitle) return 'TITLE';
@@ -1151,6 +1195,7 @@ const StudioLayout: React.FC<{
                 onDeselectAll={clearSelection}
                 onResetBadge={resetLayer}
                 onDelete={deleteLayer}
+                onDuplicate={(id) => handleDuplicateBadge([id])}
               />
             )}
             {paletteOpen && (
@@ -1198,8 +1243,8 @@ const StudioLayout: React.FC<{
           }}
         />
 
-        {/* ── MOBILE BUILDER ── */}
-        {!isFullscreen && (
+        {/* ── MOBILE BUILDER (mounted only on non-desktop — see isDesktop) ── */}
+        {!isFullscreen && !isDesktop && (
           <div
             ref={mobileRootRef}
             className="lg:hidden"
@@ -1466,11 +1511,11 @@ const StudioLayout: React.FC<{
                 }}
               >
                 <span
-                  className="syne-font"
+                  className="mono-font"
                   style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -1478,7 +1523,7 @@ const StudioLayout: React.FC<{
                     color:
                       leftPanelOpen || rightPanelOpen || bottomPanelOpen
                         ? 'rgba(196,124,46,0.8)'
-                        : 'rgba(240,230,204,0.4)',
+                        : 'rgba(178,166,146,0.58)',
                   }}
                 >
                   {leftPanelOpen
@@ -2308,161 +2353,163 @@ const StudioLayout: React.FC<{
           </div>
         )}
 
-        {/* ── BODY ── */}
-        <div className="hidden lg:flex flex-1 overflow-hidden relative flex-row">
-          {/* Left sidebar */}
-          {!isFullscreen && (
-            <aside
-              aria-label="Layer panel"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
-              style={{
-                width: leftVisible ? leftW : 0,
-                background: 'var(--film-dark)',
-                borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
-                overflow: 'hidden',
-                opacity: leftVisible ? 1 : 0,
-              }}
-            >
-              {builderMode === 'advanced' ? (
-                <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
-              ) : (
-                <LayerPanel
-                  config={config}
-                  setConfig={setConfig}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelectionOverride}
-                />
-              )}
-              <div
-                onMouseDown={startResizeLeft}
-                className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
-              >
-                <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
-              </div>
-            </aside>
-          )}
-
-          {/* Canvas */}
-          <main
-            id="main-canvas"
-            role="main"
-            aria-label="Poster canvas"
-            className="flex-1 relative overflow-hidden min-h-0"
-            style={{ background: 'var(--film-mid)' }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) clearSelection();
-            }}
-          >
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                backgroundSize: '20px 20px',
-              }}
-            />
-
-            {/* ── DESKTOP LEFT EDGE TOGGLE ── */}
+        {/* ── DESKTOP BUILDER (mounted only on desktop — see isDesktop) ── */}
+        {isDesktop && (
+          <div className="hidden lg:flex flex-1 overflow-hidden relative flex-row">
+            {/* Left sidebar */}
             {!isFullscreen && (
-              <button
-                aria-label={leftVisible ? 'Hide layers panel' : 'Show layers panel'}
-                aria-expanded={leftVisible}
-                onClick={() => setLeftVisible((v) => !v)}
-                className="hidden lg:flex"
+              <aside
+                aria-label="Layer panel"
+                className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
                 style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 30,
-                  width: 22,
-                  height: 64,
-                  borderRadius: '0 10px 10px 0',
-                  background: leftVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(196,124,46,0.22)',
-                  borderLeft: 'none',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: leftVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s, color 0.15s',
+                  width: leftVisible ? leftW : 0,
+                  background: 'var(--film-dark)',
+                  borderRight: leftVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
+                  overflow: 'hidden',
+                  opacity: leftVisible ? 1 : 0,
                 }}
               >
-                {leftVisible ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
-              </button>
+                {builderMode === 'advanced' ? (
+                  <AdvancedPanelNav activePanel={advancedPanel} onChange={switchAdvancedPanel} />
+                ) : (
+                  <LayerPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                  />
+                )}
+                <div
+                  onMouseDown={startResizeLeft}
+                  className="absolute inset-y-0 right-0 w-2 cursor-col-resize group z-50"
+                >
+                  <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
+                </div>
+              </aside>
             )}
 
-            {/* ── DESKTOP RIGHT EDGE TOGGLE ── */}
-            {!isFullscreen && (
-              <button
-                aria-label={rightVisible ? 'Hide inspector panel' : 'Show inspector panel'}
-                aria-expanded={rightVisible}
-                onClick={() => setRightVisible((v) => !v)}
-                className="hidden lg:flex"
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 30,
-                  width: 22,
-                  height: 64,
-                  borderRadius: '10px 0 0 10px',
-                  background: rightVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(196,124,46,0.22)',
-                  borderRight: 'none',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: rightVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-              >
-                {rightVisible ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
-              </button>
-            )}
-
-            <PreviewCanvas
-              config={config}
-              setConfig={setConfig}
-              selectedIds={selectedIds}
-              onSelect={handleSelectionOverride}
-              onContextMenu={openCtxMenu as (id: string, e: React.MouseEvent) => void}
-              onLogoContextMenu={(e) => openCtxMenu('logo', e)}
-            />
-            <FilmCorners />
-          </main>
-
-          {/* Right sidebar */}
-          {!isFullscreen && (
-            <aside
-              aria-label="Inspector"
-              className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
-              style={{
-                width: rightVisible ? rightW : 0,
-                background: 'var(--film-dark)',
-                borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
-                overflow: 'hidden',
-                opacity: rightVisible ? 1 : 0,
+            {/* Canvas */}
+            <main
+              id="main-canvas"
+              role="main"
+              aria-label="Poster canvas"
+              className="flex-1 relative overflow-hidden min-h-0"
+              style={{ background: 'var(--film-mid)' }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) clearSelection();
               }}
             >
               <div
-                onMouseDown={startResizeRight}
-                className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50"
-              >
-                <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
-              </div>
-              {builderMode === 'advanced' ? (
-                renderAdvancedPanel()
-              ) : (
-                <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                }}
+              />
+
+              {/* ── DESKTOP LEFT EDGE TOGGLE ── */}
+              {!isFullscreen && (
+                <button
+                  aria-label={leftVisible ? 'Hide layers panel' : 'Show layers panel'}
+                  aria-expanded={leftVisible}
+                  onClick={() => setLeftVisible((v) => !v)}
+                  className="hidden lg:flex"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 30,
+                    width: 22,
+                    height: 64,
+                    borderRadius: '0 10px 10px 0',
+                    background: leftVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(196,124,46,0.22)',
+                    borderLeft: 'none',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: leftVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {leftVisible ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+                </button>
               )}
-            </aside>
-          )}
-        </div>
+
+              {/* ── DESKTOP RIGHT EDGE TOGGLE ── */}
+              {!isFullscreen && (
+                <button
+                  aria-label={rightVisible ? 'Hide inspector panel' : 'Show inspector panel'}
+                  aria-expanded={rightVisible}
+                  onClick={() => setRightVisible((v) => !v)}
+                  className="hidden lg:flex"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 30,
+                    width: 22,
+                    height: 64,
+                    borderRadius: '10px 0 0 10px',
+                    background: rightVisible ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(196,124,46,0.22)',
+                    borderRight: 'none',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: rightVisible ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {rightVisible ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+                </button>
+              )}
+
+              <PreviewCanvas
+                config={config}
+                setConfig={setConfig}
+                selectedIds={selectedIds}
+                onSelect={handleSelectionOverride}
+                onContextMenu={openCtxMenu as (id: string, e: React.MouseEvent) => void}
+                onLogoContextMenu={(e) => openCtxMenu('logo', e)}
+              />
+              <FilmCorners />
+            </main>
+
+            {/* Right sidebar */}
+            {!isFullscreen && (
+              <aside
+                aria-label="Inspector"
+                className="hidden lg:flex flex-col z-20 relative shrink-0 sidebar-transition"
+                style={{
+                  width: rightVisible ? rightW : 0,
+                  background: 'var(--film-dark)',
+                  borderLeft: rightVisible ? '1px solid rgba(196,124,46,0.07)' : 'none',
+                  overflow: 'hidden',
+                  opacity: rightVisible ? 1 : 0,
+                }}
+              >
+                <div
+                  onMouseDown={startResizeRight}
+                  className="absolute inset-y-0 left-0 w-2 cursor-col-resize group z-50"
+                >
+                  <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-[rgba(196,124,46,0.4)] transition-colors duration-150" />
+                </div>
+                {builderMode === 'advanced' ? (
+                  renderAdvancedPanel()
+                ) : (
+                  <Inspector config={config} setConfig={setConfig} detailLevel="simple" />
+                )}
+              </aside>
+            )}
+          </div>
+        )}
 
         {/* Zoom + fullscreen overlay — desktop only; mobile uses the horizontal
            ZoomOverlay pill inside the mobile canvas above. */}
@@ -2484,13 +2531,19 @@ const StudioLayout: React.FC<{
   );
 };
 
+// A poster URL is one the API resolves to a generated poster (movie/tv/anime
+// media pages or /poster/ image URLs). Load handlers refuse anything else so
+// a bad import can never silently reset the config.
+const POSTER_URL_PATH = /^\/(movie|tv|anime|poster)\//;
+
 // ── Root app ──────────────────────────────────────────────────────────────────
 interface BuilderAppProps {
   initialMode?: BuilderMode;
   presets?: ExamplePreset[];
 }
 
-const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets = [] }) => {
+const BuilderAppInner: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets = [] }) => {
+  const { toast } = useToast();
   const {
     state: config,
     setState: setConfig,
@@ -2499,6 +2552,12 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
     canUndo,
     canRedo,
   } = usePosterHistory(() => {
+    // A shared-config URL (?url=…) must win over saved local state and be
+    // available synchronously — the walkthrough wizard initializes from it.
+    if (typeof window !== 'undefined') {
+      const urlParam = new URLSearchParams(window.location.search).get('url');
+      if (urlParam) return parseUrlToConfig(urlParam);
+    }
     try {
       const saved = localStorage.getItem(BUILDER_STORAGE_KEY);
       return saved ? (JSON.parse(saved) as PosterConfig) : DEFAULT_CONFIG;
@@ -2573,16 +2632,56 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
     localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
+  // Autosave feedback — "Changes saved", throttled (max once per 4s) and
+  // suppressed for bursty drag/slider sweeps so we never toast per-drag.
+  const autosaveBurstRef = useRef(0);
+  const autosaveTimerRef = useRef<number | null>(null);
+  // Seeded with now() so the mount-time effect run can't produce a toast.
+  const lastAutosaveToastRef = useRef(Date.now());
+
+  useEffect(() => {
+    autosaveBurstRef.current += 1;
+    if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = window.setTimeout(() => {
+      autosaveTimerRef.current = null;
+      const isBurst = autosaveBurstRef.current > 8;
+      autosaveBurstRef.current = 0;
+      const now = Date.now();
+      if (!isBurst && now - lastAutosaveToastRef.current > 4000) {
+        lastAutosaveToastRef.current = now;
+        toast('Changes saved', 'success');
+      }
+    }, 1500);
+    return () => {
+      if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+    };
+  }, [config, toast]);
+
   const handleLoadConfig = useCallback(
-    (url: string) => {
-      setConfig(parseUrlToConfig(url));
+    (url: string): boolean => {
+      let parsed: PosterConfig;
+      try {
+        const u = new URL(url);
+        if (!POSTER_URL_PATH.test(u.pathname)) {
+          toast('Enter a valid poster URL', 'error');
+          return false;
+        }
+        parsed = parseUrlToConfig(url);
+      } catch {
+        // Malformed URL — never touch the current config
+        toast('Enter a valid poster URL', 'error');
+        return false;
+      }
+      setConfig(parsed);
       try {
         setBaseUrl(new URL(url).origin);
       } catch {
         /* keep */
       }
+      toast('Poster loaded', 'success');
+      return true;
     },
-    [setConfig]
+    [setConfig, toast]
   );
 
   const handleReset = useCallback(() => {
@@ -2596,45 +2695,66 @@ const BuilderApp: React.FC<BuilderAppProps> = ({ initialMode = 'simple', presets
       textless: current.textless,
     }));
     window.dispatchEvent(new CustomEvent('reset-canvas-view'));
-  }, [setConfig]);
+    toast('Configuration reset');
+  }, [setConfig, toast]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlParam = params.get('url');
-    if (urlParam) {
-      handleLoadConfig(urlParam);
-      return;
+    // The ?url= config is applied synchronously in the history initializer
+    // above; this effect only pins the API base and reports a bad URL. It
+    // never touches the config.
+    const urlParam = new URLSearchParams(window.location.search).get('url');
+    if (!urlParam) return;
+    try {
+      const u = new URL(urlParam);
+      if (!POSTER_URL_PATH.test(u.pathname)) {
+        toast('Enter a valid poster URL', 'error');
+        return;
+      }
+      setBaseUrl(u.origin);
+    } catch {
+      toast('Enter a valid poster URL', 'error');
     }
-  }, [handleLoadConfig, setConfig]);
+  }, [toast, setBaseUrl]);
 
   // Walkthrough not completed — show the onboarding wizard instead of builder
   if (!walkthroughDone) {
     return (
-      <WalkthroughModal
-        onComplete={handleWalkthroughComplete}
-        onDismiss={handleWalkthroughDismiss}
-        onSkip={handleWalkthroughSkip}
-        presets={presets}
-      />
+      <ToastProvider>
+        <WalkthroughModal
+          initialConfig={config}
+          onComplete={handleWalkthroughComplete}
+          onDismiss={handleWalkthroughDismiss}
+          onSkip={handleWalkthroughSkip}
+          presets={presets}
+        />
+      </ToastProvider>
     );
   }
 
   return (
-    <EditorProvider>
-      <StudioLayout
-        config={config}
-        setConfig={setConfig}
-        handleReset={handleReset}
-        baseUrl={baseUrl}
-        handleLoadConfig={handleLoadConfig}
-        undo={undo}
-        redo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        initialMode={getBuilderMode() || initialMode}
-      />
-    </EditorProvider>
+    <ToastProvider>
+      <EditorProvider>
+        <StudioLayout
+          config={config}
+          setConfig={setConfig}
+          handleReset={handleReset}
+          baseUrl={baseUrl}
+          handleLoadConfig={handleLoadConfig}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          initialMode={getBuilderMode() || initialMode}
+        />
+      </EditorProvider>
+    </ToastProvider>
   );
 };
+
+const BuilderApp: React.FC<BuilderAppProps> = (props) => (
+  <ToastProvider>
+    <BuilderAppInner {...props} />
+  </ToastProvider>
+);
 
 export default BuilderApp;

@@ -2,6 +2,12 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, X, Copy, Check, ArrowRight, ExternalLink } from 'lucide-react';
 import type { ExtensionType, PosterConfig } from '@/builder/types';
 import { generateApiUrl } from '@/builder/utils/url-generator';
+import { useToast } from '@/builder/components/ui/Toast';
+
+// Poster URLs resolve on the API (movie/tv/anime media pages or /poster/ image
+// URLs). Anything else is refused by the load handler so a bad import can
+// never silently reset the config.
+const POSTER_URL_PATH = /^\/(movie|tv|anime|poster)\//;
 
 interface ExportMenuProps {
   config: PosterConfig;
@@ -40,6 +46,8 @@ const ExportMenu = memo<ExportMenuProps>(
     const [builderCopied, setBuilderCopied] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [editedUrl, setEditedUrl] = useState<string | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const { toast } = useToast();
     const [isMobileViewport, setIsMobileViewport] = useState(
       () => typeof window !== 'undefined' && window.innerWidth < 540
     );
@@ -62,6 +70,7 @@ const ExportMenu = memo<ExportMenuProps>(
 
     useEffect(() => {
       setEditedUrl(null);
+      setLoadError(null);
     }, [currentUrl]);
 
     const displayUrl = editedUrl !== null ? editedUrl : currentUrl;
@@ -70,6 +79,7 @@ const ExportMenu = memo<ExportMenuProps>(
       try {
         await navigator.clipboard.writeText(displayUrl);
         setCopied(true);
+        toast('Link copied', 'success');
         setTimeout(() => setCopied(false), 2000);
       } catch {
         // ignore clipboard errors
@@ -102,20 +112,57 @@ const ExportMenu = memo<ExportMenuProps>(
       }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
       setDownloading(true);
       try {
         const u = new URL(displayUrl);
         u.searchParams.set('download', '');
-        window.open(u.toString(), '_blank', 'noopener,noreferrer');
+        const urlStr = u.toString();
+        const win = window.open(urlStr, '_blank', 'noopener,noreferrer');
+        if (win) {
+          toast('Downloading poster…');
+        } else {
+          // Popup blocked — fall back to a download-anchor via fetch→blob.
+          try {
+            const res = await fetch(urlStr);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = u.pathname.split('/').pop() || 'poster.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(objectUrl);
+            toast('Downloading poster…');
+          } catch {
+            toast('Download failed — your browser blocked it', 'error');
+          }
+        }
       } catch {
-        // malformed URL
+        toast('Download failed — enter a valid poster URL', 'error');
       }
       setTimeout(() => setDownloading(false), 800);
     };
 
     const handleLoad = () => {
-      if (displayUrl.trim() && onLoadConfig) onLoadConfig(displayUrl.trim());
+      const url = displayUrl.trim();
+      if (!url) return;
+      // Refuse anything that isn't a poster URL — a bad import must never
+      // silently reset the config.
+      let valid = false;
+      try {
+        valid = POSTER_URL_PATH.test(new URL(url).pathname);
+      } catch {
+        valid = false;
+      }
+      if (!valid) {
+        setLoadError('Enter a valid poster URL');
+        return;
+      }
+      setLoadError(null);
+      onLoadConfig?.(url);
     };
 
     useEffect(() => {
@@ -300,13 +347,18 @@ const ExportMenu = memo<ExportMenuProps>(
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg focus-within:ring-1 focus-within:ring-[#C47C2E] transition-all"
             style={{
               background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: loadError
+                ? '1px solid rgba(248,113,113,0.5)'
+                : '1px solid rgba(255,255,255,0.06)',
             }}
           >
             <input
               type="url"
               value={displayUrl}
-              onChange={(e) => setEditedUrl(e.target.value)}
+              onChange={(e) => {
+                setEditedUrl(e.target.value);
+                setLoadError(null);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleLoad();
               }}
@@ -326,6 +378,14 @@ const ExportMenu = memo<ExportMenuProps>(
               </button>
             ) : null}
           </div>
+          {loadError ? (
+            <p
+              className="mono-font uppercase tracking-wider mt-1"
+              style={{ fontSize: 10, color: 'rgba(248,113,113,0.85)' }}
+            >
+              {loadError}
+            </p>
+          ) : null}
         </div>
 
         <div
@@ -345,7 +405,11 @@ const ExportMenu = memo<ExportMenuProps>(
                 letterSpacing: '0.04em',
               }}
             >
-              {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+              {copied ? (
+                <Check size={12} style={{ color: 'var(--film-gold)' }} />
+              ) : (
+                <Copy size={12} />
+              )}
               {copied ? 'Copied' : 'Copy URL'}
             </button>
             <button
@@ -377,9 +441,14 @@ const ExportMenu = memo<ExportMenuProps>(
               fontWeight: 600,
               letterSpacing: '0.04em',
             }}
+            title="Copy the AIO metadata template URL"
           >
-            {aioCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-            {aioCopied ? 'Copied' : 'Copy for AIOMetadata'}
+            {aioCopied ? (
+              <Check size={12} style={{ color: 'var(--film-gold)' }} />
+            ) : (
+              <Copy size={12} />
+            )}
+            {aioCopied ? 'Copied' : 'Copy metadata (AIO)'}
           </button>
 
           {openInBuilderHref ? (
@@ -413,7 +482,7 @@ const ExportMenu = memo<ExportMenuProps>(
                 }}
               >
                 {builderCopied ? (
-                  <Check size={12} className="text-emerald-400" />
+                  <Check size={12} style={{ color: 'var(--film-gold)' }} />
                 ) : (
                   <Copy size={12} />
                 )}
