@@ -309,24 +309,30 @@ const PropertyPanel: React.FC<Props> = ({
                     : undefined
                 }
               />
-              <SliderRow
-                label="Shadow X"
-                value={config.shadowX ?? 0}
-                min={-20}
-                max={20}
-                step={1}
-                unit="px"
-                onChange={(v) => updateConfig('shadowX', Math.round(v))}
-              />
-              <SliderRow
-                label="Shadow Y"
-                value={config.shadowY ?? 2}
-                min={-20}
-                max={20}
-                step={1}
-                unit="px"
-                onChange={(v) => updateConfig('shadowY', Math.round(v))}
-              />
+              <div className="flex flex-wrap gap-x-3 gap-y-3.5">
+                <div className="flex-1 min-w-[200px]">
+                  <SliderRow
+                    label="Shadow X"
+                    value={config.shadowX ?? 0}
+                    min={-20}
+                    max={20}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('shadowX', Math.round(v))}
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <SliderRow
+                    label="Shadow Y"
+                    value={config.shadowY ?? 2}
+                    min={-20}
+                    max={20}
+                    step={1}
+                    unit="px"
+                    onChange={(v) => updateConfig('shadowY', Math.round(v))}
+                  />
+                </div>
+              </div>
               <ColorRow
                 label="Shadow Color"
                 value={config.shadowColor ?? '#000000'}
@@ -839,56 +845,66 @@ const PropertyPanel: React.FC<Props> = ({
                 />
               )}
               {isOnlyTitleSelected && (
-                <SliderRow
-                  label="Container Width"
-                  value={Math.max(0, Math.round(commonTextCharWidth))}
-                  min={0}
-                  max={80}
-                  step={1}
-                  unit="ch"
-                  formatValue={(v) => (v <= 0 ? 'Auto' : `${Math.round(v)} ch`)}
-                  onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
-                  onReset={() =>
-                    updateSelectedBadges({
-                      textCharWidth: 0,
-                    })
-                  }
-                />
+                <div className="flex flex-wrap gap-x-3 gap-y-3.5">
+                  <div className="flex-1 min-w-[200px]">
+                    <SliderRow
+                      label="Container Width"
+                      value={Math.max(0, Math.round(commonTextCharWidth))}
+                      min={0}
+                      max={80}
+                      step={1}
+                      unit="ch"
+                      formatValue={(v) => (v <= 0 ? 'Auto' : `${Math.round(v)} ch`)}
+                      onChange={(v) => updateSelectedBadges({ textCharWidth: Math.round(v) })}
+                      onReset={() =>
+                        updateSelectedBadges({
+                          textCharWidth: 0,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <SliderRow
+                      label="Container Height"
+                      value={Math.max(1, Math.round(commonTextCharHeight))}
+                      min={1}
+                      max={12}
+                      step={1}
+                      unit="ln"
+                      onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
+                      onReset={() =>
+                        updateSelectedBadges({
+                          textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
               )}
-              {isOnlyTitleSelected && (
-                <SliderRow
-                  label="Container Height"
-                  value={Math.max(1, Math.round(commonTextCharHeight))}
-                  min={1}
-                  max={12}
-                  step={1}
-                  unit="ln"
-                  onChange={(v) => updateSelectedBadges({ textCharHeight: Math.round(v) })}
-                  onReset={() =>
-                    updateSelectedBadges({
-                      textCharHeight: DEFAULT_CONFIG.items.title?.textCharHeight ?? 1,
-                    })
-                  }
-                />
-              )}
-              <SliderRow
-                label="Font Weight"
-                value={commonTextWeight}
-                min={100}
-                max={900}
-                step={100}
-                onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
-                onReset={() => updateSelectedBadges({ textWeight: 700 })}
-              />
-              <SliderRow
-                label="Line Height"
-                value={commonTextLineHeight}
-                min={0.8}
-                max={2}
-                step={0.02}
-                onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
-                onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
-              />
+              <div className="flex flex-wrap gap-x-3 gap-y-3.5">
+                <div className="flex-1 min-w-[200px]">
+                  <SliderRow
+                    label="Font Weight"
+                    value={commonTextWeight}
+                    min={100}
+                    max={900}
+                    step={100}
+                    onChange={(v) => updateSelectedBadges({ textWeight: Math.round(v) })}
+                    onReset={() => updateSelectedBadges({ textWeight: 700 })}
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <SliderRow
+                    label="Line Height"
+                    value={commonTextLineHeight}
+                    min={0.8}
+                    max={2}
+                    step={0.02}
+                    onChange={(v) => updateSelectedBadges({ textLineHeight: Number(v.toFixed(2)) })}
+                    onReset={() => updateSelectedBadges({ textLineHeight: 1.1 })}
+                  />
+                </div>
+              </div>
               <SliderRow
                 label="Letter Spacing"
                 value={commonTextLetterSpacing}
@@ -1023,24 +1039,30 @@ const PropertyPanel: React.FC<Props> = ({
               onChange={(v) => updateSelectedBadges({ shadow: v })}
               onReset={commonShadow !== 6 ? () => updateSelectedBadges({ shadow: 6 }) : undefined}
             />
-            <SliderRow
-              label="Shadow X"
-              value={commonShadowX}
-              min={-20}
-              max={20}
-              step={1}
-              unit="px"
-              onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
-            />
-            <SliderRow
-              label="Shadow Y"
-              value={commonShadowY}
-              min={-20}
-              max={20}
-              step={1}
-              unit="px"
-              onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
-            />
+            <div className="flex flex-wrap gap-x-3 gap-y-3.5">
+              <div className="flex-1 min-w-[200px]">
+                <SliderRow
+                  label="Shadow X"
+                  value={commonShadowX}
+                  min={-20}
+                  max={20}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => updateSelectedBadges({ shadowX: Math.round(v) })}
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <SliderRow
+                  label="Shadow Y"
+                  value={commonShadowY}
+                  min={-20}
+                  max={20}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => updateSelectedBadges({ shadowY: Math.round(v) })}
+                />
+              </div>
+            </div>
             <ColorRow
               label="Shadow Color"
               value={commonShadowColor}

@@ -722,9 +722,13 @@ const StudioLayout: React.FC<{
       const move = (m: MouseEvent) => {
         const newW = sw + m.clientX - sx;
         if (newW < 120) {
+          // Collapse for the moment, but never latch mid-gesture: while the
+          // pointer is down the divider stays live, so dragging back out
+          // re-expands at the drag position.
           setLeftVisible(false);
           setLeftW(272);
         } else {
+          setLeftVisible(true);
           setLeftW(Math.max(220, Math.min(newW, 540)));
         }
       };
@@ -750,9 +754,11 @@ const StudioLayout: React.FC<{
       const move = (m: MouseEvent) => {
         const newW = sw - (m.clientX - sx);
         if (newW < 120) {
+          // See startResizeLeft: collapse mid-gesture, re-expand on drag-back.
           setRightVisible(false);
           setRightW(272);
         } else {
+          setRightVisible(true);
           setRightW(Math.max(248, Math.min(newW, 540)));
         }
       };

@@ -77,14 +77,14 @@ const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: 24,
-      height: 22,
-      padding: '0 6px',
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(196,124,46,0.18)',
-      borderRadius: 4,
-      fontSize: 12,
-      color: 'rgba(196,124,46,0.85)',
+      minWidth: 20,
+      padding: '2px 6px',
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(196,124,46,0.12)',
+      borderRadius: 3,
+      fontSize: 10,
+      lineHeight: 1.4,
+      color: 'rgba(196,124,46,0.7)',
       userSelect: 'none',
     }}
   >
@@ -135,7 +135,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(7,7,6,0.8)',
+              background: 'rgba(7,7,6,0.85)',
               backdropFilter: 'blur(8px)',
             }}
           />
@@ -168,10 +168,21 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 borderRadius: 12,
                 overflow: 'hidden',
                 boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.02)',
-                background: 'rgba(14,13,11,0.96)',
-                border: '1px solid rgba(196,124,46,0.16)',
+                background: 'rgba(18,17,14,0.96)',
+                border: '1px solid rgba(196,124,46,0.22)',
               }}
             >
+              <style>{`
+                .ksm-close:focus-visible {
+                  outline: 2px solid rgba(196,124,46,0.5);
+                  outline-offset: 2px;
+                }
+                @media (max-width: 640px) {
+                  .ksm-grid { grid-template-columns: 1fr !important; }
+                  .ksm-grid > div { border-right: none !important; }
+                  .ksm-grid > div:not(:last-child) { border-bottom: 1px solid rgba(196,124,46,0.08) !important; }
+                }
+              `}</style>
               {/* Header */}
               <div
                 style={{
@@ -186,24 +197,24 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 <DialogTitle as="div" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: 'rgba(196,124,46,0.08)',
-                      border: '1px solid rgba(196,124,46,0.16)',
+                      background: 'rgba(196,124,46,0.12)',
+                      border: '1px solid rgba(196,124,46,0.2)',
                     }}
                   >
-                    <Keyboard size={14} style={{ color: 'var(--film-amber)' }} />
+                    <Keyboard size={13} style={{ color: 'var(--film-amber)' }} />
                   </div>
                   <div>
                     <p
-                      className="syne-font"
+                      className="syne-font font-bold uppercase"
                       style={{
-                        fontSize: 14,
-                        fontWeight: 600,
+                        fontSize: 10,
+                        letterSpacing: '0.08em',
                         color: 'var(--film-cream)',
                         margin: 0,
                       }}
@@ -226,36 +237,38 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                 </DialogTitle>
                 <button
                   onClick={onClose}
+                  className="ksm-close"
+                  aria-label="Close keyboard shortcuts"
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(196,124,46,0.12)',
-                    color: 'rgba(140,130,112,0.6)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--film-text-dim)',
                     cursor: 'pointer',
+                    padding: 0,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--film-cream)';
-                    e.currentTarget.style.borderColor = 'rgba(196,124,46,0.24)';
+                    e.currentTarget.style.color = 'var(--film-text-label)';
                     e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'rgba(140,130,112,0.6)';
-                    e.currentTarget.style.borderColor = 'rgba(196,124,46,0.12)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                    e.currentTarget.style.color = 'var(--film-text-dim)';
+                    e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </div>
 
               {/* Content */}
               <div
+                className="ksm-grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
@@ -307,7 +320,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                               className="body-font"
                               style={{
                                 fontSize: 12,
-                                color: 'rgba(240,230,204,0.88)',
+                                color: 'var(--film-pale)',
                               }}
                             >
                               {label}
@@ -326,7 +339,7 @@ const KeyboardShortcutsModal: React.FC<Props> = memo(({ isOpen, onClose }) => {
                                     <span
                                       style={{
                                         fontSize: 10,
-                                        color: 'rgba(122,117,110,0.55)',
+                                        color: 'rgba(122,117,110,0.5)',
                                       }}
                                     >
                                       +

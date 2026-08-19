@@ -1,4 +1,4 @@
-import type React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import ToggleRow from './ui/ToggleRow';
 import type { ViewOptions } from '../EditorContext';
@@ -8,6 +8,8 @@ interface BuilderSettingsPopoverProps {
   viewOptions: ViewOptions;
   onToggleViewOption: (key: keyof ViewOptions) => void;
   isMobile?: boolean;
+  /** Called when the user dismisses the popover (outside click / Escape). */
+  onRequestClose?: () => void;
 }
 
 const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
@@ -15,11 +17,50 @@ const BuilderSettingsPopover: React.FC<BuilderSettingsPopoverProps> = ({
   viewOptions,
   onToggleViewOption,
   isMobile = false,
+  onRequestClose,
 }) => {
-  if (!isOpen) return null;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // ZoomOverlay owns the trigger and does not pass onRequestClose yet, so the
+  // popover self-dismisses as a fallback. State resets when isOpen flips true,
+  // so the trigger keeps toggling it open again.
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setDismissed(false);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || dismissed) return;
+    const dismiss = () => {
+      setDismissed(true);
+      onRequestClose?.();
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (rootRef.current?.contains(e.target as Node)) return;
+      // Ignore the settings trigger so its own onClick toggle still flips state.
+      if (
+        (e.target as Element | null)?.closest?.('button')?.getAttribute('title') ===
+        'Builder Settings'
+      )
+        return;
+      dismiss();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dismiss();
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen, dismissed, onRequestClose]);
+
+  if (!isOpen || dismissed) return null;
 
   return (
     <div
+      ref={rootRef}
       className="absolute z-[60] w-[260px] rounded-2xl overflow-hidden"
       style={{
         ...(isMobile

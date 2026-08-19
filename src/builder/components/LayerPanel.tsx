@@ -554,7 +554,7 @@ const LayerPanel: React.FC<Props> = ({
             )}
 
             <div className="flex items-center gap-2 mb-3">
-              <div className="flex-1 relative">
+              <div className="flex-1 relative max-w-[320px]">
                 <Search
                   size={11}
                   className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -581,7 +581,7 @@ const LayerPanel: React.FC<Props> = ({
                 />
               </div>
               <span
-                className="mono-font shrink-0"
+                className="mono-font shrink-0 ml-auto"
                 style={{ fontSize: 11, color: 'var(--film-text-dim)' }}
               >
                 {matchedBadgeCount} of {ALL_BADGES.length}
