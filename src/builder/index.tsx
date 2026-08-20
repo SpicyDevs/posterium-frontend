@@ -63,7 +63,6 @@ import {
   Check,
   Trash2,
   Link2,
-  MoreHorizontal,
 } from 'lucide-react';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { usePosterHistory } from './usePosterHistory';
@@ -94,71 +93,6 @@ const CommandPalette = lazy(() => import('./components/CommandPalette'));
 // together and would otherwise be ambiguous (the undo/redo mirrored pair).
 // Punched 4px radius (DESIGN two-radius economy: buttons are punched, not
 // housed), 44px+ touch target, active/danger/disabled states.
-/* More-sheet row — label + mono caption + 44px touch target (native
-   density, diagnosis 2.7). */
-function MobileMoreRow({
-  icon,
-  label,
-  caption,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  caption: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: '100%',
-        height: 44,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '0 8px',
-        borderRadius: 4,
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        color: 'var(--film-cream)',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      <span style={{ color: 'rgba(196,124,46,0.7)', flexShrink: 0, display: 'flex' }}>{icon}</span>
-      <span
-        className="syne-font"
-        style={{
-          flex: 1,
-          textAlign: 'left',
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--film-cream)',
-        }}
-      >
-        {label}
-      </span>
-      <span
-        className="mono-font"
-        style={{
-          fontSize: 8,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'rgba(178,166,146,0.55)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          maxWidth: 120,
-        }}
-      >
-        {caption}
-      </span>
-    </button>
-  );
-}
-
 // ── Studio layout ─────────────────────────────────────────────────────────────
 const StudioLayout: React.FC<{
   config: PosterConfig;
@@ -218,9 +152,6 @@ const StudioLayout: React.FC<{
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  // "More" sheet — progressive disclosure for rare actions (mode, import,
-  // reset, tour, shortcuts). Only ever open on the mobile tree.
-  const [moreOpen, setMoreOpen] = useState(false);
   // Import and Export are desktop-header chrome on desktop; on mobile they
   // live in their own sheets (Source tab / export sheet) and need no anchor
   // ref. The dialogs only ever anchor to the visible desktop button now.
@@ -267,12 +198,9 @@ const StudioLayout: React.FC<{
   // Source-tab import — inline errors render inside the field, not toasts.
   const [importUrl, setImportUrl] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
-  // More-sheet Reset row arms before firing (two-tap destructive) and disarms
-  // the moment the sheet closes, so a stray tap can never destroy the canvas.
+  // Toolbar Reset button arms before firing (two-tap destructive) and
+  // disarms when any other toolbar tool is tapped.
   const [resetArmed, setResetArmed] = useState(false);
-  useEffect(() => {
-    if (!moreOpen) setResetArmed(false);
-  }, [moreOpen]);
   // View-tab zoom slider tracks its own value; deltas go to the canvas via the
   // shared canvas-zoom event so pinch-zoom stays the authoritative scale.
   const [viewZoom, setViewZoom] = useState(1);
@@ -723,10 +651,6 @@ const StudioLayout: React.FC<{
           setShortcutsOpen(false);
           return;
         }
-        if (moreOpen) {
-          setMoreOpen(false);
-          return;
-        }
         if (mobileExportOpen) {
           setMobileExportOpen(false);
           return;
@@ -921,7 +845,6 @@ const StudioLayout: React.FC<{
     paletteOpen,
     shortcutsOpen,
     exportOpen,
-    moreOpen,
     mobileExportOpen,
     selectedIds,
     selectedLogo,
@@ -1514,26 +1437,25 @@ const StudioLayout: React.FC<{
               } as React.CSSProperties
             }
           >
-            {/* ── MOBILE HEADER — one row (56px + safe-top) ── */}
-            {/* Identity left (wordmark only — the mode stamp is gone), then
-               exactly two chrome controls: More (⋯) and the primary Export
-               action. Undo/redo + zoom live in the sheet's handle row; import
-               and reset live in the More sheet. Type discipline: one 16px icon
-               / 12px label / 10px caption hierarchy — never three sizes of
-               chrome in one row. */}
+            {/* ── MOBILE HEADER — two rows (100px + safe-top) ── */}
+            {/* Row 1 (56px): brand lockup left (same POSTER/IUM mark as the
+               desktop header) + the primary Export action right. Row 2 (44px):
+               the tool strip — mode, import, reset (two-tap), tour — every
+               tool visible, nothing hidden behind an overflow menu. Undo/redo
+               + zoom stay in the sheet's handle row (native chrome). */}
             <header
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 'calc(56px + env(safe-area-inset-top, 0px))',
+                height: 'calc(100px + env(safe-area-inset-top, 0px))',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
                 zIndex: 40,
                 background: 'rgba(7,7,6,0.97)',
                 borderBottom: '1px solid rgba(196,124,46,0.1)',
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
               }}
             >
               {/* Ambient gradient rule on header bottom — matches desktop header exactly */}
@@ -1551,6 +1473,7 @@ const StudioLayout: React.FC<{
                 }}
               />
 
+              {/* ── ROW 1 — identity + primary action ── */}
               <div
                 style={{
                   flex: 1,
@@ -1562,7 +1485,7 @@ const StudioLayout: React.FC<{
                   gap: 6,
                 }}
               >
-                {/* Wordmark — home link, 44px hit area */}
+                {/* Wordmark — the real brand lockup (matches BuilderDesktopHeader) */}
                 <a
                   href="/"
                   aria-label="Posterium home"
@@ -1571,75 +1494,30 @@ const StudioLayout: React.FC<{
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
                     height: 44,
                     padding: '0 6px',
                   }}
                 >
                   <span
-                    aria-hidden="true"
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: 'var(--film-amber)',
-                      boxShadow: '0 0 8px rgba(196,124,46,0.55)',
-                    }}
-                  />
-                  <span
                     className="poster-font"
                     style={{
-                      fontSize: 15,
-                      color: 'var(--film-cream)',
-                      letterSpacing: '0.1em',
+                      fontSize: 16,
+                      letterSpacing: '0.12em',
                       lineHeight: 1,
                       userSelect: 'none',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    P
-                  </span>
-                  <span
-                    className="syne-font max-[360px]:hidden"
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      letterSpacing: '0.22em',
-                      color: 'rgba(240,230,204,0.85)',
-                      userSelect: 'none',
-                    }}
-                  >
-                    POSTERIUM
+                    <span style={{ color: 'var(--film-cream)' }}>POSTER</span>
+                    <span
+                      style={{ color: 'transparent', WebkitTextStroke: '1px var(--film-amber)' }}
+                    >
+                      IUM
+                    </span>
                   </span>
                 </a>
 
-                {/* Mode stamp removed per the design diagnosis (2.3): one row
-                   carries identity + exactly two chrome controls. The mode
-                   toggle lives in the More sheet (progressive disclosure). */}
-
                 <div style={{ flex: 1 }} />
-
-                {/* More — progressive disclosure (mode, import, reset, tour) */}
-                <button
-                  onClick={() => setMoreOpen(true)}
-                  aria-label="More actions"
-                  aria-expanded={moreOpen}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    color: moreOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.75)',
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  <MoreHorizontal size={20} />
-                </button>
 
                 {/* PRIMARY ACTION — Export (opens the 3-step mobile sheet) */}
                 <button
@@ -1664,7 +1542,9 @@ const StudioLayout: React.FC<{
                     cursor: 'pointer',
                     flexShrink: 0,
                     boxShadow: '0 0 20px rgba(196,124,46,0.25)',
+                    transition: 'transform 0.12s ease',
                   }}
+                  className="active:scale-95"
                 >
                   <Download size={13} />
                   <span
@@ -1675,10 +1555,175 @@ const StudioLayout: React.FC<{
                   </span>
                 </button>
               </div>
+
+              {/* ── ROW 2 — tool strip (every tool visible, 44px targets) ── */}
+              {/* Captioned buttons: icon + 8px mono caption. Mode is a real
+                 control (SelectBox), self-labeled. Strip scrolls only as a
+                 safety net below ~320px. */}
+              <div
+                className="mobile-header-scroll"
+                style={{
+                  height: 44,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  padding: '0 8px',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  WebkitOverflowScrolling: 'touch',
+                  borderTop: '1px solid rgba(196,124,46,0.08)',
+                  background: 'rgba(196,124,46,0.03)',
+                }}
+              >
+                {/* Mode — segmented dropdown, self-labeled */}
+                <div style={{ display: 'flex', alignItems: 'center', height: 44 }}>
+                  <ModeToggle mode={builderMode} onChange={setBuilderMode} />
+                </div>
+
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 1,
+                    alignSelf: 'stretch',
+                    margin: '10px 6px',
+                    background: 'rgba(196,124,46,0.12)',
+                  }}
+                />
+
+                {/* Import — opens the Source tab of the bottom sheet */}
+                <button
+                  onClick={() => {
+                    setResetArmed(false);
+                    setBottomPanelTab('source');
+                    openBottomPanelSheet();
+                    setImportFocus((f) => f + 1);
+                  }}
+                  aria-label="Import from URL"
+                  className="active:scale-95"
+                  style={{
+                    height: 44,
+                    minWidth: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    padding: '0 8px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease',
+                  }}
+                >
+                  <Link2 size={15} style={{ color: 'rgba(196,124,46,0.8)' }} />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(240,230,204,0.6)',
+                    }}
+                  >
+                    Import
+                  </span>
+                </button>
+
+                {/* Reset — weighted destructive, two-tap armed; disarms on any
+                   other tool tap */}
+                <button
+                  onClick={() => {
+                    if (!resetArmed) {
+                      setResetArmed(true);
+                      return;
+                    }
+                    setResetArmed(false);
+                    handleReset();
+                  }}
+                  aria-label={resetArmed ? 'Confirm reset poster' : 'Reset poster'}
+                  className="active:scale-95"
+                  style={{
+                    height: 44,
+                    minWidth: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    padding: '0 8px',
+                    background: resetArmed ? 'rgba(248,113,113,0.12)' : 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease, background 0.15s ease',
+                  }}
+                >
+                  <RotateCcw size={15} style={{ color: 'rgba(248,113,113,0.9)' }} />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: resetArmed ? '#fca5a5' : 'rgba(248,113,113,0.8)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {resetArmed ? 'Tap again' : 'Reset'}
+                  </span>
+                </button>
+
+                {/* Re-run tour */}
+                <button
+                  onClick={() => {
+                    setResetArmed(false);
+                    clearWalkthroughState();
+                    window.location.reload();
+                  }}
+                  aria-label="Re-run tour"
+                  className="active:scale-95"
+                  style={{
+                    height: 44,
+                    minWidth: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    padding: '0 8px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease',
+                  }}
+                >
+                  <BookOpen size={15} style={{ color: 'rgba(196,124,46,0.8)' }} />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(240,230,204,0.6)',
+                    }}
+                  >
+                    Tour
+                  </span>
+                </button>
+              </div>
             </header>
 
             {/* ── CANVAS ── */}
-            {/* Top: 56px (single-row header) + safe-area-inset-top (notch in
+            {/* Top: 100px (two-row header) + safe-area-inset-top (notch in
                PWA standalone). Bottom: 64px (tab bar) + safe-area + var(--bph)
                (bottom sheet). */}
             {/* Transition on bottom must match the sheet's spring exactly:
@@ -1691,7 +1736,7 @@ const StudioLayout: React.FC<{
               className="mobile-canvas"
               style={{
                 position: 'absolute',
-                top: 'calc(56px + env(safe-area-inset-top, 0px))',
+                top: 'calc(100px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 right: 0,
                 bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
@@ -1717,443 +1762,446 @@ const StudioLayout: React.FC<{
               <FilmCorners />
             </main>
 
-            {/* ── EDGE HANDLES + DRAWERS (tablet tier only, ≥700px) ── */}
-            {/* Banned on phones (diagnosis 2.9); they return at tablet width
-               (2.15) where side panels are legitimate. Gated on isTablet. */}
-            {isTablet && (
-              <>
-                {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
-                {/* Width: 22px. Height: 64px. Centered vertically at 50%. Rounded right corners only. */}
-                {/* z-index: 30 (above canvas, below drawers). */}
-                <button
-                  aria-label={leftPanelOpen ? 'Close layers panel' : 'Open layers panel'}
-                  aria-expanded={leftPanelOpen}
-                  className="mobile-edge-handle mobile-edge-handle--left"
-                  onClick={() => setLeftPanelOpen((v) => !v)}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 30,
-                    width: 22,
-                    height: 64,
-                    borderRadius: '0 10px 10px 0',
-                    background: leftPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(196,124,46,0.22)',
-                    borderLeft: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: leftPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s, color 0.15s',
-                  }}
-                >
-                  {leftPanelOpen ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
-                </button>
+            {/* ── EDGE HANDLES + DRAWERS (every mobile size — the arrows are the
+               panels' primary access) ── */}
+            {/* Left handle = layers/panels drawer; right handle = inspector
+               drawer. Opening a drawer retreats the bottom sheet so the
+               panels always read as an overlay. */}
+            <>
+              {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
+              {/* Width: 22px. Height: 64px. Centered vertically at 50%. Rounded right corners only. */}
+              {/* z-index: 30 (above canvas, below drawers). */}
+              <button
+                aria-label={leftPanelOpen ? 'Close layers panel' : 'Open layers panel'}
+                aria-expanded={leftPanelOpen}
+                className="mobile-edge-handle mobile-edge-handle--left"
+                onClick={() => {
+                  closeBottomPanel();
+                  setLeftPanelOpen((v) => !v);
+                }}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 30,
+                  width: 22,
+                  height: 64,
+                  borderRadius: '0 10px 10px 0',
+                  background: leftPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(196,124,46,0.22)',
+                  borderLeft: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: leftPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {leftPanelOpen ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+              </button>
 
-                {/* ── RIGHT EDGE HANDLE (Selection/Inspector toggle) ── */}
-                {/* Identical geometry to left handle but mirrored. Rounded left corners only. */}
-                <button
-                  aria-label={rightPanelOpen ? 'Close inspector panel' : 'Open inspector panel'}
-                  aria-expanded={rightPanelOpen}
-                  className="mobile-edge-handle mobile-edge-handle--right"
-                  onClick={() => setRightPanelOpen((v) => !v)}
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 30,
-                    width: 22,
-                    height: 64,
-                    borderRadius: '10px 0 0 10px',
-                    background: rightPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(196,124,46,0.22)',
-                    borderRight: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: rightPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s, color 0.15s',
-                  }}
-                >
-                  {rightPanelOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
-                </button>
+              {/* ── RIGHT EDGE HANDLE (Selection/Inspector toggle) ── */}
+              {/* Identical geometry to left handle but mirrored. Rounded left corners only. */}
+              <button
+                aria-label={rightPanelOpen ? 'Close inspector panel' : 'Open inspector panel'}
+                aria-expanded={rightPanelOpen}
+                className="mobile-edge-handle mobile-edge-handle--right"
+                onClick={() => {
+                  closeBottomPanel();
+                  setRightPanelOpen((v) => !v);
+                }}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 30,
+                  width: 22,
+                  height: 64,
+                  borderRadius: '10px 0 0 10px',
+                  background: rightPanelOpen ? 'rgba(196,124,46,0.18)' : 'rgba(10,9,8,0.9)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(196,124,46,0.22)',
+                  borderRight: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: rightPanelOpen ? 'var(--film-amber)' : 'rgba(196,124,46,0.5)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {rightPanelOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+              </button>
 
-                {/* ── LEFT PANEL DRAWER BACKDROP ── */}
-                {/* Covers entire screen when drawer is open. Clicking closes the drawer. */}
-                {/* Use visibility instead of conditional render to avoid re-mount. */}
+              {/* ── LEFT PANEL DRAWER BACKDROP ── */}
+              {/* Covers entire screen when drawer is open. Clicking closes the drawer. */}
+              {/* Use visibility instead of conditional render to avoid re-mount. */}
+              <div
+                aria-hidden="true"
+                onClick={() => setLeftPanelOpen(false)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 24,
+                  background: 'rgba(0,0,0,0.45)',
+                  backdropFilter: 'blur(2px)',
+                  opacity: leftPanelOpen ? 1 : 0,
+                  visibility: leftPanelOpen ? 'visible' : 'hidden',
+                  transition: 'opacity 0.28s ease, visibility 0.28s',
+                  pointerEvents: leftPanelOpen ? 'auto' : 'none',
+                }}
+              />
+
+              {/* ── LEFT PANEL DRAWER ── */}
+              {/* Width: min(280px, 85vw). Slides in from left. */}
+              {/* Top: 96px (below two-row header). Bottom: 56px (above nav) + safe-area-inset-bottom. */}
+              {/* Content: LayersPanel with hideTabs=true (no internal tab bar, takes full height). */}
+              {/* CRITICAL: Use visibility:hidden NOT display:none so the panel stays mounted. */}
+              <aside
+                aria-label="Layers panel"
+                aria-hidden={!leftPanelOpen}
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100px + env(safe-area-inset-top, 0px))',
+                  left: 0,
+                  bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+                  width: 'min(280px, 85vw)',
+                  zIndex: 36,
+                  background: 'var(--film-dark)',
+                  borderRight: '1px solid rgba(196,124,46,0.18)',
+                  borderRadius: '0 12px 12px 0',
+                  boxShadow: '4px 0 40px rgba(0,0,0,0.7)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transform: leftPanelOpen ? 'translateX(0)' : 'translateX(-100%)',
+                  transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  visibility: leftPanelOpen ? 'visible' : 'hidden',
+                }}
+              >
+                {/* Right-edge inner glow for left drawer — matches SidebarLayout's cyber-path aesthetic */}
                 <div
                   aria-hidden="true"
-                  onClick={() => setLeftPanelOpen(false)}
                   style={{
                     position: 'absolute',
-                    inset: 0,
-                    zIndex: 24,
-                    background: 'rgba(0,0,0,0.45)',
-                    backdropFilter: 'blur(2px)',
-                    opacity: leftPanelOpen ? 1 : 0,
-                    visibility: leftPanelOpen ? 'visible' : 'hidden',
-                    transition: 'opacity 0.28s ease, visibility 0.28s',
-                    pointerEvents: leftPanelOpen ? 'auto' : 'none',
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    width: 40,
+                    background: 'linear-gradient(to left, rgba(196,124,46,0.03), transparent)',
+                    pointerEvents: 'none',
+                    zIndex: 0,
                   }}
                 />
-
-                {/* ── LEFT PANEL DRAWER ── */}
-                {/* Width: min(280px, 85vw). Slides in from left. */}
-                {/* Top: 96px (below two-row header). Bottom: 56px (above nav) + safe-area-inset-bottom. */}
-                {/* Content: LayersPanel with hideTabs=true (no internal tab bar, takes full height). */}
-                {/* CRITICAL: Use visibility:hidden NOT display:none so the panel stays mounted. */}
-                <aside
-                  aria-label="Layers panel"
-                  aria-hidden={!leftPanelOpen}
+                {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
+                <div
+                  aria-hidden="true"
                   style={{
                     position: 'absolute',
-                    top: 'calc(56px + env(safe-area-inset-top, 0px))',
-                    left: 0,
-                    bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-                    width: 'min(280px, 85vw)',
-                    zIndex: 25,
-                    background: 'var(--film-dark)',
-                    borderRight: '1px solid rgba(196,124,46,0.18)',
-                    borderRadius: '0 12px 12px 0',
-                    boxShadow: '4px 0 40px rgba(0,0,0,0.7)',
+                    top: '50%',
+                    right: 7,
+                    transform: 'translateY(-50%)',
+                    width: 2,
+                    height: 28,
+                    borderRadius: 1,
+                    background: 'rgba(196,124,46,0.35)',
+                    boxShadow: '0 0 6px rgba(196,124,46,0.25)',
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                />
+                {/* Drawer header — matches desktop sidebar header style exactly */}
+                {/* Height: 44px. Icon + title on left, close button on right. */}
+                <div
+                  style={{
+                    height: 44,
+                    flexShrink: 0,
                     display: 'flex',
-                    flexDirection: 'column',
-                    transform: leftPanelOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    visibility: leftPanelOpen ? 'visible' : 'hidden',
+                    alignItems: 'center',
+                    padding: '0 10px 0 14px',
+                    borderBottom: '1px solid rgba(196,124,46,0.08)',
+                    background: 'var(--film-mid)',
+                    gap: 8,
                   }}
                 >
-                  {/* Right-edge inner glow for left drawer — matches SidebarLayout's cyber-path aesthetic */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      right: 0,
-                      width: 40,
-                      background: 'linear-gradient(to left, rgba(196,124,46,0.03), transparent)',
-                      pointerEvents: 'none',
-                      zIndex: 0,
-                    }}
-                  />
-                  {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: 7,
-                      transform: 'translateY(-50%)',
-                      width: 2,
-                      height: 28,
-                      borderRadius: 1,
-                      background: 'rgba(196,124,46,0.35)',
-                      boxShadow: '0 0 6px rgba(196,124,46,0.25)',
-                      pointerEvents: 'none',
-                      zIndex: 2,
-                    }}
-                  />
-                  {/* Drawer header — matches desktop sidebar header style exactly */}
-                  {/* Height: 44px. Icon + title on left, close button on right. */}
-                  <div
-                    style={{
-                      height: 44,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 10px 0 14px',
-                      borderBottom: '1px solid rgba(196,124,46,0.08)',
-                      background: 'var(--film-mid)',
-                      gap: 8,
-                    }}
-                  >
-                    <Layers size={13} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
-                    <span
-                      className="syne-font"
-                      style={{
-                        flex: 1,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: 'var(--film-cream)',
-                      }}
-                    >
-                      Layers
-                    </span>
-                    {/* Layer count — mono microlabel stamp */}
-                    <span
-                      className="mono-font"
-                      style={{
-                        fontSize: 9,
-                        letterSpacing: '0.1em',
-                        color: 'var(--film-amber)',
-                        background: 'rgba(196,124,46,0.1)',
-                        border: '1px solid rgba(196,124,46,0.22)',
-                        borderRadius: 2,
-                        padding: '2px 6px',
-                        lineHeight: 1,
-                        flexShrink: 0,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {Object.keys(config.items ?? {}).length}
-                    </span>
-                    {/* Close button — 44×44 tap target (fits the 44px drawer header) */}
-                    <button
-                      onClick={() => setLeftPanelOpen(false)}
-                      aria-label="Close layers panel"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 4,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'rgba(140,130,112,0.5)',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                      onTouchStart={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background =
-                          'rgba(196,124,46,0.1)';
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
-                      }}
-                      onTouchEnd={(e) => {
-                        setTimeout(() => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                          (e.currentTarget as HTMLButtonElement).style.color =
-                            'rgba(140,130,112,0.5)';
-                        }, 150);
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  {/* Content — fills remaining height, scrollable */}
-                  <div
+                  <Layers size={13} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                  <span
+                    className="syne-font"
                     style={{
                       flex: 1,
-                      minHeight: 0,
-                      overflowY: 'auto',
-                      overflowX: 'hidden',
-                      WebkitOverflowScrolling: 'touch',
-                      overscrollBehavior: 'contain',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--film-cream)',
                     }}
                   >
-                    <LayersPanel
+                    Layers
+                  </span>
+                  {/* Layer count — mono microlabel stamp */}
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 9,
+                      letterSpacing: '0.1em',
+                      color: 'var(--film-amber)',
+                      background: 'rgba(196,124,46,0.1)',
+                      border: '1px solid rgba(196,124,46,0.22)',
+                      borderRadius: 2,
+                      padding: '2px 6px',
+                      lineHeight: 1,
+                      flexShrink: 0,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {Object.keys(config.items ?? {}).length}
+                  </span>
+                  {/* Close button — 44×44 tap target (fits the 44px drawer header) */}
+                  <button
+                    onClick={() => setLeftPanelOpen(false)}
+                    aria-label="Close layers panel"
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(140,130,112,0.5)',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                    onTouchStart={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(196,124,46,0.1)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
+                    }}
+                    onTouchEnd={(e) => {
+                      setTimeout(() => {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          'rgba(140,130,112,0.5)';
+                      }, 150);
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Content — fills remaining height, scrollable */}
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                  }}
+                >
+                  <LayersPanel
+                    config={config}
+                    setConfig={setConfig}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelectionOverride}
+                    chrome={false}
+                    detailLevel="simple"
+                  />
+                </div>
+              </aside>
+
+              {/* ── RIGHT PANEL DRAWER BACKDROP ── */}
+              <div
+                aria-hidden="true"
+                onClick={() => setRightPanelOpen(false)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 24,
+                  background: 'rgba(0,0,0,0.45)',
+                  backdropFilter: 'blur(2px)',
+                  opacity: rightPanelOpen ? 1 : 0,
+                  visibility: rightPanelOpen ? 'visible' : 'hidden',
+                  transition: 'opacity 0.28s ease, visibility 0.28s',
+                  pointerEvents: rightPanelOpen ? 'auto' : 'none',
+                }}
+              />
+
+              {/* ── RIGHT PANEL DRAWER ── */}
+              {/* Identical geometry to left drawer but slides from right. */}
+              {/* Content: SelectionPanel when items selected, BadgesPanel when nothing selected. */}
+              {/* CRITICAL: Use visibility:hidden, not display:none, to keep panel mounted. */}
+              <aside
+                aria-label="Inspector panel"
+                aria-hidden={!rightPanelOpen}
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100px + env(safe-area-inset-top, 0px))',
+                  right: 0,
+                  bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+                  width: 'min(280px, 85vw)',
+                  zIndex: 36,
+                  background: 'var(--film-dark)',
+                  borderLeft: '1px solid rgba(196,124,46,0.18)',
+                  borderRadius: '12px 0 0 12px',
+                  boxShadow: '-4px 0 40px rgba(0,0,0,0.7)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)',
+                  transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  visibility: rightPanelOpen ? 'visible' : 'hidden',
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    width: 40,
+                    background: 'linear-gradient(to right, rgba(196,124,46,0.03), transparent)',
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                  }}
+                />
+                {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: 7,
+                    transform: 'translateY(-50%)',
+                    width: 2,
+                    height: 28,
+                    borderRadius: 1,
+                    background: 'rgba(196,124,46,0.35)',
+                    boxShadow: '0 0 6px rgba(196,124,46,0.25)',
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                />
+                {/* Drawer header */}
+                <div
+                  style={{
+                    height: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 10px 0 14px',
+                    borderBottom: '1px solid rgba(196,124,46,0.08)',
+                    background: 'var(--film-mid)',
+                    gap: 8,
+                  }}
+                >
+                  <MousePointer2 size={13} style={{ color: 'var(--film-amber)', flexShrink: 0 }} />
+                  <span
+                    className="syne-font"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--film-cream)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {selectedCount === 0 ? 'Inspector' : selectedLabel}
+                  </span>
+                  {/* Selection count — mono microlabel stamp */}
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 9,
+                      letterSpacing: '0.1em',
+                      color: 'var(--film-amber)',
+                      background: 'rgba(196,124,46,0.1)',
+                      border: '1px solid rgba(196,124,46,0.22)',
+                      borderRadius: 2,
+                      padding: '2px 6px',
+                      lineHeight: 1,
+                      flexShrink: 0,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {selectedCount}
+                  </span>
+                  <button
+                    onClick={() => setRightPanelOpen(false)}
+                    aria-label="Close inspector panel"
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(140,130,112,0.5)',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                    onTouchStart={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(196,124,46,0.1)';
+                      (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
+                    }}
+                    onTouchEnd={(e) => {
+                      setTimeout(() => {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          'rgba(140,130,112,0.5)';
+                      }, 150);
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                  }}
+                >
+                  {selectedCount > 0 ? (
+                    <SelectionPanel
                       config={config}
                       setConfig={setConfig}
                       selectedIds={selectedIds}
-                      onSelect={handleSelectionOverride}
-                      chrome={false}
+                      selectedLogo={selectedLogo}
+                      selectedMinimalElements={selectedMinimalElements}
                       detailLevel="simple"
                     />
-                  </div>
-                </aside>
-
-                {/* ── RIGHT PANEL DRAWER BACKDROP ── */}
-                <div
-                  aria-hidden="true"
-                  onClick={() => setRightPanelOpen(false)}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 24,
-                    background: 'rgba(0,0,0,0.45)',
-                    backdropFilter: 'blur(2px)',
-                    opacity: rightPanelOpen ? 1 : 0,
-                    visibility: rightPanelOpen ? 'visible' : 'hidden',
-                    transition: 'opacity 0.28s ease, visibility 0.28s',
-                    pointerEvents: rightPanelOpen ? 'auto' : 'none',
-                  }}
-                />
-
-                {/* ── RIGHT PANEL DRAWER ── */}
-                {/* Identical geometry to left drawer but slides from right. */}
-                {/* Content: SelectionPanel when items selected, BadgesPanel when nothing selected. */}
-                {/* CRITICAL: Use visibility:hidden, not display:none, to keep panel mounted. */}
-                <aside
-                  aria-label="Inspector panel"
-                  aria-hidden={!rightPanelOpen}
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(56px + env(safe-area-inset-top, 0px))',
-                    right: 0,
-                    bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-                    width: 'min(280px, 85vw)',
-                    zIndex: 25,
-                    background: 'var(--film-dark)',
-                    borderLeft: '1px solid rgba(196,124,46,0.18)',
-                    borderRadius: '12px 0 0 12px',
-                    boxShadow: '-4px 0 40px rgba(0,0,0,0.7)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)',
-                    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    visibility: rightPanelOpen ? 'visible' : 'hidden',
-                  }}
-                >
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      width: 40,
-                      background: 'linear-gradient(to right, rgba(196,124,46,0.03), transparent)',
-                      pointerEvents: 'none',
-                      zIndex: 0,
-                    }}
-                  />
-                  {/* Vertical grip — the sheet "handle" affordance on the inner edge */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: 7,
-                      transform: 'translateY(-50%)',
-                      width: 2,
-                      height: 28,
-                      borderRadius: 1,
-                      background: 'rgba(196,124,46,0.35)',
-                      boxShadow: '0 0 6px rgba(196,124,46,0.25)',
-                      pointerEvents: 'none',
-                      zIndex: 2,
-                    }}
-                  />
-                  {/* Drawer header */}
-                  <div
-                    style={{
-                      height: 44,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 10px 0 14px',
-                      borderBottom: '1px solid rgba(196,124,46,0.08)',
-                      background: 'var(--film-mid)',
-                      gap: 8,
-                    }}
-                  >
-                    <MousePointer2
-                      size={13}
-                      style={{ color: 'var(--film-amber)', flexShrink: 0 }}
+                  ) : (
+                    <BadgesPanel
+                      config={config}
+                      setConfig={setConfig}
+                      selectedIds={selectedIds}
+                      selectedLogo={selectedLogo}
+                      selectedMinimalElements={selectedMinimalElements}
+                      detailLevel="simple"
                     />
-                    <span
-                      className="syne-font"
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: 'var(--film-cream)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {selectedCount === 0 ? 'Inspector' : selectedLabel}
-                    </span>
-                    {/* Selection count — mono microlabel stamp */}
-                    <span
-                      className="mono-font"
-                      style={{
-                        fontSize: 9,
-                        letterSpacing: '0.1em',
-                        color: 'var(--film-amber)',
-                        background: 'rgba(196,124,46,0.1)',
-                        border: '1px solid rgba(196,124,46,0.22)',
-                        borderRadius: 2,
-                        padding: '2px 6px',
-                        lineHeight: 1,
-                        flexShrink: 0,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {selectedCount}
-                    </span>
-                    <button
-                      onClick={() => setRightPanelOpen(false)}
-                      aria-label="Close inspector panel"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 4,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'rgba(140,130,112,0.5)',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                      onTouchStart={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background =
-                          'rgba(196,124,46,0.1)';
-                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--film-amber)';
-                      }}
-                      onTouchEnd={(e) => {
-                        setTimeout(() => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                          (e.currentTarget as HTMLButtonElement).style.color =
-                            'rgba(140,130,112,0.5)';
-                        }, 150);
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  {/* Content */}
-                  <div
-                    style={{
-                      flex: 1,
-                      minHeight: 0,
-                      overflowY: 'auto',
-                      overflowX: 'hidden',
-                      WebkitOverflowScrolling: 'touch',
-                      overscrollBehavior: 'contain',
-                    }}
-                  >
-                    {selectedCount > 0 ? (
-                      <SelectionPanel
-                        config={config}
-                        setConfig={setConfig}
-                        selectedIds={selectedIds}
-                        selectedLogo={selectedLogo}
-                        selectedMinimalElements={selectedMinimalElements}
-                        detailLevel="simple"
-                      />
-                    ) : (
-                      <BadgesPanel
-                        config={config}
-                        setConfig={setConfig}
-                        selectedIds={selectedIds}
-                        selectedLogo={selectedLogo}
-                        selectedMinimalElements={selectedMinimalElements}
-                        detailLevel="simple"
-                      />
-                    )}
-                  </div>
-                </aside>
-              </>
-            )}
+                  )}
+                </div>
+              </aside>
+            </>
 
             {/* ── BOTTOM SHEET PANEL ── */}
             {/* Position: above the bottom nav bar (56px + safe area). */}
@@ -2941,214 +2989,6 @@ const StudioLayout: React.FC<{
                 })}
               </div>
             </nav>
-
-            {/* ── MORE SHEET ── (progressive disclosure: rare actions —
-               mode, commands, tour, shortcuts. Panel language: housed 12px
-               radius, velvet fill, warm shadow, hairlines.) */}
-            {moreOpen && (
-              <>
-                {/* Backdrop — tap to dismiss */}
-                <div
-                  aria-hidden="true"
-                  onClick={() => setMoreOpen(false)}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 44,
-                    background: 'rgba(0,0,0,0.45)',
-                    backdropFilter: 'blur(2px)',
-                  }}
-                />
-                <section
-                  aria-label="More actions"
-                  style={{
-                    position: 'absolute',
-                    left: 12,
-                    right: 12,
-                    bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-                    zIndex: 45,
-                    borderRadius: 12,
-                    background: 'rgba(14,13,11,0.94)',
-                    backdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(196,124,46,0.2)',
-                    boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 0 24px rgba(196,124,46,0.05)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Ambient gradient rule */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 1,
-                      background:
-                        'linear-gradient(90deg, transparent, rgba(196,124,46,0.25), transparent)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  {/* Header — microlabel + close (44px target) */}
-                  <div
-                    style={{
-                      height: 48,
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 8px 0 16px',
-                      borderBottom: '1px solid rgba(196,124,46,0.08)',
-                    }}
-                  >
-                    <span
-                      className="mono-font"
-                      style={{
-                        fontSize: 8,
-                        letterSpacing: '0.16em',
-                        textTransform: 'uppercase',
-                        color: 'rgba(196,124,46,0.65)',
-                      }}
-                    >
-                      More
-                    </span>
-                    <div style={{ flex: 1 }} />
-                    <button
-                      onClick={() => setMoreOpen(false)}
-                      aria-label="Close more actions"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: 4,
-                        color: 'rgba(140,130,112,0.55)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                  {/* Rows — 44px, hairline separated */}
-                  <div style={{ padding: '6px 8px 8px' }}>
-                    {/* Mode — the toggle itself (ModeToggle renders a compact
-                       dropdown; safe to reuse inside the sheet) */}
-                    <div
-                      style={{
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '0 8px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      <Sliders size={15} style={{ color: 'rgba(196,124,46,0.7)', flexShrink: 0 }} />
-                      <span
-                        className="syne-font"
-                        style={{
-                          flex: 1,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: 'var(--film-cream)',
-                        }}
-                      >
-                        Mode
-                      </span>
-                      <ModeToggle mode={builderMode} onChange={setBuilderMode} />
-                    </div>
-                    <MobileMoreRow
-                      icon={<Link2 size={15} />}
-                      label="Import from URL"
-                      caption="Paste a poster link"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        setBottomPanelTab('source');
-                        openBottomPanelSheet();
-                        setImportFocus((f) => f + 1);
-                      }}
-                    />
-                    {/* Reset — weighted destructive (diagnosis 2.13): red icon
-                       + label, two-tap armed. The arm disarms when the sheet
-                       closes (see the resetArmed effect above). */}
-                    <div
-                      style={{
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '0 8px',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        background: resetArmed ? 'rgba(248,113,113,0.12)' : 'transparent',
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={resetArmed ? 'Confirm reset poster' : 'Reset poster'}
-                      onClick={() => {
-                        if (!resetArmed) {
-                          setResetArmed(true);
-                          return;
-                        }
-                        setMoreOpen(false);
-                        setResetArmed(false);
-                        handleReset();
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter' && e.key !== ' ') return;
-                        e.preventDefault();
-                        if (!resetArmed) {
-                          setResetArmed(true);
-                          return;
-                        }
-                        setMoreOpen(false);
-                        setResetArmed(false);
-                        handleReset();
-                      }}
-                    >
-                      <RotateCcw
-                        size={15}
-                        style={{ color: 'rgba(248,113,113,0.9)', flexShrink: 0 }}
-                      />
-                      <span
-                        className="syne-font"
-                        style={{
-                          flex: 1,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: resetArmed ? '#fca5a5' : 'rgba(248,113,113,0.85)',
-                        }}
-                      >
-                        {resetArmed ? 'Tap again to confirm' : 'Reset poster'}
-                      </span>
-                    </div>
-                    <MobileMoreRow
-                      icon={<BookOpen size={15} />}
-                      label="Re-run tour"
-                      caption="See the basics again"
-                      onClick={() => {
-                        clearWalkthroughState();
-                        window.location.reload();
-                      }}
-                    />
-                    <MobileMoreRow
-                      icon={<Keyboard size={15} />}
-                      label="Shortcuts"
-                      caption="Keyboard shortcuts"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        setShortcutsOpen(true);
-                      }}
-                    />
-                  </div>
-                </section>
-              </>
-            )}
 
             {/* ── MOBILE EXPORT SHEET (3 steps, diagnosis 2.11) ── */}
             {mobileExportOpen && (
