@@ -54,6 +54,7 @@ import {
   ArrowUpToLine,
   ArrowDownToLine,
   ScanLine,
+  Search,
   Keyboard,
   Type,
   ChevronDown,
@@ -1453,7 +1454,7 @@ const StudioLayout: React.FC<{
                 paddingTop: 'env(safe-area-inset-top, 0px)',
                 zIndex: 40,
                 background: 'rgba(7,7,6,0.97)',
-                borderBottom: '1px solid rgba(196,124,46,0.1)',
+                borderBottom: '1px solid rgba(196,124,46,0.08)',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -1494,10 +1495,18 @@ const StudioLayout: React.FC<{
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    gap: 8,
                     height: 44,
                     padding: '0 6px',
                   }}
                 >
+                  <img
+                    src="/posterium.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                    style={{ display: 'block', flexShrink: 0 }}
+                  />
                   <span
                     className="poster-font"
                     style={{
@@ -1518,6 +1527,33 @@ const StudioLayout: React.FC<{
                 </a>
 
                 <div style={{ flex: 1 }} />
+
+                {/* Search / commands — opens the CommandPalette (same surface as
+                   desktop's ⌘K search field; lives in the shared modal layer) */}
+                <button
+                  onClick={() => {
+                    closeBottomPanel();
+                    setPaletteOpen(true);
+                  }}
+                  aria-label="Search commands"
+                  className="active:scale-95"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    color: 'rgba(240,230,204,0.72)',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease',
+                  }}
+                >
+                  <Search size={16} />
+                </button>
 
                 {/* PRIMARY ACTION — Export (opens the 3-step mobile sheet) */}
                 <button
@@ -1557,9 +1593,10 @@ const StudioLayout: React.FC<{
               </div>
 
               {/* ── ROW 2 — tool strip (every tool visible, 44px targets) ── */}
-              {/* Captioned buttons: icon + 8px mono caption. Mode is a real
-                 control (SelectBox), self-labeled. Strip scrolls only as a
-                 safety net below ~320px. */}
+              {/* Desktop toolbar translated to a strip: undo/redo pair, mode,
+                   import, reset (two-tap), tour. Hairlines group the clusters
+                   exactly like the desktop header. Strip scrolls only as a
+                   safety net below ~340px. */}
               <div
                 className="mobile-header-scroll"
                 style={{
@@ -1576,6 +1613,107 @@ const StudioLayout: React.FC<{
                   background: 'rgba(196,124,46,0.03)',
                 }}
               >
+                {/* Undo / redo — captioned mirrored pair (ambiguous icons get
+                     labels), disabled states match desktop's ToolbarBtn */}
+                <button
+                  onClick={() => {
+                    setResetArmed(false);
+                    undo();
+                  }}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                  className="active:scale-95"
+                  style={{
+                    height: 44,
+                    minWidth: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    padding: '0 8px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: canUndo ? 'pointer' : 'default',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease',
+                  }}
+                >
+                  <Undo2
+                    size={16}
+                    style={{
+                      color: canUndo ? 'rgba(240,230,204,0.72)' : 'rgba(140,130,112,0.25)',
+                    }}
+                  />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: canUndo ? 'rgba(240,230,204,0.55)' : 'rgba(140,130,112,0.25)',
+                    }}
+                  >
+                    Undo
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setResetArmed(false);
+                    redo();
+                  }}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                  className="active:scale-95"
+                  style={{
+                    height: 44,
+                    minWidth: 44,
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    padding: '0 8px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: canRedo ? 'pointer' : 'default',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.12s ease',
+                  }}
+                >
+                  <Redo2
+                    size={16}
+                    style={{
+                      color: canRedo ? 'rgba(240,230,204,0.72)' : 'rgba(140,130,112,0.25)',
+                    }}
+                  />
+                  <span
+                    className="mono-font"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: canRedo ? 'rgba(240,230,204,0.55)' : 'rgba(140,130,112,0.25)',
+                    }}
+                  >
+                    Redo
+                  </span>
+                </button>
+
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 1,
+                    height: 16,
+                    margin: '0 4px',
+                    background: 'rgba(196,124,46,0.12)',
+                  }}
+                />
+
                 {/* Mode — segmented dropdown, self-labeled */}
                 <div style={{ display: 'flex', alignItems: 'center', height: 44 }}>
                   <ModeToggle mode={builderMode} onChange={setBuilderMode} />
@@ -1585,8 +1723,8 @@ const StudioLayout: React.FC<{
                   aria-hidden="true"
                   style={{
                     width: 1,
-                    alignSelf: 'stretch',
-                    margin: '10px 6px',
+                    height: 16,
+                    margin: '0 4px',
                     background: 'rgba(196,124,46,0.12)',
                   }}
                 />
@@ -2260,9 +2398,10 @@ const StudioLayout: React.FC<{
 
               {/* HANDLE ROW — 56px native chrome (diagnosis 2.6/2.8): zoom −/%/+ on
                   the left, grabber + snap-position dots in the center (the
-                  sheet's three positions as an affordance), undo/redo on the
-                  right. The whole row is also the drag zone; the buttons
-                  stopPropagation their touchstart so taps never drag. */}
+                  sheet's three positions as an affordance). Undo/redo moved
+                  up to the header's tool strip (desktop parity). The whole
+                  row is also the drag zone; the buttons stopPropagation
+                  their touchstart so taps never drag. */}
               <div
                 className="mobile-sheet-handle"
                 onTouchStart={(e) => {
@@ -2410,53 +2549,6 @@ const StudioLayout: React.FC<{
                       />
                     ))}
                   </div>
-                </div>
-
-                {/* Undo / redo — history lives with zoom in the handle row
-                    (diagnosis 2.3); the tab bar stays pure navigation. */}
-                <div style={{ display: 'flex', gap: 2, paddingRight: 8 }}>
-                  <button
-                    aria-label="Undo"
-                    disabled={!canUndo}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onClick={undo}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: 4,
-                      color: canUndo ? 'rgba(196,124,46,0.75)' : 'rgba(140,130,112,0.25)',
-                      cursor: canUndo ? 'pointer' : 'default',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    <Undo2 size={16} />
-                  </button>
-                  <button
-                    aria-label="Redo"
-                    disabled={!canRedo}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onClick={redo}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: 4,
-                      color: canRedo ? 'rgba(196,124,46,0.75)' : 'rgba(140,130,112,0.25)',
-                      cursor: canRedo ? 'pointer' : 'default',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    <Redo2 size={16} />
-                  </button>
                 </div>
               </div>
 
@@ -3886,8 +3978,10 @@ const StudioLayout: React.FC<{
           </div>
         )}
 
-        {/* Zoom + fullscreen overlay — desktop only; mobile uses the horizontal
-           ZoomOverlay pill inside the mobile canvas above. */}
+        {/* Zoom + fullscreen overlay — desktop: right-edge floating pill.
+           Mobile: same pill bottom-right, above the tab bar, hidden while
+           the bottom sheet is open (zoom then lives in the sheet's handle
+           row + View tab). */}
         {isDesktop && (
           <ZoomOverlay
             isFullscreen={isFullscreen}
@@ -3897,6 +3991,34 @@ const StudioLayout: React.FC<{
             onZoomOut={() => dispatchZoom(-0.25)}
             onResetView={dispatchResetView}
             isMobile={false}
+            viewOptions={viewOptions}
+            onToggleViewOption={toggleViewOption}
+          />
+        )}
+        {!isDesktop && !bottomPanelOpen && (
+          <ZoomOverlay
+            isFullscreen={false}
+            rightSidebarWidth={0}
+            onToggleFullscreen={handleMobileFullscreen}
+            onZoomIn={() =>
+              setViewZoom((z) => {
+                const nz = Math.min(2.5, z + 0.1);
+                dispatchZoom(nz - z);
+                return nz;
+              })
+            }
+            onZoomOut={() =>
+              setViewZoom((z) => {
+                const nz = Math.max(0.5, z - 0.1);
+                dispatchZoom(nz - z);
+                return nz;
+              })
+            }
+            onResetView={() => {
+              setViewZoom(1);
+              dispatchResetView();
+            }}
+            isMobile={true}
             viewOptions={viewOptions}
             onToggleViewOption={toggleViewOption}
           />

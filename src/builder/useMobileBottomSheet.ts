@@ -29,9 +29,10 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
 
   const getMaxHeight = useCallback(() => {
     if (typeof window === 'undefined') return 520;
-    // The sheet must never overlap the chrome: one 56px header row (+ safe
-    // top for the PWA notch) and one 64px tab bar (+ safe bottom), with a
-    // 56px rest gap so content never sits flush against the header.
+    // The sheet must never overlap the chrome: the 100px two-row mobile
+    // header (+ safe top for the PWA notch) and one 64px tab bar (+ safe
+    // bottom), with a 56px rest gap so content never sits flush against the
+    // header.
     const sait =
       parseFloat(
         getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--sait')
@@ -40,7 +41,7 @@ export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | n
       parseFloat(
         getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--saib')
       ) || 0;
-    return Math.max(200, window.innerHeight - 56 - sait - 64 - saib - 56);
+    return Math.max(200, window.innerHeight - 100 - sait - 64 - saib - 56);
   }, [rootRef]);
 
   const getSnapPoints = useCallback(() => {

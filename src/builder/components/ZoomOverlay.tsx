@@ -60,11 +60,12 @@ const ZoomOverlay = memo<{
     const btnClass = 'flex items-center justify-center transition-all active:scale-90';
     const btnStyle = { ...buttonStyle, width: btnSize, height: btnSize, borderRadius: 8 };
 
-    // ── MOBILE: no floating chrome (design diagnosis 2.8) ──
-    // The floating zoom pill + settings popover are banned on mobile. Zoom
-    // −/%/+ and fullscreen now live in the bottom sheet's handle row and the
-    // View tab (index.tsx). Desktop is unchanged.
-    if (isMobile) return null;
+    // ── MOBILE: floating quick-access pill ──
+    // Zoom −/%/+ and fullscreen float bottom-right (44px targets), above the
+    // tab bar. The Settings gear opens the popover above the pill. The full
+    // zoom slider + settings page live in the sheet's View tab; the pill is
+    // the always-visible quick access (hidden only while the sheet is open,
+    // per index.tsx's render gate).
 
     return (
       <div
