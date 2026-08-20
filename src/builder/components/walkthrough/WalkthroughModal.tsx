@@ -186,40 +186,40 @@ const WalkthroughModal = memo<WalkthroughModalProps>(
             flexDirection: 'column',
           }}
         >
-          {/* Close button — only show once the user has engaged */}
-          {entryChoice !== null && (
-            <button
-              onClick={onDismiss}
-              aria-label="Close walkthrough"
-              style={{
-                position: 'fixed',
-                top: 16,
-                right: 16,
-                zIndex: 110,
-                width: 24,
-                height: 24,
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--film-text-dim)',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--film-amber)';
-                e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--film-text-dim)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <X size={12} />
-            </button>
-          )}
+          {/* Close button — always available (44px touch target); on the
+              entry screen it dismisses the walkthrough back to the builder
+              or coach, after engagement it cancels the guided setup. */}
+          <button
+            onClick={onDismiss}
+            aria-label="Close walkthrough"
+            style={{
+              position: 'fixed',
+              top: 12,
+              right: 12,
+              zIndex: 110,
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--film-text-dim)',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--film-amber)';
+              e.currentTarget.style.background = 'rgba(196,124,46,0.08)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--film-text-dim)';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <X size={16} />
+          </button>
 
           <div
             style={{

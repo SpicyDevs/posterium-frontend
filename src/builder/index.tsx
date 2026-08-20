@@ -3588,7 +3588,7 @@ const StudioLayout: React.FC<{
             {/* ── OPT-IN WALKTHROUGH COACH (diagnosis 2.1/2.2) ── */}
             {/* The legacy first-visit gate is replaced on mobile by this
                 bottom-sheet coach; the builder is usable immediately. */}
-            {showCoach && (
+            {showCoach && !showStarterHelp && (
               <section
                 aria-label="Welcome"
                 role="dialog"
@@ -4095,6 +4095,7 @@ const BuilderAppInner: React.FC<BuilderAppProps> = ({ initialMode = 'simple', pr
       saveBuilderMode(mode);
       setConfig(walkthroughConfig);
       setWalkthroughDone(true);
+      setWalkthroughModalOpen(false);
     },
     [setConfig]
   );
@@ -4102,11 +4103,13 @@ const BuilderAppInner: React.FC<BuilderAppProps> = ({ initialMode = 'simple', pr
   const handleWalkthroughDismiss = useCallback(() => {
     // Transient dismiss — does NOT save completion state
     setWalkthroughDone(true);
+    setWalkthroughModalOpen(false);
   }, []);
 
   const handleWalkthroughSkip = useCallback(() => {
     saveWalkthroughState();
     setWalkthroughDone(true);
+    setWalkthroughModalOpen(false);
   }, []);
 
   const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE);
