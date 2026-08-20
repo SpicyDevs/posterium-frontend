@@ -23,27 +23,30 @@ const INITIAL_REF: BottomSheetRef = {
 export function useMobileBottomSheet(rootRef: React.RefObject<HTMLDivElement | null>) {
   const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  // Current snap position of the sheet (0 = 200px, 1 = mid, 2 = max) — surfaced
-  // for the handle's snap-affordance dots in the sheet chrome.
+  // Current snap position of the sheet (0 = 200px, 1 = 50vh, 2 = 92vh).
   const [snapIndex, setSnapIndex] = useState(0);
   const dragRef = useRef<BottomSheetRef>({ ...INITIAL_REF });
 
   const getMaxHeight = useCallback(() => {
     if (typeof window === 'undefined') return 520;
-    // Mobile header is now TWO rows (identity bar + action bar) = 96px, plus
-    // safe-area-inset-top on notched phones (PWA standalone); nav is 56px +
-    // safe-area-inset-bottom. The root exposes --sait so the sheet never
-    // overlaps the header when fully expanded in standalone mode.
+    // The sheet must never overlap the chrome: one 56px header row (+ safe
+    // top for the PWA notch) and one 64px tab bar (+ safe bottom), with a
+    // 56px rest gap so content never sits flush against the header.
     const sait =
       parseFloat(
         getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--sait')
       ) || 0;
-    return Math.max(200, window.innerHeight - 96 - sait - 56 - 80);
+    const saib =
+      parseFloat(
+        getComputedStyle(rootRef.current ?? document.documentElement).getPropertyValue('--saib')
+      ) || 0;
+    return Math.max(200, window.innerHeight - 56 - sait - 64 - saib - 56);
   }, [rootRef]);
 
   const getSnapPoints = useCallback(() => {
     const max = getMaxHeight();
-    const mid = Math.min(max, Math.max(200, Math.round(window.innerHeight * 0.48)));
+    // Diagnosis: snap 0 = 200px, 1 = 50vh, 2 = 92vh (max).
+    const mid = Math.min(max, Math.max(200, Math.round(window.innerHeight * 0.5)));
     return [200, mid, max] as const;
   }, [getMaxHeight]);
 

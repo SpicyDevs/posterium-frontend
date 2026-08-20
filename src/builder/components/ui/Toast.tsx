@@ -6,6 +6,7 @@
 // on desktop. `useToast()` degrades to a no-op outside the provider so shared
 // modules (e.g. ExportMenu on example pages) never crash without one.
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
 export type ToastTone = 'info' | 'success' | 'error';
 
@@ -22,8 +23,15 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 // DESIGN.md tokens: amber = var(--film-amber), gold = var(--film-gold),
-// danger = rgba(248,113,113,0.85).
-const TONE_DOT: Record<ToastTone, string> = {
+// danger = rgba(248,113,113,0.85). Icons replace the old dot — a glyph carries
+// the tone for glanceable reading (diagnosis 2.14).
+const TONE_ICON: Record<ToastTone, React.ReactNode> = {
+  info: <Info size={14} />,
+  success: <CheckCircle2 size={14} />,
+  error: <AlertTriangle size={14} />,
+};
+
+const TONE_COLOR: Record<ToastTone, string> = {
   info: 'var(--film-amber)',
   success: 'var(--film-gold)',
   error: 'rgba(248,113,113,0.85)',
@@ -35,10 +43,10 @@ const TONE_GLOW: Record<ToastTone, string> = {
   error: '0 0 6px rgba(248,113,113,0.5)',
 };
 
-// Errors get a little longer to read; everything else dismisses ~2.5s.
+// Everything dismisses at ~2.4s; errors get longer to read (diagnosis 2.14).
 const TONE_DURATION: Record<ToastTone, number> = {
-  info: 2500,
-  success: 2500,
+  info: 2400,
+  success: 2400,
   error: 4000,
 };
 
@@ -65,11 +73,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {/* Fixed stack — container is click-transparent; only toasts capture. */}
+      {/* Fixed stack — container is click-transparent; only toasts capture.
+          Mobile: bottom-center, floating above the 64px tab bar + safe inset
+          (offset handled in global.css so env() resolves). */}
       <div
         role="status"
         aria-live="polite"
-        className="fixed inset-x-0 bottom-4 z-[9999] flex flex-col items-center gap-2 px-4 pointer-events-none lg:items-end lg:bottom-6 lg:pr-6"
+        className="builder-toast-stack fixed inset-x-0 flex flex-col items-center gap-2 px-4 pointer-events-none lg:items-end lg:pr-6"
       >
         <style>{`
           @keyframes toast-in {
@@ -80,7 +90,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto"
+            className="builder-toast pointer-events-auto"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -97,14 +107,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <span
               aria-hidden="true"
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: TONE_DOT[t.tone],
-                boxShadow: TONE_GLOW[t.tone],
+                color: TONE_COLOR[t.tone],
+                filter: `drop-shadow(${TONE_GLOW[t.tone]})`,
                 flexShrink: 0,
+                display: 'flex',
               }}
-            />
+            >
+              {TONE_ICON[t.tone]}
+            </span>
             <span
               className="syne-font"
               style={{

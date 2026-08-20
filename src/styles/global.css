@@ -449,14 +449,90 @@
 /* ── Builder app shell (mobile PWA app feel) ───────────────────────────────
    Scoped with body:has(.builder-ui) so these never touch the marketing pages.
    The builder is a fixed 100dvh app shell — pull-to-refresh must not fight
-   the canvas, and toasts must float above the 56px bottom nav + home
-   indicator (Toast.tsx pins them at bottom-4, which the nav would cover). */
+   the canvas, and toasts must float above the 64px tab bar + home indicator
+   (Toast.tsx pins them bottom-center, which the nav would cover). */
 @media (max-width: 1023px) {
   body:has(.builder-ui) {
     overscroll-behavior-y: none;
   }
 
   body:has(.builder-ui) [role='status'] {
-    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Toast body — ≥44px touch-friendly height (diagnosis 2.14) */
+  .builder-toast {
+    min-height: 44px;
+  }
+
+  /* Sheet entrance — springy rise with a touch of overshoot (diagnosis 2.6) */
+  @keyframes mob-sheet-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes mob-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Native-density controls inside the sheet: range sliders get a 28px thumb
+     (diagnosis 2.7) — applies to the View-tab zoom slider and any panel
+     slider that renders a real <input type="range">. */
+  .mobile-sheet input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    outline: none;
+    touch-action: pan-x;
+  }
+  .mobile-sheet input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--film-amber);
+    border: 2px solid rgba(7, 7, 6, 0.9);
+    box-shadow:
+      0 1px 6px rgba(0, 0, 0, 0.5),
+      0 0 8px rgba(196, 124, 46, 0.4);
+    cursor: pointer;
+  }
+  .mobile-sheet input[type='range']::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--film-amber);
+    border: 2px solid rgba(7, 7, 6, 0.9);
+    box-shadow:
+      0 1px 6px rgba(0, 0, 0, 0.5),
+      0 0 8px rgba(196, 124, 46, 0.4);
+    cursor: pointer;
+  }
+}
+
+/* ── Tablet tier (700–1023px, diagnosis 2.15) ──────────────────────────────
+   The phone shell keeps its header/tab bar/bottom sheet, but the canvas
+   centers with gutters and the edge drawers return (gated on isTablet in
+   index.tsx). */
+@media (min-width: 700px) and (max-width: 1023px) {
+  .mobile-canvas {
+    max-width: 720px;
+    margin: 0 auto;
+    border-radius: 12px;
+  }
+  .mobile-canvas:fullscreen {
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
   }
 }

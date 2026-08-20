@@ -82,6 +82,10 @@ const DraggableBadge: React.FC<Props> = ({
   const baseHeight = BASE_BADGE_H * displayScale;
 
   const [isDragging, setIsDragging] = useState(false);
+  // Drag lift — tinted shadow + scale while the badge is being dragged, and a
+  // brief settle pulse on release. Motion only; all static styling is frozen.
+  const [dragLift, setDragLift] = useState(false);
+  const [settlePulse, setSettlePulse] = useState(false);
   const [longPressPulse, setLongPressPulse] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number } | null>(null);
   const hasDraggedRef = useRef(false);
@@ -101,6 +105,8 @@ const DraggableBadge: React.FC<Props> = ({
 
   const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
+    setDragLift(true);
+    setSettlePulse(false);
     hasDraggedRef.current = false;
     longPressFiredRef.current = false;
     dragStartRef.current = { mouseX: clientX, mouseY: clientY };
@@ -130,6 +136,13 @@ const DraggableBadge: React.FC<Props> = ({
 
   const handleEnd = (e: MouseEvent | TouchEvent) => {
     setIsDragging(false);
+    // Release the drag lift and fire a short settle pulse only when the badge
+    // actually moved — reads as a snap settle without fighting the position.
+    if (hasDraggedRef.current) {
+      setSettlePulse(true);
+      window.setTimeout(() => setSettlePulse(false), 120);
+    }
+    setDragLift(false);
     if (longPressTimerRef.current) {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
@@ -764,12 +777,21 @@ const DraggableBadge: React.FC<Props> = ({
         zIndex: zIndex ?? 120,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
-        boxShadow: 'none',
+        // Drag lift: tinted shadow + 1.08 scale on a 0.2s spring. The settle
+        // pulse (1.03) reads as a snap; it wins over the lift on release.
+        boxShadow: dragLift ? '0 12px 24px rgba(0,0,0,0.5)' : 'none',
         opacity: isObscuring ? 0.35 : 1,
         pointerEvents: isObscuring ? 'none' : 'auto',
         touchAction: 'none',
-        transform: longPressPulse ? 'translateZ(0) scale(1.06)' : 'translateZ(0)',
-        transition: 'transform 0.15s ease',
+        transform: settlePulse
+          ? 'translateZ(0) scale(1.03)'
+          : dragLift
+            ? 'translateZ(0) scale(1.08)'
+            : longPressPulse
+              ? 'translateZ(0) scale(1.06)'
+              : 'translateZ(0)',
+        transition:
+          'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       {/* Clip inner content to badge bounds (prevents icon/text from overflowing) */}
