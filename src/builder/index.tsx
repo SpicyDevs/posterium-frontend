@@ -3702,6 +3702,43 @@ const StudioLayout: React.FC<{
               </section>
             )}
 
+            {/* ── MOBILE ZOOM PILL (quick access, idle state) ── */}
+            {/* Floating zoom/settings/fullscreen pill, bottom-right above
+                the tab bar. Rendered INSIDE the mobile shell so its z-40
+                stacks under the card (45), action bar (46), export sheet
+                (50) and coach (60). Hidden while a badge is selected (the
+                action bar owns that band), while the sheet is open (zoom
+                lives in the handle row + View tab), and during starter
+                help. */}
+            {selectedCount === 0 && !bottomPanelOpen && !showStarterHelp && (
+              <ZoomOverlay
+                isFullscreen={false}
+                rightSidebarWidth={0}
+                onToggleFullscreen={handleMobileFullscreen}
+                onZoomIn={() =>
+                  setViewZoom((z) => {
+                    const nz = Math.min(2.5, z + 0.1);
+                    dispatchZoom(nz - z);
+                    return nz;
+                  })
+                }
+                onZoomOut={() =>
+                  setViewZoom((z) => {
+                    const nz = Math.max(0.5, z - 0.1);
+                    dispatchZoom(nz - z);
+                    return nz;
+                  })
+                }
+                onResetView={() => {
+                  setViewZoom(1);
+                  dispatchResetView();
+                }}
+                isMobile={true}
+                viewOptions={viewOptions}
+                onToggleViewOption={toggleViewOption}
+              />
+            )}
+
             {/* ── SELECTION ACTION BAR (diagnosis 2.5) ── */}
             {/* ≥44px floating bar above the tab bar while a badge is selected
                 and the sheet is closed — Duplicate / Edit / Delete. The
@@ -3978,10 +4015,9 @@ const StudioLayout: React.FC<{
           </div>
         )}
 
-        {/* Zoom + fullscreen overlay — desktop: right-edge floating pill.
-           Mobile: same pill bottom-right, above the tab bar, hidden while
-           the bottom sheet is open (zoom then lives in the sheet's handle
-           row + View tab). */}
+        {/* Zoom + fullscreen overlay — desktop: right-edge floating pill. The
+           mobile pill lives INSIDE the mobile shell (see mobile tree) so it
+           stacks under the shell's own overlays. */}
         {isDesktop && (
           <ZoomOverlay
             isFullscreen={isFullscreen}
@@ -3991,34 +4027,6 @@ const StudioLayout: React.FC<{
             onZoomOut={() => dispatchZoom(-0.25)}
             onResetView={dispatchResetView}
             isMobile={false}
-            viewOptions={viewOptions}
-            onToggleViewOption={toggleViewOption}
-          />
-        )}
-        {!isDesktop && !bottomPanelOpen && (
-          <ZoomOverlay
-            isFullscreen={false}
-            rightSidebarWidth={0}
-            onToggleFullscreen={handleMobileFullscreen}
-            onZoomIn={() =>
-              setViewZoom((z) => {
-                const nz = Math.min(2.5, z + 0.1);
-                dispatchZoom(nz - z);
-                return nz;
-              })
-            }
-            onZoomOut={() =>
-              setViewZoom((z) => {
-                const nz = Math.max(0.5, z - 0.1);
-                dispatchZoom(nz - z);
-                return nz;
-              })
-            }
-            onResetView={() => {
-              setViewZoom(1);
-              dispatchResetView();
-            }}
-            isMobile={true}
             viewOptions={viewOptions}
             onToggleViewOption={toggleViewOption}
           />
