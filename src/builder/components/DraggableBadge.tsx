@@ -777,18 +777,18 @@ const DraggableBadge: React.FC<Props> = ({
         zIndex: zIndex ?? 120,
         // overflow visible so labels can render outside badge bounds
         overflow: 'visible',
-        // Drag lift: tinted shadow + 1.08 scale on a 0.2s spring. The settle
-        // pulse (1.03) reads as a snap; it wins over the lift on release.
-        boxShadow: dragLift ? '0 12px 24px rgba(0,0,0,0.5)' : 'none',
+        // Drag lift: subtle tinted shadow + 1.04 scale on a 0.2s spring. The settle
+        // pulse (1.02) reads as a snap; it wins over the lift on release.
+        boxShadow: dragLift ? '0 8px 16px rgba(0,0,0,0.32)' : 'none',
         opacity: isObscuring ? 0.35 : 1,
         pointerEvents: isObscuring ? 'none' : 'auto',
         touchAction: 'none',
         transform: settlePulse
-          ? 'translateZ(0) scale(1.03)'
+          ? 'translateZ(0) scale(1.02)'
           : dragLift
-            ? 'translateZ(0) scale(1.08)'
+            ? 'translateZ(0) scale(1.04)'
             : longPressPulse
-              ? 'translateZ(0) scale(1.06)'
+              ? 'translateZ(0) scale(1.03)'
               : 'translateZ(0)',
         transition:
           'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
@@ -804,7 +804,7 @@ const DraggableBadge: React.FC<Props> = ({
           filter: dropShadowFilter || 'none',
           backdropFilter: `blur(${blurVal}px)`,
           WebkitBackdropFilter: `blur(${blurVal}px)`,
-          overflow: 'visible',
+          overflow: 'hidden',
           pointerEvents: 'none',
         }}
       >

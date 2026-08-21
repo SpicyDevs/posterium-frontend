@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { PosterConfig } from '../types';
+import { CANVAS_WIDTH } from '../types';
 import { getScale } from '../utils/positioning';
 import { useEditor } from '../EditorContext';
 
@@ -143,14 +144,22 @@ const DraggableTitle: React.FC<Props> = ({
   const textMaxChars = Math.max(0, itemConfig?.textMaxChars ?? 0);
   const wrapEnabled = itemConfig?.textWrapEnabled ?? true;
   const approxCharPx = Math.max(1, textSize * 0.54 + Math.max(0, textLetterSpacing));
+  const rawTitle = (liveTitle || 'Title').trim();
+  const truncatedTitle =
+    textMaxChars > 0 && rawTitle.length > textMaxChars
+      ? `${rawTitle.slice(0, textMaxChars).trimEnd()}…`
+      : rawTitle;
+
   const legacyWidthPx = itemConfig?.textBoxWidth;
   const legacyFromPx =
     legacyWidthPx && legacyWidthPx > 120
       ? Math.max(4, Math.round((legacyWidthPx - 16 * displayScale) / approxCharPx))
       : undefined;
+  // When no explicit width is set, fit to the actual title length instead of a fixed 24ch default
+  const autoCharWidth = Math.max(4, Math.min(24, truncatedTitle.length || 8));
   const titleCharWidth = Math.max(
     4,
-    Math.min(80, Math.round(itemConfig?.textCharWidth ?? legacyFromPx ?? 24))
+    Math.min(80, Math.round(itemConfig?.textCharWidth ?? legacyFromPx ?? autoCharWidth))
   );
   const legacyHeightPx = itemConfig?.textBoxHeight;
   const legacyMaxLinesRaw = Math.round(itemConfig?.textMaxLines ?? 0);
@@ -170,13 +179,9 @@ const DraggableTitle: React.FC<Props> = ({
     )
   );
 
-  const rawTitle = (liveTitle || 'Title').trim();
-  const truncatedTitle =
-    textMaxChars > 0 && rawTitle.length > textMaxChars
-      ? `${rawTitle.slice(0, textMaxChars).trimEnd()}…`
-      : rawTitle;
-
-  const dynamicWidth = Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale));
+  const maxAllowedWidth = Math.max(120, CANVAS_WIDTH - 32 * displayScale);
+  const rawDynamicWidth = Math.max(120, Math.round(titleCharWidth * approxCharPx + 16 * displayScale));
+  const dynamicWidth = Math.min(rawDynamicWidth, maxAllowedWidth);
   const titleCharsPerLine = Math.max(
     1,
     Math.floor((Math.max(dynamicWidth, 1) - 16 * displayScale) / approxCharPx)
@@ -270,8 +275,8 @@ const DraggableTitle: React.FC<Props> = ({
         <div
           className="absolute bg-[#C47C2E] border border-[#D4A245] rounded flex items-center justify-center shadow-sm z-10 pointer-events-none"
           style={{
-            top: `${8 * displayScale - selectionDotSize / 2}px`,
-            right: `${8 * displayScale - selectionDotSize / 2}px`,
+            top: `${-selectionDotSize / 2}px`,
+            right: `${-selectionDotSize / 2}px`,
             width: `${selectionDotSize}px`,
             height: `${selectionDotSize}px`,
           }}

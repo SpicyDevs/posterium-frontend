@@ -259,39 +259,80 @@ const SourceTabContent: React.FC<Props> = ({
           >
             IMDb ID
           </p>
-          <input
-            type="text"
-            value={config.imdbId || config.tmdbId}
-            onChange={(e) => {
-              const val = e.target.value.trim();
-              if (val.startsWith('tt')) {
-                setConfig((prev) => ({ ...prev, imdbId: val }));
-              } else {
-                setConfig((prev) => ({ ...prev, tmdbId: val, imdbId: undefined }));
-              }
-            }}
-            className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontSize: 11,
-              color: 'var(--film-pale)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
-            }}
-            onMouseLeave={(e) => {
-              if (document.activeElement !== e.currentTarget) {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-              }
-            }}
-            onFocus={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,124,46,0.4)';
-            }}
-            onBlur={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-            }}
-          />
+          {(() => {
+            const raw = (config.imdbId || config.tmdbId || '').trim();
+            const isValid =
+              !raw || /^tt\d{7,10}$/.test(raw) || /^\d{1,8}$/.test(raw);
+            const showFallbackHint = !!raw && !isValid;
+            return (
+              <>
+                <input
+                  type="text"
+                  value={config.imdbId || config.tmdbId}
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    if (!val) {
+                      // smart fallback: empty -> keep empty, preview will show default via fallback
+                      setConfig((prev) => ({ ...prev, tmdbId: '', imdbId: undefined }));
+                      return;
+                    }
+                    if (val.startsWith('tt')) {
+                      setConfig((prev) => ({ ...prev, imdbId: val }));
+                    } else {
+                      setConfig((prev) => ({ ...prev, tmdbId: val, imdbId: undefined }));
+                    }
+                  }}
+                  placeholder="tt9419884"
+                  className="w-full h-9 px-2 rounded-lg mono-font text-center focus:outline-none transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${showFallbackHint ? 'rgba(248,113,113,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                    fontSize: 11,
+                    color: showFallbackHint ? 'rgba(248,113,113,0.9)' : 'var(--film-pale)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = showFallbackHint
+                      ? 'rgba(248,113,113,0.6)'
+                      : 'rgba(196,124,46,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (document.activeElement !== e.currentTarget) {
+                      (e.currentTarget as HTMLElement).style.borderColor = showFallbackHint
+                        ? 'rgba(248,113,113,0.5)'
+                        : 'rgba(255,255,255,0.1)';
+                    }
+                  }}
+                  onFocus={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = showFallbackHint
+                      ? 'rgba(248,113,113,0.6)'
+                      : 'rgba(196,124,46,0.4)';
+                  }}
+                  onBlur={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = showFallbackHint
+                      ? 'rgba(248,113,113,0.5)'
+                      : 'rgba(255,255,255,0.1)';
+                    // smart fallback on blur: if still invalid after editing, keep value but preview already shows default
+                    const v = e.currentTarget.value.trim();
+                    if (v && !/^tt\d{7,10}$/.test(v) && !/^\d{1,8}$/.test(v)) {
+                      // leave as-is; preview fallback handles it — no hard reset to avoid surprising the user
+                    }
+                    if (!v) {
+                      // empty -> ensure we have a clean fallback state
+                      setConfig((prev) => ({ ...prev, tmdbId: '', imdbId: undefined }));
+                    }
+                  }}
+                />
+                {showFallbackHint && (
+                  <p
+                    className="mono-font mt-1 text-center"
+                    style={{ fontSize: 8, color: 'rgba(248,113,113,0.75)', lineHeight: 1.2 }}
+                  >
+                    Invalid ID — showing default
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 

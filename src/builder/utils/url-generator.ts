@@ -1,6 +1,28 @@
 import type { PosterConfig, RatingType } from '../types';
 import { DEFAULT_API_BASE, V3_KEY_TO_CODE, isApiRatingKey, DEFAULTS } from './constants';
 import { calculateAutoPosition, getScale } from './positioning';
+import { DEFAULT_CONFIG as FALLBACK_CONFIG } from '@/constants/badges';
+
+const isValidImdbId = (id: string): boolean => /^tt\d{7,10}$/.test(id.trim());
+const isValidTmdbId = (id: string): boolean => /^\d{1,8}$/.test(id.trim());
+
+const getEffectiveId = (config: PosterConfig): { id: string; type: string } | null => {
+  const rawImdb = config.imdbId?.trim() ?? '';
+  const rawTmdb = config.tmdbId?.trim() ?? '';
+  if (rawImdb && isValidImdbId(rawImdb)) return { id: rawImdb, type: 'poster' };
+  if (rawTmdb && isValidTmdbId(rawTmdb) && config.mediaType)
+    return { id: rawTmdb, type: config.mediaType };
+  // smart fallback: any non-empty but invalid still falls back to default
+  if (rawImdb || rawTmdb) {
+    const fb = FALLBACK_CONFIG.imdbId || FALLBACK_CONFIG.tmdbId;
+    if (fb) return { id: fb, type: 'poster' };
+  }
+  if (!rawImdb && !rawTmdb) {
+    const fb = FALLBACK_CONFIG.imdbId || FALLBACK_CONFIG.tmdbId;
+    if (fb) return { id: fb, type: 'poster' };
+  }
+  return null;
+};
 
 export const generateApiUrl = (
   config: PosterConfig,
@@ -9,12 +31,15 @@ export const generateApiUrl = (
   const cleanBase = baseUrl.replace(/\/$/, '');
 
   let pathSegment: string;
-  if (config.imdbId) {
+  const eff = getEffectiveId(config);
+  if (eff) {
+    pathSegment = `/${eff.type}/${eff.id}`;
+  } else if (config.imdbId) {
     pathSegment = `/poster/${config.imdbId}`;
   } else if (config.mediaType && config.tmdbId) {
     pathSegment = `/${config.mediaType}/${config.tmdbId}`;
   } else {
-    pathSegment = `/poster/{imdb_id}`;
+    pathSegment = `/poster/${FALLBACK_CONFIG.imdbId}`;
   }
 
   const p = new URLSearchParams();
@@ -263,10 +288,9 @@ export const generateCleanArtworkUrl = (
   config: PosterConfig,
   baseUrl: string = DEFAULT_API_BASE
 ): string | null => {
-  const id = config.imdbId || config.tmdbId;
-  if (!id) return null;
+  const effective = getEffectiveId(config);
+  if (!effective) return null;
   const cleanBase = baseUrl.replace(/\/$/, '');
-  const type = config.imdbId ? 'poster' : config.mediaType;
   const p = new URLSearchParams();
   p.set('source', config.source);
   if (config.textless && !['metahub', 'imdb'].includes(config.source)) p.set('tl', '1');
@@ -275,7 +299,7 @@ export const generateCleanArtworkUrl = (
   // already a real query param, so a config change always yields a different
   // URL. Keeping the URL space clean avoids lingering Workers Cache entries
   // for the same artwork rendered under different `_t` values.
-  return `${cleanBase}/${type}/${id}.svg?${p.toString()}`;
+  return `${cleanBase}/${effective.type}/${effective.id}.svg?${p.toString()}`;
 };
 
 /**
@@ -286,10 +310,11 @@ export const generateLogoUrl = (
   baseUrl: string = DEFAULT_API_BASE
 ): string | null => {
   if (!config.logo) return null;
-  const id = config.imdbId || config.tmdbId;
+  const eff = getEffectiveId(config);
+  const id = eff?.id ?? config.imdbId ?? config.tmdbId;
   if (!id) return null;
   const cleanBase = baseUrl.replace(/\/$/, '');
-  const type = config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie';
+  const type = eff?.type ?? (config.mediaType === 'anime' ? 'anime' : config.mediaType === 'tv' ? 'tv' : 'movie');
   const url = new URL(`${cleanBase}/${type}/${id}/logo`);
   if (config.logoSource) url.searchParams.set('source', config.logoSource);
   // No `_t` cache-buster — `source` already varies the URL, so the Workers

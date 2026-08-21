@@ -605,6 +605,7 @@ const PropertyPanel: React.FC<Props> = ({
     panelMode === 'selection' &&
     selectedIds.size === 0 &&
     !selectedLogo &&
+    !selectedTitle &&
     selectedMinimalElements.size === 0
   )
     return (
@@ -828,7 +829,7 @@ const PropertyPanel: React.FC<Props> = ({
         </>
       )}
 
-      {selectedIds.size > 0 && (
+      {(selectedIds.size > 0 || isOnlyTitleSelected) && (
         <>
           {isTitleOrYearOnlySelection && (
             <Section title="Typography" icon={<Type size={10} />} sectionId="badge-typography">

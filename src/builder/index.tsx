@@ -3572,8 +3572,18 @@ const StudioLayout: React.FC<{
                   }}
                 />
                 <button
-                  onClick={() => deleteLayer([...selectedIds][0])}
-                  aria-label="Delete badge"
+                  onClick={() => {
+                    if (selectedTitle) deleteLayer('title');
+                    else if (selectedLogo) deleteLayer('logo');
+                    else if (selectedMinimalElements.size > 0) {
+                      const first = Array.from(selectedMinimalElements)[0];
+                      if (first === 'minimal-logo') deleteLayer('logo');
+                      else if (first === 'minimal-title')
+                        setConfig((p) => ({ ...p, titleEnabled: false }));
+                      else clearSelection();
+                    } else if (selectedIds.size > 0) deleteLayer([...selectedIds][0]);
+                  }}
+                  aria-label="Delete selection"
                   style={{
                     height: 48,
                     minWidth: 48,

@@ -16,6 +16,7 @@ import { generateCleanArtworkUrl, generateLogoUrl } from '../utils/url-generator
 import { LoaderCircle, AlertCircle, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useEditor } from '../EditorContext';
 import clsx from 'clsx';
+import { DEFAULT_CONFIG } from '@/constants/badges';
 
 const SNAP_CENTER_TOLERANCE = 8;
 
@@ -139,6 +140,117 @@ const PreviewCanvas: React.FC<Props> = ({
     const r2 = getBadgeRect(id2, idx2);
     return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
   };
+
+  // ── Inter-badge soft snap (similar to grid snap) ───────────────────────────
+  // When dragging a badge, its edges/centers softly snap to nearby badges'
+  // edges/centers and to the canvas edges/center, showing a faint guide.
+  // Tolerance matches the centre guide (8px) so the feel is consistent.
+  const getInterBadgeSnap = useCallback(
+    (
+      draggedId: RatingType,
+      nextX: number,
+      nextY: number,
+      bW: number,
+      bH: number
+    ): { snappedX: number; snappedY: number; vGuides: number[]; hGuides: number[] } => {
+      if (!viewOptions?.snapToGrid) return { snappedX: nextX, snappedY: nextY, vGuides: [], hGuides: [] };
+      const tol = SNAP_CENTER_TOLERANCE;
+      let bestX: number | null = null;
+      let bestXGuide: number | null = null;
+      let bestXDelta = Infinity;
+      let bestY: number | null = null;
+      let bestYGuide: number | null = null;
+      let bestYDelta = Infinity;
+      const vGuides: number[] = [];
+      const hGuides: number[] = [];
+
+      // Canvas edges / centre as snap targets
+      const canvasCandidatesX: { pos: number; guide: number }[] = [
+        { pos: 0, guide: 0 },
+        { pos: CANVAS_WIDTH - bW, guide: CANVAS_WIDTH },
+        { pos: CANVAS_WIDTH / 2 - bW / 2, guide: CANVAS_WIDTH / 2 },
+      ];
+      const canvasCandidatesY: { pos: number; guide: number }[] = [
+        { pos: 0, guide: 0 },
+        { pos: CANVAS_HEIGHT - bH, guide: CANVAS_HEIGHT },
+        { pos: CANVAS_HEIGHT / 2 - bH / 2, guide: CANVAS_HEIGHT / 2 },
+      ];
+      for (const c of canvasCandidatesX) {
+        const d = c.pos - nextX;
+        if (Math.abs(d) <= tol && Math.abs(d) < Math.abs(bestXDelta)) {
+          bestXDelta = d;
+          bestX = c.pos;
+          bestXGuide = c.guide;
+        }
+      }
+      for (const c of canvasCandidatesY) {
+        const d = c.pos - nextY;
+        if (Math.abs(d) <= tol && Math.abs(d) < Math.abs(bestYDelta)) {
+          bestYDelta = d;
+          bestY = c.pos;
+          bestYGuide = c.guide;
+        }
+      }
+
+      // Other badges
+      for (let i = 0; i < previewRatings.length; i++) {
+        const otherId = previewRatings[i];
+        if (otherId === draggedId) continue;
+        // When dragging a group, don't snap to other members of the group
+        if (selectedIds.has(otherId as RatingType) && selectedIds.has(draggedId)) continue;
+        const or = getBadgeRect(otherId, i);
+        const ow = or.w;
+        const oh = or.h;
+        const ox = or.x;
+        const oy = or.y;
+        // X candidates: left-left, right-right, left-right (0 and GAP), right-left (0 and GAP), centre-centre
+        const candX: { pos: number; guide: number }[] = [
+          { pos: ox, guide: ox },
+          { pos: ox + ow - bW, guide: ox + ow },
+          { pos: ox + ow, guide: ox + ow },
+          { pos: ox + ow + 8, guide: ox + ow + 8 },
+          { pos: ox - bW, guide: ox },
+          { pos: ox - bW - 8, guide: ox - 8 },
+          { pos: ox + ow / 2 - bW / 2, guide: ox + ow / 2 },
+        ];
+        for (const c of candX) {
+          const d = c.pos - nextX;
+          if (Math.abs(d) <= tol && Math.abs(d) < Math.abs(bestXDelta)) {
+            bestXDelta = d;
+            bestX = c.pos;
+            bestXGuide = c.guide;
+          }
+        }
+        const candY: { pos: number; guide: number }[] = [
+          { pos: oy, guide: oy },
+          { pos: oy + oh - bH, guide: oy + oh },
+          { pos: oy + oh, guide: oy + oh },
+          { pos: oy + oh + 8, guide: oy + oh + 8 },
+          { pos: oy - bH, guide: oy },
+          { pos: oy - bH - 8, guide: oy - 8 },
+          { pos: oy + oh / 2 - bH / 2, guide: oy + oh / 2 },
+        ];
+        for (const c of candY) {
+          const d = c.pos - nextY;
+          if (Math.abs(d) <= tol && Math.abs(d) < Math.abs(bestYDelta)) {
+            bestYDelta = d;
+            bestY = c.pos;
+            bestYGuide = c.guide;
+          }
+        }
+      }
+
+      const snappedX = bestX !== null ? bestX : nextX;
+      const snappedY = bestY !== null ? bestY : nextY;
+      if (bestXGuide !== null) vGuides.push(bestXGuide);
+      if (bestYGuide !== null) hGuides.push(bestYGuide);
+      // Also keep the centre guide if it was the best (already in v/hGuides)
+      // For the dragged badge's own centre, the guide is at middle, which is already added
+      // via canvasCandidates. No duplicate needed.
+      return { snappedX, snappedY, vGuides, hGuides };
+    },
+    [viewOptions?.snapToGrid, previewRatings, getBadgeRect, getBadgeSize, selectedIds]
+  );
 
   const lastDist = useRef<number | null>(null);
   const lastPan = useRef<{ x: number; y: number } | null>(null);
@@ -270,6 +382,19 @@ const PreviewCanvas: React.FC<Props> = ({
 
   const previewImageUrl = cleanPosterUrl;
 
+  const isShowingFallback = useMemo(() => {
+    const rawImdb = config.imdbId?.trim() ?? '';
+    const rawTmdb = config.tmdbId?.trim() ?? '';
+    if (!rawImdb && !rawTmdb) return false; // empty is default state, not a fallback warning
+    const validImdb = /^tt\d{7,10}$/.test(rawImdb);
+    const validTmdb = /^\d{1,8}$/.test(rawTmdb);
+    if (rawImdb) return !validImdb;
+    if (rawTmdb) return !validTmdb;
+    return false;
+  }, [config.imdbId, config.tmdbId]);
+
+  const fallbackNotice = isShowingFallback ? `Showing default • invalid ID "${config.imdbId || config.tmdbId}"` : null;
+
   const posterCssFilter = useMemo(() => {
     const parts: string[] = [];
     if (config.posterBlur > 0) parts.push(`blur(${config.posterBlur}px)`);
@@ -283,11 +408,14 @@ const PreviewCanvas: React.FC<Props> = ({
   }, [previewImageUrl]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const id = config.imdbId || config.tmdbId;
+    // handle fallback case: preview may be showing DEFAULT_CONFIG id
+    const id = config.imdbId || config.tmdbId || DEFAULT_CONFIG.imdbId;
     if (id && e.currentTarget.src.includes(id)) setIsImageLoading(false);
+    else setIsImageLoading(false);
   };
   const handleImageError = () => {
     setIsImageLoading(false);
+    // if the effective fallback also fails, show error; otherwise we already show fallback via url-generator
     setImageError(true);
   };
 
@@ -314,8 +442,8 @@ const PreviewCanvas: React.FC<Props> = ({
       if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - prev.logoH / 2;
       return {
         ...prev,
-        logoX: Math.round(Math.max(1 - prev.logoW, Math.min(nextX, CANVAS_WIDTH - 1))),
-        logoY: Math.round(Math.max(1 - prev.logoH, Math.min(nextY, CANVAS_HEIGHT - 1))),
+        logoX: Math.round(Math.max(0, Math.min(nextX, CANVAS_WIDTH - prev.logoW))),
+        logoY: Math.round(Math.max(0, Math.min(nextY, CANVAS_HEIGHT - prev.logoH))),
       };
     });
   };
@@ -486,8 +614,9 @@ const PreviewCanvas: React.FC<Props> = ({
           Math.ceil(titleCharHeight * textSize * textLineHeight + 16 * displayScale)
         );
         const boxH = Math.max(36, estimatedHeight);
-        ti.x = Math.max(1 - boxW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
-        ti.y = Math.max(1 - boxH, Math.min(snap(startY + dy), CANVAS_HEIGHT - 1));
+        // Keep title fully inside poster when selected — prevents label/selection-dot leak
+        ti.x = Math.max(0, Math.min(snap(startX + dx), CANVAS_WIDTH - boxW));
+        ti.y = Math.max(0, Math.min(snap(startY + dy), CANVAS_HEIGHT - boxH));
         return { ...prev, items: { ...prev.items, title: ti }, layout: 'custom', preset: 'custom' };
       });
       return;
@@ -529,8 +658,17 @@ const PreviewCanvas: React.FC<Props> = ({
           getScale(prev.size) * (prev.items?.[targetId]?.scale ?? prev.scale ?? 1.0);
         const badgeW = BASE_BADGE_W * baseScale;
         const badgeH = BASE_BADGE_H * baseScale;
-        const clampedX = Math.max(1 - badgeW, Math.min(snap(startX + dx), CANVAS_WIDTH - 1));
-        const clampedY = Math.max(1 - badgeH, Math.min(snap(startY + dy), CANVAS_HEIGHT - 1));
+        // Grid snap + soft inter-badge snap (edges/centres + canvas edges)
+        let nextX = snap(startX + dx);
+        let nextY = snap(startY + dy);
+        if (viewOptions?.snapToGrid) {
+          const snapped = getInterBadgeSnap(targetId, nextX, nextY, badgeW, badgeH);
+          nextX = snapped.snappedX;
+          nextY = snapped.snappedY;
+        }
+        // Keep badge fully inside poster — prevents selection dot and label leak outside canvas
+        const clampedX = Math.max(0, Math.min(nextX, CANVAS_WIDTH - badgeW));
+        const clampedY = Math.max(0, Math.min(nextY, CANVAS_HEIGHT - badgeH));
         newItems[targetId] = { ...newItems[targetId], x: clampedX, y: clampedY };
       };
 
@@ -561,19 +699,29 @@ const PreviewCanvas: React.FC<Props> = ({
     if (!isFinite(y)) y = auto.y;
 
     const { w: bW, h: bH } = getBadgeSize(tid, iCfg);
-    const nextX = Math.max(1 - bW, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - 1));
-    const nextY = Math.max(1 - bH, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - 1));
-    const centerX = nextX + bW / 2;
-    const centerY = nextY + bH / 2;
+    const rawNextX = Math.max(0, Math.min(applySnapGrid(x + dragSession.dx), CANVAS_WIDTH - bW));
+    const rawNextY = Math.max(0, Math.min(applySnapGrid(y + dragSession.dy), CANVAS_HEIGHT - bH));
+    const snapped = getInterBadgeSnap(tid, rawNextX, rawNextY, bW, bH);
+    // Preserve centre-guide semantics for existing callers, but also expose full guide arrays
     const middleX = CANVAS_WIDTH / 2;
     const middleY = CANVAS_HEIGHT / 2;
+    const centreV = Math.abs(rawNextX + bW / 2 - middleX) <= SNAP_CENTER_TOLERANCE;
+    const centreH = Math.abs(rawNextY + bH / 2 - middleY) <= SNAP_CENTER_TOLERANCE;
+    const vGuides = [...snapped.vGuides];
+    const hGuides = [...snapped.hGuides];
+    if (centreV && !vGuides.includes(middleX)) vGuides.push(middleX);
+    if (centreH && !hGuides.includes(middleY)) hGuides.push(middleY);
     return {
-      showVertical: Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE,
-      showHorizontal: Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE,
-      middleX,
-      middleY,
+      showVertical: vGuides.length > 0,
+      showHorizontal: hGuides.length > 0,
+      middleX: vGuides[0] ?? middleX,
+      middleY: hGuides[0] ?? middleY,
+      vGuides,
+      hGuides,
+      snappedX: snapped.snappedX,
+      snappedY: snapped.snappedY,
     };
-  }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings]);
+  }, [dragSession, viewOptions?.snapToGrid, config, applySnapGrid, previewRatings, getInterBadgeSnap, getBadgeSize]);
 
   // Fresh-value refs so the pan-to-selection effect only re-runs on selection change.
   const panRef = useRef(pan);
@@ -657,9 +805,45 @@ const PreviewCanvas: React.FC<Props> = ({
           </div>
         )}
         {imageError && (
-          <div className="absolute inset-0 z-40 bg-[rgba(14,13,11,0.8)] backdrop-blur flex flex-col items-center justify-center text-[rgba(248,113,113,0.85)] gap-2 pointer-events-none">
+          <div className="absolute inset-0 z-40 bg-[rgba(14,13,11,0.85)] backdrop-blur flex flex-col items-center justify-center text-[rgba(248,113,113,0.85)] gap-3 p-4">
             <AlertCircle size={32} />
-            <span className="text-xs font-mono">Failed to load</span>
+            <span className="text-xs font-mono">Failed to load poster</span>
+            <span className="text-[10px] mono-font text-[var(--film-text-dim)] text-center">
+              Check the ID or try a different source
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setImageError(false);
+                setIsImageLoading(true);
+                // force reload by touching config with fallback
+                setConfig((prev) => ({ ...prev, imdbId: DEFAULT_CONFIG.imdbId, tmdbId: '' }));
+              }}
+              className="mt-1 px-3 py-1.5 rounded-lg mono-font text-[10px] font-bold uppercase tracking-wider"
+              style={{
+                background: 'rgba(196,124,46,0.15)',
+                border: '1px solid rgba(196,124,46,0.3)',
+                color: 'var(--film-amber)',
+                cursor: 'pointer',
+              }}
+            >
+              Show default
+            </button>
+          </div>
+        )}
+        {fallbackNotice && !isImageLoading && !imageError && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <span
+              className="mono-font px-2 py-1 rounded-full text-[9px] uppercase tracking-wider"
+              style={{
+                background: 'rgba(248,113,113,0.12)',
+                border: '1px solid rgba(248,113,113,0.25)',
+                color: 'rgba(248,113,113,0.9)',
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              {fallbackNotice}
+            </span>
           </div>
         )}
 
@@ -691,31 +875,37 @@ const PreviewCanvas: React.FC<Props> = ({
             </div>
           </div>
         )}
-        {badgeSnapGuide?.showVertical && (
-          <div
-            className="absolute pointer-events-none z-30"
-            style={{
-              left: badgeSnapGuide.middleX,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'rgba(196,124,46,0.8)',
-              transform: 'translateX(-50%)',
-            }}
-          />
+        {(badgeSnapGuide?.vGuides ?? (badgeSnapGuide?.showVertical ? [badgeSnapGuide.middleX] : [])).map(
+          (gx, i) => (
+            <div
+              key={`v-${i}-${gx}`}
+              className="absolute pointer-events-none z-30"
+              style={{
+                left: gx,
+                top: 0,
+                bottom: 0,
+                width: 1,
+                background: 'rgba(196,124,46,0.8)',
+                transform: 'translateX(-50%)',
+              }}
+            />
+          )
         )}
-        {badgeSnapGuide?.showHorizontal && (
-          <div
-            className="absolute pointer-events-none z-30"
-            style={{
-              top: badgeSnapGuide.middleY,
-              left: 0,
-              right: 0,
-              height: 1,
-              background: 'rgba(196,124,46,0.8)',
-              transform: 'translateY(-50%)',
-            }}
-          />
+        {(badgeSnapGuide?.hGuides ?? (badgeSnapGuide?.showHorizontal ? [badgeSnapGuide.middleY] : [])).map(
+          (gy, i) => (
+            <div
+              key={`h-${i}-${gy}`}
+              className="absolute pointer-events-none z-30"
+              style={{
+                top: gy,
+                left: 0,
+                right: 0,
+                height: 1,
+                background: 'rgba(196,124,46,0.8)',
+                transform: 'translateY(-50%)',
+              }}
+            />
+          )
         )}
 
         {/* Poster image — FIX: posterBlur/grayscale via CSS filter, not URL param */}
@@ -765,19 +955,18 @@ const PreviewCanvas: React.FC<Props> = ({
             const isGroup = selectedIds.has(dragSession.id as RatingType) && selectedIds.has(id);
             if (isTarget || isGroup) {
               const { w: bW, h: bH } = getBadgeSize(id, iCfg);
-              // Preview clamp: at least 1px inside poster
               let nextX = x + dragSession.dx;
               let nextY = y + dragSession.dy;
               if (viewOptions?.snapToGrid) {
-                const centerX = nextX + bW / 2;
-                const centerY = nextY + bH / 2;
-                const middleX = CANVAS_WIDTH / 2;
-                const middleY = CANVAS_HEIGHT / 2;
-                if (Math.abs(centerX - middleX) <= SNAP_CENTER_TOLERANCE) nextX = middleX - bW / 2;
-                if (Math.abs(centerY - middleY) <= SNAP_CENTER_TOLERANCE) nextY = middleY - bH / 2;
+                nextX = applySnapGrid(nextX);
+                nextY = applySnapGrid(nextY);
+                // Soft snap to canvas centre / edges and to nearby badges
+                const snapped = getInterBadgeSnap(id, nextX, nextY, bW, bH);
+                nextX = snapped.snappedX;
+                nextY = snapped.snappedY;
               }
-              x = Math.max(1 - bW, Math.min(nextX, CANVAS_WIDTH - 1));
-              y = Math.max(1 - bH, Math.min(nextY, CANVAS_HEIGHT - 1));
+              x = Math.max(0, Math.min(nextX, CANVAS_WIDTH - bW));
+              y = Math.max(0, Math.min(nextY, CANVAS_HEIGHT - bH));
             }
           }
 
