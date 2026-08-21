@@ -13,7 +13,7 @@ const SelectBox = memo<SelectBoxProps>(({ value, onChange, options }) => (
   <Listbox value={value} onChange={onChange}>
     <div className="relative">
       <ListboxButton
-        className="w-full flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
+        className="w-full flex items-center justify-between gap-1 h-11 px-2.5 rounded-lg text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C47C2E] syne-font"
         style={{
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.1)',
@@ -43,7 +43,7 @@ const SelectBox = memo<SelectBoxProps>(({ value, onChange, options }) => (
             value={opt.id}
             className={({ active, selected }) =>
               clsx(
-                'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors syne-font',
+                'flex items-center gap-2 px-3 py-3.5 min-h-[44px] cursor-pointer transition-colors syne-font',
                 active && 'bg-[rgba(196,124,46,0.1)]',
                 !active && selected && 'text-[var(--film-pale)]',
                 !active && !selected && 'text-[var(--film-text-label)]'

@@ -38,8 +38,6 @@ import {
   ZoomIn,
   ZoomOut,
   Grid3x3,
-  Grid2x2,
-  Expand,
   ShieldCheck,
   Eye,
   EyeOff,
@@ -60,7 +58,6 @@ import {
   ChevronDown,
   BookOpen,
   CopyPlus,
-  Copy,
   Check,
   Trash2,
   Link2,
@@ -165,7 +162,7 @@ const StudioLayout: React.FC<{
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [bottomPanelTab, setBottomPanelTab] = useState<
-    'source' | 'layers' | 'badges' | 'selection' | 'view'
+    'source' | 'layers' | 'badges' | 'selection'
   >('source');
   const [mobileExportOpen, setMobileExportOpen] = useState(false);
   // Starter helper card — shows on a blank canvas (fresh visit or reset) and
@@ -246,15 +243,8 @@ const StudioLayout: React.FC<{
     setImportError(null);
   }, [importUrl, loadConfigInline, setImportError, setImportUrl]);
 
-  // View-tab fullscreen — native Fullscreen API on the mobile canvas element
-  // (the toggle handler itself lives with the desktop fullscreen logic below;
-  // this only tracks the native state for the View-tab button label).
-  const [mobileFsActive, setMobileFsActive] = useState(false);
-  useEffect(() => {
-    const onFs = () => setMobileFsActive(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onFs);
-    return () => document.removeEventListener('fullscreenchange', onFs);
-  }, []);
+  // Native Fullscreen API is handled by ZoomOverlay's internal nativeFs state
+  // on mobile (the pill) and by the desktop isFullscreen state.
 
   const {
     bottomPanelOpen,
@@ -268,7 +258,7 @@ const StudioLayout: React.FC<{
   } = useMobileBottomSheet(mobileRootRef);
 
   const openBottomPanel = useCallback(
-    (tab: 'source' | 'layers' | 'badges' | 'selection' | 'view') => {
+    (tab: 'source' | 'layers' | 'badges' | 'selection') => {
       setBottomPanelTab(tab);
       setMobileExportOpen(false);
       openBottomPanelSheet();
@@ -1438,7 +1428,7 @@ const StudioLayout: React.FC<{
               } as React.CSSProperties
             }
           >
-            {/* ── MOBILE HEADER — two rows (100px + safe-top) ── */}
+            {/* ── MOBILE HEADER — two rows (96px = 52 + 44 + safe-top) ── */}
             {/* Row 1 (56px): brand lockup left (same POSTER/IUM mark as the
                desktop header) + the primary Export action right. Row 2 (44px):
                the tool strip — mode, import, reset (two-tap), tour — every
@@ -1450,43 +1440,28 @@ const StudioLayout: React.FC<{
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 'calc(100px + env(safe-area-inset-top, 0px))',
+                height: 'calc(96px + env(safe-area-inset-top, 0px))',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
                 zIndex: 40,
                 background: 'rgba(7,7,6,0.97)',
-                borderBottom: '1px solid rgba(196,124,46,0.08)',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              {/* Ambient gradient rule on header bottom — matches desktop header exactly */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 1,
-                  background:
-                    'linear-gradient(90deg, transparent, rgba(196,124,46,0.15), transparent)',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* ── ROW 1 — identity + primary action ── */}
+              {/* ── ROW 1 — Global Application Header (52px) ── */}
+              {/* Brand left, search + export right. Search uses a subtle container to balance Export's weight. */}
               <div
                 style={{
-                  flex: 1,
-                  minWidth: 0,
-                  height: 56,
+                  height: 52,
+                  flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '0 8px',
-                  gap: 6,
+                  padding: '0 16px',
+                  gap: 12,
                 }}
               >
-                {/* Wordmark — the real brand lockup (matches BuilderDesktopHeader) */}
+                {/* Brand — Posterium wordmark */}
                 <a
                   href="/"
                   aria-label="Posterium home"
@@ -1496,8 +1471,8 @@ const StudioLayout: React.FC<{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    height: 44,
-                    padding: '0 6px',
+                    height: 32,
+                    padding: 0,
                   }}
                 >
                   <img
@@ -1528,34 +1503,34 @@ const StudioLayout: React.FC<{
 
                 <div style={{ flex: 1 }} />
 
-                {/* Search / commands — opens the CommandPalette (same surface as
-                   desktop's ⌘K search field; lives in the shared modal layer) */}
+                {/* Search trigger — subtle container to balance Export weight */}
                 <button
                   onClick={() => {
                     closeBottomPanel();
                     setPaletteOpen(true);
                   }}
                   aria-label="Search commands"
+                  title="Search commands"
                   className="active:scale-95"
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 32,
+                    height: 32,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    color: 'rgba(240,230,204,0.72)',
+                    background: 'rgba(39,39,42,0.6)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    color: 'rgba(212,212,216,0.85)',
                     cursor: 'pointer',
                     WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease',
+                    transition: 'transform 0.12s ease, background 0.15s ease',
                   }}
                 >
-                  <Search size={16} />
+                  <Search size={18} />
                 </button>
 
-                {/* PRIMARY ACTION — Export (opens the 3-step mobile sheet) */}
+                {/* Primary CTA — Export */}
                 <button
                   onClick={() => {
                     closeBottomPanel();
@@ -1564,10 +1539,11 @@ const StudioLayout: React.FC<{
                     setMobileExportOpen(true);
                   }}
                   aria-label="Export poster"
+                  className="active:scale-95"
                   style={{
-                    height: 44,
+                    height: 36,
                     paddingInline: 16,
-                    borderRadius: 4,
+                    borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1577,291 +1553,261 @@ const StudioLayout: React.FC<{
                     border: 'none',
                     cursor: 'pointer',
                     flexShrink: 0,
-                    boxShadow: '0 0 20px rgba(196,124,46,0.25)',
+                    fontFamily: 'inherit',
+                    fontWeight: 700,
                     transition: 'transform 0.12s ease',
                   }}
-                  className="active:scale-95"
                 >
-                  <Download size={13} />
+                  <Download size={16} />
                   <span
                     className="syne-font"
-                    style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}
+                    style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.06em' }}
                   >
-                    EXPORT
+                    Export
                   </span>
                 </button>
               </div>
 
-              {/* ── ROW 2 — tool strip (every tool visible, 44px targets) ── */}
-              {/* Desktop toolbar translated to a strip: undo/redo pair, mode,
-                   import, reset (two-tap), tour. Hairlines group the clusters
-                   exactly like the desktop header. Strip scrolls only as a
-                   safety net below ~340px. */}
+              {/* Row divider — distinct 1px line */}
               <div
-                className="mobile-header-scroll"
+                aria-hidden="true"
+                style={{
+                  height: 1,
+                  flexShrink: 0,
+                  background: 'rgba(255,255,255,0.08)',
+                }}
+              />
+
+              {/* ── ROW 2 — Contextual Toolbar & Canvas Controls (44px) ── */}
+              {/* History | Preset (center) | Utilities — unified monochrome, amber active, 32px targets */}
+              <div
                 style={{
                   height: 44,
                   flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 2,
                   padding: '0 8px',
-                  overflowX: 'auto',
-                  scrollbarWidth: 'none',
-                  WebkitOverflowScrolling: 'touch',
-                  borderTop: '1px solid rgba(196,124,46,0.08)',
-                  background: 'rgba(196,124,46,0.03)',
+                  gap: 4,
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.02)',
                 }}
               >
-                {/* Undo / redo — captioned mirrored pair (ambiguous icons get
-                     labels), disabled states match desktop's ToolbarBtn */}
-                <button
-                  onClick={() => {
-                    setResetArmed(false);
-                    undo();
-                  }}
-                  disabled={!canUndo}
-                  aria-label="Undo"
-                  className="active:scale-95"
-                  style={{
-                    height: 44,
-                    minWidth: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    padding: '0 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: canUndo ? 'pointer' : 'default',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease',
-                  }}
-                >
-                  <Undo2
-                    size={16}
-                    style={{
-                      color: canUndo ? 'rgba(240,230,204,0.72)' : 'rgba(140,130,112,0.25)',
+                {/* Left group — History (icon-only, 32px targets) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    onClick={() => {
+                      setResetArmed(false);
+                      undo();
                     }}
-                  />
-                  <span
-                    className="mono-font"
+                    disabled={!canUndo}
+                    aria-label="Undo"
+                    title="Undo"
+                    className="active:scale-95"
                     style={{
-                      fontSize: 8,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: canUndo ? 'rgba(240,230,204,0.55)' : 'rgba(140,130,112,0.25)',
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: canUndo ? 'rgba(212,212,216,0.85)' : 'rgba(212,212,216,0.3)',
+                      cursor: canUndo ? 'pointer' : 'default',
+                      opacity: canUndo ? 1 : 0.3,
+                      pointerEvents: canUndo ? 'auto' : 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'transform 0.12s ease, color 0.15s ease',
                     }}
                   >
-                    Undo
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setResetArmed(false);
-                    redo();
-                  }}
-                  disabled={!canRedo}
-                  aria-label="Redo"
-                  className="active:scale-95"
-                  style={{
-                    height: 44,
-                    minWidth: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    padding: '0 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: canRedo ? 'pointer' : 'default',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease',
-                  }}
-                >
-                  <Redo2
-                    size={16}
-                    style={{
-                      color: canRedo ? 'rgba(240,230,204,0.72)' : 'rgba(140,130,112,0.25)',
+                    <Undo2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setResetArmed(false);
+                      redo();
                     }}
-                  />
-                  <span
-                    className="mono-font"
+                    disabled={!canRedo}
+                    aria-label="Redo"
+                    title="Redo"
+                    className="active:scale-95"
                     style={{
-                      fontSize: 8,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: canRedo ? 'rgba(240,230,204,0.55)' : 'rgba(140,130,112,0.25)',
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: canRedo ? 'rgba(212,212,216,0.85)' : 'rgba(212,212,216,0.3)',
+                      cursor: canRedo ? 'pointer' : 'default',
+                      opacity: canRedo ? 1 : 0.3,
+                      pointerEvents: canRedo ? 'auto' : 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'transform 0.12s ease, color 0.15s ease',
                     }}
                   >
-                    Redo
-                  </span>
-                </button>
+                    <Redo2 size={18} />
+                  </button>
+                </div>
 
+                {/* Separator — History | Preset */}
                 <div
                   aria-hidden="true"
                   style={{
                     width: 1,
-                    height: 16,
+                    height: 20,
                     margin: '0 4px',
-                    background: 'rgba(196,124,46,0.12)',
+                    background: 'rgba(255,255,255,0.08)',
+                    flexShrink: 0,
                   }}
                 />
 
-                {/* Mode — segmented dropdown, self-labeled */}
-                <div style={{ display: 'flex', alignItems: 'center', height: 44 }}>
+                {/* Center group — Configuration / Preset (center-anchored pill) */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
                   <ModeToggle mode={builderMode} onChange={setBuilderMode} />
                 </div>
 
+                {/* Separator — Preset | Utilities */}
                 <div
                   aria-hidden="true"
                   style={{
                     width: 1,
-                    height: 16,
+                    height: 20,
                     margin: '0 4px',
-                    background: 'rgba(196,124,46,0.12)',
+                    background: 'rgba(255,255,255,0.08)',
+                    flexShrink: 0,
                   }}
                 />
 
-                {/* Import — opens the Source tab of the bottom sheet */}
-                <button
-                  onClick={() => {
-                    setResetArmed(false);
-                    setBottomPanelTab('source');
-                    openBottomPanelSheet();
-                    setImportFocus((f) => f + 1);
-                  }}
-                  aria-label="Import from URL"
-                  className="active:scale-95"
-                  style={{
-                    height: 44,
-                    minWidth: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    padding: '0 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease',
-                  }}
-                >
-                  <Link2 size={15} style={{ color: 'rgba(196,124,46,0.8)' }} />
-                  <span
-                    className="mono-font"
+                {/* Right group — Utilities (icon-only, 32px targets) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    onClick={() => {
+                      setResetArmed(false);
+                      setBottomPanelTab('source');
+                      openBottomPanelSheet();
+                      setImportFocus((f) => f + 1);
+                    }}
+                    aria-label="Import from URL"
+                    title="Import"
+                    className="active:scale-95"
                     style={{
-                      fontSize: 8,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(240,230,204,0.6)',
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: 'rgba(212,212,216,0.7)',
+                      cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'transform 0.12s ease, background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(255,255,255,0.06)';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color =
+                        'rgba(212,212,216,0.7)';
                     }}
                   >
-                    Import
-                  </span>
-                </button>
+                    <Link2 size={18} />
+                  </button>
 
-                {/* Reset — weighted destructive, two-tap armed; disarms on any
-                   other tool tap */}
-                <button
-                  onClick={() => {
-                    if (!resetArmed) {
-                      setResetArmed(true);
-                      return;
-                    }
-                    setResetArmed(false);
-                    handleReset();
-                  }}
-                  aria-label={resetArmed ? 'Confirm reset poster' : 'Reset poster'}
-                  className="active:scale-95"
-                  style={{
-                    height: 44,
-                    minWidth: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    padding: '0 8px',
-                    background: resetArmed ? 'rgba(248,113,113,0.12)' : 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease, background 0.15s ease',
-                  }}
-                >
-                  <RotateCcw size={15} style={{ color: 'rgba(248,113,113,0.9)' }} />
-                  <span
-                    className="mono-font"
+                  {/* Reset — neutral by default, red on hover/armed */}
+                  <button
+                    onClick={() => {
+                      if (!resetArmed) {
+                        setResetArmed(true);
+                        return;
+                      }
+                      setResetArmed(false);
+                      handleReset();
+                    }}
+                    aria-label={resetArmed ? 'Confirm reset poster' : 'Reset poster'}
+                    title={resetArmed ? 'Tap again to confirm' : 'Reset'}
+                    className="active:scale-95"
                     style={{
-                      fontSize: 8,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: resetArmed ? '#fca5a5' : 'rgba(248,113,113,0.8)',
-                      whiteSpace: 'nowrap',
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: resetArmed ? 'rgba(248,113,113,0.12)' : 'transparent',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: resetArmed ? '#f87171' : 'rgba(212,212,216,0.7)',
+                      cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'transform 0.12s ease, background 0.15s ease, color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!resetArmed) {
+                        (e.currentTarget as HTMLButtonElement).style.background =
+                          'rgba(248,113,113,0.08)';
+                        (e.currentTarget as HTMLButtonElement).style.color = '#f87171';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!resetArmed) {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          'rgba(212,212,216,0.7)';
+                      }
                     }}
                   >
-                    {resetArmed ? 'Tap again' : 'Reset'}
-                  </span>
-                </button>
+                    <RotateCcw size={18} />
+                  </button>
 
-                {/* Re-run tour */}
-                <button
-                  onClick={() => {
-                    setResetArmed(false);
-                    clearWalkthroughState();
-                    window.location.reload();
-                  }}
-                  aria-label="Re-run tour"
-                  className="active:scale-95"
-                  style={{
-                    height: 44,
-                    minWidth: 44,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    padding: '0 8px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.12s ease',
-                  }}
-                >
-                  <BookOpen size={15} style={{ color: 'rgba(196,124,46,0.8)' }} />
-                  <span
-                    className="mono-font"
+                  <button
+                    onClick={() => {
+                      setResetArmed(false);
+                      clearWalkthroughState();
+                      window.location.reload();
+                    }}
+                    aria-label="Re-run tour"
+                    title="Tour"
+                    className="active:scale-95"
                     style={{
-                      fontSize: 8,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(240,230,204,0.6)',
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 8,
+                      color: 'rgba(212,212,216,0.7)',
+                      cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'transform 0.12s ease, background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(255,255,255,0.06)';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color =
+                        'rgba(212,212,216,0.7)';
                     }}
                   >
-                    Tour
-                  </span>
-                </button>
+                    <BookOpen size={18} />
+                  </button>
+                </div>
               </div>
             </header>
 
             {/* ── CANVAS ── */}
-            {/* Top: 100px (two-row header) + safe-area-inset-top (notch in
+            {/* Top: 96px (52 + 44 two-row header) + safe-area-inset-top (notch in
                PWA standalone). Bottom: 64px (tab bar) + safe-area + var(--bph)
                (bottom sheet). */}
             {/* Transition on bottom must match the sheet's spring exactly:
@@ -1874,7 +1820,7 @@ const StudioLayout: React.FC<{
               className="mobile-canvas"
               style={{
                 position: 'absolute',
-                top: 'calc(100px + env(safe-area-inset-top, 0px))',
+                top: 'calc(96px + env(safe-area-inset-top, 0px))',
                 left: 0,
                 right: 0,
                 bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + var(--bph, 0px))',
@@ -1884,7 +1830,7 @@ const StudioLayout: React.FC<{
                   ? 'none'
                   : 'bottom 0.45s cubic-bezier(0.32, 0.72, 0, 1)',
               }}
-              onClick={(e) => {
+               onClick={(e) => {
                 if (e.target === e.currentTarget) clearSelection();
               }}
             >
@@ -1900,13 +1846,13 @@ const StudioLayout: React.FC<{
               <FilmCorners />
             </main>
 
-            {/* ── EDGE HANDLES + DRAWERS (every mobile size — the arrows are the
-               panels' primary access) ── */}
-            {/* Left handle = layers/panels drawer; right handle = inspector
-               drawer. Opening a drawer retreats the bottom sheet so the
-               panels always read as an overlay. */}
-            <>
-              {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
+            {/* ── EDGE HANDLES + DRAWERS — tablet only (700–1023px) ── */}
+            {/* Phone (<700) uses only the bottom sheet (Source / Layers / Badges / Edit);
+                side drawers are redundant IA and tiny 22px targets. Tablet legitimately
+                has gutter space for drawers (diagnosis 2.15). */}
+            {isTablet && (
+              <>
+                {/* ── LEFT EDGE HANDLE (Layers toggle) ── */}
               {/* Width: 22px. Height: 64px. Centered vertically at 50%. Rounded right corners only. */}
               {/* z-index: 30 (above canvas, below drawers). */}
               <button
@@ -2004,7 +1950,7 @@ const StudioLayout: React.FC<{
                 aria-hidden={!leftPanelOpen}
                 style={{
                   position: 'absolute',
-                  top: 'calc(100px + env(safe-area-inset-top, 0px))',
+                  top: 'calc(96px + env(safe-area-inset-top, 0px))',
                   left: 0,
                   bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
                   width: 'min(280px, 85vw)',
@@ -2179,7 +2125,7 @@ const StudioLayout: React.FC<{
                 aria-hidden={!rightPanelOpen}
                 style={{
                   position: 'absolute',
-                  top: 'calc(100px + env(safe-area-inset-top, 0px))',
+                  top: 'calc(96px + env(safe-area-inset-top, 0px))',
                   right: 0,
                   bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
                   width: 'min(280px, 85vw)',
@@ -2339,7 +2285,8 @@ const StudioLayout: React.FC<{
                   )}
                 </div>
               </aside>
-            </>
+              </>
+            )}
 
             {/* ── BOTTOM SHEET PANEL ── */}
             {/* Position: above the bottom nav bar (56px + safe area). */}
@@ -2730,184 +2677,6 @@ const StudioLayout: React.FC<{
                   />
                 </div>
 
-                {/* VIEW TAB CONTENT — the mobile settings page (diagnosis 2.8):
-                    zoom slider, fit-to-screen, snap-to-grid, fullscreen. */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehavior: 'contain',
-                    display: bottomPanelTab === 'view' ? 'block' : 'none',
-                    padding: '12px 12px 24px',
-                  }}
-                >
-                  <div
-                    style={{
-                      height: 44,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '0 8px',
-                    }}
-                  >
-                    <span
-                      className="syne-font"
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        color: 'var(--film-cream)',
-                      }}
-                    >
-                      Zoom
-                    </span>
-                    <span
-                      className="mono-font"
-                      style={{ fontSize: 11, color: 'var(--film-amber)' }}
-                    >
-                      {Math.round(viewZoom * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={2.5}
-                    step={0.05}
-                    value={viewZoom}
-                    aria-label="Canvas zoom"
-                    onChange={(e) => {
-                      const nz = parseFloat(e.target.value);
-                      // Dispatch outside the updater: a side effect inside the
-                      // setState updater would double-fire under StrictMode.
-                      dispatchZoom(nz - viewZoom);
-                      setViewZoom(nz);
-                    }}
-                    style={{ width: '100%', height: 28, margin: '2px 0 10px' }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 12,
-                      background: 'rgba(14,13,11,0.7)',
-                      border: '1px solid rgba(196,124,46,0.12)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        setViewZoom(1);
-                        dispatchResetView();
-                      }}
-                      style={{
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '0 12px',
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid rgba(196,124,46,0.08)',
-                        color: 'var(--film-cream)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: 12,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      <Maximize2 size={15} style={{ color: 'rgba(196,124,46,0.7)' }} />
-                      Fit poster to screen
-                    </button>
-                    <div
-                      style={{
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '0 12px',
-                        borderBottom: '1px solid rgba(196,124,46,0.08)',
-                      }}
-                    >
-                      <Grid2x2 size={15} style={{ color: 'rgba(196,124,46,0.7)', flexShrink: 0 }} />
-                      <span
-                        className="syne-font"
-                        style={{
-                          flex: 1,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: 'var(--film-cream)',
-                        }}
-                      >
-                        Snap to grid
-                      </span>
-                      <button
-                        role="switch"
-                        aria-checked={!!viewOptions.snapToGrid}
-                        onClick={() => toggleViewOption('snapToGrid')}
-                        aria-label="Snap to grid"
-                        style={{
-                          width: 40,
-                          height: 24,
-                          borderRadius: 12,
-                          padding: 2,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: viewOptions.snapToGrid ? 'flex-end' : 'flex-start',
-                          background: viewOptions.snapToGrid
-                            ? 'rgba(196,124,46,0.85)'
-                            : 'rgba(255,255,255,0.12)',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'background 0.15s',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            background: '#fff',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-                          }}
-                        />
-                      </button>
-                    </div>
-                    <button
-                      onClick={handleMobileFullscreen}
-                      style={{
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '0 12px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--film-cream)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: 12,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {mobileFsActive ? (
-                        <Minimize2 size={15} style={{ color: 'rgba(196,124,46,0.7)' }} />
-                      ) : (
-                        <Expand size={15} style={{ color: 'rgba(196,124,46,0.7)' }} />
-                      )}
-                      {mobileFsActive ? 'Exit fullscreen' : 'Fullscreen canvas'}
-                    </button>
-                  </div>
-                </div>
-
                 {/* SELECTION TAB CONTENT — Inspector becomes a dynamic 4th tab
                     (diagnosis 2.9): shown in the nav bar only while a badge is
                     selected; opens SelectionPanel for fine adjustments. */}
@@ -2997,21 +2766,22 @@ const StudioLayout: React.FC<{
                 onTouchEnd={() => endBottomPanelDrag()}
               />
 
-              {/* Nav buttons row — fills the 64px of the nav (excluding safe-area padding at bottom) */}
+              {/* Nav buttons — idle: 3 tabs (Source / Layers / Badges) · selected: + Edit (Inspector). View tab removed — its zoom/settings live in the handle row + pill's gear popover. */}
               <div style={{ flex: 1, display: 'flex' }}>
                 {(
                   [
                     { id: 'source', label: 'Source', Icon: Film },
                     { id: 'layers', label: 'Layers', Icon: Layers },
                     { id: 'badges', label: 'Badges', Icon: Sliders },
-                    selectedCount > 0
-                      ? { id: 'selection', label: 'Edit', Icon: MousePointer2 }
-                      : { id: 'view', label: 'View', Icon: Eye },
+                    ...(selectedCount > 0
+                      ? [{ id: 'selection' as const, label: 'Edit', Icon: MousePointer2 }]
+                      : []),
                   ] as {
-                    id: 'source' | 'layers' | 'badges' | 'selection' | 'view';
+                    id: 'source' | 'layers' | 'badges' | 'selection';
                     label: string;
                     Icon: React.ComponentType<{
                       size?: number | string;
+                      strokeWidth?: number | string;
                       style?: React.CSSProperties;
                     }>;
                   }[]
@@ -3023,6 +2793,7 @@ const StudioLayout: React.FC<{
                       onClick={() => (active ? closeBottomPanel() : openBottomPanel(id))}
                       aria-label={`${label} panel`}
                       aria-pressed={active}
+                      className="active:scale-95"
                       style={{
                         position: 'relative',
                         flex: 1,
@@ -3031,33 +2802,36 @@ const StudioLayout: React.FC<{
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: 5,
-                        background: 'transparent',
+                        gap: 4,
+                        background: active ? 'rgba(196,124,46,0.08)' : 'transparent',
                         border: 'none',
-                        color: active ? 'var(--film-amber)' : 'rgba(140,130,112,0.45)',
+                        borderRadius: 12,
+                        margin: 4,
+                        color: active ? 'var(--film-amber)' : 'rgba(240,230,204,0.58)',
                         cursor: 'pointer',
-                        transition: 'color 0.15s',
+                        transition: 'color 0.15s ease, background 0.15s ease, transform 0.12s ease',
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      {/* Active indicator — 28px amber line at the top */}
+                      {/* Active indicator — 32px amber line at the top, 8pt-aligned */}
                       <span
                         aria-hidden="true"
                         style={{
                           position: 'absolute',
-                          top: 0,
+                          top: -4,
                           left: '50%',
                           transform: 'translateX(-50%)',
-                          width: 28,
-                          height: 2,
-                          borderRadius: '0 0 2px 2px',
+                          width: 32,
+                          height: 3,
+                          borderRadius: '0 0 3px 3px',
                           background: active ? 'var(--film-amber)' : 'transparent',
-                          boxShadow: active ? '0 0 8px rgba(196,124,46,0.5)' : 'none',
-                          transition: 'background 0.15s',
+                          boxShadow: active ? '0 2px 10px rgba(196,124,46,0.45)' : 'none',
+                          transition: 'background 0.15s ease',
                         }}
                       />
                       <Icon
-                        size={20}
+                        size={22}
+                        strokeWidth={active ? 2.2 : 1.8}
                         style={
                           active
                             ? { filter: 'drop-shadow(0 0 6px rgba(196,124,46,0.45))' }
@@ -3067,11 +2841,12 @@ const StudioLayout: React.FC<{
                       <span
                         className="syne-font"
                         style={{
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: 700,
-                          letterSpacing: '0.1em',
+                          letterSpacing: '0.08em',
                           textTransform: 'uppercase',
                           lineHeight: 1,
+                          opacity: active ? 1 : 0.9,
                         }}
                       >
                         {label}
@@ -3739,10 +3514,9 @@ const StudioLayout: React.FC<{
               />
             )}
 
-            {/* ── SELECTION ACTION BAR (diagnosis 2.5) ── */}
+            {/* ── SELECTION ACTION BAR — Edit / Delete only (Duplicate removed per user: not needed on mobile) ── */}
             {/* ≥44px floating bar above the tab bar while a badge is selected
-                and the sheet is closed — Duplicate / Edit / Delete. The
-                sheet's Edit tab (Inspector) is one tap away. */}
+                and the sheet is closed. The sheet's Edit tab (Inspector) is one tap away. */}
             {selectedCount > 0 && !bottomPanelOpen && !showStarterHelp && (
               <div
                 role="toolbar"
@@ -3762,38 +3536,6 @@ const StudioLayout: React.FC<{
                   padding: 2,
                 }}
               >
-                <button
-                  onClick={() => handleDuplicateBadge([...selectedIds])}
-                  aria-label="Duplicate badge"
-                  style={{
-                    height: 48,
-                    minWidth: 48,
-                    paddingInline: 14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 10,
-                    color: 'var(--film-cream)',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <Copy size={15} style={{ color: 'rgba(196,124,46,0.8)' }} />
-                  Duplicate
-                </button>
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: 1,
-                    alignSelf: 'stretch',
-                    margin: '10px 0',
-                    background: 'rgba(196,124,46,0.15)',
-                  }}
-                />
                 <button
                   onClick={() => {
                     setBottomPanelTab('selection');
