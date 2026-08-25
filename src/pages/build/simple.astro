@@ -1,0 +1,31 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SimpleChoiceBuilder from '@/components/builder/SimpleChoiceBuilder';
+import { SITE_CONFIG } from '@/lib/config';
+import type { PageSEOMetadata } from '@/lib/seo';
+import '@/styles/global.css';
+
+const canonical = `${SITE_CONFIG.baseUrl}/build/simple`;
+
+const seo: PageSEOMetadata = {
+  title: 'Guided Choice Poster Builder | Posterium',
+  description:
+    'Create a choice poster from a simple multiple-choice question with Posterium guided mode.',
+  keywords:
+    'choice poster builder, multiple choice poster, guided poster creator, simple poster builder, Posterium guided mode',
+  canonical,
+  ogImage: SITE_CONFIG.ogImageUrl,
+  ogImageAlt: 'Posterium guided choice poster builder',
+  robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+  breadcrumbs: [
+    { name: 'Home', url: SITE_CONFIG.baseUrl },
+    { name: 'Poster Builder', url: `${SITE_CONFIG.baseUrl}/build` },
+    { name: 'Guided Choice Poster Builder', url: canonical },
+  ],
+  jsonLd: [],
+};
+---
+
+<BaseLayout seo={seo} bodyClass="overflow-hidden">
+  <SimpleChoiceBuilder client:only="react" />
+</BaseLayout>
