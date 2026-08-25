@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Builder UI Concept Board</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #111833;
+        --panel-2: #1a2450;
+        --line: #2f3b73;
+        --text: #eaf0ff;
+        --muted: #a4b3de;
+        --accent: #7aa2ff;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: radial-gradient(circle at top, #101739 0%, var(--bg) 55%);
+        color: var(--text);
+        line-height: 1.45;
+      }
+
+      .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+      h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+      .subtitle { color: var(--muted); margin-bottom: 24px; }
+      h2 { margin-top: 42px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 16px;
+      }
+
+      .idea {
+        background: linear-gradient(180deg, var(--panel), #0f1530);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+      }
+
+      .idea h3 { margin: 0 0 8px; font-size: 1.02rem; }
+      .idea p { margin: 0 0 10px; color: var(--muted); font-size: 0.92rem; }
+
+      .wire {
+        border: 1px dashed #5465a6;
+        border-radius: 10px;
+        padding: 10px;
+        min-height: 220px;
+        background: rgba(255,255,255,0.015);
+      }
+
+      .bar, .pill, .block {
+        border: 1px solid #5c6eb6;
+        background: rgba(122, 162, 255, 0.12);
+        border-radius: 8px;
+      }
+
+      .bar { height: 34px; margin-bottom: 8px; }
+      .row { display: flex; gap: 8px; margin-bottom: 8px; }
+      .col { display: flex; flex-direction: column; gap: 8px; }
+      .pill { height: 24px; width: 38%; }
+      .block { height: 74px; flex: 1; }
+      .tiny { height: 28px; }
+      .phone {
+        max-width: 250px;
+        margin: 0 auto;
+        border-radius: 28px;
+        border: 2px solid #6f83d7;
+        padding: 10px;
+        background: #0a1030;
+      }
+      .legend { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+      code {
+        display: inline-block;
+        background: rgba(122,162,255,0.15);
+        border: 1px solid #5366b0;
+        border-radius: 6px;
+        padding: 2px 6px;
+        color: #c9d9ff;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Builder UI — Concept Board</h1>
+      <p class="subtitle">
+        Single-page rough outline with <strong>5 desktop layout ideas</strong> (simple + advanced modes) and <strong>10 phone-native UI ideas</strong>.<br />
+        Route target: <code>/experimental</code> (file: <code>public/experimental/index.html</code>).
+      </p>
+
+      <h2>Desktop Visual Ideas (for Discord sharing)</h2>
+      <div class="grid">
+        <section class="idea">
+          <h3>1) Studio Split Canvas (Simple)</h3>
+          <p><span class="legend">Goal:</span> 70% canvas + 30% right settings rail. Fast and focused beginner flow.</p>
+          <div class="wire">
+            <div class="bar"></div>
+            <div class="row"><div class="block" style="flex:2"></div><div class="col" style="flex:1"><div class="block"></div><div class="block tiny"></div><div class="block tiny"></div></div></div>
+            <div class="row"><div class="pill"></div><div class="pill"></div></div>
+          </div>
+        </section>
+
+        <section class="idea">
+          <h3>2) Dockable Pro Workspace (Advanced)</h3>
+          <p><span class="legend">Goal:</span> Multi-panel desktop app feel with dockable layers, inspector, timeline.</p>
+          <div class="wire">
+            <div class="bar"></div>
+            <div class="row"><div class="col" style="flex:0.8"><div class="block"></div><div class="block"></div></div><div class="block" style="flex:2"></div><div class="col" style="flex:1"><div class="block"></div><div class="block tiny"></div></div></div>
+            <div class="block tiny"></div>
+          </div>
+        </section>
+
+        <section class="idea">
+          <h3>3) Command Palette First (Simple→Advanced)</h3>
+          <p><span class="legend">Goal:</span> Keyboard-first productivity with slash commands and contextual actions.</p>
+          <div class="wire">
+            <div class="bar"></div>
+            <div class="block tiny" style="height:42px"></div>
+            <div class="row"><div class="block" style="flex:1.7"></div><div class="col" style="flex:1"><div class="block"></div><div class="block"></div></div></div>
+          </div>
+        </section>
+
+        <section class="idea">
+          <h3>4) Progressive Steps + Expert Toggle</h3>
+          <p><span class="legend">Goal:</span> Wizard-like simple mode, same screen unlocks expert controls in place.</p>
+          <div class="wire">
+            <div class="row"><div class="pill" style="width:18%"></div><div class="pill" style="width:18%"></div><div class="pill" style="width:18%"></div><div class="pill" style="width:18%"></div></div>
+            <div class="row"><div class="block" style="flex:1.5"></div><div class="block" style="flex:1"></div></div>
+            <div class="block tiny"></div>
+          </div>
+        </section>
+
+        <section class="idea">
+          <h3>5) Data Grid + Live Preview (Advanced)</h3>
+          <p><span class="legend">Goal:</span> Spreadsheet/panel for power users with synchronized visual preview.</p>
+          <div class="wire">
+            <div class="bar"></div>
+            <div class="row"><div class="block" style="flex:1.3"></div><div class="block" style="flex:1.7"></div></div>
+            <div class="row"><div class="block tiny" style="flex:1"></div><div class="block tiny" style="flex:1"></div><div class="block tiny" style="flex:1"></div></div>
+          </div>
+        </section>
+      </div>
+
+      <h2>Phone-Native UI Ideas</h2>
+      <div class="grid">
+        <section class="idea"><h3>1) Bottom Tabs + Floating Create</h3><p>Native 5-tab structure, thumb-reachable FAB for primary action.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="block tiny"></div><div class="row"><div class="pill"></div><div class="pill"></div></div></div></section>
+        <section class="idea"><h3>2) Sheet-Based Editing</h3><p>Edit controls open as bottom sheet while canvas stays fully visible.</p><div class="phone"><div class="bar"></div><div class="block" style="height:110px"></div><div class="block" style="height:80px"></div><div class="block tiny"></div></div></section>
+        <section class="idea"><h3>3) Gesture-Driven Timeline</h3><p>Horizontal scrub + haptics; pinch to zoom timeline density.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="row"><div class="block tiny" style="flex:2"></div><div class="block tiny"></div></div><div class="block tiny"></div></div></section>
+        <section class="idea"><h3>4) Card Stack Builder</h3><p>Step cards (content/style/publish) with swipe navigation and progress chip.</p><div class="phone"><div class="pill" style="width:35%"></div><div class="block"></div><div class="block"></div><div class="block tiny"></div></div></section>
+        <section class="idea"><h3>5) One-Hand Quick Actions</h3><p>Arc menu near thumb zone for duplicate, resize, align, and undo.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="row"><div class="pill" style="width:22%"></div><div class="pill" style="width:22%"></div><div class="pill" style="width:22%"></div></div><div class="block tiny"></div></div></section>
+        <section class="idea"><h3>6) Native iOS/Android Theming</h3><p>Platform-specific components: segmented controls vs material chips.</p><div class="phone"><div class="bar"></div><div class="row"><div class="pill" style="width:30%"></div><div class="pill" style="width:30%"></div></div><div class="block"></div><div class="block tiny"></div></div></section>
+        <section class="idea"><h3>7) Contextual Toolbelt</h3><p>Tools appear only when object selected, reducing noise for novices.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="block tiny"></div><div class="row"><div class="pill" style="width:28%"></div><div class="pill" style="width:28%"></div></div></div></section>
+        <section class="idea"><h3>8) Voice + Prompt Assist</h3><p>Microphone/prompt bar to create edits conversationally on mobile.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="block tiny" style="height:40px"></div><div class="pill" style="width:45%"></div></div></section>
+        <section class="idea"><h3>9) Multi-Device Handoff</h3><p>Persistent session card: continue on desktop without losing position.</p><div class="phone"><div class="bar"></div><div class="block tiny"></div><div class="block"></div><div class="row"><div class="pill"></div><div class="pill"></div></div></div></section>
+        <section class="idea"><h3>10) Accessibility-First Mobile</h3><p>Large hit targets, high contrast modes, and readable dynamic type scale.</p><div class="phone"><div class="bar"></div><div class="block"></div><div class="block"></div><div class="block tiny"></div></div></section>
+      </div>
+    </main>
+  </body>
+</html>
