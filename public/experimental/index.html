@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Builder UI Concepts — Desktop + Phone</title>
+    <style>
+      :root { --bg:#090b12; --card:#121826; --ink:#eef3ff; --muted:#94a3c9; --accent:#6ee7ff; --line:#26324d; }
+      * { box-sizing: border-box; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      body { margin:0; background: radial-gradient(1000px 500px at 20% -20%, #1d2b56 0%, transparent 60%), var(--bg); color:var(--ink); }
+      .wrap{max-width:1300px;margin:0 auto;padding:28px 18px 80px;}
+      h1,h2,h3{margin:.2rem 0 .6rem;} p{margin:.15rem 0;color:var(--muted)}
+      .grid{display:grid;gap:16px}
+      .desktop{grid-template-columns:repeat(auto-fit,minmax(360px,1fr));}
+      .phone{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+      .card{background:linear-gradient(180deg,#151d31,#0f1525);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 12px 30px #02050f70}
+      .mode{display:flex;gap:8px;margin:8px 0 10px}.pill{padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted)}.pill.on{background:#12223f;color:#c7ecff;border-color:#1e4f7e}
+      .wf{border:1px dashed #3b4b70;border-radius:12px;padding:10px;min-height:180px;background:#0b1120}
+      .bar,.blk,.chip,.thumb{border:1px solid #334364;background:#131f35;border-radius:10px}
+      .bar{height:30px}.blk{height:70px}.chip{height:22px;width:80px;border-radius:999px}.thumb{height:120px}
+      .row{display:flex;gap:8px;align-items:center}.col{display:grid;gap:8px}
+      .sp{justify-content:space-between}.phoneframe{border:7px solid #10192d;border-radius:32px;padding:10px;background:#070b15}
+      .tiny{font-size:12px;color:#9fb0d8;margin-top:8px}
+      .legend{font-size:13px;line-height:1.35}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Poster Builder UI Concept Boards</h1>
+      <p>Single-page visual brainstorm: 5 desktop ideas (each with Simple + Advanced mode) and 10 native-first phone ideas.</p>
+
+      <h2>Desktop Concepts (Discord-friendly showcase)</h2>
+      <div class="grid desktop">
+        <section class="card"><h3>1) Pro Studio Split</h3><p>Figma-like, strong left tools + center canvas + right inspector.</p><div class="mode"><span class="pill on">Simple</span><span class="pill">Advanced</span></div><div class="wf col"><div class="row"><div class="blk" style="width:22%"></div><div class="thumb" style="width:50%"></div><div class="blk" style="width:28%"></div></div><div class="row sp"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div></div><p class="tiny">Advanced adds timeline/history panel + JSON/source toggles.</p></section>
+        <section class="card"><h3>2) Command Center</h3><p>Keyboard-first with command palette and contextual floating tools.</p><div class="mode"><span class="pill on">Simple</span><span class="pill">Advanced</span></div><div class="wf col"><div class="bar"></div><div class="row"><div class="thumb" style="width:68%"></div><div class="col" style="width:32%"><div class="blk"></div><div class="blk"></div></div></div></div><p class="tiny">Advanced reveals automation recipes + macro editor.</p></section>
+        <section class="card"><h3>3) Content-First Gallery</h3><p>Poster browser-first workflow: pick, then edit in-place.</p><div class="mode"><span class="pill on">Simple</span><span class="pill">Advanced</span></div><div class="wf col"><div class="row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div><div class="row"><div class="thumb" style="width:33%"></div><div class="thumb" style="width:33%"></div><div class="thumb" style="width:33%"></div></div></div><p class="tiny">Advanced adds smart collections and batch edit queue.</p></section>
+        <section class="card"><h3>4) Kanban Builder Flow</h3><p>Step lanes: Discover → Compose → Polish → Export.</p><div class="mode"><span class="pill on">Simple</span><span class="pill">Advanced</span></div><div class="wf row"><div class="col" style="width:25%"><div class="bar"></div><div class="blk"></div></div><div class="col" style="width:25%"><div class="bar"></div><div class="blk"></div></div><div class="col" style="width:25%"><div class="bar"></div><div class="blk"></div></div><div class="col" style="width:25%"><div class="bar"></div><div class="blk"></div></div></div><p class="tiny">Advanced adds collaborative comments per lane.</p></section>
+        <section class="card"><h3>5) Dual Monitor Ops</h3><p>Primary canvas on one side, metadata + presets on the other.</p><div class="mode"><span class="pill on">Simple</span><span class="pill">Advanced</span></div><div class="wf col"><div class="row"><div class="thumb" style="width:60%"></div><div class="blk" style="width:40%;height:120px"></div></div><div class="row"><div class="bar" style="width:100%"></div></div></div><p class="tiny">Advanced includes diff compare and A/B variations panel.</p></section>
+      </div>
+
+      <h2 style="margin-top:26px">Phone Concepts (native-first, not compressed desktop)</h2>
+      <div class="grid phone">
+        <section class="card phoneframe"><h3>1) Thumb-Zone Composer</h3><div class="wf col"><div class="thumb"></div><div class="row sp"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div></div></section>
+        <section class="card phoneframe"><h3>2) Bottom Sheet Tools</h3><div class="wf col"><div class="thumb"></div><div class="blk" style="height:90px"></div></div></section>
+        <section class="card phoneframe"><h3>3) Swipe Stepper</h3><div class="wf col"><div class="row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div><div class="thumb"></div></div></section>
+        <section class="card phoneframe"><h3>4) Camera-like Capture UI</h3><div class="wf col"><div class="thumb"></div><div class="row sp"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div></div></section>
+        <section class="card phoneframe"><h3>5) Card Stack Presets</h3><div class="wf col"><div class="blk"></div><div class="blk"></div><div class="blk"></div></div></section>
+        <section class="card phoneframe"><h3>6) One-Hand Quick Actions</h3><div class="wf col"><div class="thumb"></div><div class="row"><div class="bar" style="width:72%"></div><div class="chip" style="width:28%"></div></div></div></section>
+        <section class="card phoneframe"><h3>7) Gesture-Only Fine Tuning</h3><div class="wf col"><div class="thumb"></div><div class="bar"></div><div class="bar"></div></div></section>
+        <section class="card phoneframe"><h3>8) Native iOS Segmenter</h3><div class="wf col"><div class="bar"></div><div class="thumb"></div><div class="row"><div class="chip"></div><div class="chip"></div></div></div></section>
+        <section class="card phoneframe"><h3>9) Native Android Rail + FAB</h3><div class="wf row"><div class="blk" style="width:20%;height:190px"></div><div class="thumb" style="width:80%;height:190px"></div></div></section>
+        <section class="card phoneframe"><h3>10) Guided Wizard + Haptics</h3><div class="wf col"><div class="row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div><div class="thumb"></div><div class="bar"></div></div></section>
+      </div>
+
+      <p class="legend" style="margin-top:18px">Use this as a moodboard for Discord discussion. Each card can become a polished mockup next (light + dark themes, states, and interaction specs).</p>
+    </div>
+  </body>
+</html>
