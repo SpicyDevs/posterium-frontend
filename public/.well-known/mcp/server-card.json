@@ -3,9 +3,10 @@
   "description": "Browser-exposed MCP context for Posterium poster generation actions.",
   "url": "https://posterium.xyz",
   "version": "1.0.0",
-  "protocolVersion": "2025-03-26",
+  "protocolVersion": "2025-07-28",
   "capabilities": {
-    "tools": true
+    "tools": true,
+    "resources": true
   },
   "tools": [
     {
@@ -34,5 +35,25 @@
         }
       }
     }
-  ]
+  ],
+  "cloudflareMCP": {
+    "name": "Cloudflare API MCP",
+    "description": "Access the entire Cloudflare API (~2,500 endpoints) through search() and execute() tools.",
+    "url": "https://mcp.cloudflare.com/mcp",
+    "protocolVersion": "2025-07-28",
+    "capabilities": {
+      "tools": true
+    },
+    "approach": "code_mode",
+    "tokenCost": "~1,000",
+    "equivalentNativeMCP": {
+      "tools": 2594,
+      "tokensNativeFull": ~1170000,
+      "tokensNativeRequired": ~244000
+    },
+    "oauth": {
+      "authorization": "https://posterium.xyz/.well-known/oauth-authorization-server",
+      "scopes": ["posterium:read", "posterium:write", "posterium:generate"]
+    }
+  }
 }

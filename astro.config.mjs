@@ -138,14 +138,13 @@ const workboxSW = () => ({
       const outDir = fileURLToPath(dir);
       const { count, size, warnings } = await generateSW({
         globDirectory: outDir,
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        globPatterns: ['**/*.{js,css,svg,png,webp,woff2}'],
         swDest: path.join(outDir, 'sw.js'),
         sourcemap: false,
-        navigateFallback: '/404.html',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/image\.tmdb\.org\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'tmdb-image-cache',
               expiration: {
@@ -158,8 +157,8 @@ const workboxSW = () => ({
             },
           },
           {
-            urlPattern: /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com)\/.*/i,
-            handler: 'CacheFirst',
+            urlPattern: /^https:\/(fonts\.googleapis\.com|fonts\.gstatic\.com)\/.*/i,
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'google-fonts-cache',
               expiration: {
@@ -188,6 +187,13 @@ const workboxSW = () => ({
           },
         ],
       });
+      if (warnings.length > 0) {
+        console.warn('[workbox] SW generation warnings:', warnings);
+      }
+      console.log(`[workbox] Generated sw.js precaching ${count} files`);
+    },
+  },
+});
       if (warnings.length > 0) {
         console.warn('[workbox] SW generation warnings:', warnings);
       }

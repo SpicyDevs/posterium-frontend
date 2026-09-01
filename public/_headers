@@ -35,10 +35,9 @@
   Vary: Accept-Encoding
   Access-Control-Allow-Origin: *
 
-# Service worker — must never be cached by the CDN; browsers must revalidate
-# it on every visit so updates are picked up promptly
+# Service worker — cache for 5 min at edge, revalidate after to pick up updates
 /sw.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=300, s-maxage=300, stale-while-revalidate=86400
 
 # Sitemaps / robots (FIXED: applying to Astro's generated filenames)
 /*sitemap*.xml
