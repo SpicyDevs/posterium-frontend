@@ -194,13 +194,6 @@ const workboxSW = () => ({
     },
   },
 });
-      if (warnings.length > 0) {
-        console.warn('[workbox] SW generation warnings:', warnings);
-      }
-      console.log(`[workbox] Generated sw.js precaching ${count} files`);
-    },
-  },
-});
 
 export default defineConfig({
   site: 'https://posterium.xyz',
